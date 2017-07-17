@@ -51,8 +51,7 @@ func (dto *NameToIdxDtoWithoutMeta) IsDelete() bool { // similarity to other API
 
 // NameToIdxRW is the "owner API" to the NameToIdx registry. Using this
 // API the owner adds (registers) new mappings to the registry or deletes
-// (unregisters) existing mappings from the registry. A new index to name
-// mapping is needed when something needs to be reprogrammed in VPP.
+// (unregisters) existing mappings from the registry.
 type NameToIdxRW interface {
 	NameToIdx
 

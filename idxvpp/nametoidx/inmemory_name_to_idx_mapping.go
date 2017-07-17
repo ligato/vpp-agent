@@ -67,12 +67,12 @@ func NewNameToIdx(logger logging.Logger, owner core.PluginName, title string,
 	return &m
 }
 
-// RegisterName from namedMapping allows to register a name-to-index mapping in-memory.
+// RegisterName inserts or updates index and metadata for the given name.
 func (mem *nameToIdxMem) RegisterName(name string, idx uint32, metadata interface{}) {
 	mem.internal.RegisterName(name, &nameToIdxMeta{idx, metadata})
 }
 
-// UnregisterName from namedMapping allows to remove mapping from the in-memory registry.
+// UnregisterName removes data associated with the given name.
 func (mem *nameToIdxMem) UnregisterName(name string) (idx uint32, metadata interface{}, found bool) {
 
 	meta, found := mem.internal.UnregisterName(name)
@@ -101,6 +101,7 @@ func (mem *nameToIdxMem) LookupIdx(name string) (uint32, interface{}, bool) {
 	return 0, nil, false
 }
 
+// LookupName looks up the name associated with the given softwareIfIndex.
 func (mem *nameToIdxMem) LookupName(idx uint32) (name string, metadata interface{}, exists bool) {
 	res := mem.internal.LookupByMetadata(idxKey, strconv.FormatUint(uint64(idx), 10))
 	if len(res) != 1 {
@@ -119,10 +120,13 @@ func (mem *nameToIdxMem) LookupNameByMetadata(key string, value string) []string
 	return mem.internal.LookupByMetadata(key, value)
 }
 
+// ListNames returns all names in the mapping
 func (mem *nameToIdxMem) ListNames() (names []string) {
 	return mem.internal.ListNames()
 }
 
+// Watch start monitoring of change in the mapping. When a change occurs the callback is called.
+// To receive changes through channel ToChan utility can be used.
 func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.NameToIdxDto)) {
 	watcher := func(dto idxmap.NamedMappingDto) {
 		internalMeta, ok := dto.Metadata.(*nameToIdxMeta)
