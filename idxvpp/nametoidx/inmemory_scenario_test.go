@@ -176,4 +176,5 @@ func TestOldIndexRemove(t *testing.T) {
 
 	name, _, found = idxm.LookupName(idx1)
 	gomega.Expect(found).To(gomega.BeFalse())
+	gomega.Expect(name).To(gomega.BeEquivalentTo(""))
 }
