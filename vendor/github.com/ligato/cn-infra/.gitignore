@@ -1,0 +1,23 @@
+.idea/
+glide.lock
+db/keyval/etcdv3/examples/phonebook/editor/editor
+db/keyval/etcdv3/examples/phonebook/view/view
+db/keyval/etcdv3/examples/phonebook/watcher/watcher
+db/keyval/redis/examples/simple/simple
+logging/logrus/examples/basic/basic
+logging/logrus/examples/custom/custom
+logging/logrus/examples/http/http
+messaging/kafka/examples/asyncproducer/asyncproducer
+messaging/kafka/examples/consumer/consumer
+messaging/kafka/examples/mux/mux
+messaging/kafka/examples/syncproducer/syncproducer
+
+#---------
+# eclipse
+*.classpath
+*.project
+*.settings
+
+#---------
+# oops...
+.gitignore.swp

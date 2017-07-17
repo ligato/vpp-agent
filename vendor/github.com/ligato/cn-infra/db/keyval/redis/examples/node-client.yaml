@@ -1,0 +1,16 @@
+db: 0
+endpoint: localhost:6379
+password: ""
+read-timeout: 0
+write-timeout: 0
+pool:
+  idle-timeout: 60
+  max-active: 10
+  max-idle: 10
+  wait-on-max-active: true
+tls:
+  ca-file: ""
+  cert-file: ""
+  enabled: false
+  key-file: ""
+  skip-verify: false

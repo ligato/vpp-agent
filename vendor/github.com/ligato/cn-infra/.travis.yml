@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - 1.8.x
+
+before_install:
+  - go get -v github.com/golang/lint/golint
+  - go get github.com/mattn/goveralls
+
+script:
+  - make lint
+  - make
+  - make test-cover
+
+after_success:
+  - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
