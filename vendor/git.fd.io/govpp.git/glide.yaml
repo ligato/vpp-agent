@@ -1,0 +1,9 @@
+package: git.fd.io/govpp.git
+import:
+- package: github.com/Sirupsen/logrus
+  version: v0.11.5
+- package: github.com/bennyscetbun/jsongo
+- package: github.com/lunixbochs/struc
+testImport:
+- package: github.com/onsi/gomega
+  version: v1.1.0

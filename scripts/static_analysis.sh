@@ -10,8 +10,10 @@ function static_analysis() {
   local FILES=$(find "${PWD}" -mount -name "*.go" -type f -not -path "${PWD}/vendor/*" -exec grep -LE "${WHITELIST_CONTENT}"  {} +)
 
   local IDXVPP=$(${TOOL} "${PWD}/idxvpp${SELECTOR}")
+  local GOVPPMUX=$(${TOOL} "${PWD}/govppmux${SELECTOR}")
 
   local ALL="$IDXVPP
+$GOVPPMUX
 "
 
   local OUT=$(echo "${ALL}" | grep -F "${FILES}" | grep -v "${WHITELIST_ERRORS}")

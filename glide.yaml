@@ -6,3 +6,14 @@ import:
   version: b5bfa59ec0adc420475f97f89b58045c721d761c
 - package: github.com/onsi/gomega
   version: v1.2.0
+- package: git.fd.io/govpp.git
+  version: 3ec4064566b9e4db1a88c007e0d9a513f7673b36
+  repo: https://git.fd.io/govpp.git
+  subpackages:
+  - adapter
+  - adapter/mock
+  - adapter/mock/binapi_reflect
+  - adapter/vppapiclient
+  - api
+  - api/ifcounters
+  - core
