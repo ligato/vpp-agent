@@ -390,7 +390,7 @@ func listValuesRangeInternal(log logging.Logger, kv clientv3.KV, opTimeout time.
 }
 
 // GetNext returns the following item from the result set. If data was returned found is set to true.
-func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, lastReceived bool) {
+func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
 
 	if ctx.index >= ctx.len {
 		return nil, true
@@ -403,7 +403,7 @@ func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, lastReceived 
 }
 
 // GetNext returns the following item from the result set. If data was returned found is set to true.
-func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, lastReceived bool) {
+func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 
 	if ctx.index >= ctx.len {
 		return "", 0, true

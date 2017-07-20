@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// Package status provides data model for status information of the agent.
+package status;
+
+enum OperationalState {
+    INIT = 0;
+    OK = 1;
+    ERROR = 2;
+};
+
+message AgentStatus {
+    string build_version = 1;
+    string build_date = 2;
+    OperationalState state = 3;
+    int64 start_time = 4;
+    int64 last_change = 5;  /* last change of the state */
+    int64 last_update = 6;  /* last update of the state by some plugin */
+}
+
+message PluginStatus {
+    OperationalState state = 1;
+    int64 last_change = 4;  /* last change of the state */
+    int64 last_update = 5;  /* last update of the state */
+    string error = 6;       /* last seen error */
+}

@@ -66,8 +66,8 @@ func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 	return &mem
 }
 
-// RegisterName adds an item into the mapping associated with the name. If there is previously stored
-// item with the name it is overwritten.
+// RegisterName adds an item to the mapping associated with the name. If there is an already stored
+// item with that name, it is overwritten.
 func (mem *memNamedMapping) RegisterName(name string, metadata interface{}) {
 	mem.access.Lock()
 	defer mem.access.Unlock()
@@ -99,7 +99,7 @@ func (mem *memNamedMapping) GetRegistryTitle() string {
 	return mem.title
 }
 
-// Lookup looks up item in the mapping by name (primary index).
+// Lookup looks up an item in the mapping by name (primary index).
 func (mem *memNamedMapping) Lookup(name string) (metadata interface{}, exists bool) {
 	mem.access.RLock()
 	defer mem.access.RUnlock()
@@ -144,7 +144,7 @@ func (mem *memNamedMapping) LookupByMetadata(key string, value string) []string 
 	return set.content()
 }
 
-// Watch allows to subscribe for watching changes in the mapping. When an item is added or removed the given callback is called.
+// Watch allows to subscribe for tracking changes in the mapping. When an item is added or removed, the given callback is triggered.
 func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxmap.NamedMappingDto)) error {
 	mem.Debug("Watch ", subscriber)
 	mem.access.Lock()
@@ -159,8 +159,8 @@ func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxm
 	return nil
 }
 
-// ToChan creates a callback that can be passed to Watch function in order to receive
-// notification through channel. If the notification can not be delivered until timeout it is dropped.
+// ToChan creates a callback that can be passed to the Watch function in order to receive
+// notifications through a channel. If the notification can not be delivered until timeout it is dropped.
 func ToChan(ch chan idxmap.NamedMappingDto) func(dto idxmap.NamedMappingDto) {
 	return func(dto idxmap.NamedMappingDto) {
 		select {
@@ -260,7 +260,7 @@ func (mem *memNamedMapping) publishDelToChannel(name string, metadata interface{
 	}
 }
 
-// nameSet is a simple implementation of set holding names of type string
+// nameSet is a simple implementation of a set holding names of type string
 type nameSet struct {
 	set map[string]interface{}
 }

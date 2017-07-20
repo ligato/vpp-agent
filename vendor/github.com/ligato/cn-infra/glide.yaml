@@ -38,6 +38,26 @@ import:
   version: v1.1.0
 - package: github.com/rafaeljusto/redigomock
   version: v2.0
+- package: github.com/gocql/gocql
+  version: 88748c7b290d13b288055f5dea4d1c49d44db06d
+- package: gopkg.in/inf.v0
+  version: v0.9.0
+- package: github.com/maraino/go-mock
+  version: ef7faf3e47cc5395d25e0a1f8ea2b75d5dd6fa7e
+- package: github.com/hailocab/go-hostpool
+  version: e80d13ce29ede4452c43dea11e79b9bc8a15b478
+- package: github.com/willfaught/gockle
+  version: 4f254e1e0f0a12485963192ff605f61f1933e71f
+- package: github.com/kr/pretty
+  version: cfb55aafdaf3ec08f0db22699ab822c50091b1c4
+- package: github.com/kr/text
+  version: 7cafcd837844e784b526369c9bce262804aebc60
+- package: github.com/kr/pty
+  version: 2c10821df3c3cf905230d078702dfbe9404c9b23
+- package: github.com/kr/fs
+  version: 2788f0dbd16903de03cb8186e5c7d97b69ad387b
+- package: github.com/unrolled/render
+  version: a0ec58421ddf111bd7efd3b7087399ca7d5da2f1
 testImport:
 - package: github.com/onsi/gomega
   version: v1.1.0

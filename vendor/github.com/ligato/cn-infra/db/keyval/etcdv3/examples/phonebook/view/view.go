@@ -64,8 +64,8 @@ func main() {
 	fmt.Println("Phonebook:")
 	for {
 		c := &phonebook.Contact{}
-		kv, allReceived := resp.GetNext()
-		if allReceived {
+		kv, stop := resp.GetNext()
+		if stop {
 			break
 		}
 		//maintain latest revision

@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	"time"
 )
 
 var dataBroker *BytesConnectionEtcd
@@ -280,4 +281,15 @@ func TestWatchDeleteResp(t *testing.T) {
 	gomega.Expect(createResp.GetKey()).To(gomega.BeEquivalentTo(key))
 	gomega.Expect(createResp.GetValue()).To(gomega.BeNil())
 	gomega.Expect(createResp.GetRevision()).To(gomega.BeEquivalentTo(rev))
+}
+
+func TestConfig(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	cfg := &Config{DialTimeout: time.Second, OpTimeout: time.Second}
+	etcdCfg, err := ConfigToClientv3(cfg)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(etcdCfg).NotTo(gomega.BeNil())
+	gomega.Expect(etcdCfg.OpTimeout).To(gomega.BeEquivalentTo(time.Second))
+	gomega.Expect(etcdCfg.DialTimeout).To(gomega.BeEquivalentTo(time.Second))
+	gomega.Expect(etcdCfg.TLS).To(gomega.BeNil())
 }

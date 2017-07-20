@@ -183,7 +183,7 @@ func (db *BytesConnectionRedis) handleChange(val interface{}, respChan chan<- ke
 		}
 	case redis.PMessage:
 		db.Debugf("PMessage: %s %s %s", n.Pattern, n.Channel, n.Data)
-		key := strings.Split(n.Channel, ":")[1]
+		key := n.Channel[strings.Index(n.Channel, ":")+1:]
 		switch cmd := string(n.Data); cmd {
 		case "set":
 			// Ouch, keyspace event does not convey value.  Need to retrieve it.

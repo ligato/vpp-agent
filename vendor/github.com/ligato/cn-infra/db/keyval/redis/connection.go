@@ -26,8 +26,16 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// ConnPool configures connection pool
-type ConnPool struct {
+// ConnPool provides abstraction of connection pool.
+type ConnPool interface {
+	// Get returns a vlid connection. The application must close the returned connection.
+	Get() redis.Conn
+	// Close releases the resources used by the pool.
+	Close() error
+}
+
+// ConnPoolConfig configures connection pool
+type ConnPoolConfig struct {
 	// Properties mimic those in github.com/garyburd/redigo/redis/Pool
 
 	// Maximum number of idle connections in the pool.
@@ -58,13 +66,13 @@ type TLS struct {
 
 // NodeClientConfig configures a node client that will connect to a single Redis server
 type NodeClientConfig struct {
-	Endpoint     string        `json:"endpoint"`      // like "172.17.0.1:6379"
-	Db           int           `json:"db"`            // ID of the DB
-	Password     string        `json:"password"`      // password, if required
-	ReadTimeout  time.Duration `json:"read-timeout"`  // timeout for read operations
-	WriteTimeout time.Duration `json:"write-timeout"` // timeout for write operations
-	TLS          TLS           `json:"tls"`           // TLS configuration
-	Pool         ConnPool      `json:"pool"`          // connection pool configuration
+	Endpoint     string         `json:"endpoint"`      // like "172.17.0.1:6379"
+	Db           int            `json:"db"`            // ID of the DB
+	Password     string         `json:"password"`      // password, if required
+	ReadTimeout  time.Duration  `json:"read-timeout"`  // timeout for read operations
+	WriteTimeout time.Duration  `json:"write-timeout"` // timeout for write operations
+	TLS          TLS            `json:"tls"`           // TLS configuration
+	Pool         ConnPoolConfig `json:"pool"`          // connection pool configuration
 }
 
 // CreateNodeClientConnPool creates a Redis connection pool
@@ -73,9 +81,13 @@ func CreateNodeClientConnPool(config NodeClientConfig) (*redis.Pool, error) {
 	options = append(options, redis.DialPassword(config.Password))
 	options = append(options, redis.DialReadTimeout(config.ReadTimeout))
 	options = append(options, redis.DialWriteTimeout(config.WriteTimeout))
-	err := addTLSOptions(options, config.TLS)
-	if err != nil {
-		return nil, err
+	if config.TLS.Enabled {
+		tlsConfig, err := createTLSConfig(config.TLS)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, redis.DialTLSConfig(tlsConfig))
+		options = append(options, redis.DialTLSSkipVerify(config.TLS.SkipVerify))
 	}
 	return &redis.Pool{
 		MaxIdle:     config.Pool.MaxIdle,
@@ -86,40 +98,36 @@ func CreateNodeClientConnPool(config NodeClientConfig) (*redis.Pool, error) {
 	}, nil
 }
 
-func addTLSOptions(options []redis.DialOption, config TLS) error {
-	if config.Enabled {
-		var (
-			cert *tls.Certificate
-			cp   *x509.CertPool
-			err  error
-		)
-		if config.Certfile != "" && config.Keyfile != "" {
-			cert, err = tlsutil.NewCert(config.Certfile, config.Keyfile, nil)
-			if err != nil {
-				return fmt.Errorf("tlsutil.NewCert() failed: %s", err)
-			}
+func createTLSConfig(config TLS) (*tls.Config, error) {
+	var (
+		cert *tls.Certificate
+		cp   *x509.CertPool
+		err  error
+	)
+	if config.Certfile != "" && config.Keyfile != "" {
+		cert, err = tlsutil.NewCert(config.Certfile, config.Keyfile, nil)
+		if err != nil {
+			return nil, fmt.Errorf("tlsutil.NewCert() failed: %s", err)
 		}
-
-		if config.CAfile != "" {
-			cp, err = tlsutil.NewCertPool([]string{config.CAfile})
-			if err != nil {
-				return fmt.Errorf("tlsutil.NewCertPool() failed: %s", err)
-			}
-		}
-
-		tlsConfig := &tls.Config{
-			MinVersion:         tls.VersionTLS10,
-			InsecureSkipVerify: config.SkipVerify,
-			RootCAs:            cp,
-		}
-		if cert != nil {
-			tlsConfig.Certificates = []tls.Certificate{*cert}
-		}
-		options = append(options, redis.DialTLSConfig(tlsConfig))
-		options = append(options, redis.DialTLSSkipVerify(config.SkipVerify))
-
 	}
-	return nil
+
+	if config.CAfile != "" {
+		cp, err = tlsutil.NewCertPool([]string{config.CAfile})
+		if err != nil {
+			return nil, fmt.Errorf("tlsutil.NewCertPool() failed: %s", err)
+		}
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion:         tls.VersionTLS10,
+		InsecureSkipVerify: config.SkipVerify,
+		RootCAs:            cp,
+	}
+	if cert != nil {
+		tlsConfig.Certificates = []tls.Certificate{*cert}
+	}
+
+	return tlsConfig, nil
 }
 
 // GenerateConfig Generates a yaml file using the given configuration object

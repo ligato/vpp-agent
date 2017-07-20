@@ -84,15 +84,15 @@ func TestGetLoggerByName(t *testing.T) {
 	gomega.Expect(lgB).NotTo(gomega.BeNil())
 	gomega.Expect(err).To(gomega.BeNil())
 
-	returnedA, found := LoggerRegistry.GetLoggerByName(loggerA)
+	returnedA, found := LoggerRegistry.Lookup(loggerA)
 	gomega.Expect(found).To(gomega.BeTrue())
 	gomega.Expect(returnedA).To(gomega.BeEquivalentTo(lgA))
 
-	returnedB, found := LoggerRegistry.GetLoggerByName(loggerB)
+	returnedB, found := LoggerRegistry.Lookup(loggerB)
 	gomega.Expect(found).To(gomega.BeTrue())
 	gomega.Expect(returnedB).To(gomega.BeEquivalentTo(lgB))
 
-	unknown, found := LoggerRegistry.GetLoggerByName("unknown")
+	unknown, found := LoggerRegistry.Lookup("unknown")
 	gomega.Expect(found).To(gomega.BeFalse())
 	gomega.Expect(unknown).To(gomega.BeNil())
 }
@@ -112,12 +112,12 @@ func TestClearRegistry(t *testing.T) {
 
 	LoggerRegistry.ClearRegistry()
 
-	_, found := LoggerRegistry.GetLoggerByName(loggerA)
+	_, found := LoggerRegistry.Lookup(loggerA)
 	gomega.Expect(found).To(gomega.BeFalse())
 
-	_, found = LoggerRegistry.GetLoggerByName(loggerB)
+	_, found = LoggerRegistry.Lookup(loggerB)
 	gomega.Expect(found).To(gomega.BeFalse())
 
-	_, found = LoggerRegistry.GetLoggerByName(defaultLoggerName)
+	_, found = LoggerRegistry.Lookup(defaultLoggerName)
 	gomega.Expect(found).To(gomega.BeTrue())
 }

@@ -9,15 +9,10 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/config"
 )
 
-var log logging.Logger
-
-func init() {
-	log = logrus.StandardLogger()
-}
+var log = logroot.Logger()
 
 var broker keyval.BytesBroker
 var watcher keyval.BytesWatcher
@@ -26,8 +21,8 @@ func main() {
 	log.SetLevel(logging.DebugLevel)
 
 	redisConn := createConnection(os.Args[1])
-	broker = redisConn
-	watcher = redisConn
+	broker = redisConn.NewBroker("")
+	watcher = redisConn.NewWatcher("")
 
 	runSimpleExmple(redisConn)
 }
@@ -45,7 +40,7 @@ func createConnection(yamlFile string) *redis.BytesConnectionRedis {
 		log.Panicf("CreateNodeClientConnPool() failed: %s", err)
 	}
 	var redisConn *redis.BytesConnectionRedis
-	redisConn, err = redis.NewBytesConnectionRedis(pool, logroot.Logger())
+	redisConn, err = redis.NewBytesConnectionRedis(pool, log)
 	if err != nil {
 		pool.Close()
 		log.Panicf("NewBytesConnectionRedis() failed: %s", err)
@@ -94,6 +89,7 @@ func runSimpleExmple(redisConn *redis.BytesConnectionRedis) {
 	get(key2)
 	get(key3)      // key3 should've expired
 	get(keyPrefix) // keyPrefix shouldn't find anything
+	listKeys(keyPrefix)
 	listVal(keyPrefix)
 
 	del(keyPrefix)
@@ -139,6 +135,21 @@ func get(key string) {
 	}
 }
 
+func listKeys(keyPrefix string) {
+	k, err := broker.ListKeys(keyPrefix)
+	if err != nil {
+		log.Errorf("ListKeys(%s): %s", keyPrefix, err)
+	} else {
+		for {
+			key, rev, done := k.GetNext()
+			if done {
+				break
+			}
+			log.Infof("ListKeys(%s):  %s (rev %d)", keyPrefix, key, rev)
+		}
+	}
+}
+
 func listVal(keyPrefix string) {
 	kv, err := broker.ListValues(keyPrefix)
 	if err != nil {
@@ -177,7 +188,7 @@ func txn() {
 func generateServerConfig(path string) {
 	config := redis.NodeClientConfig{
 		Endpoint: "localhost:6379",
-		Pool: redis.ConnPool{
+		Pool: redis.ConnPoolConfig{
 			MaxIdle:     10,
 			MaxActive:   10,
 			IdleTimeout: 60,

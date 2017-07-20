@@ -38,13 +38,13 @@ type protoWatcher struct {
 
 // protoKeyValIterator is an iterator returned by ListValues call
 type protoKeyValIterator struct {
-	ctx        keyval.BytesKeyValIterator
+	delegate   keyval.BytesKeyValIterator
 	serializer keyval.Serializer
 }
 
 // protoKeyIterator is an iterator returned by ListKeys call
 type protoKeyIterator struct {
-	ctx keyval.BytesKeyIterator
+	delegate keyval.BytesKeyIterator
 }
 
 // protoKeyVal represents single key-value pair
@@ -227,18 +227,18 @@ func listKeysProtoInternal(broker keyval.BytesBroker, prefix string) (keyval.Pro
 }
 
 // GetNext returns the following item from the result set. If data was returned, found is set to true.
-func (ctx *protoKeyValIterator) GetNext() (kv keyval.ProtoKeyVal, lastReceived bool) {
-	pair, allReceived := ctx.ctx.GetNext()
-	if allReceived {
-		return nil, allReceived
+func (ctx *protoKeyValIterator) GetNext() (kv keyval.ProtoKeyVal, stop bool) {
+	pair, stop := ctx.delegate.GetNext()
+	if stop {
+		return nil, stop
 	}
 
-	return &protoKeyVal{pair, ctx.serializer}, allReceived
+	return &protoKeyVal{pair, ctx.serializer}, stop
 }
 
 // GetNext returns the following item from the result set. If data was returned, found is set to true.
-func (ctx *protoKeyIterator) GetNext() (key string, rev int64, lastReceived bool) {
-	return ctx.ctx.GetNext()
+func (ctx *protoKeyIterator) GetNext() (key string, rev int64, stop bool) {
+	return ctx.delegate.GetNext()
 }
 
 // Watch for changes in datastore respChannel is used for receiving watch events

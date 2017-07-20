@@ -22,23 +22,23 @@
 // Owner and title are used for identification of the mapping. IndexFunc extracts secondary
 // indexes from the stored item.
 //
-// To insert a new item into the mapping execute:
+// To insert a new item into the mapping, execute:
 //
 //     mapping.RegisterName(name, metadata)
 //
-// RegisterName can be used also to overwrite existing item associated with the name.
+// RegisterName can also be used to overwrite an existing item associated with the name.
 //
 // To retrieve a particular item identified by name run:
 //
 //    meta, found := mapping.Lookup(name)
 //
-// To lookup items by secondary indexes execute:
+// To lookup items by secondary indexes, execute:
 //
 //    names := mapping.LookupByMetadata(indexName, indexValue)
 //
 // names of all matching items are returned.
 //
-// To retrieve all currently registered names run:
+// To retrieve all currently registered names, run:
 //
 //   names := mapping.ListNames()
 //
@@ -47,14 +47,14 @@
 //
 //    mapping.UnregisterName(name)
 //
-// To monitor changes run:
+// To monitor changes, run:
 //    callback := func(notif idxmap.NamedMappingDto) {
 // 		   // process notification
 //	  }
 //
 //    mapping.Watch("NameOfWatcher", callback)
 //
-// If you prefer processing of changes through channels:
+// If you prefer processing changes through channels:
 //
 //    ch := make(chan idxmap.NamedMappingDto)
 //    mapping.Watch("NameOfWatcher", ToChan(ch))

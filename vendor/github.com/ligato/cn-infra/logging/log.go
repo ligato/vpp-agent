@@ -87,8 +87,8 @@ type Registry interface {
 	SetLevel(logger, level string) error
 	// GetLevel returns the currently set log level of the logger from registry
 	GetLevel(logger string) (string, error)
-	// GetLoggerByName returns a logger instance identified by name from registry
-	GetLoggerByName(name string) (Logger, bool)
+	// Lookup returns a logger instance identified by name from registry
+	Lookup(loggerName string) (Logger, bool)
 	// ClearRegistry removes all loggers except the default one from registry
 	ClearRegistry()
 }

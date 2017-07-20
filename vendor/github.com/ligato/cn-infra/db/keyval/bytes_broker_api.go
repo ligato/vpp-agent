@@ -48,13 +48,13 @@ type BytesKeyVal interface {
 // BytesKeyValIterator is an iterator returned by ListValues call
 type BytesKeyValIterator interface {
 	// GetNext retrieves the following item from the context.
-	GetNext() (kv BytesKeyVal, allReceived bool)
+	GetNext() (kv BytesKeyVal, stop bool)
 }
 
 // BytesKeyIterator is an iterator returned by ListKeys call
 type BytesKeyIterator interface {
 	// GetNext retrieves the following item from the context.
-	GetNext() (key string, rev int64, allReceived bool)
+	GetNext() (key string, rev int64, stop bool)
 }
 
 // CoreBrokerWatcher defines methods for full datastore access.

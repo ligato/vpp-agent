@@ -46,7 +46,7 @@ type ProtoKvPair interface {
 // ProtoKeyIterator is an iterator returned by ListKeys call
 type ProtoKeyIterator interface {
 	// GetNext retrieves the following item from the context.
-	GetNext() (key string, rev int64, allReceived bool)
+	GetNext() (key string, rev int64, stop bool)
 }
 
 // ProtoKeyVal represents a single key-value pair
@@ -59,5 +59,5 @@ type ProtoKeyVal interface {
 // ProtoKeyValIterator is an iterator returned by ListValues call.
 type ProtoKeyValIterator interface {
 	// GetNext retrieves the following value from the context. GetValue is unmarshaled into the provided argument.
-	GetNext() (kv ProtoKeyVal, allReceived bool)
+	GetNext() (kv ProtoKeyVal, stop bool)
 }

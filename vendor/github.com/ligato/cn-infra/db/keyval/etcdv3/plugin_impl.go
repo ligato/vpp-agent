@@ -15,24 +15,55 @@
 package etcdv3
 
 import (
-	"github.com/coreos/etcd/clientv3"
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/config"
+	"github.com/namsral/flag"
 )
 
-// ProtoPluginEtcd implements Plugin interface therefore can be loaded with other plugins
-type ProtoPluginEtcd struct {
+// PluginID used in the Agent Core flavors
+const PluginID core.PluginName = "EtcdClient"
+
+// Plugin implements Plugin interface therefore can be loaded with other plugins
+type Plugin struct {
+	LogFactory     logging.LogFactory
+	ConfigFileName string
 	*plugin.Skeleton
-	/*TODO
-	Config *clientv3.Config //TODO `inject:""`
-	client *clientv3.Client
-	*/
 }
 
-// NewEtcdPlugin creates a new instance of ProtoPluginEtcd. Configuration of etcd connection is loaded from file.
-func NewEtcdPlugin(cfg *Config) *ProtoPluginEtcd {
+var defaultConfigFileName string
 
-	skeleton := plugin.NewSkeleton(
+func init() {
+	flag.StringVar(&defaultConfigFileName, "etcdv3-config", "", "Location of the Etcd configuration file; also set via 'ETCDV3_CONFIG' env variable.")
+}
+
+func (p *Plugin) retrieveConfig() (*Config, error) {
+	cfg := &Config{}
+	var configFile string
+	if p.ConfigFileName != "" {
+		configFile = p.ConfigFileName
+	} else if defaultConfigFileName != "" {
+		configFile = defaultConfigFileName
+	}
+
+	if configFile != "" {
+		err := config.ParseConfigFromYamlFile(configFile, cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cfg, nil
+}
+
+// Init is called at plugin startup. The connection to etcd is established.
+func (p *Plugin) Init() error {
+	cfg, err := p.retrieveConfig()
+	if err != nil {
+		return err
+	}
+
+	skeleton := plugin.NewSkeleton(string(PluginID), p.LogFactory,
 		func(log logging.Logger) (plugin.Connection, error) {
 			etcdConfig, err := ConfigToClientv3(cfg)
 			if err != nil {
@@ -41,15 +72,6 @@ func NewEtcdPlugin(cfg *Config) *ProtoPluginEtcd {
 			return NewEtcdConnectionWithBytes(*etcdConfig, log)
 		},
 	)
-	return &ProtoPluginEtcd{Skeleton: skeleton}
-}
-
-// NewEtcdPluginUsingClient creates a new instance of ProtoPluginEtcd using given etcd client
-func NewEtcdPluginUsingClient(client *clientv3.Client) *ProtoPluginEtcd {
-	skeleton := plugin.NewSkeleton(
-		func(log logging.Logger) (plugin.Connection, error) {
-			return NewEtcdConnectionUsingClient(client, log)
-		},
-	)
-	return &ProtoPluginEtcd{Skeleton: skeleton}
+	p.Skeleton = skeleton
+	return p.Skeleton.Init()
 }

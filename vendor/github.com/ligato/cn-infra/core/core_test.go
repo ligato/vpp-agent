@@ -201,6 +201,15 @@ func TestEventLoopCloseFailed(t *testing.T) {
 
 }
 
+func TestPluginApi(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	const plName = "Name"
+	named := NamedPlugin{plName, &TestPlugin{}}
+
+	strRep := named.String()
+	gomega.Expect(strRep).To(gomega.BeEquivalentTo(plName))
+}
+
 type TestPlugin struct {
 	failInit      bool
 	failAfterInit bool

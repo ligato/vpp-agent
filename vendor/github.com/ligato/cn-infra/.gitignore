@@ -1,9 +1,11 @@
 .idea/
 glide.lock
+cmd/generic-agent/generic-agent
 db/keyval/etcdv3/examples/phonebook/editor/editor
 db/keyval/etcdv3/examples/phonebook/view/view
 db/keyval/etcdv3/examples/phonebook/watcher/watcher
 db/keyval/redis/examples/simple/simple
+db/keyval/redis/examples/airport/airport
 logging/logrus/examples/basic/basic
 logging/logrus/examples/custom/custom
 logging/logrus/examples/http/http

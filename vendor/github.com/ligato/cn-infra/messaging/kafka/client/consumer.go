@@ -78,6 +78,7 @@ func NewConsumer(config *Config, wg *sync.WaitGroup) (*Consumer, error) {
 	}
 
 	csmr := &Consumer{
+		Logger:       config.Logger,
 		Config:       config,
 		Client:       client,
 		Consumer:     consumer,

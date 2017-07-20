@@ -31,6 +31,9 @@ import (
 var mockConn *redigomock.Conn
 var mockPool *redis.Pool
 var bytesBroker *BytesConnectionRedis
+var iKeys = []interface{}{}
+var iVals = []interface{}{}
+var iAll = []interface{}{}
 var log logging.Logger
 
 var keyValues = map[string]string{
@@ -38,13 +41,12 @@ var keyValues = map[string]string{
 	"keyMap":  "a map",
 }
 
-//func TestMain(m *testing.M) {
+// Seriously, must do init() instead of TestMain().
+// Or test coverage will generated profile.
+// func TestMain(m *testing.M) {
 func init() {
 	log = logroot.Logger()
 	mockConn = redigomock.NewConn()
-	var iKeys []interface{}
-	var iVals []interface{}
-	var iAll []interface{}
 	for k, v := range keyValues {
 		mockConn.Command("SET", k, v).Expect("not used")
 		mockConn.Command("GET", k).Expect(v)
@@ -57,7 +59,6 @@ func init() {
 	mockConn.Command("GET", "nil").Expect(nil)
 
 	mockConn.Command("MGET", iKeys...).Expect(iVals)
-	mockConn.Command("KEYS", "key*").Expect(iKeys)
 	mockConn.Command("DEL", iKeys...).Expect(len(keyValues))
 
 	mockConn.Command("MSET", []interface{}{"keyMap", keyValues["keyMap"]}...).Expect(nil)
@@ -132,6 +133,10 @@ func TestGetShouldNotApplyWildcard(t *testing.T) {
 }
 
 func TestListValues(t *testing.T) {
+	// Implicitly call SCAN (or previous, "KEYS")
+	mockConn.Command("SCAN", "0", "MATCH", "key*").Expect([]interface{}{[]byte("0"), iKeys})
+	//mockConn.Command("KEYS", "key*").Expect(iKeys)
+
 	gomega.RegisterTestingT(t)
 	keyVals, err := bytesBroker.ListValues("key")
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
@@ -146,6 +151,10 @@ func TestListValues(t *testing.T) {
 }
 
 func TestListKeys(t *testing.T) {
+	// Each SCAN (or previous, "KEYS") is set on demand in individual test that calls it.
+	mockConn.Command("SCAN", "0", "MATCH", "key*").Expect([]interface{}{[]byte("0"), iKeys})
+	//mockConn.Command("KEYS", "key*").Expect(iKeys)
+
 	gomega.RegisterTestingT(t)
 	keys, err := bytesBroker.ListKeys("key")
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
@@ -159,10 +168,14 @@ func TestListKeys(t *testing.T) {
 }
 
 func TestDel(t *testing.T) {
+	// Implicitly call SCAN (or previous, "KEYS")
+	mockConn.Command("SCAN", "0", "MATCH", "key*").Expect([]interface{}{[]byte("0"), iKeys})
+	//mockConn.Command("KEYS", "key*").Expect(iKeys)
+
 	gomega.RegisterTestingT(t)
-	/*found*/ _, err := bytesBroker.Delete("key")
+	found, err := bytesBroker.Delete("key")
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
-	//gomega.Expect(found).Should(gomega.BeTrue()) // why is this not found, all of a sudden?
+	gomega.Expect(found).Should(gomega.BeTrue())
 }
 
 func TestTxn(t *testing.T) {

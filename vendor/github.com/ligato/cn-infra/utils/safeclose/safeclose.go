@@ -34,7 +34,7 @@ func Close(obj interface{}) error {
 		}
 	}()
 
-	if obj != nil {
+	if reflect.ValueOf(obj).IsValid() && !reflect.ValueOf(obj).IsNil() {
 		if closer, ok := obj.(*io.Closer); ok {
 			if closer != nil {
 				err := (*closer).Close()

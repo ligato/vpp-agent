@@ -16,7 +16,6 @@ package redis
 
 import (
 	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
@@ -28,7 +27,7 @@ type op struct {
 // Txn allows to group operations into the transaction. Transaction executes multiple operations
 // in a more efficient way in contrast to executing them one by one.
 type Txn struct {
-	pool   *redis.Pool
+	pool   ConnPool
 	ops    map[string] /*key*/ *op
 	prefix string
 }
