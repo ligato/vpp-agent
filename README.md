@@ -13,3 +13,22 @@ The tool used for managing third-party dependencies is [Glide](https://github.co
 a dependency in `glide.yaml` run `make install-dep` to download specified dependencies into the vendor folder. 
 
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
+
+# Architecture
+
+VPP Agent Plugins on top of cn-infra:
+
+![vpp agent plugins](vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
+
+10.000 feet architecture:
+
+![VPP agent 10.000 feet](vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
+
+* SFC Controller - renders desired network stitching configuration for multiple agents to the Data Store
+* Control Plane APPs - renders specific network configuration for multiple agents to the Data Store
+* VPP vSwitch - Privileged container that cross connects multiple VNFs
+* VPP VNF - Benefits of putting VPP to a container
+ * supports failover
+ * simplifies: upgrade, start/top, potentially also scaling
+ * microservices: small & reusable apps
+* Non VPP VNF - non VPP containers can interact together with VPP containers (see below MEMIFs, VETH)
