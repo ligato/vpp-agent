@@ -16,11 +16,7 @@ If you are interested in contributing, please see the [contribution guidelines](
 
 # Architecture
 
-VPP Agent Plugins on top of cn-infra:
-
-![vpp agent plugins](vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
-
-10.000 feet architecture:
+## 10.000 feet architecture
 
 ![VPP agent 10.000 feet](vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
 
@@ -37,9 +33,19 @@ VPP Agent Plugins on top of cn-infra:
 * Non VPP VNF - non VPP containers can interact together with VPP containers (see below MEMIFs, VETH)
 * Messaging - AD-HOC events (e.g. link UP/Down)
  
-K8s integration:
+## VPP Agent Plugins on top of cn-infra:
+
+![vpp agent plugins](vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
+ 
+* NET Interface - Network interfaces configuration (Gigi ETH, MEMIF, AF_Packet, VXLAN, Loopback...)
+* L2 - Bridge Domains, FIBs...
+* L3 - IP Routes, VRFs...
+* ACL - configures VPP ACL Plugin
+* Linux (VETH) - configures Linux Virtual Ethernets
+ 
+## K8s integration
 
 ![K8s integration](k8s_deployment.png "VPP Agent - K8s integration")
 
-Contiv deployment:
+### Contiv deployment:
 TBD - in memory calls (not remote calls)
