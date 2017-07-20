@@ -26,9 +26,20 @@ VPP Agent Plugins on top of cn-infra:
 
 * SFC Controller - renders desired network stitching configuration for multiple agents to the Data Store
 * Control Plane APPs - renders specific network configuration for multiple agents to the Data Store
+* Data Store - ETCD, Redis, Cassandra etc. to:
+  * store the configuration
+  * operational state (network counters & statistics, errors...)
 * VPP vSwitch - Privileged container that cross connects multiple VNFs
 * VPP VNF - Benefits of putting VPP to a container
  * supports failover
  * simplifies: upgrade, start/top, potentially also scaling
  * microservices: small & reusable apps
 * Non VPP VNF - non VPP containers can interact together with VPP containers (see below MEMIFs, VETH)
+* Messaging - AD-HOC events (e.g. link UP/Down)
+ 
+K8s integration:
+
+![K8s integration](k8s_deployment.png "VPP Agent - K8s integration")
+
+Contiv deployment:
+TBD - in memory calls (not remote calls)
