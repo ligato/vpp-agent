@@ -6,7 +6,7 @@ Brief description:
 * Control Plane APPs - renders specific VPP configuration for multiple agents to the Data Store
 * Client v1 - Control plane can use the Client v1 (VPP Agent Client v1) for submitting configuration for VPP Agents.
               The Client v1 is based on generated GO structures from protobuf messages & set of helper methods
-              that generates keys and store the data to key the value Data Store.
+              that generate keys and store the data to key the value Data Store.
 * Data Store (ETCD, Redis, etc.) to:
   * store the VPP configuration
   * operational state (network counters & statistics, errors...)
@@ -25,24 +25,27 @@ VPP Agent was designed with following principal requirements:
 
 
 ## Modular design with API contract
-Code organized as plugins. Each plugin exposes API that. This approach allows 
+The code is organized into multiple plugins. Each plugin exposes specific API. This approach allows 
 to extend the functionality by introducing new plugins and enables integration of plugins by using the API.
 
 ## Cloud native
 Assumption: data plane & control plane can be divided to multiple microservices.
-Each microservice is independent therefore normally can occur that the configuration
-is incomplete. Incomplete: one object refers the non existing object in configuration.
+Each microservice is independent. Therefore, it may occur that the configuration is incomplete: 
+an object can refer to a non-existing object in configuration. 
+Incomplete: one object refers the non existing object in configuration.
 VPP agent can handle this - it skips incomplete part of configuration.
 Later when the configuration is updated it tries again to configure what was skipped.
 
-VPP Agent with VPP itself is normaly deployed in container. There can be many of these containers.
-Containers are used in many different clouds. VPP Agent is tested with [Kubernetes](https://kubernetes.io/).
+VPP Agent is usually deployed in a container together with VPP.
+There can be many of these containers. Containers can be used in many different infrastructures 
+(on-premise, hybrid, or public cloud). The VPP + VPP Agent containers have been tested with 
+[Kubernetes](https://kubernetes.io/).
 
 
 Control Plane microservices do not really depended on current lifecycle phase of the VPP Agents.
 Control Plane can render the data to the Data Store even if VPP Agents are not started.
 This is possible because:
-- Control Plane does not access the VPP Agents directly but it rather access the Data Store
+- Control Plane does not access the VPP Agents directly but it rather accesses the Data Store
 - Data structures are using logical names of objects inside the configuration (not internal identifiers of the VPP).
   See the [protobuf](https://developers.google.com/protocol-buffers/) definitions in model sub folders of VPP Agent. 
 
@@ -58,7 +61,7 @@ VPP Agent also reports status of the VPP in probes & Status Check Plugin.
 
 In general VPP Agents:
  * propagate errors to upper layers & report to the Status Check Plugin
- * fault recovery is down with two diffrent strategies:
+ * fault recovery is is performed with two different strategies:
    * easily recoverable errors: retry data synchronization (Data Store configuration -> VPP Binary API calls)
    * otherwise: report error to control plane which can failover or recreate the microservice
 
