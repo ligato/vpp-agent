@@ -1,5 +1,5 @@
 # Architecture
-![VPP agent 10.000 feet](vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
+![VPP agent 10.000 feet](imgs/vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
 
 Brief description:
 * SFC Controller - renders desired network stitching configuration for multiple agents to the Data Store
@@ -67,12 +67,12 @@ In general VPP Agents:
 
 ## Rapid deployment
 
-Containers manages to reduce deployment to seconds. This is due to the fact that containers are created at process level 
+Containers allow to reduce deployment time to seconds. This is due to the fact that containers are created at process level 
 and there is no need to boot OS. More over K8s helps with (un)deploying different version of multiple instances 
 of microservices.
 
 ## High performance & minimal footprint
-Performance optimization is currently work in progress. There are identified several bottlenecks the can be optimized:
+Performance optimization is currently work in progress. Several bottlenecks that can be optimized have been identified:
 - GOVPP
 - minimize context switching
 - replace blocking calls to non-blocking calls

@@ -13,7 +13,7 @@ built on [cn-infra](github.com/ligato/cn-infra).
 VPP Agent provides plugins that process high level (north-bound) configuration which 
 is carefully translated to low level VPP Binary API calls.
 
-![vpp agent plugins](vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
+![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
  
 * Default VPP Plugins - provides abstraction on top of VPP binary API for:
   * NET Interface - Network interfaces configuration (Gigi ETH, MEMIF, AF_Packet, VXLAN, Loopback...)
@@ -21,23 +21,23 @@ is carefully translated to low level VPP Binary API calls.
   * L3 - IP Routes, VRFs...
   * ACL - configures VPP ACL Plugin
 * GOVPP - allows other plugins to access VPP independently on each other by means of connection multiplexing
-* Linux (VETH) - optionally you can configures Linux Virtual Ethernets
-* Core - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
+* Linux (VETH) - allows optional configuration of Linux virtual ethernet interfaces
+* Core - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
-1. Run VPP agent in Docker image
+1. Run VPP + VPP Agent in Docker image
 2. Configure the VPP agent using agentctl
 3. Check the configurtion (using agentctl or directly using VPP console)
 
 # Next Steps(TBD)
 ## Deployment:
-![K8s integration](k8s_deployment_thumb.png "VPP Agent - K8s integration")
+[![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
 ## Extensibility:
-![VPP Agent Extensibility](extensibility_thumb.png)
+![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png)
 
 ## Design & architecture:
-[![VPP agent 10.000 feet](vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](Design.md)
+[![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
 
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
