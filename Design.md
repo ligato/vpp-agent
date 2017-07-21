@@ -1,3 +1,4 @@
+# Architecture
 ![VPP agent 10.000 feet](vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
 
 Brief description:
@@ -14,6 +15,7 @@ Brief description:
 * Non VPP VNF - non VPP containers can interact together with VPP containers (see below MEMIFs, VETH)
 * Messaging - AD-HOC events (e.g. link UP/Down)
 
+# Requirements
 VPP Agent was designed with following principal requirements:
 * Modular design with API contract
 * Cloud native
@@ -22,11 +24,11 @@ VPP Agent was designed with following principal requirements:
 * High performance & minimal footprint
 
 
-# Modular design with API contract
+## Modular design with API contract
 Code organized as plugins. Each plugin exposes API that. This approach allows 
 to extend the functionality by introducing new plugins and enables integration of plugins by using the API.
 
-# Cloud native
+## Cloud native
 Assumption: data plane & control plane can be divided to multiple microservices.
 Each microservice is independent therefore normally can occur that the configuration
 is incomplete. Incomplete: one object refers the non existing object in configuration.
@@ -44,7 +46,7 @@ This is possible because:
 - Data structures are using logical names of objects inside the configuration (not internal identifiers of the VPP).
   See the [protobuf](https://developers.google.com/protocol-buffers/) definitions in model sub folders of VPP Agent. 
 
-# Fault tolerant
+## Fault tolerant
 Each microservice has it's own lifecycle therefore the agent is designed in the way that 
 it recovers from situations that different microservice (db, message bus...) is temporary unavailable.
 
@@ -60,13 +62,13 @@ In general VPP Agents:
    * easily recoverable errors: retry data synchronization (Data Store configuration -> VPP Binary API calls)
    * otherwise: report error to control plane which can failover or recreate the microservice
 
-# Rapid deployment
+## Rapid deployment
 
 Containers manages to reduce deployment to seconds. This is due to the fact that containers are created at process level 
 and there is no need to boot OS. More over K8s helps with (un)deploying different version of multiple instances 
 of microservices.
 
-# High performance & minimal footprint
+## High performance & minimal footprint
 Performance optimization is currently work in progress. There are identified several bottlenecks the can be optimized:
 - GOVPP
 - minimize context switching
