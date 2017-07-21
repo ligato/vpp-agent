@@ -32,19 +32,19 @@ using same Client v1 interface. There are three different implementations of the
 The Control Plane using remote client writes configuration to the Data Store (tested with ETCD, Redis).
 VPP Agent watches particular key prefixes in Data Store using dbsync package.
 
-![deployment with data store](deployment_with_data_store.png)
+![deployment with data store](imgs/deployment_with_data_store.png)
 TBD links to the code
 
 ### GRPC 
 The Control Plane using remote client sends configuration to the Data Store (tested with ETCD, Redis).
 VPP Agent watches particular key prefixes in Data Store using grpcsync package.
 
-![grpc northbound](deployment_nb_grpc.png)
+![grpc northbound](imgs/deployment_nb_grpc.png)
 TBD links to the code
 
 ### Embeded deployment
 VPP Agent can be embedded in different project. For integration with Contiv we use ebmedded deployment.
 In this case VPP Agent get's the configuration from Local clivent v1 through in memory calls.
 
-![embeded deployment](deployment_embeded.png)
+![embeded deployment](imgs/deployment_embeded.png)
 TBD links to the code
