@@ -1,6 +1,6 @@
 # Deployment
 
-VPP Agent can run everywhere where is installed VPP. It can run either in VM or container.
+VPP Agent can run everywhere where VPP is installed. It can run either in VM or container.
  
 Benefits of putting VPP to a container
  * simplifies: upgrade, start/top, potentially also scaling
