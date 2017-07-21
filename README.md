@@ -7,7 +7,11 @@
 
 Please note that the content of the repository is currently WORK IN PROGRESS.
 
-The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://fd.io/)) built on [cn-infra](github.com/ligato/cn-infra).
+The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://fd.io/)) 
+built on [cn-infra](github.com/ligato/cn-infra).
+
+VPP Agent provides plugins that process high level (north-bound) configuration which 
+is carefully translated to low level VPP Binary API calls.
 
 ![vpp agent plugins](vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
  
@@ -18,7 +22,7 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
   * ACL - configures VPP ACL Plugin
 * GOVPP - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * Linux (VETH) - optionally you can configures Linux Virtual Ethernets
-* Core - lifecycle management of plugins (loading, initialization, unloading) see [cn-infra](https://github.com/ligato/cn-infra)
+* Core - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
 1. Run VPP agent in Docker image
@@ -33,7 +37,7 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
 ![VPP Agent Extensibility](extensibility_thumb.png)
 
 ## Design & architecture:
-![VPP agent 10.000 feet](vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")
+[![VPP agent 10.000 feet](vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](Design.md)
 
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
