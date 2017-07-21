@@ -17,7 +17,7 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
   * L3 - IP Routes, VRFs...
   * ACL - configures VPP ACL Plugin
 * GOVPP - allows other plugins to access VPP independently on each other by means of connection multiplexing
-* Linux (VETH) - configures Linux Virtual Ethernets
+* Linux (VETH) - optionally you can configures Linux Virtual Ethernets
 * Core - lifecycle management of plugins (loading, initialization, unloading) see [cn-infra](https://github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
@@ -26,16 +26,16 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
 3. Check the configurtion (using agentctl or directly using VPP console)
 
 # Next Steps(TBD)
-Deployment:
+## Deployment:
 ![K8s integration](k8s_deployment_thumb.png "VPP Agent - K8s integration")
 
-Extensibility:
+## Extensibility:
 TBD
 
-Design & architecture:
+## Design & architecture:
 ![VPP agent 10.000 feet](vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")
 
-Contribution:
+## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
 
 The tool used for managing third-party dependencies is [Glide](https://github.com/Masterminds/glide). After adding or updating
