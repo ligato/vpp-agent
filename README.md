@@ -30,10 +30,10 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
 * Extensibility
 * Design & architecture
 
-![VPP agent 10.000 feet](vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
+![VPP agent 10.000 feet](vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")
 *Architecture*
 
-![K8s integration](k8s_deployment.png "VPP Agent - K8s integration")
+![K8s integration](k8s_deployment_thumb.png "VPP Agent - K8s integration")
 *Deployment*
 
 The tool used for managing third-party dependencies is [Glide](https://github.com/Masterminds/glide). After adding or updating
