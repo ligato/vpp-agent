@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/config"
 	"github.com/namsral/flag"
 )
@@ -28,6 +29,7 @@ const PluginID core.PluginName = "EtcdClient"
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
 	LogFactory     logging.LogFactory
+	ServiceLabel   *servicelabel.Plugin
 	ConfigFileName string
 	*plugin.Skeleton
 }
@@ -63,7 +65,9 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	skeleton := plugin.NewSkeleton(string(PluginID), p.LogFactory,
+	skeleton := plugin.NewSkeleton(string(PluginID),
+		p.LogFactory,
+		p.ServiceLabel,
 		func(log logging.Logger) (plugin.Connection, error) {
 			etcdConfig, err := ConfigToClientv3(cfg)
 			if err != nil {

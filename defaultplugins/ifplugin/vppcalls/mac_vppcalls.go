@@ -1,0 +1,34 @@
+package vppcalls
+
+import (
+	"fmt"
+	"net"
+
+	govppapi "git.fd.io/govpp.git/api"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/interfaces"
+)
+
+// SetInterfaceMac calls SwInterfaceSetMacAddress bin API
+func SetInterfaceMac(ifIdx uint32, macAddress string, vppChan *govppapi.Channel) error {
+	mac, macErr := net.ParseMAC(macAddress)
+	if macErr != nil {
+		return macErr
+	}
+
+	req := &interfaces.SwInterfaceSetMacAddress{}
+	req.SwIfIndex = ifIdx
+	req.MacAddress = mac
+
+	reply := &interfaces.SwInterfaceSetMacAddressReply{}
+	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("Adding MAC address returned %d", reply.Retval)
+	}
+	log.WithFields(log.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
+	return nil
+}

@@ -49,6 +49,13 @@ define build_examples_only
     @echo "# done"
 endef
 
+# build vpp agent only
+define build_vpp_agent_only
+    @echo "# building vpp agent"
+    @cd cmd/vpp-agent && go build
+    @echo "# done"
+endef
+
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
@@ -58,6 +65,7 @@ endef
 # build all binaries
 build:
 	$(call build_examples_only)
+	$(call build_vpp_agent_only)
 
 # install dependencies
 install-dep:
@@ -92,6 +100,7 @@ lint:
 clean:
 	@echo "# cleanup completed"
 	$(call clean_examples_only)
+	rm -f cmd/vpp-agent/vpp-agent
 
 # run all targets
 all:

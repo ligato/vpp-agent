@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/servicelabel"
 )
 
 // PluginID used in the Agent Core flavors
@@ -25,7 +26,8 @@ const PluginID core.PluginName = "RedisClient"
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
-	LogFactory logging.LogFactory
+	LogFactory   logging.LogFactory
+	ServiceLabel *servicelabel.Plugin
 	*plugin.Skeleton
 }
 
@@ -38,7 +40,7 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	skeleton := plugin.NewSkeleton(string(PluginID), p.LogFactory,
+	skeleton := plugin.NewSkeleton(string(PluginID), p.LogFactory, p.ServiceLabel,
 		func(log logging.Logger) (plugin.Connection, error) {
 			return NewBytesConnectionRedis(pool, log)
 		},

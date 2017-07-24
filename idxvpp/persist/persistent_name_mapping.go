@@ -1,0 +1,214 @@
+// Package persist provides persistent implementation of the interfaces
+// defined in core.name_mapping.go (please see the documentation in there)
+package persist
+
+import (
+	"encoding/json"
+	"io/ioutil"
+	"math/rand"
+	"os"
+	"path"
+	"sync"
+	"time"
+
+	"flag"
+	"github.com/ligato/cn-infra/core"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+)
+
+var (
+	// configuration file path
+	idxMapConfigFile string
+
+	// configuration common to all mappings
+	gConfig *nametoidx.Config
+)
+
+// init is here only for parsing program arguments
+func init() {
+	flag.StringVar(&idxMapConfigFile, "idxmap-config", "",
+		"Location of the configuration file for index-to-name maps; also set via 'IDXMAP_CONFIG' env variable.")
+
+	if gConfig == nil {
+		var err error
+		gConfig, err = nametoidx.ConfigFromFile(idxMapConfigFile)
+		if err != nil {
+			log.WithFields(log.Fields{"filepath": idxMapConfigFile, "err": err}).Warn(
+				"Failed to load idxmap configuration file")
+		} else {
+			log.WithFields(log.Fields{"filepath": idxMapConfigFile}).Debug(
+				"Loaded idxmap configuration file")
+		}
+	}
+}
+
+// Marshalling loads the config and starts watching for changes.
+func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxvpp.NameToIdxRW) error {
+	log.Debug("Persistence")
+
+	changes := make(chan idxvpp.NameToIdxDto, 1000)
+	fileName := idxMap.GetRegistryTitle() + ".json"
+	persist := NewNameToIdxPersist(fileName, gConfig, agentLabel, changes)
+	err := persist.Init()
+	if err != nil {
+		return err
+	}
+
+	idxMap.Watch(core.PluginName("idxpersist"), nametoidx.ToChan(changes))
+
+	err = persist.loadIdxMapFile(loadedFromFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// NameToIdxPersist is a decorator for NameToIdxRW implementing persistent storage.
+type NameToIdxPersist struct {
+	// to now about registration
+	registrations chan idxvpp.NameToIdxDto
+
+	// Configuration associated with this mapping.
+	// Unless this is a unit test, it is the same as the global configuration.
+	config *nametoidx.Config
+
+	// (de)serialization of mapping data
+	nameToIdx map[string]uint32
+
+	// persistent storage location
+	fileDir  string
+	filePath string
+
+	// synchronization between the underlying registry and the persistent storage
+	syncLock  sync.Mutex
+	syncCh    chan bool
+	syncAckCh chan error
+}
+
+// NewNameToIdxPersist initializes decorator for persistent storage of index to name mapping.
+func NewNameToIdxPersist(fileName string, config *nametoidx.Config, namespace string,
+	registrations chan idxvpp.NameToIdxDto) *NameToIdxPersist {
+
+	persist := NameToIdxPersist{}
+	persist.config = config
+	persist.nameToIdx = map[string]uint32{}
+
+	persist.fileDir = path.Join(persist.config.PersistentStorage.Location, namespace)
+	persist.filePath = path.Join(persist.fileDir, fileName)
+
+	persist.registrations = registrations
+
+	return &persist
+}
+
+// Init starts go routine that watches chan idxvpp.NameToIdxDto
+func (persist *NameToIdxPersist) Init() error {
+	persist.syncCh = make(chan bool)
+	persist.syncAckCh = make(chan error)
+
+	offset := rand.Int63n(int64(persist.config.PersistentStorage.MaxSyncStartDelay))
+	go persist.periodicIdxMapSync(time.Duration(offset))
+
+	return nil
+}
+
+// loadIdxMapFile loads persistently stored entries of the associated registry.
+func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxRW) error {
+	if _, err := os.Stat(persist.filePath); os.IsNotExist(err) {
+		log.WithFields(log.Fields{"Filepath": persist.filePath}).Debug(
+			"Persistent storage for name to index mapping doesn't exist yet")
+		return nil
+	}
+	idxMapData, err := ioutil.ReadFile(persist.filePath)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(idxMapData, &persist.nameToIdx)
+	if err != nil {
+		return err
+	}
+
+	for name, idx := range persist.nameToIdx {
+		log.WithFields(log.Fields{"name": name, "idx": idx}).Debug(
+			"Loaded mapping from the persistent storage")
+		loadedFromFile.RegisterName(name, idx, nil)
+	}
+	return nil
+}
+
+// periodicIdxMapSync periodically synchronizes the underlying registry with the persistent storage.
+func (persist *NameToIdxPersist) periodicIdxMapSync(offset time.Duration) error {
+	for {
+		select {
+		case reg := <-persist.registrations:
+			if reg.Del {
+				persist.unregisterName(reg.Name)
+			} else {
+				persist.registerName(reg.Name, reg.Idx)
+			}
+		case <-persist.syncCh:
+			persist.syncAckCh <- persist.syncMapping()
+		case <-time.After(persist.config.PersistentStorage.SyncInterval + offset):
+			offset = 0
+			err := persist.syncMapping()
+			if err != nil {
+				log.WithFields(log.Fields{"Error": err, "Filepath": persist.filePath}).Error(
+					"Failed to sync idxMap with the persistent storage")
+			}
+		}
+	}
+}
+
+// syncMapping updates the persistent  storage with the new mappings.
+// Current implementation simply re-builds the file content from the scratch.
+// TODO: NICE-TO-HAVE incremental update
+func (persist *NameToIdxPersist) syncMapping() error {
+	persist.syncLock.Lock()
+	defer persist.syncLock.Unlock()
+
+	idxMapData, err := json.Marshal(persist.nameToIdx)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(persist.fileDir, 0777)
+	if err != nil {
+		return err
+	}
+
+	//log.Debug("Persist len=", len(persist.nameToIdx)," ", persist.filePath)
+
+	return ioutil.WriteFile(persist.filePath, idxMapData, 0644)
+}
+
+// RegisterName from NameToIdxPersist allows to add a name-to-index mapping into both the underlying registry and
+// the persistent storage (with some delay in synchronization).
+func (persist *NameToIdxPersist) registerName(name string, idx uint32) {
+	persist.nameToIdx[name] = idx
+}
+
+// UnregisterName from NameToIdxPersist allows to remove mapping from both the underlying registry and the persistent
+// storage.
+func (persist *NameToIdxPersist) unregisterName(name string) {
+	delete(persist.nameToIdx, name)
+}
+
+// Close triggers explicit synchronization and closes the underlying mapping.
+func (persist *NameToIdxPersist) Close() error {
+	err := persist.Sync()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Sync triggers immediate synchronization between the underlying registry and the persistent storage.
+// The function doesn't return until the operation has fully finished.
+func (persist *NameToIdxPersist) Sync() error {
+	persist.syncCh <- true
+	return <-persist.syncAckCh
+}

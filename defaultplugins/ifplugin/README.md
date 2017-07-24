@@ -1,0 +1,193 @@
+# IF Plugin
+
+The `ifplugin` is a Core Agent Plugin for configuration of NICs, memifs,
+VXLANs and loopback interfaces.
+
+The plugin watches the northbound configuration of network interfaces,
+which is modelled by [interfaces proto file](model/interfaces/interfaces.proto)
+and stored in ETCD under the following key:
+
+```
+/vnf-agent/<agent-label>/vpp/config/v1/interface/<interface-name>
+```
+
+This northbound configuration is translated to a sequence of binary
+API calls (using GOVPP library). Replies from the VPP are processed
+sequentially, i.e. one by one.
+
+Internally in VPP, each newly created interface is assigned a unique
+integer for identification and future references. This integer is
+denoted as `sw_if_index`, and the agent will learn it from a VPP
+response to a successfully created interface (of any kind). The
+agent, however, needs to decouple the control plane from `sw_if_index`
+to be able to configure multiple inter-dependent objects in one
+transaction. For example, multiple interfaces may all be created
+in one transaction, together with objects that depend on them, such
+as L2 FIB entries, L3 routing, ACLs, etc. It is, however, not possible
+to describe the dependencies without knowing the identifiers of
+interfaces in advance. Furthermore, certain interface parameters
+cannot be modified once the interface was created. In order to reflect
+a configuration change,  it may be necessary to re-create the interface
+in VPP with the new configuration. The new instance of the interface,
+however, may be assigned a different `sw_if_index`. All pre-existing
+references to this interface that would be based on `sw_if_index` are
+thus invalidated by this operation.
+
+In order to address the limitations of VPP `sw_if_index`, the control
+plane defines a unique logical name for each network interface and
+uses it as a reference from dependent objects. The agent receives a
+logical name from a northbound configuration and calls the specific
+binary API (e.g. "Create NIC") to obtain `sw_if_idx`. The agent then
+maintains a one-to-one mapping between the logical name and its
+respective `sw_if_index` in a registry called `NameIdx`. Later,
+if/when the interface configuration changes, the new `sw_if_idx`
+can be looked up by its logical name and used in an up-to-date
+reference.
+
+The following sequence diagrams describe the high-level behavior
+of the `ifplugin`.
+
+*Create one MEMIF (one part of the link)*
+```
+... -> ifpluign : Create ietf-interface (MEMIF)
+ifplugin -> GOVPP : Create MEMIF
+ifplugin <-- GOVPP : sw_if_index + success/err
+ifplugin -> NameIdx : register sw_if_index by name
+ifplugin <-- NameIdx : success/err
+ifplugin -> GOVPP : IF admin up
+ifplugin <-- GOVPP : success/err
+ifplugin -> GOVPP : ADD IP address
+ifplugin <-- GOVPP : success/err
+```
+
+*Update MEMIF IP addresses*
+```
+... -> ifplugin : Update ietf-interface (MEMIF, IP addresses)
+ifplugin -> NameIdx : lookup sw_if_index by name
+ifplugin <-- NameIdx : sw_if_index / not found
+ifplugin -> Calculate the delta (what IP address was added or deleted)
+ifplugin -> GOVPP : (un)assign IP address(es) to the MEMIF with specific sw_if_idx
+ifplugin <-- GOVPP : success/err
+ifplugin -> GOVPP : VRF
+ifplugin <-- GOVPP : success/err
+```
+
+*Delete one MEMIF interface*
+```
+... -> ifplugin : Remove ietf-interfaces (MEMIF)
+ifplugin -> NameIdx : lookup sw_if_index by name
+ifplugin <-- NameIdx : sw_if_index / not found
+ifplugin -> Calculate the delta (what IP address needs to be deleted)
+ifplugin -> GOVPP : delete MEMIF with the specific sw_if_idx
+ifplugin <-- GOVPP : success/err
+ifplugin -> GOVPP : VRF
+ifplugin <-- GOVPP : success/err
+```
+
+**JSON configuration example with vpp-agent-ctl**
+
+An example of interface configuration for MEMIF in JSON format can
+be found [here](../../../../agent/cmd/vpp-agent-ctl/json/memif.json).
+
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../../agent/cmd/vpp-agent-ctl/main.go)
+can be used. For example, to configure interface `memif1` in vpp
+labeled `vpp1`, use the configuration in the `memif.json` file and
+run the following `vpp-agent-ctl` command:
+```
+vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/interface/memif1" memif.json
+```
+
+**Inbuilt configuration example with vpp-agent-ctl**
+
+The `vpp-agent-ctl` binary also ships with some simple predefined
+ietf-interface configurations. This is intended solely for testing
+purposes.
+
+To create a `master` memif with IP address `192.168.42.1`, run:
+```
+vpp-agent-ctl -cmm
+```
+
+To turn the memif from `master` to `slave` and change the IP address
+from `192.168.42.1` to `192.168.42.2`, invoke:
+```
+vpp-agent-ctl -cms
+```
+
+Note: As it is not possible to change the operating mode of memif
+interface once it was created, the agent must first remove the
+existing interface and then create a new instance of memif in
+`slave` mode.
+
+To remove the interface, run:
+```
+vpp-agent-ctl -dmm
+```
+
+Similarly, `vpp-agent-ctl` offers commands to create, change and delete
+VXLANs, tap and loopback interfaces with predefined configurations.
+Run `vpp-agent-ctl` with no arguments to get the list of all available
+commands. The documentation for `vpp-agent-ctl` is incomplete right now,
+and the only way to find out what a given command does is to
+[study the source code itself](../../../../agent/cmd/vpp-agent-ctl/main.go).
+
+**Bidirectional Forwarding Detection**
+
+`iflplugin` is also able to configure BFD sessions, authentication keys
+and echo function.
+
+BFD is modelled by [bfd proto file](model/bfd/bfd.proto). Every part of BFD
+is stored in ETCD under unique. Every BFD session is stored under following
+key:
+
+```
+/vnf-agent/{agent-label}/vpp/config/v1/bfd/session/{session-name}
+```
+
+Every created authentication key, which can be used in sessions is stored under:
+
+```
+/vnf-agent/{agent-label}/vpp/config/v1/bfd/auth-key/{key-name}
+```
+
+If echo function is configured, it can be found under key:
+
+```
+/vnf-agent/{agent-label}/vpp/config/v1/bfd/echo-function
+```
+
+Each newly created BFD element is assigned an integer for identification (the same
+concept as with interfaces). There are several mappings used for every BFD configuration
+part. `bfd_session_index` is used for BFD sessions, `bfd_keys_index` for authentication
+keys and echo function index is stored in `bfd_echo_function_index`.
+
+**Configuration example with vpp-agent-ctl using JSON**
+
+// todo
+
+**Inbuilt configuration example with vpp-agent-ctl**
+
+Use predefined `vpp-agent-ctl` configurations:
+
+*Create BFD session*
+```
+vpp-agent-ctl -bfds
+```
+
+**Note:** BFD session requires interface over which session will be created. This interface
+has to contain IP address defined also as BFD session source address. Authentication is assigned 
+only if particular key (defined in BFD session) already exists
+ 
+*Create BFD authentication key*
+```
+vpp-agent-ctl -bfdk
+```
+
+*Set up Echo Function*
+```
+vpp-agent-ctl -bfde
+```
+ 
+To remove any part of BFD configuration, just add `d` before vpp-agent-ctl suffix (for example
+`-dbfds` to remove BFD session). Keep in mind that authentication key cannot be removed (or modified)
+if it is used in any BFD session.

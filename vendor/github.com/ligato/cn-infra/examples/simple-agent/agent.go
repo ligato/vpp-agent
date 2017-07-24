@@ -50,6 +50,7 @@ func (g *Flavour) Inject() error {
 
 	g.HTTP.LogFactory = &g.Logrus
 	g.Etcd.LogFactory = &g.Logrus
+	g.Etcd.ServiceLabel = &g.ServiceLabel
 	g.Kafka.LogFactory = &g.Logrus
 	g.Kafka.ServiceLabel = &g.ServiceLabel
 	return nil
