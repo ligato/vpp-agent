@@ -252,6 +252,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
 	}
 
+	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
 	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {

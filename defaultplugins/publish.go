@@ -89,7 +89,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 	return nil
 }
 
-// publishBdState is used to watch bridge domain state notifications
+// PublishBdState is used to watch bridge domain state notifications
 func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -99,11 +99,11 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 		case bdState := <-plugin.bdStateChan:
 			if bdState != nil && bdState.State != nil {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
-				// Remove state
+				// Remove BD state
 				if bdState.State.Index == 0  && bdState.State.InternalName != ""{
 					plugin.Transport.PublishData(key, nil)
 					log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
-					// Write/Update state
+				// Write/Update BD state
 				} else if bdState.State.Index != 0 {
 					plugin.Transport.PublishData(key, bdState.State)
 					log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
@@ -113,7 +113,7 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				}
 			}
 		case <-ctx.Done():
-			// stop watching for state data updates
+			// Stop watching for state data updates
 			return
 		}
 	}

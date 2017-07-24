@@ -35,6 +35,8 @@ type BDConfigurator struct {
 	notificationChan chan BridgeDomainStateMessage
 }
 
+// BridgeDomainStateMessage is message with bridge domain state + bridge domain name (because state message does not
+// contain it). This state is sent to the bd_state.go to further processing after every change
 type BridgeDomainStateMessage struct {
 	Message govppapi.Message
 	Name	string
@@ -115,6 +117,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.Bridge
 		log.WithField("Bridge domain name", bridgeDomainInput.Name).Debug("No ARP termination entries to set")
 	}
 
+	// Push to bridge domain state
 	errLookup := plugin.LookupBridgeDomainDetails(bridgeDomainIndex, bridgeDomainInput.Name)
 	if errLookup != nil {
 		log.WithField("bdName", bridgeDomainInput.Name).Error(errLookup)
@@ -186,6 +189,7 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 		}
 	}
 
+	// Push change to bridge domain state
 	errLookup := plugin.LookupBridgeDomainDetails(newConfigIndex, newConfig.Name)
 	if errLookup != nil {
 		log.WithField("bdName", newConfig.Name).Error(errLookup)
@@ -222,7 +226,7 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 	plugin.BdIndexes.UnregisterName(bridgeDomain.Name)
 	log.WithFields(log.Fields{"Name": bridgeDomain.Name, "bdIdx": bdIdx}).Debug("Bridge domain removed.")
 
-	// Prepare bridge domain state
+	// Push to bridge domain state
 	err = plugin.LookupBridgeDomainDetails(bdIdx, bridgeDomain.Name)
 	if err != nil {
 		return err
@@ -238,11 +242,15 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 
 	_, _, found := plugin.BdIndexes.LookupName(bdID)
 	if !found {
+		// If bridge domain does not exist in mapping, lookup treats it as a removed bridge domain, ID in message
+		// is set to 0 but name has to be passed further in order to be able to construct the key to remove the status
+		// from ETCD
 		stateMsg.Message = &l2ba.BridgeDomainDetails{
 			BdID: 0,
 		}
 		stateMsg.Name = bdName
 	} else {
+		// Put current state data to status message
 		req := &l2ba.BridgeDomainDump{
 			BdID: bdID,
 		}
@@ -256,8 +264,7 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 		stateMsg.Name = bdName
 	}
 
-
-	// propagate bridge domain state information
+	// Propagate bridge domain state information
 	plugin.notificationChan <- stateMsg
 
 	return wasError
