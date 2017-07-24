@@ -5,16 +5,14 @@ language: go
 go:
   - 1.8.x
 
-env:
-  # VPP version
-  - UBUNTU="trusty"  RELEASE=".master"
+cache:
+  directories:
+- $HOME/build-cache
 
 before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
-  - sudo echo "deb [trusted=yes] https://nexus.fd.io/content/repositories/fd.io$RELEASE.ubuntu.$UBUNTU.main/ ./" | sudo tee -a /etc/apt/sources.list.d/99fd.io.list
-  - sudo apt-get update
-  - sudo apt-get install vpp
+  - sudo ./scripts/build-vpp.sh
 
 script:
   - make lint
