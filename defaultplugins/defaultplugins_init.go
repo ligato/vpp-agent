@@ -107,6 +107,7 @@ func (plugin *Plugin) Init() error {
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
+	plugin.bdStateChan = make(chan *l2plugin.BridgeDomainStateNotification, 100)
 	plugin.resyncConfigChan = make(chan datasync.ResyncEvent)
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
@@ -121,6 +122,7 @@ func (plugin *Plugin) Init() error {
 
 	// run event handler go routines
 	go plugin.publishIfStateEvents(ctx)
+	go plugin.publishBdStateEvents(ctx)
 	go plugin.watchEvents(ctx)
 
 	// run error handler

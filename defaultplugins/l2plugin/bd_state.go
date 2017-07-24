@@ -34,7 +34,7 @@ type BridgeDomainStateUpdater struct {
 }
 
 type BridgeDomainStateNotification struct {
-	// todo add fields if necessary
+	State *l2.BridgeDomainState_BridgeDomain
 }
 
 func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
@@ -81,7 +81,12 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 		case notif := <-plugin.notificationChan:
 			switch msg := notif.(type) {
 			case *l2_api.BridgeDomainDetails:
-				plugin.processBridgeDomainDetailsNotification(msg)
+				bdState := plugin.processBridgeDomainDetailsNotification(msg)
+				if bdState != nil {
+					plugin.publishBdState(&BridgeDomainStateNotification{
+						State: bdState,
+					})
+				}
 			default:
 				log.WithFields(log.Fields{"MessageName": notif.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
 			}
@@ -97,20 +102,28 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 	}
 
 }
-func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails) {
-	bdState := l2.BridgeDomainState_BridgeDomain{}
+func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails) *l2.BridgeDomainState_BridgeDomain{
+	bdState := &l2.BridgeDomainState_BridgeDomain{}
 	bdState.Index = msg.BdID
+	name, _, found := plugin.bdIndex.LookupName(msg.BdID)
+	if !found {
+		log.Warnf("Unable to store bridge domain state, index %v is not in the mapping", msg.BdID)
+		return nil
+	}
+	bdState.InternalName = name
 	bdState.InterfaceCount = msg.NSwIfs
-	name, _, found := plugin.swIfIndexes.LookupName(msg.BviSwIfIndex)
+	name, _, found = plugin.swIfIndexes.LookupName(msg.BviSwIfIndex)
 	if found {
 		bdState.BviInterface = name
+		bdState.BviInterfaceIndex = msg.BviSwIfIndex
 	} else {
-		bdState.BviInterface = "unknown"
+		bdState.BviInterface = "<not_set>"
 	}
-	bdState.BviInterfaceIndex = msg.BviSwIfIndex
 	bdState.L2Params = getBridgeDomainStateParams(msg)
 	bdState.Interfaces = plugin.getBridgeDomainInterfaces(msg)
 	bdState.LastChange = time.Now().Unix()
+
+	return bdState
 }
 
 func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {

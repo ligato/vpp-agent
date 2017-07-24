@@ -7,6 +7,7 @@ import (
 
 	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 )
 
 const kafkaIfStateTopic = "if_state" // Kafka topic where interface state changes are published.
@@ -61,6 +62,23 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 				}
 			}
 
+		case <-ctx.Done():
+			// stop watching for state data updates
+			return
+		}
+	}
+}
+
+// publishBdState is used to watch bridge domain state notifications
+func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
+	plugin.wg.Add(1)
+	defer plugin.wg.Done()
+
+	for {
+		select {
+		case bdState := <-plugin.bdStateChan:
+			plugin.Transport.PublishData(l2.BridgeDomainStateKey(bdState.State.InternalName), bdState.State)
+			log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.Index)
 		case <-ctx.Done():
 			// stop watching for state data updates
 			return
