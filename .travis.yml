@@ -7,7 +7,7 @@ go:
 
 cache:
   directories:
-    - $HOME/local/vpp
+    - $HOME/build-cache
 
 before_install:
   - go get -v github.com/golang/lint/golint
