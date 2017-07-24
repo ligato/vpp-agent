@@ -52,7 +52,7 @@ endef
 # build vpp agent only
 define build_vpp_agent_only
     @echo "# building vpp agent"
-    @cd cmd/vpp-agent && go build
+    @cd cmd/vpp-agent && go build -v
     @echo "# done"
 endef
 
