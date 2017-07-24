@@ -131,16 +131,16 @@ func exampleDDL(session *gocql.Session) (err error) {
 }
 
 func exampleDML(session *gocql.Session) (err error) {
-	_ /*ip01 */ , ipPrefix01, err := net.ParseCIDR("192.168.1.2/24")
+	_ /*ip01 */, ipPrefix01, err := net.ParseCIDR("192.168.1.2/24")
 	if err != nil {
 		return err
 	}
 	db := cassandra.NewBrokerUsingSession(gockle.NewSession(session))
 	written := &User{"Fero", "Mrkva", /*ip01, */
 		//"kkk",
-		&Wrapper01{ipPrefix01}, &Udt03{Tx: "tx1", Tx2: "tx2" /*, Inet1: "201.202.203.204"*/ },
+		&Wrapper01{ipPrefix01}, &Udt03{Tx: "tx1", Tx2: "tx2" /*, Inet1: "201.202.203.204"*/},
 
-		Udt04{"kuk", &Udt03{Tx: "txxxxxxxxx1", Tx2: "txxxxxxxxx2" /*, Inet1: "201.202.203.204"*/ }},
+		Udt04{"kuk", &Udt03{Tx: "txxxxxxxxx1", Tx2: "txxxxxxxxx2" /*, Inet1: "201.202.203.204"*/}},
 	}
 	err = db.Put(sql.Exp("userid='Fero Mrkva'"), written)
 	if err == nil {

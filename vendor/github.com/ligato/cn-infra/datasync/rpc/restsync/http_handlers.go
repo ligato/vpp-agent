@@ -18,8 +18,8 @@ import (
 	"github.com/unrolled/render"
 	"net/http"
 
-	"io/ioutil"
 	"github.com/ligato/cn-infra/datasync/persisted/dbsync/local"
+	"io/ioutil"
 )
 
 // putMessage is just a stub prepared for later implementation

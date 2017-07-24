@@ -15,12 +15,12 @@
 package cassandra_test
 
 import (
-	"github.com/willfaught/gockle"
-	"github.com/maraino/go-mock"
 	"errors"
 	"github.com/gocql/gocql"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
+	"github.com/maraino/go-mock"
+	"github.com/willfaught/gockle"
 )
 
 // test data
@@ -50,7 +50,7 @@ type row struct {
 
 // mockQuery is a helper for testing. It setups mock iterator
 func mockQuery(sessionMock *gockle.SessionMock, query sql.Expression, rows ...*row) {
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
 	if err != nil {
 		panic(err.Error())
 	}

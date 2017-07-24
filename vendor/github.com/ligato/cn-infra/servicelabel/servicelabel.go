@@ -15,12 +15,16 @@
 package servicelabel
 
 import (
+	"fmt"
 	"github.com/namsral/flag"
 )
 
 // default service key prefix, can be changed in the build time using ldflgs, e.g.
 // -ldflags '-X github.com/ligato/cn-infra/servicelabel.agentPrefix=/xyz/'
 var agentPrefix = "/vnf-agent/"
+
+// MicroserviceLabelEnvVar label this is inferred from the flag name
+const MicroserviceLabelEnvVar = "MICROSERVICE_LABEL"
 
 // Plugin exposes the service label(i.e. the string used to identify the particular VNF) to the other plugins.
 type Plugin struct {
@@ -32,7 +36,7 @@ type Plugin struct {
 var microserviceLabelFlag string
 
 func init() {
-	flag.StringVar(&microserviceLabelFlag, "microservice-label", "vpp1", 		"microservice label; also set via 'MICROSERVICE_LABEL' env variable.")
+	flag.StringVar(&microserviceLabelFlag, "microservice-label", "vpp1", fmt.Sprintf("microservice label; also set via '%v' env variable.", MicroserviceLabelEnvVar))
 }
 
 // Init is called at plugin initialization.

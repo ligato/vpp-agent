@@ -11,7 +11,9 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	"github.com/ligato/cn-infra/statuscheck"
 	"github.com/ligato/vpp-agent/defaultplugins"
+	"github.com/ligato/vpp-agent/linuxplugin"
 )
 
 // Flavour glues together multiple plugins to translate ETCD configuration into VPP.
@@ -20,10 +22,12 @@ type Flavour struct {
 	Logrus       logrus.Plugin
 	HTTP         http.Plugin
 	ServiceLabel servicelabel.Plugin
+	StatusCheck  statuscheck.Plugin
 	Etcd         etcdv3.Plugin
 	Kafka        kafka.Plugin
 	Resync       resync.Plugin
 	GoVPP        govppmux.GOVPPPlugin
+	Linux        linuxplugin.Plugin
 	VPP          defaultplugins.Plugin
 }
 
@@ -34,10 +38,12 @@ func (f *Flavour) Inject() error {
 	}
 	f.injected = true
 	f.HTTP.LogFactory = &f.Logrus
+	f.StatusCheck.HTTP = &f.HTTP
 	f.Etcd.LogFactory = &f.Logrus
 	f.Etcd.ServiceLabel = &f.ServiceLabel
 	f.Kafka.LogFactory = &f.Logrus
 	f.Kafka.ServiceLabel = &f.ServiceLabel
+	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.VPP.ServiceLabel = &f.ServiceLabel
 
 	return nil

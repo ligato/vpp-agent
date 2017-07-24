@@ -15,10 +15,10 @@
 package local
 
 import (
-	"github.com/ligato/cn-infra/db"
-	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
+	"github.com/ligato/cn-infra/db"
+	"github.com/ligato/cn-infra/db/keyval"
 	"sync"
 )
 

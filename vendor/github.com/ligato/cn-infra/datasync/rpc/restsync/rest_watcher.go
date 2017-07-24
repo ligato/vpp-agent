@@ -18,10 +18,10 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 
 	"github.com/gorilla/mux"
-	"github.com/unrolled/render"
 	"github.com/ligato/cn-infra/datasync/syncbase"
-	"net/http"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/unrolled/render"
+	"net/http"
 )
 
 // just a shortcut to make following code more readable
@@ -45,7 +45,7 @@ func (adapter *Adapter) RegisterTestHandler() {
 	adapter.registerHTTPHandler("/restsync/test", testHandler, "GET")
 }
 
-// WatchData registers HTTP handlers - basicaly bridges them with local dbadapter
+// WatchData registers HTTP handlers - basically bridges them with local dbadapter
 func (adapter *Adapter) WatchData(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchDataRegistration, error) {
 

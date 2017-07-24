@@ -12,7 +12,7 @@ import (
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
-	//withLinuxPlugin  bool                       // is linux plugin loaded ?
+	withLinuxPlugin  bool                       // is linux plugin loaded ?
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	hostInterfaces   map[string]struct{}        // a set of available host interfaces
@@ -45,13 +45,13 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 		return 0, false, errors.New("Expecting AfPacket interface")
 	}
 
-	/*	if plugin.withLinuxPlugin {
+	if plugin.withLinuxPlugin {
 		_, hostIfAvail := plugin.hostInterfaces[afpacket.Afpacket.HostIfName]
 		if !hostIfAvail {
 			plugin.addToCache(afpacket, true)
 			return 0, true, nil
 		}
-	}*/
+	}
 	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Afpacket, plugin.vppCh)
 	if err == nil {
 		plugin.addToCache(afpacket, false)
@@ -96,10 +96,10 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
 func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName string, interfaceIndex uint32) *intf.Interfaces_Interface {
-	/*if !plugin.withLinuxPlugin {
+	if !plugin.withLinuxPlugin {
 		log.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about a new Linux interface")
 		return nil
-	}*/
+	}
 	plugin.hostInterfaces[interfaceName] = struct{}{}
 
 	afpacket, found := plugin.afPacketByHostIf[interfaceName]
@@ -116,10 +116,10 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName s
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
 func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName string) {
-	/*if !plugin.withLinuxPlugin {
+	if !plugin.withLinuxPlugin {
 		log.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about removed Linux interface")
 		return
-	}*/
+	}
 	delete(plugin.hostInterfaces, interfaceName)
 
 	afpacket, found := plugin.afPacketByHostIf[interfaceName]

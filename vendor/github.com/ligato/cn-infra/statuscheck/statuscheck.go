@@ -31,7 +31,23 @@ import (
 	"github.com/unrolled/render"
 )
 
+// PluginID uniquely identifies the plugin.
+const PluginID core.PluginName = "StatusCheck"
+
+// PluginState is a data type used to describe the current operational state of a plugin.
+type PluginState string
+
+// PluginStateProbe defines parameters of a function used for plugin state probing.
+type PluginStateProbe func() (PluginState, error)
+
 const (
+	// Init state means that the initialization of the plugin is in progress.
+	Init PluginState = "init"
+	// OK state means that the plugin is healthy.
+	OK PluginState = "ok"
+	// Error state means that some error has occurred in the plugin.
+	Error PluginState = "error"
+
 	livenessProbePath      string        = "/liveness"      // liveness probe URL
 	readinessProbePath     string        = "/readiness"     // readiness probe URL
 	periodicWriteTimeout   time.Duration = time.Second * 10 // frequency of periodic writes of state data into ETCD
@@ -53,22 +69,8 @@ type Plugin struct {
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
-var (
-	gPlugin *Plugin    // global plugin handle
-	gLock   sync.Mutex // lock for the global variables
-)
-
-// plugin function is used to conveniently access the global plugin handle.
-func plugin() *Plugin {
-	gLock.Lock()
-	defer gLock.Unlock()
-	return gPlugin
-}
-
 // Init is the plugin entry point called by the Agent Core.
 func (p *Plugin) Init() error {
-	gLock.Lock()
-	defer gLock.Unlock()
 
 	// init data transport
 	p.transport = datasync.GetTransport()
@@ -99,7 +101,6 @@ func (p *Plugin) Init() error {
 	// do periodic updates of the state data in ETCD
 	go p.periodicUpdates(ctx)
 
-	gPlugin = p
 	return nil
 }
 
@@ -110,8 +111,8 @@ func (p *Plugin) AfterInit() error {
 
 	if p.HTTP != nil {
 		log.Debug("Initializing k8s health check probes.")
-		p.HTTP.RegisterHTTPHandler(livenessProbePath, livenessProbeHandler, "GET")
-		p.HTTP.RegisterHTTPHandler(readinessProbePath, readinessProbeHandler, "GET")
+		p.HTTP.RegisterHTTPHandler(livenessProbePath, p.livenessProbeHandler, "GET")
+		p.HTTP.RegisterHTTPHandler(readinessProbePath, p.readinessProbeHandler, "GET")
 	}
 
 	// transition to OK state if there are no plugins
@@ -132,8 +133,8 @@ func (p *Plugin) Close() error {
 	return nil
 }
 
-// registerPlugin Register a plugin for status change reporting.
-func (p *Plugin) registerPlugin(pluginName core.PluginName, probe PluginStateProbe) {
+// Register registers a plugin for status change reporting.
+func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 	p.access.Lock()
 	defer p.access.Unlock()
 
@@ -151,8 +152,8 @@ func (p *Plugin) registerPlugin(pluginName core.PluginName, probe PluginStatePro
 	p.publishPluginData(pluginName, stat)
 }
 
-// reportStateChange can be used to report a change in the status of a previously registered plugin.
-func (p *Plugin) reportStateChange(pluginName core.PluginName, state PluginState, lastError error) {
+// ReportStateChange can be used to report a change in the status of a previously registered plugin.
+func (p *Plugin) ReportStateChange(pluginName core.PluginName, state PluginState, lastError error) {
 	p.access.Lock()
 	defer p.access.Unlock()
 
@@ -240,7 +241,7 @@ func (p *Plugin) periodicProbing(ctx context.Context) {
 		case <-time.After(periodicProbingTimeout):
 			for pluginName, probe := range p.pluginProbe {
 				state, lastErr := probe()
-				p.reportStateChange(core.PluginName(pluginName), state, lastErr)
+				p.ReportStateChange(core.PluginName(pluginName), state, lastErr)
 				// just check in-between probes if the plugin is closing
 				select {
 				case <-ctx.Done():
@@ -280,11 +281,11 @@ func (p *Plugin) getAgentState() status.OperationalState {
 }
 
 // readinessProbeHandler handles k8s readiness probe.
-func readinessProbeHandler(formatter *render.Render) http.HandlerFunc {
+func (p *Plugin) readinessProbeHandler(formatter *render.Render) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, req *http.Request) {
-		stat, _ := json.Marshal(plugin().agentStat)
-		if plugin().getAgentState() == status.OperationalState_OK {
+		stat, _ := json.Marshal(p.agentStat)
+		if p.getAgentState() == status.OperationalState_OK {
 			w.WriteHeader(http.StatusOK)
 			w.Write(stat)
 		} else {
@@ -295,11 +296,11 @@ func readinessProbeHandler(formatter *render.Render) http.HandlerFunc {
 }
 
 // livenessProbeHandler handles k8s liveness probe.
-func livenessProbeHandler(formatter *render.Render) http.HandlerFunc {
+func (p *Plugin) livenessProbeHandler(formatter *render.Render) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, req *http.Request) {
-		stat, _ := json.Marshal(plugin().agentStat)
-		if plugin().getAgentState() == status.OperationalState_INIT || plugin().getAgentState() == status.OperationalState_OK {
+		stat, _ := json.Marshal(p.agentStat)
+		if p.getAgentState() == status.OperationalState_INIT || p.getAgentState() == status.OperationalState_OK {
 			w.WriteHeader(http.StatusOK)
 			w.Write(stat)
 		} else {

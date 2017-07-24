@@ -16,6 +16,7 @@ package kafka
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -65,4 +66,15 @@ func (p *Plugin) AfterInit() error {
 // Close is called at plugin cleanup phase.
 func (p *Plugin) Close() error {
 	return safeclose.Close(p.mx)
+}
+
+// NewConnection returns a new instance of connection to access the kafka brokers.
+func (p *Plugin) NewConnection(name string) *mux.Connection {
+	return p.mx.NewConnection(name)
+}
+
+// NewProtoConnection returns a new instance of connection to access the kafka brokers. The connection
+// uses proto-modelled messages.
+func (p *Plugin) NewProtoConnection(name string) *mux.ProtoConnection {
+	return p.mx.NewProtoConnection(name, &keyval.SerializerJSON{})
 }

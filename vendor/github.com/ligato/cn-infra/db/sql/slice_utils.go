@@ -15,8 +15,8 @@
 package sql
 
 import (
-	"reflect"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"reflect"
 )
 
 // SliceIt reads everything from the ValIterator & stores it to pointerToASlice

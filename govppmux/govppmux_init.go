@@ -39,9 +39,10 @@ func plugin() *GOVPPPlugin {
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
-	vppConn    *govpp.Connection
-	vppAdapter adapter.VppAdapter
-	vppConChan chan govpp.ConnectionEvent
+	StatusCheck *statuscheck.Plugin
+	vppConn     *govpp.Connection
+	vppAdapter  adapter.VppAdapter
+	vppConChan  chan govpp.ConnectionEvent
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -62,7 +63,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	var err error
 
 	// register for providing status reports (push mode)
-	statuscheck.Register(PluginID, nil)
+	plugin.StatusCheck.Register(PluginID, nil)
 
 	/* TODO setup logger
 	govppLogger, err := log_registry.NewLogger("GoVpp")
@@ -90,7 +91,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 
-	statuscheck.ReportStateChange(PluginID, statuscheck.OK, nil)
+	plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.OK, nil)
 	log.Debug("govpp connect success ", plugin.vppConn)
 
 	var ctx context.Context
@@ -127,9 +128,9 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
-				statuscheck.ReportStateChange(PluginID, statuscheck.OK, nil)
+				plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.OK, nil)
 			} else {
-				statuscheck.ReportStateChange(PluginID, statuscheck.Error, errors.New("VPP disconnected"))
+				plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.Error, errors.New("VPP disconnected"))
 			}
 
 		case <-ctx.Done():

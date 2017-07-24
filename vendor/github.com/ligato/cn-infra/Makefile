@@ -62,9 +62,13 @@ define lint_only
     @echo "# done"
 endef
 
-# build simple-agent only
-define build_simple_agent_only
-    @echo "# building simple-agent"
+# build plugin example only
+define build_plugin_examples_only
+    @echo "# building plugin examples"
+    @cd examples/etcd && go build -v ${LDFLAGS}
+    @cd examples/flags && go build -v ${LDFLAGS}
+    @cd examples/kafka && go build -v ${LDFLAGS}
+    @cd examples/logs && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
     @echo "# done"
 endef
@@ -92,17 +96,21 @@ define clean_examples_only
     @echo "# done"
 endef
 
-# clean simple-agent only
-define clean_simple_agent_only
-    @echo "# cleaning simple agent"
+# clean plugin examples only
+define clean_plugin_examples_only
+    @echo "# cleaning plugin examples"
     @rm -f examples/simple-agent/simple-agent
+    @rm -f examples/etcd/etcd
+    @rm -f examples/flags/flags
+    @rm -f examples/kafka/kafka
+    @rm -f examples/logs/logs
     @echo "# done"
 endef
 
 # build all binaries
 build:
 	$(call build_examples_only)
-	$(call build_simple_agent_only)
+	$(call build_plugin_examples_only)
 
 # install dependencies
 install-dep:
@@ -137,7 +145,7 @@ lint:
 clean:
 	@echo "# cleanup completed"
 	$(call clean_examples_only)
-	$(call clean_simple_agent_only)
+	$(call clean_plugin_examples_only)
 # run all targets
 all:
 	$(call lint_only)

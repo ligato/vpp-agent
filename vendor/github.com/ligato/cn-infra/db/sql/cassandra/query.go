@@ -17,11 +17,11 @@ package cassandra
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/ligato/cn-infra/db/sql"
+	"github.com/ligato/cn-infra/utils/structs"
 	r "reflect"
 	"strings"
-	"github.com/ligato/cn-infra/utils/structs"
-	"fmt"
 )
 
 // PutExpToString converts expression to string & slice of bindings
@@ -32,7 +32,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 	whereCondition.Accept(whereCondtionStr)
 
 	statement, _, err := updateSetExpToString(r.Indirect(r.ValueOf(entity)).Type().Name(), /*TODO extract method / make customizable*/
-		entity                                                                             /*, TODO TTL*/)
+		entity /*, TODO TTL*/)
 	if err != nil {
 		return "", nil, err
 	}

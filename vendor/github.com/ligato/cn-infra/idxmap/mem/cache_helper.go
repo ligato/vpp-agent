@@ -1,10 +1,9 @@
 package mem
 
-
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/db"
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/db"
 	"github.com/ligato/cn-infra/idxmap"
 )
 
@@ -15,7 +14,6 @@ type CacheHelper struct {
 	DataPrototype proto.Message
 	ParseName     func(key string) (name string, err error)
 }
-
 
 // DoWatching is supposed to be used as a go routine. It select the data from channels in arguments.
 func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.Watcher) {

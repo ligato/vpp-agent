@@ -104,5 +104,5 @@ func (plugin *Plugin) startResync() {
 		}
 	}
 
-	// TODO check if there ReportError (if not than report) if error ocurred even during Resync
+	// TODO check if there ReportError (if not than report) if error occurred even during Resync
 }

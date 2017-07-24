@@ -15,9 +15,9 @@
 package cassandra
 
 import (
-	r "reflect"
-	"github.com/willfaught/gockle"
 	"github.com/ligato/cn-infra/db/sql"
+	"github.com/willfaught/gockle"
+	r "reflect"
 )
 
 // NewBrokerUsingSession is a constructor. Use it like this:
@@ -117,7 +117,7 @@ func structFieldPtrs(val interface{}) []interface{} {
 		field := rVal.Field(i)
 
 		switch field.Kind() {
-		case r.Chan, r.Func /*TODO func*/ , r.Map, r.Ptr, r.Interface, r.Slice:
+		case r.Chan, r.Func /*TODO func*/, r.Map, r.Ptr, r.Interface, r.Slice:
 			if field.IsNil() {
 				p := r.New(field.Type().Elem())
 				field.Set(p)

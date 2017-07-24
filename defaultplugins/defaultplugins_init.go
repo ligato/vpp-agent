@@ -8,9 +8,11 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/messaging/kafka/mux"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/defaultplugins/aclplugin"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
@@ -18,15 +20,14 @@ import (
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/defaultplugins/l3plugin"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/linuxplugin"
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	Transport datasync.TransportAdapter `inject:""`
+	Transport    datasync.TransportAdapter `inject:""`
 	ServiceLabel *servicelabel.Plugin
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
@@ -35,7 +36,7 @@ type Plugin struct {
 	aclL2Indexes    idxvpp.NameToIdxRW
 
 	swIfIndexes          ifaceidx.SwIfIndexRW
-	//linuxIfIndexes       idxvpp.NameToIdx
+	linuxIfIndexes       idxvpp.NameToIdx
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -54,10 +55,10 @@ type Plugin struct {
 	fibIndexes        idxvpp.NameToIdxRW
 	fibDesIndexes     idxvpp.NameToIdxRW
 	xcIndexes         idxvpp.NameToIdxRW
-	errorIndexes	  idxvpp.NameToIdxRW
+	errorIndexes      idxvpp.NameToIdxRW
 	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
 	bdIdxWatchCh      chan bdidx.ChangeDto
-	//linuxIfIdxWatchCh chan idxvpp.NameToIdxDto
+	linuxIfIdxWatchCh chan idxvpp.NameToIdxDto
 
 	routeConfigurator *l3plugin.RouteConfigurator
 
@@ -69,8 +70,8 @@ type Plugin struct {
 	watchConfigReg datasync.WatchDataRegistration
 	watchStatusReg datasync.WatchDataRegistration
 
-	errorChannel	chan ErrCtx
-	errorIdxSeq		uint32
+	errorChannel chan ErrCtx
+	errorIdxSeq  uint32
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -102,7 +103,7 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
 	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
-	//plugin.linuxIfIdxWatchCh = make(chan idxvpp.NameToIdxDto, 100)
+	plugin.linuxIfIdxWatchCh = make(chan idxvpp.NameToIdxDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
 	// create plugin context, save cancel function into the plugin handle
@@ -150,24 +151,23 @@ func (plugin *Plugin) Init() error {
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface indexes
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(),PluginID,
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), PluginID,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 
 	// get pointer to the map with Linux interface indexes
-//	plugin.linuxIfIndexes = linuxplugin.GetIfIndexes()
+	plugin.linuxIfIndexes = linuxplugin.GetIfIndexes()
 
 	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "bfd_session_indexes", nil)
+	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_session_indexes", nil)
 
 	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "bfd_auth_keys_indexes", nil)
+	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_auth_keys_indexes", nil)
 
 	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "bfd_echo_function_index", nil)
-
+	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_echo_function_index", nil)
 
 	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "bfd_removed_auth_keys", nil)
+	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
@@ -182,15 +182,15 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{ServiceLabel:plugin.ServiceLabel}
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{ServiceLabel: plugin.ServiceLabel}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
 
 	log.Debug("ifConfigurator Initialized")
 
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
 		ServiceLabel: plugin.ServiceLabel,
-		SwIfIndexes: plugin.swIfIndexes,
-		BfdIDSeq:    1,
+		SwIfIndexes:  plugin.swIfIndexes,
+		BfdIDSeq:     1,
 	}
 	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
 
@@ -201,11 +201,9 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
 	var err error
-	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "acl_l3_l4_indexes", nil)
+	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "acl_l3_l4_indexes", nil)
 
-
-	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "acl_l2_indexes", nil)
-
+	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "acl_l2_indexes", nil)
 
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
 		ACLL3L4Indexes: plugin.aclL3L4Indexes,
@@ -225,16 +223,15 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
 	// Bridge domain indexes
-	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(logroot.Logger(),PluginID,
+	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(logroot.Logger(), PluginID,
 		"bd_indexes", bdidx.IndexMetadata))
 
 	// Interface to bridge domain indexes - desired state
-	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "if_to_bd_des_indexes", nil)
-
+	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "if_to_bd_des_indexes", nil)
 
 	// Interface to bridge domain indexes - current state
 
-	plugin.ifToBdRealIndexes= nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "if_to_bd_real_indexes", nil)
+	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "if_to_bd_real_indexes", nil)
 
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
 		SwIfIndexes:        plugin.swIfIndexes,
@@ -245,8 +242,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	}
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "fib_indexes", nil)
-
+	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "fib_indexes", nil)
 
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
 		SwIfIndexes:   plugin.swIfIndexes,
@@ -259,7 +255,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 xConnect indexes
 
-	plugin.xcIndexes= nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "xc_indexes", nil)
+	plugin.xcIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "xc_indexes", nil)
 
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
 		SwIfIndexes: plugin.swIfIndexes,
@@ -308,7 +304,7 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 
 func (plugin *Plugin) initErrorHandler() error {
 
-	plugin.errorIndexes = nametoidx.NewNameToIdx(logroot.Logger(),PluginID, "error_indexes", nil)
+	plugin.errorIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "error_indexes", nil)
 
 	// Init mapping index
 	plugin.errorIdxSeq = 1

@@ -73,7 +73,7 @@ func (adapter *Watcher) WatchDataBase(resyncName string, changeChan chan datasyn
 	defer adapter.access.Unlock()
 
 	if _, found := adapter.subscriptions[resyncName]; found {
-		return nil, errors.New("Allready watching " + resyncName)
+		return nil, errors.New("Already watching " + resyncName)
 	}
 
 	reg := &WatchDataReg{ResyncName: resyncName, adapter: adapter, CloseChan: make(chan interface{}, 1)}

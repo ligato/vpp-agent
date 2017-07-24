@@ -51,7 +51,7 @@ type Adapter struct {
 	server *grpc.Server
 }
 
-// WatchData registers HTTP handlers - basicaly bridges them with local dbadapter
+// WatchData registers HTTP handlers - basically bridges them with local dbadapter
 func (adapter *Adapter) WatchData(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchDataRegistration, error) {
 

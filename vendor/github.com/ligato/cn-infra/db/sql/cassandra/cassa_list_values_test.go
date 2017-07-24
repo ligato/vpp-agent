@@ -17,9 +17,9 @@ package cassandra_test
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
+	"github.com/onsi/gomega"
 )
 
 // TestListValues1_convenient is most convenient way of selecting slice of entities
