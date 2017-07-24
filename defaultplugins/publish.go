@@ -98,8 +98,19 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 		select {
 		case bdState := <-plugin.bdStateChan:
 			if bdState != nil && bdState.State != nil {
-				plugin.Transport.PublishData(l2.BridgeDomainStateKey(bdState.State.InternalName), bdState.State)
-				log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.Index)
+				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
+				// Remove state
+				if bdState.State.Index == 0  && bdState.State.InternalName != ""{
+					plugin.Transport.PublishData(key, nil)
+					log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
+					// Write/Update state
+				} else if bdState.State.Index != 0 {
+					plugin.Transport.PublishData(key, bdState.State)
+					log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
+				} else {
+					log.Warnf("Unable to process bridge domain state with Idx %v and Name %v",
+						bdState.State.Index, bdState.State.InternalName)
+				}
 			}
 		case <-ctx.Done():
 			// stop watching for state data updates

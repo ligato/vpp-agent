@@ -18,6 +18,7 @@ const VlAPIVersion = 0xad274edf
 //        ]
 //
 type BridgeDomainSwIf struct {
+	Context   uint32 // TODO temporary fix, need to modify the generator
 	SwIfIndex uint32
 	Shg       uint8
 }

@@ -26,7 +26,7 @@ type BridgeDomainStateUpdater struct {
 	vppNotifSubs            *govppapi.NotifSubscription
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
-	notificationChan        chan govppapi.Message
+	notificationChan        chan BridgeDomainStateMessage
 	bdIdxChan               chan bdidx.ChangeDto
 
 	cancel context.CancelFunc
@@ -35,12 +35,10 @@ type BridgeDomainStateUpdater struct {
 
 type BridgeDomainStateNotification struct {
 	State *l2.BridgeDomainState_BridgeDomain
-	BdID	uint32
-	IsAdd	bool
 }
 
 func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
-	notificationChan chan govppapi.Message,	publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
+	notificationChan chan BridgeDomainStateMessage,	publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
 	log.Info("Initializing BridgeDomainStateUpdater")
 
@@ -81,16 +79,18 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 	for {
 		select {
 		case notif := <-plugin.notificationChan:
-			switch msg := notif.(type) {
+			msg := notif.Message
+			bdName := notif.Name
+			switch msg := msg.(type) {
 			case *l2_api.BridgeDomainDetails:
-				bdState := plugin.processBridgeDomainDetailsNotification(msg)
+				bdState := plugin.processBridgeDomainDetailsNotification(msg, bdName)
 				if bdState != nil {
 					plugin.publishBdState(&BridgeDomainStateNotification{
 						State: bdState,
 					})
 				}
 			default:
-				log.WithFields(log.Fields{"MessageName": notif.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
+				log.WithFields(log.Fields{"MessageName": msg.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
 			}
 		case bdIdxDto := <-plugin.bdIdxChan:
 			bdIdxDto.Done()
@@ -100,15 +100,22 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 			return
 		}
 	}
-
 }
-func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails) *l2.BridgeDomainState_BridgeDomain{
+
+func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails, name string) *l2.BridgeDomainState_BridgeDomain {
 	bdState := &l2.BridgeDomainState_BridgeDomain{}
+	// Delete case
+	if msg.BdID == 0 && name != "" {
+		// Mark index to 0 to be removed, but pass name so key can be constructed
+		bdState.Index = 0
+		bdState.InternalName = name
+		return bdState
+	}
 	bdState.Index = msg.BdID
 	name, _, found := plugin.bdIndex.LookupName(msg.BdID)
 	if !found {
 		log.Warnf("Unable to store bridge domain state, index %v is not in the mapping", msg.BdID)
-		return nil
+		return bdState
 	}
 	bdState.InternalName = name
 	bdState.InterfaceCount = msg.NSwIfs
@@ -120,9 +127,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 		bdState.BviInterface = "<not_set>"
 	}
 	bdState.L2Params = getBridgeDomainStateParams(msg)
-	log.Warnf("%v", msg.SwIfDetails)
 	bdState.Interfaces = plugin.getBridgeDomainInterfaces(msg)
-	log.Warnf("%v", bdState.Interfaces)
 	bdState.LastChange = time.Now().Unix()
 
 	return bdState

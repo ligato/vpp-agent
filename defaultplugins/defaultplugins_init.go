@@ -43,7 +43,7 @@ type Plugin struct {
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
 	ifStateChan          chan *intf.InterfaceStateNotification
-	bfdConfigurator      *ifplugin.BFDConfigurator
+	bdVppNotifChan       chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater       *l2plugin.BridgeDomainStateUpdater
 	bdVppNotifChan       chan govppapi.Message
 	bdStateChan          chan *l2plugin.BridgeDomainStateNotification
@@ -252,7 +252,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
 	}
 
-	plugin.bdVppNotifChan = make(chan govppapi.Message, 100)
+	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
 	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
