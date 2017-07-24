@@ -46,6 +46,11 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
+    @cd examples/govpp_call && go build
+    @cd examples/idx_bd_cache && go build
+    @cd examples/idx_iface_cache && go build
+    @cd examples/idx_mapping_lookup && go build
+    @cd examples/idx_mapping_watcher && go build
     @echo "# done"
 endef
 
@@ -59,6 +64,11 @@ endef
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
+    @rm -f examples/govpp_call/govpp_call
+    @rm -f examples/idx_bd_cache/idx_bd_cache
+    @rm -f examples/idx_iface_cache/idx_iface_cache
+    @rm -f examples/idx_mapping_lookup/idx_mapping_lookup
+    @rm -f examples/idx_mapping_watcher/idx_mapping_watcher
     @echo "# done"
 endef
 
