@@ -22,6 +22,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 	govpp "git.fd.io/govpp.git/core"
+	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/statuscheck"
 )
@@ -39,10 +40,14 @@ func plugin() *GOVPPPlugin {
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
+	LogFactory  logging.LogFactory
 	StatusCheck *statuscheck.Plugin
-	vppConn     *govpp.Connection
-	vppAdapter  adapter.VppAdapter
-	vppConChan  chan govpp.ConnectionEvent
+
+	logging.Logger
+
+	vppConn    *govpp.Connection
+	vppAdapter adapter.VppAdapter
+	vppConChan chan govpp.ConnectionEvent
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -65,14 +70,15 @@ func (plugin *GOVPPPlugin) Init() error {
 	// register for providing status reports (push mode)
 	plugin.StatusCheck.Register(PluginID, nil)
 
-	/* TODO setup logger
-	govppLogger, err := log_registry.NewLogger("GoVpp")
+	govppLogger, err := plugin.LogFactory.NewLogger("GoVpp")
 	if err != nil {
 		return err
 	}
 	govppLogger.SetLevel(logging.InfoLevel)
-	govpp.SetLogger(govppLogger.StandardLogger())
-	*/
+	if logger, ok := govppLogger.(*log.Logger); ok {
+		govpp.SetLogger(logger.StandardLogger())
+	}
+
 	if plugin.vppAdapter == nil {
 		plugin.vppAdapter = vppapiclient.NewVppAdapter()
 	} else {

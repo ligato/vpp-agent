@@ -44,6 +44,7 @@ func (f *Flavour) Inject() error {
 	f.Kafka.LogFactory = &f.Logrus
 	f.Kafka.ServiceLabel = &f.ServiceLabel
 	f.GoVPP.StatusCheck = &f.StatusCheck
+	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
 	f.VPP.Kafka = &f.Kafka
 
