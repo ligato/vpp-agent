@@ -9,7 +9,7 @@ import (
 const (
 	// BdPrefix is the relative key prefix for bridge domains
 	BdPrefix = "vpp/config/v1/bd/"
-	// BdPrefix is the relative key prefix for bridge domain state
+	// BdStatePrefix is the relative key prefix for bridge domain state
 	BdStatePrefix = "vpp/status/v1/bd/"
 	// BdErrPrefix is the relative key prefix for the bridge domain error
 	BdErrPrefix = "vpp/config/v1/bd/error/"

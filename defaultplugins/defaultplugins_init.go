@@ -45,13 +45,13 @@ type Plugin struct {
 	ifStateChan          chan *intf.InterfaceStateNotification
 	bdVppNotifChan       chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater       *l2plugin.BridgeDomainStateUpdater
-	bdVppNotifChan       chan govppapi.Message
 	bdStateChan          chan *l2plugin.BridgeDomainStateNotification
 	bfdSessionIndexes    idxvpp.NameToIdxRW
 	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
 	bfdEchoFunctionIndex idxvpp.NameToIdxRW
 
-	bdConfigurator    *l2plugin.BDConfigurator
+	bfdConfigurator      *ifplugin.BFDConfigurator
+	bdConfigurator      *l2plugin.BDConfigurator
 	fibConfigurator   *l2plugin.FIBConfigurator
 	xcConfigurator    *l2plugin.XConnectConfigurator
 	bdIndexes         bdidx.BDIndexRW

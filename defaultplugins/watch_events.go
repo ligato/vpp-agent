@@ -25,7 +25,6 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case resyncStatusEv := <-plugin.resyncStatusChan:
 			var wasError error
 			for key, vals := range resyncStatusEv.GetValues() {
-				ifStatusPrefix := strings.HasPrefix(key, interfaces.IfStatePrefix)
 				log.Debugf("trying to delete obsolete status for key %v begin ", key)
 				if strings.HasPrefix(key, interfaces.IfStatePrefix) {
 					keys := []string{}

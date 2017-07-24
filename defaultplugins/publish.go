@@ -79,7 +79,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
 			log.Debug("deleting obsolete status begin ", key)
-			err := plugin.Transport.PublishData(key, nil )
+			err := plugin.Transport.PublishData(key, nil)
 			log.Debug("deleting obsolete status end ", key, err)
 		} else {
 			log.WithField("bdName", bdName).Debug("bridge domain status required")
@@ -100,10 +100,10 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 			if bdState != nil && bdState.State != nil {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
 				// Remove BD state
-				if bdState.State.Index == 0  && bdState.State.InternalName != ""{
+				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
 					plugin.Transport.PublishData(key, nil)
 					log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
-				// Write/Update BD state
+					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
 					plugin.Transport.PublishData(key, bdState.State)
 					log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)

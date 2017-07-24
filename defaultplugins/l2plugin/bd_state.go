@@ -2,25 +2,26 @@ package l2plugin
 
 import (
 	"context"
-	"sync"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/bdidx"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/govppmux"
 	"github.com/ligato/cn-infra/core"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/bdidx"
 	l2_api "github.com/ligato/vpp-agent/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/govppmux"
+	"sync"
 	"time"
 )
 
+// BridgeDomainStateUpdater holds all data required to handle bridge domain state
 type BridgeDomainStateUpdater struct {
-	bdIndex bdidx.BDIndex
-	swIfIndexes            ifaceidx.SwIfIndex
+	bdIndex     bdidx.BDIndex
+	swIfIndexes ifaceidx.SwIfIndex
 
 	publishBdState func(notification *BridgeDomainStateNotification)
-	bdState map[uint32]*l2.BridgeDomainState_BridgeDomain
-	access  sync.Mutex
+	bdState        map[uint32]*l2.BridgeDomainState_BridgeDomain
+	access         sync.Mutex
 
 	vppCh                   *govppapi.Channel
 	vppNotifSubs            *govppapi.NotifSubscription
@@ -33,12 +34,14 @@ type BridgeDomainStateUpdater struct {
 	wg     sync.WaitGroup
 }
 
+// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD
 type BridgeDomainStateNotification struct {
 	State *l2.BridgeDomainState_BridgeDomain
 }
 
+// Init bridge domain state updater
 func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
-	notificationChan chan BridgeDomainStateMessage,	publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
+	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
 	log.Info("Initializing BridgeDomainStateUpdater")
 
@@ -154,7 +157,7 @@ func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.Br
 func getBridgeDomainStateParams(msg *l2_api.BridgeDomainDetails) *l2.BridgeDomainState_BridgeDomain_L2Params {
 	params := &l2.BridgeDomainState_BridgeDomain_L2Params{}
 	params.Flood = intToBool(msg.Flood)
-	params.UnknownUnicastFlood  = intToBool(msg.UuFlood)
+	params.UnknownUnicastFlood = intToBool(msg.UuFlood)
 	params.Forward = intToBool(msg.Forward)
 	params.Learn = intToBool(msg.Learn)
 	params.ArpTermination = intToBool(msg.ArpTerm)
