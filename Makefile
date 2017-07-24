@@ -46,11 +46,11 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/govpp_call && go build
-    @cd examples/idx_bd_cache && go build
-    @cd examples/idx_iface_cache && go build
-    @cd examples/idx_mapping_lookup && go build
-    @cd examples/idx_mapping_watcher && go build
+    @cd examples/govpp_call && go build -v
+    @cd examples/idx_bd_cache && go build -v
+    @cd examples/idx_iface_cache && go build -v
+    @cd examples/idx_mapping_lookup && go build -v
+    @cd examples/idx_mapping_watcher && go build -v
     @echo "# done"
 endef
 
