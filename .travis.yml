@@ -6,6 +6,10 @@ go:
 before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
+  - sudo rm -f /etc/apt/sources.list.d/99fd.io.list
+  - echo "deb [trusted=yes] https://nexus.fd.io/content/repositories/fd.io.stable.1707.ubuntu.trusty.main/ ./" | sudo tee -a /etc/apt/sources.list.d/99fd.io.list
+  - sudo apt-get update
+  - sudo apt-get install vpp
 
 script:
   - make lint
