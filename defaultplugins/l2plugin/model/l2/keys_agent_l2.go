@@ -7,8 +7,10 @@ import (
 
 // Prefixes
 const (
-	// BdPrefix is the relative key prefix for bridge domains.
+	// BdPrefix is the relative key prefix for bridge domains
 	BdPrefix = "vpp/config/v1/bd/"
+	// BdStatePrefix is the relative key prefix for bridge domain state
+	BdStatePrefix = "vpp/status/v1/bd/"
 	// BdErrPrefix is the relative key prefix for the bridge domain error
 	BdErrPrefix = "vpp/config/v1/bd/error/"
 	// FIBPrefix is the relative key prefix for FIB table entries.
@@ -27,6 +29,17 @@ func BridgeDomainKeyPrefix() string {
 // of particular bridge domain in selected vpp instance
 func BridgeDomainKey(bdName string) string {
 	return BdPrefix + bdName
+}
+
+// BridgeDomainStateKeyPrefix returns the prefix used in ETCD to store vpp bridge domain state data
+func BridgeDomainStateKeyPrefix() string {
+	return BdStatePrefix
+}
+
+// BridgeDomainStateKey returns the prefix used in ETCD to store vpp bridge domain state data
+// of particular bridge domain in selected vpp instance
+func BridgeDomainStateKey(ifaceLabel string) string {
+	return BdStatePrefix + ifaceLabel
 }
 
 // BridgeDomainErrorPrefix returns the prefix used in ETCD to store bridge domain errors

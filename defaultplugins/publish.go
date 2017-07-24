@@ -7,6 +7,7 @@ import (
 
 	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 )
 
 const kafkaIfStateTopic = "if_state" // Kafka topic where interface state changes are published.
@@ -63,6 +64,56 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 
 		case <-ctx.Done():
 			// stop watching for state data updates
+			return
+		}
+	}
+}
+
+// Resync deletes old operation status of bridge domains in ETCD
+func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
+	for _, key := range keys {
+		bdName, err := intf.ParseNameFromKey(key)
+		if err != nil {
+			return err
+		}
+		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
+		if !found {
+			log.Debug("deleting obsolete status begin ", key)
+			err := plugin.Transport.PublishData(key, nil)
+			log.Debug("deleting obsolete status end ", key, err)
+		} else {
+			log.WithField("bdName", bdName).Debug("bridge domain status required")
+		}
+	}
+
+	return nil
+}
+
+// PublishBdState is used to watch bridge domain state notifications
+func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
+	plugin.wg.Add(1)
+	defer plugin.wg.Done()
+
+	for {
+		select {
+		case bdState := <-plugin.bdStateChan:
+			if bdState != nil && bdState.State != nil {
+				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
+				// Remove BD state
+				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
+					plugin.Transport.PublishData(key, nil)
+					log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
+					// Write/Update BD state
+				} else if bdState.State.Index != 0 {
+					plugin.Transport.PublishData(key, bdState.State)
+					log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
+				} else {
+					log.Warnf("Unable to process bridge domain state with Idx %v and Name %v",
+						bdState.State.Index, bdState.State.InternalName)
+				}
+			}
+		case <-ctx.Done():
+			// Stop watching for state data updates
 			return
 		}
 	}

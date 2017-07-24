@@ -18,7 +18,6 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 	// Step 0: Dump actual state of the VPP
 	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan)
-	// old implemention: err := plugin.LookupBridgeDomains()
 	if err != nil {
 		return err
 	}

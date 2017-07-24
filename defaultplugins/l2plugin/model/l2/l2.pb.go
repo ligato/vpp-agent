@@ -12,6 +12,7 @@ It has these top-level messages:
 	BridgeDomains
 	FibTableEntries
 	XConnectPairs
+	BridgeDomainState
 	BridgeDomainErrors
 */
 package l2
@@ -160,6 +161,77 @@ type XConnectPairs_XConnectPair struct {
 func (m *XConnectPairs_XConnectPair) Reset()         { *m = XConnectPairs_XConnectPair{} }
 func (m *XConnectPairs_XConnectPair) String() string { return proto.CompactTextString(m) }
 func (*XConnectPairs_XConnectPair) ProtoMessage()    {}
+
+type BridgeDomainState struct {
+	BridgeDomains []*BridgeDomainState_BridgeDomain `protobuf:"bytes,100,rep,name=bridge_domains" json:"bridge_domains,omitempty"`
+}
+
+func (m *BridgeDomainState) Reset()         { *m = BridgeDomainState{} }
+func (m *BridgeDomainState) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainState) ProtoMessage()    {}
+
+func (m *BridgeDomainState) GetBridgeDomains() []*BridgeDomainState_BridgeDomain {
+	if m != nil {
+		return m.BridgeDomains
+	}
+	return nil
+}
+
+type BridgeDomainState_BridgeDomain struct {
+	Index             uint32                                       `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	InternalName      string                                       `protobuf:"bytes,2,opt,name=internal_name,proto3" json:"internal_name,omitempty"`
+	BviInterface      string                                       `protobuf:"bytes,3,opt,name=bvi_interface,proto3" json:"bvi_interface,omitempty"`
+	BviInterfaceIndex uint32                                       `protobuf:"varint,4,opt,name=bvi_interface_index,proto3" json:"bvi_interface_index,omitempty"`
+	InterfaceCount    uint32                                       `protobuf:"varint,5,opt,name=interface_count,proto3" json:"interface_count,omitempty"`
+	LastChange        int64                                        `protobuf:"varint,6,opt,name=last_change,proto3" json:"last_change,omitempty"`
+	L2Params          *BridgeDomainState_BridgeDomain_L2Params     `protobuf:"bytes,100,opt,name=l2_params" json:"l2_params,omitempty"`
+	Interfaces        []*BridgeDomainState_BridgeDomain_Interfaces `protobuf:"bytes,101,rep,name=interfaces" json:"interfaces,omitempty"`
+}
+
+func (m *BridgeDomainState_BridgeDomain) Reset()         { *m = BridgeDomainState_BridgeDomain{} }
+func (m *BridgeDomainState_BridgeDomain) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainState_BridgeDomain) ProtoMessage()    {}
+
+func (m *BridgeDomainState_BridgeDomain) GetL2Params() *BridgeDomainState_BridgeDomain_L2Params {
+	if m != nil {
+		return m.L2Params
+	}
+	return nil
+}
+
+func (m *BridgeDomainState_BridgeDomain) GetInterfaces() []*BridgeDomainState_BridgeDomain_Interfaces {
+	if m != nil {
+		return m.Interfaces
+	}
+	return nil
+}
+
+type BridgeDomainState_BridgeDomain_L2Params struct {
+	Flood               bool   `protobuf:"varint,1,opt,name=flood,proto3" json:"flood,omitempty"`
+	UnknownUnicastFlood bool   `protobuf:"varint,2,opt,name=unknown_unicast_flood,proto3" json:"unknown_unicast_flood,omitempty"`
+	Forward             bool   `protobuf:"varint,3,opt,name=forward,proto3" json:"forward,omitempty"`
+	Learn               bool   `protobuf:"varint,4,opt,name=learn,proto3" json:"learn,omitempty"`
+	ArpTermination      bool   `protobuf:"varint,5,opt,name=arp_termination,proto3" json:"arp_termination,omitempty"`
+	MacAge              uint32 `protobuf:"varint,6,opt,name=mac_age,proto3" json:"mac_age,omitempty"`
+}
+
+func (m *BridgeDomainState_BridgeDomain_L2Params) Reset() {
+	*m = BridgeDomainState_BridgeDomain_L2Params{}
+}
+func (m *BridgeDomainState_BridgeDomain_L2Params) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainState_BridgeDomain_L2Params) ProtoMessage()    {}
+
+type BridgeDomainState_BridgeDomain_Interfaces struct {
+	Name              string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	SwIfIndex         uint32 `protobuf:"varint,2,opt,name=sw_if_index,proto3" json:"sw_if_index,omitempty"`
+	SplitHorizonGroup uint32 `protobuf:"varint,3,opt,name=split_horizon_group,proto3" json:"split_horizon_group,omitempty"`
+}
+
+func (m *BridgeDomainState_BridgeDomain_Interfaces) Reset() {
+	*m = BridgeDomainState_BridgeDomain_Interfaces{}
+}
+func (m *BridgeDomainState_BridgeDomain_Interfaces) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainState_BridgeDomain_Interfaces) ProtoMessage()    {}
 
 type BridgeDomainErrors struct {
 	BridgeDomain []*BridgeDomainErrors_BridgeDomainError `protobuf:"bytes,1,rep,name=bridge_domain" json:"bridge_domain,omitempty"`

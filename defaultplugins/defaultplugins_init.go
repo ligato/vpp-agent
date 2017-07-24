@@ -43,12 +43,15 @@ type Plugin struct {
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
 	ifStateChan          chan *intf.InterfaceStateNotification
-	bfdConfigurator      *ifplugin.BFDConfigurator
+	bdVppNotifChan       chan l2plugin.BridgeDomainStateMessage
+	bdStateUpdater       *l2plugin.BridgeDomainStateUpdater
+	bdStateChan          chan *l2plugin.BridgeDomainStateNotification
 	bfdSessionIndexes    idxvpp.NameToIdxRW
 	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
 	bfdEchoFunctionIndex idxvpp.NameToIdxRW
 
-	bdConfigurator    *l2plugin.BDConfigurator
+	bfdConfigurator      *ifplugin.BFDConfigurator
+	bdConfigurator      *l2plugin.BDConfigurator
 	fibConfigurator   *l2plugin.FIBConfigurator
 	xcConfigurator    *l2plugin.XConnectConfigurator
 	bdIndexes         bdidx.BDIndexRW
@@ -104,6 +107,7 @@ func (plugin *Plugin) Init() error {
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
+	plugin.bdStateChan = make(chan *l2plugin.BridgeDomainStateNotification, 100)
 	plugin.resyncConfigChan = make(chan datasync.ResyncEvent)
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
@@ -118,6 +122,7 @@ func (plugin *Plugin) Init() error {
 
 	// run event handler go routines
 	go plugin.publishIfStateEvents(ctx)
+	go plugin.publishBdStateEvents(ctx)
 	go plugin.watchEvents(ctx)
 
 	// run error handler
@@ -247,6 +252,18 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
 	}
 
+	// Bridge domain state and state updater
+	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
+	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
+		select {
+		case plugin.bdStateChan <- state:
+			// OK
+		default:
+			log.Debug("Unable to send to the bdState channel: buffer is full.")
+		}
+	})
+
 	// FIB indexes
 	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "fib_indexes", nil)
 
@@ -270,7 +287,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	}
 
 	// Init
-	err := plugin.bdConfigurator.Init()
+	err := plugin.bdConfigurator.Init(plugin.bdVppNotifChan)
 	if err != nil {
 		return err
 	}
@@ -340,8 +357,8 @@ func (plugin *Plugin) Close() error {
 	_, err := safeclose.CloseAll(plugin.watchStatusReg, plugin.watchConfigReg, plugin.changeChan,
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
-		plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator, plugin.xcConfigurator,
-		plugin.routeConfigurator)
+		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
+		plugin.xcConfigurator, plugin.routeConfigurator)
 
 	return err
 }
