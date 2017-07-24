@@ -6,8 +6,7 @@ go:
   - 1.8.x
 
 env:
-  - UBUNTU="trusty"
-  - RELEASE=""
+  - UBUNTU="trusty" RELEASE=""
 
 before_install:
   - go get -v github.com/golang/lint/golint
