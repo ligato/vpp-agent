@@ -10,6 +10,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -29,6 +30,7 @@ import (
 type Plugin struct {
 	Transport    datasync.TransportAdapter `inject:""`
 	ServiceLabel *servicelabel.Plugin
+	Kafka        kafka.Mux
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
 	aclConfigurator *aclplugin.ACLConfigurator
@@ -95,6 +97,10 @@ func (plugin *Plugin) Init() error {
 	plugin.Transport = datasync.GetTransport()
 
 	log.Debug("Initializing interface plugin")
+
+	if plugin.Kafka != nil {
+		plugin.kafkaConn = plugin.Kafka.NewConnection(string(PluginID))
+	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
