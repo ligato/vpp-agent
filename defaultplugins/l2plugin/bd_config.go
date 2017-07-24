@@ -217,30 +217,28 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 
 // LookupBridgeDomains looks up all VPP BDs and saves their name-to-index mapping
 func (plugin *BDConfigurator) LookupBridgeDomains() error {
-	req := &l2ba.BridgeDomainDump{}
-	reqContext := plugin.vppChan.SendMultiRequest(req)
-	for {
-		msg := &l2ba.BridgeDomainDetails{}
-		stop, err := reqContext.ReceiveReply(msg)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		if stop {
-			break
-		}
-		// Store name if missing
-		_, meta, found := plugin.BdIndexes.LookupName(msg.BdID)
-		bdName := string(msg.BdID)
+	var wasError error
+	var bdIndex uint32
+	for bdIndex = 1; bdIndex <= plugin.BridgeDomainIDSeq; bdIndex++ {
+		_, _, found := plugin.BdIndexes.LookupName(bdIndex)
 		if !found {
-			log.WithFields(log.Fields{"Name": bdName, "Index": msg.BdID}).Debug("Bridge domain registered.")
-			plugin.BdIndexes.RegisterName(bdName, msg.BdID, meta)
-		} else {
-			log.WithFields(log.Fields{"Name": bdName, "Index": msg.BdID}).Debug("Bridge domain already registered.")
+			continue
 		}
+		req := &l2ba.BridgeDomainDump{
+			BdID: bdIndex,
+		}
+		reqContext := plugin.vppChan.SendRequest(req)
+		msg := &l2ba.BridgeDomainDetails{}
+		err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			wasError = err
+		}
+
+		// propagate bridge domain state information
+		plugin.notificationChan <- msg
 	}
 
-	return nil
+	return wasError
 }
 
 // ResolveCreatedInterface looks for bridge domain this interface is assigned to and sets it up
