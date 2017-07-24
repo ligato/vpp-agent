@@ -5,10 +5,14 @@ language: go
 go:
   - 1.8.x
 
+env:
+  - UBUNTU="trusty"
+  - RELEASE=""
+
 before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
-  - sudo add-apt-repository 'deb https://nexus.fd.io/content/repositories/fd.io.stable.1701.ubuntu.trusty.main stable fdio'
+  - sudo echo "deb [trusted=yes] https://nexus.fd.io/content/repositories/fd.io$RELEASE.ubuntu.$UBUNTU.main/ ./" | sudo tee -a /etc/apt/sources.list.d/99fd.io.list
   - sudo apt-get update
   - sudo apt-get install vpp
 
