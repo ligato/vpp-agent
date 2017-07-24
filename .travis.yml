@@ -2,6 +2,8 @@ dist: trusty
 sudo: required
 language: go
 
+go_import_path: github.com/ligato/vpp-agent
+
 go:
   - 1.8.x
 
