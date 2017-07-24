@@ -6,7 +6,7 @@ go:
 before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
-  - sudo add-apt-repository 'deb https://nexus.fd.io/content/repositories/fd.io.stable.1707.ubuntu.trusty.main stable fdio'
+  - sudo add-apt-repository 'deb https://nexus.fd.io/content/repositories/fd.io.stable.1701.ubuntu.trusty.main stable fdio'
   - sudo apt-get update
   - sudo apt-get install vpp
 
