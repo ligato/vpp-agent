@@ -44,6 +44,9 @@ type Plugin struct {
 	ifVppNotifChan       chan govppapi.Message
 	ifStateChan          chan *intf.InterfaceStateNotification
 	bfdConfigurator      *ifplugin.BFDConfigurator
+	bdStateUpdater       *l2plugin.BridgeDomainStateUpdater
+	bdVppNotifChan       chan govppapi.Message
+	bdStateChan          chan *l2plugin.BridgeDomainStateNotification
 	bfdSessionIndexes    idxvpp.NameToIdxRW
 	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
 	bfdEchoFunctionIndex idxvpp.NameToIdxRW
@@ -247,6 +250,17 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
 	}
 
+	plugin.bdVppNotifChan = make(chan govppapi.Message, 100)
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
+	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
+		select {
+		case plugin.bdStateChan <- state:
+			// OK
+		default:
+			log.Debug("Unable to send to the bdState channel: buffer is full.")
+		}
+	})
+
 	// FIB indexes
 	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "fib_indexes", nil)
 
@@ -270,7 +284,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	}
 
 	// Init
-	err := plugin.bdConfigurator.Init()
+	err := plugin.bdConfigurator.Init(plugin.bdVppNotifChan)
 	if err != nil {
 		return err
 	}
@@ -340,8 +354,8 @@ func (plugin *Plugin) Close() error {
 	_, err := safeclose.CloseAll(plugin.watchStatusReg, plugin.watchConfigReg, plugin.changeChan,
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
-		plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator, plugin.xcConfigurator,
-		plugin.routeConfigurator)
+		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
+		plugin.xcConfigurator, plugin.routeConfigurator)
 
 	return err
 }

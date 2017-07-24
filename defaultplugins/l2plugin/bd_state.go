@@ -1,0 +1,150 @@
+package l2plugin
+
+import (
+	"context"
+	"sync"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	govppapi "git.fd.io/govpp.git/api"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/cn-infra/core"
+	l2_api "github.com/ligato/vpp-agent/defaultplugins/l2plugin/bin_api/l2"
+	"time"
+)
+
+type BridgeDomainStateUpdater struct {
+	bdIndex bdidx.BDIndex
+	swIfIndexes            ifaceidx.SwIfIndex
+
+	publishBdState func(notification *BridgeDomainStateNotification)
+	bdState map[uint32]*l2.BridgeDomainState_BridgeDomain
+	access  sync.Mutex
+
+	vppCh                   *govppapi.Channel
+	vppNotifSubs            *govppapi.NotifSubscription
+	vppCountersSubs         *govppapi.NotifSubscription
+	vppCombinedCountersSubs *govppapi.NotifSubscription
+	notificationChan        chan govppapi.Message
+	bdIdxChan               chan bdidx.ChangeDto
+
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+}
+
+type BridgeDomainStateNotification struct {
+	// todo add fields if necessary
+}
+
+func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
+	notificationChan chan govppapi.Message,	publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
+
+	log.Info("Initializing BridgeDomainStateUpdater")
+
+	plugin.bdIndex = bdIndexes
+	plugin.swIfIndexes = swIfIndexes
+	plugin.publishBdState = publishBdState
+	plugin.bdState = make(map[uint32]*l2.BridgeDomainState_BridgeDomain)
+
+	plugin.vppCh, err = govppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+
+	plugin.bdIdxChan = make(chan bdidx.ChangeDto, 100)
+	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
+	plugin.notificationChan = notificationChan
+
+	var childCtx context.Context
+	childCtx, plugin.cancel = context.WithCancel(ctx)
+
+	go plugin.watchVPPNotifications(childCtx)
+
+	return nil
+}
+
+// watchVPPNotifications watches for delivery of notifications from VPP.
+func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Context) {
+	plugin.wg.Add(1)
+	defer plugin.wg.Done()
+
+	if plugin.notificationChan != nil {
+		log.Info("watchVPPNotifications for bridge domain state started")
+	} else {
+		log.Error("failed to start watchVPPNotifications for bridge domain state")
+		return
+	}
+
+	for {
+		select {
+		case notif := <-plugin.notificationChan:
+			switch msg := notif.(type) {
+			case *l2_api.BridgeDomainDetails:
+				plugin.processBridgeDomainDetailsNotification(msg)
+			default:
+				log.WithFields(log.Fields{"MessageName": notif.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
+			}
+
+		case bdIdxDto := <-plugin.bdIdxChan:
+
+			bdIdxDto.Done()
+
+		case <-ctx.Done():
+			// stop watching for notifications
+			return
+		}
+	}
+
+}
+func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails) {
+	bdState := l2.BridgeDomainState_BridgeDomain{}
+	bdState.Index = msg.BdID
+	bdState.InterfaceCount = msg.NSwIfs
+	name, _, found := plugin.swIfIndexes.LookupName(msg.BviSwIfIndex)
+	if found {
+		bdState.BviInterface = name
+	} else {
+		bdState.BviInterface = "unknown"
+	}
+	bdState.BviInterfaceIndex = msg.BviSwIfIndex
+	bdState.L2Params = getBridgeDomainStateParams(msg)
+	bdState.Interfaces = plugin.getBridgeDomainInterfaces(msg)
+	bdState.LastChange = time.Now().Unix()
+}
+
+func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {
+	bdStateInterfaces := []*l2.BridgeDomainState_BridgeDomain_Interfaces{}
+	for _, swIfaceDetails := range msg.SwIfDetails {
+		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
+		name, _, found := plugin.swIfIndexes.LookupName(swIfaceDetails.SwIfIndex)
+		if !found {
+			log.Debugf("Interface name for index %v not found for bridge domain status")
+			bdIfaceState.Name = "unknown"
+		} else {
+			bdIfaceState.Name = name
+		}
+		bdIfaceState.SwIfIndex = swIfaceDetails.SwIfIndex
+		bdIfaceState.SplitHorizonGroup = uint32(swIfaceDetails.Shg)
+		bdStateInterfaces = append(bdStateInterfaces, bdIfaceState)
+	}
+	return bdStateInterfaces
+}
+
+func getBridgeDomainStateParams(msg *l2_api.BridgeDomainDetails) *l2.BridgeDomainState_BridgeDomain_L2Params {
+	params := &l2.BridgeDomainState_BridgeDomain_L2Params{}
+	params.Flood = intToBool(msg.Flood)
+	params.UnknownUnicastFlood  = intToBool(msg.UuFlood)
+	params.Forward = intToBool(msg.Forward)
+	params.Learn = intToBool(msg.Learn)
+	params.ArpTermination = intToBool(msg.ArpTerm)
+	params.MacAge = uint32(msg.MacAge)
+	return params
+}
+
+func intToBool(num uint8) bool {
+	if num == 1 {
+		return true
+	}
+	return false
+}

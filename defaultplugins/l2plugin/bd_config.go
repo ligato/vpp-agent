@@ -32,6 +32,8 @@ type BDConfigurator struct {
 	RegisteredIfaceCounter uint32
 	vppChan                *govppapi.Channel
 	SwIfIndexes            ifaceidx.SwIfIndex
+
+	notificationChan chan govppapi.Message
 }
 
 // BridgeDomainMeta holds info about interfaces's bridge domain index and BVI
@@ -41,7 +43,7 @@ type BridgeDomainMeta struct {
 }
 
 // Init members (channels...) and start go routines.
-func (plugin *BDConfigurator) Init() (err error) {
+func (plugin *BDConfigurator) Init(notificationChannel chan govppapi.Message) (err error) {
 
 	log.Debug("Initializing L2 Bridge domains")
 
@@ -50,6 +52,9 @@ func (plugin *BDConfigurator) Init() (err error) {
 	if err != nil {
 		return err
 	}
+
+	// Init notification channel
+	plugin.notificationChan = notificationChannel
 
 	err = vppcalls.CheckMsgCompatibilityForBridgeDomains(plugin.vppChan)
 	if err != nil {
