@@ -7,7 +7,7 @@ go:
 
 env:
   # VPP version
-  - UBUNTU="trusty"  RELEASE=".stable.1707"
+  - UBUNTU="trusty"  RELEASE=".master"
 
 before_install:
   - go get -v github.com/golang/lint/golint
