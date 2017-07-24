@@ -92,7 +92,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.Bridge
 	plugin.BdIndexes.RegisterName(bridgeDomainInput.Name, bridgeDomainIndex, nil)
 	log.WithFields(log.Fields{"Name": bridgeDomainInput.Name, "Index": bridgeDomainIndex}).Debug("Bridge domain registered.")
 
-	errLookup := plugin.LookupBridgeDomains()
+	errLookup := plugin.LookupBridgeDomainDetails(bridgeDomainIndex)
 	if errLookup != nil {
 		log.WithField("bdName", bridgeDomainInput.Name).Error(errLookup)
 		return errLookup
@@ -182,6 +182,12 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 		}
 	}
 
+	errLookup := plugin.LookupBridgeDomainDetails(newConfigIndex)
+	if errLookup != nil {
+		log.WithField("bdName", newConfig.Name).Error(errLookup)
+		return errLookup
+	}
+
 	return nil
 }
 
@@ -215,28 +221,24 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 	return nil
 }
 
-// LookupBridgeDomains looks up all VPP BDs and saves their name-to-index mapping
-func (plugin *BDConfigurator) LookupBridgeDomains() error {
+// LookupBridgeDomainDetails looks up all VPP BDs and saves their name-to-index mapping
+func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32) error {
 	var wasError error
-	var bdIndex uint32
-	for bdIndex = 1; bdIndex <= plugin.BridgeDomainIDSeq; bdIndex++ {
-		_, _, found := plugin.BdIndexes.LookupName(bdIndex)
-		if !found {
-			continue
-		}
-		req := &l2ba.BridgeDomainDump{
-			BdID: bdIndex,
-		}
-		reqContext := plugin.vppChan.SendRequest(req)
-		msg := &l2ba.BridgeDomainDetails{}
-		err := reqContext.ReceiveReply(msg)
-		if err != nil {
-			wasError = err
-		}
-
-		// propagate bridge domain state information
-		plugin.notificationChan <- msg
+	_, _, found := plugin.BdIndexes.LookupName(bdID)
+	if !found {
+		return wasError
 	}
+	req := &l2ba.BridgeDomainDump{
+		BdID: bdID,
+	}
+	reqContext := plugin.vppChan.SendRequest(req)
+	msg := &l2ba.BridgeDomainDetails{}
+	err := reqContext.ReceiveReply(msg)
+	if err != nil {
+		wasError = err
+	}
+	// propagate bridge domain state information
+	plugin.notificationChan <- msg
 
 	return wasError
 }

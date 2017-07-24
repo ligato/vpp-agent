@@ -69,6 +69,26 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	}
 }
 
+// Resync deletes old operation status of bridge domains in ETCD
+func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
+	for _, key := range keys {
+		bdName, err := intf.ParseNameFromKey(key)
+		if err != nil {
+			return err
+		}
+		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
+		if !found {
+			log.Debug("deleting obsolete status begin ", key)
+			err := plugin.Transport.PublishData(key, nil )
+			log.Debug("deleting obsolete status end ", key, err)
+		} else {
+			log.WithField("bdName", bdName).Debug("bridge domain status required")
+		}
+	}
+
+	return nil
+}
+
 // publishBdState is used to watch bridge domain state notifications
 func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
@@ -77,8 +97,10 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 	for {
 		select {
 		case bdState := <-plugin.bdStateChan:
-			plugin.Transport.PublishData(l2.BridgeDomainStateKey(bdState.State.InternalName), bdState.State)
-			log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.Index)
+			if bdState != nil && bdState.State != nil {
+				plugin.Transport.PublishData(l2.BridgeDomainStateKey(bdState.State.InternalName), bdState.State)
+				log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.Index)
+			}
 		case <-ctx.Done():
 			// stop watching for state data updates
 			return

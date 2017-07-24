@@ -6,6 +6,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 	"golang.org/x/net/context"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 )
 
 // WatchEvents goroutine is used to watch for changes in the northbound configuration & NameToIdxMapping notifications
@@ -25,8 +26,8 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			var wasError error
 			for key, vals := range resyncStatusEv.GetValues() {
 				ifStatusPrefix := strings.HasPrefix(key, interfaces.IfStatePrefix)
-				log.Debug("trying to delete obsolete status begin ", key, " ", ifStatusPrefix)
-				if ifStatusPrefix {
+				log.Debugf("trying to delete obsolete status for key %v begin ", key)
+				if strings.HasPrefix(key, interfaces.IfStatePrefix) {
 					keys := []string{}
 					for {
 						x, stop := vals.GetNext()
@@ -41,11 +42,23 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 							wasError = err
 						}
 					}
-				} else {
-					log.Debug("trying to delete obsolete status begin ", key, " ", interfaces.IfStatePrefix)
+				} else if strings.HasPrefix(key, l2.BdStatePrefix) {
+					keys := []string{}
+					for {
+						x, stop := vals.GetNext()
+						if stop {
+							break
+						}
+						keys = append(keys, x.GetKey())
+					}
+					if len(keys) > 0 {
+						err := plugin.resyncBdStateEvents(keys)
+						if err != nil {
+							wasError = err
+						}
+					}
 				}
 			}
-
 			resyncStatusEv.Done(wasError)
 
 		case dataChng := <-plugin.changeChan:

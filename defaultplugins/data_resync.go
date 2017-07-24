@@ -99,7 +99,6 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
-		} else if strings.HasPrefix(key, l2.FibKeyPrefix()) {
 			numL2FIBs := resyncAppendFIBs(resyncData, req)
 			log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
@@ -288,7 +287,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 
 	plugin.watchStatusReg, err = plugin.Transport.
 		WatchData("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
-			intf.InterfaceStateKeyPrefix())
+			intf.InterfaceStateKeyPrefix(), l2.BridgeDomainStateKeyPrefix())
 	if err != nil {
 		return err
 	}
