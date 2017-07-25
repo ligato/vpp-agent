@@ -3,13 +3,13 @@ package l2plugin
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/govppmux"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	l2ba "github.com/ligato/vpp-agent/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/vppcalls"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/vpp-agent/idxvpp"
 )
 
 // XConnectConfigurator implements PluginHandlerVPP

@@ -1,8 +1,8 @@
 package interfaces
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 const (

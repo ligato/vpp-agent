@@ -1,28 +1,42 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
 import (
-	"github.com/buger/goterm"
 	"fmt"
-	"strings"
+	"github.com/buger/goterm"
 	"sort"
+	"strings"
 )
 
 // Used as a header/info message
 const (
-	InPkt string = "IN-PKT"
-	InBytes string = "IN-BYTES"
-	InErrPkt string = "IN-ERR-PKT"
+	InPkt     string = "IN-PKT"
+	InBytes   string = "IN-BYTES"
+	InErrPkt  string = "IN-ERR-PKT"
 	InMissPkt string = "IN-MISS-PKT"
-	InNoBuf string = "IN-NO-BUFF"
-	OutPkt string = "OUT-PKT"
-	OutBytes string = "OUT-BYTES"
+	InNoBuf   string = "IN-NO-BUFF"
+	OutPkt    string = "OUT-PKT"
+	OutBytes  string = "OUT-BYTES"
 	OutErrPkt string = "OUT-ERR-PKT"
-	Drop string = "DROP"
-	Punt string = "PUNT"
-	Ipv4Pkt string = "IPV4-PKT"
-	Ipv6Pkt string = "IPV6-PKT"
+	Drop      string = "DROP"
+	Punt      string = "PUNT"
+	Ipv4Pkt   string = "IPV4-PKT"
+	Ipv6Pkt   string = "IPV6-PKT"
 
-	NoData string = "Nothing to show, add some data or change the filter"
+	NoData  string = "Nothing to show, add some data or change the filter"
 	NoSpace string = "There is not enough space to show the whole table. Use --short"
 )
 
@@ -172,7 +186,7 @@ func filterInactiveInterfaces(interfaceList []string, interfaceMap map[string]In
 		}
 		stats := ifaceData.State.Statistics
 		if stats.InPackets != 0 || stats.InBytes != 0 || stats.InErrorPackets != 0 || stats.InMissPackets != 0 ||
-			stats.InNobufPackets != 0 ||stats.OutPackets != 0 || stats.OutBytes != 0 ||
+			stats.InNobufPackets != 0 || stats.OutPackets != 0 || stats.OutBytes != 0 ||
 			stats.OutErrorPackets != 0 || stats.DropPackets != 0 || stats.PuntPackets != 0 ||
 			stats.Ipv4Packets != 0 || stats.Ipv6Packets != 0 {
 			filteredInterfaces = append(filteredInterfaces, name)
@@ -193,20 +207,44 @@ func getHeaderItems(short bool, active bool, dataContext []*TableVppDataContext)
 	var headerItems []string
 	if active && short {
 		// Need to keep item order
-		if isNonZeroColumn(dataContext, InPkt) {headerItems = append(headerItems, InPkt)}
-		if isNonZeroColumn(dataContext, OutPkt) {headerItems = append(headerItems, OutPkt)}
-		if isNonZeroColumn(dataContext, Drop) {headerItems = append(headerItems, Drop)}
+		if isNonZeroColumn(dataContext, InPkt) {
+			headerItems = append(headerItems, InPkt)
+		}
+		if isNonZeroColumn(dataContext, OutPkt) {
+			headerItems = append(headerItems, OutPkt)
+		}
+		if isNonZeroColumn(dataContext, Drop) {
+			headerItems = append(headerItems, Drop)
+		}
 	} else if active && !short {
 		// Need to keep item order
-		if isNonZeroColumn(dataContext, InPkt) {headerItems = append(headerItems, InPkt)}
-		if isNonZeroColumn(dataContext, InBytes) {headerItems = append(headerItems, InBytes)}
-		if isNonZeroColumn(dataContext, InErrPkt) {headerItems = append(headerItems, InErrPkt)}
-		if isNonZeroColumn(dataContext, InMissPkt) {headerItems = append(headerItems, InMissPkt)}
-		if isNonZeroColumn(dataContext, OutPkt) {headerItems = append(headerItems, OutPkt)}
-		if isNonZeroColumn(dataContext, OutBytes) {headerItems = append(headerItems, OutBytes)}
-		if isNonZeroColumn(dataContext, OutErrPkt) {headerItems = append(headerItems, OutErrPkt)}
-		if isNonZeroColumn(dataContext, Drop) {headerItems = append(headerItems, Drop)}
-		if isNonZeroColumn(dataContext, Punt) {headerItems = append(headerItems, Punt)}
+		if isNonZeroColumn(dataContext, InPkt) {
+			headerItems = append(headerItems, InPkt)
+		}
+		if isNonZeroColumn(dataContext, InBytes) {
+			headerItems = append(headerItems, InBytes)
+		}
+		if isNonZeroColumn(dataContext, InErrPkt) {
+			headerItems = append(headerItems, InErrPkt)
+		}
+		if isNonZeroColumn(dataContext, InMissPkt) {
+			headerItems = append(headerItems, InMissPkt)
+		}
+		if isNonZeroColumn(dataContext, OutPkt) {
+			headerItems = append(headerItems, OutPkt)
+		}
+		if isNonZeroColumn(dataContext, OutBytes) {
+			headerItems = append(headerItems, OutBytes)
+		}
+		if isNonZeroColumn(dataContext, OutErrPkt) {
+			headerItems = append(headerItems, OutErrPkt)
+		}
+		if isNonZeroColumn(dataContext, Drop) {
+			headerItems = append(headerItems, Drop)
+		}
+		if isNonZeroColumn(dataContext, Punt) {
+			headerItems = append(headerItems, Punt)
+		}
 	} else if short {
 		// Need to keep item order
 		headerItems = append(headerItems, InPkt, OutPkt, Drop)
@@ -216,7 +254,6 @@ func getHeaderItems(short bool, active bool, dataContext []*TableVppDataContext)
 	}
 	return headerItems
 }
-
 
 // Compose header and formatting string for table. The formatting string will be applied to every table row.
 func composeHeader(headerItems []string) (tableHeader string, format string) {
@@ -251,72 +288,83 @@ func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 			stats := ifaceData.State.Statistics
 			// If particular data type contains non-zero value, evaluation is finished
 			switch dataType {
-			case InPkt: {
-				if stats.InPackets != 0 {
-					isZeroColumn = false
-					break
+			case InPkt:
+				{
+					if stats.InPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case InBytes: {
-				if stats.InBytes != 0 {
-					isZeroColumn = false
-					break
+			case InBytes:
+				{
+					if stats.InBytes != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case InErrPkt: {
-				if stats.InErrorPackets != 0 {
-					isZeroColumn = false
-					break
+			case InErrPkt:
+				{
+					if stats.InErrorPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case InMissPkt: {
-				if stats.InMissPackets != 0 {
-					isZeroColumn = false
-					break
+			case InMissPkt:
+				{
+					if stats.InMissPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case OutPkt: {
-				if stats.OutPackets != 0 {
-					isZeroColumn = false
-					break
+			case OutPkt:
+				{
+					if stats.OutPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case OutBytes: {
-				if stats.OutBytes != 0 {
-					isZeroColumn = false
-					break
+			case OutBytes:
+				{
+					if stats.OutBytes != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case OutErrPkt: {
-				if stats.OutErrorPackets != 0 {
-					isZeroColumn = false
-					break
+			case OutErrPkt:
+				{
+					if stats.OutErrorPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case Drop: {
-				if stats.DropPackets != 0 {
-					isZeroColumn = false
-					break
+			case Drop:
+				{
+					if stats.DropPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case Punt: {
-				if stats.PuntPackets != 0 {
-					isZeroColumn = false
-					break
+			case Punt:
+				{
+					if stats.PuntPackets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case Ipv4Pkt: {
-				if stats.Ipv4Packets != 0 {
-					isZeroColumn = false
-					break
+			case Ipv4Pkt:
+				{
+					if stats.Ipv4Packets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
-			case Ipv6Pkt: {
-				if stats.Ipv6Packets != 0 {
-					isZeroColumn = false
-					break
+			case Ipv6Pkt:
+				{
+					if stats.Ipv6Packets != 0 {
+						isZeroColumn = false
+						break
+					}
 				}
-			}
 			}
 		}
 	}
@@ -378,9 +426,9 @@ func (row *TableVppDataContext) printTable(table *goterm.Table, items []string, 
 
 		if index == 0 {
 			// Print vpp name in first line only
-			fmt.Fprintf(table, "%s:" + format, dataList...)
+			fmt.Fprintf(table, "%s:"+format, dataList...)
 		} else {
-			fmt.Fprintf(table, "%s" + format, dataList...)
+			fmt.Fprintf(table, "%s"+format, dataList...)
 		}
 	}
 }

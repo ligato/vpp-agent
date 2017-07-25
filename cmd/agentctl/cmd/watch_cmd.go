@@ -1,20 +1,34 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"errors"
-	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/buger/goterm"
 	"fmt"
+	"github.com/buger/goterm"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/spf13/cobra"
 	"time"
 )
 
 var watchCommand = &cobra.Command{
-	Use:		"watch [agent-label-filter(s)] [interface-filter(s)]",
-	Aliases: 	[]string{"w", "wa"},
-	Short: 		"Show real-time traffic data for vpp interfaces",
-	Long:		`
+	Use:     "watch [agent-label-filter(s)] [interface-filter(s)]",
+	Aliases: []string{"w", "wa"},
+	Short:   "Show real-time traffic data for vpp interfaces",
+	Long: `
 'watch' displays a table with periodically updated interface statistics
 counters. Data is printed for every agent whose configuration contains
 at least one interface with statistics (in case no filters are applied).
@@ -52,11 +66,11 @@ themselves every 10 seconds. `,
   possible to see full zero output because there could be fields which are
   non-zero and not shown in shortened output:
     $ agentctl watch --active`,
-	Run:		watchFunc,
+	Run: watchFunc,
 }
 
 var (
-	showShort bool
+	showShort  bool
 	showActive bool
 )
 
@@ -79,14 +93,14 @@ func watchFunc(cmd *cobra.Command, args []string) {
 		width := goterm.Width()
 		height := goterm.Height()
 
-		if width != 0 && height != 0  {
+		if width != 0 && height != 0 {
 			goterm.Clear()
 		}
 		// This hooks watcher to the top of the console window
 		goterm.MoveCursor(1, 1)
 		table := goterm.NewTable(0, 10, 2, ' ', 0)
 
-		if width < 145  && !showShort {
+		if width < 145 && !showShort {
 			fmt.Fprintf(table, "%s", utils.NoSpace)
 		} else {
 
@@ -118,12 +132,12 @@ func getLatestEtcdData() utils.EtcdDump {
 	// Get data broker
 	dataBroker, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
 	if err != nil {
-		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - " + err.Error()))
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}
 	// Read agent prefixes
 	keyIter, err := dataBroker.ListKeys(servicelabel.GetAllAgentsPrefix())
 	if err != nil {
-		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - " + err.Error()))
+		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))
 	}
 	etcdDump := utils.NewEtcdDump()
 	for {

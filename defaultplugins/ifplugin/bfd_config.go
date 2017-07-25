@@ -12,13 +12,13 @@ import (
 	"github.com/ligato/vpp-agent/govppmux"
 	"github.com/ligato/vpp-agent/idxvpp"
 	//"gitlab.cisco.com/ctao/vnf-agent/plugins/servicelabel"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	bfd_api "github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"strconv"
-	"github.com/ligato/cn-infra/servicelabel"
 )
 
 // BFDConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -27,9 +27,9 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type BFDConfigurator struct {
-	SwIfIndexes ifaceidx.SwIfIndex
+	SwIfIndexes  ifaceidx.SwIfIndex
 	ServiceLabel *servicelabel.Plugin
-	BfdIDSeq    uint32
+	BfdIDSeq     uint32
 	// Base mappings
 	bfdSessionsIndexes   idxvpp.NameToIdxRW
 	bfdKeysIndexes       idxvpp.NameToIdxRW

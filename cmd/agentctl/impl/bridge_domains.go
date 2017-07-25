@@ -1,30 +1,44 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package impl
 
 import (
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/spf13/cobra"
 	"errors"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	"github.com/spf13/cobra"
 )
 
 // BridgeDomainCommonFields defines all fields which can be set using flags in bridge domain config
 type BridgeDomainCommonFields struct {
-	Name     string
-	Flood	 bool
-	UUFlood  bool
-	Forward  bool
-	Learn    bool
-	Arp      bool
-	MacAge   uint32
+	Name    string
+	Flood   bool
+	UUFlood bool
+	Forward bool
+	Learn   bool
+	Arp     bool
+	MacAge  uint32
 }
 
 // BridgeDomainInterfaceFields defines all fields used as flags in bridge domain interface command
 type BridgeDomainInterfaceFields struct {
-	BdName			string
-	IfName			string
-	Bvi             	bool
-	SplitHorizonGroup 	uint32
-	IsDelete		bool
+	BdName            string
+	IfName            string
+	Bvi               bool
+	SplitHorizonGroup uint32
+	IsDelete          bool
 }
 
 // BridgeDomainArpFields defines all fields used as flags in bridge domain arp command
@@ -37,13 +51,13 @@ type BridgeDomainArpFields struct {
 
 // L2FIBEntryFields defines all fields used as flags in bridge domain fib command
 type L2FIBEntryFields struct {
-	PhysAddress 		string
-	BdName 			string
-	Action 			uint8
-	OutgoingInterface 	string
-	StaticConfig 		bool
-	BVI 			bool
-	IsDelete		bool
+	PhysAddress       string
+	BdName            string
+	Action            uint8
+	OutgoingInterface string
+	StaticConfig      bool
+	BVI               bool
+	IsDelete          bool
 }
 
 var bdCommonFields BridgeDomainCommonFields
@@ -83,7 +97,7 @@ func AddUpdateInterfaceToBridgeDomain(endpoints []string, label string, iface *B
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Interface configured from a nonexisting bridge domain"))
 	}
 	// Obtain actual list of interfaces attached
-	interfaceList := bd.Interfaces;
+	interfaceList := bd.Interfaces
 	for i, ifaceEntry := range interfaceList {
 		// If interface already exists, remove it. It will be created anew (update)
 		if ifaceEntry.Name == iface.IfName {
@@ -238,4 +252,3 @@ func AddBridgeDomainFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint32VarP(&bdCommonFields.MacAge, "mac", "", 0, "MAC aging time in min, 0 for disabled aging ")
 
 }
-

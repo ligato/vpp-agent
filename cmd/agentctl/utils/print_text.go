@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
 import (
@@ -7,10 +21,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/logrusorgru/aurora.git"
+	"bytes"
 	"github.com/ligato/cn-infra/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	"bytes"
+	"github.com/logrusorgru/aurora.git"
 )
 
 const perLevelSpaces = 3
@@ -145,48 +159,48 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 
 	bdTemplate, err := template.New("bridgeDomains").Funcs(bdFuncMap).Parse(
 		"{{$etcd := .ShowEtcd}}" +
-		"{{$fibTableEntries := .FibTableEntries}}" +
-		"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
+			"{{$fibTableEntries := .FibTableEntries}}" +
+			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
 			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n{{pfx 3}}Attributes: macAge {{.MacAge}}" +
 
-				// Bridge domain attributes
-				"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}}, <{{if .Flood}}FLOOD{{end}}" +
-				"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
-				"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
-				"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
-				"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
-				"{{end}}" +
+			// Bridge domain attributes
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}}, <{{if .Flood}}FLOOD{{end}}" +
+			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
+			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
+			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
+			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
+			"{{end}}" +
 
-				// Interface table
-				"{{with .Interfaces}}\n{{pfx 3}}Interfaces:" +
-					"{{range $ifKey, $element := .}}\n{{pfx 4}}{{setBold $element.Name}} splitHorizonGrp {{.SplitHorizonGroup}}" +
-						"{{if .BridgedVirtualInterface}}, <BVI>{{end}}" +
-					"{{end}}" +
-				"{{end}}" +
+			// Interface table
+			"{{with .Interfaces}}\n{{pfx 3}}Interfaces:" +
+			"{{range $ifKey, $element := .}}\n{{pfx 4}}{{setBold $element.Name}} splitHorizonGrp {{.SplitHorizonGroup}}" +
+			"{{if .BridgedVirtualInterface}}, <BVI>{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
-				// ARP termination table
-				"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
-					"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}{{end}}" +
-				"{{end}}" +
+			// ARP termination table
+			"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
+			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}{{end}}" +
+			"{{end}}" +
 
-				// Etcd metadata
-				"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}\n" +
+			// Etcd metadata
+			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}\n" +
 			"{{end}}" +
 			// FIB table
 			"{{with $fibTableEntries}}\n" +
-				"{{with .FibTable}}" +
-				"{{pfx 2}}FIB-Table:" +
-					"{{range $fibKey, $fib := .}}\n" +
-						"{{pfx 3}}{{$fib.PhysAddress}}" +
-						"{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}{{end}}" +
-						"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}{{end}}" +
-						"{{if $fib.StaticConfig}}, <STATIC>{{end}}" +
-						"{{if $fib.BridgedVirtualInterface}}, <BVI>{{end}}" +
-						"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>{{end}}" +
-					"{{end}}" +
-				"{{end}}" +
+			"{{with .FibTable}}" +
+			"{{pfx 2}}FIB-Table:" +
+			"{{range $fibKey, $fib := .}}\n" +
+			"{{pfx 3}}{{$fib.PhysAddress}}" +
+			"{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}{{end}}" +
+			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}{{end}}" +
+			"{{if $fib.StaticConfig}}, <STATIC>{{end}}" +
+			"{{if $fib.BridgedVirtualInterface}}, <BVI>{{end}}" +
+			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>{{end}}" +
 			"{{end}}" +
-		"{{end}}\n\n")
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}\n\n")
 
 	buffer := new(bytes.Buffer)
 	if printAsTree {

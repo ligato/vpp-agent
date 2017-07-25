@@ -3,8 +3,8 @@ package ifaceidx
 import (
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp"
 	intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 

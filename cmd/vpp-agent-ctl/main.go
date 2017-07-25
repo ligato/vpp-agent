@@ -31,17 +31,18 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/utils/config"
-	linuxIntf "github.com/ligato/vpp-agent/linuxplugin/model/interfaces"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/cn-infra/utils/config"
 	"github.com/ligato/vpp-agent/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l3plugin/model/l3"
+	linuxIntf "github.com/ligato/vpp-agent/linuxplugin/model/interfaces"
 )
 
-var (log logging.Logger
+var (
+	log          logging.Logger
 	serviceLabel servicelabel.Plugin
 )
 

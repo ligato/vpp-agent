@@ -10,11 +10,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/govppmux"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes

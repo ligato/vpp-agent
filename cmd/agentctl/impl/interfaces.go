@@ -1,24 +1,38 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package impl
 
 import (
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"os"
-	"errors"
-	"github.com/spf13/cobra"
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/spf13/cobra"
+	"os"
 )
 
 // IfaceCommonFields are fields common for interface of any type
 type IfaceCommonFields struct {
-	Name     string
-	Desc     string
-	IfType   string
-	Enabled  bool
-	PhysAddr string
-	Mtu      uint32
+	Name      string
+	Desc      string
+	IfType    string
+	Enabled   bool
+	PhysAddr  string
+	Mtu       uint32
 	Ipv4Addrs []string
 	Ipv6Addrs []string
 }
@@ -137,7 +151,7 @@ func PutVxLan(endpoints []string, label string, flags *interfaces.Interfaces_Int
 		if utils.ValidateIpv4Addr(flags.SrcAddress) || utils.ValidateIpv6Addr(flags.SrcAddress) {
 			ifc.Vxlan.SrcAddress = flags.SrcAddress
 		} else {
-			utils.ExitWithError(utils.ExitBadArgs, errors.New("Invalid " + utils.VxLanSrcAddr + " " + flags.SrcAddress))
+			utils.ExitWithError(utils.ExitBadArgs, errors.New("Invalid "+utils.VxLanSrcAddr+" "+flags.SrcAddress))
 		}
 	}
 	if flags.DstAddress != "" {
@@ -147,7 +161,7 @@ func PutVxLan(endpoints []string, label string, flags *interfaces.Interfaces_Int
 		if utils.ValidateIpv4Addr(flags.DstAddress) || utils.ValidateIpv6Addr(flags.DstAddress) {
 			ifc.Vxlan.DstAddress = flags.DstAddress
 		} else {
-			utils.ExitWithError(utils.ExitBadArgs, errors.New("Invalid " + utils.VxLanDstAddr + " " + flags.DstAddress))
+			utils.ExitWithError(utils.ExitBadArgs, errors.New("Invalid "+utils.VxLanDstAddr+" "+flags.DstAddress))
 		}
 	}
 	if utils.IsFlagPresent(utils.VxLanVni) && flags.Vni > 0 {
@@ -207,7 +221,7 @@ func AddCommonIfPutFlags(cmd *cobra.Command) {
 func processCommonIfFlags(found bool, ifType interfaces.InterfaceType, ifc *interfaces.Interfaces_Interface) *interfaces.Interfaces_Interface {
 
 	if found && ifc.Type != ifType {
-		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Bad type for interface '"+ ifCommonFields.Name+
+		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Bad type for interface '"+ifCommonFields.Name+
 			"'. Interface with this name but a different type already exists."))
 	}
 

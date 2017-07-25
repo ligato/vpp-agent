@@ -5,8 +5,8 @@ import (
 
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	"golang.org/x/net/context"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	"golang.org/x/net/context"
 )
 
 // WatchEvents goroutine is used to watch for changes in the northbound configuration & NameToIdxMapping notifications
@@ -90,17 +90,17 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				// TODO propagate error
 			}
 			ifIdxEv.Done()
-/*
-		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
-			if !linuxIfIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
-				// TODO propagate error
-			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
-				// TODO propagate error
-			}
-			linuxIfIdxEv.Done()
-*/
+			/*
+				case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
+					if !linuxIfIdxEv.IsDelete() {
+						plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
+						// TODO propagate error
+					} else {
+						plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
+						// TODO propagate error
+					}
+					linuxIfIdxEv.Done()
+			*/
 		case bdIdxEv := <-plugin.bdIdxWatchCh:
 			if !bdIdxEv.IsDelete() {
 				plugin.fibConfigurator.ResolveCreatedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {

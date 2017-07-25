@@ -13,12 +13,12 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/vpe"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/govppmux"
 )
 
 // counterType is the basic counter type - contains only packet statistics.

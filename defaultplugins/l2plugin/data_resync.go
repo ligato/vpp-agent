@@ -3,13 +3,13 @@ package l2plugin
 import (
 	"fmt"
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/vppdump"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // Resync writes BDs to the empty VPP
@@ -28,7 +28,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 	// Step 1: delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
 	for vppIdx, vppBD := range vppBDs {
-		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(),pluginID,
+		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), pluginID,
 			"hack_sw_if_indexes", ifaceidx.IndexMetadata))
 
 		// hack to reuse existing binary call wrappers

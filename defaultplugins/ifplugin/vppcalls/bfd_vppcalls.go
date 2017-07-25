@@ -5,10 +5,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"net"
 )
 

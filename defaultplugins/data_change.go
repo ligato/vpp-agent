@@ -5,8 +5,8 @@ import (
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l3plugin/model/l3"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/db"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/bfd"
 )

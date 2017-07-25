@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package testing
 
 import (
@@ -10,17 +24,17 @@ import (
 func TableData() utils.EtcdDump {
 	// Non-zero statistics
 	statistics := &interfaces.InterfacesState_Interface_Statistics{
-		InPackets: uint64(10),
-		OutPackets: uint64(20),
+		InPackets:     uint64(10),
+		OutPackets:    uint64(20),
 		InMissPackets: uint64(5),
 	}
 
 	ifStateWithMD := &utils.IfstateWithMD{
 		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
-			AdminStatus: 1,
-			OperStatus: 1,
+			AdminStatus:  1,
+			OperStatus:   1,
 			InternalName: "Test-Interface",
-			Statistics: statistics,
+			Statistics:   statistics,
 		},
 	}
 
@@ -33,10 +47,10 @@ func TableData() utils.EtcdDump {
 
 	zeroIfStateWithMD := &utils.IfstateWithMD{
 		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
-			AdminStatus: 2,
-			OperStatus: 2,
+			AdminStatus:  2,
+			OperStatus:   2,
 			InternalName: "Test-Interface",
-			Statistics: zeroStatistics,
+			Statistics:   zeroStatistics,
 		},
 	}
 
@@ -45,7 +59,7 @@ func TableData() utils.EtcdDump {
 	}
 
 	// Prepare test table with a values and several full-zero columns and full-zero rows
-	etcdDump :=  make(map[string]*utils.VppData)
+	etcdDump := make(map[string]*utils.VppData)
 	for i := 1; i <= 3; i++ {
 		vppName := "vpp-" + strconv.Itoa(i)
 
@@ -66,6 +80,3 @@ func TableData() utils.EtcdDump {
 
 	return etcdDump
 }
-
-
-

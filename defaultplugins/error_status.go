@@ -1,9 +1,9 @@
 package defaultplugins
 
 import (
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"strings"
@@ -117,7 +117,7 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change db.PutDel, er
 			InterfaceName: ifName,
 			ChangeType:    string(change),
 			ErrorMessage:  err.Error(),
-			LastChange:     time.Now().Unix(),
+			LastChange:    time.Now().Unix(),
 		}
 		interfaceErrors = append(interfaceErrors, interfaceError)
 	}
@@ -155,7 +155,7 @@ func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change db.PutDel,
 			BdName:       bdName,
 			ChangeType:   string(change),
 			ErrorMessage: err.Error(),
-			LastChange:    time.Now().Unix(),
+			LastChange:   time.Now().Unix(),
 		}
 		bridgeDomainErrors = append(bridgeDomainErrors, bridgeDomainError)
 	}

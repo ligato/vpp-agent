@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
 import (
@@ -12,7 +26,7 @@ import (
 
 // Interface flag names
 const (
-	HostIfName	 = "host-if-name"
+	HostIfName       = "host-if-name"
 	MemifMaster      = "master"
 	MemifMode        = "mode"
 	MemifID          = "id"
@@ -22,9 +36,9 @@ const (
 	MemifBufferSize  = "buffer-size"
 	MemifRxQueues    = "rx-queues"
 	MemifTxQueues    = "tx-queues"
-	VxLanSrcAddr 	 = "src-addr"
-	VxLanDstAddr 	 = "dst-addr"
-	VxLanVni 	 = "vni"
+	VxLanSrcAddr     = "src-addr"
+	VxLanDstAddr     = "dst-addr"
+	VxLanVni         = "vni"
 )
 
 // WriteInterfaceToDb validates and writes interface to the ETCD
@@ -66,7 +80,7 @@ func IsFlagPresent(flag string) bool {
 
 // UpdateIpv4Address updates interface's IPv4 address
 func UpdateIpv4Address(old []string, updates []string) []string {
-	Loop:
+Loop:
 	for i := range updates {
 		validateIpv4AddrCIDR(updates[i])
 		addr := updates[i]
@@ -83,7 +97,7 @@ func UpdateIpv4Address(old []string, updates []string) []string {
 
 // UpdateIpv6Address updates interface's IPv6 address
 func UpdateIpv6Address(old []string, updates []string) []string {
-	Loop:
+Loop:
 	for i := range updates {
 		validateIpv6AddrCIDR(updates[i])
 

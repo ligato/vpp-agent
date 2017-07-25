@@ -18,14 +18,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/govppmux"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -35,7 +35,7 @@ import (
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
 	ServiceLabel *servicelabel.Plugin
-	swIfIndexes ifaceidx.SwIfIndexRW
+	swIfIndexes  ifaceidx.SwIfIndexRW
 
 	afPacketConfigurator *AFPacketConfigurator
 

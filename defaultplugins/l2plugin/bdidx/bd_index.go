@@ -2,8 +2,8 @@ package bdidx
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
