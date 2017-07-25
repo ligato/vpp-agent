@@ -159,10 +159,10 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 	}
 
 	bdFuncMap := template.FuncMap{
-		"convertTime":    convertTime,
-		"setBold": setBold,
-		"setRed":         setRed,
-		"pfx":     getPrefix,
+		"convertTime": convertTime,
+		"setBold":     setBold,
+		"setRed":      setRed,
+		"pfx":         getPrefix,
 	}
 
 	bdTemplate, err := template.New("bridgeDomains").Funcs(bdFuncMap).Parse(
@@ -192,7 +192,10 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}{{end}}" +
 			"{{end}}" +
 
-		// Bridge domain errors (if present)
+			// Etcd metadata
+			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
+
+		    // Bridge domain errors (if present)
 			"{{with $bridgeDomainErrors}}{{range .}}" +
 			"{{with .BdErrorList}}{{range .}}" +
 			"{{if eq .BdName $element.Name}}" +
@@ -201,12 +204,10 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{range $index, $error := .}}\n" +
 			"{{pfx 4}}Changed: {{convertTime $error.LastChange}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			"{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
+			"{{end}}\n" +
 
-			// Etcd metadata
-			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}\n" +
-			"{{end}}" +
 
-			// FIB table
+		    // FIB table
 			"{{with $fibTableEntries}}\n" +
 			"{{with .FibTable}}" +
 			"{{pfx 2}}FIB-Table:" +
@@ -221,7 +222,6 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{end}}" +
 			"{{end}}" +
 			"{{end}}\n\n")
-
 
 	buffer := new(bytes.Buffer)
 	if printAsTree {
@@ -239,23 +239,11 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 				}
 				padRight(nl, ":")
 			}
-			err := nameTemplate.Execute(os.Stdout, key)
-			if err != nil {
-				fmt.Errorf("%v\n", err)
-			}
-			err = stsTemplate.Execute(writer, vd)
-			if err != nil {
-				fmt.Errorf("%v\n", err)
-			}
-			err = ifTemplate.Execute(writer, vd)
-			if err != nil {
-				fmt.Errorf("%v\n", err)
-			}
-			err = bdTemplate.Execute(writer, vd)
+			nameTemplate.Execute(os.Stdout, key)
+			stsTemplate.Execute(writer, vd)
+			ifTemplate.Execute(writer, vd)
+			bdTemplate.Execute(writer, vd)
 			treeWriter.FlushTree()
-			if err != nil {
-				fmt.Errorf("%v\n", err)
-			}
 			fmt.Println("")
 		}
 	} else {

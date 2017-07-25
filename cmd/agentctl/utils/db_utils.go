@@ -42,11 +42,15 @@ type InterfaceWithMD struct {
 	State  *IfstateWithMD
 }
 
+// InterfaceErrorWithMD contains a data record for interface errors and its
+// Etcd metadata
 type InterfaceErrorWithMD struct {
 	VppMetaData
 	InterfaceErrorList []*interfaces.InterfaceErrors_Interface
 }
 
+// BridgeDomainErrorWithMD contains a data record for bridge domain errors and its
+// Etcd metadata
 type BridgeDomainErrorWithMD struct {
 	VppMetaData
 	BdErrorList []*l2.BridgeDomainErrors_BridgeDomain
@@ -90,15 +94,15 @@ type VppStatusWithMD struct {
 // VppData defines a structure to hold all Etcd data records (of all
 // types) for one VPP.
 type VppData struct {
-	Interfaces      map[string]InterfaceWithMD
-	InterfaceErrors map[string]InterfaceErrorWithMD
-	BridgeDomains   map[string]BdWithMD
+	Interfaces         map[string]InterfaceWithMD
+	InterfaceErrors    map[string]InterfaceErrorWithMD
+	BridgeDomains      map[string]BdWithMD
 	BridgeDomainErrors map[string]BridgeDomainErrorWithMD
-	FibTableEntries FibTableWithMD
-	XConnectPairs   map[string]XconnectWithMD
-	StaticRoutes    StaticRoutesWithMD
-	Status          map[string]VppStatusWithMD
-	ShowEtcd        bool
+	FibTableEntries    FibTableWithMD
+	XConnectPairs      map[string]XconnectWithMD
+	StaticRoutes       StaticRoutesWithMD
+	Status             map[string]VppStatusWithMD
+	ShowEtcd           bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -359,15 +363,15 @@ func DeleteDataFromDb(db keyval.ProtoBroker, key string,
 
 func newVppDataRecord() *VppData {
 	return &VppData{
-		Interfaces:      make(map[string]InterfaceWithMD),
-		InterfaceErrors: make(map[string]InterfaceErrorWithMD),
-		BridgeDomains:   make(map[string]BdWithMD),
+		Interfaces:         make(map[string]InterfaceWithMD),
+		InterfaceErrors:    make(map[string]InterfaceErrorWithMD),
+		BridgeDomains:      make(map[string]BdWithMD),
 		BridgeDomainErrors: make(map[string]BridgeDomainErrorWithMD),
-		FibTableEntries: FibTableWithMD{},
-		XConnectPairs:   make(map[string]XconnectWithMD),
-		StaticRoutes:    StaticRoutesWithMD{},
-		Status:          make(map[string]VppStatusWithMD),
-		ShowEtcd:        false,
+		FibTableEntries:    FibTableWithMD{},
+		XConnectPairs:      make(map[string]XconnectWithMD),
+		StaticRoutes:       StaticRoutesWithMD{},
+		Status:             make(map[string]VppStatusWithMD),
+		ShowEtcd:           false,
 	}
 }
 
