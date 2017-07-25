@@ -54,7 +54,7 @@ func (e *unavailableMicroserviceErr) Error() string {
 // Updates received from the northbound API are compared with the Linux network configuration and differences
 // are applied through the Netlink API.
 type LinuxInterfaceConfigurator struct {
-	cfgLock      sync.Mutex
+	cfgLock sync.Mutex
 
 	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */
 	ifIndexes idxvpp.NameToIdxRW
@@ -777,7 +777,7 @@ func (plugin *LinuxInterfaceConfigurator) processTerminatedMicroservice(nsMgmtCt
 
 	microservice, exists := plugin.microserviceByID[id]
 	if !exists {
-		log.WithFields(log.Fields{"label": microservice.label}).Warn("Detected removal of an unknown microservice")
+		log.WithFields(log.Fields{"id": id}).Warn("Detected removal of an unknown microservice")
 		return
 	}
 	log.WithFields(log.Fields{"label": microservice.label, "pid": microservice.pid, "id": microservice.id}).Debug(
