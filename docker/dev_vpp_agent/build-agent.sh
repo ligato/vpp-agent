@@ -17,12 +17,12 @@ go get -u github.com/FiloSottile/gvt
 curl https://glide.sh/get | sh
 
 # checkout agent code
-mkdir -p $GOPATH/src/gitlab.cisco.com/ctao
-cd $GOPATH/src/gitlab.cisco.com/ctao
-git clone http://gitlab.cisco.com/ctao/vnf-agent
+mkdir -p $GOPATH/src/github.com/ligato
+cd $GOPATH/src/github.com/ligato
+git clone https://github.com/ligato/vpp-agent
 
 # build the agent
-cd $GOPATH/src/gitlab.cisco.com/ctao/vnf-agent
+cd $GOPATH/src/github.com/ligato/vpp-agent
 git checkout $1
 make
 make install

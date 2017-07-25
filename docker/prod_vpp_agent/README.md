@@ -2,7 +2,7 @@
 
 This image is lightweight version of dev_vpp_agent image. It contains:
 
-- `vpp-agent`, `generic-agent` and `vpp-agent-ctl` binaries,
+- `vpp-agent`, `agentctl` and `vpp-agent-ctl` binaries,
 - installed VPP ready to be used.
 
 #### Building Locally
@@ -35,7 +35,7 @@ docker image history prod_vpp_agent
 ```
 
 ### Shrinking the Image
-Prod_vpp_agent image can be shrinked by typing command:
+Prod_vpp_agent image can be shrunk by typing command:
 
 ```
 ./shrink.sh

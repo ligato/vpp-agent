@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor
 
-RUN mkdir /opt/vnf-agent
-RUN mkdir /opt/vnf-agent/dev
-RUN mkdir /opt/vnf-agent/plugin
+RUN mkdir /opt/vpp-agent
+RUN mkdir /opt/vpp-agent/dev
+RUN mkdir /opt/vpp-agent/plugin
 
-WORKDIR /opt/vnf-agent/dev
+WORKDIR /opt/vpp-agent/dev
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp

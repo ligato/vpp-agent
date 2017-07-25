@@ -9,7 +9,6 @@ sudo docker run -itd --name extract dev_vpp_agent bash
 rm -rf agent
 mkdir -p agent
 sudo docker cp extract:/root/go/bin/vpp-agent agent/
-sudo docker cp extract:/root/go/bin/generic-agent agent/
 sudo docker cp extract:/root/go/bin/vpp-agent-ctl agent/
 sudo docker cp extract:/root/go/bin/agentctl agent/
 

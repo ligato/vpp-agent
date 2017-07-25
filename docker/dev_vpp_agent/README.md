@@ -1,6 +1,6 @@
 ## Development Docker Image
 
-This image can be used to get started with the vnf-agent Go code. It contains:
+This image can be used to get started with the vpp-agent Go code. It contains:
 
 - The development environment with all libs & dependencies required to build VPP / Go code,
 - A pre-built vpp ready to be used,
@@ -15,11 +15,11 @@ To build the image on your local machine,  type:
 ./build.sh
 ```
 This will build dev_vpp_agent image with default parameters:  
-- vnf-agent - latest commit number from the cloned repo,
+- vpp-agent - latest commit number from the cloned repo,
 - vpp - commit number specified in vpp submodule. 
   
 To build specific commits (one or both), use `build.sh` with parameters:  
-- `-a` or `--agent` to specify vnf-agent commit number, 
+- `-a` or `--agent` to specify vpp-agent commit number, 
 - `-v` or `--vpp` to specify vpp commit number.
 
 Example:
@@ -39,7 +39,7 @@ You can verify the newly built or downloaded image as follows:
 docker images
 ``` 
 
-You should see something this:
+You should see something like this:
 
 ```
 REPOSITORY                       TAG                 IMAGE ID            CREATED             SIZE
@@ -54,7 +54,7 @@ docker image history dev_vpp_agent
 ```
 
 ### Shrinking the Image
-Dev_vpp_agent image can be shrinked by typing the command:
+Dev_vpp_agent image can be shrunk by typing the command:
 
 ```
 ./shrink.sh
@@ -112,7 +112,7 @@ privileged mode (add `--privileged` option to `docker run`).
 For more options, please refer to the [VPP documentation](https://wiki.fd.io/view/VPP/Command-line_Arguments).
 
 To run the Agent, do the following:
-- Edit `/opt/vnf-agent/dev/etcd.conf` to point the agent to an ETCD 
+- Edit `/opt/vpp-agent/dev/etcd.conf` to point the agent to an ETCD 
   server that runs outside of the VPP/Agent container. The
   default configuration is:
 
@@ -129,7 +129,7 @@ mapped onto the host at port 2379; the host's IP address
 will typically be 172.17.0.1, unless you change your Docker 
 networking settings.*
 
-- Edit `/opt/vnf-agent/dev/kafka.conf` to point the agent to a Kafka broker.
+- Edit `/opt/vpp-agent/dev/kafka.conf` to point the agent to a Kafka broker.
  The default configuration is:
 
 ```
@@ -146,7 +146,7 @@ networking settings.*
 
 - Start the Agent:
 ```
-vpp-agent --etcdv3-config=/opt/vnf-agent/dev/etcd.conf --kafka-config=/opt/vnf-agent/dev/kafka.conf
+vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
 ```
 
 ### Running Etcd Server on Local Host
@@ -163,10 +163,10 @@ in the default docker environment) on port `2379`)
 
 Call the agent via ETCD using the testing client:
 ```
-cd $GOPATH/src/gitlab.cisco.com/ctao/vnf-agent/plugins/ifplugin/examples/
-go run crud.go /opt/vnf-agent/dev/etcd.conf -ct
-go run crud.go /opt/vnf-agent/dev/etcd.conf -mt
-go run crud.go /opt/vnf-agent/dev/etcd.conf -dt
+cd $GOPATH/src/github.com/ligato/vpp-agent/cmd/vpp-agent-ctl
+go run main.go /opt/vpp-agent/dev/etcd.conf -ct
+go run main.go /opt/vpp-agent/dev/etcd.conf -mt
+go run main.go /opt/vpp-agent/dev/etcd.conf -dt
 ```
 
 ### Running Kafka on Local Host
@@ -178,7 +178,7 @@ sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
 
 ### Rebuilding the Agent
 ```
-cd $GOPATH/src/gitlab.cisco.com/ctao/vnf-agent/
+cd $GOPATH/src/github.com/ligato/vpp-agent/
 git pull      # if needed
 make
 make test     # optional
@@ -199,11 +199,11 @@ Use `-v` option of the docker command:
 sudo docker run -v /host/folder:/container/folder -it --name vpp_agent --privileged --rm dev_vpp_agent bash
 ```
 
-E.g. if you have the vnf-agent code in `~/go/src/gitlab.cisco.com/ctao/vnf-agent/` 
-on your host OS, you can mount it as `/root/go/src/gitlab.cisco.com/ctao/vnf-agent/` 
+E.g. if you have the vpp-agent code in `~/go/src/github.com/ligato/vpp-agent/` 
+on your host OS, you can mount it as `/root/go/src/github.com/ligato/vpp-agent/` 
 in the container as follows:
 ```
-sudo docker run -v ~/go/src/gitlab.cisco.com/ctao/vnf-agent/:/root/go/src/gitlab.cisco.com/ctao/vnf-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
+sudo docker run -v ~/go/src/github.com/ligato/vpp-agent/:/root/go/src/github.com/ligato/vpp-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
 ```
 Then you can modify the code on you host OS and us the container for building and testing it.
 
@@ -234,20 +234,20 @@ through these steps.
   folder must be called `src`. So you will have: ` ~/go/src`
   
 - In the Go source folder, create the folder that will hold the 
-  local clone of the vnf-agent repository. The path for the folder
-  must reflect the import path in Go source code. So, the vnf-agent
+  local clone of the vpp-agent repository. The path for the folder
+  must reflect the import path in Go source code. So, the vpp-agent
   repository folder will be created as follows:
 ```
    cd  ~/go/src
-   mkdir gitlab.cisco.com
-   mkdir gitlab.cisco.com/ctao
+   mkdir github.com
+   mkdir github.com/ligato
 ```
   
-- The agent repository is located at `http://gitlab.cisco.com/ctao/vnf-agent`. 
-  Go into your local vnf-agent repo folder and checkout the Agent code:
+- The agent repository is located at `https://github.com/ligato/vpp-agent`. 
+  Go into your local vpp-agent repo folder and checkout the Agent code:
 ```
-   cd gitlab.cisco.com/ctao
-   git clone http://gitlab.cisco.com/ctao/vnf-agent.git 
+   cd github.com/ligato
+   git clone https://github.com/ligato/vpp-agent.git 
 ```
 
 - In Gogland, set `GOROOT` and `GOPATH` (`Preferences->Go->GOROOT`, `Preferences->Go->GOPATH`). Set `GOROOT` to where Go is installed (default: `/usr/local/go`) and the global `GOPATH` to the location of your Go home folder (`/Users/jmedved/Documents/Git/go-home/` in our example).
@@ -257,7 +257,7 @@ through these steps.
 - Start the Development Environment container with the -v option, mounting the Go home folder in the container. With our example, and assuming that we want to mount our Go home folder into the `root/go-home` folder, type:
 
 ```
-   sudo docker run -v ~/go/src/gitlab.cisco.com/ctao/vnf-agent/:/root/go/src/gitlab.cisco.com/ctao/vnf-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
+   sudo docker run -v ~/go/src/github.com/ligato/vpp-agent/:/root/go/src/github.com/ligato/vpp-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
 ```
 The above command will put you into the Development Environment container console. 
 
@@ -269,9 +269,9 @@ The above command will put you into the Development Environment container consol
    export GOPATH=/root/go
    export PATH=/$GOPATH/bin:$PATH
 ```
-- Change directory into the vnf-agent folder and build & install the Agent:
+- Change directory into the vpp-agent folder and build & install the Agent:
 ```
-   cd /root/go-home/src/gitlab.cisco.com/ctao/vnf-agent
+   cd /root/go-home/src/github.com/ligato/vpp-agent
    make
    make install
 ```

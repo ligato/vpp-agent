@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
         openssl python libapr1 \
         supervisor
 
-# use /opt/vnf-agent/dev as the working directory
-RUN mkdir -p /opt/vnf-agent/dev
-WORKDIR /opt/vnf-agent/dev
+# use /opt/vpp-agent/dev as the working directory
+RUN mkdir -p /opt/vpp-agent/dev
+WORKDIR /opt/vpp-agent/dev
 
 # copy vpp deb packages and agent
 # use ADD instead of COPY, because ADD will uncompress automatically
