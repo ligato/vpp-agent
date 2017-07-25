@@ -1,6 +1,47 @@
 include Makeroutines.mk
 
+VERSION=$(shell git rev-parse HEAD)
+DATE=$(shell date +'%Y-%m-%dT%H:%M%:z')
+LDFLAGS=-ldflags '-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildVersion=$(VERSION) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildDate=$(DATE)'
 COVER_DIR=/tmp/
+
+
+# generate go structures from proto files
+define generate_sources
+	$(call install_generators)
+	@echo "# installing generic"
+	@cd vendor/github.com/taylorchu/generic/cmd/generic/ && go install -v
+	@cd vendor/github.com/ungerik/pkgreflect/ && go install -v
+	@echo "# installing gomock"
+	@cd vendor/github.com/golang/mock/gomock && go install -v
+	@cd vendor/github.com/golang/mock/mockgen && go install -v
+	@echo "# generating sources"
+	@cd linuxplugin && go generate
+	@cd defaultplugins/ifplugin && go generate
+	@cd defaultplugins/l2plugin && go generate
+	@cd defaultplugins/l3plugin && go generate
+	@cd defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/bfd && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/ip && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/memif && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/tap && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/vpe && pkgreflect
+	@cd defaultplugins/ifplugin/bin_api/vxlan && pkgreflect
+	@cd defaultplugins/l2plugin/bin_api/l2 && pkgreflect
+	@cd defaultplugins/l2plugin/bin_api/vpe && pkgreflect
+	@cd defaultplugins/l3plugin/bin_api/ip && pkgreflect
+	@echo "# done"
+endef
+
+# install-only binaries
+define install_only
+	@echo "# installing vpp-agent"
+	@cd agent/cmd/vpp-agent && go install -v ${LDFLAGS}
+	@echo "# installing vpp-agent-ctl"
+	@cd agent/cmd/vpp-agent-ctl && go install -v
+	@echo "# done"
+endef
 
 # run all tests
 define test_only
@@ -61,6 +102,14 @@ define build_vpp_agent_only
     @echo "# done"
 endef
 
+# build vpp-agent-ctl only
+define build_vpp_agent_ctl_only
+    @echo "# building vpp-agent-ctl"
+    @cd cmd/vpp-agent-ctl && go build -v
+    @echo "# done"
+endef
+
+
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
@@ -76,6 +125,23 @@ endef
 build:
 	$(call build_examples_only)
 	$(call build_vpp_agent_only)
+	$(call build_vpp_agent_ctl_only)
+
+# build vpp-agent
+vpp-agent:
+	$(call build_vpp_agent_only)
+
+# build vpp-agent-ctl
+vpp-agent-ctl:
+	$(call build_vpp_agent_ctl_only)
+
+# build examples
+example:
+	$(call build_examples_only)
+
+# install binaries
+install:
+	$(call install_only)
 
 # install dependencies
 install-dep:
@@ -84,6 +150,10 @@ install-dep:
 # update dependencies
 update-dep:
 	$(call update_dependencies)
+
+# generate structures
+generate:
+	$(call generate_sources)
 
 # run tests
 test:
@@ -108,13 +178,16 @@ lint:
 
 # clean
 clean:
-	@echo "# cleanup completed"
 	$(call clean_examples_only)
 	rm -f cmd/vpp-agent/vpp-agent
+	rm -f cmd/vpp-agent-ctl/vpp-agent-ctl
+	@echo "# cleanup completed"
 
 # run all targets
 all:
 	$(call lint_only)
+	$(call build_vpp_agent_only)
+	$(call build_vpp_agent_ctl_only)
 	$(call test_only)
 	$(call install_only)
 
