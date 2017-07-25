@@ -94,6 +94,8 @@ define build_examples_only
     @cd examples/idx_iface_cache && go build -v
     @cd examples/idx_mapping_lookup && go build -v
     @cd examples/idx_mapping_watcher && go build -v
+    @cd examples/localclient_linux && go build -v
+    @cd examples/localclient_vpp && go build -v
     @echo "# done"
 endef
 
@@ -126,6 +128,8 @@ define clean_examples_only
     @rm -f examples/idx_iface_cache/idx_iface_cache
     @rm -f examples/idx_mapping_lookup/idx_mapping_lookup
     @rm -f examples/idx_mapping_watcher/idx_mapping_watcher
+    @rm -f examples/localclient_linux/localclient_linux
+    @rm -r examples/localclient_vpp/localclient_vpp
     @echo "# done"
 endef
 

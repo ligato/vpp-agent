@@ -3,3 +3,10 @@ glide.lock
 cmd/vpp-agent/vpp-agent
 cmd/vpp-agent-ctl/vpp-agent-ctl
 cmd/agentctl/agentctl
+examples/govpp_call/govpp_call
+examples/idx_bd_cache/idx_bd_cache
+examples/idx_iface_cache/idx_iface_cache
+examples/idx_mapping_lookup/idx_mapping_lookup
+examples/idx_mapping_watcher/idx_mapping_watcher
+examples/localclient_linux/localclient_linux
+examples/localclient_vpp/localclient_vpp
