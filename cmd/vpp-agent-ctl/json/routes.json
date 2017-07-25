@@ -1,0 +1,14 @@
+{
+    "ip": [
+        {
+            "description": "Description",
+            "destination_address":  "10.1.1.0/24",
+            "next_hops": [
+                {
+                    "address": "192.168.1.1",
+                    "weight": 5
+                }
+            ]
+        }
+    ]
+}
