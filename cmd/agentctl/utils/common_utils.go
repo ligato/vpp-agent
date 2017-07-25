@@ -85,7 +85,32 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 		dataType += "/" + localDataType
 	}
 
+	// In case localDataType is equal to 'bd' or 'interface', verify next item to identify error/fib key
 	if len(ps) > 5 {
+		// Recognize interface error key
+		if ps[4] == "interface" && ps[5] == "error" {
+			ifaceErrorDataType := ps[5]
+			dataType += "/" + ifaceErrorDataType
+			if len(ps) > 6 {
+				dataType += "/"
+				params = ps[6:]
+			} else {
+				params = []string{}
+			}
+			return label, dataType, params, plugStatCfgRev
+		}
+		// Recognize bridge domain error key
+		if ps[4] == "bd" && ps[5] == "error" {
+			bdErrorDataType := ps[5]
+			dataType += "/" + bdErrorDataType
+			if len(ps) > 6 {
+				dataType += "/"
+				params = ps[6:]
+			} else {
+				params = []string{}
+			}
+			return label, dataType, params, plugStatCfgRev
+		}
 		// Recognize FIB key
 		if ps[4] == "bd" && ps[5] == "fib" {
 			fibDataType := ps[5]

@@ -824,7 +824,7 @@ func reportIfaceErrorState(db keyval.ProtoBroker) {
 		if allReceived {
 			break
 		}
-		entry := &interfaces.InterfaceErrors{}
+		entry := &interfaces.InterfaceErrors_Interface{}
 		err := kv.GetValue(entry)
 		if err != nil {
 			log.Fatal(err)
@@ -847,7 +847,7 @@ func reportBdErrorState(db keyval.ProtoBroker) {
 		if allReceived {
 			break
 		}
-		entry := &l2.BridgeDomainErrors{}
+		entry := &l2.BridgeDomainErrors_BridgeDomain{}
 		err := kv.GetValue(entry)
 		if err != nil {
 			log.Fatal(err)
