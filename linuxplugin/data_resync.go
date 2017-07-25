@@ -3,8 +3,8 @@ package linuxplugin
 import (
 	"strings"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/datasync"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/linuxplugin/model/interfaces"
 )
 
@@ -85,7 +85,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
-		err := dataChng.GetValue(&value)
+		err = dataChng.GetValue(&value)
 		if err != nil {
 			return err
 		}

@@ -25,6 +25,6 @@ func TestDumpInterfaces(t *testing.T) {
 	}
 	defer ch.Close()
 
-	res, err := DumpInterfaces(ch)
+	res, _ := DumpInterfaces(ch)
 	fmt.Println(res)
 }

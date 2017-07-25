@@ -25,7 +25,7 @@ func TestDumpL3(t *testing.T) {
 	}
 	defer ch.Close()
 
-	res3, err := DumpStaticRoutes(ch)
+	res3, _ := DumpStaticRoutes(ch)
 	fmt.Printf("%+v\n", res3)
 	for _, routes := range res3 {
 		for _, route := range routes.IP {

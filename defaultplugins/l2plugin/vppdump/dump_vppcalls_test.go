@@ -34,7 +34,7 @@ func TestDumpL2(t *testing.T) {
 		fmt.Printf("%+v\n", fib)
 	}
 
-	res3, err := DumpXConnectPairs(ch)
+	res3, _ := DumpXConnectPairs(ch)
 	fmt.Printf("%+v\n", res3)
 	for _, xconn := range res3 {
 		fmt.Printf("%+v\n", xconn)
