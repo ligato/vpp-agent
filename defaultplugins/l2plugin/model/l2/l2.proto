@@ -87,11 +87,14 @@ message BridgeDomainState {
 }
 
 message BridgeDomainErrors {
-    message BridgeDomainError {
+    message BridgeDomain {               /* List of bridge domains with errors */
         string bd_name = 1;
-        string change_type = 2;
-        string error_message = 3;
-        int64 last_change = 4;
+        message ErrorData {              /* List of errors (if there are more) for every bridge domain */
+            string change_type = 2;
+            string error_message = 3;
+            int64 last_change = 4;
+        }
+        repeated ErrorData error_data = 2;
     }
-    repeated BridgeDomainError bridge_domain = 1;
+    repeated BridgeDomain bridge_domain = 1;
 }

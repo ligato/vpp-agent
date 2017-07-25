@@ -234,30 +234,47 @@ func (m *BridgeDomainState_BridgeDomain_Interfaces) String() string { return pro
 func (*BridgeDomainState_BridgeDomain_Interfaces) ProtoMessage()    {}
 
 type BridgeDomainErrors struct {
-	BridgeDomain []*BridgeDomainErrors_BridgeDomainError `protobuf:"bytes,1,rep,name=bridge_domain" json:"bridge_domain,omitempty"`
+	BridgeDomain []*BridgeDomainErrors_BridgeDomain `protobuf:"bytes,1,rep,name=bridge_domain" json:"bridge_domain,omitempty"`
 }
 
 func (m *BridgeDomainErrors) Reset()         { *m = BridgeDomainErrors{} }
 func (m *BridgeDomainErrors) String() string { return proto.CompactTextString(m) }
 func (*BridgeDomainErrors) ProtoMessage()    {}
 
-func (m *BridgeDomainErrors) GetBridgeDomain() []*BridgeDomainErrors_BridgeDomainError {
+func (m *BridgeDomainErrors) GetBridgeDomain() []*BridgeDomainErrors_BridgeDomain {
 	if m != nil {
 		return m.BridgeDomain
 	}
 	return nil
 }
 
-type BridgeDomainErrors_BridgeDomainError struct {
-	BdName       string `protobuf:"bytes,1,opt,name=bd_name,proto3" json:"bd_name,omitempty"`
+type BridgeDomainErrors_BridgeDomain struct {
+	BdName    string                                       `protobuf:"bytes,1,opt,name=bd_name,proto3" json:"bd_name,omitempty"`
+	ErrorData []*BridgeDomainErrors_BridgeDomain_ErrorData `protobuf:"bytes,2,rep,name=error_data" json:"error_data,omitempty"`
+}
+
+func (m *BridgeDomainErrors_BridgeDomain) Reset()         { *m = BridgeDomainErrors_BridgeDomain{} }
+func (m *BridgeDomainErrors_BridgeDomain) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainErrors_BridgeDomain) ProtoMessage()    {}
+
+func (m *BridgeDomainErrors_BridgeDomain) GetErrorData() []*BridgeDomainErrors_BridgeDomain_ErrorData {
+	if m != nil {
+		return m.ErrorData
+	}
+	return nil
+}
+
+type BridgeDomainErrors_BridgeDomain_ErrorData struct {
 	ChangeType   string `protobuf:"bytes,2,opt,name=change_type,proto3" json:"change_type,omitempty"`
 	ErrorMessage string `protobuf:"bytes,3,opt,name=error_message,proto3" json:"error_message,omitempty"`
 	LastChange   int64  `protobuf:"varint,4,opt,name=last_change,proto3" json:"last_change,omitempty"`
 }
 
-func (m *BridgeDomainErrors_BridgeDomainError) Reset()         { *m = BridgeDomainErrors_BridgeDomainError{} }
-func (m *BridgeDomainErrors_BridgeDomainError) String() string { return proto.CompactTextString(m) }
-func (*BridgeDomainErrors_BridgeDomainError) ProtoMessage()    {}
+func (m *BridgeDomainErrors_BridgeDomain_ErrorData) Reset() {
+	*m = BridgeDomainErrors_BridgeDomain_ErrorData{}
+}
+func (m *BridgeDomainErrors_BridgeDomain_ErrorData) String() string { return proto.CompactTextString(m) }
+func (*BridgeDomainErrors_BridgeDomain_ErrorData) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("l2.FibTableEntries_FibTableEntry_Action", FibTableEntries_FibTableEntry_Action_name, FibTableEntries_FibTableEntry_Action_value)
