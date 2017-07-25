@@ -13,7 +13,7 @@ function static_analysis() {
   local DATASYNC=$(${TOOL} "${PWD}/datasync${SELECTOR}")
   local DB=$(${TOOL} "${PWD}/db${SELECTOR}")
   local EXAMPLES=$(${TOOL} "${PWD}/examples${SELECTOR}")
-  local HTTP=$(${TOOL} "${PWD}/http${SELECTOR}")
+  local HTTPMUX=$(${TOOL} "${PWD}/httpmux${SELECTOR}")
   local IDXMAP=$(${TOOL} "${PWD}/idxmap${SELECTOR}")
   local LOGGING=$(${TOOL} "${PWD}/logging${SELECTOR}")
   local MESSAGING=$(${TOOL} "${PWD}/messaging${SELECTOR}")
@@ -25,7 +25,7 @@ function static_analysis() {
 $DATASYNC
 $DB
 $EXAMPLES
-$HTTP
+$HTTPMUX
 $IDXMAP
 $LOGGING
 $MESSAGING

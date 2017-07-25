@@ -1,9 +1,12 @@
-package http
+package httpmux
 
 import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/rpc/grpcsync"
+	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
@@ -35,14 +38,16 @@ type Plugin struct {
 	LogFactory logging.LogFactory
 
 	logging.Logger
-	HTTPport  string
-	server    *http.Server
-	mx        *mux.Router
-	formatter *render.Render
+	HTTPport   string
+	server     *http.Server
+	mx         *mux.Router
+	formatter  *render.Render
+	grpcServer *grpcsync.Adapter
 }
 
 // Init is entry point called by Agent Core
-// It prepares Gorilla MUX HTTP Router
+// - It prepares Gorilla MUX HTTP Router
+// - registers grpc transport
 func (plugin *Plugin) Init() (err error) {
 	plugin.Logger, err = plugin.LogFactory.NewLogger(string(PluginID))
 	if err != nil {
@@ -58,7 +63,11 @@ func (plugin *Plugin) Init() (err error) {
 		IndentJSON: true,
 	})
 
-	return nil
+	plugin.grpcServer = grpcsync.NewAdapter()
+	plugin.Debug("grpctransp: ", plugin.grpcServer)
+	err = datasync.RegisterTransport(&syncbase.Adapter{Watcher: plugin.grpcServer})
+
+	return err
 }
 
 // RegisterHTTPHandler propagates to Gorilla mux
@@ -98,5 +107,6 @@ func (plugin *Plugin) AfterInit() error {
 
 // Close cleans up the resources
 func (plugin *Plugin) Close() error {
+	safeclose.Close(plugin.grpcServer)
 	return safeclose.Close(plugin.server)
 }

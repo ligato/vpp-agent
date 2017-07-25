@@ -25,7 +25,7 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	httpmux "github.com/ligato/cn-infra/http"
+	"github.com/ligato/cn-infra/httpmux"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/statuscheck/model/status"
 	"github.com/unrolled/render"

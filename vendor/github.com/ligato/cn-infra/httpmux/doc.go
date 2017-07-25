@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package http provides a plugin that allows other plugins to handle
+// Package httpmux provides a plugin that allows other plugins to handle
 // http requests.
-package http
+package httpmux

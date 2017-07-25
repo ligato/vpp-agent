@@ -17,7 +17,7 @@ package linuxlocal
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/http"
+	"github.com/ligato/cn-infra/httpmux"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/statuscheck"
@@ -31,7 +31,7 @@ type Flavour struct {
 	injected         bool
 	Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
-	HTTP             http.Plugin
+	HTTP             httpmux.Plugin
 	ServiceLabel     servicelabel.Plugin
 	StatusCheck      statuscheck.Plugin
 	Resync           resync.Plugin

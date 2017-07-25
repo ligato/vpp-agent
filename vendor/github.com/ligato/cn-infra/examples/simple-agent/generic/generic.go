@@ -17,7 +17,7 @@ package generic
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
-	"github.com/ligato/cn-infra/http"
+	"github.com/ligato/cn-infra/httpmux"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka"
@@ -32,7 +32,7 @@ type Flavour struct {
 	injected bool
 
 	Logrus       logrus.Plugin
-	HTTP         http.Plugin
+	HTTP         httpmux.Plugin
 	LogManager   logmanager.Plugin
 	ServiceLabel servicelabel.Plugin
 	Etcd         etcdv3.Plugin

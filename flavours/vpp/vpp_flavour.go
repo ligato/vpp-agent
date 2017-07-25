@@ -6,7 +6,7 @@ import (
 	"github.com/ligato/vpp-agent/govppmux"
 
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
-	"github.com/ligato/cn-infra/http"
+	"github.com/ligato/cn-infra/httpmux"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -20,7 +20,7 @@ import (
 type Flavour struct {
 	injected     bool
 	Logrus       logrus.Plugin
-	HTTP         http.Plugin
+	HTTP         httpmux.Plugin
 	ServiceLabel servicelabel.Plugin
 	StatusCheck  statuscheck.Plugin
 	Etcd         etcdv3.Plugin

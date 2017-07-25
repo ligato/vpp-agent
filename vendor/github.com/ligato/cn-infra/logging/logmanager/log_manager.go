@@ -17,7 +17,7 @@ package logmanager
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	httpmux "github.com/ligato/cn-infra/http"
+	"github.com/ligato/cn-infra/httpmux"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/unrolled/render"
 	"net/http"
