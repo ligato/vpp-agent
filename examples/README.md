@@ -9,6 +9,13 @@ transformation between the model data and the VPP binary API which are then sent
 * **[idx_mapping_lookup](idx_mapping_lookup/main.go)** shows an usage of the name to index mapping (registration, read by name/index, 
 un-registration)
 * **[idx_mapping_watcher](idx_mapping_watcher/main.go)** shows how to watch on changes in the name to index mapping
+* **[localclient_vpp](localclient_vpp/main.go)** demonstrates the use of the localclient package to transport example configuration into
+    the VPP plugins running inside the same agent instance (i.e. the same OS process). Behind the scenes the configuration
+    data are transported by means of go channels.
+* **[localclient_linux](localclient_linux/main.go)** demonstrates the use of the localclient package to transport example configuration into
+    the linux and VPP plugins running inside the same agent instance (i.e. the same OS process). Behind the scenes the configuration
+    data are transported by means of go channels.
+
 * **[other examples](https://github.com/ligato/cn-infra/examples)**
  
 ## How to run example
