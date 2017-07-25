@@ -1,0 +1,156 @@
+package utils
+
+import (
+	"os"
+	"strings"
+
+	"fmt"
+
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/kvproto"
+	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/servicelabel"
+)
+
+// Common exit flags
+const (
+	ExitSuccess = iota
+	ExitError
+	ExitBadConnection
+	ExitInvalidInput
+	ExitBadFeature
+	ExitInterrupted
+	ExitIO
+	ExitBadArgs = 128
+)
+
+// ParseKey parses the etcd Key for the microservice label and the
+// data type encoded in the Key. The function returns the microservice
+// label, the data type and a list of parameters that contains path
+// segments that follow the data path segment in the Key URL. The
+// parameter list is empty if data path is the last segment in the
+// Key ..
+//
+// URI Examples:
+// * /vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}
+// * /vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}
+// * /vnf-agent/{agent-label}/check/status/v1/agent
+//
+// Explanation of the URI examples:
+// * allAgntsPref   label     plugin stats ver  dataType
+// *                ps[0]      ps[1] ps[2]ps[3] ps[4]
+//
+// Example for dataType ... "check/status/v1/"
+func ParseKey(key string) (label string, dataType string, params []string, plugStatCfgRev string) {
+	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
+
+	var plugin, statusConfig, version, localDataType string
+	if len(ps) > 0 {
+		label = ps[0]
+	}
+	if len(ps) > 1 {
+		plugin = ps[1]
+		dataType = plugin
+		plugStatCfgRev = dataType
+	}
+	if len(ps) > 2 {
+		statusConfig = ps[2]
+		dataType += "/" + statusConfig
+		plugStatCfgRev = dataType
+	}
+	if len(ps) > 3 {
+		version = ps[3]
+		dataType += "/" + version
+		plugStatCfgRev = dataType
+	}
+	plugStatCfgRev += "/"
+
+	if len(ps) > 4 {
+		localDataType = ps[4]
+		dataType += "/" + localDataType
+	}
+
+	if len(ps) > 5 {
+		// Recognize FIB key
+		if ps[4] == "bd" && ps[5] == "fib" {
+			fibDataType := ps[5]
+			dataType += "/" + fibDataType
+
+			if len(ps) > 6 {
+				dataType += "/"
+				params = ps[6:]
+			} else {
+				params = []string{}
+			}
+			return label, dataType, params, plugStatCfgRev
+		}
+		dataType += "/"
+		params = ps[5:]
+	} else {
+		params = []string{}
+	}
+
+	return label, dataType, params, plugStatCfgRev
+}
+
+// GetDbForAllAgents opens a connection to Etcd specified in the command line
+// or the "ETCDV3_ENDPOINTS" environment variable
+func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
+	if len(endpoints) > 0 {
+		ep := strings.Join(endpoints, ",")
+		os.Setenv("ETCDV3_ENDPOINTS", ep)
+	}
+
+	cfg := &etcdv3.Config{}
+	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
+
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.Logger())
+	if err != nil {
+		return nil, err
+	}
+
+	return kvproto.NewProtoWrapperWithSerializer(etcdv3Broker, &keyval.SerializerJSON{}), nil
+
+}
+
+// GetDbForOneAgent opens a connection to Etcd specified in the command line
+// or the "ETCDV3_ENDPOINTS" environment variable
+func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker, error) {
+	if len(endpoints) > 0 {
+		ep := strings.Join(endpoints, ",")
+		os.Setenv("ETCDV3_ENDPOINTS", ep)
+	}
+
+	cfg := &etcdv3.Config{}
+	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
+
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.Logger())
+	if err != nil {
+		return nil, err
+	}
+
+	return kvproto.NewProtoWrapperWithSerializer(etcdv3Broker, &keyval.SerializerJSON{}).
+		NewBroker(servicelabel.GetAllAgentsPrefix() + agentLabel + "/"), nil
+
+}
+
+// ExitWithError is used by all commands to print out an error
+// and exit.
+func ExitWithError(code int, err error) {
+	fmt.Fprintln(os.Stderr, "Error: ", err)
+	os.Exit(code)
+}
+
+func padRight(items []*string, sfx string) {
+	il := 0
+	for _, it := range items {
+		if len(*it) > il {
+			il = len(*it)
+		}
+	}
+	fs := "%" + fmt.Sprintf("-%ds", il+len(sfx))
+	for _, it := range items {
+		*it = fmt.Sprintf(fs, *it+sfx)
+	}
+}

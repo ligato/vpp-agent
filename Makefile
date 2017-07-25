@@ -40,6 +40,8 @@ define install_only
 	@cd cmd/vpp-agent && go install -v ${LDFLAGS}
 	@echo "# installing vpp-agent-ctl"
 	@cd cmd/vpp-agent-ctl && go install -v
+	@echo "# installing agentctl"
+    @cd cmd/agentctl && go install -v
 	@echo "# done"
 endef
 
@@ -109,6 +111,12 @@ define build_vpp_agent_ctl_only
     @echo "# done"
 endef
 
+# build-only agentctl
+define build_agentctl_only
+ 	@echo "# building agentctl"
+ 	@cd cmd/agentctl && go build -v
+ 	@echo "# done"
+endef
 
 # clean examples only
 define clean_examples_only
@@ -126,6 +134,7 @@ build:
 	$(call build_examples_only)
 	$(call build_vpp_agent_only)
 	$(call build_vpp_agent_ctl_only)
+	$(call build_agentctl_only)
 
 # build vpp-agent
 vpp-agent:
@@ -134,6 +143,10 @@ vpp-agent:
 # build vpp-agent-ctl
 vpp-agent-ctl:
 	$(call build_vpp_agent_ctl_only)
+
+# build agentctl
+agentctl:
+	$(call build_agentctl_only)
 
 # build examples
 example:
@@ -181,6 +194,7 @@ clean:
 	$(call clean_examples_only)
 	rm -f cmd/vpp-agent/vpp-agent
 	rm -f cmd/vpp-agent-ctl/vpp-agent-ctl
+	rm -f cmd/agentctl/agentctl
 	@echo "# cleanup completed"
 
 # run all targets

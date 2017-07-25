@@ -67,11 +67,23 @@ func (p *Plugin) GetAgentPrefix() string {
 // GetDifferentAgentPrefix returns the string that is supposed to be used as the prefix for configuration
 // "subtree" of the particular VPP Agent instance (e.g. in ETCD).
 func (p *Plugin) GetDifferentAgentPrefix(microserviceLabel string) string {
-	return agentPrefix + microserviceLabel + "/"
+	return GetDifferentAgentPrefix(microserviceLabel)
 }
 
 // GetAllAgentsPrefix returns the string that is supposed to be used as the prefix for configuration
 // subtree of the particular VPP Agent instance (e.g. in ETCD).
 func (p *Plugin) GetAllAgentsPrefix() string {
+	return GetAllAgentsPrefix()
+}
+
+// GetAllAgentsPrefix returns the string that is supposed to be used as the prefix for configuration
+// subtree of the particular VPP Agent instance (e.g. in ETCD).
+func GetAllAgentsPrefix() string {
 	return agentPrefix
+}
+
+// GetDifferentAgentPrefix returns the string that is supposed to be used as the prefix for configuration
+// "subtree" of the particular VPP Agent instance (e.g. in ETCD).
+func GetDifferentAgentPrefix(microserviceLabel string) string {
+	return agentPrefix + microserviceLabel + "/"
 }

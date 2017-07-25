@@ -1,3 +1,5 @@
 glide.lock
 .idea/*
 cmd/vpp-agent/vpp-agent
+cmd/vpp-agent-ctl/vpp-agent-ctl
+cmd/agentctl/agentctl

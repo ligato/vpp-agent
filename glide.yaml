@@ -1,7 +1,7 @@
 package: github.com/ligato/vpp-agent
 import:
 - package: github.com/ligato/cn-infra
-  version: da18d08f6149d3ca08d0f4ead7420bfb15507a70
+  version: 57ea56c194a49ec4716e8ad47195e6e211030534
 - package: github.com/wadey/gocovmerge
   version: b5bfa59ec0adc420475f97f89b58045c721d761c
 - package: github.com/onsi/gomega
@@ -30,3 +30,9 @@ import:
   version: d311a3a681f918906249a1678eab0136ac663f6e
 - package: github.com/fsouza/go-dockerclient
   version: 9e921e30db8bcc1221fa0485ad9ce5b195fb4445
+- package: github.com/spf13/cobra
+  version: e606913c4ee45fec232e67e70105fb6c866b95d9
+- package: github.com/logrusorgru/aurora.git
+  version: 962a6974312dde57d1f6f5738b4f83e1af9f38a4
+- package: github.com/buger/goterm
+  version: bc6c333206f446a53cac4db5d2e6a4316139d737
