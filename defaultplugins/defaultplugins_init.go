@@ -50,8 +50,8 @@ type Plugin struct {
 	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
 	bfdEchoFunctionIndex idxvpp.NameToIdxRW
 
-	bfdConfigurator      *ifplugin.BFDConfigurator
-	bdConfigurator      *l2plugin.BDConfigurator
+	bfdConfigurator   *ifplugin.BFDConfigurator
+	bdConfigurator    *l2plugin.BDConfigurator
 	fibConfigurator   *l2plugin.FIBConfigurator
 	xcConfigurator    *l2plugin.XConnectConfigurator
 	bdIndexes         bdidx.BDIndexRW
@@ -344,7 +344,7 @@ func (plugin *Plugin) AfterInit() error {
 		return err
 	}
 
-	log.Debug("vpp plugins AfterInit finished succesfully")
+	log.Debug("vpp plugins AfterInit finished successfully")
 
 	return nil
 }

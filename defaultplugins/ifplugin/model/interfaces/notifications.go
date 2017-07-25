@@ -11,7 +11,7 @@ const (
 	// COUNTERS represents interface state with updated counters
 	COUNTERS InterfaceStateNotificationType = 2
 	// DELETED represents the event when the interface was deleted from the VPP
-	// Note, some north bound config updates require delete and create the netwrok interface one more time
+	// Note, some north bound config updates require delete and create the network interface one more time
 	DELETED InterfaceStateNotificationType = 3
 )
 

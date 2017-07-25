@@ -196,7 +196,7 @@ func transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.MacipA
 				aclMacIPRule.SrcIPAddr = srcIPAddress.To16()
 				aclMacIPRule.SrcIPPrefixLen = uint8(macIPRule.SourceAddressPrefix)
 			} else {
-				return aclMacIPRules, fmt.Errorf("IP address %v: unkonwn version", macIPRule.SourceAddress)
+				return aclMacIPRules, fmt.Errorf("IP address %v: unknown version", macIPRule.SourceAddress)
 			}
 			// MAC + mask
 			srcMac, err := net.ParseMAC(macIPRule.SourceMacAddress)

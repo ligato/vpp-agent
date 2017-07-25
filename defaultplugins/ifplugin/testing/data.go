@@ -22,7 +22,7 @@ var (
 		IpAddresses: []string{"10.0.0.11/24"},
 	}
 
-	// Memif100011Slave is an example of a memory interface configuration. Intentionaly simmilar to Memif100011.
+	// Memif100011Slave is an example of a memory interface configuration. Intentionaly similar to Memif100011.
 	// Here is only one different Master=false.
 	Memif100011Slave = interfaces.Interfaces_Interface{
 		Name:    "memif1",

@@ -111,7 +111,7 @@ func (plugin *examplePlugin) consume() (err error) {
 	return nil
 }
 
-// uses the NameToIndexMapping to explicity lookup
+// use the NameToIndexMapping to lookup
 func (plugin *examplePlugin) lookup() (err error) {
 	// /vnf-agent/agent0/vpp/config/v1/interface/egresXY
 	if _, iface0, found0 := plugin.swIfIdxLocal.LookupIdx("local0"); found0 {
