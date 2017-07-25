@@ -53,7 +53,7 @@ This is possible because:
 Each microservice has it's own lifecycle therefore the agent is designed in the way that 
 it recovers from situations that different microservice (db, message bus...) is temporary unavailable.
 
-The same principle can be applied also for VPP Agent Proces & VPP Process inside one container.
+The same principle can be applied also for VPP Agent Process & VPP Process inside one container.
 VPP Agent checks the VPP actual configuration and does data synchronization by polling latest
 configuration from the Data Store.
 

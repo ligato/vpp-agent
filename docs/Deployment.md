@@ -1,16 +1,16 @@
 # Deployment
 
-VPP Agent can run everywhere where VPP is installed. It can run either in VM or container.
+VPP Agent can run everywhere where VPP is installed. It can run either in a VM or in a container.
  
-Benefits of putting VPP to a container
- * simplifies: upgrade, start/top, potentially also scaling
+Benefits of putting VPP into a container
+ * simplifies: upgrade, start/stop, potentially also scaling
  * introducing microservices takes advantage of small & reusable apps
  * supports container healing 
  
 ## K8s integration
-Following diagram depics VPP deployed in:
+Following diagram depicts VPP deployed in:
 - Data Plane vSwitch
-- Control Plane vSwitch (TBD [Contive](http://contiv.github.io/) integration)
+- Control Plane vSwitch (TBD [Contiv](http://contiv.github.io/) integration)
 - VPP VNF Container
 - Non VPP Container
 
@@ -42,9 +42,9 @@ VPP Agent watches particular key prefixes in Data Store using grpcsync package.
 ![grpc northbound](imgs/deployment_nb_grpc.png)
 TBD links to the code
 
-### Embeded deployment
-VPP Agent can be embedded in different project. For integration with Contiv we use ebmedded deployment.
-In this case VPP Agent get's the configuration from Local clivent v1 through in memory calls.
+### Embedded deployment
+VPP Agent can be embedded in a different project. For integration with Contiv we use embedded deployment.
+In this case VPP Agent gets the configuration from Local client v1 through in memory calls.
 
 ![embeded deployment](imgs/deployment_embeded.png)
 TBD links to the code
