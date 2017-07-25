@@ -49,7 +49,7 @@ func (plugin *Plugin) changePropagateError() {
 
 			if errInfo == nil && change.GetChangeType() == db.Delete {
 				// Data were successfully removed so delete all error entries related to the data (if exists)
-				plugin.removeOldestErrorLogEntry(key)
+				plugin.removeErrorLog(key)
 			} else if errInfo != nil {
 				// There is an error to store
 				plugin.processError(errInfo, key, changeType, change)
@@ -229,6 +229,27 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 	}
 	return nil
 }
+
+func (plugin *Plugin) removeErrorLog(key string) {
+	dividedKey := strings.Split(key, "/")
+	// Last part of the key is a name
+	name := dividedKey[len(dividedKey)-1]
+	// The rest is a prefix
+	prefix := strings.Replace(key, name, "", 1)
+
+	if prefix == interfaces.InterfacePrefix {
+		key := interfaces.InterfaceErrorKey(name)
+		plugin.Transport.PublishData(key, nil)
+		log.Infof("Error log for interface %v cleared", name)
+	} else if prefix == l2.BdPrefix {
+		key := l2.BridgeDomainKey(name)
+		plugin.Transport.PublishData(key, nil)
+		log.Infof("Error log for bridge domain %v cleared", name)
+	} else {
+		log.Warnf("Unknown type of prefix: %v", prefix)
+	}
+}
+
 
 // Generic method which can be used to remove oldest error data under provided key
 func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
