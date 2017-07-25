@@ -289,30 +289,45 @@ func (m *InterfacesState_Interface_Statistics) String() string { return proto.Co
 func (*InterfacesState_Interface_Statistics) ProtoMessage()    {}
 
 type InterfaceErrors struct {
-	Interface []*InterfaceErrors_InterfaceError `protobuf:"bytes,1,rep,name=interface" json:"interface,omitempty"`
+	Interface []*InterfaceErrors_Interface `protobuf:"bytes,1,rep,name=interface" json:"interface,omitempty"`
 }
 
 func (m *InterfaceErrors) Reset()         { *m = InterfaceErrors{} }
 func (m *InterfaceErrors) String() string { return proto.CompactTextString(m) }
 func (*InterfaceErrors) ProtoMessage()    {}
 
-func (m *InterfaceErrors) GetInterface() []*InterfaceErrors_InterfaceError {
+func (m *InterfaceErrors) GetInterface() []*InterfaceErrors_Interface {
 	if m != nil {
 		return m.Interface
 	}
 	return nil
 }
 
-type InterfaceErrors_InterfaceError struct {
-	InterfaceName string `protobuf:"bytes,1,opt,name=interface_name,proto3" json:"interface_name,omitempty"`
-	ChangeType    string `protobuf:"bytes,2,opt,name=change_type,proto3" json:"change_type,omitempty"`
-	ErrorMessage  string `protobuf:"bytes,3,opt,name=error_message,proto3" json:"error_message,omitempty"`
-	LastChange    int64  `protobuf:"varint,4,opt,name=last_change,proto3" json:"last_change,omitempty"`
+type InterfaceErrors_Interface struct {
+	InterfaceName string                                 `protobuf:"bytes,1,opt,name=interface_name,proto3" json:"interface_name,omitempty"`
+	ErrorData     []*InterfaceErrors_Interface_ErrorData `protobuf:"bytes,2,rep,name=error_data" json:"error_data,omitempty"`
 }
 
-func (m *InterfaceErrors_InterfaceError) Reset()         { *m = InterfaceErrors_InterfaceError{} }
-func (m *InterfaceErrors_InterfaceError) String() string { return proto.CompactTextString(m) }
-func (*InterfaceErrors_InterfaceError) ProtoMessage()    {}
+func (m *InterfaceErrors_Interface) Reset()         { *m = InterfaceErrors_Interface{} }
+func (m *InterfaceErrors_Interface) String() string { return proto.CompactTextString(m) }
+func (*InterfaceErrors_Interface) ProtoMessage()    {}
+
+func (m *InterfaceErrors_Interface) GetErrorData() []*InterfaceErrors_Interface_ErrorData {
+	if m != nil {
+		return m.ErrorData
+	}
+	return nil
+}
+
+type InterfaceErrors_Interface_ErrorData struct {
+	ChangeType   string `protobuf:"bytes,1,opt,name=change_type,proto3" json:"change_type,omitempty"`
+	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,proto3" json:"error_message,omitempty"`
+	LastChange   int64  `protobuf:"varint,3,opt,name=last_change,proto3" json:"last_change,omitempty"`
+}
+
+func (m *InterfaceErrors_Interface_ErrorData) Reset()         { *m = InterfaceErrors_Interface_ErrorData{} }
+func (m *InterfaceErrors_Interface_ErrorData) String() string { return proto.CompactTextString(m) }
+func (*InterfaceErrors_Interface_ErrorData) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("interfaces.InterfaceType", InterfaceType_name, InterfaceType_value)
