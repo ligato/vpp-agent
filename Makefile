@@ -37,9 +37,9 @@ endef
 # install-only binaries
 define install_only
 	@echo "# installing vpp-agent"
-	@cd agent/cmd/vpp-agent && go install -v ${LDFLAGS}
+	@cd cmd/vpp-agent && go install -v ${LDFLAGS}
 	@echo "# installing vpp-agent-ctl"
-	@cd agent/cmd/vpp-agent-ctl && go install -v
+	@cd cmd/vpp-agent-ctl && go install -v
 	@echo "# done"
 endef
 
