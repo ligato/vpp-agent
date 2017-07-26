@@ -22,7 +22,7 @@ ADD agent.tar.gz .
 RUN dpkg -i vpp/build-root/vpp-lib_*.deb vpp/build-root/vpp_*.deb vpp/build-root/vpp-plugins_*.deb
 
 # install agent
-RUN mv agent/vpp-agent agent/generic-agent agent/vpp-agent-ctl agent/agentctl /bin
+RUN mv agent/vpp-agent agent/vpp-agent-ctl agent/agentctl /bin
 
 # remove packages
 RUN rm -rf vpp/ && rm -rf agent/
