@@ -8,7 +8,7 @@
 Please note that the content of the repository is currently WORK IN PROGRESS.
 
 The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://fd.io/)) 
-built on [cn-infra](github.com/ligato/cn-infra).
+built on [cn-infra](https://github.com/ligato/cn-infra).
 
 VPP Agent provides plugins that process high level (north-bound) configuration which 
 is carefully translated to low level VPP Binary API calls.
@@ -22,7 +22,7 @@ is carefully translated to low level VPP Binary API calls.
   * [ACL](defaultplugins/aclplugin) - configures VPP ACL Plugin
 * [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
-* [Core](github.com/ligato/cn-infra/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](github.com/ligato/cn-infra)
+* [Core](https://github.com/ligato/cn-infra/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
 1. Run VPP + VPP Agent in Docker image
