@@ -228,7 +228,7 @@ var (
 		},
 		Mtu: 1500,
 	}
-
+	// XConMemif1ToMemif2 defines xconnect between memifs
 	XConMemif1ToMemif2 = l2.XConnectPairs_XConnectPair{
 		ReceiveInterface:  memif1AsSlave.Name,
 		TransmitInterface: memif2.Name,
@@ -273,7 +273,7 @@ var (
 		IpAddresses: []string{"10.0.0.1/24"},
 	}
 
-	// BDLoopbackToTap1 is a bridge domain with tap1 and loopback1 interfaces in it.
+	// BDLoopback1ToTap1 is a bridge domain with tap1 and loopback1 interfaces in it.
 	// Loopback is set to be BVI.
 	BDLoopback1ToTap1 = l2.BridgeDomains_BridgeDomain{
 		Name:                "br1",

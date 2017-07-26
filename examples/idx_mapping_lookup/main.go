@@ -101,7 +101,7 @@ func (plugin *ExamplePlugin) Close() error {
 	return nil
 }
 
-// Metadata structure. It can contain any number of fields of different types. Metadata is optional and can be nil
+// Meta structure. It can contain any number of fields of different types. Metadata is optional and can be nil
 type Meta struct {
 	ip     string
 	prefix uint32
