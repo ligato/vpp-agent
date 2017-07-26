@@ -86,6 +86,13 @@ define lint_only
     @echo "# done"
 endef
 
+# run code formatter
+define format_only
+    @echo "# formatting the code"
+    @./scripts/gofmt.sh
+    @echo "# done"
+endef
+
 # build examples only
 define build_examples_only
     @echo "# building examples"
@@ -191,6 +198,10 @@ test-cover-xml:
 # run & print code analysis
 lint:
 	$(call lint_only)
+
+# format the code
+format:
+	$(call format_only)
 
 
 # clean
