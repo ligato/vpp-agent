@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/cmd/agentctl/impl"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/spf13/cobra"
 )
 
 // Can be used to put bridge domain configuration to ETCD. This command can be used with attribute flags
@@ -80,11 +80,11 @@ $ agentctl d b -l <agent-label> -n <bd-name>
 }
 
 // The command is used to add or remove interface in bridge domain
-var l2InterfaceCommand = &cobra.Command {
-	Use:     "interface -l <agent-label> -n <bd-name> -i<interface-name>",
-	Aliases: []string{"i", "if", "int"},
+var l2InterfaceCommand = &cobra.Command{
+	Use:        "interface -l <agent-label> -n <bd-name> -i<interface-name>",
+	Aliases:    []string{"i", "if", "int"},
 	SuggestFor: []string{"i", "in", "int", "inte", "interf"},
-	Short:   "Attach interface to bridge domain",
+	Short:      "Attach interface to bridge domain",
 	Long: `
 This command is used to put interface to the bridge domain configuration.
 Required flags are vpp label, bridge domain name (to identify where the interface
@@ -116,11 +116,11 @@ $ agentctl p b i -l <agent-label> -n <bd-name> -i <interface-name> -D
 }
 
 // The command is used to add or remove ARP table entry in bridge domain
-var l2ArpEntryCommand = &cobra.Command {
-	Use:     "arp -l <agent-label> -n <bd-name> -i<ip-address>",
-	Aliases: []string{"a", "ar"},
+var l2ArpEntryCommand = &cobra.Command{
+	Use:        "arp -l <agent-label> -n <bd-name> -i<ip-address>",
+	Aliases:    []string{"a", "ar"},
 	SuggestFor: []string{"a", "ar"},
-	Short:   "Add ARP entry to a bridge domain ARP table",
+	Short:      "Add ARP entry to a bridge domain ARP table",
 	Long: `
 This command is used to add ARP entry to the ARP table within specified bridge domain.
 Minimally required flags are vpp label, bridge domain name (to identify where the
@@ -185,8 +185,8 @@ $ agentctl p b f -l <agent-label> -n <bd-name> -i <mac-address> -D
 
 var (
 	l2InterfaceFlags impl.BridgeDomainInterfaceFields
-	l2ArpEntryFlags impl.BridgeDomainArpFields
-	l2FibEntryFlags impl.L2FIBEntryFields
+	l2ArpEntryFlags  impl.BridgeDomainArpFields
+	l2FibEntryFlags  impl.L2FIBEntryFields
 )
 
 func init() {
