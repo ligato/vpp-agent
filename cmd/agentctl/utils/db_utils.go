@@ -56,6 +56,20 @@ type InterfaceWithMD struct {
 	State  *IfstateWithMD
 }
 
+// InterfaceErrorWithMD contains a data record for interface errors and its
+// Etcd metadata
+type InterfaceErrorWithMD struct {
+	VppMetaData
+	InterfaceErrorList []*interfaces.InterfaceErrors_Interface
+}
+
+// BridgeDomainErrorWithMD contains a data record for bridge domain errors and its
+// Etcd metadata
+type BridgeDomainErrorWithMD struct {
+	VppMetaData
+	BdErrorList []*l2.BridgeDomainErrors_BridgeDomain
+}
+
 // BdWithMD contains a Bridge Domain data record and its Etcd
 // metadata
 type BdWithMD struct {
@@ -94,13 +108,15 @@ type VppStatusWithMD struct {
 // VppData defines a structure to hold all Etcd data records (of all
 // types) for one VPP.
 type VppData struct {
-	Interfaces      map[string]InterfaceWithMD
-	BridgeDomains   map[string]BdWithMD
-	FibTableEntries FibTableWithMD
-	XConnectPairs   map[string]XconnectWithMD
-	StaticRoutes    StaticRoutesWithMD
-	Status          map[string]VppStatusWithMD
-	ShowEtcd        bool
+	Interfaces         map[string]InterfaceWithMD
+	InterfaceErrors    map[string]InterfaceErrorWithMD
+	BridgeDomains      map[string]BdWithMD
+	BridgeDomainErrors map[string]BridgeDomainErrorWithMD
+	FibTableEntries    FibTableWithMD
+	XConnectPairs      map[string]XconnectWithMD
+	StaticRoutes       StaticRoutesWithMD
+	Status             map[string]VppStatusWithMD
+	ShowEtcd           bool
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
@@ -137,7 +153,6 @@ func (ed EtcdDump) CreateEmptyRecord(key string) {
 // found.
 func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 	labelFilter []string, typeFilter []string) (found bool, err error) {
-
 	label, dataType, params, plugStatCfgRev := ParseKey(key)
 	if !isItemAllowed(label, labelFilter) {
 		return false, nil
@@ -165,8 +180,12 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[label], err = readInterfaceFromDb(db, vd, key, params)
 	case interfaces.IfStatePrefix:
 		ed[label], err = readIfstateFromDb(db, vd, key, params)
+	case interfaces.IfStateErrorPrefix:
+		ed[label], err = readInterfaceErrorFromDb(db, vd, key, params)
 	case l2.BdPrefix:
 		ed[label], err = readBdFromDb(db, vd, key, params)
+	case l2.BdErrPrefix:
+		ed[label], err = readBdErrorFromDb(db, vd, key, params)
 	case l2.FIBPrefix:
 		ed[label], err = readFibFromDb(db, vd, key, params)
 	case l2.XconnectPrefix:
@@ -223,6 +242,24 @@ func readIfstateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []s
 	return vd, err
 }
 
+func readInterfaceErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, params []string) (*VppData, error) {
+	ife := &interfaces.InterfaceErrors_Interface{}
+	if len(params) == 0 {
+		fmt.Printf("WARNING: Invalid interface Key '%s'\n", key)
+		return vd, nil
+	}
+	found, rev, err := readDataFromDb(db, key, ife)
+	if found && err == nil {
+		ifaceErrList := vd.InterfaceErrors[params[0]].InterfaceErrorList
+		ifaceErrList = append(ifaceErrList, ife)
+		vd.InterfaceErrors[params[0]] = InterfaceErrorWithMD{
+			VppMetaData{rev, key}, ifaceErrList,
+		}
+	}
+
+	return vd, err
+}
+
 func readBdFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
 	if len(parms) == 0 {
 		fmt.Printf("WARNING: Invalid bridge domain Key '%s'\n", key)
@@ -234,6 +271,24 @@ func readBdFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string
 		vd.BridgeDomains[parms[0]] =
 			BdWithMD{VppMetaData{rev, key}, bd}
 	}
+	return vd, err
+}
+
+func readBdErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, params []string) (*VppData, error) {
+	bde := &l2.BridgeDomainErrors_BridgeDomain{}
+	if len(params) == 0 {
+		fmt.Printf("WARNING: Invalid interface Key '%s'\n", key)
+		return vd, nil
+	}
+	found, rev, err := readDataFromDb(db, key, bde)
+	if found && err == nil {
+		bdErrList := vd.BridgeDomainErrors[params[0]].BdErrorList
+		bdErrList = append(bdErrList, bde)
+		vd.BridgeDomainErrors[params[0]] = BridgeDomainErrorWithMD{
+			VppMetaData{rev, key}, bdErrList,
+		}
+	}
+
 	return vd, err
 }
 
@@ -322,13 +377,15 @@ func DeleteDataFromDb(db keyval.ProtoBroker, key string,
 
 func newVppDataRecord() *VppData {
 	return &VppData{
-		Interfaces:      make(map[string]InterfaceWithMD),
-		BridgeDomains:   make(map[string]BdWithMD),
-		FibTableEntries: FibTableWithMD{},
-		XConnectPairs:   make(map[string]XconnectWithMD),
-		StaticRoutes:    StaticRoutesWithMD{},
-		Status:          make(map[string]VppStatusWithMD),
-		ShowEtcd:        false,
+		Interfaces:         make(map[string]InterfaceWithMD),
+		InterfaceErrors:    make(map[string]InterfaceErrorWithMD),
+		BridgeDomains:      make(map[string]BdWithMD),
+		BridgeDomainErrors: make(map[string]BridgeDomainErrorWithMD),
+		FibTableEntries:    FibTableWithMD{},
+		XConnectPairs:      make(map[string]XconnectWithMD),
+		StaticRoutes:       StaticRoutesWithMD{},
+		Status:             make(map[string]VppStatusWithMD),
+		ShowEtcd:           false,
 	}
 }
 

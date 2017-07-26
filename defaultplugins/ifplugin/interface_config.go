@@ -441,7 +441,6 @@ func canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, ol
 }
 
 func canVxlanBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Vxlan, oldConfig *intf.Interfaces_Interface_Vxlan) bool {
-
 	if newConfig.SrcAddress != oldConfig.SrcAddress || newConfig.DstAddress != oldConfig.DstAddress || newConfig.Vni != oldConfig.Vni {
 		return false
 	}
