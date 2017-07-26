@@ -11,7 +11,8 @@ The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://f
 built on [cn-infra](https://github.com/ligato/cn-infra).
 
 VPP Agent provides plugins that process high level (north-bound) configuration which 
-is carefully translated to low level VPP Binary API calls.
+is carefully translated to low level VPP Binary API calls. North-bound configuration
+is modelled by proto files that can be found in the [default plugins](defaultplugins).
 
 ![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
  
