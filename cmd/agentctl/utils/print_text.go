@@ -50,8 +50,8 @@ func (p pfx) getPrefix(level int) string {
 	return strings.Repeat(" ", level*p.perLevelSpaces)
 }
 
-// PrintDataAsText prints data from an EtcdDump repo in text
-// format.
+// PrintDataAsText prints data from an EtcdDump repo in text format. If tree option is chosen, output is printed with
+// tree lines
 func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffer {
 	prefixer = newPrefixer(printAsTree, perLevelSpaces)
 	keys := ed.getSortedKeys()
@@ -228,7 +228,6 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{end}}" +
 			"{{end}}" +
 			"\n{{pfx 4}}BVI: {{.BviInterface}}" +
-
 
 			"{{end}}" +
 

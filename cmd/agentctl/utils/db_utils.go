@@ -74,14 +74,18 @@ type BridgeDomainErrorWithMD struct {
 // metadata
 type BdWithMD struct {
 	Config *BdConfigWithMD
-	State *BdStateWithMD
+	State  *BdStateWithMD
 }
 
+// BdConfigWithMD contains a Bridge Domain config data record and its Etcd
+// metadata
 type BdConfigWithMD struct {
 	VppMetaData
 	*l2.BridgeDomains_BridgeDomain
 }
 
+// BdStateWithMD contains a Bridge Domain state data record and its Etcd
+// metadata
 type BdStateWithMD struct {
 	VppMetaData
 	*l2.BridgeDomainState_BridgeDomain
@@ -282,7 +286,7 @@ func readBdConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []
 	if found && err == nil {
 		vd.BridgeDomains[parms[0]] = BdWithMD{
 			Config: &BdConfigWithMD{VppMetaData{rev, key}, bd},
-			State: vd.BridgeDomains[parms[0]].State,
+			State:  vd.BridgeDomains[parms[0]].State,
 		}
 	}
 	return vd, err
@@ -298,7 +302,7 @@ func readBdStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []s
 	if found && err == nil {
 		vd.BridgeDomains[parms[0]] = BdWithMD{
 			Config: vd.BridgeDomains[parms[0]].Config,
-			State: &BdStateWithMD{VppMetaData{rev, key}, bd},
+			State:  &BdStateWithMD{VppMetaData{rev, key}, bd},
 		}
 	}
 	return vd, err

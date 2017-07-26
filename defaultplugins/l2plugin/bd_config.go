@@ -21,6 +21,7 @@
 package l2plugin
 
 import (
+	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -31,7 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/govppmux"
 	"github.com/ligato/vpp-agent/idxvpp"
-	"fmt"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes
