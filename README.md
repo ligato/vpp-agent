@@ -16,13 +16,13 @@ is carefully translated to low level VPP Binary API calls.
 ![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
  
 * Default VPP Plugins - provides abstraction on top of VPP binary API for:
-  * NET Interface - Network interfaces configuration (Gigi ETH, MEMIF, AF_Packet, VXLAN, Loopback...)
-  * L2 - Bridge Domains, FIBs...
-  * L3 - IP Routes, VRFs...
-  * ACL - configures VPP ACL Plugin
-* GOVPP - allows other plugins to access VPP independently on each other by means of connection multiplexing
-* Linux (VETH) - allows optional configuration of Linux virtual ethernet interfaces
-* Core - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](github.com/ligato/cn-infra)
+  * [NET Interface](defaultplugins/ifplugin) - Network interfaces configuration (Gigi ETH, MEMIF, AF_Packet, VXLAN, Loopback...)
+  * [L2](defaultplugins/l2plugin) - Bridge Domains, FIBs...
+  * [L3](defaultplugins/l3plugin) - IP Routes, VRFs...
+  * [ACL](defaultplugins/aclplugin) - configures VPP ACL Plugin
+* [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
+* [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
+* [Core](github.com/ligato/cn-infra/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
 1. Run VPP + VPP Agent in Docker image
