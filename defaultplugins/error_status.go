@@ -32,7 +32,7 @@ type ErrCtx struct {
 
 // Maximum count of entries which can be stored in error log. If this number is exceeded, the oldest log entry will be
 // removed
-const maxErrCount = 50
+const maxErrCount = 10
 
 // Wait on ErrCtx object which is then used to handle the error log. Two cases are treated:
 // 1. If there is any error present, save it together with time stamp and change type under particular key
@@ -253,20 +253,27 @@ func (plugin *Plugin) removeErrorLog(key string) {
 
 // Generic method which can be used to remove oldest error data under provided key
 func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
-	dividedKey := strings.Split(key, "/")
-	// Last part of the key is a name
-	name := dividedKey[len(dividedKey)-1]
-
-	_, data, exists := plugin.errorIndexes.LookupIdx(name)
+	log.Warnf("Key: %v", key)
+	var name string
+	var metaData interface{}
+	var exists bool
+	if strings.HasPrefix(key, interfaces.IfStateErrorPrefix) {
+		name = strings.Replace(key, interfaces.IfStateErrorPrefix, "", 1)
+		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
+	} else if strings.HasPrefix(key, l2.BdErrPrefix) {
+		name = strings.Replace(key, l2.BdErrPrefix, "", 1)
+		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
+	}
 	if !exists {
 		log.Debugf("There is no error log related to the %v", name)
 		return
 	}
-	if data == nil {
-		log.Infof("Error-Idx-Map entry %v: missing data", name)
+	if metaData == nil {
+		log.Infof("Error-Idx-Map entry %v: missing metaData", name)
 		return
 	}
-	switch errData := data.(type) {
+	log.Warnf("Name: %v", name)
+	switch errData := metaData.(type) {
 	// Interfaces
 	case []*interfaces.InterfaceErrors_Interface_ErrorData:
 		key := interfaces.InterfaceErrorKey(name)
@@ -285,7 +292,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 			plugin.Transport.PublishData(key, nil)
 			plugin.errorIndexes.UnregisterName(name)
 		}
-	// Bridge domains
+		// Bridge domains
 	case []*l2.BridgeDomainErrors_BridgeDomain_ErrorData:
 		key := l2.BridgeDomainErrorKey(name)
 		// If there are more than one error under the bridge domain key, remove the oldest one

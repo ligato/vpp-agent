@@ -149,7 +149,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{with $interfaceErrors}}{{range .}}" +
 			"{{with .InterfaceErrorList}}{{range .}}" +
 			"{{if eq .InterfaceName $iface}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:{{range $index, $error := .}}\n" +
-			"{{pfx 4}}Changed: {{convertTime $error.LastChange}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			"{{end}}\n{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
 
 			"{{end}}" +
@@ -202,7 +202,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{with .ErrorData}}" +
 			"\n{{pfx 3}}{{setRed \"Errors\"}}" +
 			"{{range $index, $error := .}}\n" +
-			"{{pfx 4}}Changed: {{convertTime $error.LastChange}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			"{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
 			"{{end}}\n" +
 
@@ -229,9 +229,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 		for _, key := range keys {
 			vd, _ := ed[key]
 			vd.ShowEtcd = showEtcd
-
-			//fmt.Printf("%v\n", vd.InterfaceErrors["a"].InterfaceErrorList[2].ErrorData[0])
-
+			
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
 				for _, bdi := range bd.Interfaces {
