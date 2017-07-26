@@ -177,9 +177,11 @@ func getL2Data(l2ConfigData map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	l2Data := []*l2.BridgeDomains_BridgeDomain{}
 	var keyset []string
 	for _, bdData := range l2ConfigData {
-		bd := bdData.BridgeDomains_BridgeDomain
-		l2Data = append(l2Data, bd)
-		keyset = append(keyset, bdData.Key)
+		if bdData.Config != nil {
+			bd := bdData.Config.BridgeDomains_BridgeDomain
+			l2Data = append(l2Data, bd)
+			keyset = append(keyset, bdData.Config.Key)
+		}
 	}
 	sort.Strings(keyset)
 	l2Root.BridgeDomains = l2Data

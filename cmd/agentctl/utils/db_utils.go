@@ -35,25 +35,25 @@ type VppMetaData struct {
 	Key string
 }
 
-// IfconfigWithMD contains a data record for interface configuration
+// InterfaceWithMD contains a data record for interface and its
+// Etcd metadata
+type InterfaceWithMD struct {
+	Config *IfConfigWithMD
+	State  *IfStateWithMD
+}
+
+// IfConfigWithMD contains a data record for interface configuration
 // and its Etcd metadata
-type IfconfigWithMD struct {
+type IfConfigWithMD struct {
 	VppMetaData
 	*interfaces.Interfaces_Interface
 }
 
-// IfstateWithMD contains a data record for interface State and its
+// IfStateWithMD contains a data record for interface State and its
 // Etcd metadata
-type IfstateWithMD struct {
+type IfStateWithMD struct {
 	VppMetaData
 	*interfaces.InterfacesState_Interface
-}
-
-// InterfaceWithMD contains a data record for interface and its
-// Etcd metadata
-type InterfaceWithMD struct {
-	Config *IfconfigWithMD
-	State  *IfstateWithMD
 }
 
 // InterfaceErrorWithMD contains a data record for interface errors and its
@@ -73,8 +73,18 @@ type BridgeDomainErrorWithMD struct {
 // BdWithMD contains a Bridge Domain data record and its Etcd
 // metadata
 type BdWithMD struct {
+	Config *BdConfigWithMD
+	State *BdStateWithMD
+}
+
+type BdConfigWithMD struct {
 	VppMetaData
 	*l2.BridgeDomains_BridgeDomain
+}
+
+type BdStateWithMD struct {
+	VppMetaData
+	*l2.BridgeDomainState_BridgeDomain
 }
 
 // FibTableWithMD contains a FIB table data record and its Etcd
@@ -177,13 +187,15 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 	}
 	switch dataType {
 	case interfaces.InterfacePrefix:
-		ed[label], err = readInterfaceFromDb(db, vd, key, params)
+		ed[label], err = readIfConfigFromDb(db, vd, key, params)
 	case interfaces.IfStatePrefix:
-		ed[label], err = readIfstateFromDb(db, vd, key, params)
+		ed[label], err = readIfStateFromDb(db, vd, key, params)
 	case interfaces.IfStateErrorPrefix:
 		ed[label], err = readInterfaceErrorFromDb(db, vd, key, params)
 	case l2.BdPrefix:
-		ed[label], err = readBdFromDb(db, vd, key, params)
+		ed[label], err = readBdConfigFromDb(db, vd, key, params)
+	case l2.BdStatePrefix:
+		ed[label], err = readBdStateFromDb(db, vd, key, params)
 	case l2.BdErrPrefix:
 		ed[label], err = readBdErrorFromDb(db, vd, key, params)
 	case l2.FIBPrefix:
@@ -209,7 +221,7 @@ func isItemAllowed(item string, filter []string) bool {
 	return false
 }
 
-func readInterfaceFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
+func readIfConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
 	ifc := &interfaces.Interfaces_Interface{}
 	if len(parms) == 0 {
 		fmt.Printf("WARNING: Invalid interface Key '%s'\n", key)
@@ -218,7 +230,7 @@ func readInterfaceFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms [
 	found, rev, err := readDataFromDb(db, key, ifc)
 	if found && err == nil {
 		vd.Interfaces[parms[0]] = InterfaceWithMD{
-			Config: &IfconfigWithMD{VppMetaData{rev, key}, ifc},
+			Config: &IfConfigWithMD{VppMetaData{rev, key}, ifc},
 			State:  vd.Interfaces[parms[0]].State,
 		}
 	}
@@ -226,7 +238,7 @@ func readInterfaceFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms [
 	return vd, err
 }
 
-func readIfstateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
+func readIfStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
 	ifs := &interfaces.InterfacesState_Interface{}
 	if len(parms) == 0 {
 		fmt.Printf("WARNING: Invalid ifstate Key '%s'\n", key)
@@ -236,7 +248,7 @@ func readIfstateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []s
 	if found && err == nil {
 		vd.Interfaces[parms[0]] = InterfaceWithMD{
 			Config: (vd.Interfaces[parms[0]]).Config,
-			State:  &IfstateWithMD{VppMetaData{rev, key}, ifs},
+			State:  &IfStateWithMD{VppMetaData{rev, key}, ifs},
 		}
 	}
 	return vd, err
@@ -260,16 +272,34 @@ func readInterfaceErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, pa
 	return vd, err
 }
 
-func readBdFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
+func readBdConfigFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
 	if len(parms) == 0 {
-		fmt.Printf("WARNING: Invalid bridge domain Key '%s'\n", key)
+		fmt.Printf("WARNING: Invalid bridge domain config Key '%s'\n", key)
 		return vd, nil
 	}
 	bd := &l2.BridgeDomains_BridgeDomain{}
 	found, rev, err := readDataFromDb(db, key, bd)
 	if found && err == nil {
-		vd.BridgeDomains[parms[0]] =
-			BdWithMD{VppMetaData{rev, key}, bd}
+		vd.BridgeDomains[parms[0]] = BdWithMD{
+			Config: &BdConfigWithMD{VppMetaData{rev, key}, bd},
+			State: vd.BridgeDomains[parms[0]].State,
+		}
+	}
+	return vd, err
+}
+
+func readBdStateFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []string) (*VppData, error) {
+	if len(parms) == 0 {
+		fmt.Printf("WARNING: Invalid bridge domain state Key '%s'\n", key)
+		return vd, nil
+	}
+	bd := &l2.BridgeDomainState_BridgeDomain{}
+	found, rev, err := readDataFromDb(db, key, bd)
+	if found && err == nil {
+		vd.BridgeDomains[parms[0]] = BdWithMD{
+			Config: vd.BridgeDomains[parms[0]].Config,
+			State: &BdStateWithMD{VppMetaData{rev, key}, bd},
+		}
 	}
 	return vd, err
 }
