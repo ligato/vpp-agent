@@ -22,7 +22,7 @@ is carefully translated to low level VPP Binary API calls.
   * [ACL](defaultplugins/aclplugin) - configures VPP ACL Plugin
 * [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
-* [Core](https://github.com/ligato/cn-infra/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
+* [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 
 # Quickstart(TBD)
 1. Run VPP + VPP Agent in Docker image
