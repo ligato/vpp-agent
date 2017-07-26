@@ -250,7 +250,6 @@ func (plugin *Plugin) removeErrorLog(key string) {
 	}
 }
 
-
 // Generic method which can be used to remove oldest error data under provided key
 func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	log.Warnf("Key: %v", key)

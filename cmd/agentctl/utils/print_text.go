@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
 import (
@@ -195,7 +209,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			// Etcd metadata
 			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
 
-		    // Bridge domain errors (if present)
+			// Bridge domain errors (if present)
 			"{{with $bridgeDomainErrors}}{{range .}}" +
 			"{{with .BdErrorList}}{{range .}}" +
 			"{{if eq .BdName $element.Name}}" +
@@ -206,8 +220,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
 			"{{end}}\n" +
 
-
-		    // FIB table
+			// FIB table
 			"{{with $fibTableEntries}}\n" +
 			"{{with .FibTable}}" +
 			"{{pfx 2}}FIB-Table:" +
@@ -229,7 +242,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 		for _, key := range keys {
 			vd, _ := ed[key]
 			vd.ShowEtcd = showEtcd
-			
+
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
 				for _, bdi := range bd.Interfaces {
