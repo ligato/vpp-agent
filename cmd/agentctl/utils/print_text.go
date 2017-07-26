@@ -101,11 +101,13 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 	}
 
 	ifTemplate, err := template.New("interfaces").Funcs(ifFuncMap).Parse(
-		"{{$etcd := .ShowEtcd}}{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
+		"{{$etcd := .ShowEtcd}}" +
+			"{{$interfaceErrors := .InterfaceErrors}}" +
+			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
 			"{{$paLbl := \"PhAddr: \"}}" +
 
 			// Interface status (combines status values from config and state)
-			"{{range $index, $element := .}}\n{{pfx 2}}{{setBold $index}}" +
+			"{{range $iface, $element := .}}\n{{pfx 2}}{{setBold $iface}}" +
 			"{{with .State}} ({{.InternalName}}, ifIdx {{.IfIndex}}){{end}}:\n" +
 			"{{pfx 3}}Status: <" +
 			"{{if .Config}}{{isEnabled .Config.Enabled}}{{else}}{{setRed \"NOT-IN-CONFIG\"}}: {{end}}" +
@@ -123,14 +125,24 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 
 			// Physical (MAC) Address from both config and state
 			// (if configured or available from state)
-			"{{if .Config}}{{if .Config.PhysAddress}}\n{{pfx 3}}{{$paLbl}}{{.Config.PhysAddress}}" +
-			"{{if .State}}{{if .State.PhysAddress}}, (s {{.State.PhysAddress}}){{end}}{{end}}" +
-			"{{else if .State}}{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}{{end}}" +
-			"{{else if .State}}{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}{{end}}" +
+			"{{if .Config}}" +
+			"{{if .Config.PhysAddress}}\n{{pfx 3}}{{$paLbl}}{{.Config.PhysAddress}}" +
+			"{{if .State}}{" +
+			"{if .State.PhysAddress}}, (s {{.State.PhysAddress}}){{end}}" +
+			"{{end}}" +
+			"{{else if .State}}" +
+			"{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}" +
+			"{{end}}" +
+			"{{else if .State}}" +
+			"{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}" +
+			"{{end}}" +
 
 			// Link attributes (if available from state)
 			"{{with .State}}{{if or .Mtu .Speed .Duplex}}\n{{pfx 3}}LnkAtr: {{with .Mtu}}mtu {{.}}{{end}}" +
-			"{{with .Speed}}, speed {{.}}{{end}}{{with .Duplex}}, duplex {{.}}{{end}}{{end}}{{end}}" +
+			"{{with .Speed}}, speed {{.}}{{end}}" +
+			"{{with .Duplex}}, duplex {{.}}{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
 			// Interface statistics (if available from State)
 			"{{with .State}}{{with .Statistics}}" +
@@ -138,14 +150,22 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{pfx 3}}Stats:" +
 			"\n{{pfx 4}}In: pkt {{.InPackets}}, byte {{.InBytes}}, errPkt {{.InErrorPackets}}, nobufPkt {{.InNobufPackets}}, missPkt {{.InMissPackets}}" +
 			"\n{{pfx 4}}Out: pkt {{.OutPackets}}, byte {{.OutBytes}}, errPkt {{.OutErrorPackets}}" +
-			"\n{{pfx 4}}Misc: drop {{.DropPackets}}, punt {{.PuntPackets}}, ipv4 {{.Ipv4Packets}}, ipv6 {{.Ipv6Packets}}" +
-			"{{end}}{{end}}{{end}}" +
+			"\n{{pfx 4}}Misc: drop {{.DropPackets}}, punt {{.PuntPackets}}, ipv4 {{.Ipv4Packets}}, ipv6 {{.Ipv6Packets}}{{end}}" +
+			"{{end}}{{end}}" +
 
 			// Etcd metadata for both the config and state records
 			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
 			"{{with .Config}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
 			"{{with .State}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
 			"{{end}}\n" +
+
+			// Interface errors (if present)
+			"{{with $interfaceErrors}}{{range .}}" +
+			"{{with .InterfaceErrorList}}{{range .}}" +
+			"{{if eq .InterfaceName $iface}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:{{range $index, $error := .}}\n" +
+			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			"{{end}}\n{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
+
 			"{{end}}" +
 			"{{end}}")
 	if err != nil {
@@ -153,13 +173,16 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 	}
 
 	bdFuncMap := template.FuncMap{
-		"setBold": setBold,
-		"pfx":     getPrefix,
+		"convertTime": convertTime,
+		"setBold":     setBold,
+		"setRed":      setRed,
+		"pfx":         getPrefix,
 	}
 
 	bdTemplate, err := template.New("bridgeDomains").Funcs(bdFuncMap).Parse(
 		"{{$etcd := .ShowEtcd}}" +
 			"{{$fibTableEntries := .FibTableEntries}}" +
+			"{{$bridgeDomainErrors := .BridgeDomainErrors}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
 			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n{{pfx 3}}Attributes: macAge {{.MacAge}}" +
 
@@ -184,8 +207,19 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{end}}" +
 
 			// Etcd metadata
-			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}\n" +
-			"{{end}}" +
+			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
+
+			// Bridge domain errors (if present)
+			"{{with $bridgeDomainErrors}}{{range .}}" +
+			"{{with .BdErrorList}}{{range .}}" +
+			"{{if eq .BdName $element.Name}}" +
+			"{{with .ErrorData}}" +
+			"\n{{pfx 3}}{{setRed \"Errors\"}}" +
+			"{{range $index, $error := .}}\n" +
+			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			"{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
+			"{{end}}\n" +
+
 			// FIB table
 			"{{with $fibTableEntries}}\n" +
 			"{{with .FibTable}}" +

@@ -486,7 +486,7 @@ func create(db keyval.ProtoBroker, ifname1 string, ipAddr string) {
 	ifs.Interface[0].Enabled = true
 	ifs.Interface[0].Mtu = 1500
 	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "10.1.1.1"
+	ifs.Interface[0].IpAddresses[0] = "10.1.1.2"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
 
@@ -685,7 +685,7 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 	bd.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 1)
 
 	bd.BridgeDomains[0] = new(l2.BridgeDomains_BridgeDomain)
-	bd.BridgeDomains[0].Name = "bd2"
+	bd.BridgeDomains[0].Name = "bd1"
 	bd.BridgeDomains[0].Learn = true
 	bd.BridgeDomains[0].ArpTermination = true
 	bd.BridgeDomains[0].Flood = true
@@ -824,7 +824,7 @@ func reportIfaceErrorState(db keyval.ProtoBroker) {
 		if allReceived {
 			break
 		}
-		entry := &interfaces.InterfaceErrors{}
+		entry := &interfaces.InterfaceErrors_Interface{}
 		err := kv.GetValue(entry)
 		if err != nil {
 			log.Fatal(err)
@@ -847,7 +847,7 @@ func reportBdErrorState(db keyval.ProtoBroker) {
 		if allReceived {
 			break
 		}
-		entry := &l2.BridgeDomainErrors{}
+		entry := &l2.BridgeDomainErrors_BridgeDomain{}
 		err := kv.GetValue(entry)
 		if err != nil {
 			log.Fatal(err)
