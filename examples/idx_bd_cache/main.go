@@ -17,15 +17,15 @@ package main
 import (
 	"fmt"
 	"github.com/ligato/cn-infra/core"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavours/vpp"
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/defaultplugins"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/testing"
+	"github.com/ligato/vpp-agent/flavours/vpp"
 	"time"
-	"github.com/ligato/cn-infra/logging"
 )
 
 // Start Agent plugins selected for this example
@@ -109,10 +109,10 @@ func (plugin *examplePlugin) consume() (err error) {
 			select {
 			case bdIdxEvent := <-bdIdxChan:
 				log.WithFields(logging.Fields{"RegistryTitle": bdIdxEvent.RegistryTitle,
-												"Name": bdIdxEvent.Name, //br1, br2
-												"Del": bdIdxEvent.Del,
-												"IFaces": bdIdxEvent.Metadata.Interfaces}).
-												Info("xxx event received")
+					"Name":   bdIdxEvent.Name, //br1, br2
+					"Del":    bdIdxEvent.Del,
+					"IFaces": bdIdxEvent.Metadata.Interfaces}).
+					Info("xxx event received")
 			case <-time.After(10 * time.Second):
 				watching = false
 			}

@@ -12,6 +12,7 @@ function static_analysis() {
   local CLIENTV1=$(${TOOL} "${PWD}/clientv1${SELECTOR}")
   local CMD=$(${TOOL} "${PWD}/cmd${SELECTOR}")
   local DEFAULTPLUGINS=$(${TOOL} "${PWD}/defaultplugins${SELECTOR}")
+  local EXAMPLES=$(${TOOL} "${PWD}/examples${SELECTOR}")
   local FLAVOURS=$(${TOOL} "${PWD}/flavours${SELECTOR}")
   local IDXVPP=$(${TOOL} "${PWD}/idxvpp${SELECTOR}")
   local GOVPPMUX=$(${TOOL} "${PWD}/govppmux${SELECTOR}")
@@ -20,6 +21,7 @@ function static_analysis() {
   local ALL="$CLIENTV1
 $CMD
 $DEFAULTPLUGINS
+$EXAMPLES
 $FLAVOURS
 $IDXVPP
 $GOVPPMUX
