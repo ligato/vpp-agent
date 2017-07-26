@@ -9,6 +9,7 @@ function static_analysis() {
 
   local FILES=$(find "${PWD}" -mount -name "*.go" -type f -not -path "${PWD}/vendor/*" -exec grep -LE "${WHITELIST_CONTENT}"  {} +)
 
+  local CLIENTV1=$(${TOOL} "${PWD}/clientv1${SELECTOR}")
   local CMD=$(${TOOL} "${PWD}/cmd${SELECTOR}")
   local DEFAULTPLUGINS=$(${TOOL} "${PWD}/defaultplugins${SELECTOR}")
   local FLAVOURS=$(${TOOL} "${PWD}/flavours${SELECTOR}")
@@ -16,7 +17,8 @@ function static_analysis() {
   local GOVPPMUX=$(${TOOL} "${PWD}/govppmux${SELECTOR}")
   local LINUXPLUGIN=$(${TOOL} "${PWD}/linuxplugin${SELECTOR}")
 
-  local ALL="$CMD
+  local ALL="$CLIENTV1
+$CMD
 $DEFAULTPLUGINS
 $FLAVOURS
 $IDXVPP

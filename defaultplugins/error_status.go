@@ -1,3 +1,17 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package defaultplugins
 
 import (
@@ -114,9 +128,9 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change db.PutDel, er
 			continue
 		}
 		interfaceError := &interfaces.InterfaceErrors_Interface_ErrorData{
-			ChangeType:    string(change),
-			ErrorMessage:  err.Error(),
-			LastChange:    time.Now().Unix(),
+			ChangeType:   string(change),
+			ErrorMessage: err.Error(),
+			LastChange:   time.Now().Unix(),
 		}
 		interfaceErrors = append(interfaceErrors, interfaceError)
 	}
@@ -135,7 +149,7 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change db.PutDel, er
 
 	return &interfaces.InterfaceErrors_Interface{
 		InterfaceName: ifName,
-		ErrorData: interfaceErrors,
+		ErrorData:     interfaceErrors,
 	}
 }
 
@@ -172,7 +186,7 @@ func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change db.PutDel,
 	plugin.errorIdxSeq++
 
 	return &l2.BridgeDomainErrors_BridgeDomain{
-		BdName: bdName,
+		BdName:    bdName,
 		ErrorData: bridgeDomainErrors,
 	}
 }
@@ -241,7 +255,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 			log.Infof("Error log for interface %v: oldest entry removed", name)
 			plugin.Transport.PublishData(key, &interfaces.InterfaceErrors_Interface{
 				InterfaceName: name,
-				ErrorData: errData,
+				ErrorData:     errData,
 			})
 			plugin.errorIndexes.RegisterName(name, plugin.errorIdxSeq, errData)
 			plugin.errorIdxSeq++
@@ -258,7 +272,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 			errData = append(errData[:0], errData[1:]...)
 			log.Infof("Error log for bridge domain %v: oldest entry removed", name)
 			plugin.Transport.PublishData(key, &l2.BridgeDomainErrors_BridgeDomain{
-				BdName: name,
+				BdName:    name,
 				ErrorData: errData,
 			})
 			plugin.errorIndexes.RegisterName(name, plugin.errorIdxSeq, errData)
