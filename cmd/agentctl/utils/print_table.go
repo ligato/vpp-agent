@@ -368,7 +368,7 @@ func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 			}
 		}
 	}
-	// At last revert the value to return correct result
+	// At Last revert the value to return correct result
 	return !isZeroColumn
 }
 

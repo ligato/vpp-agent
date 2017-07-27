@@ -66,14 +66,14 @@ func (p *TreeWriter) FlushTree() {
 	//}
 
 	tree, _ := createTree(1, p.lineBuf)
-	stack := &pfxStack{
-		entries:    []pfxStackEntry{},
-		spaces:     p.spaces,
-		firstDash:  p.firstDash,
-		middleDash: p.middleDash,
-		lastDash:   p.lastDash,
+	stack := &PfxStack{
+		Entries:    []PfxStackEntry{},
+		Spaces:     p.spaces,
+		FirstDash:  p.firstDash,
+		MiddleDash: p.middleDash,
+		LastDash:   p.lastDash,
 	}
-	stack.push()
+	stack.Push()
 	p.renderSubtree(tree, stack)
 	p.writeBuf = []byte{}
 }
@@ -112,27 +112,27 @@ func createPrintLineBuf(byteBuf []byte) []printLine {
 }
 
 // renderSubtree is used to recursively render the tree
-func (p *TreeWriter) renderSubtree(tree []printLine, stack *pfxStack) {
+func (p *TreeWriter) renderSubtree(tree []printLine, stack *PfxStack) {
 	for i, pl := range tree {
 		if i == len(tree)-1 {
-			stack.setLast()
+			stack.SetLast()
 		}
 
 		var pp string
 		if pl.line == "" {
-			pp = stack.setTopPfxStackEntry(stack.getPreamble(stack.middleDash))
+			pp = stack.setTopPfxStackEntry(stack.GetPreamble(stack.MiddleDash))
 		} else {
 			pp = stack.getTopPfxStackEntry()
 		}
 		//fmt.Printf("%2d of %2d: level %d, Line: '%s %s'\n",
-		// 		i, len(tree), pl.lnLevel, stack.getPrefix(), pl.line)
-		fmt.Printf("%s %s\n", stack.getPrefix(), pl.line)
+		// 		i, len(tree), pl.lnLevel, stack.GetPrefix(), pl.line)
+		fmt.Printf("%s %s\n", stack.GetPrefix(), pl.line)
 		stack.setTopPfxStackEntry(pp)
 
 		if len(pl.subtree) > 0 {
-			stack.push()
+			stack.Push()
 			p.renderSubtree(pl.subtree, stack)
-			stack.pop()
+			stack.Pop()
 		}
 	}
 }

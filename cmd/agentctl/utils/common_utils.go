@@ -43,7 +43,7 @@ const (
 // data type encoded in the Key. The function returns the microservice
 // label, the data type and a list of parameters that contains path
 // segments that follow the data path segment in the Key URL. The
-// parameter list is empty if data path is the last segment in the
+// parameter list is empty if data path is the Last segment in the
 // Key ..
 //
 // URI Examples:
