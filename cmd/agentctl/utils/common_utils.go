@@ -58,7 +58,6 @@ const (
 // Example for dataType ... "check/status/v1/"
 func ParseKey(key string) (label string, dataType string, params []string, plugStatCfgRev string) {
 	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
-
 	var plugin, statusConfig, version, localDataType string
 	if len(ps) > 0 {
 		label = ps[0]
@@ -193,3 +192,5 @@ func padRight(items []*string, sfx string) {
 		*it = fmt.Sprintf(fs, *it+sfx)
 	}
 }
+
+

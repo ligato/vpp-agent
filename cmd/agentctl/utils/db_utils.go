@@ -45,15 +45,15 @@ type InterfaceWithMD struct {
 // IfConfigWithMD contains a data record for interface configuration
 // and its Etcd metadata
 type IfConfigWithMD struct {
-	VppMetaData
-	*interfaces.Interfaces_Interface
+	Metadata  VppMetaData
+	Interface *interfaces.Interfaces_Interface
 }
 
 // IfStateWithMD contains a data record for interface State and its
 // Etcd metadata
 type IfStateWithMD struct {
-	VppMetaData
-	*interfaces.InterfacesState_Interface
+	Metadata VppMetaData
+	InterfaceState *interfaces.InterfacesState_Interface
 }
 
 // InterfaceErrorWithMD contains a data record for interface errors and its
@@ -194,7 +194,7 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[label], err = readIfConfigFromDb(db, vd, key, params)
 	case interfaces.IfStatePrefix:
 		ed[label], err = readIfStateFromDb(db, vd, key, params)
-	case interfaces.IfStateErrorPrefix:
+	case interfaces.IfErrorPrefix:
 		ed[label], err = readInterfaceErrorFromDb(db, vd, key, params)
 	case l2.BdPrefix:
 		ed[label], err = readBdConfigFromDb(db, vd, key, params)

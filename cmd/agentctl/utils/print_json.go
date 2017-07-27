@@ -26,6 +26,15 @@ import (
 )
 
 const (
+	// IfConfig labels used by json formatter
+	IfConfig  = "INTERFACE CONFIG"
+	// IfState labels used by json formatter
+	IfState   = "INTERFACE STATE"
+	// BdConfig labels used by json formatter
+	BdConfig  = "BRIDGE DOMAINS"
+	// FibConfig labels used by json formatter
+	FibConfig = "FIB TABLE"
+	// Format
 	indent    = "  "
 	emptyJSON = "{}"
 )
@@ -84,11 +93,11 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 
 		// Add data to buffer
 		if string(jsConfData) != emptyJSON {
-			printLabel(buffer, key+": - INTERFACE CONFIG\n", indent, ifaceConfKeys)
+			printLabel(buffer, key+": - " +IfConfig+ "\n", indent, ifaceConfKeys)
 			fmt.Fprintf(buffer, "%s\n", jsConfData)
 		}
 		if string(jsStateData) != emptyJSON {
-			printLabel(buffer, key+": - INTERFACE STATE\n", indent, ifaceStateKeys)
+			printLabel(buffer, key+": - " +IfState+ "\n", indent, ifaceStateKeys)
 			fmt.Fprintf(buffer, "%s\n", jsStateData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
@@ -100,7 +109,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
 		if string(jsFIBData) != emptyJSON {
-			printLabel(buffer, key+": - FIB TABLE\n", indent, fibKeys)
+			printLabel(buffer, key+": -" +FibConfig+ "\n", indent, fibKeys)
 			fmt.Fprintf(buffer, "%s\n", jsFIBData)
 		}
 
@@ -151,9 +160,9 @@ func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfac
 	var keyset []string
 	for _, ifaceData := range interfaceData {
 		if ifaceData.Config != nil {
-			iface := ifaceData.Config.Interfaces_Interface
+			iface := ifaceData.Config.Interface
 			ifaces = append(ifaces, iface)
-			keyset = append(keyset, ifaceData.Config.Key)
+			keyset = append(keyset, ifaceData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
@@ -170,9 +179,9 @@ func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interface
 	var keyset []string
 	for _, ifaceData := range interfaceData {
 		if ifaceData.State != nil {
-			ifaceState := ifaceData.State.InterfacesState_Interface
+			ifaceState := ifaceData.State.InterfaceState
 			ifaceStates = append(ifaceStates, ifaceState)
-			keyset = append(keyset, ifaceData.State.Key)
+			keyset = append(keyset, ifaceData.State.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
