@@ -57,7 +57,7 @@ Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.m
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
 ### Extensibility:
-![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png)
+[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - extensibility via cn-infra")](https://github.com/ligato/cn-infra)
 
 ### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
