@@ -44,7 +44,8 @@ VPP Agent watches particular key prefixes in Data Store using grpcsync package.
 TBD links to the code
 
 ### Embedded deployment
-VPP Agent can be embedded in a different project. For integration with Contiv we use embedded deployment.
+VPP Agent can be embedded in a different project. For integration with [Contiv](http://contiv.github.io/)
+we use embedded deployment.
 In this case VPP Agent gets the configuration from Local client v1 through in memory calls (Go API).
 
 ![embeded deployment](imgs/deployment_embeded.png)
