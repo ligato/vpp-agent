@@ -25,10 +25,13 @@ The agent consists of the following components:
 * [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
 * [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
+* [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
 
 ## Quickstart
 For quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
 on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
+
+0. Run ETCD and Kafka on your host (e.g. in Docker [using this procedure](docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host)).
 
 1. Run VPP + VPP Agent in a Docker image:
 ```
@@ -54,7 +57,7 @@ Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.m
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
 ### Extensibility:
-![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png)
+[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - extensibility via cn-infra")](https://github.com/ligato/cn-infra)
 
 ### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
