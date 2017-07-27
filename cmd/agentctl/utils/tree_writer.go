@@ -88,9 +88,11 @@ func (p *TreeWriter) FlushTree() {
 // expected to have the format '<level>^@<content-of-the-line>, where
 // '^@' is the separator.
 func createPrintLineBuf(byteBuf []byte) []printLine {
+	fmt.Printf("Data: %v\n", byteBuf)
 	lines := bytes.Split(bytes.TrimSpace(byteBuf), []byte{10})
 
 	printLineBuf := make([]printLine, 0, len(lines)+1)
+	fmt.Printf("printLineBuf: %v\n", printLineBuf)
 	for _, line := range lines {
 		lbl := printLine{}
 		if len(line) == 0 {
@@ -102,6 +104,7 @@ func createPrintLineBuf(byteBuf []byte) []printLine {
 		}
 		printLineBuf = append(printLineBuf, lbl)
 	}
+	fmt.Printf("printLineBuf: %v\n", printLineBuf)
 	for i, lbl := range printLineBuf {
 		if len(lbl.line) == 0 {
 			lbl.lnLevel = printLineBuf[i+1].lnLevel
