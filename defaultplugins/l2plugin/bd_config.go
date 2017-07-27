@@ -21,6 +21,7 @@
 package l2plugin
 
 import (
+	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -285,13 +286,13 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 }
 
 // ResolveCreatedInterface looks for bridge domain this interface is assigned to and sets it up
-func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) {
+func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
 	log.Println("Resolving new interface ", interfaceName)
 	// Look whether interface belongs to some bridge domain using interface-to-bd mapping
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
 		log.Debug("Interface does not belong to any bridge domain ", interfaceName)
-		return
+		return nil
 	}
 
 	bridgeDomainIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
@@ -300,6 +301,17 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	vppcalls.VppSetInterfaceToBridgeDomain(bridgeDomainIndex, interfaceIndex, bvi, plugin.vppChan)
 	// Register interface to real state
 	plugin.IfToBdRealStateIdx.RegisterName(interfaceName, interfaceIndex, meta)
+
+	// Push to bridge domain state
+	bridgeDomainName, _, found := plugin.BdIndexes.LookupName(bridgeDomainIndex)
+	if !found {
+		return fmt.Errorf("Unable to update status for bridge domain, index %v not found in mapping", bridgeDomainIndex)
+	}
+	err := plugin.LookupBridgeDomainDetails(bridgeDomainIndex, bridgeDomainName)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ResolveDeletedInterface does nothing

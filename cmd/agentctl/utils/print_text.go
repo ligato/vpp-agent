@@ -50,8 +50,8 @@ func (p pfx) getPrefix(level int) string {
 	return strings.Repeat(" ", level*p.perLevelSpaces)
 }
 
-// PrintDataAsText prints data from an EtcdDump repo in text
-// format.
+// PrintDataAsText prints data from an EtcdDump repo in text format. If tree option is chosen, output is printed with
+// tree lines
 func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffer {
 	prefixer = newPrefixer(printAsTree, perLevelSpaces)
 	keys := ed.getSortedKeys()
@@ -184,10 +184,11 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{$fibTableEntries := .FibTableEntries}}" +
 			"{{$bridgeDomainErrors := .BridgeDomainErrors}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
-			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n{{pfx 3}}Attributes: macAge {{.MacAge}}" +
-
-			// Bridge domain attributes
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}}, <{{if .Flood}}FLOOD{{end}}" +
+			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n" +
+			"{{with $element.Config}}" +
+			"{{pfx 3}}Attributes:" +
+			// Bridge domain config attributes
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <{{if .Flood}}FLOOD{{end}}" +
 			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
 			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
 			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
@@ -204,6 +205,30 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			// ARP termination table
 			"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
 			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}{{end}}" +
+			"{{end}}" +
+
+			// Bridge Domain status
+			"{{with $element.State}}" +
+			"\n{{pfx 3}}Stats:" +
+			"\n{{pfx 4}}Index: {{.Index}}" +
+			"\n{{pfx 4}}Attributes:" +
+			"{{with .L2Params}}" +
+			// Bridge domain state attributes
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <{{if .Flood}}FLOOD{{end}}" +
+			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
+			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
+			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
+			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
+			"{{end}}" +
+			"{{end}}" +
+			"\n{{pfx 4}}Interfaces: ({{.InterfaceCount}})" +
+			"{{with .Interfaces}}" +
+			"{{range $ifaceIndex, $iface := .}}\n" +
+			"{{pfx 5}}{{setBold $iface.Name}} shg: {{$iface.SplitHorizonGroup}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"\n{{pfx 4}}BVI: {{.BviInterface}}" +
+
 			"{{end}}" +
 
 			// Etcd metadata
@@ -232,6 +257,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{if $fib.BridgedVirtualInterface}}, <BVI>{{end}}" +
 			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>{{end}}" +
 			"{{end}}" +
+			"{{end}}\n" +
 			"{{end}}" +
 			"{{end}}" +
 			"{{end}}\n\n")
@@ -243,10 +269,14 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			vd, _ := ed[key]
 			vd.ShowEtcd = showEtcd
 
+			//vd.BridgeDomains[0].State.
+
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
-				for _, bdi := range bd.Interfaces {
-					nl = append(nl, &bdi.Name)
+				if bd.Config != nil {
+					for _, bdi := range bd.Config.Interfaces {
+						nl = append(nl, &bdi.Name)
+					}
 				}
 				padRight(nl, ":")
 			}
@@ -264,8 +294,10 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			vd.ShowEtcd = showEtcd
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
-				for _, bdi := range bd.Interfaces {
-					nl = append(nl, &bdi.Name)
+				if bd.Config != nil {
+					for _, bdi := range bd.Config.Interfaces {
+						nl = append(nl, &bdi.Name)
+					}
 				}
 				padRight(nl, ":")
 			}
@@ -334,7 +366,7 @@ func setStsColor(kind string, arg interfaces.InterfacesState_Interface_Status) s
 // getIfTypeInfo gets type-specific parameters for an interface.
 // The parameters are returned as a formatted string ready to be
 // printed out.
-func getIfTypeInfo(ifc *IfconfigWithMD) string {
+func getIfTypeInfo(ifc *IfConfigWithMD) string {
 	switch ifc.Type {
 	case interfaces.InterfaceType_MEMORY_INTERFACE:
 		if ifc.Memif.Master {

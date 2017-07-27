@@ -29,7 +29,7 @@ func TableData() utils.EtcdDump {
 		InMissPackets: uint64(5),
 	}
 
-	ifStateWithMD := &utils.IfstateWithMD{
+	ifStateWithMD := &utils.IfStateWithMD{
 		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
 			AdminStatus:  1,
 			OperStatus:   1,
@@ -45,7 +45,7 @@ func TableData() utils.EtcdDump {
 	// Full-zero statistics
 	zeroStatistics := &interfaces.InterfacesState_Interface_Statistics{}
 
-	zeroIfStateWithMD := &utils.IfstateWithMD{
+	zeroIfStateWithMD := &utils.IfStateWithMD{
 		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
 			AdminStatus:  2,
 			OperStatus:   2,
