@@ -5,9 +5,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
-Please note that the content of the repository is currently WORK IN PROGRESS.
+Please note that the content of this repository is currently a **WORK IN PROGRESS**.
 
-The VPP Agent is a management tool for VPP ([Vector Packet Processing](https://fd.io/)) 
+The VPP Agent is a management tool for VPP ([FD.io Vector Packet Processing](https://fd.io/)) 
 built on [cn-infra](https://github.com/ligato/cn-infra).
 
 VPP Agent provides plugins that process high level (north-bound) configuration which 
@@ -15,29 +15,48 @@ is carefully translated to low level VPP Binary API calls. North-bound configura
 is modelled by proto files that can be found in the [default plugins](defaultplugins).
 
 ![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
- 
-* Default VPP Plugins - provides abstraction on top of VPP binary API for:
-  * [NET Interface](defaultplugins/ifplugin) - Network interfaces configuration (Gigi ETH, MEMIF, AF_Packet, VXLAN, Loopback...)
+
+The agent consists of the following components:
+* [Default VPP Plugins](defaultplugins) - provide abstraction on top of the VPP binary APIs for:
+  * [NET Interfaces](defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...)
   * [L2](defaultplugins/l2plugin) - Bridge Domains, FIBs...
   * [L3](defaultplugins/l3plugin) - IP Routes, VRFs...
-  * [ACL](defaultplugins/aclplugin) - configures VPP ACL Plugin
+  * [ACL](defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
 * [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
 * [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 
-# Quickstart(TBD)
-1. Run VPP + VPP Agent in Docker image
-2. Configure the VPP agent using agentctl
-3. Check the configurtion (using agentctl or directly using VPP console)
+## Quickstart
+For quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
+on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
 
-# Next Steps(TBD)
-## Deployment:
+1. Run VPP + VPP Agent in a Docker image:
+```
+docker pull ligato/vpp-agent
+docker run -it --name vpp --rm ligato/vpp-agent
+```
+
+2. Configure the VPP agent using agentctl:
+```
+docker exec -it vpp agentctl -h
+```
+
+3. Check the configuration (using agentctl or directly using VPP console):
+```
+docker exec -it vpp agentctl show
+docker exec -it vpp vppctl
+```
+
+## Next Steps
+Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
+
+### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
-## Extensibility:
+### Extensibility:
 ![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png)
 
-## Design & architecture:
+### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
 
 ## Contribution:

@@ -2,8 +2,8 @@
 
 VPP Agent can run everywhere where VPP is installed. It can run either in a VM or in a container.
  
-Benefits of putting VPP into a container
- * simplifies: upgrade, start/stop, potentially also scaling
+Benefits of putting VPP + VPP Agent into a container:
+ * it simplifies: upgrade, start/stop, potentially also scaling
  * introducing microservices takes advantage of small & reusable apps
  * supports container healing 
  
@@ -12,7 +12,7 @@ Following diagram depicts VPP deployed in:
 - Data Plane vSwitch
 - Control Plane vSwitch (TBD [Contiv](http://contiv.github.io/) integration)
 - VPP VNF Container
-- Non VPP Container
+- Non-VPP Container
 
 ![K8s integration](imgs/k8s_deployment.png "VPP Agent - K8s integration")
 
@@ -21,9 +21,10 @@ K8s:
 - checks containers health (using probes - HTTP calls)
 
 ## NB (Nort-bound) configuration vs. deployment
-VPP Agent can be deployed to different environments. In following sub-chapters there are briefly 
-described alternative deployments. Independent on the deployment the VPP Agent can be configured
-using same Client v1 interface. There are three different implementations of the interface:
+VPP + Agent can be deployed in different environments. Several deployment alternatives are 
+briefly described in the following sub-chapters. 
+Independent on the deployment the VPP Agent can be configured
+using the same Client v1 interface. There are three different implementations of the interface:
  - local client
  - remote client using Data Broker
  - remote client using GRPC
@@ -43,8 +44,9 @@ VPP Agent watches particular key prefixes in Data Store using grpcsync package.
 TBD links to the code
 
 ### Embedded deployment
-VPP Agent can be embedded in a different project. For integration with Contiv we use embedded deployment.
-In this case VPP Agent gets the configuration from Local client v1 through in memory calls.
+VPP Agent can be embedded in a different project. For integration with [Contiv](http://contiv.github.io/)
+we use embedded deployment.
+In this case VPP Agent gets the configuration from Local client v1 through in memory calls (Go API).
 
 ![embeded deployment](imgs/deployment_embeded.png)
 TBD links to the code
