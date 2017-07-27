@@ -15,12 +15,12 @@
 package utils_test
 
 import (
-	"testing"
+	"fmt"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
+	"testing"
 	"text/template"
-	"gitlab.cisco.com/ctao/vnf-agent/plugins/vpp/defaultplugins/ifplugin/model/interfaces"
-	"fmt"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 )
 
 func TestTreeWriter(t *testing.T) {
@@ -41,8 +41,8 @@ func TestTreeWriter(t *testing.T) {
 
 func testData() *interfaces.Interfaces_Interface {
 	return &interfaces.Interfaces_Interface{
-		Name: "test-iface",
-		Enabled: true,
+		Name:        "test-iface",
+		Enabled:     true,
 		PhysAddress: "ff:ff:ff:ff:ff:ff",
 	}
 }
@@ -54,8 +54,8 @@ func getTemplate() (*template.Template, error) {
 
 	return template.New("test-template").Funcs(testFuncMap).Parse(
 		"{{with .Name}}\n{{pfx 1}}Name: {{.}}{{end}}" +
-		"{{with .Enabled}}\n{{pfx 1}}IsEnabled: {{.}}{{end}}" +
-		"{{if .PhysAddress}}\n{{pfx 1}}PhysAddr: {{.PhysAddress}}{{end}}")
+			"{{with .Enabled}}\n{{pfx 1}}IsEnabled: {{.}}{{end}}" +
+			"{{if .PhysAddress}}\n{{pfx 1}}PhysAddr: {{.PhysAddress}}{{end}}")
 }
 
 func getPrefix(level int) string {

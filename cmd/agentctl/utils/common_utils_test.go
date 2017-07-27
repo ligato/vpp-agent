@@ -18,15 +18,15 @@ import (
 	"github.com/ligato/cn-infra/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"github.com/onsi/gomega"
 	"testing"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 )
 
 func TestParseKeyAgentPrefix(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, plugStatCfgRev := utils.
-	ParseKey("/vnf-agent/{agent-label}/check/status/v1/agent")
+		ParseKey("/vnf-agent/{agent-label}/check/status/v1/agent")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(status.AgentStatusPrefix))
@@ -37,7 +37,7 @@ func TestParseKeyAgentPrefix(t *testing.T) {
 func TestParseKeyInterfaceConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.InterfacePrefix))
@@ -47,7 +47,7 @@ func TestParseKeyInterfaceConfig(t *testing.T) {
 func TestParseKeyInterfaceStatus(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfStatePrefix))
@@ -57,7 +57,7 @@ func TestParseKeyInterfaceStatus(t *testing.T) {
 func TestParseKeyInterfaceError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/error/{interface-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/error/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfErrorPrefix))
@@ -67,7 +67,7 @@ func TestParseKeyInterfaceError(t *testing.T) {
 func TestParseKeyBdConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/{bd-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/{bd-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdPrefix))
@@ -77,7 +77,7 @@ func TestParseKeyBdConfig(t *testing.T) {
 func TestParseKeyBdState(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/{bd-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/{bd-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdStatePrefix))
@@ -87,7 +87,7 @@ func TestParseKeyBdState(t *testing.T) {
 func TestParseKeyBdError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/error/{bd-name}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/error/{bd-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdErrPrefix))
@@ -97,7 +97,7 @@ func TestParseKeyBdError(t *testing.T) {
 func TestParseKeyFib(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
-	ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/fib/{mac-address}")
+		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/fib/{mac-address}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FIBPrefix))

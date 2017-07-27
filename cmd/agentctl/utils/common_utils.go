@@ -192,5 +192,3 @@ func padRight(items []*string, sfx string) {
 		*it = fmt.Sprintf(fs, *it+sfx)
 	}
 }
-
-

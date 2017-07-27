@@ -15,10 +15,10 @@
 package utils_test
 
 import (
-	"testing"
-	"github.com/onsi/gomega"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/onsi/gomega"
+	"testing"
 )
 
 func TestPrintDataAsJson(t *testing.T) {
@@ -64,7 +64,7 @@ func TestPrintDataAsTextWithEtcd(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring("Sts"))
 }
 
-func getEtcdDataMap() utils.EtcdDump{
+func getEtcdDataMap() utils.EtcdDump {
 	// Vpp metadata (the same for every entity)
 	vppMetaData := utils.VppMetaData{
 		Rev: 1,
@@ -73,8 +73,8 @@ func getEtcdDataMap() utils.EtcdDump{
 
 	// Interface config/status data container
 	ifaceWithMD := utils.InterfaceWithMD{
-		Config: &utils.IfconfigWithMD{ Metadata: vppMetaData, Interface: getInterface() },
-		State: &utils.IfstateWithMD{ Metadata: vppMetaData, InterfaceState: getInterfaceStatus() },
+		Config: &utils.IfConfigWithMD{Metadata: vppMetaData, Interface: getInterface()},
+		State:  &utils.IfStateWithMD{Metadata: vppMetaData, InterfaceState: getInterfaceStatus()},
 	}
 
 	// Interface label/data map
@@ -96,14 +96,14 @@ func getEtcdDataMap() utils.EtcdDump{
 
 func getInterface() *interfaces.Interfaces_Interface {
 	return &interfaces.Interfaces_Interface{
-		Name: "interface",
+		Name:        "interface",
 		IpAddresses: []string{"192.168.1.10"},
 	}
 }
 
 func getInterfaceStatus() *interfaces.InterfacesState_Interface {
 	return &interfaces.InterfacesState_Interface{
-		Name: "interface",
+		Name:         "interface",
 		InternalName: "internal-interface",
 		Statistics: &interfaces.InterfacesState_Interface_Statistics{
 			InPackets: 10,

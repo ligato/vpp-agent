@@ -16,8 +16,8 @@ package utils_test
 
 import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"testing"
 	"github.com/onsi/gomega"
+	"testing"
 )
 
 func TestGetPrefix(t *testing.T) {
@@ -70,18 +70,17 @@ func TestPfxStack_GetPreamble(t *testing.T) {
 	gomega.Expect(result).To(gomega.BeEquivalentTo("   icon"))
 }
 
-
 func getPrefixStack() *utils.PfxStack {
 	pfxEntry := utils.PfxStackEntry{
 		Preamble: "-",
-		Last: false,
+		Last:     false,
 	}
 
 	return &utils.PfxStack{
-		Entries: []utils.PfxStackEntry{pfxEntry},
-		Spaces: 3,
-		FirstDash: "├─",
+		Entries:    []utils.PfxStackEntry{pfxEntry},
+		Spaces:     3,
+		FirstDash:  "├─",
 		MiddleDash: "│ ",
-		LastDash: "└─",
+		LastDash:   "└─",
 	}
 }

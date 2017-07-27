@@ -27,11 +27,11 @@ import (
 
 const (
 	// IfConfig labels used by json formatter
-	IfConfig  = "INTERFACE CONFIG"
+	IfConfig = "INTERFACE CONFIG"
 	// IfState labels used by json formatter
-	IfState   = "INTERFACE STATE"
+	IfState = "INTERFACE STATE"
 	// BdConfig labels used by json formatter
-	BdConfig  = "BRIDGE DOMAINS"
+	BdConfig = "BRIDGE DOMAINS"
 	// FibConfig labels used by json formatter
 	FibConfig = "FIB TABLE"
 	// Format
@@ -93,11 +93,11 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 
 		// Add data to buffer
 		if string(jsConfData) != emptyJSON {
-			printLabel(buffer, key+": - " +IfConfig+ "\n", indent, ifaceConfKeys)
+			printLabel(buffer, key+": - "+IfConfig+"\n", indent, ifaceConfKeys)
 			fmt.Fprintf(buffer, "%s\n", jsConfData)
 		}
 		if string(jsStateData) != emptyJSON {
-			printLabel(buffer, key+": - " +IfState+ "\n", indent, ifaceStateKeys)
+			printLabel(buffer, key+": - "+IfState+"\n", indent, ifaceStateKeys)
 			fmt.Fprintf(buffer, "%s\n", jsStateData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
@@ -109,7 +109,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
 		if string(jsFIBData) != emptyJSON {
-			printLabel(buffer, key+": -" +FibConfig+ "\n", indent, fibKeys)
+			printLabel(buffer, key+": -"+FibConfig+"\n", indent, fibKeys)
 			fmt.Fprintf(buffer, "%s\n", jsFIBData)
 		}
 

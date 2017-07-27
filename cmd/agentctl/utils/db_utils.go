@@ -52,7 +52,7 @@ type IfConfigWithMD struct {
 // IfStateWithMD contains a data record for interface State and its
 // Etcd metadata
 type IfStateWithMD struct {
-	Metadata VppMetaData
+	Metadata       VppMetaData
 	InterfaceState *interfaces.InterfacesState_Interface
 }
 

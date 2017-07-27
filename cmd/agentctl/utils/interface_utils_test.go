@@ -15,9 +15,9 @@
 package utils_test
 
 import (
-	"testing"
-	"github.com/onsi/gomega"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/onsi/gomega"
+	"testing"
 )
 
 func TestUpdateIpv4Address(t *testing.T) {
