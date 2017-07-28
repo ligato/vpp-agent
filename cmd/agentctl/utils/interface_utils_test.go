@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-func TestUpdateIpv4Address(t *testing.T) {
+func Test01UpdateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	oldIps := []string{"192.168.1.1/24", "192.168.1.2/24", "192.168.1.3/24"}
@@ -35,7 +35,7 @@ func TestUpdateIpv4Address(t *testing.T) {
 	gomega.Expect(isContained(update[1], newIps)).To(gomega.BeTrue())
 }
 
-func TestUpdateIpv6Address(t *testing.T) {
+func Test02UpdateIpv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	oldIps := []string{"2001:0db8:0a0b:12f0:0000:0000:0000:0001/64", "2001:db8:0:1:1:1:1:1/64"}
@@ -48,7 +48,7 @@ func TestUpdateIpv6Address(t *testing.T) {
 	gomega.Expect(isContained(update[0], newIps)).To(gomega.BeTrue())
 }
 
-func TestValidateIpv4Address(t *testing.T) {
+func Test03ValidateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidateIpv4Addr("192.168.1.1/24")
@@ -57,7 +57,7 @@ func TestValidateIpv4Address(t *testing.T) {
 	gomega.Succeed()
 }
 
-func TestValidateIPv6Address(t *testing.T) {
+func Test04ValidateIPv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidateIpv6Addr("2001:db8:0:1:1:1:1:1/64")
@@ -66,7 +66,7 @@ func TestValidateIPv6Address(t *testing.T) {
 	gomega.Succeed()
 }
 
-func TestValidatePhysAddress(t *testing.T) {
+func Test05ValidatePhysAddress(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidatePhyAddr("F8:CF:E6:E8:CC:2F")

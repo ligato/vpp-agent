@@ -31,7 +31,9 @@ const (
 	// IfState labels used by json formatter
 	IfState = "INTERFACE STATE"
 	// BdConfig labels used by json formatter
-	BdConfig = "BRIDGE DOMAINS"
+	BdConfig = "BRIDGE DOMAINS CONFIG"
+	// BdState labels used by json formatter
+	BdState = "BRIDGE DOMAINS State"
 	// FibConfig labels used by json formatter
 	FibConfig = "FIB TABLE"
 	// Format
@@ -101,11 +103,11 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			fmt.Fprintf(buffer, "%s\n", jsStateData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
-			printLabel(buffer, key+": - BRIDGE DOMAINS CONFIG\n", indent, l2Keys)
+			printLabel(buffer, key+": - "+BdConfig+"\n", indent, l2Keys)
 			fmt.Fprintf(buffer, "%s\n", jsL2ConfigData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
-			printLabel(buffer, key+": - BRIDGE DOMAINS STATE\n", indent, l2Keys)
+			printLabel(buffer, key+": - "+BdState+"\n", indent, l2Keys)
 			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
 		if string(jsFIBData) != emptyJSON {

@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestPrintDataAsJson(t *testing.T) {
+func Test01PrintDataAsJson(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
 
@@ -35,7 +35,7 @@ func TestPrintDataAsJson(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring(utils.IfState))
 }
 
-func TestPrintDataAsText(t *testing.T) {
+func Test02PrintDataAsText(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
 
@@ -50,7 +50,7 @@ func TestPrintDataAsText(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring("IpAddr"))
 }
 
-func TestPrintDataAsTextWithEtcd(t *testing.T) {
+func Test03PrintDataAsTextWithEtcd(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
 

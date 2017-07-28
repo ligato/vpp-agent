@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-func TestGetPrefix(t *testing.T) {
+func Test01GetPrefix(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	prefixStack := getPrefixStack()
@@ -28,7 +28,7 @@ func TestGetPrefix(t *testing.T) {
 	gomega.Expect(result).To(gomega.BeEquivalentTo("-"))
 }
 
-func TestSetLast(t *testing.T) {
+func Test02SetLast(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	prefixStack := getPrefixStack()
@@ -38,7 +38,7 @@ func TestSetLast(t *testing.T) {
 	gomega.Expect(prefixStack.Entries[0].Last).To(gomega.BeTrue())
 }
 
-func TestPush(t *testing.T) {
+func Test03Push(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	prefixStack := getPrefixStack()
@@ -48,7 +48,7 @@ func TestPush(t *testing.T) {
 	gomega.Expect(len(prefixStack.Entries)).To(gomega.BeEquivalentTo(2))
 }
 
-func TestPop(t *testing.T) {
+func Test04Pop(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	prefixStack := getPrefixStack()
@@ -60,7 +60,7 @@ func TestPop(t *testing.T) {
 	gomega.Expect(len(prefixStack.Entries)).To(gomega.BeEquivalentTo(2))
 }
 
-func TestPfxStack_GetPreamble(t *testing.T) {
+func Test05PfxStack_GetPreamble(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	prefixStack := getPrefixStack()
