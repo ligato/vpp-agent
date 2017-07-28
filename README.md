@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
+[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
 Please note that the content of this repository is currently a **WORK IN PROGRESS**.
@@ -53,6 +54,8 @@ docker exec -it vpp vppctl
 ## Next Steps
 Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
 
+GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
+
 ### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
@@ -61,6 +64,7 @@ Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.m
 
 ### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
+
 
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
