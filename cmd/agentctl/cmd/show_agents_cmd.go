@@ -116,8 +116,7 @@ func showAgentsFunc(cmd *cobra.Command, args []string) {
 			buffer := ed.PrintDataAsText(showEtcd, false)
 			fmt.Print(buffer.String())
 		case "tree":
-			buffer := ed.PrintDataAsText(showEtcd, true)
-			fmt.Print(buffer.String())
+			ed.PrintDataAsText(showEtcd, true)
 		case "json":
 			buffer, err := ed.PrintDataAsJSON(args)
 			if err != nil {

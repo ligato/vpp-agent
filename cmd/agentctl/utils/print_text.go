@@ -54,7 +54,6 @@ func (p pfx) getPrefix(level int) string {
 // tree lines
 func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffer {
 	prefixer = newPrefixer(printAsTree, perLevelSpaces)
-	keys := ed.getSortedKeys()
 
 	nameFuncMap := template.FuncMap{
 		"setBold": setBold,
@@ -360,47 +359,79 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"\n{{end}}" +
 			"{{end}}\n\n")
 
-	buffer := new(bytes.Buffer)
-	if printAsTree {
-		writer := treeWriter
-		for _, key := range keys {
-			vd, _ := ed[key]
-			vd.ShowEtcd = showEtcd
+	templates := []*template.Template{}
+	// Keep template order
+	templates = append(templates, nameTemplate, stsTemplate, ifTemplate, bdTemplate)
 
-			for _, bd := range vd.BridgeDomains {
-				nl := []*string{}
-				if bd.Config != nil {
-					for _, bdi := range bd.Config.BridgeDomain.Interfaces {
-						nl = append(nl, &bdi.Name)
-					}
+	if printAsTree {
+		return ed.treeRenderer(showEtcd, templates)
+	}
+	return ed.textRenderer(showEtcd, templates)
+}
+
+// Render data according to templates as a tree
+func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) *bytes.Buffer {
+	buffer := new(bytes.Buffer)
+	for _, key := range ed.getSortedKeys() {
+		treeBuffer := new(bytes.Buffer)
+		vd, _ := ed[key]
+		vd.ShowEtcd = showEtcd
+
+		for _, bd := range vd.BridgeDomains {
+			nl := []*string{}
+			if bd.Config != nil {
+				for _, bdi := range bd.Config.BridgeDomain.Interfaces {
+					nl = append(nl, &bdi.Name)
 				}
-				padRight(nl, ":")
 			}
-			nameTemplate.Execute(os.Stdout, key)
-			stsTemplate.Execute(writer, vd)
-			ifTemplate.Execute(writer, vd)
-			bdTemplate.Execute(writer, vd)
-			treeWriter.FlushTree()
-			fmt.Println("")
+			padRight(nl, ":")
 		}
-	} else {
-		buffer.WriteTo(os.Stdout)
-		for _, key := range keys {
-			vd, _ := ed[key]
-			vd.ShowEtcd = showEtcd
-			for _, bd := range vd.BridgeDomains {
-				nl := []*string{}
-				if bd.Config != nil {
-					for _, bdi := range bd.Config.BridgeDomain.Interfaces {
-						nl = append(nl, &bdi.Name)
-					}
-				}
-				padRight(nl, ":")
+
+		for index, templateVal := range templates {
+			if index == 0 {
+				// Execute first template with standard output with key
+				templateVal.Execute(os.Stdout, key)
+			} else {
+				templateVal.Execute(treeBuffer, vd)
 			}
-			nameTemplate.Execute(buffer, key)
-			stsTemplate.Execute(buffer, vd)
-			ifTemplate.Execute(buffer, vd)
-			bdTemplate.Execute(buffer, vd)
+		}
+
+		// Pass bytes written for this key to tree writer
+		treeWriter.writeBuf = treeBuffer.Bytes()
+		// Render tree
+		treeWriter.FlushTree()
+		fmt.Println("")
+		// Add bytes to cumulative buffer (the buffer is not used to render)
+		buffer.Write(append(buffer.Bytes(), treeBuffer.Bytes()...))
+		// Reset local buffer
+		treeBuffer.Reset()
+	}
+	return buffer
+}
+
+// Render data according to templates in text form
+func (ed EtcdDump) textRenderer(showEtcd bool, templates []*template.Template) *bytes.Buffer {
+	buffer := new(bytes.Buffer)
+	buffer.WriteTo(os.Stdout)
+	for _, key := range ed.getSortedKeys() {
+		vd, _ := ed[key]
+		vd.ShowEtcd = showEtcd
+		for _, bd := range vd.BridgeDomains {
+			nl := []*string{}
+			if bd.Config != nil {
+				for _, bdi := range bd.Config.BridgeDomain.Interfaces {
+					nl = append(nl, &bdi.Name)
+				}
+			}
+			padRight(nl, ":")
+		}
+		for index, templateVal := range templates {
+			if index == 0 {
+				// First with key
+				templateVal.Execute(buffer, key)
+			} else {
+				templateVal.Execute(buffer, vd)
+			}
 		}
 	}
 	return buffer

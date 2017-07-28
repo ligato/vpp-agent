@@ -20,19 +20,20 @@ import (
 	"strconv"
 )
 
-type printLine struct {
+// PrintLine represents one line in the tree output
+type PrintLine struct {
 	line    string
 	lnLevel int
-	subtree []printLine
+	subtree []PrintLine
 }
 
-type lineBuf []printLine
+type lineBuf []PrintLine
 
 // TreeWriter is an implementation of the TreePrinter interface.
 type TreeWriter struct {
 	writeBuf []byte
 	level    int
-	lineBuf  []printLine
+	lineBuf  []PrintLine
 
 	spaces     int
 	firstDash  string
@@ -48,7 +49,7 @@ type TreeWriter struct {
 func NewTreeWriter(spaces int, first string, middle string, last string) *TreeWriter {
 	return &TreeWriter{
 		writeBuf:   []byte{},
-		lineBuf:    []printLine{},
+		lineBuf:    []PrintLine{},
 		spaces:     spaces,
 		firstDash:  first,
 		middleDash: middle,
@@ -56,13 +57,13 @@ func NewTreeWriter(spaces int, first string, middle string, last string) *TreeWr
 	}
 }
 
-// FlushTree takes the contant of the finalize buffer formats it
+// FlushTree takes the content of the finalize buffer formats it
 // into a tree and prints it out to stdout.
 func (p *TreeWriter) FlushTree() {
 
 	p.lineBuf = createPrintLineBuf(p.writeBuf)
 	//for i, lbl := range p.lineBuf {
-	//	fmt.Printf("%d: Level %d, Line '%s'\n", i, lbl.lnLevel, lbl.line)
+	//	fmt.Printf("%d: Level %d, line '%s'\n", i, lbl.lnLevel, lbl.line)
 	//}
 
 	tree, _ := createTree(1, p.lineBuf)
@@ -78,21 +79,21 @@ func (p *TreeWriter) FlushTree() {
 	p.writeBuf = []byte{}
 }
 
-// createPrintLineBuf creates a new buffer of printLine structs
-// that are then used to create a printLine tree which is used to
+// createPrintLineBuf creates a new buffer of PrintLine structs
+// that are then used to create a PrintLine tree which is used to
 // render the tree. The function translates the content of a raw
 // write buffer into a flat buffer of printLines.
 //
 // The function expects that each line in the raw write buffer contains
-// printLine level information - each line in the write buffer is
+// PrintLine level information - each line in the write buffer is
 // expected to have the format '<level>^@<content-of-the-line>, where
 // '^@' is the separator.
-func createPrintLineBuf(byteBuf []byte) []printLine {
+func createPrintLineBuf(byteBuf []byte) []PrintLine {
 	lines := bytes.Split(bytes.TrimSpace(byteBuf), []byte{10})
 
-	printLineBuf := make([]printLine, 0, len(lines)+1)
+	printLineBuf := make([]PrintLine, 0, len(lines)+1)
 	for _, line := range lines {
-		lbl := printLine{}
+		lbl := PrintLine{}
 		if len(line) == 0 {
 			lbl.line = string(line)
 		} else {
@@ -112,7 +113,7 @@ func createPrintLineBuf(byteBuf []byte) []printLine {
 }
 
 // renderSubtree is used to recursively render the tree
-func (p *TreeWriter) renderSubtree(tree []printLine, stack *PfxStack) {
+func (p *TreeWriter) renderSubtree(tree []PrintLine, stack *PfxStack) {
 	for i, pl := range tree {
 		if i == len(tree)-1 {
 			stack.SetLast()
@@ -124,7 +125,7 @@ func (p *TreeWriter) renderSubtree(tree []printLine, stack *PfxStack) {
 		} else {
 			pp = stack.getTopPfxStackEntry()
 		}
-		//fmt.Printf("%2d of %2d: level %d, Line: '%s %s'\n",
+		//fmt.Printf("%2d of %2d: level %d, line: '%s %s'\n",
 		// 		i, len(tree), pl.lnLevel, stack.GetPrefix(), pl.line)
 		fmt.Printf("%s %s\n", stack.GetPrefix(), pl.line)
 		stack.setTopPfxStackEntry(pp)
@@ -134,15 +135,16 @@ func (p *TreeWriter) renderSubtree(tree []printLine, stack *PfxStack) {
 			p.renderSubtree(pl.subtree, stack)
 			stack.Pop()
 		}
+
 	}
 }
 
-// createTree creates a tree of printLine structs from a flat printLine
+// createTree creates a tree of PrintLine structs from a flat PrintLine
 // buffer (typically created in createPrintLineBuf()).
-func createTree(curLevel int, lineBuf []printLine) ([]printLine, int) {
+func createTree(curLevel int, lineBuf []PrintLine) ([]PrintLine, int) {
 	//fmt.Printf("--> Enter createTree: curLevel %d, lineBufLen %d, line[0]: %s\n",
 	// 	curLevel, len(lineBuf), lineBuf[0].line)
-	res := []printLine{}
+	res := []PrintLine{}
 	processed := 0
 	lb := lineBuf
 
