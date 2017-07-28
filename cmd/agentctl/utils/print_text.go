@@ -94,7 +94,6 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 		"setRed":         setRed,
 		"isEnabled":      isEnabled,
 		"setStsColor":    setStsColor,
-		"getIfTypeInfo":  getIfTypeInfo,
 		"getIpAddresses": getIPAddresses,
 		"pfx":            getPrefix,
 	}
@@ -128,7 +127,6 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{with .Interface}}" +
 			"\n{{pfx 3}}IfType: {{.Type}}" +
 			"{{end}}" +
-			//"{{getIfTypeInfo .}}" +
 			"{{end}}" +
 
 			// Interface MTU
@@ -402,7 +400,7 @@ func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) *
 		treeWriter.FlushTree()
 		fmt.Println("")
 		// Add bytes to cumulative buffer (the buffer is not used to render)
-		buffer.Write(append(buffer.Bytes(), treeBuffer.Bytes()...))
+		buffer.Write(treeBuffer.Bytes())
 		// Reset local buffer
 		treeBuffer.Reset()
 	}
@@ -487,32 +485,6 @@ func setStsColor(kind string, arg interfaces.InterfacesState_Interface_Status) s
 		return setRed(sts)
 	default:
 		return sts
-	}
-}
-
-// getIfTypeInfo gets type-specific parameters for an interface.
-// The parameters are returned as a formatted string ready to be
-// printed out.
-func getIfTypeInfo(ifc *IfConfigWithMD) string {
-	iface := ifc.Interface
-	switch iface.Type {
-	case interfaces.InterfaceType_MEMORY_INTERFACE:
-		if iface.Memif.Master {
-			return fmt.Sprintf("; <MASTER>, id %d, bufSize %d, rngSize %d, socketFN '%s', secret '%s', rxQueues '%d', txQueues '%d'",
-				iface.Memif.Id, iface.Memif.BufferSize, iface.Memif.RingSize, iface.Memif.SocketFilename, iface.Memif.Secret,
-				iface.Memif.RxQueues, iface.Memif.TxQueues)
-		}
-		return fmt.Sprintf("; id %d, bufSize %d, rngSize %d, socketFN '%s', secret '%s', rxQueues '%d', txQueues '%d'",
-			iface.Memif.Id, iface.Memif.BufferSize, iface.Memif.RingSize, iface.Memif.SocketFilename, iface.Memif.Secret,
-			iface.Memif.RxQueues, iface.Memif.TxQueues)
-
-	case interfaces.InterfaceType_VXLAN_TUNNEL:
-		return fmt.Sprintf("; srcIp %s, dstIp %s, vni %d",
-			iface.Vxlan.SrcAddress, iface.Vxlan.DstAddress, iface.Vxlan.Vni)
-	case interfaces.InterfaceType_AF_PACKET_INTERFACE:
-		return fmt.Sprintf("; hostName %s", iface.Afpacket.HostIfName)
-	default:
-		return ""
 	}
 }
 

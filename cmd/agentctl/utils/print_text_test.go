@@ -23,28 +23,36 @@ import (
 	"testing"
 )
 
-// Test01VppInterfacePrintText verifies presence of every VPP and an interface from the input data
+// Test01VppInterfacePrintText verifies presence of every VPP and an interface from the input data in both
+// text and tree output. Both data sets have the same content to test
 func Test01VppInterfacePrintText(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	result := etcdDump.PrintDataAsText(false, false)
-	gomega.Expect(result).ToNot(gomega.BeNil())
-	output := result.String()
+	txt := etcdDump.PrintDataAsText(false, false)
+	tree := etcdDump.PrintDataAsText(false, true)
+	gomega.Expect(txt).ToNot(gomega.BeNil())
+	gomega.Expect(tree).ToNot(gomega.BeNil())
+	txtOutput := txt.String()
+	treeOutput := txt.String()
 
 	// Check Vpp and interface presence
 	for i := 1; i <= 3; i++ {
 		vppName := "vpp-" + strconv.Itoa(i)
-		gomega.Expect(strings.Contains(output, vppName)).To(gomega.BeTrue())
+		gomega.Expect(strings.Contains(txtOutput, vppName)).To(gomega.BeTrue())
+		gomega.Expect(strings.Contains(treeOutput, vppName)).To(gomega.BeTrue())
 		for j := 1; j <= 3; j++ {
 			interfaceName := vppName + "-interface-" + strconv.Itoa(j)
-			gomega.Expect(strings.Contains(output, interfaceName)).To(gomega.BeTrue())
+			gomega.Expect(strings.Contains(txtOutput, interfaceName)).To(gomega.BeTrue())
+			gomega.Expect(strings.Contains(treeOutput, interfaceName)).To(gomega.BeTrue())
 		}
 	}
 }
 
-// Test02StatusPrintText tests presence of status flags in the output
+// Test02StatusPrintText tests presence of status flags in the output in text format
 func Test02StatusPrintText(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
@@ -76,20 +84,61 @@ func Test02StatusPrintText(t *testing.T) {
 	gomega.Expect(strings.Count(output, operDown)).To(gomega.BeEquivalentTo(3))
 }
 
-// Test03InterfaceStatsPrintText tests presence of state flags on active interfaces in output
-func Test03InterfaceStatsPrintText(t *testing.T) {
+// Test02StatusPrintText tests presence of status flags in the output in tree format
+func Test02StatusPrintTree(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	result := etcdDump.PrintDataAsText(false, false)
+	result := etcdDump.PrintDataAsText(false, true)
 	gomega.Expect(result).ToNot(gomega.BeNil())
 	output := result.String()
+
+	// Tested  flags
+	notInCfg := "NOT-IN-CONFIG"
+	adminUp := "ADMIN-UP"
+	adminDown := "ADMIN-DOWN"
+	operUp := "OPER-UP"
+	operDown := "OPER-DOWN"
+
+	// Status flag expected in every interface
+	gomega.Expect(strings.Contains(output, notInCfg)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, notInCfg)).To(gomega.BeEquivalentTo(9))
+	// Status flag expected in every active interface
+	gomega.Expect(strings.Contains(output, adminUp)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, adminUp)).To(gomega.BeEquivalentTo(6))
+	// Status flag expected in every inactive interface
+	gomega.Expect(strings.Contains(output, adminDown)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, adminDown)).To(gomega.BeEquivalentTo(3))
+	// Status flag expected in every active interface
+	gomega.Expect(strings.Contains(output, operUp)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, operUp)).To(gomega.BeEquivalentTo(6))
+	// Status flag expected in every inactive interface
+	gomega.Expect(strings.Contains(output, operDown)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, operDown)).To(gomega.BeEquivalentTo(3))
+}
+
+// Test03InterfaceStatsPrintText tests presence of state flags on active interfaces in output in both
+// text and tree output. Both data sets have the same content to test
+func Test03InterfaceStatsPrintText(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	etcdDump := utils.NewEtcdDump()
+	etcdDump = data.TableData()
+
+	txt := etcdDump.PrintDataAsText(false, false)
+	tree := etcdDump.PrintDataAsText(false, true)
+	gomega.Expect(txt).ToNot(gomega.BeNil())
+	gomega.Expect(tree).ToNot(gomega.BeNil())
+	txtOutput := txt.String()
+	treeOutput := txt.String()
 
 	statsFlags := []string{"Stats", "In:", "Out:", "Misc:"}
 
 	for _, flag := range statsFlags {
-		gomega.Expect(strings.Contains(output, flag)).To(gomega.BeTrue())
+		gomega.Expect(strings.Contains(txtOutput, flag)).To(gomega.BeTrue())
+		gomega.Expect(strings.Contains(treeOutput, flag)).To(gomega.BeTrue())
 		// Flags are expected in every active interface
-		gomega.Expect(strings.Count(output, flag)).To(gomega.BeEquivalentTo(6))
+		gomega.Expect(strings.Count(txtOutput, flag)).To(gomega.BeEquivalentTo(6))
+		gomega.Expect(strings.Count(treeOutput, flag)).To(gomega.BeEquivalentTo(6))
 	}
 }

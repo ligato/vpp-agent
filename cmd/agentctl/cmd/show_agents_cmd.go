@@ -117,6 +117,7 @@ func showAgentsFunc(cmd *cobra.Command, args []string) {
 			fmt.Print(buffer.String())
 		case "tree":
 			ed.PrintDataAsText(showEtcd, true)
+			// Data are renderer within render method
 		case "json":
 			buffer, err := ed.PrintDataAsJSON(args)
 			if err != nil {
