@@ -23,7 +23,8 @@ import (
 	"testing"
 )
 
-func TestParseKeyAgentPrefix(t *testing.T) {
+// Test01ParseKeyAgentPrefix tests whether all parameters for ParseKey() functions are correct for provided agent key
+func Test01ParseKeyAgentPrefix(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, plugStatCfgRev := utils.
 		ParseKey("/vnf-agent/{agent-label}/check/status/v1/agent")
@@ -34,7 +35,9 @@ func TestParseKeyAgentPrefix(t *testing.T) {
 	gomega.Expect(plugStatCfgRev).To(gomega.BeEquivalentTo(status.StatusPrefix))
 }
 
-func TestParseKeyInterfaceConfig(t *testing.T) {
+// Test02ParseKeyInterfaceConfig tests whether all parameters for ParseKey() functions are correct for provided
+// interface config key
+func Test02ParseKeyInterfaceConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}")
@@ -44,7 +47,9 @@ func TestParseKeyInterfaceConfig(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
-func TestParseKeyInterfaceStatus(t *testing.T) {
+// Test03ParseKeyInterfaceStatus tests whether all parameters for ParseKey() functions are correct for provided
+// interface status key
+func Test03ParseKeyInterfaceStatus(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}")
@@ -54,7 +59,9 @@ func TestParseKeyInterfaceStatus(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
-func TestParseKeyInterfaceError(t *testing.T) {
+// Test04ParseKeyInterfaceError tests whether all parameters for ParseKey() functions are correct for provided
+// interface error key
+func Test04ParseKeyInterfaceError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/error/{interface-name}")
@@ -64,7 +71,9 @@ func TestParseKeyInterfaceError(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
-func TestParseKeyBdConfig(t *testing.T) {
+// Test05ParseKeyBdConfig tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain config key
+func Test05ParseKeyBdConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/{bd-name}")
@@ -74,7 +83,9 @@ func TestParseKeyBdConfig(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
-func TestParseKeyBdState(t *testing.T) {
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain status key
+func Test06ParseKeyBdState(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/{bd-name}")
@@ -84,7 +95,9 @@ func TestParseKeyBdState(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
-func TestParseKeyBdError(t *testing.T) {
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain error key
+func Test07ParseKeyBdError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/bd/error/{bd-name}")
@@ -94,7 +107,9 @@ func TestParseKeyBdError(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
-func TestParseKeyFib(t *testing.T) {
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// fib table key
+func Test08ParseKeyFib(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/fib/{mac-address}")

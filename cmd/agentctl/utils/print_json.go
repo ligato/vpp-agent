@@ -31,7 +31,9 @@ const (
 	// IfState labels used by json formatter
 	IfState = "INTERFACE STATE"
 	// BdConfig labels used by json formatter
-	BdConfig = "BRIDGE DOMAINS"
+	BdConfig = "BRIDGE DOMAINS CONFIG"
+	// BdState labels used by json formatter
+	BdState = "BRIDGE DOMAINS State"
 	// FibConfig labels used by json formatter
 	FibConfig = "FIB TABLE"
 	// Format
@@ -101,11 +103,11 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			fmt.Fprintf(buffer, "%s\n", jsStateData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
-			printLabel(buffer, key+": - BRIDGE DOMAINS CONFIG\n", indent, l2Keys)
+			printLabel(buffer, key+": - "+BdConfig+"\n", indent, l2Keys)
 			fmt.Fprintf(buffer, "%s\n", jsL2ConfigData)
 		}
 		if string(jsL2ConfigData) != emptyJSON {
-			printLabel(buffer, key+": - BRIDGE DOMAINS STATE\n", indent, l2Keys)
+			printLabel(buffer, key+": - "+BdState+"\n", indent, l2Keys)
 			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
 		if string(jsFIBData) != emptyJSON {
@@ -197,9 +199,9 @@ func getL2ConfigData(l2Data map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	var keyset []string
 	for _, bdData := range l2Data {
 		if bdData.Config != nil {
-			bd := bdData.Config.BridgeDomains_BridgeDomain
+			bd := bdData.Config.BridgeDomain
 			l2s = append(l2s, bd)
-			keyset = append(keyset, bdData.Config.Key)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
@@ -214,10 +216,10 @@ func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string
 	l2States := []*l2.BridgeDomainState_BridgeDomain{}
 	var keyset []string
 	for _, bdData := range l2Data {
-		if bdData.State != nil {
-			bd := bdData.State.BridgeDomainState_BridgeDomain
+		if bdData.Config != nil && bdData.State != nil {
+			bd := bdData.State.BridgeDomainState
 			l2States = append(l2States, bd)
-			keyset = append(keyset, bdData.Config.Key)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)

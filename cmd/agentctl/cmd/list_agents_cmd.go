@@ -74,8 +74,12 @@ func listAgentsFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if len(ed) > 0 {
-		buffer := ed.PrintDataAsText(showEtcd, false)
-		fmt.Print(buffer.String())
+		buffer, err := ed.PrintDataAsText(showEtcd, false)
+		if err == nil {
+			fmt.Print(buffer.String())
+		} else {
+			fmt.Printf("Error: %v", err)
+		}
 	} else {
 		fmt.Print("No data found.\n")
 	}

@@ -17,13 +17,15 @@ package utils_test
 import (
 	"fmt"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 	"github.com/onsi/gomega"
 	"testing"
 	"text/template"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
 )
 
-func TestTreeWriter(t *testing.T) {
+// Test01TreeWriter Tests functionality of FlushTree() called with tree writer. If the provided template is processed
+// without any failures and FlushTree() won't throw an error, the test is successful
+func Test01TreeWriter(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	treeWriter := utils.NewTreeWriter(1, "├─", "│ ", "└─")

@@ -17,6 +17,7 @@ package testing
 import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
 	"strconv"
 )
 
@@ -76,6 +77,81 @@ func TableData() utils.EtcdDump {
 			Interfaces: interfaceStateMap,
 		}
 		etcdDump[vppName] = &vppData
+	}
+
+	return etcdDump
+}
+
+// JSONData - every type of data to test all JSON possibilities
+func JSONData() utils.EtcdDump {
+	// Interface data
+	interfaceData := utils.InterfaceWithMD{
+		Config: &utils.IfConfigWithMD{
+			Interface: &interfaces.Interfaces_Interface{
+				Name: "iface",
+			},
+		},
+		State: &utils.IfStateWithMD{
+			InterfaceState: &interfaces.InterfacesState_Interface{
+				Name:         "iface",
+				AdminStatus:  1,
+				OperStatus:   1,
+				InternalName: "Test-Interface",
+				Statistics: &interfaces.InterfacesState_Interface_Statistics{
+					InPackets:     uint64(10),
+					OutPackets:    uint64(20),
+					InMissPackets: uint64(5),
+				},
+			},
+		},
+	}
+
+	// Bridge domain data
+	bdData := utils.BdWithMD{
+		Config: &utils.BdConfigWithMD{
+			Metadata: utils.VppMetaData{},
+			BridgeDomain: &l2.BridgeDomains_BridgeDomain{
+				Name: "bd",
+			},
+		},
+		State: &utils.BdStateWithMD{
+			Metadata: utils.VppMetaData{},
+			BridgeDomainState: &l2.BridgeDomainState_BridgeDomain{
+				Index: 1,
+			},
+		},
+	}
+
+	// Fib data
+	fibTableEntries := []*l2.FibTableEntries_FibTableEntry{}
+	fibTableEntry := &l2.FibTableEntries_FibTableEntry{
+		PhysAddress: "ff:ff:ff:ff:ff:ff",
+	}
+	fibTableEntries = append(fibTableEntries, fibTableEntry)
+
+	fibData := utils.FibTableWithMD{
+		FibTable: fibTableEntries,
+	}
+
+	etcdDump := make(map[string]*utils.VppData)
+	interfaceMap := make(map[string]utils.InterfaceWithMD)
+	bridgeDomainMap := make(map[string]utils.BdWithMD)
+
+	// Fill maps
+	interfaceMap["test-interface"] = interfaceData
+	bridgeDomainMap["test-bd"] = bdData
+
+	// Add the same data twice under different VPPs
+	etcdDump["vpp1"] = &utils.VppData{
+		Interfaces:      interfaceMap,
+		BridgeDomains:   bridgeDomainMap,
+		FibTableEntries: fibData,
+	}
+
+	etcdDump["vpp2"] = &utils.VppData{
+		Interfaces:      interfaceMap,
+		BridgeDomains:   bridgeDomainMap,
+		FibTableEntries: fibData,
 	}
 
 	return etcdDump
