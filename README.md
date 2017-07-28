@@ -19,7 +19,7 @@ is modelled by proto files that can be found in the [default plugins](defaultplu
 
 The agent consists of the following components:
 * [Default VPP Plugins](defaultplugins) - provide abstraction on top of the VPP binary APIs for:
-  * [NET Interfaces](defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...)
+  * [NET Interfaces](defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
   * [L2](defaultplugins/l2plugin) - Bridge Domains, FIBs...
   * [L3](defaultplugins/l3plugin) - IP Routes, VRFs...
   * [ACL](defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
@@ -68,6 +68,3 @@ GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).
-
-The tool used for managing third-party dependencies is [Glide](https://github.com/Masterminds/glide). After adding or updating
-a dependency in `glide.yaml` run `make install-dep` to download specified dependencies into the vendor folder. 
