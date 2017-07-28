@@ -199,9 +199,9 @@ func getL2ConfigData(l2Data map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	var keyset []string
 	for _, bdData := range l2Data {
 		if bdData.Config != nil {
-			bd := bdData.Config.BridgeDomains_BridgeDomain
+			bd := bdData.Config.BridgeDomain
 			l2s = append(l2s, bd)
-			keyset = append(keyset, bdData.Config.Key)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
@@ -216,10 +216,10 @@ func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string
 	l2States := []*l2.BridgeDomainState_BridgeDomain{}
 	var keyset []string
 	for _, bdData := range l2Data {
-		if bdData.State != nil {
-			bd := bdData.State.BridgeDomainState_BridgeDomain
+		if bdData.Config != nil && bdData.State != nil {
+			bd := bdData.State.BridgeDomainState
 			l2States = append(l2States, bd)
-			keyset = append(keyset, bdData.Config.Key)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)

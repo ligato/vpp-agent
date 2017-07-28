@@ -80,15 +80,15 @@ type BdWithMD struct {
 // BdConfigWithMD contains a Bridge Domain config data record and its Etcd
 // metadata
 type BdConfigWithMD struct {
-	VppMetaData
-	*l2.BridgeDomains_BridgeDomain
+	Metadata     VppMetaData
+	BridgeDomain *l2.BridgeDomains_BridgeDomain
 }
 
 // BdStateWithMD contains a Bridge Domain state data record and its Etcd
 // metadata
 type BdStateWithMD struct {
-	VppMetaData
-	*l2.BridgeDomainState_BridgeDomain
+	Metadata          VppMetaData
+	BridgeDomainState *l2.BridgeDomainState_BridgeDomain
 }
 
 // FibTableWithMD contains a FIB table data record and its Etcd

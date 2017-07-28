@@ -109,14 +109,14 @@ func JSONData() utils.EtcdDump {
 	// Bridge domain data
 	bdData := utils.BdWithMD{
 		Config: &utils.BdConfigWithMD{
-			utils.VppMetaData{},
-			&l2.BridgeDomains_BridgeDomain{
+			Metadata: utils.VppMetaData{},
+			BridgeDomain: &l2.BridgeDomains_BridgeDomain{
 				Name: "bd",
 			},
 		},
 		State: &utils.BdStateWithMD{
-			utils.VppMetaData{},
-			&l2.BridgeDomainState_BridgeDomain{
+			Metadata: utils.VppMetaData{},
+			BridgeDomainState: &l2.BridgeDomainState_BridgeDomain{
 				Index: 1,
 			},
 		},

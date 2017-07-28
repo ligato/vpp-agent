@@ -229,40 +229,73 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{$bridgeDomainErrors := .BridgeDomainErrors}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
 			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n" +
-			"{{with $element.Config}}" +
+			"{{with .Config}}" +
+			"{{with .BridgeDomain}}" +
 			"{{pfx 3}}Attributes:" +
 			// Bridge domain config attributes
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <{{if .Flood}}FLOOD{{end}}" +
-			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
-			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
-			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
-			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
+			"{{if .Flood}}FLOOD" +
+			"{{end}}" +
+			"{{if .UnknownUnicastFlood}}" +
+			"{{if .Flood}}," +
+			"{{end}} UNKN-UNICAST-FLOOD" +
+			"{{end}}" +
+			"{{if .Forward}}" +
+			"{{if or .Flood .UnknownUnicastFlood}}," +
+			"{{end}} FORWARD" +
+			"{{end}}" +
+			"{{if .Learn}}" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward}}," +
+			"{{end}} LEARN" +
+			"{{end}}" +
+			"{{if .ArpTermination}}" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn}}," +
+			"{{end}} ARP-TERMINATION" +
+			"{{end}}>" +
 			"{{end}}" +
 
 			// Interface table
 			"{{with .Interfaces}}\n{{pfx 3}}Interfaces:" +
 			"{{range $ifKey, $element := .}}\n{{pfx 4}}{{setBold $element.Name}} splitHorizonGrp {{.SplitHorizonGroup}}" +
-			"{{if .BridgedVirtualInterface}}, <BVI>{{end}}" +
+			"{{if .BridgedVirtualInterface}}, <BVI>" +
+			"{{end}}" +
 			"{{end}}" +
 			"{{end}}" +
 
 			// ARP termination table
 			"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
-			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}{{end}}" +
+			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 			"{{end}}" +
 
 			// Bridge Domain status
-			"{{with $element.State}}" +
+			"{{with .State}}" +
+			"{{with .BridgeDomainState}}" +
 			"\n{{pfx 3}}Stats:" +
 			"\n{{pfx 4}}Index: {{.Index}}" +
 			"\n{{pfx 4}}Attributes:" +
 			"{{with .L2Params}}" +
 			// Bridge domain state attributes
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <{{if .Flood}}FLOOD{{end}}" +
-			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
-			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
-			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
-			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
+			"{{if .Flood}}FLOOD" +
+			"{{end}}" +
+			"{{if .UnknownUnicastFlood}}" +
+			"{{if .Flood}}," +
+			"{{end}} UNKN-UNICAST-FLOOD" +
+			"{{end}}" +
+			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}}," +
+			"{{end}} FORWARD" +
+			"{{end}}" +
+			"{{if .Learn}}" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward}}," +
+			"{{end}} LEARN" +
+			"{{end}}" +
+			"{{if .ArpTermination}}" +
+			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn}}," +
+			"{{end}} ARP-TERMINATION" +
+			"{{end}}>" +
 			"{{end}}" +
 			"{{end}}" +
 			"\n{{pfx 4}}Interfaces: ({{.InterfaceCount}})" +
@@ -272,21 +305,37 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{end}}" +
 			"{{end}}" +
 			"\n{{pfx 4}}BVI: {{.BviInterface}}" +
-
+			"{{end}}" +
 			"{{end}}" +
 
 			// Etcd metadata
-			"{{if $etcd}}\n{{pfx 3}}ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
+			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
+			"{{with .Config}}" +
+			"{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{with .State}}" +
+			"{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
 			// Bridge domain errors (if present)
-			"{{with $bridgeDomainErrors}}{{range .}}" +
-			"{{with .BdErrorList}}{{range .}}" +
+			"{{with $bridgeDomainErrors}}" +
+			"{{range .}}" +
+			"{{with .BdErrorList}}" +
+			"{{range .}}" +
 			"{{if eq .BdName $element.Name}}" +
 			"{{with .ErrorData}}" +
 			"\n{{pfx 3}}{{setRed \"Errors\"}}" +
 			"{{range $index, $error := .}}\n" +
 			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
-			"{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 			"{{end}}\n" +
 
 			// FIB table
@@ -295,15 +344,20 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			"{{pfx 2}}FIB-Table:" +
 			"{{range $fibKey, $fib := .}}\n" +
 			"{{pfx 3}}{{$fib.PhysAddress}}" +
-			"{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}{{end}}" +
-			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}{{end}}" +
-			"{{if $fib.StaticConfig}}, <STATIC>{{end}}" +
-			"{{if $fib.BridgedVirtualInterface}}, <BVI>{{end}}" +
-			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>{{end}}" +
+			"{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}" +
 			"{{end}}" +
-			"{{end}}\n" +
+			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}" +
+			"{{end}}" +
+			"{{if $fib.StaticConfig}}, <STATIC>" +
+			"{{end}}" +
+			"{{if $fib.BridgedVirtualInterface}}, <BVI>" +
+			"{{end}}" +
+			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>" +
 			"{{end}}" +
 			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"\n{{end}}" +
 			"{{end}}\n\n")
 
 	buffer := new(bytes.Buffer)
@@ -316,7 +370,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
 				if bd.Config != nil {
-					for _, bdi := range bd.Config.Interfaces {
+					for _, bdi := range bd.Config.BridgeDomain.Interfaces {
 						nl = append(nl, &bdi.Name)
 					}
 				}
@@ -337,7 +391,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
 				if bd.Config != nil {
-					for _, bdi := range bd.Config.Interfaces {
+					for _, bdi := range bd.Config.BridgeDomain.Interfaces {
 						nl = append(nl, &bdi.Name)
 					}
 				}
