@@ -30,9 +30,11 @@ func Test01VppInterfacePrintText(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	txt := etcdDump.PrintDataAsText(false, false)
-	tree := etcdDump.PrintDataAsText(false, true)
+	txt, err := etcdDump.PrintDataAsText(false, false)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(txt).ToNot(gomega.BeNil())
+	tree, err := etcdDump.PrintDataAsText(false, true)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(tree).ToNot(gomega.BeNil())
 	txtOutput := txt.String()
 	treeOutput := txt.String()
@@ -56,7 +58,8 @@ func Test02StatusPrintText(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	result := etcdDump.PrintDataAsText(false, false)
+	result, err := etcdDump.PrintDataAsText(false, false)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(result).ToNot(gomega.BeNil())
 	output := result.String()
 
@@ -90,7 +93,8 @@ func Test02StatusPrintTree(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	result := etcdDump.PrintDataAsText(false, true)
+	result, err := etcdDump.PrintDataAsText(false, true)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(result).ToNot(gomega.BeNil())
 	output := result.String()
 
@@ -125,9 +129,11 @@ func Test03InterfaceStatsPrintText(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
 
-	txt := etcdDump.PrintDataAsText(false, false)
-	tree := etcdDump.PrintDataAsText(false, true)
+	txt, err := etcdDump.PrintDataAsText(false, false)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(txt).ToNot(gomega.BeNil())
+	tree, err := etcdDump.PrintDataAsText(false, true)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(tree).ToNot(gomega.BeNil())
 	txtOutput := txt.String()
 	treeOutput := txt.String()

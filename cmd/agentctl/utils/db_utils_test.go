@@ -43,7 +43,8 @@ func Test02PrintDataAsText(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
 
-	buffer := etcdDump.PrintDataAsText(false, false)
+	buffer, err := etcdDump.PrintDataAsText(false, false)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(buffer).ToNot(gomega.BeNil())
 
 	output := buffer.String()
@@ -60,7 +61,8 @@ func Test03PrintDataAsTextWithEtcd(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
 
-	buffer := etcdDump.PrintDataAsText(true, false)
+	buffer, err := etcdDump.PrintDataAsText(true, false)
+	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(buffer).ToNot(gomega.BeNil())
 
 	output := buffer.String()

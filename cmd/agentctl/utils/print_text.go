@@ -52,7 +52,7 @@ func (p pfx) getPrefix(level int) string {
 
 // PrintDataAsText prints data from an EtcdDump repo in text format. If tree option is chosen, output is printed with
 // tree lines
-func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffer {
+func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(printAsTree, perLevelSpaces)
 
 	nameFuncMap := template.FuncMap{
@@ -368,7 +368,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 }
 
 // Render data according to templates as a tree
-func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) *bytes.Buffer {
+func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	for _, key := range ed.getSortedKeys() {
 		treeBuffer := new(bytes.Buffer)
@@ -385,12 +385,16 @@ func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) *
 			padRight(nl, ":")
 		}
 
+		var wasError error
 		for index, templateVal := range templates {
 			if index == 0 {
 				// Execute first template with standard output with key
-				templateVal.Execute(os.Stdout, key)
+				wasError = templateVal.Execute(os.Stdout, key)
 			} else {
-				templateVal.Execute(treeBuffer, vd)
+				wasError = templateVal.Execute(treeBuffer, vd)
+			}
+			if wasError != nil {
+				return nil, wasError
 			}
 		}
 
@@ -404,11 +408,11 @@ func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) *
 		// Reset local buffer
 		treeBuffer.Reset()
 	}
-	return buffer
+	return buffer, nil
 }
 
 // Render data according to templates in text form
-func (ed EtcdDump) textRenderer(showEtcd bool, templates []*template.Template) *bytes.Buffer {
+func (ed EtcdDump) textRenderer(showEtcd bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	buffer.WriteTo(os.Stdout)
 	for _, key := range ed.getSortedKeys() {
@@ -423,16 +427,20 @@ func (ed EtcdDump) textRenderer(showEtcd bool, templates []*template.Template) *
 			}
 			padRight(nl, ":")
 		}
+		var wasError error
 		for index, templateVal := range templates {
 			if index == 0 {
 				// First with key
-				templateVal.Execute(buffer, key)
+				wasError = templateVal.Execute(buffer, key)
 			} else {
-				templateVal.Execute(buffer, vd)
+				wasError = templateVal.Execute(buffer, vd)
+			}
+			if wasError != nil {
+				return nil, wasError
 			}
 		}
 	}
-	return buffer
+	return buffer, nil
 }
 
 func getPrefix(level int) string {
