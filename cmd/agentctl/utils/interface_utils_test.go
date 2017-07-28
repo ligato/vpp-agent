@@ -20,6 +20,7 @@ import (
 	"testing"
 )
 
+// Test01UpdateIpv4Address tests correct function of UpdateIpv4Address()
 func Test01UpdateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -35,6 +36,7 @@ func Test01UpdateIpv4Address(t *testing.T) {
 	gomega.Expect(isContained(update[1], newIps)).To(gomega.BeTrue())
 }
 
+// Test02UpdateIpv6Address tests correct function of UpdateIpv6Address()
 func Test02UpdateIpv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -48,6 +50,7 @@ func Test02UpdateIpv6Address(t *testing.T) {
 	gomega.Expect(isContained(update[0], newIps)).To(gomega.BeTrue())
 }
 
+// Test03ValidateIpv4Address tests correct function of ValidateIpv4Addr()
 func Test03ValidateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -57,6 +60,7 @@ func Test03ValidateIpv4Address(t *testing.T) {
 	gomega.Succeed()
 }
 
+// Test04ValidateIPv6Address tests correct function of ValidateIpv6Addr()
 func Test04ValidateIPv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -66,6 +70,7 @@ func Test04ValidateIPv6Address(t *testing.T) {
 	gomega.Succeed()
 }
 
+// Test05ValidatePhysAddress tests correct function of ValidatePhyAddr()
 func Test05ValidatePhysAddress(t *testing.T) {
 	gomega.RegisterTestingT(t)
 

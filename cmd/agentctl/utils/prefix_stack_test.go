@@ -20,6 +20,7 @@ import (
 	"testing"
 )
 
+// Test01GetPrefix tests whether prefix can be obtained using GetPrefix() method
 func Test01GetPrefix(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -28,6 +29,7 @@ func Test01GetPrefix(t *testing.T) {
 	gomega.Expect(result).To(gomega.BeEquivalentTo("-"))
 }
 
+// Test02SetLast set correct flag setup for last entry in prefix stack
 func Test02SetLast(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -38,6 +40,7 @@ func Test02SetLast(t *testing.T) {
 	gomega.Expect(prefixStack.Entries[0].Last).To(gomega.BeTrue())
 }
 
+// Test03Push tests correct functionality of pushing prefix stack entries
 func Test03Push(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -48,6 +51,7 @@ func Test03Push(t *testing.T) {
 	gomega.Expect(len(prefixStack.Entries)).To(gomega.BeEquivalentTo(2))
 }
 
+// Test04Pop tests correct functionality of popping prefix stack entries
 func Test04Pop(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -60,6 +64,7 @@ func Test04Pop(t *testing.T) {
 	gomega.Expect(len(prefixStack.Entries)).To(gomega.BeEquivalentTo(2))
 }
 
+// Test05PfxStack_GetPreamble tests right format of returned icon with preamble
 func Test05PfxStack_GetPreamble(t *testing.T) {
 	gomega.RegisterTestingT(t)
 

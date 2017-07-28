@@ -23,6 +23,7 @@ import (
 	"testing"
 )
 
+// Test01ParseKeyAgentPrefix tests whether all parameters for ParseKey() functions are correct for provided agent key
 func Test01ParseKeyAgentPrefix(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, plugStatCfgRev := utils.
@@ -34,6 +35,8 @@ func Test01ParseKeyAgentPrefix(t *testing.T) {
 	gomega.Expect(plugStatCfgRev).To(gomega.BeEquivalentTo(status.StatusPrefix))
 }
 
+// Test02ParseKeyInterfaceConfig tests whether all parameters for ParseKey() functions are correct for provided
+// interface config key
 func Test02ParseKeyInterfaceConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -44,6 +47,8 @@ func Test02ParseKeyInterfaceConfig(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
+// Test03ParseKeyInterfaceStatus tests whether all parameters for ParseKey() functions are correct for provided
+// interface status key
 func Test03ParseKeyInterfaceStatus(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -54,6 +59,8 @@ func Test03ParseKeyInterfaceStatus(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
+// Test04ParseKeyInterfaceError tests whether all parameters for ParseKey() functions are correct for provided
+// interface error key
 func Test04ParseKeyInterfaceError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -64,6 +71,8 @@ func Test04ParseKeyInterfaceError(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
 }
 
+// Test05ParseKeyBdConfig tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain config key
 func Test05ParseKeyBdConfig(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -74,6 +83,8 @@ func Test05ParseKeyBdConfig(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain status key
 func Test06ParseKeyBdState(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -84,6 +95,8 @@ func Test06ParseKeyBdState(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// bridge domain error key
 func Test07ParseKeyBdError(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.
@@ -94,6 +107,8 @@ func Test07ParseKeyBdError(t *testing.T) {
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
 }
 
+// Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
+// fib table key
 func Test08ParseKeyFib(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	label, dataType, params, _ := utils.

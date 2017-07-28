@@ -23,6 +23,8 @@ import (
 	"text/template"
 )
 
+// Test01TreeWriter Tests functionality of FlushTree() called with tree writer. If the provided template is processed
+// without any failures and FlushTree() won't throw an error, the test is successful
 func Test01TreeWriter(t *testing.T) {
 	gomega.RegisterTestingT(t)
 

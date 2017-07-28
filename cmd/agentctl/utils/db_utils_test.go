@@ -21,6 +21,8 @@ import (
 	"testing"
 )
 
+// Test01PrintDataAsJson reads buffer created according to provided etcd data and verifies all flags used within JSON
+// output
 func Test01PrintDataAsJson(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
@@ -35,6 +37,8 @@ func Test01PrintDataAsJson(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring(utils.IfState))
 }
 
+// Test02PrintDataAsText reads buffer created according to provided etcd data and verifies some important flags which
+// are expected within text output
 func Test02PrintDataAsText(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
@@ -50,6 +54,8 @@ func Test02PrintDataAsText(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring("IpAddr"))
 }
 
+// Test03PrintDataAsTextWithEtcd reads buffer created according to provided etcd data (including special ETCD info)
+// and verifies all flags used within text output
 func Test03PrintDataAsTextWithEtcd(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := getEtcdDataMap()
@@ -64,6 +70,7 @@ func Test03PrintDataAsTextWithEtcd(t *testing.T) {
 	gomega.Expect(output).To(gomega.ContainSubstring("Sts"))
 }
 
+// Generates simple ETCD data
 func getEtcdDataMap() utils.EtcdDump {
 	// Vpp metadata (the same for every entity)
 	vppMetaData := utils.VppMetaData{
