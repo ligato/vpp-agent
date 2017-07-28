@@ -811,7 +811,7 @@ func createBfdEcho(db keyval.ProtoBroker, iface string) {
 }
 
 func reportIfaceErrorState(db keyval.ProtoBroker) {
-	ifErr, err := db.ListValues(interfaces.IfStateErrorPrefix)
+	ifErr, err := db.ListValues(interfaces.IfErrorPrefix)
 	if err != nil {
 		log.Fatal(err)
 		return

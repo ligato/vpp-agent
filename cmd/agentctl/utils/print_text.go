@@ -108,65 +108,109 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 
 			// Interface status (combines status values from config and state)
 			"{{range $iface, $element := .}}\n{{pfx 2}}{{setBold $iface}}" +
-			"{{with .State}} ({{.InternalName}}, ifIdx {{.IfIndex}}){{end}}:\n" +
+			"{{with .State}}" +
+			"{{with .InterfaceState}} ({{.InternalName}}, ifIdx {{.IfIndex}})" +
+			"{{end}}" +
+			"{{end}}:\n" +
 			"{{pfx 3}}Status: <" +
-			"{{if .Config}}{{isEnabled .Config.Enabled}}{{else}}{{setRed \"NOT-IN-CONFIG\"}}: {{end}}" +
-			"{{with .State}}{{setStsColor \"ADMIN\" .AdminStatus}}, {{setStsColor \"OPER\" .OperStatus}} {{else}}, {{setRed \"NOT-IN-VPP\"}}{{end}}" +
-			">" +
+			"{{with .Config}}" +
+			"{{with .Interface}}{{isEnabled .Enabled}}" +
+			"{{end}}" +
+			"{{else}}{{setRed \"NOT-IN-CONFIG\"}}, " +
+			"{{end}}" +
+			"{{with .State}}" +
+			"{{with .InterfaceState}}{{setStsColor \"ADMIN\" .AdminStatus}}, {{setStsColor \"OPER\" .OperStatus}}" +
+			"{{end}}" +
+			"{{else}}, {{setRed \"NOT-IN-VPP\"}}" +
+			"{{end}}>" +
 
 			// Interface type
-			"{{with .Config}}\n{{pfx 3}}IfType: {{.Type}}{{getIfTypeInfo .}}{{end}}" +
+			"{{with .Config}}" +
+			"{{with .Interface}}" +
+			"\n{{pfx 3}}IfType: {{.Type}}" +
+			"{{end}}" +
+			//"{{getIfTypeInfo .}}" +
+			"{{end}}" +
 
 			// Interface MTU
 			//TODO "{{with .Config}}\n{{pfx 3}}MTU: {{.Mtu}}{{end}}" +
 
 			// IP Address and attributes (if configured)
-			"{{with .Config}}\n{{pfx 3}}IpAddr: {{getIpAddresses .IpAddresses}}{{end}}" +
+			"{{with .Config}}" +
+			"{{with .Interface}}" +
+			"{{with .IpAddresses}}" +
+			"\n{{pfx 3}}IpAddr: {{getIpAddresses .}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
 			// Physical (MAC) Address from both config and state
 			// (if configured or available from state)
-			"{{if .Config}}" +
-			"{{if .Config.PhysAddress}}\n{{pfx 3}}{{$paLbl}}{{.Config.PhysAddress}}" +
-			"{{if .State}}{" +
-			"{if .State.PhysAddress}}, (s {{.State.PhysAddress}}){{end}}" +
+			//"{{with .Config}}" +
+			//	"{{with .Interface}}" +
+			//		"\n{{pfx 3}}{{$paLbl}}{{.PhysAddress}}" +
+			//	"{{end}}" +
+			//"{{end}}" +
+			"{{if .State}}" +
+			"{{with .State}}" +
+			"{{if .InterfaceState}}" +
+			"{{with .InterfaceState}}" +
+			"{{if .PhysAddress}}" +
+			"\n{{pfx 3}}{{$paLbl}}(s {{.PhysAddress}})" +
 			"{{end}}" +
-			"{{else if .State}}" +
-			"{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}" +
 			"{{end}}" +
-			"{{else if .State}}" +
-			"{{if .State.PhysAddress}}\n{{pfx 3}}{{$paLbl}}(s {{.State.PhysAddress}}){{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 			"{{end}}" +
 
 			// Link attributes (if available from state)
-			"{{with .State}}{{if or .Mtu .Speed .Duplex}}\n{{pfx 3}}LnkAtr: {{with .Mtu}}mtu {{.}}{{end}}" +
-			"{{with .Speed}}, speed {{.}}{{end}}" +
-			"{{with .Duplex}}, duplex {{.}}{{end}}" +
+			"{{with .State}}" +
+			"{{with .InterfaceState}}" +
+			"{{if or .Mtu .Speed .Duplex}}\n{{pfx 3}}LnkAtr: " +
+			"{{with .Mtu}}mtu {{.}}" +
+			"{{end}}" +
+			"{{with .Speed}}, speed {{.}}" +
+			"{{end}}" +
+			"{{with .Duplex}}, duplex {{.}}" +
+			"{{end}}" +
+			"{{end}}" +
 			"{{end}}" +
 			"{{end}}" +
 
 			// Interface statistics (if available from State)
-			"{{with .State}}{{with .Statistics}}" +
+			"{{with .State}}" +
+			"{{with .InterfaceState}}" +
+			"{{with .Statistics}}" +
 			"{{if or .InPackets .InBytes .OutPackets .OutBytes .Ipv4Packets .Ipv6Packets .DropPackets .InErrorPackets .InMissPackets .PuntPackets .InNobufPackets}}\n" +
 			"{{pfx 3}}Stats:" +
 			"\n{{pfx 4}}In: pkt {{.InPackets}}, byte {{.InBytes}}, errPkt {{.InErrorPackets}}, nobufPkt {{.InNobufPackets}}, missPkt {{.InMissPackets}}" +
 			"\n{{pfx 4}}Out: pkt {{.OutPackets}}, byte {{.OutBytes}}, errPkt {{.OutErrorPackets}}" +
-			"\n{{pfx 4}}Misc: drop {{.DropPackets}}, punt {{.PuntPackets}}, ipv4 {{.Ipv4Packets}}, ipv6 {{.Ipv6Packets}}{{end}}" +
-			"{{end}}{{end}}" +
+			"\n{{pfx 4}}Misc: drop {{.DropPackets}}, punt {{.PuntPackets}}, ipv4 {{.Ipv4Packets}}, ipv6 {{.Ipv6Packets}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
 			// Etcd metadata for both the config and state records
 			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
-			"{{with .Config}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
-			"{{with .State}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
-			"{{end}}\n" +
+			"{{with .Config}}" +
+			"{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{with .State}}" +
+			"{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'" +
+			"{{end}}" +
+			"{{end}}" +
+			"{{end}}" +
 
 			// Interface errors (if present)
-			"{{with $interfaceErrors}}{{range .}}" +
+			"{{with $interfaceErrors}}" +
+			"{{range .}}" +
 			"{{with .InterfaceErrorList}}{{range .}}" +
 			"{{if eq .InterfaceName $iface}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:{{range $index, $error := .}}\n" +
 			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			"{{end}}\n{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
-
-			"{{end}}" +
+			"\n{{end}}" +
 			"{{end}}")
 	if err != nil {
 		panic(err)
@@ -269,8 +313,6 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) *bytes.Buffe
 			vd, _ := ed[key]
 			vd.ShowEtcd = showEtcd
 
-			//vd.BridgeDomains[0].State.
-
 			for _, bd := range vd.BridgeDomains {
 				nl := []*string{}
 				if bd.Config != nil {
@@ -367,22 +409,23 @@ func setStsColor(kind string, arg interfaces.InterfacesState_Interface_Status) s
 // The parameters are returned as a formatted string ready to be
 // printed out.
 func getIfTypeInfo(ifc *IfConfigWithMD) string {
-	switch ifc.Type {
+	iface := ifc.Interface
+	switch iface.Type {
 	case interfaces.InterfaceType_MEMORY_INTERFACE:
-		if ifc.Memif.Master {
+		if iface.Memif.Master {
 			return fmt.Sprintf("; <MASTER>, id %d, bufSize %d, rngSize %d, socketFN '%s', secret '%s', rxQueues '%d', txQueues '%d'",
-				ifc.Memif.Id, ifc.Memif.BufferSize, ifc.Memif.RingSize, ifc.Memif.SocketFilename, ifc.Memif.Secret,
-				ifc.Memif.RxQueues, ifc.Memif.TxQueues)
+				iface.Memif.Id, iface.Memif.BufferSize, iface.Memif.RingSize, iface.Memif.SocketFilename, iface.Memif.Secret,
+				iface.Memif.RxQueues, iface.Memif.TxQueues)
 		}
 		return fmt.Sprintf("; id %d, bufSize %d, rngSize %d, socketFN '%s', secret '%s', rxQueues '%d', txQueues '%d'",
-			ifc.Memif.Id, ifc.Memif.BufferSize, ifc.Memif.RingSize, ifc.Memif.SocketFilename, ifc.Memif.Secret,
-			ifc.Memif.RxQueues, ifc.Memif.TxQueues)
+			iface.Memif.Id, iface.Memif.BufferSize, iface.Memif.RingSize, iface.Memif.SocketFilename, iface.Memif.Secret,
+			iface.Memif.RxQueues, iface.Memif.TxQueues)
 
 	case interfaces.InterfaceType_VXLAN_TUNNEL:
 		return fmt.Sprintf("; srcIp %s, dstIp %s, vni %d",
-			ifc.Vxlan.SrcAddress, ifc.Vxlan.DstAddress, ifc.Vxlan.Vni)
+			iface.Vxlan.SrcAddress, iface.Vxlan.DstAddress, iface.Vxlan.Vni)
 	case interfaces.InterfaceType_AF_PACKET_INTERFACE:
-		return fmt.Sprintf("; hostName %s", ifc.Afpacket.HostIfName)
+		return fmt.Sprintf("; hostName %s", iface.Afpacket.HostIfName)
 	default:
 		return ""
 	}

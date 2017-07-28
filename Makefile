@@ -48,17 +48,19 @@ endef
 # run all tests
 define test_only
 	@echo "# running unit tests"
+	@go test ./cmd/agentctl/utils
 	@go test ./idxvpp/nametoidx
-    @echo "# done"
+	@echo "# done"
 endef
 
 # run all tests with coverage
 define test_cover_only
 	@echo "# running unit tests with coverage analysis"
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./idxvpp/nametoidx
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
 	@echo "# merging coverage results"
     @cd vendor/github.com/wadey/gocovmerge && go install -v
-    @gocovmerge ${COVER_DIR}coverage_unit1.out > ${COVER_DIR}coverage.out
+    @gocovmerge ${COVER_DIR}coverage_unit1.out ${COVER_DIR}coverage_unit2.out  > ${COVER_DIR}coverage.out
     @echo "# coverage data generated into ${COVER_DIR}coverage.out"
     @echo "# done"
 endef
@@ -80,7 +82,7 @@ endef
 
 # run code analysis
 define lint_only
-    @echo "# running code analysis"
+   @echo "# running code analysis"
     @./scripts/golint.sh
     @./scripts/govet.sh
     @echo "# done"

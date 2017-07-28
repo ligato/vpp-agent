@@ -15,7 +15,6 @@
 package utils_test
 
 import (
-	"fmt"
 	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
@@ -34,8 +33,6 @@ func Test01VppInterfacesPrintJsonData(t *testing.T) {
 	gomega.Expect(result).ToNot(gomega.BeNil())
 
 	output := result.String()
-
-	fmt.Print(output)
 
 	// Check Vpp and interface presence
 	for i := 1; i <= 3; i++ {

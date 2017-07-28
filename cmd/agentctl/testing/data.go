@@ -30,7 +30,7 @@ func TableData() utils.EtcdDump {
 	}
 
 	ifStateWithMD := &utils.IfStateWithMD{
-		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
+		InterfaceState: &interfaces.InterfacesState_Interface{
 			AdminStatus:  1,
 			OperStatus:   1,
 			InternalName: "Test-Interface",
@@ -46,7 +46,7 @@ func TableData() utils.EtcdDump {
 	zeroStatistics := &interfaces.InterfacesState_Interface_Statistics{}
 
 	zeroIfStateWithMD := &utils.IfStateWithMD{
-		InterfacesState_Interface: &interfaces.InterfacesState_Interface{
+		InterfaceState: &interfaces.InterfacesState_Interface{
 			AdminStatus:  2,
 			OperStatus:   2,
 			InternalName: "Test-Interface",

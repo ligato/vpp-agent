@@ -155,7 +155,7 @@ func filterInterfacesWithoutData(interfaces []string, interfaceMap map[string]In
 	var filteredInterfaces []string
 	for _, iface := range interfaces {
 		ifaceData := interfaceMap[iface]
-		if ifaceData.State == nil || ifaceData.State.Statistics == nil {
+		if ifaceData.State == nil || ifaceData.State.InterfaceState == nil || ifaceData.State.InterfaceState.Statistics == nil {
 			continue
 		}
 		filteredInterfaces = append(filteredInterfaces, iface)
@@ -181,10 +181,10 @@ func filterInactiveInterfaces(interfaceList []string, interfaceMap map[string]In
 	var filteredInterfaces []string
 	for _, name := range interfaceList {
 		ifaceData := interfaceMap[name]
-		if ifaceData.State == nil || ifaceData.State.Statistics == nil {
+		if ifaceData.State == nil || ifaceData.State.InterfaceState == nil || ifaceData.State.InterfaceState.Statistics == nil {
 			continue
 		}
-		stats := ifaceData.State.Statistics
+		stats := ifaceData.State.InterfaceState.Statistics
 		if stats.InPackets != 0 || stats.InBytes != 0 || stats.InErrorPackets != 0 || stats.InMissPackets != 0 ||
 			stats.InNobufPackets != 0 || stats.OutPackets != 0 || stats.OutBytes != 0 ||
 			stats.OutErrorPackets != 0 || stats.DropPackets != 0 || stats.PuntPackets != 0 ||
@@ -285,7 +285,7 @@ func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 		for _, iface := range row.interfaces {
 			ifaceData := row.interfaceMap[iface]
 			// All these interfaces have statistics
-			stats := ifaceData.State.Statistics
+			stats := ifaceData.State.InterfaceState.Statistics
 			// If particular data type contains non-zero value, evaluation is finished
 			switch dataType {
 			case InPkt:
@@ -368,7 +368,7 @@ func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 			}
 		}
 	}
-	// At last revert the value to return correct result
+	// At Last revert the value to return correct result
 	return !isZeroColumn
 }
 
@@ -377,10 +377,10 @@ func (row *TableVppDataContext) printTable(table *goterm.Table, items []string, 
 	// Iterate over vpp interfaces
 	for index, name := range row.interfaces {
 		ifaceData := row.interfaceMap[name]
-		if ifaceData.State == nil || ifaceData.State.Statistics == nil {
+		if ifaceData.State == nil || ifaceData.State.InterfaceState == nil || ifaceData.State.InterfaceState.Statistics == nil {
 			continue
 		}
-		stats := ifaceData.State.Statistics
+		stats := ifaceData.State.InterfaceState.Statistics
 		var dataList []interface{}
 		// Vpp label is written only one for better readability
 		if index == 0 {
