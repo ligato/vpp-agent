@@ -76,13 +76,17 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 	stsTemplate, err := template.New("status").Funcs(stsFuncMap).Parse(
 		"{{pfx 1}}STATUS:" +
 			"{{$etcd := .ShowEtcd}}" +
-			"{{range $index, $element := .Status}}\n{{pfx 2}}{{$index}}: {{setOsColor .State}}" +
+			// Iterate over status
+			"{{range $statusName, $statusData := .Status}}\n{{pfx 2}}{{$statusName}}: {{setOsColor .State}}" +
 			"{{if .LastUpdate}}, Updated: {{convertTime .LastUpdate | setBold}}{{end}}" +
 			"{{if .LastChange}}, Changed: {{convertTime .LastChange}}{{end}}" +
 			"{{if .BuildVersion}}\n{{pfx 3}}    Version: '{{.BuildVersion}}'{{end}}" +
 			"{{if .BuildDate}}, Built: {{setBold .BuildDate}}{{end}}" +
 			"{{if $etcd}}\n{{pfx 3}}    ETCD: Rev {{.Rev}}, Key '{{.Key}}'{{end}}" +
-			"{{else}} {{setRed \"INACTIVE\"}}{{end}}\n")
+			// In case there is no status
+			"{{else}} {{setRed \"INACTIVE\"}}" +
+			// Iterate over status - end of loop
+			"{{end}}\n")
 	if err != nil {
 		panic(err)
 	}
@@ -102,113 +106,71 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 		"{{$etcd := .ShowEtcd}}" +
 			"{{$interfaceErrors := .InterfaceErrors}}" +
 			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
-			"{{$paLbl := \"PhAddr: \"}}" +
 
-			// Interface status (combines status values from config and state)
-			"{{range $iface, $element := .}}\n{{pfx 2}}{{setBold $iface}}" +
-			"{{with .State}}" +
-			"{{with .InterfaceState}} ({{.InternalName}}, ifIdx {{.IfIndex}})" +
-			"{{end}}" +
-			"{{end}}:\n" +
-			"{{pfx 3}}Status: <" +
-			"{{with .Config}}" +
-			"{{with .Interface}}{{isEnabled .Enabled}}" +
-			"{{end}}" +
-			"{{else}}{{setRed \"NOT-IN-CONFIG\"}}, " +
-			"{{end}}" +
-			"{{with .State}}" +
-			"{{with .InterfaceState}}{{setStsColor \"ADMIN\" .AdminStatus}}, {{setStsColor \"OPER\" .OperStatus}}" +
-			"{{end}}" +
-			"{{else}}, {{setRed \"NOT-IN-VPP\"}}" +
-			"{{end}}>" +
+			// Iterate over interfaces
+			"{{range $ifaceName, $ifaceData := .}}\n{{pfx 2}}{{setBold $ifaceName}}" +
+
+			// Interface overall status
+			"{{with .State}}{{with .InterfaceState}} ({{.InternalName}}, ifIdx {{.IfIndex}}){{end}}{{end}}:\n{{pfx 3}}Status: <" +
+			"{{with .Config}}{{with .Interface}}{{isEnabled .Enabled}}{{end}}" +
+			// 'with .Config' else
+			"{{else}}{{setRed \"NOT-IN-CONFIG\"}}{{end}}" +
+			"{{with .State}}{{with .InterfaceState}}{{setStsColor \"ADMIN\" .AdminStatus}}, {{setStsColor \"OPER\" .OperStatus}}{{end}}" +
+			// 'with .State' else
+			"{{else}}, {{setRed \"NOT-IN-VPP\"}}{{end}}>" +
 
 			// Interface type
-			"{{with .Config}}" +
-			"{{with .Interface}}" +
-			"\n{{pfx 3}}IfType: {{.Type}}" +
+			"{{with .Config}}{{with .Interface}}\n{{pfx 3}}IfType: {{.Type}}" +
 			"{{end}}" +
-			"{{end}}" +
-
-			// Interface MTU
-			//TODO "{{with .Config}}\n{{pfx 3}}MTU: {{.Mtu}}{{end}}" +
 
 			// IP Address and attributes (if configured)
-			"{{with .Config}}" +
-			"{{with .Interface}}" +
-			"{{with .IpAddresses}}" +
-			"\n{{pfx 3}}IpAddr: {{getIpAddresses .}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{with .Interface}}{{with .IpAddresses}}\n{{pfx 3}}IpAddr: {{getIpAddresses .}}" +
+			"{{end}}{{end}}{{end}}" +
 
-			// Physical (MAC) Address from both config and state
-			// (if configured or available from state)
-			//"{{with .Config}}" +
-			//	"{{with .Interface}}" +
-			//		"\n{{pfx 3}}{{$paLbl}}{{.PhysAddress}}" +
-			//	"{{end}}" +
-			//"{{end}}" +
-			"{{if .State}}" +
-			"{{with .State}}" +
-			"{{if .InterfaceState}}" +
-			"{{with .InterfaceState}}" +
-			"{{if .PhysAddress}}" +
-			"\n{{pfx 3}}{{$paLbl}}(s {{.PhysAddress}})" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			// Physical address (if configured)
+			"{{with .State}}{{with .InterfaceState}}{{if .PhysAddress}}\n{{pfx 3}}PhysAddr: {{.PhysAddress}}" +
+			"{{end}}{{end}}" +
 
 			// Link attributes (if available from state)
-			"{{with .State}}" +
-			"{{with .InterfaceState}}" +
-			"{{if or .Mtu .Speed .Duplex}}\n{{pfx 3}}LnkAtr: " +
-			"{{with .Mtu}}mtu {{.}}" +
-			"{{end}}" +
-			"{{with .Speed}}, speed {{.}}" +
-			"{{end}}" +
-			"{{with .Duplex}}, duplex {{.}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{with .InterfaceState}}{{if or .Mtu .Speed .Duplex}}\n{{pfx 3}}LnkAtr: " +
+			"{{with .Mtu}}mtu {{.}}{{end}}" +
+			"{{with .Speed}}, speed {{.}}{{end}}" +
+			"{{with .Duplex}}, duplex {{.}}{{end}}" +
+			"{{end}}{{end}}" +
 
 			// Interface statistics (if available from State)
-			"{{with .State}}" +
-			"{{with .InterfaceState}}" +
-			"{{with .Statistics}}" +
+			"{{with .InterfaceState}}{{with .Statistics}}" +
 			"{{if or .InPackets .InBytes .OutPackets .OutBytes .Ipv4Packets .Ipv6Packets .DropPackets .InErrorPackets .InMissPackets .PuntPackets .InNobufPackets}}\n" +
 			"{{pfx 3}}Stats:" +
 			"\n{{pfx 4}}In: pkt {{.InPackets}}, byte {{.InBytes}}, errPkt {{.InErrorPackets}}, nobufPkt {{.InNobufPackets}}, missPkt {{.InMissPackets}}" +
 			"\n{{pfx 4}}Out: pkt {{.OutPackets}}, byte {{.OutBytes}}, errPkt {{.OutErrorPackets}}" +
 			"\n{{pfx 4}}Misc: drop {{.DropPackets}}, punt {{.PuntPackets}}, ipv4 {{.Ipv4Packets}}, ipv6 {{.Ipv6Packets}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{end}}" + // Return from 'if or'
+			"{{end}}{{end}}{{end}}" +
 
 			// Etcd metadata for both the config and state records
 			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
-			"{{with .Config}}" +
-			"{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{with .State}}" +
-			"{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{with .Config}}{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
+			"{{with .State}}{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
+			"{{end}}\n" +
 
 			// Interface errors (if present)
 			"{{with $interfaceErrors}}" +
-			"{{range .}}" +
-			"{{with .InterfaceErrorList}}{{range .}}" +
-			"{{if eq .InterfaceName $iface}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:{{range $index, $error := .}}\n" +
-			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
-			"{{end}}\n{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}" +
-			"\n{{end}}" +
-			"{{end}}")
+			// Iterate over interfaces (Interface_errors)
+			"{{range .}}{{with .InterfaceErrorList}}" +
+			// Iterate over interface error list
+			"{{range .}}{{if eq .InterfaceName $ifaceName}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:" +
+			// Iterate over error data
+			"{{range $index, $error := .}}\n{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			// Iterate over error data - end of loop
+			"{{end}}{{end}}{{end}}" +
+			// Iterate over interface error list - end of loop
+			"{{end}}{{end}}" +
+			// Iterate over interfaces (Interface_errors) - end of loop
+			"{{end}}{{end}}" +
+
+			// Iterate over interfaces - end of loop
+			"{{end}}{{end}}\n")
 	if err != nil {
 		panic(err)
 	}
@@ -225,137 +187,93 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"{{$fibTableEntries := .FibTableEntries}}" +
 			"{{$bridgeDomainErrors := .BridgeDomainErrors}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
-			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:\n" +
-			"{{with .Config}}" +
-			"{{with .BridgeDomain}}" +
-			"{{pfx 3}}Attributes:" +
+
+			// Iterate over bridge domains
+			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:" +
+
 			// Bridge domain config attributes
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
-			"{{if .Flood}}FLOOD" +
-			"{{end}}" +
-			"{{if .UnknownUnicastFlood}}" +
-			"{{if .Flood}}," +
-			"{{end}} UNKN-UNICAST-FLOOD" +
-			"{{end}}" +
-			"{{if .Forward}}" +
-			"{{if or .Flood .UnknownUnicastFlood}}," +
-			"{{end}} FORWARD" +
-			"{{end}}" +
-			"{{if .Learn}}" +
-			"{{if or .Flood .UnknownUnicastFlood .Forward}}," +
-			"{{end}} LEARN" +
-			"{{end}}" +
-			"{{if .ArpTermination}}" +
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn}}," +
-			"{{end}} ARP-TERMINATION" +
-			"{{end}}>" +
+			"{{with .Config}}{{with .BridgeDomain}}\n{{pfx 3}}Attributes:{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
+			"{{if .Flood}}FLOOD{{end}}" +
+			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
+			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
+			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
+			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
 			"{{end}}" +
 
 			// Interface table
 			"{{with .Interfaces}}\n{{pfx 3}}Interfaces:" +
+			// Iterate over BD interfaces
 			"{{range $ifKey, $element := .}}\n{{pfx 4}}{{setBold $element.Name}} splitHorizonGrp {{.SplitHorizonGroup}}" +
-			"{{if .BridgedVirtualInterface}}, <BVI>" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{if .BridgedVirtualInterface}}, <BVI>{{end}}" +
+			// Iterate over BD interfaces - end of loop
+			"{{end}}{{end}}" +
 
 			// ARP termination table
 			"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
+			// Iterate over ARP table
 			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
+			//Iterate over ARP table - end of loop
+			"{{end}}{{end}}" +
+			// Out of '.Config'
+			"{{end}}{{end}}" +
 
-			// Bridge Domain status
-			"{{with .State}}" +
-			"{{with .BridgeDomainState}}" +
+			// Bridge domain status
+			"{{with .State}}{{with .BridgeDomainState}}" +
 			"\n{{pfx 3}}Stats:" +
 			"\n{{pfx 4}}Index: {{.Index}}" +
 			"\n{{pfx 4}}Attributes:" +
-			"{{with .L2Params}}" +
+
 			// Bridge domain state attributes
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
-			"{{if .Flood}}FLOOD" +
-			"{{end}}" +
-			"{{if .UnknownUnicastFlood}}" +
-			"{{if .Flood}}," +
-			"{{end}} UNKN-UNICAST-FLOOD" +
-			"{{end}}" +
-			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}}," +
-			"{{end}} FORWARD" +
-			"{{end}}" +
-			"{{if .Learn}}" +
-			"{{if or .Flood .UnknownUnicastFlood .Forward}}," +
-			"{{end}} LEARN" +
-			"{{end}}" +
-			"{{if .ArpTermination}}" +
-			"{{if or .Flood .UnknownUnicastFlood .Forward .Learn}}," +
-			"{{end}} ARP-TERMINATION" +
-			"{{end}}>" +
-			"{{end}}" +
-			"{{end}}" +
-			"\n{{pfx 4}}Interfaces: ({{.InterfaceCount}})" +
-			"{{with .Interfaces}}" +
-			"{{range $ifaceIndex, $iface := .}}\n" +
-			"{{pfx 5}}{{setBold $iface.Name}} shg: {{$iface.SplitHorizonGroup}}" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{with .L2Params}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn .ArpTermination}} <" +
+			"{{if .Flood}}FLOOD{{end}}" +
+			"{{if .UnknownUnicastFlood}}{{if .Flood}},{{end}} UNKN-UNICAST-FLOOD{{end}}" +
+			"{{if .Forward}}{{if or .Flood .UnknownUnicastFlood}},{{end}} FORWARD{{end}}" +
+			"{{if .Learn}}{{if or .Flood .UnknownUnicastFlood .Forward}},{{end}} LEARN{{end}}" +
+			"{{if .ArpTermination}}{{if or .Flood .UnknownUnicastFlood .Forward .Learn}},{{end}} ARP-TERMINATION{{end}}>" +
+			"{{end}}{{end}}" +
+			"\n{{pfx 4}}Interfaces: ({{.InterfaceCount}}){{with .Interfaces}}" +
+			// Iterate over BD status interfaces
+			"{{range $ifaceIndex, $iface := .}}" +
+			"\n{{pfx 5}}{{setBold $iface.Name}} shg: {{$iface.SplitHorizonGroup}}" +
+			// Iterate over BD status interfaces - end of loop
+			"{{end}}{{end}}" +
 			"\n{{pfx 4}}BVI: {{.BviInterface}}" +
-			"{{end}}" +
-			"{{end}}" +
+			// Out of '.Status"
+			"{{end}}{{end}}" +
 
 			// Etcd metadata
 			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
-			"{{with .Config}}" +
-			"{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{with .State}}" +
-			"{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'" +
-			"{{end}}" +
-			"{{end}}" +
+			"{{with .Config}}{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
+			"{{with .State}}{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
 			"{{end}}" +
 
 			// Bridge domain errors (if present)
 			"{{with $bridgeDomainErrors}}" +
-			"{{range .}}" +
-			"{{with .BdErrorList}}" +
-			"{{range .}}" +
-			"{{if eq .BdName $element.Name}}" +
-			"{{with .ErrorData}}" +
-			"\n{{pfx 3}}{{setRed \"Errors\"}}" +
-			"{{range $index, $error := .}}\n" +
-			"{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}\n" +
+			// Iterate over bridge domains (BridgeDomain_errors)
+			"{{range .}}{{with .BdErrorList}}" +
+			// Iterate ove bridge domain error list
+			"{{range .}}{{if eq .BdName $element.Name}}{{with .ErrorData}}\n{{pfx 3}}{{setRed \"Errors\"}}" +
+			// Iterate over error data
+			"{{range $index, $error := .}}\n{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
+			// Iterate over error data - end of loop
+			"{{end}}{{end}}{{end}}" +
+			// Iterate ove bridge domain error list - end of loop
+			"{{end}}{{end}}" +
+			// Iterate over bridge domains (BridgeDomain_errors) - end of loop
+			"{{end}}{{end}}" +
 
 			// FIB table
-			"{{with $fibTableEntries}}\n" +
-			"{{with .FibTable}}" +
-			"{{pfx 2}}FIB-Table:" +
-			"{{range $fibKey, $fib := .}}\n" +
-			"{{pfx 3}}{{$fib.PhysAddress}}" +
-			"{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}" +
-			"{{end}}" +
-			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}" +
-			"{{end}}" +
-			"{{if $fib.StaticConfig}}, <STATIC>" +
-			"{{end}}" +
-			"{{if $fib.BridgedVirtualInterface}}, <BVI>" +
-			"{{end}}" +
-			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"{{end}}" +
-			"\n{{end}}" +
-			"{{end}}\n\n")
+			"\n{{with $fibTableEntries}}{{with .FibTable}}\n{{pfx 2}}FIB-Table:" +
+			// Iterate over FIB table
+			"{{range $fibKey, $fib := .}}\n{{pfx 3}}{{$fib.PhysAddress}}{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}{{end}}" +
+			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}{{end}}" +
+			"{{if $fib.StaticConfig}}, <STATIC>{{end}}" +
+			"{{if $fib.BridgedVirtualInterface}}, <BVI>{{end}}" +
+			"{{if eq $fib.Action 0}}, <FORWARD> {{else}}, <DROP>{{end}}" +
+			// Iterate over FIB table - end of loop
+			"{{end}}{{end}}{{end}}\n" +
+
+			"{{end}}{{end}}\n")
 
 	templates := []*template.Template{}
 	// Keep template order
