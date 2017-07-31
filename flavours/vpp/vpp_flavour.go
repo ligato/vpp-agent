@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/statuscheck"
 	"github.com/ligato/vpp-agent/defaultplugins"
 	"github.com/ligato/vpp-agent/linuxplugin"
@@ -21,6 +22,7 @@ type Flavour struct {
 	injected     bool
 	Logrus       logrus.Plugin
 	HTTP         httpmux.Plugin
+	LogManager   logmanager.Plugin
 	ServiceLabel servicelabel.Plugin
 	StatusCheck  statuscheck.Plugin
 	Etcd         etcdv3.Plugin
@@ -38,6 +40,8 @@ func (f *Flavour) Inject() error {
 	}
 	f.injected = true
 	f.HTTP.LogFactory = &f.Logrus
+	f.LogManager.ManagedLoggers = &f.Logrus
+	f.LogManager.HTTP = &f.HTTP
 	f.StatusCheck.HTTP = &f.HTTP
 	f.Etcd.LogFactory = &f.Logrus
 	f.Etcd.ServiceLabel = &f.ServiceLabel
