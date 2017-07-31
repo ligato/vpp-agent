@@ -162,7 +162,7 @@ func validateIpv6AddrCIDR(ipv6Addr string) {
 		ExitWithError(ExitIO, errors.New("Failed to parse IPv6 Address: "+err.Error()))
 	}
 	if !match {
-		ExitWithError(ExitIO, errors.New("Invalid Ipv4 Address: "+ipv6Addr))
+		ExitWithError(ExitIO, errors.New("Invalid Ipv6 Address: "+ipv6Addr))
 	}
 }
 

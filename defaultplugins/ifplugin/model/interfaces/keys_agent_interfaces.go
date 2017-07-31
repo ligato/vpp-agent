@@ -24,8 +24,8 @@ const (
 	InterfacePrefix = "vpp/config/v1/interface/"
 	// IfStatePrefix vpp/status/v1/interface/
 	IfStatePrefix = "vpp/status/v1/interface/"
-	// IfStateErrorPrefix vpp/status/v1/interface/error
-	IfStateErrorPrefix = "vpp/status/v1/interface/error/"
+	// IfErrorPrefix vpp/status/v1/interface/error
+	IfErrorPrefix = "vpp/status/v1/interface/error/"
 )
 
 // InterfaceKeyPrefix returns the prefix used in ETCD to store vpp interfaces config
@@ -51,12 +51,12 @@ func InterfaceKey(ifaceLabel string) string {
 
 // InterfaceErrorPrefix returns the prefix used in ETCD to store interface errors
 func InterfaceErrorPrefix() string {
-	return IfStateErrorPrefix
+	return IfErrorPrefix
 }
 
 // InterfaceErrorKey returns the key used in ETCD to store interface errors
 func InterfaceErrorKey(ifaceLabel string) string {
-	return IfStateErrorPrefix + ifaceLabel
+	return IfErrorPrefix + ifaceLabel
 }
 
 // InterfaceStateKeyPrefix returns the prefix used in ETCD to store vpp interfaces state data

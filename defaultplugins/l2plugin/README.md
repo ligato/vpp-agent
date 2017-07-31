@@ -49,26 +49,26 @@ It is meant to be used solely for testing purposes.
 
 First create a new tap interface `tap1`:
 ```
-vpp-agent-ctl /opt/vnf-agent/dev/etcd.conf -ct
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -ct
 ```
 
 To configure a new bridge domain `bd1` containing the previously created tap interface `tap1`, use:
 ```
-vpp-agent-ctl /opt/vnf-agent/dev/etcd.conf -cbd
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -cbd
 ```
 
 Alternatively, the bridge domain `bd1` can be created to include few ARP termination entries with:
 ```
-vpp-agent-ctl /opt/vnf-agent/dev/etcd.conf -aat
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -aat
 ```
 
 To create a new tap interface `tap2` and to L2-xConnect it with `tap1`, use:
 ```
-vpp-agent-ctl /opt/vnf-agent/dev/etcd.conf -cxc
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -cxc
 ```
 
 To create L2 FIB table, run:
 ```
-vpp-agent-ctl /opt/vnf-agent/dev/etcd.conf -aft
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -aft
 ```
 

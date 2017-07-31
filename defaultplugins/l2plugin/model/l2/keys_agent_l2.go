@@ -26,7 +26,7 @@ const (
 	// BdStatePrefix is the relative key prefix for bridge domain state
 	BdStatePrefix = "vpp/status/v1/bd/"
 	// BdErrPrefix is the relative key prefix for the bridge domain error
-	BdErrPrefix = "vpp/config/v1/bd/error/"
+	BdErrPrefix = "vpp/status/v1/bd/error/"
 	// FIBPrefix is the relative key prefix for FIB table entries.
 	//TODO FIBPrefix = "vpp/config/v1/bd/<bd>/fib/"
 	FIBPrefix = "vpp/config/v1/bd/fib/"

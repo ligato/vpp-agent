@@ -15,57 +15,95 @@
 package utils_test
 
 import (
-	"fmt"
 	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
-	"strconv"
 	"strings"
 	"testing"
 )
 
-// Test01VppInterfacesPrintJsonData tests VPPs and interfaces presence in the output + the presence of a statistics data
+// Test01VppPrintJsonData tests VPPs and config presence in the output + the presence of a statistics data
 // (the header in every interface and the data flags in active interfaces)
-func Test01VppInterfacesPrintJsonData(t *testing.T) {
+func Test01VppPrintJsonData(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()
-	etcdDump = data.TableData()
+	etcdDump = data.JSONData()
 
 	result, _ := etcdDump.PrintDataAsJSON(nil)
 	gomega.Expect(result).ToNot(gomega.BeNil())
 
 	output := result.String()
 
-	fmt.Print(output)
+	// Check Vpp flags
+	gomega.Expect(strings.Contains(output, "vpp1")).To(gomega.BeTrue())
+	gomega.Expect(strings.Contains(output, "vpp2")).To(gomega.BeTrue())
 
-	// Check Vpp and interface presence
-	for i := 1; i <= 3; i++ {
-		vppName := "vpp-" + strconv.Itoa(i)
-		gomega.Expect(strings.Contains(output, vppName)).To(gomega.BeTrue())
-		// Interface Root
-		gomega.Expect(strings.Contains(output, "interface")).To(gomega.BeTrue())
-		for j := 1; j <= 3; j++ {
-			gomega.Expect(strings.Contains(output, "Test-Interface")).To(gomega.BeTrue())
-		}
-	}
+	// Check interface config (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.IfConfig)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.IfConfig)).To(gomega.BeEquivalentTo(2))
+
+	// Check interface state (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.IfState)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.IfState)).To(gomega.BeEquivalentTo(2))
+
+	// Check bridge domain config (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.BdConfig)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.BdConfig)).To(gomega.BeEquivalentTo(2))
+
+	// Check bridge domain state (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.BdState)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.BdState)).To(gomega.BeEquivalentTo(2))
+
+	// Check fib table (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.FibConfig)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.FibConfig)).To(gomega.BeEquivalentTo(2))
 
 	// Test statistics presence (including empty)
 	gomega.Expect(strings.Contains(output, "statistics")).To(gomega.BeTrue())
-	gomega.Expect(strings.Count(output, "statistics")).To(gomega.BeEquivalentTo(9)) // Interface count
+	gomega.Expect(strings.Count(output, "statistics")).To(gomega.BeEquivalentTo(2)) // Interface count
 
 	// Test statistics data
 	dataFlags := []string{"in_packets", "out_packets", "in_miss_packets"}
 	for _, flag := range dataFlags {
 		gomega.Expect(strings.Contains(output, flag)).To(gomega.BeTrue())
 		// Interfaces with statistics data
-		gomega.Expect(strings.Count(output, flag)).To(gomega.BeEquivalentTo(6))
+		gomega.Expect(strings.Count(output, flag)).To(gomega.BeEquivalentTo(2))
 	}
 }
 
-// Test02PrintJsonMetadata tests presence of a metadata in the output in case the 'showEtcd' switch is set to true. The metadata should
-// be present on every interface
-func Test02PrintJsonMetadata(t *testing.T) {
+// Test02VppPrintJsonFilteredData tests VPPs and config presence in the output. Result is filtered
+func Test02VppPrintJsonFilteredData(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()
-	etcdDump = data.TableData()
+	etcdDump = data.JSONData()
+
+	// Added filter to vpp2 (vpp1 data should be ignored) + non existing vpp3 filter (should be ignored as well)
+	result, _ := etcdDump.PrintDataAsJSON([]string{"vpp2", "vpp3"})
+	gomega.Expect(result).ToNot(gomega.BeNil())
+
+	output := result.String()
+
+	// Check Vpp flags
+	gomega.Expect(strings.Contains(output, "vpp1")).To(gomega.BeFalse())
+	gomega.Expect(strings.Contains(output, "vpp2")).To(gomega.BeTrue())
+	// There should be nothing as a 'vpp3'
+	gomega.Expect(strings.Contains(output, "vpp3")).To(gomega.BeFalse())
+
+	// Test statistics data
+	dataFlags := []string{"in_packets", "out_packets", "in_miss_packets"}
+	for _, flag := range dataFlags {
+		gomega.Expect(strings.Contains(output, flag)).To(gomega.BeTrue())
+		// Interfaces with statistics data
+		gomega.Expect(strings.Count(output, flag)).To(gomega.BeEquivalentTo(1))
+	}
+}
+
+// Test04PrintJsonMetadata tests presence of a metadata in the output in case the 'showEtcd' switch is set to true. The metadata should
+// be present on every interface
+func Test04PrintJsonMetadata(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	etcdDump := utils.NewEtcdDump()
+	etcdDump = data.JSONData()
 
 	result, _ := etcdDump.PrintDataAsJSON(nil)
 	gomega.Expect(result).ToNot(gomega.BeNil())
@@ -73,5 +111,16 @@ func Test02PrintJsonMetadata(t *testing.T) {
 
 	gomega.Expect(strings.Contains(output, "Keys")).To(gomega.BeTrue())
 	count := strings.Count(output, "Keys")
-	gomega.Expect(count).To(gomega.BeEquivalentTo(3))
+	gomega.Expect(count).To(gomega.BeEquivalentTo(10))
+}
+
+// Test05PrintJsonEmptyBuffer tests empty buffer using non-existing vpp filter
+func Test05PrintJsonEmptyBuffer(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	etcdDump := utils.NewEtcdDump()
+	etcdDump = data.JSONData()
+
+	result, err := etcdDump.PrintDataAsJSON([]string{"filter-all"})
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.ContainSubstring("No data to display", result.String())
 }

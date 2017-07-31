@@ -256,8 +256,8 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	var name string
 	var metaData interface{}
 	var exists bool
-	if strings.HasPrefix(key, interfaces.IfStateErrorPrefix) {
-		name = strings.Replace(key, interfaces.IfStateErrorPrefix, "", 1)
+	if strings.HasPrefix(key, interfaces.IfErrorPrefix) {
+		name = strings.Replace(key, interfaces.IfErrorPrefix, "", 1)
 		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
 	} else if strings.HasPrefix(key, l2.BdErrPrefix) {
 		name = strings.Replace(key, l2.BdErrPrefix, "", 1)

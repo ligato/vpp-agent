@@ -26,6 +26,17 @@ import (
 )
 
 const (
+	// IfConfig labels used by json formatter
+	IfConfig = "INTERFACE CONFIG"
+	// IfState labels used by json formatter
+	IfState = "INTERFACE STATE"
+	// BdConfig labels used by json formatter
+	BdConfig = "BRIDGE DOMAINS CONFIG"
+	// BdState labels used by json formatter
+	BdState = "BRIDGE DOMAINS State"
+	// FibConfig labels used by json formatter
+	FibConfig = "FIB TABLE"
+	// Format
 	indent    = "  "
 	emptyJSON = "{}"
 )
@@ -51,7 +62,8 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		// Obtain raw data
 		ifaceConfDataRoot, ifaceConfKeys := getInterfaceConfigData(vd.Interfaces)
 		ifaceStateDataRoot, ifaceStateKeys := getInterfaceStateData(vd.Interfaces)
-		l2DataRoot, l2Keys := getL2Data(vd.BridgeDomains)
+		l2ConfigDataRoot, l2Keys := getL2ConfigData(vd.BridgeDomains)
+		l2StateDataRoot, l2Keys := getL2StateData(vd.BridgeDomains)
 		fibDataRoot, fibKeys := getFIBData(vd.FibTableEntries)
 
 		// Interface config data
@@ -64,8 +76,13 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		if err != nil {
 			wasError = err
 		}
-		// L2 data
-		jsL2Data, err := json.MarshalIndent(l2DataRoot, "", indent)
+		// L2 config data
+		jsL2ConfigData, err := json.MarshalIndent(l2ConfigDataRoot, "", indent)
+		if err != nil {
+			wasError = err
+		}
+		// L2 state data
+		jsL2StateData, err := json.MarshalIndent(l2StateDataRoot, "", indent)
 		if err != nil {
 			wasError = err
 		}
@@ -78,19 +95,23 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 
 		// Add data to buffer
 		if string(jsConfData) != emptyJSON {
-			printLabel(buffer, key+": - INTERFACE CONFIG\n", indent, ifaceConfKeys)
+			printLabel(buffer, key+": - "+IfConfig+"\n", indent, ifaceConfKeys)
 			fmt.Fprintf(buffer, "%s\n", jsConfData)
 		}
 		if string(jsStateData) != emptyJSON {
-			printLabel(buffer, key+": - INTERFACE STATE\n", indent, ifaceStateKeys)
+			printLabel(buffer, key+": - "+IfState+"\n", indent, ifaceStateKeys)
 			fmt.Fprintf(buffer, "%s\n", jsStateData)
 		}
-		if string(jsL2Data) != emptyJSON {
-			printLabel(buffer, key+": - BRIDGE DOMAINS\n", indent, l2Keys)
-			fmt.Fprintf(buffer, "%s\n", jsL2Data)
+		if string(jsL2ConfigData) != emptyJSON {
+			printLabel(buffer, key+": - "+BdConfig+"\n", indent, l2Keys)
+			fmt.Fprintf(buffer, "%s\n", jsL2ConfigData)
+		}
+		if string(jsL2ConfigData) != emptyJSON {
+			printLabel(buffer, key+": - "+BdState+"\n", indent, l2Keys)
+			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
 		if string(jsFIBData) != emptyJSON {
-			printLabel(buffer, key+": - FIB TABLE\n", indent, fibKeys)
+			printLabel(buffer, key+": -"+FibConfig+"\n", indent, fibKeys)
 			fmt.Fprintf(buffer, "%s\n", jsFIBData)
 		}
 
@@ -141,9 +162,9 @@ func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfac
 	var keyset []string
 	for _, ifaceData := range interfaceData {
 		if ifaceData.Config != nil {
-			iface := ifaceData.Config.Interfaces_Interface
+			iface := ifaceData.Config.Interface
 			ifaces = append(ifaces, iface)
-			keyset = append(keyset, ifaceData.Config.Key)
+			keyset = append(keyset, ifaceData.Config.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
@@ -160,9 +181,9 @@ func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interface
 	var keyset []string
 	for _, ifaceData := range interfaceData {
 		if ifaceData.State != nil {
-			ifaceState := ifaceData.State.InterfacesState_Interface
+			ifaceState := ifaceData.State.InterfaceState
 			ifaceStates = append(ifaceStates, ifaceState)
-			keyset = append(keyset, ifaceData.State.Key)
+			keyset = append(keyset, ifaceData.State.Metadata.Key)
 		}
 	}
 	sort.Strings(keyset)
@@ -171,20 +192,40 @@ func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interface
 	return &ifaceStateRoot, keyset
 }
 
-// Get l2 data and create full l2 bridge domains proto structure
-func getL2Data(l2ConfigData map[string]BdWithMD) (*l2.BridgeDomains, []string) {
+// Get l2 config data and create full l2 bridge domains proto structure
+func getL2ConfigData(l2Data map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	l2Root := l2.BridgeDomains{}
-	l2Data := []*l2.BridgeDomains_BridgeDomain{}
+	l2s := []*l2.BridgeDomains_BridgeDomain{}
 	var keyset []string
-	for _, bdData := range l2ConfigData {
-		bd := bdData.BridgeDomains_BridgeDomain
-		l2Data = append(l2Data, bd)
-		keyset = append(keyset, bdData.Key)
+	for _, bdData := range l2Data {
+		if bdData.Config != nil {
+			bd := bdData.Config.BridgeDomain
+			l2s = append(l2s, bd)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
+		}
 	}
 	sort.Strings(keyset)
-	l2Root.BridgeDomains = l2Data
+	l2Root.BridgeDomains = l2s
 
 	return &l2Root, keyset
+}
+
+// Get l2 state data and create full l2 bridge domains proto structure
+func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string) {
+	l2StateRoot := l2.BridgeDomainState{}
+	l2States := []*l2.BridgeDomainState_BridgeDomain{}
+	var keyset []string
+	for _, bdData := range l2Data {
+		if bdData.Config != nil && bdData.State != nil {
+			bd := bdData.State.BridgeDomainState
+			l2States = append(l2States, bd)
+			keyset = append(keyset, bdData.Config.Metadata.Key)
+		}
+	}
+	sort.Strings(keyset)
+	l2StateRoot.BridgeDomains = l2States
+
+	return &l2StateRoot, keyset
 }
 
 // Get FIB data and create full FIB proto structure
