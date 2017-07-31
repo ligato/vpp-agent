@@ -60,7 +60,7 @@ GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
 ### Extensibility:
-[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - extensibility via cn-infra")](https://github.com/ligato/cn-infra)
+[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - example of extensibility")](https://github.com/ligato/cn-sample-service)
 
 ### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)

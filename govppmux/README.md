@@ -39,6 +39,8 @@ plugin.vppCh, err = govppmux.NewAPIChannel()
 if err != nil {
     // Handle error condition...
 }
+// Close VPP channel.
+defer safeclose.Close(plugin.vppCh)
 
 req := &interfaces.SwInterfaceDump{}
 reqCtx := plugin.vppCh.SendMultiRequest(req)
@@ -59,6 +61,4 @@ for {
     // Process the message...
 }
 
-// Close VPP channel.
-safeclose.Close(plugin.vppCh)
 ```
