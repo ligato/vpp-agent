@@ -19,9 +19,9 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport)
