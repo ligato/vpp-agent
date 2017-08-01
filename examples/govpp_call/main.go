@@ -19,10 +19,10 @@ import (
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	bin_api "github.com/ligato/vpp-agent/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/flavours/vpp"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"time"
 )
 

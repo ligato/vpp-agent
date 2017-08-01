@@ -16,7 +16,7 @@ package utils_test
 
 import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/onsi/gomega"
 	"testing"
 )

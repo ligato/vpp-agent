@@ -15,10 +15,10 @@
 package defaultplugins
 
 import (
-	"github.com/ligato/vpp-agent/defaultplugins/aclplugin/model/acl"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange

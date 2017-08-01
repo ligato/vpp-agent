@@ -16,21 +16,21 @@ define generate_sources
 	@cd vendor/github.com/golang/mock/gomock && go install -v
 	@cd vendor/github.com/golang/mock/mockgen && go install -v
 	@echo "# generating sources"
-	@cd linuxplugin && go generate
-	@cd defaultplugins/ifplugin && go generate
-	@cd defaultplugins/l2plugin && go generate
-	@cd defaultplugins/l3plugin && go generate
-	@cd defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/bfd && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/ip && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/memif && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/tap && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/vpe && pkgreflect
-	@cd defaultplugins/ifplugin/bin_api/vxlan && pkgreflect
-	@cd defaultplugins/l2plugin/bin_api/l2 && pkgreflect
-	@cd defaultplugins/l2plugin/bin_api/vpe && pkgreflect
-	@cd defaultplugins/l3plugin/bin_api/ip && pkgreflect
+	@cd plugins/linuxplugin && go generate
+	@cd plugins/defaultplugins/ifplugin && go generate
+	@cd plugins/defaultplugins/l2plugin && go generate
+	@cd plugins/defaultplugins/l3plugin && go generate
+	@cd plugins/defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/bfd && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/ip && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/memif && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/tap && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/vpe && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/vxlan && pkgreflect
+	@cd plugins/defaultplugins/l2plugin/bin_api/l2 && pkgreflect
+	@cd plugins/defaultplugins/l2plugin/bin_api/vpe && pkgreflect
+	@cd plugins/defaultplugins/l3plugin/bin_api/ip && pkgreflect
 	@echo "# done"
 endef
 

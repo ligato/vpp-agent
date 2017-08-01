@@ -3,7 +3,7 @@ package vpp
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/httpmux"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/statuscheck"
-	"github.com/ligato/vpp-agent/defaultplugins"
-	"github.com/ligato/vpp-agent/linuxplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
 // Flavour glues together multiple plugins to translate ETCD configuration into VPP.

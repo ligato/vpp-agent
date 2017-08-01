@@ -19,12 +19,12 @@ is modelled by proto files that can be found in the [default plugins](defaultplu
 
 The agent consists of the following components:
 * [Default VPP Plugins](defaultplugins) - provide abstraction on top of the VPP binary APIs for:
-  * [NET Interfaces](defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
-  * [L2](defaultplugins/l2plugin) - Bridge Domains, FIBs...
-  * [L3](defaultplugins/l3plugin) - IP Routes, VRFs...
-  * [ACL](defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
-* [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
-* [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
+  * [NET Interfaces](plugins/defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
+  * [L2](plugins/defaultplugins/l2plugin) - Bridge Domains, FIBs...
+  * [L3](plugins/defaultplugins/l3plugin) - IP Routes, VRFs...
+  * [ACL](plugins/defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
+* [GOVPPmux](plugins/govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
+* [Linux](plugins/linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
 * [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
 

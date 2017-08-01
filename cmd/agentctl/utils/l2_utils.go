@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
 // Bridge domain flag names

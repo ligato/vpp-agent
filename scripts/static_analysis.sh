@@ -11,21 +11,17 @@ function static_analysis() {
 
   local CLIENTV1=$(${TOOL} "${PWD}/clientv1${SELECTOR}")
   local CMD=$(${TOOL} "${PWD}/cmd${SELECTOR}")
-  local DEFAULTPLUGINS=$(${TOOL} "${PWD}/defaultplugins${SELECTOR}")
+  local PLUGINS=$(${TOOL} "${PWD}/plugins${SELECTOR}")
   local EXAMPLES=$(${TOOL} "${PWD}/examples${SELECTOR}")
   local FLAVOURS=$(${TOOL} "${PWD}/flavours${SELECTOR}")
   local IDXVPP=$(${TOOL} "${PWD}/idxvpp${SELECTOR}")
-  local GOVPPMUX=$(${TOOL} "${PWD}/govppmux${SELECTOR}")
-  local LINUXPLUGIN=$(${TOOL} "${PWD}/linuxplugin${SELECTOR}")
 
   local ALL="$CLIENTV1
 $CMD
-$DEFAULTPLUGINS
+$PLUGINS
 $EXAMPLES
 $FLAVOURS
 $IDXVPP
-$GOVPPMUX
-$LINUXPLUGIN
 "
 
   local OUT=$(echo "${ALL}" | grep -F "${FILES}" | grep -v "${WHITELIST_ERRORS}")
