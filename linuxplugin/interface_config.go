@@ -68,13 +68,12 @@ func (e *unavailableMicroserviceErr) Error() string {
 // Updates received from the northbound API are compared with the Linux network configuration and differences
 // are applied through the Netlink API.
 type LinuxInterfaceConfigurator struct {
+	ServiceLabel *servicelabel.Plugin // service label plugin
+
 	cfgLock sync.Mutex
 
 	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */
 	ifIndexes idxvpp.NameToIdxRW
-
-	/* service label plugin */
-	serviceLabel *servicelabel.Plugin
 
 	/* interface caches (managed interfaces only) */
 	intfByName          map[string]*LinuxInterfaceConfig   /* interface name -> interface configuration */
@@ -93,10 +92,9 @@ type LinuxInterfaceConfigurator struct {
 }
 
 // Init linuxplugin and start go routines
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes idxvpp.NameToIdxRW, serviceLabel *servicelabel.Plugin) error {
+func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes idxvpp.NameToIdxRW) error {
 	log.Debug("Initializing LinuxInterfaceConfigurator")
 	plugin.ifIndexes = ifIndexes
-	plugin.serviceLabel = serviceLabel
 
 	// allocate caches
 	plugin.intfByName = make(map[string]*LinuxInterfaceConfig)
