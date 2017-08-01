@@ -66,6 +66,7 @@ const (
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
 type InterfaceStateUpdater struct {
+	GoVppmux       *govppmux.GOVPPPlugin
 	swIfIndexes    ifaceidx.SwIfIndex
 	publishIfState func(notification *intf.InterfaceStateNotification)
 
@@ -95,7 +96,7 @@ func (plugin *InterfaceStateUpdater) Init(ctx context.Context,
 	plugin.ifState = make(map[uint32]*intf.InterfacesState_Interface)
 
 	// init VPP API channel
-	plugin.vppCh, err = govppmux.NewAPIChannel()
+	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

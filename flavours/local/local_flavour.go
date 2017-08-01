@@ -18,13 +18,13 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/httpmux"
+	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/statuscheck"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/cn-infra/logging/logmanager"
 )
 
 // Flavour glues together multiple plugins to mange VPP configuration using local client.
@@ -54,6 +54,7 @@ func (f *Flavour) Inject() error {
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
+	f.VPP.GoVppmux = &f.GoVPP
 
 	return nil
 }

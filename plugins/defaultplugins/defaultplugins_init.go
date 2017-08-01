@@ -28,6 +28,8 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -35,8 +37,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
@@ -44,6 +45,7 @@ import (
 type Plugin struct {
 	Transport    datasync.TransportAdapter `inject:""`
 	ServiceLabel *servicelabel.Plugin
+	GoVppmux     *govppmux.GOVPPPlugin
 	Kafka        kafka.Mux
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
@@ -195,7 +197,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
-	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
+	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{GoVppmux: plugin.GoVppmux}
 	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
 		select {
 		case plugin.ifStateChan <- state:
@@ -207,12 +209,13 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{ServiceLabel: plugin.ServiceLabel}
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
 
 	log.Debug("ifConfigurator Initialized")
 
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
+		GoVppmux:     plugin.GoVppmux,
 		ServiceLabel: plugin.ServiceLabel,
 		SwIfIndexes:  plugin.swIfIndexes,
 		BfdIDSeq:     1,
@@ -231,6 +234,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "acl_l2_indexes", nil)
 
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
+		GoVppmux:       plugin.GoVppmux,
 		ACLL3L4Indexes: plugin.aclL3L4Indexes,
 		ACLL2Indexes:   plugin.aclL2Indexes,
 		SwIfIndexes:    plugin.swIfIndexes,
@@ -259,6 +263,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "if_to_bd_real_indexes", nil)
 
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
+		GoVppmux:           plugin.GoVppmux,
 		SwIfIndexes:        plugin.swIfIndexes,
 		BdIndexes:          plugin.bdIndexes,
 		BridgeDomainIDSeq:  1,
@@ -268,7 +273,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{GoVppmux: plugin.GoVppmux}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
 		case plugin.bdStateChan <- state:
@@ -282,6 +287,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "fib_indexes", nil)
 
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
+		GoVppmux:      plugin.GoVppmux,
 		SwIfIndexes:   plugin.swIfIndexes,
 		BdIndexes:     plugin.bdIndexes,
 		IfToBdIndexes: plugin.ifToBdDesIndexes,
@@ -295,6 +301,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.xcIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "xc_indexes", nil)
 
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
+		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 		XcIndexes:   plugin.xcIndexes,
 		XcIndexSeq:  1,
@@ -327,6 +334,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
+		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 	}
 	err := plugin.routeConfigurator.Init()

@@ -36,6 +36,7 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1routes". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
+	GoVppmux    *govppmux.GOVPPPlugin
 	vppChan     *govppapi.Channel
 	SwIfIndexes ifaceidx.SwIfIndex
 }
@@ -60,7 +61,7 @@ func (plugin *RouteConfigurator) Init() (err error) {
 	log.Debug("Initializing L3 plugin")
 
 	// Init VPP API channel
-	plugin.vppChan, err = govppmux.NewAPIChannel()
+	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

@@ -54,6 +54,7 @@ func (f *Flavour) Inject() error {
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
+	f.VPP.GoVppmux = &f.GoVPP
 
 	return nil
 }

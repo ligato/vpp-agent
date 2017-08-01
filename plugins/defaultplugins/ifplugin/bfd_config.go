@@ -23,15 +23,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/idxvpp"
-	//"gitlab.cisco.com/ctao/vnf-agent/plugins/servicelabel"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"strconv"
 )
 
@@ -41,6 +40,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type BFDConfigurator struct {
+	GoVppmux     *govppmux.GOVPPPlugin
 	SwIfIndexes  ifaceidx.SwIfIndex
 	ServiceLabel *servicelabel.Plugin
 	BfdIDSeq     uint32
@@ -63,7 +63,7 @@ func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKey
 	plugin.bfdEchoFunctionIndex = bfdEchoFunctionIndex
 	plugin.bfdRemovedAuthIndex = bfdRemovedAuthIndex
 
-	plugin.vppChannel, err = govppmux.NewAPIChannel()
+	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
