@@ -68,8 +68,6 @@ func (e *unavailableMicroserviceErr) Error() string {
 // Updates received from the northbound API are compared with the Linux network configuration and differences
 // are applied through the Netlink API.
 type LinuxInterfaceConfigurator struct {
-	ServiceLabel *servicelabel.Plugin // service label plugin
-
 	cfgLock sync.Mutex
 
 	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */

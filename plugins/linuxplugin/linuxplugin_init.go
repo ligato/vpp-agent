@@ -24,7 +24,6 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
@@ -34,11 +33,9 @@ const PluginID core.PluginName = "linuxplugin"
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	ServiceLabel *servicelabel.Plugin
+	transport datasync.TransportAdapter // data transport adapter
 
-	transport    datasync.TransportAdapter // data transport adapter
-
-	ifIndexes idxvpp.NameToIdxRW
+	ifIndexes      idxvpp.NameToIdxRW
 	ifConfigurator *LinuxInterfaceConfigurator
 
 	resyncChan chan datasync.ResyncEvent
@@ -77,7 +74,7 @@ func (plugin *Plugin) Init() error {
 	plugin.ifIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "linux_if_indexes", nil)
 
 	// Linux interface configurator
-	plugin.ifConfigurator = &LinuxInterfaceConfigurator{ServiceLabel: plugin.ServiceLabel}
+	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
 	err = plugin.subscribeWatcher()
