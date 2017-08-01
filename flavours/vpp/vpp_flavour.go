@@ -45,8 +45,10 @@ func (f *Flavour) Inject() error {
 	f.Kafka.ServiceLabel = &f.ServiceLabel
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus
+	f.Linux.ServiceLabel = &f.ServiceLabel
 	f.VPP.ServiceLabel = &f.ServiceLabel
 	f.VPP.Kafka = &f.Kafka
+	f.VPP.Linux = &f.Linux
 
 	return nil
 }
