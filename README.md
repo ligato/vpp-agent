@@ -13,12 +13,12 @@ built on [cn-infra](https://github.com/ligato/cn-infra).
 
 VPP Agent provides plugins that process high level (north-bound) configuration which 
 is carefully translated to low level VPP Binary API calls. North-bound configuration
-is modelled by proto files that can be found in the [default plugins](defaultplugins).
+is modelled by proto files that can be found in the [default plugins](plugins/defaultplugins).
 
 ![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
 
 The agent consists of the following components:
-* [Default VPP Plugins](defaultplugins) - provide abstraction on top of the VPP binary APIs for:
+* [Default VPP Plugins](plugins/defaultplugins) - provide abstraction on top of the VPP binary APIs for:
   * [NET Interfaces](plugins/defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
   * [L2](plugins/defaultplugins/l2plugin) - Bridge Domains, FIBs...
   * [L3](plugins/defaultplugins/l3plugin) - IP Routes, VRFs...
