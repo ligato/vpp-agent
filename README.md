@@ -15,7 +15,7 @@ VPP Agent provides plugins that process high level (north-bound) configuration w
 is carefully translated to low level VPP Binary API calls. North-bound configuration
 is modelled by proto files that can be found in the [default plugins](plugins/defaultplugins).
 
-![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
+![vpp agent](docs/imgs/vpp_agent.png "VPP Agent & it's Plugins on top of cn-infra")
 
 The agent consists of the following components:
 * [Default VPP Plugins](plugins/defaultplugins) - provide abstraction on top of the VPP binary APIs for:
@@ -25,7 +25,8 @@ The agent consists of the following components:
   * [ACL](plugins/defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
 * [GOVPPmux](plugins/govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
 * [Linux](plugins/linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
-* [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
+* [Plugins from cn-infra](https://github.com/ligato/cn-infra/tree/master/datasync) - datasync and other plugins
+* [Core from cn-infra](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading)
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
 
 ## Quickstart
