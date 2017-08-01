@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"os"
 	"regexp"
 	"strings"

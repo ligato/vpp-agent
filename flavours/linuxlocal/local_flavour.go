@@ -18,12 +18,13 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/httpmux"
+	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/statuscheck"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/defaultplugins"
-	"github.com/ligato/vpp-agent/govppmux"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // Flavour glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
@@ -32,6 +33,7 @@ type Flavour struct {
 	Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
 	HTTP             httpmux.Plugin
+	LogManager       logmanager.Plugin
 	ServiceLabel     servicelabel.Plugin
 	StatusCheck      statuscheck.Plugin
 	Resync           resync.Plugin
@@ -46,6 +48,8 @@ func (f *Flavour) Inject() error {
 	}
 	f.injected = true
 	f.HTTP.LogFactory = &f.Logrus
+	f.LogManager.ManagedLoggers = &f.Logrus
+	f.LogManager.HTTP = &f.HTTP
 	f.StatusCheck.HTTP = &f.HTTP
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus

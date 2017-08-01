@@ -13,18 +13,18 @@ built on [cn-infra](https://github.com/ligato/cn-infra).
 
 VPP Agent provides plugins that process high level (north-bound) configuration which 
 is carefully translated to low level VPP Binary API calls. North-bound configuration
-is modelled by proto files that can be found in the [default plugins](defaultplugins).
+is modelled by proto files that can be found in the [default plugins](plugins/defaultplugins).
 
 ![vpp agent plugins](docs/imgs/vpp_agent_plugins.png "VPP Agent Plugins on top of cn-infra")
 
 The agent consists of the following components:
-* [Default VPP Plugins](defaultplugins) - provide abstraction on top of the VPP binary APIs for:
-  * [NET Interfaces](defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
-  * [L2](defaultplugins/l2plugin) - Bridge Domains, FIBs...
-  * [L3](defaultplugins/l3plugin) - IP Routes, VRFs...
-  * [ACL](defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
-* [GOVPPmux](govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
-* [Linux](linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
+* [Default VPP Plugins](plugins/defaultplugins) - provide abstraction on top of the VPP binary APIs for:
+  * [NET Interfaces](plugins/defaultplugins/ifplugin) - network interfaces configuration (PCI Ethernet, MEMIF, AF_Packet, VXLAN, Loopback...) + BFD
+  * [L2](plugins/defaultplugins/l2plugin) - Bridge Domains, FIBs...
+  * [L3](plugins/defaultplugins/l3plugin) - IP Routes, VRFs...
+  * [ACL](plugins/defaultplugins/aclplugin) - VPP access lists (VPP ACL plugin)
+* [GOVPPmux](plugins/govppmux) - allows other plugins to access VPP independently on each other by means of connection multiplexing
+* [Linux](plugins/linuxplugin) (VETH) - allows optional configuration of Linux virtual ethernet interfaces
 * [Core](https://github.com/ligato/cn-infra/tree/master/core) - lifecycle management of plugins (loading, initialization, unloading) from [cn-infra](https://github.com/ligato/cn-infra)
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
 
@@ -60,7 +60,7 @@ GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
 ### Extensibility:
-[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - extensibility via cn-infra")](https://github.com/ligato/cn-infra)
+[![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - example of extensibility")](https://github.com/ligato/cn-sample-service)
 
 ### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)

@@ -23,7 +23,7 @@ import (
 
 	"bytes"
 	"github.com/ligato/cn-infra/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/logrusorgru/aurora.git"
 )
 

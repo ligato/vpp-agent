@@ -23,10 +23,10 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 
-	linux_intf "github.com/ligato/vpp-agent/linuxplugin/model/interfaces"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 
-	vpp_intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
