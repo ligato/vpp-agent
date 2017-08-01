@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
 // Flavour glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
@@ -38,6 +39,7 @@ type Flavour struct {
 	StatusCheck      statuscheck.Plugin
 	Resync           resync.Plugin
 	GoVPP            govppmux.GOVPPPlugin
+	Linux            linuxplugin.Plugin
 	VPP              defaultplugins.Plugin
 }
 
@@ -54,6 +56,7 @@ func (f *Flavour) Inject() error {
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
+	f.VPP.Linux = &f.Linux
 	f.VPP.GoVppmux = &f.GoVPP
 
 	return nil

@@ -40,6 +40,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -50,6 +51,8 @@ import (
 type InterfaceConfigurator struct {
 	GoVppmux     *govppmux.GOVPPPlugin
 	ServiceLabel *servicelabel.Plugin
+	Linux  *linuxplugin.Plugin
+
 	swIfIndexes  ifaceidx.SwIfIndexRW
 
 	afPacketConfigurator *AFPacketConfigurator
@@ -75,7 +78,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, noti
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Linux: plugin.Linux}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil

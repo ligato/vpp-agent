@@ -104,17 +104,17 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				// TODO propagate error
 			}
 			ifIdxEv.Done()
-			/*
-				case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
-					if !linuxIfIdxEv.IsDelete() {
-						plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
-						// TODO propagate error
-					} else {
-						plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
-						// TODO propagate error
-					}
-					linuxIfIdxEv.Done()
-			*/
+
+		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
+				if !linuxIfIdxEv.IsDelete() {
+					plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
+					// TODO propagate error
+				} else {
+					plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
+					// TODO propagate error
+				}
+				linuxIfIdxEv.Done()
+
 		case bdIdxEv := <-plugin.bdIdxWatchCh:
 			if !bdIdxEv.IsDelete() {
 				plugin.fibConfigurator.ResolveCreatedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {

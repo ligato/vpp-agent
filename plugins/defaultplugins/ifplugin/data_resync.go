@@ -104,8 +104,10 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 			if err != nil {
 				wasError = err
 			}
-			// even if error occurred (because there is still swIfIndex)
-			plugin.swIfIndexes.RegisterName(nbIface.Name, swIfIdx, nbIface)
+			if !plugin.afPacketConfigurator.IsPendingAfPacket(nbIface) {
+				// even if error occurred (because there is still swIfIndex)
+				plugin.swIfIndexes.RegisterName(nbIface.Name, swIfIdx, nbIface)
+			}
 		} else {
 			toBeConfigured = append(toBeConfigured, nbIface)
 		}

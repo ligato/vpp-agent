@@ -18,6 +18,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
@@ -27,11 +28,14 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
+// PluginID used in the Agent Core flavors
+const PluginID core.PluginName = "linuxplugin"
+
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	transport datasync.TransportAdapter
-	ifIndexes idxvpp.NameToIdxRW
+	transport datasync.TransportAdapter // data transport adapter
 
+	ifIndexes      idxvpp.NameToIdxRW
 	ifConfigurator *LinuxInterfaceConfigurator
 
 	resyncChan chan datasync.ResyncEvent
@@ -43,17 +47,10 @@ type Plugin struct {
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
-var (
-	// gPlugin holds the global instance of the Plugin
-	gPlugin *Plugin
-)
-
-// plugin function is used in api to access the plugin instance. It panics if the plugin instance is not initialized.
-func plugin() *Plugin {
-	if gPlugin == nil {
-		log.Panic("Trying to access the Linux Interface Plugin but it is still not initialized")
-	}
-	return gPlugin
+// GetIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux interface indexes.
+// This mapping is especially helpful for plugins that need to watch for newly added or deleted Linux interfaces.
+func (plugin *Plugin) GetIfIndexes() idxvpp.NameToIdx {
+	return plugin.ifIndexes
 }
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
@@ -84,8 +81,6 @@ func (plugin *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
-
-	gPlugin = plugin
 
 	return nil
 }

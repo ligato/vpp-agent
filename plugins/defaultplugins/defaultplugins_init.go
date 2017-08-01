@@ -28,8 +28,6 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -38,6 +36,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
@@ -47,6 +47,7 @@ type Plugin struct {
 	ServiceLabel *servicelabel.Plugin
 	GoVppmux     *govppmux.GOVPPPlugin
 	Kafka        kafka.Mux
+	Linux        *linuxplugin.Plugin
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
 	aclConfigurator *aclplugin.ACLConfigurator
@@ -182,7 +183,11 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 
 	// get pointer to the map with Linux interface indexes
-	plugin.linuxIfIndexes = linuxplugin.GetIfIndexes()
+	if plugin.Linux != nil {
+		plugin.linuxIfIndexes = plugin.Linux.GetIfIndexes()
+	} else {
+		plugin.linuxIfIndexes = nil
+	}
 
 	// BFD session
 	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_session_indexes", nil)
@@ -209,7 +214,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel}
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
 
 	log.Debug("ifConfigurator Initialized")
