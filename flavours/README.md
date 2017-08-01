@@ -1,7 +1,7 @@
 # Flavours
 
-A flavour in this context is a collection of plugins that allows to inspect capabilities available 
-for an agent. By convention, flavour provides `Inject()` method that interconnects plugins - injects dependencies and
+A flavour in this context is a collection of plugins that allows inspecting capabilities available 
+to an agent. By convention, flavour provides `Inject()` method that interconnects plugins - injects dependencies and
 `Plugins()` method returning all plugins contained in the flavour.
 
 Example:
@@ -32,4 +32,4 @@ func (f *Flavour) Plugins() []*core.NamedPlugin {
 
 ```
 
-This package contains flavours that can be used out-of the box.
+This package contains flavours that can be used out-of-the-box.
