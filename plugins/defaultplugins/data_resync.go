@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -278,11 +279,10 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	log.Debug("swIfIndexes watch registration finished")
 	plugin.bdIndexes.WatchNameToIdx(PluginID, plugin.bdIdxWatchCh)
 	log.Debug("bdIndexes watch registration finished")
-	/*
-		if plugin.linuxIfIndexes != nil {
-			plugin.linuxIfIndexes.WatchNameToIdx(PluginID, plugin.linuxIfIdxWatchCh)
-			log.Debug("linuxIfIndexes watch registration finished")
-		}*/
+	if plugin.linuxIfIndexes != nil {
+		plugin.linuxIfIndexes.Watch(PluginID, nametoidx.ToChan(plugin.linuxIfIdxWatchCh))
+		log.Debug("linuxIfIndexes watch registration finished")
+	}
 
 	plugin.watchConfigReg, err = plugin.Transport.
 		WatchData("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,

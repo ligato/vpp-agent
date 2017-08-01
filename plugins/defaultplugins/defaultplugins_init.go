@@ -45,6 +45,7 @@ type Plugin struct {
 	Transport    datasync.TransportAdapter `inject:""`
 	ServiceLabel *servicelabel.Plugin
 	Kafka        kafka.Mux
+	Linux        *linuxplugin.Plugin
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
 	aclConfigurator *aclplugin.ACLConfigurator
@@ -180,7 +181,11 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 
 	// get pointer to the map with Linux interface indexes
-	plugin.linuxIfIndexes = linuxplugin.GetIfIndexes()
+	if plugin.Linux != nil {
+		plugin.linuxIfIndexes = plugin.Linux.GetIfIndexes()
+	} else {
+		plugin.linuxIfIndexes = nil
+	}
 
 	// BFD session
 	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "bfd_session_indexes", nil)
@@ -207,7 +212,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{ServiceLabel: plugin.ServiceLabel}
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
 
 	log.Debug("ifConfigurator Initialized")
