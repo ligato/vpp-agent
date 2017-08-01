@@ -15,13 +15,13 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	vpp_acl "github.com/ligato/vpp-agent/defaultplugins/aclplugin/model/acl"
-	vpp_intf "github.com/ligato/vpp-agent/defaultplugins/ifplugin/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/defaultplugins/l2plugin/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/defaultplugins/l3plugin/model/l3"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange
