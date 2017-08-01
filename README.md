@@ -11,9 +11,9 @@ Please note that the content of this repository is currently a **WORK IN PROGRES
 The VPP Agent is a management tool for VPP ([FD.io Vector Packet Processing](https://fd.io/)) 
 built on [cn-infra](https://github.com/ligato/cn-infra).
 
-VPP Agent provides plugins that process high level (north-bound) configuration which 
-is carefully translated to low level VPP Binary API calls. North-bound configuration
-is modelled by proto files that can be found in the [default plugins](plugins/defaultplugins).
+VPP Agent provides plugins that process high-level (northbound) configuration which 
+is carefully translated to low level VPP Binary API calls. Northbound configuration
+is modelled by proto-files that can be found in the [default plugins](plugins/defaultplugins).
 
 ![vpp agent](docs/imgs/vpp_agent.png "VPP Agent & its Plugins on top of cn-infra")
 
@@ -30,7 +30,7 @@ The agent consists of the following components:
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
 
 ## Quickstart
-For quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
+For a quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
 on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
 
 0. Run ETCD and Kafka on your host (e.g. in Docker [using this procedure](docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host)).
