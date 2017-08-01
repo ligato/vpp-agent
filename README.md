@@ -15,7 +15,7 @@ VPP Agent provides plugins that process high level (north-bound) configuration w
 is carefully translated to low level VPP Binary API calls. North-bound configuration
 is modelled by proto files that can be found in the [default plugins](plugins/defaultplugins).
 
-![vpp agent](docs/imgs/vpp_agent.png "VPP Agent & it's Plugins on top of cn-infra")
+![vpp agent](docs/imgs/vpp_agent.png "VPP Agent & its Plugins on top of cn-infra")
 
 The agent consists of the following components:
 * [Default VPP Plugins](plugins/defaultplugins) - provide abstraction on top of the VPP binary APIs for:
