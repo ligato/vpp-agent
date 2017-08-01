@@ -26,12 +26,12 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 )
 
-// NewWatcher is a constructor
+// NewWatcher creates a new instance of Watcher.
 func NewWatcher() *Watcher {
 	return &Watcher{subscriptions: map[string]*Subscription{}, access: sync.Mutex{}, lastRev: NewLatestRev()}
 }
 
-// Watcher is simple implementation used for propagating events directly using channels
+// Watcher propagates events using channels.
 type Watcher struct {
 	subscriptions map[string]*Subscription
 	access        sync.Mutex
@@ -45,7 +45,7 @@ type WatchDataReg struct {
 	CloseChan  chan interface{}
 }
 
-// Close stops watching particular KeyPrefixes
+// Close stops watching of particular KeyPrefixes.
 func (reg *WatchDataReg) Close() error {
 	reg.adapter.access.Lock()
 	defer reg.adapter.access.Unlock()
@@ -166,13 +166,3 @@ func (adapter *Watcher) PropagateResync(txData map[ /*key*/ string]datasync.Chan
 
 	return nil
 }
-
-/*
-if db.Delete == val.GetChangeType() {
-						var prevRev int64
-						_, prevRev, prev = adapter.lastRev.Del(key)
-						currRev = prevRev + 1
-					} else {
-						_, _, prev, currRev = adapter.lastRev.Put(key, val.Data)
-
-*/

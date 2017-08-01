@@ -150,6 +150,8 @@ func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 
 	// write initial status data into ETCD
 	p.publishPluginData(pluginName, stat)
+
+	log.Infof("Plugin %v: status check probe registered", pluginName)
 }
 
 // ReportStateChange can be used to report a change in the status of a previously registered plugin.

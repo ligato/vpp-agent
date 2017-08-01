@@ -26,7 +26,7 @@ import (
 	"net"
 )
 
-// NewAdapter is a constructor
+// NewAdapter creates a new instance of Adapter.
 func NewAdapter() *Adapter {
 	grpcServer := grpc.NewServer()
 	//TODO grpcServer.RegisterCodec(json.NewCodec(), "application/json")

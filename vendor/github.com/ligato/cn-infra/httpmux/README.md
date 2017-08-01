@@ -1,6 +1,6 @@
-# HTTP
+# HTTPmux
 
-The `http` is a Plugin which allows other plugins to handle HTTP requests.
+The `HTTPmux` is a Plugin which allows other plugins to handle HTTP requests.
 
 **API**
 
@@ -8,6 +8,10 @@ To serve an HTTP service, plugin must first implement a handler function and the
 it at a given URL path using the `RegisterHTTPHandler` method.
 Behind the scenes, `httpmux` runs HTTP server inside a goroutine and registers HTTP handlers
 by their URL path using a HTTP request multiplexer from the package `gorilla/mux`.
+
+**Configuration**
+
+- used port can be defined using commandline flag `http-port`.
 
 **Example**
 
@@ -34,3 +38,8 @@ $ curl -X GET http://localhost:9191/example
   "Example": "This is an example"
 }
 ```
+
+**Dependencies**
+
+- [Logging](../logging/plugin)
+- [HTTPmux](../httpmux)

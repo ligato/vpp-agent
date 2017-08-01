@@ -65,7 +65,7 @@ func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (prevExists bool,
 	return false, err //TODO prev value
 }
 
-// Done does not anything yet
+// Done does nothing yet
 func (ev *ChangeWatchResp) Done(err error) {
 	//TODO publish response to the topic
 	if err != nil {
