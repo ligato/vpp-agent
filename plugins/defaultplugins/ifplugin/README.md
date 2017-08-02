@@ -87,9 +87,9 @@ ifplugin <-- GOVPP : success/err
 **JSON configuration example with vpp-agent-ctl**
 
 An example of interface configuration for MEMIF in JSON format can
-be found [here](../../cmd/vpp-agent-ctl/json/memif.json).
+be found [here](../../../cmd/vpp-agent-ctl/json/memif.json).
 
-To insert config into etcd in JSON format [vpp-agent-ctl](../../cmd/vpp-agent-ctl/main.go)
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
 can be used. For example, to configure interface `memif1` in vpp
 labeled `vpp1`, use the configuration in the `memif.json` file and
 run the following `vpp-agent-ctl` command:
@@ -129,7 +129,7 @@ VXLANs, tap and loopback interfaces with predefined configurations.
 Run `vpp-agent-ctl` with no arguments to get the list of all available
 commands. The documentation for `vpp-agent-ctl` is incomplete right now,
 and the only way to find out what a given command does is to
-[study the source code itself](../../cmd/vpp-agent-ctl/main.go).
+[study the source code itself](../../../cmd/vpp-agent-ctl/main.go).
 
 **Bidirectional Forwarding Detection**
 

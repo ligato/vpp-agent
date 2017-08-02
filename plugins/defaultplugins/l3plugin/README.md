@@ -8,12 +8,12 @@ must be stored in etcd using the following key:
 /vnf-agent/<agent-label>/vpp/config/v1/vrf/0/fib/
 ```
 
-An example of configuration in json format can be found [here](../../cmd/vpp-agent-ctl/json/routes.json).
+An example of configuration in json format can be found [here](../../../cmd/vpp-agent-ctl/json/routes.json).
 
 Note: Value `0` in vrfID field denotes default VRF in vpp. Since it is default value it is omitted in the config above.
  If you want to configure a route for a VRF other than default, make sure that the VRF has already been created.
 
-To insert config into etcd in json format [vpp-agent-ctl](../../cmd/vpp-agent-ctl/main.go) can be used.
+To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
 We assume that we want to configure vpp with label `vpp1` and config is stored in the `routes.json` file
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" routes.json
