@@ -30,7 +30,7 @@ import (
 
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state
 type BridgeDomainStateUpdater struct {
-	GoVppmux *govppmux.GOVPPPlugin
+	GoVppmux    *govppmux.GOVPPPlugin
 	bdIndex     bdidx.BDIndex
 	swIfIndexes ifaceidx.SwIfIndex
 
