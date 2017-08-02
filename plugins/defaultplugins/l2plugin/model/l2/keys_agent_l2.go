@@ -27,9 +27,8 @@ const (
 	BdStatePrefix = "vpp/status/v1/bd/"
 	// BdErrPrefix is the relative key prefix for the bridge domain error
 	BdErrPrefix = "vpp/status/v1/bd/error/"
-	// FIBPrefix is the relative key prefix for FIB table entries.
-	//TODO FIBPrefix = "vpp/config/v1/bd/<bd>/fib/"
-	FIBPrefix = "vpp/config/v1/bd/fib/"
+	// FIBPrefix is the key prefix for FIB table entries relative to a bridge domain.
+	FIBPrefix = "fib/"
 	// XconnectPrefix is the relative key prefix for xconnects.
 	XconnectPrefix = "vpp/config/v1/xconnect/"
 )
@@ -76,15 +75,15 @@ func ParseBDNameFromKey(key string) (name string, err error) {
 	return key, fmt.Errorf("wrong format of the key %s", key)
 }
 
-// FibKeyPrefix returns the prefix used in ETCD to store vpp fib table entry config
+// FibKeyPrefix returns the prefix (relative to bridge domain) used in ETCD to store vpp fib table entry config
 func FibKeyPrefix() string {
 	return FIBPrefix
 }
 
 // FibKey returns the prefix used in ETCD to store vpp fib table entry config
 // of particular fib in selected vpp instance
-func FibKey(fibMac string) string {
-	return FIBPrefix + fibMac
+func FibKey(bdLabel string, fibMac string) string {
+	return BridgeDomainKey(bdLabel) + "/" + FIBPrefix + fibMac
 }
 
 // XConnectKeyPrefix returns the prefix used in ETCD to store vpp xConnect pair config

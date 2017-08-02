@@ -79,7 +79,7 @@ func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.PutDSL 
 
 // BDFIB delete request for the L2 Forwarding Information Base
 func (dsl *PutDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l2.FibKey(val.PhysAddress), val)
+	dsl.parent.txn.Put(l2.FibKey(val.BridgeDomain, val.PhysAddress), val)
 
 	return dsl
 }
@@ -140,8 +140,8 @@ func (dsl *DeleteDSL) BD(bdName string) defaultplugins.DeleteDSL {
 }
 
 // BDFIB delete request for the L2 Forwarding Information Base
-func (dsl *DeleteDSL) BDFIB(mac string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l2.FibKey(mac))
+func (dsl *DeleteDSL) BDFIB(bdName string, mac string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l2.FibKey(bdName, mac))
 
 	return dsl
 }

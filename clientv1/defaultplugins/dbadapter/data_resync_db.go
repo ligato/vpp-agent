@@ -85,7 +85,7 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.
 
 // BDFIB add Bridge Domain to the RESYNC request
 func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
-	key := l2.FibKey(val.PhysAddress)
+	key := l2.FibKey(val.BridgeDomain, val.PhysAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

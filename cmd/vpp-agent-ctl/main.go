@@ -739,7 +739,7 @@ func addStaticFibTableEntry(db keyval.ProtoBroker, bdName string, iface string) 
 
 	log.Println(fibTable)
 
-	db.Put(l2.FibKey(fibTable.FibTableEntry[0].PhysAddress), fibTable.FibTableEntry[0])
+	db.Put(l2.FibKey(fibTable.FibTableEntry[0].BridgeDomain, fibTable.FibTableEntry[0].PhysAddress), fibTable.FibTableEntry[0])
 }
 
 func deleteStaticFibTableEntry(db keyval.ProtoBroker) {
@@ -750,7 +750,7 @@ func deleteStaticFibTableEntry(db keyval.ProtoBroker) {
 
 	log.Println(fibTable)
 
-	db.Delete(l2.FibKey(fibTable.FibTableEntry[0].PhysAddress))
+	db.Delete(l2.FibKey(fibTable.FibTableEntry[0].BridgeDomain, fibTable.FibTableEntry[0].PhysAddress))
 }
 
 func createL2xConnect(db keyval.ProtoBroker, ifnameRx string, ifnameTx string) {

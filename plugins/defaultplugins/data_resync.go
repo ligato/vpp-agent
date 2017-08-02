@@ -23,10 +23,10 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -292,7 +292,6 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.AuthKeysKeyPrefix(),
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
-			l2.FibKeyPrefix(),
 			l2.XConnectKeyPrefix(),
 			l3.RouteKey())
 	if err != nil {
@@ -380,29 +379,35 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return err
 		}
-	} else if strings.HasPrefix(key, l2.FibKeyPrefix()) {
-		var value, prevValue l2.FibTableEntries_FibTableEntry
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
 	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
-		var value, prevValue l2.BridgeDomains_BridgeDomain
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+		suffix := strings.TrimPrefix(key, l2.BridgeDomainKeyPrefix())
+		sep := strings.Index(suffix, "/") /* skip over the bridge domain label */
+		if sep != -1 && strings.HasPrefix(suffix[sep+1:], l2.FibKeyPrefix()) {
+			// FIB table (bdLabel = suffix[:sep])
+			var value, prevValue l2.FibTableEntries_FibTableEntry
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		} else {
-			return err
+			// Bridge domain
+			var value, prevValue l2.BridgeDomains_BridgeDomain
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 	} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 		var value, prevValue l2.XConnectPairs_XConnectPair

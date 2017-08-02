@@ -17,6 +17,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
@@ -56,13 +57,13 @@ func GetBridgeDomainKeyAndValue(endpoints []string, label string, bdName string)
 }
 
 // GetFibEntry returns the FIB entry if exists
-func GetFibEntry(endpoints []string, label string, fibMac string) (bool, string, *l2.FibTableEntries_FibTableEntry) {
+func GetFibEntry(endpoints []string, label string, bdLabel string, fibMac string) (bool, string, *l2.FibTableEntries_FibTableEntry) {
 	db, err := GetDbForOneAgent(endpoints, label)
 	if err != nil {
 		ExitWithError(ExitBadConnection, err)
 	}
 
-	key := l2.FibKeyPrefix() + fibMac
+	key := l2.FibKey(bdLabel, fibMac)
 	fibEntry := &l2.FibTableEntries_FibTableEntry{}
 
 	found, _, err := db.GetValue(key, fibEntry)

@@ -9,7 +9,7 @@ configuration must be stored in etcd using following keys:
 ```
 
 ```
-/vnf-agent/<agent-label>/vpp/config/v1/bd/fib/<mac-address>
+/vnf-agent/<agent-label>/vpp/config/v1/bd/<bridge-domain-name>/fib/<mac-address>
 ```
 
 ```
