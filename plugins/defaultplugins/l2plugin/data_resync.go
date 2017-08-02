@@ -19,11 +19,11 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // Resync writes BDs to the empty VPP

@@ -17,8 +17,8 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 )
 
 // DumpInterface finds interface in VPP and returns its ACL configuration

@@ -18,12 +18,12 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 )
 
-// NewResyncEventDB is a constructor
+// NewResyncEventDB creates a new instance of ResyncEventDB using the given map of iterators.
 func NewResyncEventDB(its map[string] /*keyPrefix*/ datasync.KeyValIterator) *ResyncEventDB {
 	return &ResyncEventDB{its, NewDoneChannel(make(chan error, 1))}
 }
 
-// NewResyncEvent is a constructor
+// NewResyncEvent creates a new instance of ResyncEventDB using the give map of slice of KeyVal.
 func NewResyncEvent(m map[string] /*keyPrefix*/ []datasync.KeyVal) *ResyncEventDB {
 	its := map[string] /*keyPrefix*/ datasync.KeyValIterator{}
 	for keyPrefix, kvs := range m {
@@ -39,7 +39,7 @@ type ResyncEventDB struct {
 	*DoneChannel
 }
 
-// GetValues ...
+// GetValues returns values of the event.
 func (ev *ResyncEventDB) GetValues() map[string] /*keyPrefix*/ datasync.KeyValIterator {
 	return ev.its
 }

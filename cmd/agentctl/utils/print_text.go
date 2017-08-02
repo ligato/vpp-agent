@@ -112,9 +112,9 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// Interface overall status
 			"{{with .State}}{{with .InterfaceState}} ({{.InternalName}}, ifIdx {{.IfIndex}}){{end}}{{end}}:\n{{pfx 3}}Status: <" +
-			"{{with .Config}}{{with .Interface}}{{isEnabled .Enabled}}{{end}}" +
+			"{{with .Config}}{{with .Interface}}{{isEnabled .Enabled}}{{end}}, " +
 			// 'with .Config' else
-			"{{else}}{{setRed \"NOT-IN-CONFIG\"}}{{end}}" +
+			"{{else}}{{setRed \"NOT-IN-CONFIG\"}}{{end}}, " +
 			"{{with .State}}{{with .InterfaceState}}{{setStsColor \"ADMIN\" .AdminStatus}}, {{setStsColor \"OPER\" .OperStatus}}{{end}}" +
 			// 'with .State' else
 			"{{else}}, {{setRed \"NOT-IN-VPP\"}}{{end}}>" +

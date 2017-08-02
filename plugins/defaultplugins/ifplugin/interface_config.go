@@ -50,9 +50,9 @@ import (
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
 	ServiceLabel *servicelabel.Plugin
-	Linux  *linuxplugin.Plugin
+	Linux        *linuxplugin.Plugin
 
-	swIfIndexes  ifaceidx.SwIfIndexRW
+	swIfIndexes ifaceidx.SwIfIndexRW
 
 	afPacketConfigurator *AFPacketConfigurator
 

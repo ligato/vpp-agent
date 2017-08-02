@@ -205,5 +205,14 @@
 //      ... use contact
 //  }
 //
+// The Etcd plugin
 //
+//    plugin := etcdv3.Plugin{}
+//    // initialization by agent core
+//
+// Plugin allows to create a broker
+//    broker := plugin.NewBroker(prefix)
+//
+// and watcher
+//    watcher := plugin.NewWatcher(prefix)
 package etcdv3

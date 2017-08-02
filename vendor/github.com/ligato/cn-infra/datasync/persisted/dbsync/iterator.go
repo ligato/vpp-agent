@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewIterator is a constructor
+// NewIterator creates a new instance of Iterator.
 func NewIterator(delegate keyval.BytesKeyValIterator) *Iterator {
 	return &Iterator{delegate: delegate}
 }

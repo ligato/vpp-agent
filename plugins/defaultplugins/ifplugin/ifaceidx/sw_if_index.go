@@ -17,9 +17,9 @@ package ifaceidx
 import (
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
 // SwIfIndex provides read-only access to mapping between software interface indexes (used internally in VPP)

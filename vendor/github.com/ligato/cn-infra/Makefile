@@ -107,6 +107,13 @@ define clean_plugin_examples_only
     @echo "# done"
 endef
 
+# run code formatter
+define format_only
+    @echo "# formatting the code"
+    @./scripts/gofmt.sh
+    @echo "# done"
+endef
+
 # build all binaries
 build:
 	$(call build_examples_only)
@@ -139,6 +146,10 @@ test-cover-xml:
 # run & print code analysis
 lint:
 	$(call lint_only)
+
+# format the code
+format:
+	$(call format_only)
 
 
 # clean

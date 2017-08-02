@@ -131,7 +131,7 @@ func main() {
 		case "-aft":
 			addStaticFibTableEntry(db, bridgeDomain1, ifName1)
 		case "-dft":
-			deleteStaticFibTableEntry(db)
+			deleteStaticFibTableEntry(db, bridgeDomain1)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -742,11 +742,12 @@ func addStaticFibTableEntry(db keyval.ProtoBroker, bdName string, iface string) 
 	db.Put(l2.FibKey(fibTable.FibTableEntry[0].BridgeDomain, fibTable.FibTableEntry[0].PhysAddress), fibTable.FibTableEntry[0])
 }
 
-func deleteStaticFibTableEntry(db keyval.ProtoBroker) {
+func deleteStaticFibTableEntry(db keyval.ProtoBroker, bdName string) {
 	fibTable := l2.FibTableEntries{}
 	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
 	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
 	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
+	fibTable.FibTableEntry[0].BridgeDomain = bdName
 
 	log.Println(fibTable)
 

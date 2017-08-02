@@ -25,13 +25,13 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/idxvpp"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -291,10 +291,14 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	// Look whether interface belongs to some bridge domain using interface-to-bd mapping
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
-		log.Debug("Interface does not belong to any bridge domain ", interfaceName)
+		log.Debugf("Interface %s does not belong to any bridge domain", interfaceName)
 		return nil
 	}
-
+	_, _, alreadyCreated := plugin.IfToBdRealStateIdx.LookupIdx(interfaceName)
+	if alreadyCreated {
+		log.Debugf("Interface %s has been already configured", interfaceName)
+		return nil
+	}
 	bridgeDomainIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
 	bvi := meta.(*BridgeDomainMeta).IsInterfaceBvi
 

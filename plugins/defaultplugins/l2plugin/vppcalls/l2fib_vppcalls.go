@@ -105,7 +105,7 @@ func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq) error {
 		Message: req,
 	}
 
-	log.WithFields(log.Fields{"Mac": req.Mac, "BD index": req.BdID}).Debug("Static fib entry added.")
+	log.WithFields(log.Fields{"Mac": req.Mac, "BD index": req.BdID}).Debug("Static fib entry added/deleted.")
 	return nil
 }
 

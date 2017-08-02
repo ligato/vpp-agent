@@ -106,14 +106,14 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			ifIdxEv.Done()
 
 		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
-				if !linuxIfIdxEv.IsDelete() {
-					plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
-					// TODO propagate error
-				} else {
-					plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
-					// TODO propagate error
-				}
-				linuxIfIdxEv.Done()
+			if !linuxIfIdxEv.IsDelete() {
+				plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
+				// TODO propagate error
+			} else {
+				plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
+				// TODO propagate error
+			}
+			linuxIfIdxEv.Done()
 
 		case bdIdxEv := <-plugin.bdIdxWatchCh:
 			if !bdIdxEv.IsDelete() {

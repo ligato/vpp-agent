@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewAdapter is a constructor
+// NewAdapter creates a new instance of Adapter.
 func NewAdapter(name string, db keyval.BytesBroker, dbW keyval.BytesWatcher) *Adapter {
 	return &Adapter{name, db, dbW, syncbase.NewWatcher()}
 }
@@ -36,7 +36,6 @@ type Adapter struct {
 }
 
 // WatchData using ETCD or any other default transport.
-//
 func (adapter *Adapter) WatchData(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchDataRegistration, error) {
 

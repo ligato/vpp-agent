@@ -114,8 +114,6 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
-			numL2FIBs := resyncAppendFIBs(resyncData, req)
-			log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 			numBDs := resyncAppendBDs(resyncData, req)
 			log.Debug("Received RESYNC BD values ", numBDs)
@@ -159,38 +157,43 @@ func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 	}
 	return num
 }
-func resyncAppendFIBs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	num := 0
-	for {
-		if fibData, stop := resyncData.GetNext(); stop {
-			break
-		} else {
-			value := &l2.FibTableEntries_FibTableEntry{}
-			err := fibData.GetValue(value)
-			if err == nil {
-				req.FibTableEntries = append(req.FibTableEntries, value)
-				num++
-			}
-		}
+func resyncAppendFIB(fibData datasync.KeyVal, req *DataResyncReq) error {
+	value := &l2.FibTableEntries_FibTableEntry{}
+	err := fibData.GetValue(value)
+	if err == nil {
+		req.FibTableEntries = append(req.FibTableEntries, value)
 	}
-	return num
+	return err
 }
+
 func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
 	for {
 		if bridgeDomainData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &l2.BridgeDomains_BridgeDomain{}
-			err := bridgeDomainData.GetValue(value)
-			if err == nil {
-				req.BridgeDomains = append(req.BridgeDomains, value)
-				num++
+			key := bridgeDomainData.GetKey()
+			suffix := strings.TrimPrefix(key, l2.BridgeDomainKeyPrefix())
+			sep := strings.Index(suffix, "/") /* skip over the bridge domain label */
+			if sep != -1 && strings.HasPrefix(suffix[sep+1:], l2.FibKeyPrefix()) {
+				log.Debugf("Received RESYNC L2 FIB (%s)", key)
+				err := resyncAppendFIB(bridgeDomainData, req)
+				if err == nil {
+					num++
+				}
+			} else {
+				value := &l2.BridgeDomains_BridgeDomain{}
+				err := bridgeDomainData.GetValue(value)
+				if err == nil {
+					req.BridgeDomains = append(req.BridgeDomains, value)
+					num++
+				}
 			}
 		}
 	}
 	return num
 }
+
 func resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	value := &bfd.SingleHopBFD_EchoFunction{}
 	num := 0
