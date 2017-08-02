@@ -64,9 +64,11 @@ func (p *Plugin) Init() error {
 
 	// Get config data
 	config := &mux.Config{}
-	config, err = mux.ConfigFromFile(configFile)
-	if err != nil {
-		return err
+	if configFile != "" {
+		config, err = mux.ConfigFromFile(configFile)
+		if err != nil {
+			return err
+		}
 	}
 	clientConfig := p.getClientConfig(config, logger, topic)
 
@@ -127,7 +129,6 @@ func (p *Plugin) getClientConfig(config *mux.Config, logger logging.Logger, topi
 	} else {
 		clientConf.SetBrokers(mux.DefAddress)
 	}
-	clientConf.SetBrokers(config.Addrs...)
 	clientConf.SetGroup(p.ServiceLabel.GetAgentLabel())
 	clientConf.SetRecvMessageChan(p.subscription)
 	clientConf.SetInitialOffset(sarama.OffsetNewest)
