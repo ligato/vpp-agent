@@ -31,6 +31,7 @@ type Connection interface {
 
 // Skeleton of a KV plugin is a generic part of KV plugin.
 type Skeleton struct {
+	Logger       logging.Logger
 	serviceLabel *servicelabel.Plugin
 	name         string
 	logFactory   logging.LogFactory
@@ -47,11 +48,11 @@ func NewSkeleton(name string, factory logging.LogFactory, serviceLabel *servicel
 
 // Init is called on plugin startup
 func (plugin *Skeleton) Init() (err error) {
-	logger, err := plugin.logFactory.NewLogger(plugin.name)
+	plugin.Logger, err = plugin.logFactory.NewLogger(plugin.name)
 	if err != nil {
 		return err
 	}
-	plugin.conn, err = plugin.connect(logger)
+	plugin.conn, err = plugin.connect(plugin.Logger)
 	if err != nil {
 		return err
 	}

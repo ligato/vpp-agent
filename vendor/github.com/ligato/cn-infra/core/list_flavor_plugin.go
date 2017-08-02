@@ -19,13 +19,13 @@ import (
 	"reflect"
 )
 
-// ListPluginsInFlavor uses very simple reflection to traverse top level fields of Flavor structure.
-// It extracts all plugins and returns them as slice of NamedPlugins.
+// ListPluginsInFlavor uses reflection to traverse top level fields of Flavor structure.
+// It extracts all plugins and returns them as a slice of NamedPlugins.
 func ListPluginsInFlavor(flavor interface{}) (plugins []*NamedPlugin) {
 	return listPluginsInFlavor(reflect.ValueOf(flavor))
 }
 
-// listPluginsInFlavor checks every field and tries to cast it to Plugin or inspect it's type recursively
+// listPluginsInFlavor checks every field and tries to cast it to Plugin or inspect its type recursively.
 func listPluginsInFlavor(flavorValue reflect.Value) []*NamedPlugin {
 	var res []*NamedPlugin
 

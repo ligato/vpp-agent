@@ -35,9 +35,9 @@ type Flavour struct {
 	HTTP         httpmux.Plugin
 	LogManager   logmanager.Plugin
 	ServiceLabel servicelabel.Plugin
+	StatusCheck  statuscheck.Plugin
 	Etcd         etcdv3.Plugin
 	Kafka        kafka.Plugin
-	StatusCheck  statuscheck.Plugin
 }
 
 // Inject interconnects plugins - injects the dependencies. If it has been called
@@ -53,9 +53,10 @@ func (g *Flavour) Inject() error {
 	g.LogManager.HTTP = &g.HTTP
 	g.Etcd.LogFactory = &g.Logrus
 	g.Etcd.ServiceLabel = &g.ServiceLabel
+	g.Etcd.StatusCheck = &g.StatusCheck
 	g.Kafka.LogFactory = &g.Logrus
 	g.Kafka.ServiceLabel = &g.ServiceLabel
-	g.StatusCheck.HTTP = &g.HTTP
+	g.Kafka.StatusCheck = &g.StatusCheck
 	return nil
 }
 

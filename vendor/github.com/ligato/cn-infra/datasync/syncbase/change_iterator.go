@@ -20,12 +20,12 @@ import (
 	"github.com/ligato/cn-infra/db"
 )
 
-// NewChangeIterator is a constructor
+// NewChangeIterator creates a new instance of ChangeIterator.
 func NewChangeIterator(data []*Change) *ChangeIterator {
 	return &ChangeIterator{data: data}
 }
 
-// ChangeIterator is a simple in memory implementation of data.Iterator
+// ChangeIterator is a simple in-memory implementation of data.Iterator
 type ChangeIterator struct {
 	data  []*Change
 	index int
@@ -42,12 +42,12 @@ func (it *ChangeIterator) GetNext() (kv datasync.KeyVal, changeType db.PutDel, a
 	return ret, ret.changeType, false
 }
 
-// NewChange is a constructor
+// NewChange creates a new instance of Change.
 func NewChange(key string, value proto.Message, rev int64, changeType db.PutDel) *Change {
 	return &Change{changeType, &KeyVal{key, &lazyProto{value}, rev}}
 }
 
-// NewChangeBytes is a constructor
+// NewChangeBytes creates a new instance of NewChangeBytes.
 func NewChangeBytes(key string, value []byte, rev int64, changeType db.PutDel) *Change {
 	return &Change{changeType, &KeyValBytes{key, value, rev}}
 }

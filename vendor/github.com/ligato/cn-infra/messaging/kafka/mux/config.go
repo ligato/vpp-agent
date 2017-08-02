@@ -8,6 +8,9 @@ import (
 	"io/ioutil"
 )
 
+// DefAddress default kafka address/port (if not specified in config)
+const DefAddress = "127.0.0.1:9092"
+
 // Config holds the settings for kafka multiplexer.
 type Config struct {
 	Addrs []string `json:"addrs"`
@@ -56,7 +59,7 @@ func getConsumerFactory(config *client.Config) ConsumerFactory {
 func InitMultiplexer(configFile string, name string, log logging.Logger) (*Multiplexer, error) {
 
 	var err error
-	muxCfg := &Config{[]string{"127.0.0.1:9092"}}
+	muxCfg := &Config{[]string{DefAddress}}
 	if configFile != "" {
 		muxCfg, err = ConfigFromFile(configFile)
 		if err != nil {

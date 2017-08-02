@@ -184,5 +184,22 @@ to actually initialize the consumer inside the Multiplexer.
 To properly clean up the Multiplexer call:
 
         mx.Close()
+
+
+The KAFKA plugin
+
+Once kafka plugin is initialized
+        plugin := kafka.Plugin{}
+        // Init called by agent core
+
+The plugin allows to create connections:
+
+        conn := plugin.NewConnection("name")
+
+or connection that support proto-modelled messages:
+
+        protoConn := plugin.NewProtoConnection("protoConnection")
+The usage of connections is described above.
+
 */
 package kafka

@@ -51,9 +51,9 @@ import (
 type InterfaceConfigurator struct {
 	GoVppmux     *govppmux.GOVPPPlugin
 	ServiceLabel *servicelabel.Plugin
-	Linux  *linuxplugin.Plugin
+	Linux        *linuxplugin.Plugin
 
-	swIfIndexes  ifaceidx.SwIfIndexRW
+	swIfIndexes ifaceidx.SwIfIndexRW
 
 	afPacketConfigurator *AFPacketConfigurator
 

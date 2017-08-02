@@ -18,9 +18,9 @@ package defaultplugins
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
-	"github.com/ligato/vpp-agent/idxvpp"
 )
 
 // PluginID used in the Agent Core flavors
