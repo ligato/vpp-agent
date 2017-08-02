@@ -22,14 +22,14 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // FIBConfigurator runs in the background in its own goroutine where it watches for any changes

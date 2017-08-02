@@ -16,11 +16,11 @@ package main
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/examples/simple-agent/generic"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"os"
 	"time"
-	"github.com/ligato/cn-infra/examples/simple-agent/generic"
 )
 
 func main() {

@@ -23,13 +23,13 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewChangeWatchResp is a constructor
+// NewChangeWatchResp creates a new instance of ChangeWatchResp.
 func NewChangeWatchResp(delegate keyval.BytesWatchResp, prevVal datasync.LazyValue) *ChangeWatchResp {
 	return &ChangeWatchResp{delegate, prevVal, &syncbase.DoneChannel{DoneChan: nil}}
 }
 
-// ChangeWatchResp is a simple structure that adapts the WatchRest to the
-// Basically only the callback is the value add.
+// ChangeWatchResp is a structure that adapts the BytesWatchResp to the
+// datasync api.
 type ChangeWatchResp struct {
 	delegate keyval.BytesWatchResp
 	prev     datasync.LazyValue

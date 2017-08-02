@@ -23,10 +23,10 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins

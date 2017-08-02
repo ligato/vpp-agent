@@ -13,4 +13,19 @@
 // limitations under the License.
 
 // Package servicelabel allows to retrieve a string identifying particular VNF function (service label).
+//
+//     p := serviceLabel.Plugin{}
+//     // initialization plugin handled by agent core
+//
+// To retrieve service label of the VNF instance, run:
+//     label = p.GetAgentLabel()
+//
+// To retrieve prefix that can be used to access configuration of the VNF instance in key-value datastore, run:
+//     prefix = p.GetAgentPrefix()
+//
+// To retrieve prefix for a different VNF instance, run:
+//    otherPrefix = p.GetDifferentAgentPrefix(differentLabel)
+//
+// To retrieve prefix that identifies configuration of all instances:
+//    allInstances = p.GetAllAgentsPrefix()
 package servicelabel

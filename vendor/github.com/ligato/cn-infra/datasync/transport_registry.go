@@ -82,7 +82,7 @@ func OfDifferentAgent(microserviceLabel string) TransportAdapter {
 	return factoryOfDifferentAgent(microserviceLabel)
 }
 
-// RegisterTransportOfDifferentAgent is simillar to RegisterTransport
+// RegisterTransportOfDifferentAgent is similar to RegisterTransport
 func RegisterTransportOfDifferentAgent(factory func(microserviceLabel string) TransportAdapter) error {
 	access.Lock()
 	defer access.Unlock()

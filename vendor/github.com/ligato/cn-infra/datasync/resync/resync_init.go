@@ -15,9 +15,9 @@
 package resync
 
 import (
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/datasync/resync/resyncevent"
 	"github.com/ligato/cn-infra/datasync/resync/resyncevent/resynceventimpl"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"sync"
 	"time"
 )
@@ -41,7 +41,7 @@ type Plugin struct {
 	access        sync.Mutex
 }
 
-// Init just initializes variables
+// Init initializes variables
 func (plugin *Plugin) Init() (err error) {
 	plugin.registrations = make(map[string]*resynceventimpl.Registration)
 

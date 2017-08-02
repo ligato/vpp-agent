@@ -31,7 +31,7 @@ type ChangeEvent struct {
 	delegate   datasync.CallbackResult
 }
 
-// GetChangeType is just a getter...
+// GetChangeType returns type of the event.
 func (ev *ChangeEvent) GetChangeType() db.PutDel {
 	return ev.ChangeType
 }

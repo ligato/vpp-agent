@@ -15,13 +15,13 @@
 package dbsync
 
 import (
-	"github.com/ligato/cn-infra/db"
-	"github.com/ligato/cn-infra/db/keyval"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/resync"
 	resync_types "github.com/ligato/cn-infra/datasync/resync/resyncevent"
 	"github.com/ligato/cn-infra/datasync/syncbase"
+	"github.com/ligato/cn-infra/db"
+	"github.com/ligato/cn-infra/db/keyval"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"time"
 )
 

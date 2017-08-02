@@ -18,7 +18,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 )
 
-// NewDoneChannel is a constructor
+// NewDoneChannel creates a new instance of DoneChannel.
 func NewDoneChannel(doneChan chan error) *DoneChannel {
 	return &DoneChannel{doneChan}
 }
@@ -29,7 +29,7 @@ type DoneChannel struct {
 	DoneChan chan error
 }
 
-// Done propagates error to the channel
+// Done propagates error to the channel.
 func (ev *DoneChannel) Done(err error) {
 	if ev.DoneChan != nil {
 		select {
