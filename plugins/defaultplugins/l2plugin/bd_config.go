@@ -39,6 +39,7 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1bd". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type BDConfigurator struct {
+	GoVppmux      *govppmux.GOVPPPlugin
 	BdIndexes     bdidx.BDIndexRW    // bridge domains
 	IfToBdIndexes idxvpp.NameToIdxRW // interface to bridge domain mapping - desired state. Metadata is boolean flag whether interface is bvi or not
 	//TODO use rather BdIndexes.LookupNameByIfaceName
@@ -69,7 +70,7 @@ func (plugin *BDConfigurator) Init(notificationChannel chan BridgeDomainStateMes
 	log.Debug("Initializing L2 Bridge domains")
 
 	// Init VPP API channel
-	plugin.vppChan, err = govppmux.NewAPIChannel()
+	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

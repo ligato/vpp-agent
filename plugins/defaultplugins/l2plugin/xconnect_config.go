@@ -28,6 +28,7 @@ import (
 
 // XConnectConfigurator implements PluginHandlerVPP
 type XConnectConfigurator struct {
+	GoVppmux    *govppmux.GOVPPPlugin
 	SwIfIndexes ifaceidx.SwIfIndex
 	XcIndexes   idxvpp.NameToIdxRW
 	XcIndexSeq  uint32
@@ -45,7 +46,7 @@ func (plugin *XConnectConfigurator) Init() (err error) {
 	log.Debug("Initializing L2 xConnect")
 
 	// Init VPP API channel
-	plugin.vppChan, err = govppmux.NewAPIChannel()
+	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

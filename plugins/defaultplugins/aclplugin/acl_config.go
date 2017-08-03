@@ -33,6 +33,7 @@ import (
 // in ETCD under the key "/vnf-agent/{agent-label}/vpp/config/v1/acl/". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type ACLConfigurator struct {
+	GoVppmux       *govppmux.GOVPPPlugin
 	ACLL3L4Indexes idxvpp.NameToIdxRW
 	ACLL2Indexes   idxvpp.NameToIdxRW // mapping for L2 ACLs
 	SwIfIndexes    ifaceidx.SwIfIndex
@@ -44,7 +45,7 @@ func (plugin *ACLConfigurator) Init() (err error) {
 	log.Infof("Initializing plugin ACL plugin")
 
 	// Init VPP API channel
-	plugin.vppChannel, err = govppmux.NewAPIChannel()
+	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

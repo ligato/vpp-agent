@@ -57,6 +57,7 @@ func (f *Flavour) Inject() error {
 	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
 	f.VPP.Linux = &f.Linux
+	f.VPP.GoVppmux = &f.GoVPP
 
 	return nil
 }

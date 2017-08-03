@@ -21,22 +21,16 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/vppapiclient"
+	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/statuscheck"
 )
 
-var gPlugin *GOVPPPlugin
-
-// plugin function is used in api to access the plugin instance. It panics if the plugin instance is not initialized.
-func plugin() *GOVPPPlugin {
-	if gPlugin == nil {
-		log.Panic("GOVPP Plugin is not yet initialized but you are trying to use that")
-	}
-
-	return gPlugin
-}
+// PluginID used in the Agent Core flavors
+const PluginID core.PluginName = "GOVPP"
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
@@ -104,8 +98,6 @@ func (plugin *GOVPPPlugin) Init() error {
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.handleVPPConnectionEvents(ctx)
 
-	gPlugin = plugin
-
 	return nil
 }
 
@@ -121,6 +113,26 @@ func (plugin *GOVPPPlugin) Close() error {
 	}()
 
 	return nil
+}
+
+// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
+// It uses default buffer sizes for the request and reply Go channels.
+//
+// Example of binary API call from some plugin using GOVPP:
+//      ch, _ := govpp_mux.NewAPIChannel()
+//      ch.SendRequest(req).ReceiveReply
+func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
+	return plugin.vppConn.NewAPIChannel()
+}
+
+// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
+// It allows to specify custom buffer sizes for the request and reply Go channels.
+//
+// Example of binary API call from some plugin using GOVPP:
+//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
+//      ch.SendRequest(req).ReceiveReply
+func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error) {
+	return plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 }
 
 // handleVPPConnectionEvents handles VPP connection events

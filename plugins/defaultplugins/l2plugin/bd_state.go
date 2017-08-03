@@ -30,6 +30,7 @@ import (
 
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state
 type BridgeDomainStateUpdater struct {
+	GoVppmux    *govppmux.GOVPPPlugin
 	bdIndex     bdidx.BDIndex
 	swIfIndexes ifaceidx.SwIfIndex
 
@@ -64,7 +65,7 @@ func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdid
 	plugin.publishBdState = publishBdState
 	plugin.bdState = make(map[uint32]*l2.BridgeDomainState_BridgeDomain)
 
-	plugin.vppCh, err = govppmux.NewAPIChannel()
+	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}

@@ -52,10 +52,13 @@ func main() {
 	f := vpp.Flavour{}
 
 	// Example plugin (GOVPP call)
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+	examplePlugin := ExamplePlugin{}
+	examplePlugin.GoVppmux = &f.GoVPP
+
+	namedExamplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), namedExamplePlugin)...)
 
 	// End when the GOVPP example is finished
 	go closeExample("GOVPP call example finished", closeChannel)
@@ -83,6 +86,7 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
+	GoVppmux            *govppmux.GOVPPPlugin
 	exampleConfigurator *ExampleConfigurator // Plugin configurator
 }
 
@@ -91,6 +95,7 @@ type ExamplePlugin struct {
 func (plugin *ExamplePlugin) Init() error {
 	// Initialize configurator
 	plugin.exampleConfigurator = &ExampleConfigurator{
+		GoVppmux:     plugin.GoVppmux,
 		exampleIDSeq: 1, // Example ID is plugin-specific number used as a data index
 	}
 
@@ -116,6 +121,7 @@ func (plugin *ExamplePlugin) Close() error {
 // ExampleConfigurator usually initializes configuration-specific fields or other tasks (e.g. defines GOVPP channels
 // if they are used, checks VPP message compatibility etc.)
 type ExampleConfigurator struct {
+	GoVppmux     *govppmux.GOVPPPlugin
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
 }
@@ -124,7 +130,7 @@ type ExampleConfigurator struct {
 func (configurator *ExampleConfigurator) Init() (err error) {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core. It uses default buffer
 	// sizes for the request and reply Go channels
-	configurator.vppChannel, err = govppmux.NewAPIChannel()
+	configurator.vppChannel, err = configurator.GoVppmux.NewAPIChannel()
 
 	log.Info("Default plugin configurator ready")
 

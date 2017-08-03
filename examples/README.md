@@ -16,7 +16,7 @@ un-registration)
     the linux and VPP plugins running inside the same agent instance (i.e. the same OS process). Behind the scenes the configuration
     data are transported by means of go channels.
 
-* **[other examples](https://github.com/ligato/cn-infra/examples)**
+* **[other examples](https://github.com/ligato/cn-infra/tree/master/examples)**
  
 ## How to run example
  

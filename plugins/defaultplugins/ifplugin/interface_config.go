@@ -49,6 +49,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
+	GoVppmux     *govppmux.GOVPPPlugin
 	ServiceLabel *servicelabel.Plugin
 	Linux        *linuxplugin.Plugin
 
@@ -68,7 +69,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, noti
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
 
-	plugin.vppCh, err = govppmux.NewAPIChannel()
+	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
