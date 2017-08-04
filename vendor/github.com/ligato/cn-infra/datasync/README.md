@@ -1,34 +1,116 @@
-# Fault tolerance vs. data synchronization
+# Concept
+It is usual that logic of a microservice relies on data synchronization. In this context 
+the data synchronization is about two or more data sets that needs to be synchronized when 
+event was published. Event can be published by database (when particular data was changes),   
+by message bus (like Kafka).
+
+The datasync plugin helps other plugins/APP to (see next diagram):
+ 1. Watch data - subscribe for particular data changes to receive events 
+                 with current data in channels
+ 2. Publish data - publish events with current values
+ 
+![datasync](../docs/imgs/datasync.png)
+ 
+## Watch data
+The API distinguishes between:
+1. Full data resync (startup, for certain fault recovery) - reprocess whole (configuration) data 
+2. Optimized datasync - process only changes (deltas)
+
+### Full data resync
+Fault tolerance vs. data synchronization
 In a fault-tolerant solution, there is a need to recover from faults. This plugin helps to solve the
 data resynchronization (data RESYNC) aspect of fault recovery.
-When the Agent looses connectivity to a northbound client (ETCD, Kafka...) or VPP, it needs to recover from that fault:
-1. When connectivity is reestablished after a failure, the agent needs to resynchronize configuration from a northbound 
-   client with configuration in the VPP.
-2. Sometimes it is easier to use "brute force" and restart the container (both VPP and the agent) 
-   and skip the resynchronization.
+When the Agent looses connectivity (to ETCD, Kafka, VPP etc.), it needs to recover from that fault:
+1. When connectivity is reestablished after a failure, the agent can resynchronize (configuration) from a northbound 
+   client with southbound configuration (VPP etc.).
+2. Alternative behavior: Sometimes it is easier to use "brute force" and restart the container (both VPP and the agent) 
+   and skip the resynchronization. This restart is supposed to be done by control plane & orchestration
+   layer. The Agent is supposed to just publish the event.
 
-# Responsibility of plugins
-Each plugin is responsible for its own part of configuration data received from northbound clients. Each plugin needs 
-to be decoupled from a particular datasync transport (ETCD, GRPC, REST...)
+To report a fault/error occurred and notify the datasync plugin there is defined following API call.
+
+### Optimized mode
+In optimized mode we do not need to reprocess whole (configuration) data but rather process just the delta
+(only the changed object in current value of go channel event).
+ 
+## Responsibility of plugins
+Each plugin is responsible for its own part of (configuration) data received from northbound clients. Each plugin needs 
+to be decoupled from a particular datasync transport (ETCD/Redis, more will come soon: Kafka, Local, GRPC, REST ...).
+Every other plugin (then datasync plugin) receives (configuration) data only through GO interfaces defined 
+in [datasync_api.go](datasync_api.go)
+
 The data of one plugin can have references to data of another plugin. Therefore, we need 
-to orchestrate the right order of data resynchronization between plugins.
+to have proper time/order of data resynchronization between plugins. The datasync plugin
+initiates full data resync in the same order as the other plugins have been registered in Init().
 
-The datasync plugin helps other plugins to:
- 1. Determine the right time to resynchronize their data (event will be send on a dedicated resync channel)
- 2. Report a fault/error occurred and that the resync plugin should start data resynchronization. 
- 3. be decoupled from a particular datasync transport (ETCD, GRPC, REST ...). 
-    Every other plugin receives configuration data only through GO interfaces defined in datasync_api.go
 
-# Example Workflow (TODO move to VPP agent repo...)
+## Example
+```go
+package example
+import (
+    "errors"
+    "context"
+    "io"
+    "github.com/ligato/cn-infra/datasync"
+    "github.com/ligato/cn-infra/logging"
+    "github.com/ligato/cn-infra/utils/safeclose"
+)
 
-Note, about other events: a/ data change events, b/ IDX changes. Data change events are supposed to be buffered
-during data resync (by the plugin transport). Buffered changes need to be filtered if they were not already processed
-during revision (see the dbmux plugin for more details). The IDX changes will be delivered during overall resync
-process. Let's explain it on this example:
-1. given network interfaces and BD's configured in the VPP
-2. resync is started
-3. first plugin finds in the resync process that particular network interface needs to be deleted
-4. this first plugin notifies that it is going to delete network interface (using IDX API)
-5. second plugin handles the notification and adapts the BD configuration in the VPP
-6. then second plugin callbacks that it is Done()
-7. the first plugin finally deletes the network interface
+type PluginXY struct {
+    Watcher     datasync.Watcher //Injected
+    Logger      logging.Logger
+    ParentCtx   context.Context
+    
+    dataChange  chan datasync.ChangeEvent
+    dataResync  chan datasync.ResyncEvent
+    cancel      context.CancelFunc
+}
+
+func (plugin * PluginXY) Init() (err error) {    
+    // initialize channels & start go routins
+    plugin.dataChange = make(chan datasync.ChangeEvent, 100)
+    plugin.dataResync = make(chan datasync.ResyncEvent, 100)
+    
+    // initiate context & cancel function (to stop go routine)
+    var ctx context.Context
+    if plugin.ParentCtx == nil {
+        ctx, plugin.cancel = context.WithCancel(context.Background())    
+    } else {
+        ctx, plugin.cancel = context.WithCancel(plugin.ParentCtx)
+    }   
+    
+    go func() {
+        for {
+            select {
+            case dataChangeEvent := <-plugin.dataChange:
+                plugin.Logger.Debug(dataChangeEvent)
+            case dataResyncEvent := <-plugin.dataResync:
+                plugin.Logger.Debug(dataResyncEvent)
+            case <-ctx.Done():
+                // stop watching for notifications
+                return
+            }
+        }
+    }()
+    
+    return nil
+}
+
+func (plugin * PluginXY) AfterInit() error {
+    // subscribe plugin.channel for watching data (to really receive the data)
+    plugin.Watcher.WatchData("watchingXY", plugin.dataChange, plugin.dataResync, "keysXY")
+
+    return nil
+}
+
+func (plugin * PluginXY) Close() error {
+    // cancel watching the channels
+    plugin.cancel()
+    
+    // close all resources / channels
+    _, err := safeclose.CloseAll(plugin.dataChange, plugin.dataResync)
+    return err 
+}
+```
+
+

@@ -1,7 +1,7 @@
 # Phonebook example
 
 The etcd library is showcased on phonebook example. Phonebook entry - Contact is
-modelled by [protofile](model/phonebook.proto). Foreach entry name, company and phone
+modelled by [protofile](phonebook/model/phonebook/phonebook.proto). Foreach entry name, company and phone
 number is stored.
 
 To generate go structs from proto file run:

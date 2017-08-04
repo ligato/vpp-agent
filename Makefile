@@ -115,6 +115,14 @@ define build_vpp_agent_only
     @echo "# done"
 endef
 
+# verify that links in markdown files are valid
+# requires npm install -g markdown-link-check
+define check_links_only
+    @echo "# checking links"
+    @./scripts/check_links.sh
+    @echo "# done"
+endef
+
 # build vpp-agent-ctl only
 define build_vpp_agent_ctl_only
     @echo "# building vpp-agent-ctl"
@@ -205,6 +213,9 @@ lint:
 format:
 	$(call format_only)
 
+# validate links in markdown files
+check_links:
+	$(call check_links_only)
 
 # clean
 clean:
