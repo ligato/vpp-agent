@@ -15,8 +15,10 @@ before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
   - sudo ./scripts/build-vpp.sh
+  - sudo apt-get install npm && npm install -g markdown-link-check
 
 script:
+  - make check_links || true
   - make lint
   - make
   - make test-cover

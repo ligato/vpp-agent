@@ -29,8 +29,6 @@ import (
 // for different flavours. The plugins are initialized in the same order as they appear
 // in the structure.
 type Flavour struct {
-	injected bool
-
 	Logrus       logrus.Plugin
 	HTTP         httpmux.Plugin
 	LogManager   logmanager.Plugin
@@ -38,6 +36,8 @@ type Flavour struct {
 	StatusCheck  statuscheck.Plugin
 	Etcd         etcdv3.Plugin
 	Kafka        kafka.Plugin
+
+	injected bool
 }
 
 // Inject interconnects plugins - injects the dependencies. If it has been called

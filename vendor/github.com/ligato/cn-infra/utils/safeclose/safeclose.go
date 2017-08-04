@@ -54,7 +54,14 @@ func Close(obj interface{}) error {
 			if closer != nil {
 				closer.Close()
 			}
+		} else if reflect.TypeOf(obj).Kind() == reflect.Chan {
+			//reflect.ValueOf(nil).
+
+			if x, ok := obj.(chan interface{}); ok {
+				close(x)
+			}
 		}
+
 	}
 	return nil
 }
@@ -69,41 +76,7 @@ func CloseAll(objs ...interface{}) (details []error, errOccured error) {
 
 	details = make([]error, len(objs))
 	for i, obj := range objs {
-		if obj != nil {
-			if closer, ok := obj.(*io.Closer); ok {
-				if closer != nil {
-					err := (*closer).Close()
-					if err != nil {
-						details[i] = err
-						errOccured = err
-
-					}
-				}
-			} else if closer, ok := obj.(*CloserWithoutErr); ok {
-				if closer != nil {
-					(*closer).Close()
-				}
-			} else if closer, ok := obj.(io.Closer); ok {
-				if closer != nil {
-					err := closer.Close()
-					if err != nil {
-						details[i] = err
-						errOccured = err
-
-					}
-				}
-			} else if closer, ok := obj.(CloserWithoutErr); ok {
-				if closer != nil {
-					closer.Close()
-				}
-			} else if reflect.TypeOf(obj).Kind() == reflect.Chan {
-				//reflect.ValueOf(nil).
-
-				if x, ok := obj.(chan interface{}); ok {
-					close(x)
-				}
-			}
-		}
+		details[i] = Close(obj)
 	}
 
 	if errOccured != nil {

@@ -29,18 +29,20 @@ platform is the [VPP Agent](https://github.com/ligato/vpp-agent).
 
 ## Architecture
 
-![arch](high_level_arch_cninfra.png "High Level Architecture of cn-infra")
+![arch](docs/imgs/high_level_arch_cninfra.png "High Level Architecture of cn-infra")
 
 The CN-Infra platform comprises a **[Core](core)** that provides plugin
 lifecycle management (initialization and graceful shutdown of plugins) 
-and a set of platform plugins. The platform plugins implement the following
-functions:
+and a set of platform plugins. The platform can be easily extended and 
+out of the box implements the following functions:
 
 * **RPC** - allows to expose application's API via REST or gRPC
 * **DB** - provides a common API and connectivity to the various KV data 
     stores ([etcd](db/keyval/etcdv3), [Redis](db/keyval/redis), 
     [Casssandra](db/sql/cassandra))
 * **Messaging** - provides a common API and connectivity to message buses 
+    ([Kafka](messaging/kafka), ...)
+* **Datasync** - abstracts transport (RPC, DB, Messaging) and helps with data synchronization 
     ([Kafka](messaging/kafka), ...)
 * **Logging** - Integrated [Logrus](logging/logrus) for logging and a 
     [logmanager plugin](logging/logmanager) for setting of log level at 
