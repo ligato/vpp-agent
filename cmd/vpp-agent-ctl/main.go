@@ -400,13 +400,13 @@ func createRoute(db keyval.ProtoBroker) {
 	routes.Route[0].OutgoingInterface = "tap1"
 	routes.Route[0].Multipath = true
 
-	key := l3.RouteKey(routes.Route[0].DestinationAddress, routes.Route[0].NextHopAddress)
+	key := l3.RouteKey(routes.Route[0].DestinationAddress)
 	db.Put(key, routes.Route[0])
 	log.WithField("path", key).Debug("Adding route")
 }
 
 func deleteRoute(db keyval.ProtoBroker, routeIP string) {
-	path := l3.RouteKey("10.1.1.3", "192.168.1.8")
+	path := l3.RouteKey("10.1.1.3")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }

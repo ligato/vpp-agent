@@ -92,15 +92,15 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 }
 
 // StaticRoute create or update the L3 Static Route
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(), val)
+func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.RouteKey(val.DestinationAddress), val)
 
 	return dsl
 }
 
 // ACL create or update request for the Access Control List
 func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(), val)
+	dsl.parent.txn.Put(acl.Key(val.AclName), val)
 
 	return dsl
 }

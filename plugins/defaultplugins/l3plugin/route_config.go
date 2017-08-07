@@ -189,7 +189,7 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 		return key, fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
 	}
 
-	key = l3.RouteKey(ipv6.String(), nextHopAddr.String())
+	key = l3.RouteKey(ipv6.String())
 
 	return key, nil
 }

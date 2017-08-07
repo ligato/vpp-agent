@@ -21,8 +21,8 @@ const (
 )
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
-func RouteKey(address string, nextHopAddr string) string {
-	return RoutesPrefix + address + "-" + string(nextHopAddr)
+func RouteKey(net string) string {
+	return RoutesPrefix + net
 }
 
 // RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
