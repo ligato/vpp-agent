@@ -84,14 +84,14 @@ func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes_Route) 
 	}
 	if len(routes) > 0 {
 		for _, route := range routes {
-
-			key, err := plugin.vppAddRoute(route)
+			err := plugin.vppAddRoute(route)
 			if err != nil {
 				return err
 			}
-			plugin.RouteIndexes.RegisterName(key, plugin.RouteIndexSeq, nil)
+			routeIdentifier := routeIdentifier(route.destAddr.String(), route.nexthop.addr.String())
+			plugin.RouteIndexes.RegisterName(routeIdentifier, plugin.RouteIndexSeq, nil)
 			plugin.RouteIndexSeq++
-			log.Infof("Route %v registered", key)
+			log.Infof("Route %v registered", routeIdentifier)
 		}
 	}
 
@@ -110,21 +110,23 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	}
 
 	for _, oldRoute := range oldRoutes {
-		oldKey, err := plugin.vppDelRoute(oldRoute)
+		err := plugin.vppDelRoute(oldRoute)
 		if err != nil {
 			return err
 		}
-		plugin.RouteIndexes.UnregisterName(oldKey)
-		log.Infof("Old route %v unregistered", oldKey)
+		oldRouteIdentifier := routeIdentifier(oldRoute.destAddr.String(), oldRoute.nexthop.addr.String())
+		plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
+		log.Infof("Old route %v unregistered", oldRouteIdentifier)
 	}
 	for _, newRoute := range newRoutes {
-		newKey, err := plugin.vppAddRoute(newRoute)
+		err := plugin.vppAddRoute(newRoute)
 		if err != nil {
 			return err
 		}
-		plugin.RouteIndexes.RegisterName(newKey, plugin.RouteIndexSeq, nil)
+		newRouteIdentifier := routeIdentifier(newRoute.destAddr.String(), newRoute.nexthop.addr.String())
+		plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
 		plugin.RouteIndexSeq++
-		log.Infof("New route %v registered", newKey)
+		log.Infof("New route %v registered", newRouteIdentifier)
 	}
 
 	return nil
@@ -137,35 +139,36 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 		return err
 	}
 	for _, route := range routes {
-		key, err := plugin.vppDelRoute(route)
-		log.Infof("Route %v unregistered", key)
+		err := plugin.vppDelRoute(route)
+
 		if err != nil {
 			return err
 		}
-		plugin.RouteIndexes.UnregisterName(key)
+		routeIdentifier := routeIdentifier(route.destAddr.String(), route.nexthop.addr.String())
+		plugin.RouteIndexes.UnregisterName(routeIdentifier)
+		log.Infof("Route %v unregistered", routeIdentifier)
 	}
 
 	return nil
 }
-func (plugin *RouteConfigurator) vppAddRoute(route *Route) (string, error) {
+func (plugin *RouteConfigurator) vppAddRoute(route *Route)  error {
 	log.WithField("Route", *route).Debug("Adding")
 	return plugin.vppAddDelRoute(route, true)
 }
 
-func (plugin *RouteConfigurator) vppDelRoute(route *Route) (string, error) {
+func (plugin *RouteConfigurator) vppDelRoute(route *Route)  error {
 	log.WithField("Route", *route).Debug("Deleting")
 	return plugin.vppAddDelRoute(route, false)
 }
 
-func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (string, error) {
+func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error {
 	// prepare the message
 	req := &ip.IPAddDelRoute{}
 
-	var key string
 	ipAddr := route.destAddr.IP
 	isIpv6, err := addrs.IsIPv6(ipAddr.String())
 	if err != nil {
-		return key, err
+		return err
 	}
 	prefix, _ := route.destAddr.Mask.Size()
 
@@ -198,15 +201,13 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 	err = plugin.vppChan.SendRequest(req).ReceiveReply(reply)
 
 	if err != nil {
-		return key, err
+		return err
 	}
 	if 0 != reply.Retval {
-		return key, fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
+		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
 	}
 
-	key = l3.RouteKey(route.vrfID, ipAddr.String())
-
-	return key, nil
+	return nil
 }
 
 func (plugin *RouteConfigurator) checkMsgCompatibility() error {
@@ -228,4 +229,9 @@ func (plugin *RouteConfigurator) checkMsgCompatibility() error {
 // Close GOVPP channel
 func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
+}
+
+// Creates unique identifier which serves as a name for index mapping
+func routeIdentifier(destination string, nextHop string) string {
+	return destination + "-" + nextHop
 }
