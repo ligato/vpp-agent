@@ -16,11 +16,11 @@ package l3plugin
 
 import (
 	"bytes"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"net"
 	"sort"
+	"fmt"
 )
 
 // Route represents a forward IP route entry.
@@ -35,6 +35,7 @@ type Route struct {
 type NextHop struct {
 	addr   net.IP
 	intf   uint32
+	multipath bool
 	weight uint32
 }
 
@@ -89,49 +90,48 @@ func lessRoute(a *Route, b *Route) bool {
 
 }
 
-func (plugin *RouteConfigurator) protoRoutesToStruct(r *l3.StaticRoutes) []*Route {
-	var result []*Route
-	if r.Ip != nil {
-		for _, ipAddress := range r.Ip {
-			var (
-				ifindex uint32
-				exists  bool
-			)
-			if ipAddress == nil || ipAddress.DestinationAddress == "" {
-				continue
-			}
-			parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(ipAddress.DestinationAddress)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			vrfID := ipAddress.VrfId
-			for _, nextHop := range ipAddress.NextHops {
-				name := nextHop.OutgoingInterface
-				ifindex, _, exists = plugin.SwIfIndexes.LookupIdx(name)
-				if name != "" && !exists {
-					log.WithField("Interface", name).Warn("Interface not found next hop skipped")
-					continue
-				}
-				if !exists {
-					ifindex = nextHopOutgoingIfUnset
-				}
-				nextHopIP := net.ParseIP(nextHop.Address)
-				if isIpv6 {
-					nextHopIP = nextHopIP.To16()
-				} else {
-					nextHopIP = nextHopIP.To4()
-				}
-				route := &Route{
-					vrfID,
-					*parsedDestIP,
-					NextHop{nextHopIP, ifindex, nextHop.Weight},
-				}
-				result = append(result, route)
-			}
+func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) (*Route, error) {
+	var route *Route
+	if routeInput != nil {
+		var (
+			ifIndex uint32
+			exists  bool
+		)
+		if routeInput.DestinationAddress == "" {
+			return nil, fmt.Errorf("Route does not contain destination address")
+		}
+		parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DestinationAddress)
+		if err != nil {
+			return nil, err
+		}
+		vrfID := routeInput.VrfId
+		ifName := routeInput.OutgoingInterface
+		ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
+		if ifName != "" && !exists {
+			return nil, fmt.Errorf("Interface %v not found, route skipped", ifName)
+		}
+		if !exists {
+			ifIndex = nextHopOutgoingIfUnset
+		}
+		nextHopIP := net.ParseIP(routeInput.NextHopAddress)
+		if isIpv6 {
+			nextHopIP = nextHopIP.To16()
+		} else {
+			nextHopIP = nextHopIP.To4()
+		}
+		route = &Route{
+			vrfID:    vrfID,
+			destAddr: *parsedDestIP,
+			nexthop: NextHop{
+				addr:   nextHopIP,
+				intf:   ifIndex,
+				multipath: routeInput.Multipath,
+				weight: routeInput.Weight,
+			},
 		}
 	}
-	return result
+
+	return route, nil
 }
 
 func (plugin *RouteConfigurator) diffRoutes(new []*Route, old []*Route) (toBeDeleted []*Route, toBeAdded []*Route) {

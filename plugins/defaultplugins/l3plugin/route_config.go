@@ -23,12 +23,13 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/cn-infra/utils/addrs"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -37,8 +38,10 @@ import (
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
 	GoVppmux    *govppmux.GOVPPPlugin
-	vppChan     *govppapi.Channel
+	RouteIndexes idxvpp.NameToIdxRW
+	RouteIndexSeq	uint32
 	SwIfIndexes ifaceidx.SwIfIndex
+	vppChan     *govppapi.Channel
 }
 
 const (
@@ -57,7 +60,6 @@ const (
 
 // Init members (channels...) and start go routines
 func (plugin *RouteConfigurator) Init() (err error) {
-
 	log.Debug("Initializing L3 plugin")
 
 	// Init VPP API channel
@@ -75,52 +77,50 @@ func (plugin *RouteConfigurator) Init() (err error) {
 }
 
 // ConfigureRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes) (wasError error) {
-	routes := plugin.protoRoutesToStruct(config)
-
-	for i := range routes {
-		err := plugin.vppAddRoute(routes[i])
+func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes_Route) error {
+	route, err := plugin.transformRoute(config)
+	if err != nil {
+		return err
+	}
+	if route != nil {
+		err = plugin.vppAddRoute(route)
 		if err != nil {
-			wasError = err
+			return err
 		}
 	}
 
-	return wasError
+	return nil
 }
 
-// ModifyRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) ModifyRoutes(newConfig *l3.StaticRoutes, oldConfig *l3.StaticRoutes) (
-	wasError error) {
-	newRoutes := plugin.protoRoutesToStruct(newConfig)
-	oldRoutes := plugin.protoRoutesToStruct(oldConfig)
-	toBeDeleted, toBeAdded := plugin.diffRoutes(newRoutes, oldRoutes)
-	for i := range toBeDeleted {
-		err := plugin.vppDelRoute(toBeDeleted[i])
-		if err != nil {
-			wasError = err
-		}
+// ModifyRoute process the NB config and propagates it to bin api calls
+func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route) error {
+	newRoute, err := plugin.transformRoute(newConfig)
+	oldRoute, err := plugin.transformRoute(oldConfig)
+
+	err = plugin.vppDelRoute(oldRoute)
+	if err != nil {
+		return err
 	}
-	for i := range toBeAdded {
-		err := plugin.vppAddRoute(toBeAdded[i])
-		if err != nil {
-			wasError = err
-		}
+	err = plugin.vppAddRoute(newRoute)
+	if err != nil {
+		return err
 	}
 
-	return wasError
+	return nil
 }
 
-// DeleteRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) DeleteRoutes(config *l3.StaticRoutes) (wasError error) {
-	routes := plugin.protoRoutesToStruct(config)
-	for i := range routes {
-		err := plugin.vppDelRoute(routes[i])
-		if err != nil {
-			wasError = err
-		}
+// DeleteRoute process the NB config and propagates it to bin api calls
+func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
+	route, err := plugin.transformRoute(config)
+	if err != nil {
+		return err
+	}
+	err = plugin.vppDelRoute(route)
+	if err != nil {
+		return err
 	}
 
-	return wasError
+	return nil
 }
 func (plugin *RouteConfigurator) vppAddRoute(route *Route) error {
 	log.WithField("Route", *route).Debug("Adding")
@@ -133,18 +133,26 @@ func (plugin *RouteConfigurator) vppDelRoute(route *Route) error {
 }
 
 func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error {
+	log.Infof("Adding route with dst %v next hop %v to %v", route.destAddr.IP, route.nexthop.addr, route.nexthop.intf)
 	// prepare the message
 	req := &ip.IPAddDelRoute{}
-	if isAdd {
-		req.IsAdd = 1
-	} else {
 
-		req.IsAdd = 0
-	}
 	isIpv6, err := addrs.IsIPv6(route.destAddr.IP.String())
 	if err != nil {
 		return err
 	}
+	prefix, _ := route.destAddr.Mask.Size()
+
+
+	req.NextHopAddress = []byte(route.nexthop.addr)
+	if isAdd {
+		req.IsAdd = 1
+	} else {
+		req.IsAdd = 0
+	}
+	req.ClassifyTableIndex = classifyTableIndexUnset
+	req.DstAddressLength = byte(prefix)
+	req.IsDrop = 0
 	if isIpv6 {
 		req.IsIpv6 = 1
 		req.DstAddress = []byte(route.destAddr.IP.To16())
@@ -152,17 +160,14 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error 
 		req.IsIpv6 = 0
 		req.DstAddress = []byte(route.destAddr.IP.To4())
 	}
-	prefix, _ := route.destAddr.Mask.Size()
-	req.DstAddressLength = byte(prefix)
-	req.TableID = route.vrfID
-	req.ClassifyTableIndex = classifyTableIndexUnset
-
-	req.NextHopAddress = []byte(route.nexthop.addr)
+	if route.nexthop.multipath {
+		req.IsMultipath = 1
+	}
 	req.NextHopSwIfIndex = route.nexthop.intf
-	req.NextHopWeight = uint8(route.nexthop.weight)
 	req.NextHopTableID = route.vrfID
-
 	req.NextHopViaLabel = nextHopViaLabelUnset
+	req.NextHopWeight = uint8(route.nexthop.weight)
+	req.TableID = route.vrfID
 	reply := &ip.IPAddDelRouteReply{}
 	err = plugin.vppChan.SendRequest(req).ReceiveReply(reply)
 

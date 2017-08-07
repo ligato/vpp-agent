@@ -20,16 +20,16 @@ import (
 )
 
 // Resync confgures the empty VPP (overwrites the static route)
-func (plugin *RouteConfigurator) Resync(staticRoutes *l3.StaticRoutes) error {
+func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
 	log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// TODO lookup vpp Route Configs
 
-	if staticRoutes != nil {
-
-		wasError := plugin.ConfigureRoutes(staticRoutes)
-		log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
-		return wasError
+	var wasError error
+	if len(staticRoutes) > 0  {
+		for _, route := range staticRoutes {
+			wasError = plugin.ConfigureRoutes(route)
+		}
 	}
-
-	return nil
+	log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
+	return wasError
 }

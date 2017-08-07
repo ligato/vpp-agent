@@ -119,7 +119,7 @@ func main() {
 		case "-cr":
 			createRoute(db)
 		case "-dr":
-			deleteRoute(db)
+			deleteRoute(db, "")
 		case "-txn":
 			txn(db)
 		case "-dtxn":
@@ -388,25 +388,25 @@ func etcdDel(bDB *etcdv3.BytesConnectionEtcd, key string) {
 
 func createRoute(db keyval.ProtoBroker) {
 	routes := l3.StaticRoutes{}
-	routes.Ip = make([]*l3.StaticRoutes_Ip, 1)
-	routes.Ip[0] = new(l3.StaticRoutes_Ip)
-	routes.Ip[0].Description = "Description"
-	routes.Ip[0].VrfId = 0
-	routes.Ip[0].DestinationAddress = "10.1.1.2"
+	routes.Route = make([]*l3.StaticRoutes_Route, 1)
+	routes.Route[0] = new(l3.StaticRoutes_Route)
+	routes.Route[0].Description = "Description"
+	routes.Route[0].VrfId = 0
+	routes.Route[0].DestinationAddress = "10.1.1.3"
 	//routes.Ip[0].DestinationAddress.IpAddressWithPrefix = "2001:db8:0:0:0:ff00:42:8329/48"
-	routes.Ip[0].NextHops = make([]*l3.StaticRoutes_Ip_NextHop, 1)
-	routes.Ip[0].NextHops[0] = new(l3.StaticRoutes_Ip_NextHop)
 	//routes.Ip[0].NextHops[0].Address = "2587:db8:0:0:0:ff00:42:8329"
-	routes.Ip[0].NextHops[0].Address = "192.168.1.5"
-	routes.Ip[0].NextHops[0].Weight = 5
+	routes.Route[0].NextHopAddress = "192.168.1.8"
+	routes.Route[0].Weight = 6
+	routes.Route[0].OutgoingInterface = "tap1"
+	routes.Route[0].Multipath = true
 
-	path := l3.RouteKey()
-	db.Put(path, &routes)
-	log.WithField("path", path).Debug("Adding route")
+	key := l3.RouteKey(routes.Route[0].DestinationAddress, routes.Route[0].NextHopAddress)
+	db.Put(key, routes.Route[0])
+	log.WithField("path", key).Debug("Adding route")
 }
 
-func deleteRoute(db keyval.ProtoBroker) {
-	path := l3.RouteKey()
+func deleteRoute(db keyval.ProtoBroker, routeIP string) {
+	path := l3.RouteKey("10.1.1.2", "192.168.1.5")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }
