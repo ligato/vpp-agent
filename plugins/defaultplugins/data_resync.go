@@ -20,7 +20,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -48,7 +47,7 @@ type DataResyncReq struct {
 	// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-	StaticRoutes *l3.StaticRoutes
+	StaticRoutes []*l3.StaticRoutes_Route
 }
 
 // NewDataResyncReq is a constructor
@@ -71,7 +70,7 @@ func NewDataResyncReq() *DataResyncReq {
 		// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
 		XConnects: []*l2.XConnectPairs_XConnectPair{},
 		// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-		StaticRoutes: nil}
+		StaticRoutes: []*l3.StaticRoutes_Route{}}
 }
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
@@ -120,7 +119,7 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			log.Debug("Received RESYNC XConnects values ", numXCons)
-		} else if strings.HasPrefix(key, l3.RouteKey()) {
+		} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
 			numL3FIBs := resyncAppendRoutes(resyncData, req)
 			log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
 		} else {
@@ -131,12 +130,16 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 }
 func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
-	if staticRouteData, stop := resyncData.GetNext(); !stop {
-		value := &l3.StaticRoutes{}
-		err := staticRouteData.GetValue(value)
-		if err == nil {
-			req.StaticRoutes = value
-			num++
+	for {
+		if staticRouteData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &l3.StaticRoutes_Route{}
+			err := staticRouteData.GetValue(value)
+			if err == nil {
+				req.StaticRoutes = append(req.StaticRoutes, value)
+				num++
+			}
 		}
 	}
 	return num
@@ -295,7 +298,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.RouteKey())
+			l3.RouteKeyPrefix())
 	if err != nil {
 		return err
 	}
@@ -422,8 +425,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return err
 		}
-	} else if strings.HasPrefix(key, l3.RouteKey()) {
-		var value, prevValue l3.StaticRoutes
+	} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
+		var value, prevValue l3.StaticRoutes_Route
 		if err := dataChng.GetValue(&value); err != nil {
 			return err
 		}
