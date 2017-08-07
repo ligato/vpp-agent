@@ -83,28 +83,36 @@ func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes_Route) 
 		return err
 	}
 	if route != nil {
-		err = plugin.vppAddRoute(route)
+		key, err := plugin.vppAddRoute(route)
 		if err != nil {
 			return err
 		}
+		plugin.RouteIndexes.RegisterName(key, plugin.RouteIndexSeq, nil)
+		plugin.RouteIndexSeq++
+		log.Infof("Route %v registered", key)
 	}
 
 	return nil
 }
 
-// ModifyRoute process the NB config and propagates it to bin api calls
+// M`difyRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route) error {
 	newRoute, err := plugin.transformRoute(newConfig)
 	oldRoute, err := plugin.transformRoute(oldConfig)
 
-	err = plugin.vppDelRoute(oldRoute)
+	oldKey, err := plugin.vppDelRoute(oldRoute)
 	if err != nil {
 		return err
 	}
-	err = plugin.vppAddRoute(newRoute)
+	plugin.RouteIndexes.UnregisterName(oldKey)
+	log.Infof("Old route %v unregistered", oldKey)
+	newKey, err := plugin.vppAddRoute(newRoute)
 	if err != nil {
 		return err
 	}
+	plugin.RouteIndexes.RegisterName(newKey, plugin.RouteIndexSeq, nil)
+	plugin.RouteIndexSeq++
+	log.Infof("New route %v registered", newKey)
 
 	return nil
 }
@@ -115,36 +123,39 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 	if err != nil {
 		return err
 	}
-	err = plugin.vppDelRoute(route)
+	key, err := plugin.vppDelRoute(route)
+	log.Infof("Route %v unregistered", key)
 	if err != nil {
 		return err
 	}
+	plugin.RouteIndexes.UnregisterName(key)
 
 	return nil
 }
-func (plugin *RouteConfigurator) vppAddRoute(route *Route) error {
+func (plugin *RouteConfigurator) vppAddRoute(route *Route) (string, error) {
 	log.WithField("Route", *route).Debug("Adding")
 	return plugin.vppAddDelRoute(route, true)
 }
 
-func (plugin *RouteConfigurator) vppDelRoute(route *Route) error {
+func (plugin *RouteConfigurator) vppDelRoute(route *Route) (string, error) {
 	log.WithField("Route", *route).Debug("Deleting")
 	return plugin.vppAddDelRoute(route, false)
 }
 
-func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error {
-	log.Infof("Adding route with dst %v next hop %v to %v", route.destAddr.IP, route.nexthop.addr, route.nexthop.intf)
+func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (string, error) {
 	// prepare the message
 	req := &ip.IPAddDelRoute{}
 
-	isIpv6, err := addrs.IsIPv6(route.destAddr.IP.String())
+	var key string
+	ipv6 := route.destAddr.IP
+	isIpv6, err := addrs.IsIPv6(ipv6.String())
 	if err != nil {
-		return err
+		return key, err
 	}
 	prefix, _ := route.destAddr.Mask.Size()
 
-
-	req.NextHopAddress = []byte(route.nexthop.addr)
+	nextHopAddr := route.nexthop.addr
+	req.NextHopAddress = []byte(nextHopAddr)
 	if isAdd {
 		req.IsAdd = 1
 	} else {
@@ -155,10 +166,10 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error 
 	req.IsDrop = 0
 	if isIpv6 {
 		req.IsIpv6 = 1
-		req.DstAddress = []byte(route.destAddr.IP.To16())
+		req.DstAddress = []byte(ipv6.To16())
 	} else {
 		req.IsIpv6 = 0
-		req.DstAddress = []byte(route.destAddr.IP.To4())
+		req.DstAddress = []byte(ipv6.To4())
 	}
 	if route.nexthop.multipath {
 		req.IsMultipath = 1
@@ -172,12 +183,15 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error 
 	err = plugin.vppChan.SendRequest(req).ReceiveReply(reply)
 
 	if err != nil {
-		return err
+		return key, err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
+		return key, fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
 	}
-	return nil
+
+	key = l3.RouteKey(ipv6.String(), nextHopAddr.String())
+
+	return key, nil
 }
 
 func (plugin *RouteConfigurator) checkMsgCompatibility() error {

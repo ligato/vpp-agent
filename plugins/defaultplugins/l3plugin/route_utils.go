@@ -106,8 +106,11 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 		}
 		vrfID := routeInput.VrfId
 		ifName := routeInput.OutgoingInterface
+		if ifName == "" {
+			return nil, fmt.Errorf("Outgoing interface not set")
+		}
 		ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
-		if ifName != "" && !exists {
+		if !exists {
 			return nil, fmt.Errorf("Interface %v not found, route skipped", ifName)
 		}
 		if !exists {

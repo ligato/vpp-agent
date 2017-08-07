@@ -395,7 +395,7 @@ func createRoute(db keyval.ProtoBroker) {
 	routes.Route[0].DestinationAddress = "10.1.1.3"
 	//routes.Ip[0].DestinationAddress.IpAddressWithPrefix = "2001:db8:0:0:0:ff00:42:8329/48"
 	//routes.Ip[0].NextHops[0].Address = "2587:db8:0:0:0:ff00:42:8329"
-	routes.Route[0].NextHopAddress = "192.168.1.8"
+	routes.Route[0].NextHopAddress = "192.168.1.9"
 	routes.Route[0].Weight = 6
 	routes.Route[0].OutgoingInterface = "tap1"
 	routes.Route[0].Multipath = true
@@ -406,7 +406,7 @@ func createRoute(db keyval.ProtoBroker) {
 }
 
 func deleteRoute(db keyval.ProtoBroker, routeIP string) {
-	path := l3.RouteKey("10.1.1.2", "192.168.1.5")
+	path := l3.RouteKey("10.1.1.3", "192.168.1.8")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }
