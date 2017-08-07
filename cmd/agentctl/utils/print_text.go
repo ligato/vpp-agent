@@ -170,7 +170,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"{{end}}{{end}}" +
 
 			// Iterate over interfaces - end of loop
-			"{{end}}{{end}}\n")
+			"{{end}}{{end}}")
 	if err != nil {
 		panic(err)
 	}
