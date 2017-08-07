@@ -21,12 +21,14 @@ import (
 	"net"
 	"sort"
 	"fmt"
+	log "github.com/ligato/cn-infra/logging/logrus"
 )
 
 // Route represents a forward IP route entry.
 type Route struct {
 	vrfID    uint32
 	destAddr net.IPNet
+	multipath bool
 	nexthop  NextHop
 }
 
@@ -35,7 +37,6 @@ type Route struct {
 type NextHop struct {
 	addr   net.IP
 	intf   uint32
-	multipath bool
 	weight uint32
 }
 
@@ -90,8 +91,8 @@ func lessRoute(a *Route, b *Route) bool {
 
 }
 
-func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) (*Route, error) {
-	var route *Route
+func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) ([]*Route, error) {
+	var routes []*Route
 	if routeInput != nil {
 		var (
 			ifIndex uint32
@@ -105,36 +106,42 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 			return nil, err
 		}
 		vrfID := routeInput.VrfId
-		ifName := routeInput.OutgoingInterface
-		if ifName == "" {
-			return nil, fmt.Errorf("Outgoing interface not set")
-		}
-		ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
-		if !exists {
-			return nil, fmt.Errorf("Interface %v not found, route skipped", ifName)
-		}
-		if !exists {
-			ifIndex = nextHopOutgoingIfUnset
-		}
-		nextHopIP := net.ParseIP(routeInput.NextHopAddress)
-		if isIpv6 {
-			nextHopIP = nextHopIP.To16()
-		} else {
-			nextHopIP = nextHopIP.To4()
-		}
-		route = &Route{
-			vrfID:    vrfID,
-			destAddr: *parsedDestIP,
-			nexthop: NextHop{
-				addr:   nextHopIP,
-				intf:   ifIndex,
+
+		for _, nextHop := range routeInput.NextHops {
+
+			ifName := nextHop.OutgoingInterface
+			if ifName == "" {
+				log.Infof("Outgoing interface not set for next hop %v, route skipped", nextHop.NextHopAddress)
+				continue
+			}
+			ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
+			if !exists {
+				log.Infof("Interface %v not found, route skipped", ifName)
+			}
+			if !exists {
+				ifIndex = nextHopOutgoingIfUnset
+			}
+			nextHopIP := net.ParseIP(nextHop.NextHopAddress)
+			if isIpv6 {
+				nextHopIP = nextHopIP.To16()
+			} else {
+				nextHopIP = nextHopIP.To4()
+			}
+			route := &Route{
+				vrfID:    vrfID,
+				destAddr: *parsedDestIP,
 				multipath: routeInput.Multipath,
-				weight: routeInput.Weight,
-			},
+				nexthop: NextHop{
+					addr:      nextHopIP,
+					intf:      ifIndex,
+					weight:    nextHop.Weight,
+				},
+			}
+			routes = append(routes, route)
 		}
 	}
 
-	return route, nil
+	return routes, nil
 }
 
 func (plugin *RouteConfigurator) diffRoutes(new []*Route, old []*Route) (toBeDeleted []*Route, toBeAdded []*Route) {

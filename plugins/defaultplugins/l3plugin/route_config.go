@@ -78,57 +78,72 @@ func (plugin *RouteConfigurator) Init() (err error) {
 
 // ConfigureRoutes process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes_Route) error {
-	route, err := plugin.transformRoute(config)
+	routes, err := plugin.transformRoute(config)
 	if err != nil {
 		return err
 	}
-	if route != nil {
-		key, err := plugin.vppAddRoute(route)
-		if err != nil {
-			return err
+	if len(routes) > 0 {
+		for _, route := range routes {
+
+			key, err := plugin.vppAddRoute(route)
+			if err != nil {
+				return err
+			}
+			plugin.RouteIndexes.RegisterName(key, plugin.RouteIndexSeq, nil)
+			plugin.RouteIndexSeq++
+			log.Infof("Route %v registered", key)
 		}
-		plugin.RouteIndexes.RegisterName(key, plugin.RouteIndexSeq, nil)
-		plugin.RouteIndexSeq++
-		log.Infof("Route %v registered", key)
 	}
 
 	return nil
 }
 
-// M`difyRoute process the NB config and propagates it to bin api calls
+// ModifyRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route) error {
-	newRoute, err := plugin.transformRoute(newConfig)
-	oldRoute, err := plugin.transformRoute(oldConfig)
+	newRoutes, err := plugin.transformRoute(newConfig)
+	if err != nil {
+		return err
+	}
+	oldRoutes, err := plugin.transformRoute(oldConfig)
+	if err != nil {
+		return err
+	}
 
-	oldKey, err := plugin.vppDelRoute(oldRoute)
-	if err != nil {
-		return err
+	for _, oldRoute := range oldRoutes {
+		oldKey, err := plugin.vppDelRoute(oldRoute)
+		if err != nil {
+			return err
+		}
+		plugin.RouteIndexes.UnregisterName(oldKey)
+		log.Infof("Old route %v unregistered", oldKey)
 	}
-	plugin.RouteIndexes.UnregisterName(oldKey)
-	log.Infof("Old route %v unregistered", oldKey)
-	newKey, err := plugin.vppAddRoute(newRoute)
-	if err != nil {
-		return err
+	for _, newRoute := range newRoutes {
+		newKey, err := plugin.vppAddRoute(newRoute)
+		if err != nil {
+			return err
+		}
+		plugin.RouteIndexes.RegisterName(newKey, plugin.RouteIndexSeq, nil)
+		plugin.RouteIndexSeq++
+		log.Infof("New route %v registered", newKey)
 	}
-	plugin.RouteIndexes.RegisterName(newKey, plugin.RouteIndexSeq, nil)
-	plugin.RouteIndexSeq++
-	log.Infof("New route %v registered", newKey)
 
 	return nil
 }
 
 // DeleteRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
-	route, err := plugin.transformRoute(config)
+	routes, err := plugin.transformRoute(config)
 	if err != nil {
 		return err
 	}
-	key, err := plugin.vppDelRoute(route)
-	log.Infof("Route %v unregistered", key)
-	if err != nil {
-		return err
+	for _, route := range routes {
+		key, err := plugin.vppDelRoute(route)
+		log.Infof("Route %v unregistered", key)
+		if err != nil {
+			return err
+		}
+		plugin.RouteIndexes.UnregisterName(key)
 	}
-	plugin.RouteIndexes.UnregisterName(key)
 
 	return nil
 }
@@ -171,7 +186,7 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 		req.IsIpv6 = 0
 		req.DstAddress = []byte(ipv6.To4())
 	}
-	if route.nexthop.multipath {
+	if route.multipath {
 		req.IsMultipath = 1
 	}
 	req.NextHopSwIfIndex = route.nexthop.intf

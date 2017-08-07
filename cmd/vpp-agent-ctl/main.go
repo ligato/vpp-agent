@@ -393,12 +393,19 @@ func createRoute(db keyval.ProtoBroker) {
 	routes.Route[0].Description = "Description"
 	routes.Route[0].VrfId = 0
 	routes.Route[0].DestinationAddress = "10.1.1.3"
+	routes.Route[0].Multipath = true
 	//routes.Ip[0].DestinationAddress.IpAddressWithPrefix = "2001:db8:0:0:0:ff00:42:8329/48"
 	//routes.Ip[0].NextHops[0].Address = "2587:db8:0:0:0:ff00:42:8329"
-	routes.Route[0].NextHopAddress = "192.168.1.9"
-	routes.Route[0].Weight = 6
-	routes.Route[0].OutgoingInterface = "tap1"
-	routes.Route[0].Multipath = true
+	routes.Route[0].NextHops = make([]*l3.StaticRoutes_Route_NextHops, 2)
+	routes.Route[0].NextHops[0] = new(l3.StaticRoutes_Route_NextHops)
+	routes.Route[0].NextHops[0].NextHopAddress = "192.168.1.8"
+	routes.Route[0].NextHops[0].Weight = 6
+	routes.Route[0].NextHops[0].OutgoingInterface = "tap1"
+	routes.Route[0].NextHops[1] = new(l3.StaticRoutes_Route_NextHops)
+	routes.Route[0].NextHops[1].NextHopAddress = "192.168.1.9"
+	routes.Route[0].NextHops[1].Weight = 6
+	routes.Route[0].NextHops[1].OutgoingInterface = "tap1"
+
 
 	key := l3.RouteKey(routes.Route[0].DestinationAddress)
 	db.Put(key, routes.Route[0])
