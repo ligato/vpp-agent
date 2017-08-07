@@ -16,20 +16,20 @@ package l3plugin
 
 import (
 	"bytes"
+	"fmt"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"net"
 	"sort"
-	"fmt"
-	log "github.com/ligato/cn-infra/logging/logrus"
 )
 
 // Route represents a forward IP route entry.
 type Route struct {
-	vrfID    uint32
-	destAddr net.IPNet
+	vrfID     uint32
+	destAddr  net.IPNet
 	multipath bool
-	nexthop  NextHop
+	nexthop   NextHop
 }
 
 // NextHop defines the parameters of gateway to which packets should be forwarded
@@ -128,13 +128,13 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 				nextHopIP = nextHopIP.To4()
 			}
 			route := &Route{
-				vrfID:    vrfID,
-				destAddr: *parsedDestIP,
+				vrfID:     vrfID,
+				destAddr:  *parsedDestIP,
 				multipath: routeInput.Multipath,
 				nexthop: NextHop{
-					addr:      nextHopIP,
-					intf:      ifIndex,
-					weight:    nextHop.Weight,
+					addr:   nextHopIP,
+					intf:   ifIndex,
+					weight: nextHop.Weight,
 				},
 			}
 			routes = append(routes, route)

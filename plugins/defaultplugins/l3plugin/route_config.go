@@ -23,13 +23,13 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/cn-infra/utils/addrs"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -37,11 +37,11 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1routes". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
-	GoVppmux    *govppmux.GOVPPPlugin
-	RouteIndexes idxvpp.NameToIdxRW
-	RouteIndexSeq	uint32
-	SwIfIndexes ifaceidx.SwIfIndex
-	vppChan     *govppapi.Channel
+	GoVppmux      *govppmux.GOVPPPlugin
+	RouteIndexes  idxvpp.NameToIdxRW
+	RouteIndexSeq uint32
+	SwIfIndexes   ifaceidx.SwIfIndex
+	vppChan       *govppapi.Channel
 }
 
 const (

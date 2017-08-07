@@ -341,10 +341,10 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "route_indexes", nil)
 
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		GoVppmux:    plugin.GoVppmux,
-		RouteIndexes: plugin.routeIndexes,
-		RouteIndexSeq:	1,
-		SwIfIndexes: plugin.swIfIndexes,
+		GoVppmux:      plugin.GoVppmux,
+		RouteIndexes:  plugin.routeIndexes,
+		RouteIndexSeq: 1,
+		SwIfIndexes:   plugin.swIfIndexes,
 	}
 	err := plugin.routeConfigurator.Init()
 	if err != nil {

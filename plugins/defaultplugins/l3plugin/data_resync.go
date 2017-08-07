@@ -25,7 +25,7 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	// TODO lookup vpp Route Configs
 
 	var wasError error
-	if len(staticRoutes) > 0  {
+	if len(staticRoutes) > 0 {
 		for _, route := range staticRoutes {
 			wasError = plugin.ConfigureRoutes(route)
 		}

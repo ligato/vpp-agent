@@ -15,8 +15,8 @@
 package l3
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // Prefixes
@@ -27,6 +27,7 @@ const (
 	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/route/"
 )
 
+// VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
 func VrfKeyPrefix() string {
 	return VrfPrefix
 }
@@ -35,6 +36,7 @@ func VrfKeyPrefix() string {
 func RouteKey(vrf uint32, net string) string {
 	return strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1) + net
 }
+
 // ParseRouteKey parses VRF label and route address from a route key.
 func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, routeAddress string) {
 	if strings.HasPrefix(key, VrfKeyPrefix()) {
@@ -46,7 +48,6 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, routeAddress s
 	}
 	return false, "", ""
 }
-
 
 // RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
 func RouteKeyPrefix() string {

@@ -406,7 +406,6 @@ func createRoute(db keyval.ProtoBroker) {
 	routes.Route[0].NextHops[1].Weight = 6
 	routes.Route[0].NextHops[1].OutgoingInterface = "tap1"
 
-
 	key := l3.RouteKey(0, routes.Route[0].DestinationAddress)
 	db.Put(key, routes.Route[0])
 	log.Printf("Adding route %v", key)
