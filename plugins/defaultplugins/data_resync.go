@@ -298,7 +298,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.RouteKeyPrefix())
+			l3.VrfKeyPrefix())
 	if err != nil {
 		return err
 	}
@@ -425,17 +425,22 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return err
 		}
-	} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
-		var value, prevValue l3.StaticRoutes_Route
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+		isRoute, _, _ := l3.ParseRouteKey(key)
+		if isRoute {
+			var value, prevValue l3.StaticRoutes_Route
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		} else {
-			return err
+			// TODO vrf key
 		}
 	} else {
 		log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!

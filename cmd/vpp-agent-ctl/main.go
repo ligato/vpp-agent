@@ -407,13 +407,13 @@ func createRoute(db keyval.ProtoBroker) {
 	routes.Route[0].NextHops[1].OutgoingInterface = "tap1"
 
 
-	key := l3.RouteKey(routes.Route[0].DestinationAddress)
+	key := l3.RouteKey(0, routes.Route[0].DestinationAddress)
 	db.Put(key, routes.Route[0])
-	log.WithField("path", key).Debug("Adding route")
+	log.Printf("Adding route %v", key)
 }
 
 func deleteRoute(db keyval.ProtoBroker, routeIP string) {
-	path := l3.RouteKey("10.1.1.3")
+	path := l3.RouteKey(0, "10.1.1.3")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }

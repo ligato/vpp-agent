@@ -162,8 +162,8 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 	req := &ip.IPAddDelRoute{}
 
 	var key string
-	ipv6 := route.destAddr.IP
-	isIpv6, err := addrs.IsIPv6(ipv6.String())
+	ipAddr := route.destAddr.IP
+	isIpv6, err := addrs.IsIPv6(ipAddr.String())
 	if err != nil {
 		return key, err
 	}
@@ -181,10 +181,10 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 	req.IsDrop = 0
 	if isIpv6 {
 		req.IsIpv6 = 1
-		req.DstAddress = []byte(ipv6.To16())
+		req.DstAddress = []byte(ipAddr.To16())
 	} else {
 		req.IsIpv6 = 0
-		req.DstAddress = []byte(ipv6.To4())
+		req.DstAddress = []byte(ipAddr.To4())
 	}
 	if route.multipath {
 		req.IsMultipath = 1
@@ -204,7 +204,7 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) (strin
 		return key, fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
 	}
 
-	key = l3.RouteKey(ipv6.String())
+	key = l3.RouteKey(route.vrfID, ipAddr.String())
 
 	return key, nil
 }

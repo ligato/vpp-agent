@@ -93,7 +93,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 
 // StaticRoute create or update the L3 Static Route
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(val.DestinationAddress), val)
+	dsl.parent.txn.Put(l3.RouteKey(string(val.VrfId), val.DestinationAddress), val)
 
 	return dsl
 }
@@ -154,8 +154,8 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 }
 
 // StaticRoute create or update the L3 Static Route
-func (dsl *DeleteDSL) StaticRoute() defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey())
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, address string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.RouteKey(string(vrf), address))
 
 	return dsl
 }

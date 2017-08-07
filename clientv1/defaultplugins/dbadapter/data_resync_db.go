@@ -103,7 +103,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adss L3 Static Route to the RESYNC request
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	key := l3.RouteKey(val.DestinationAddress)
+	key := l3.RouteKey(string(val.VrfId), val.DestinationAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -158,7 +158,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.RouteKey())
+		keys, err = dsl.listKeys(l3.RouteKeyPrefix())
 		if err != nil {
 			break
 		}
