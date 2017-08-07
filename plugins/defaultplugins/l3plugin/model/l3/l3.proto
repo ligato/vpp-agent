@@ -3,17 +3,14 @@ syntax = "proto3";
 package l3;
 
 message StaticRoutes {
-    message Ip {
+    message Route {
         uint32 vrf_id = 1;                   /* VRF identifier */
         string description = 2;              /* optional description */
-        string destination_address = 3;   /* ip address + prefix in format <address>/<prefix> */
-
-        message NextHop {
-            string address = 1;              /* next hop address */
-            string outgoing_interface = 2;   /* outgoing interface name */
-            uint32 weight = 3;               /* weight (used for unequal cost load balncing) */
-        }
-        repeated NextHop next_hops = 100;    /* list of the next hops (load balancing in case of multiple next hops) */
+        string destination_address = 3;      /* ip address + prefix in format <address>/<prefix> */
+        string next_hop_address = 4;         /* next hop address */
+        string outgoing_interface = 5;       /* outgoing interface name */
+        bool multipath = 6;                  /* enable/disable multipath */
+        uint32 weight = 7;                   /* weight (used for unequal cost load balncing) */
     }
-    repeated Ip ip = 1; /* list of IP static routes */
+    repeated Route route = 1; /* list of IP static routes */
 }
