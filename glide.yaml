@@ -36,3 +36,14 @@ import:
   version: 962a6974312dde57d1f6f5738b4f83e1af9f38a4
 - package: github.com/buger/goterm
   version: bc6c333206f446a53cac4db5d2e6a4316139d737
+- package: github.com/taylorchu/generic
+  version: v0.3
+  subpackages:
+  - cmd/generic
+- package: github.com/ungerik/pkgreflect
+  version: 71c5bcab7c39861b211c096350622c8d02c02ba5
+- package: github.com/golang/mock
+  version: bd3c8e81be01eef76d4b503f5e687d2d1354d2d9
+  repo: https://github.com/golang/mock
+  subpackages:
+  - gomock

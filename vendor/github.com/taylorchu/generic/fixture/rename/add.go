@@ -1,0 +1,4 @@
+package rename
+
+func add() {
+}
