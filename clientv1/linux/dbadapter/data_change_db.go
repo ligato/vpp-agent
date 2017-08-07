@@ -139,8 +139,8 @@ func (dsl *DeleteDSL) BD(bdName string) linux.DeleteDSL {
 }
 
 // BDFIB adds a request to delete an existing VPP L2 Forwarding Information Base
-func (dsl *DeleteDSL) BDFIB(mac string) linux.DeleteDSL {
-	dsl.vppDelete.BDFIB(mac)
+func (dsl *DeleteDSL) BDFIB(bdName string, mac string) linux.DeleteDSL {
+	dsl.vppDelete.BDFIB(bdName, mac)
 	return dsl
 }
 

@@ -18,11 +18,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/logrusorgru/aurora.git"
-	"sort"
-	"strings"
 )
 
 const (
@@ -234,7 +235,7 @@ func getFIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
 	fibRoot.FibTableEntry = fibData.FibTable
 	var keyset []string
 	for _, fib := range fibData.FibTable {
-		keyset = append(keyset, l2.FIBPrefix+fib.PhysAddress)
+		keyset = append(keyset, l2.FibKey(fib.BridgeDomain, fib.PhysAddress))
 	}
 	sort.Strings(keyset)
 

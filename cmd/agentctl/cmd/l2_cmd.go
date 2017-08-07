@@ -166,9 +166,9 @@ mandatory.
 `,
 	Example: `
 To create a FIB entry:
-$ agentctl put bridge-domain fib --label <agent-label> --name <bd-name> --physical-address <mac-address>
-$ agentctl put bridge-domain fib -l <agent-label> -n <bd-name> --physical-address <mac-address>
-$ agentctl p b f -l <agent-label> -n <bd-name> -i <mac-address>
+$ agentctl put bridge-domain fib --label <agent-label> --name <bd-name> --physical-address <mac-address> --interface-name <outgoing-if-name>
+$ agentctl put bridge-domain fib -l <agent-label> -n <bd-name> --physical-address <mac-address> --interface-name <outgoing-if-name>
+$ agentctl p b f -l <agent-label> -n <bd-name> -i <mac-address> --interface-name <outgoing-if-name>
 To remove a FIB entry:
 $ agentctl put bridge-domain fib --label <agent-label> --name <bd-name> --physical-address <mac-address> -D
 $ agentctl put bridge-domain fib -l <agent-label> -n <bd-name> --physical-address <mac-address> -D

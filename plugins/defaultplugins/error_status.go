@@ -242,7 +242,7 @@ func (plugin *Plugin) removeErrorLog(key string) {
 		plugin.Transport.PublishData(key, nil)
 		log.Infof("Error log for interface %v cleared", name)
 	} else if prefix == l2.BdPrefix {
-		key := l2.BridgeDomainKey(name)
+		key := l2.BridgeDomainErrorKey(name)
 		plugin.Transport.PublishData(key, nil)
 		log.Infof("Error log for bridge domain %v cleared", name)
 	} else {

@@ -34,8 +34,9 @@ import (
 
 // FIBConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of fib table entries as modelled by the proto file "../model/l2/l2.proto" and stored
-// in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1fib". Updates received from the northbound API
-// are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
+// in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/bd/<bd-label>/fib".
+// Updates received from the northbound API are compared with the VPP run-time configuration and differences are applied
+// through the VPP binary API.
 type FIBConfigurator struct {
 	GoVppmux      *govppmux.GOVPPPlugin
 	SwIfIndexes   ifaceidx.SwIfIndex

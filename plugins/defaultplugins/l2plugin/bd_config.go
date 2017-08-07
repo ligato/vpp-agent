@@ -292,10 +292,14 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	// Look whether interface belongs to some bridge domain using interface-to-bd mapping
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
-		log.Debug("Interface does not belong to any bridge domain ", interfaceName)
+		log.Debugf("Interface %s does not belong to any bridge domain", interfaceName)
 		return nil
 	}
-
+	_, _, alreadyCreated := plugin.IfToBdRealStateIdx.LookupIdx(interfaceName)
+	if alreadyCreated {
+		log.Debugf("Interface %s has been already configured", interfaceName)
+		return nil
+	}
 	bridgeDomainIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
 	bvi := meta.(*BridgeDomainMeta).IsInterfaceBvi
 

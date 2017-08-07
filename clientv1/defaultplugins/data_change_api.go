@@ -63,7 +63,7 @@ type DeleteDSL interface {
 	// BD delete request for the Bridge Domain
 	BD(bdName string) DeleteDSL
 	// FIB delete request for the L2 Forwarding Information Base
-	BDFIB(mac string) DeleteDSL
+	BDFIB(bdName string, mac string) DeleteDSL
 	// XConnect delete request for the Cross Connect
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute delete request for the L3 Static Route

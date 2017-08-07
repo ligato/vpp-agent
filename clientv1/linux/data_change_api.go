@@ -72,7 +72,7 @@ type DeleteDSL interface {
 	// BD adds a request to delete an existing VPP Bridge Domain
 	BD(bdName string) DeleteDSL
 	// FIB adds a request to delete an existing VPP L2 Forwarding Information Base
-	BDFIB(mac string) DeleteDSL
+	BDFIB(bdName string, mac string) DeleteDSL
 	// XConnect adds a request to delete an existing VPP Cross Connect
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route

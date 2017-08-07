@@ -114,8 +114,6 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
-			numL2FIBs := resyncAppendFIBs(resyncData, req)
-			log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 			numBDs := resyncAppendBDs(resyncData, req)
 			log.Debug("Received RESYNC BD values ", numBDs)
@@ -159,38 +157,42 @@ func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 	}
 	return num
 }
-func resyncAppendFIBs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	num := 0
-	for {
-		if fibData, stop := resyncData.GetNext(); stop {
-			break
-		} else {
-			value := &l2.FibTableEntries_FibTableEntry{}
-			err := fibData.GetValue(value)
-			if err == nil {
-				req.FibTableEntries = append(req.FibTableEntries, value)
-				num++
-			}
-		}
+func resyncAppendFIB(fibData datasync.KeyVal, req *DataResyncReq) error {
+	value := &l2.FibTableEntries_FibTableEntry{}
+	err := fibData.GetValue(value)
+	if err == nil {
+		req.FibTableEntries = append(req.FibTableEntries, value)
 	}
-	return num
+	return err
 }
+
 func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
 	for {
 		if bridgeDomainData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &l2.BridgeDomains_BridgeDomain{}
-			err := bridgeDomainData.GetValue(value)
-			if err == nil {
-				req.BridgeDomains = append(req.BridgeDomains, value)
-				num++
+			key := bridgeDomainData.GetKey()
+			fib, _, fibMac := l2.ParseFibKey(key)
+			if fib {
+				log.Debugf("Received RESYNC L2 FIB entry (%s)", fibMac)
+				err := resyncAppendFIB(bridgeDomainData, req)
+				if err == nil {
+					num++
+				}
+			} else {
+				value := &l2.BridgeDomains_BridgeDomain{}
+				err := bridgeDomainData.GetValue(value)
+				if err == nil {
+					req.BridgeDomains = append(req.BridgeDomains, value)
+					num++
+				}
 			}
 		}
 	}
 	return num
 }
+
 func resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	value := &bfd.SingleHopBFD_EchoFunction{}
 	num := 0
@@ -292,7 +294,6 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.AuthKeysKeyPrefix(),
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
-			l2.FibKeyPrefix(),
 			l2.XConnectKeyPrefix(),
 			l3.RouteKey())
 	if err != nil {
@@ -380,29 +381,34 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return err
 		}
-	} else if strings.HasPrefix(key, l2.FibKeyPrefix()) {
-		var value, prevValue l2.FibTableEntries_FibTableEntry
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
 	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
-		var value, prevValue l2.BridgeDomains_BridgeDomain
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+		fib, _, _ := l2.ParseFibKey(key)
+		if fib {
+			// L2 FIB entry
+			var value, prevValue l2.FibTableEntries_FibTableEntry
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		} else {
-			return err
+			// Bridge domain
+			var value, prevValue l2.BridgeDomains_BridgeDomain
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 	} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 		var value, prevValue l2.XConnectPairs_XConnectPair
