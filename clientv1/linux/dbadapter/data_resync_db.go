@@ -78,7 +78,7 @@ func (dsl *DataResyncDSL) XConnect(xcon *vpp_l2.XConnectPairs_XConnectPair) linu
 }
 
 // StaticRoute adds VPP L3 Static Route to the RESYNC request
-func (dsl *DataResyncDSL) StaticRoute(staticRoute *vpp_l3.StaticRoutes) linux.DataResyncDSL {
+func (dsl *DataResyncDSL) StaticRoute(staticRoute *vpp_l3.StaticRoutes_Route) linux.DataResyncDSL {
 	dsl.vppDataResync.StaticRoute(staticRoute)
 	return dsl
 }

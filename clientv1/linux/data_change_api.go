@@ -52,7 +52,7 @@ type PutDSL interface {
 	// XConnect adds a request to create or update VPP Cross Connect
 	XConnect(val *vpp_l2.XConnectPairs_XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route
-	StaticRoute(val *vpp_l3.StaticRoutes) PutDSL
+	StaticRoute(val *vpp_l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List
 	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
 
@@ -76,7 +76,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route
-	StaticRoute() DeleteDSL
+	StaticRoute(vrf uint32, address string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List
 	ACL(aclName string) DeleteDSL
 

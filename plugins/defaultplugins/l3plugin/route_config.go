@@ -151,12 +151,12 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 
 	return nil
 }
-func (plugin *RouteConfigurator) vppAddRoute(route *Route)  error {
+func (plugin *RouteConfigurator) vppAddRoute(route *Route) error {
 	log.WithField("Route", *route).Debug("Adding")
 	return plugin.vppAddDelRoute(route, true)
 }
 
-func (plugin *RouteConfigurator) vppDelRoute(route *Route)  error {
+func (plugin *RouteConfigurator) vppDelRoute(route *Route) error {
 	log.WithField("Route", *route).Debug("Deleting")
 	return plugin.vppAddDelRoute(route, false)
 }

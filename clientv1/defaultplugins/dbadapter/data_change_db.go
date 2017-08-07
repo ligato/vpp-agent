@@ -155,7 +155,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 
 // StaticRoute create or update the L3 Static Route
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, address string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey(string(vrf), address))
+	dsl.parent.txn.Delete(l3.RouteKey(vrf, address))
 
 	return dsl
 }

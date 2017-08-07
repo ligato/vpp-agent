@@ -99,7 +99,7 @@ func (dsl *PutDSL) XConnect(val *vpp_l2.XConnectPairs_XConnectPair) linux.PutDSL
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route
-func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes) linux.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes_Route) linux.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
@@ -151,8 +151,8 @@ func (dsl *DeleteDSL) XConnect(rxIfaceName string) linux.DeleteDSL {
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route
-func (dsl *DeleteDSL) StaticRoute() linux.DeleteDSL {
-	dsl.vppDelete.StaticRoute()
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, address string) linux.DeleteDSL {
+	dsl.vppDelete.StaticRoute(vrf, address)
 	return dsl
 }
 

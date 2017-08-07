@@ -132,7 +132,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
-			StaticRoute(). /* remove the route going through memif1 */
+			StaticRoute(0, "192.168.2.1"). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
 			log.Errorf("Failed to reconfigure VPP: %v", err)
@@ -295,18 +295,14 @@ var (
 	}
 
 	// routeThroughMemif1 is an example route configuration, with memif1 being the next hop.
-	routeThroughMemif1 = l3.StaticRoutes{
-		Ip: []*l3.StaticRoutes_Ip{
+	routeThroughMemif1 = l3.StaticRoutes_Route{
+		Description:        "Description",
+		VrfId:              0,
+		DestinationAddress: "192.168.2.1",
+		NextHops: []*l3.StaticRoutes_Route_NextHops{
 			{
-				Description:        "Description",
-				VrfId:              0,
-				DestinationAddress: "192.168.2.1",
-				NextHops: []*l3.StaticRoutes_Ip_NextHop{
-					{
-						Address: memif1AsMaster.IpAddresses[0],
-						Weight:  5,
-					},
-				},
+				NextHopAddress: memif1AsMaster.IpAddresses[0],
+				Weight:         5,
 			},
 		},
 	}
