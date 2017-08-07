@@ -173,10 +173,9 @@ func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) int
 			break
 		} else {
 			key := bridgeDomainData.GetKey()
-			suffix := strings.TrimPrefix(key, l2.BridgeDomainKeyPrefix())
-			sep := strings.Index(suffix, "/") /* skip over the bridge domain label */
-			if sep != -1 && strings.HasPrefix(suffix[sep+1:], l2.FibKeyPrefix()) {
-				log.Debugf("Received RESYNC L2 FIB (%s)", key)
+			fib, _, fibMac := l2.ParseFibKey(key)
+			if fib {
+				log.Debugf("Received RESYNC L2 FIB entry (%s)", fibMac)
 				err := resyncAppendFIB(bridgeDomainData, req)
 				if err == nil {
 					num++
@@ -383,10 +382,9 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return err
 		}
 	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
-		suffix := strings.TrimPrefix(key, l2.BridgeDomainKeyPrefix())
-		sep := strings.Index(suffix, "/") /* skip over the bridge domain label */
-		if sep != -1 && strings.HasPrefix(suffix[sep+1:], l2.FibKeyPrefix()) {
-			// FIB table (bdLabel = suffix[:sep])
+		fib, _, _ := l2.ParseFibKey(key)
+		if fib {
+			// L2 FIB entry
 			var value, prevValue l2.FibTableEntries_FibTableEntry
 			if err := dataChng.GetValue(&value); err != nil {
 				return err

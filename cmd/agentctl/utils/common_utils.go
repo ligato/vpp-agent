@@ -112,7 +112,8 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 		}
 		// Recognize FIB key
 		if len(ps) > 6 && ps[4] == "bd" && ps[6] == "fib" {
-			dataType = ps[6]
+			fibDataType := ps[6]
+			dataType += "/{bd}/" + fibDataType
 
 			if len(ps) > 7 {
 				dataType += "/"

@@ -27,8 +27,8 @@ const (
 	BdStatePrefix = "vpp/status/v1/bd/"
 	// BdErrPrefix is the relative key prefix for the bridge domain error
 	BdErrPrefix = "vpp/status/v1/bd/error/"
-	// FIBPrefix is the key prefix for FIB table entries relative to a bridge domain.
-	FIBPrefix = "fib/"
+	// FIBPrefix is the relative key prefix for FIB table entries.
+	FIBPrefix = "vpp/config/v1/bd/{bd}/fib/"
 	// XconnectPrefix is the relative key prefix for xconnects.
 	XconnectPrefix = "vpp/config/v1/xconnect/"
 )
@@ -75,7 +75,7 @@ func ParseBDNameFromKey(key string) (name string, err error) {
 	return key, fmt.Errorf("wrong format of the key %s", key)
 }
 
-// FibKeyPrefix returns the prefix (relative to bridge domain) used in ETCD to store vpp fib table entry config
+// FibKeyPrefix returns the prefix used in ETCD to store vpp fib table entry config
 func FibKeyPrefix() string {
 	return FIBPrefix
 }
@@ -83,7 +83,19 @@ func FibKeyPrefix() string {
 // FibKey returns the prefix used in ETCD to store vpp fib table entry config
 // of particular fib in selected vpp instance
 func FibKey(bdLabel string, fibMac string) string {
-	return BridgeDomainKey(bdLabel) + "/" + FIBPrefix + fibMac
+	return strings.Replace(FIBPrefix, "{bd}", bdLabel, 1) + fibMac
+}
+
+// ParseFibKey parses bridge domain label and FIB MAC address from a FIB key.
+func ParseFibKey(key string) (isFibKey bool, bdName string, fibMac string) {
+	if strings.HasPrefix(key, BridgeDomainKeyPrefix()) {
+		bdSuffix := strings.TrimPrefix(key, BridgeDomainKeyPrefix())
+		fibComps := strings.Split(bdSuffix, "/")
+		if len(fibComps) == 3 && fibComps[1] == "fib" {
+			return true, fibComps[0], fibComps[2]
+		}
+	}
+	return false, "", ""
 }
 
 // XConnectKeyPrefix returns the prefix used in ETCD to store vpp xConnect pair config
