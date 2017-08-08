@@ -2,17 +2,17 @@
 set -e
 
 VPP_CACHE_DIR=$HOME/build-cache/vpp
-VPP_COMMIT="acd4c63e3c6e70ea3f58527d9bace7c0e38df719"
+VPP_COMMIT="8e4222fc7e23a478b021930ade3cb7d20938e398"
 
 if [ ! -d "$VPP_CACHE_DIR" ]; then
     echo "Building VPP binaries."
 
     # build VPP
-    git clone https://gerrit.fd.io/r/vpp 
-    cd vpp 
-    git checkout ${VPP_COMMIT} 
-    yes | make install-dep     
-    make bootstrap     
+    git clone https://gerrit.fd.io/r/vpp
+    cd vpp
+    git checkout ${VPP_COMMIT}
+    yes | make install-dep
+    make bootstrap
     make pkg-deb
 
     # copy deb packages to cache dir
