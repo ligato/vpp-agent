@@ -20,28 +20,13 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
 	"sort"
 )
 
-// Route represents a forward IP route entry.
-type Route struct {
-	vrfID     uint32
-	destAddr  net.IPNet
-	multipath bool
-	nexthop   NextHop
-}
-
-// NextHop defines the parameters of gateway to which packets should be forwarded
-// when a given routing table entry is applied.
-type NextHop struct {
-	addr   net.IP
-	intf   uint32
-	weight uint32
-}
-
 // SortedRoutes type is used to implement sort interface for slice of Route
-type SortedRoutes []*Route
+type SortedRoutes []*vppcalls.Route
 
 // Returns length of slice
 // Implements sort.Interface
@@ -62,37 +47,38 @@ func (arr SortedRoutes) Less(i, j int) bool {
 	return lessRoute(arr[i], arr[j])
 }
 
-func eqRoutes(a *Route, b *Route) bool {
-	return a.vrfID == b.vrfID &&
-		bytes.Equal(a.destAddr.IP, b.destAddr.IP) &&
-		bytes.Equal(a.destAddr.Mask, b.destAddr.Mask) &&
-		bytes.Equal(a.nexthop.addr, b.nexthop.addr) &&
-		a.nexthop.intf == b.nexthop.intf &&
-		a.nexthop.weight == b.nexthop.weight
+func eqRoutes(a *vppcalls.Route, b *vppcalls.Route) bool {
+	return a.VrfID == b.VrfID &&
+		bytes.Equal(a.DstAddr.IP, b.DstAddr.IP) &&
+		bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) &&
+		bytes.Equal(a.NextHop.Addr, b.NextHop.Addr) &&
+		a.NextHop.Iface == b.NextHop.Iface &&
+		a.NextHop.Weight == b.NextHop.Weight
 }
 
-func lessRoute(a *Route, b *Route) bool {
-	if a.vrfID != b.vrfID {
-		return a.vrfID < b.vrfID
+func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
+	if a.VrfID != b.VrfID {
+		return a.VrfID < b.VrfID
 	}
-	if !bytes.Equal(a.destAddr.IP, b.destAddr.IP) {
-		return bytes.Compare(a.destAddr.IP, b.destAddr.IP) < 0
+	if !bytes.Equal(a.DstAddr.IP, b.DstAddr.IP) {
+		return bytes.Compare(a.DstAddr.IP, b.DstAddr.IP) < 0
 	}
-	if !bytes.Equal(a.destAddr.Mask, b.destAddr.Mask) {
-		return bytes.Compare(a.destAddr.Mask, b.destAddr.Mask) < 0
+	if !bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) {
+		return bytes.Compare(a.DstAddr.Mask, b.DstAddr.Mask) < 0
 	}
-	if !bytes.Equal(a.nexthop.addr, b.nexthop.addr) {
-		return bytes.Compare(a.nexthop.addr, b.nexthop.addr) < 0
+	if !bytes.Equal(a.NextHop.Addr, b.NextHop.Addr) {
+		return bytes.Compare(a.NextHop.Addr, b.NextHop.Addr) < 0
 	}
-	if a.nexthop.intf != b.nexthop.intf {
-		return a.nexthop.intf < b.nexthop.intf
+	if a.NextHop.Iface != b.NextHop.Iface {
+		return a.NextHop.Iface < b.NextHop.Iface
 	}
-	return a.nexthop.weight < b.nexthop.weight
+	return a.NextHop.Weight < b.NextHop.Weight
 
 }
 
-func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) ([]*Route, error) {
-	var routes []*Route
+// Transform raw routes data to list of Route objects.
+func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) ([]*vppcalls.Route, error) {
+	var routes []*vppcalls.Route
 	if routeInput != nil {
 		var (
 			ifIndex uint32
@@ -119,7 +105,7 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 				log.Infof("Interface %v not found, route skipped", ifName)
 			}
 			if !exists {
-				ifIndex = nextHopOutgoingIfUnset
+				ifIndex = vppcalls.NextHopOutgoingIfUnset
 			}
 			nextHopIP := net.ParseIP(nextHop.Address)
 			if isIpv6 {
@@ -127,14 +113,14 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 			} else {
 				nextHopIP = nextHopIP.To4()
 			}
-			route := &Route{
-				vrfID:     vrfID,
-				destAddr:  *parsedDestIP,
-				multipath: routeInput.Multipath,
-				nexthop: NextHop{
-					addr:   nextHopIP,
-					intf:   ifIndex,
-					weight: nextHop.Weight,
+			route := &vppcalls.Route{
+				VrfID:     vrfID,
+				DstAddr:   *parsedDestIP,
+				MultiPath: routeInput.Multipath,
+				NextHop: vppcalls.NextHopList{
+					Addr:   nextHopIP,
+					Iface:  ifIndex,
+					Weight: nextHop.Weight,
 				},
 			}
 			routes = append(routes, route)
@@ -144,7 +130,7 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 	return routes, nil
 }
 
-func (plugin *RouteConfigurator) diffRoutes(new []*Route, old []*Route) (toBeDeleted []*Route, toBeAdded []*Route) {
+func (plugin *RouteConfigurator) diffRoutes(new []*vppcalls.Route, old []*vppcalls.Route) (toBeDeleted []*vppcalls.Route, toBeAdded []*vppcalls.Route) {
 	newSorted := SortedRoutes(new)
 	oldSorted := SortedRoutes(old)
 	sort.Sort(newSorted)
