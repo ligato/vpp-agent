@@ -76,7 +76,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	if plugin.vppAdapter == nil {
 		plugin.vppAdapter = vppapiclient.NewVppAdapter()
 	} else {
-		log.Info("Reusing existing vppAdapter") //this is used for testing
+		govppLogger.Info("Reusing existing vppAdapter") //this is used for testing
 	}
 
 	plugin.vppConn, plugin.vppConChan, err = govpp.AsyncConnect(plugin.vppAdapter)
@@ -92,7 +92,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 
 	plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.OK, nil)
-	log.Debug("govpp connect success ", plugin.vppConn)
+	govppLogger.Debug("govpp connect success ", plugin.vppConn)
 
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
