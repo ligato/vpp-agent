@@ -78,6 +78,7 @@ func (plugin *RouteConfigurator) Init() (err error) {
 
 // ConfigureRoutes process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes_Route) error {
+	log.Infof("Creating new routes with destination address %v", config)
 	routes, err := plugin.transformRoute(config)
 	if err != nil {
 		return err
@@ -197,6 +198,7 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error 
 	req.NextHopViaLabel = nextHopViaLabelUnset
 	req.NextHopWeight = uint8(route.nexthop.weight)
 	req.TableID = route.vrfID
+	req.CreateVrfIfNeeded = 1
 	reply := &ip.IPAddDelRouteReply{}
 	err = plugin.vppChan.SendRequest(req).ReceiveReply(reply)
 

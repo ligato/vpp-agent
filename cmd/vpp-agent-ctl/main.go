@@ -398,11 +398,11 @@ func createRoute(db keyval.ProtoBroker) {
 	//routes.Ip[0].NextHops[0].Address = "2587:db8:0:0:0:ff00:42:8329"
 	routes.Route[0].NextHops = make([]*l3.StaticRoutes_Route_NextHops, 2)
 	routes.Route[0].NextHops[0] = new(l3.StaticRoutes_Route_NextHops)
-	routes.Route[0].NextHops[0].NextHopAddress = "192.168.1.8"
+	routes.Route[0].NextHops[0].Address = "192.168.1.8"
 	routes.Route[0].NextHops[0].Weight = 6
 	routes.Route[0].NextHops[0].OutgoingInterface = "tap1"
 	routes.Route[0].NextHops[1] = new(l3.StaticRoutes_Route_NextHops)
-	routes.Route[0].NextHops[1].NextHopAddress = "192.168.1.9"
+	routes.Route[0].NextHops[1].Address = "192.168.1.9"
 	routes.Route[0].NextHops[1].Weight = 6
 	routes.Route[0].NextHops[1].OutgoingInterface = "tap1"
 

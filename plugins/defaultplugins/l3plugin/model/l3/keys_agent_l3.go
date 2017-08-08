@@ -24,7 +24,7 @@ const (
 	// VrfPrefix is the relative key prefix for VRFs.
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
-	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/route/"
+	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/fib/"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
@@ -42,7 +42,7 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, routeAddress s
 	if strings.HasPrefix(key, VrfKeyPrefix()) {
 		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())
 		routeComps := strings.Split(vrfSuffix, "/")
-		if len(routeComps) == 3 && routeComps[1] == "route" {
+		if len(routeComps) >= 3 && routeComps[1] == "fib" {
 			return true, routeComps[0], routeComps[2]
 		}
 	}

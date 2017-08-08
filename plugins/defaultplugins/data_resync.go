@@ -322,7 +322,6 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
 		return nil
 	}
-
 	log.Debug("Start processing change for key: ", key)
 	if strings.HasPrefix(key, acl.KeyPrefix()) {
 		var value, prevValue acl.AccessLists_Acl
@@ -428,11 +427,13 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
 		isRoute, _, _ := l3.ParseRouteKey(key)
 		if isRoute {
+			// Route
 			var value, prevValue l3.StaticRoutes_Route
 			if err := dataChng.GetValue(&value); err != nil {
 				return err
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				log.Printf("ROUTE DATA: %v, %v", value, prevValue)
 				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 					return err
 				}
@@ -440,7 +441,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return err
 			}
 		} else {
-			// TODO vrf key
+			// Vrf
+			// TODO vrf not implemented yet
 		}
 	} else {
 		log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!

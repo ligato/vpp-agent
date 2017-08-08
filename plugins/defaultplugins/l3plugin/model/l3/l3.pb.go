@@ -53,7 +53,7 @@ func (m *StaticRoutes_Route) GetNextHops() []*StaticRoutes_Route_NextHops {
 }
 
 type StaticRoutes_Route_NextHops struct {
-	NextHopAddress    string `protobuf:"bytes,1,opt,name=next_hop_address,proto3" json:"next_hop_address,omitempty"`
+	Address           string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	OutgoingInterface string `protobuf:"bytes,2,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
 	Weight            uint32 `protobuf:"varint,3,opt,name=weight,proto3" json:"weight,omitempty"`
 }

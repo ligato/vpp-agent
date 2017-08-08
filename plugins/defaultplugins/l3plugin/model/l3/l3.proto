@@ -7,13 +7,13 @@ message StaticRoutes {
         uint32 vrf_id = 1;                   /* VRF identifier */
         string description = 2;              /* optional description */
         string destination_address = 3;      /* ip address + prefix in format <address>/<prefix> */
-        bool multipath = 4;              /* enable/disable multipath */
+        bool multipath = 4;                  /* enable/disable multipath */
         message NextHops {
-            string next_hop_address = 1;     /* next hop address */
+            string address = 1;              /* next hop address */
             string outgoing_interface = 2;   /* outgoing interface name */
             uint32 weight = 3;               /* weight (used for unequal cost load balncing) */
         }
-        repeated NextHops next_hops = 5;
+        repeated NextHops next_hops = 5;     /* list of the next hops (load balancing in case of multiple next hops) */
     }
     repeated Route route = 1; /* list of IP static routes */
 }

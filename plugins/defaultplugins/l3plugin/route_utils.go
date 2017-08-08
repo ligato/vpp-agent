@@ -111,7 +111,7 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 
 			ifName := nextHop.OutgoingInterface
 			if ifName == "" {
-				log.Infof("Outgoing interface not set for next hop %v, route skipped", nextHop.NextHopAddress)
+				log.Infof("Outgoing interface not set for next hop %v, route skipped", nextHop.Address)
 				continue
 			}
 			ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
@@ -121,7 +121,7 @@ func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Rout
 			if !exists {
 				ifIndex = nextHopOutgoingIfUnset
 			}
-			nextHopIP := net.ParseIP(nextHop.NextHopAddress)
+			nextHopIP := net.ParseIP(nextHop.Address)
 			if isIpv6 {
 				nextHopIP = nextHopIP.To16()
 			} else {
