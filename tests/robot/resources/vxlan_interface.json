@@ -1,0 +1,10 @@
+{
+  "name": "${name}",
+  "type": 5,
+  "enabled": ${enabled},
+  "vxlan": {
+    "src_address": "${src}",
+    "dst_address": "${dst}",
+    "vni": ${vni}
+  }
+}

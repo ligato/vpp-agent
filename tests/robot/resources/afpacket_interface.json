@@ -1,0 +1,9 @@
+{
+  "name": "${name}",
+  "type": 4,
+  "enabled": ${enabled},
+  "phys_address": "${mac}",
+  "afpacket": {
+    "host_if_name": "${host_int}"
+  }
+}
