@@ -22,6 +22,7 @@ import (
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"net"
 )
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange
@@ -76,7 +77,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route
-	StaticRoute(vrf uint32, address string) DeleteDSL
+	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List
 	ACL(aclName string) DeleteDSL
 

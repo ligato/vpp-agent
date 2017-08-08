@@ -27,7 +27,8 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	var wasError error
 	if len(staticRoutes) > 0 {
 		for _, route := range staticRoutes {
-			wasError = plugin.ConfigureRoutes(route)
+			// VRF ID is already validated at this point
+			wasError = plugin.ConfigureRoute(route, string(route.VrfId))
 		}
 	}
 	log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)

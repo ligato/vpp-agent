@@ -16,7 +16,6 @@ package l3plugin
 
 import (
 	"bytes"
-	"fmt"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -51,9 +50,9 @@ func eqRoutes(a *vppcalls.Route, b *vppcalls.Route) bool {
 	return a.VrfID == b.VrfID &&
 		bytes.Equal(a.DstAddr.IP, b.DstAddr.IP) &&
 		bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) &&
-		bytes.Equal(a.NextHop.Addr, b.NextHop.Addr) &&
-		a.NextHop.Iface == b.NextHop.Iface &&
-		a.NextHop.Weight == b.NextHop.Weight
+		bytes.Equal(a.NextHopAddr, b.NextHopAddr) &&
+		a.OutIface == b.OutIface &&
+		a.Weight == b.Weight
 }
 
 func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
@@ -66,68 +65,55 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 	if !bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) {
 		return bytes.Compare(a.DstAddr.Mask, b.DstAddr.Mask) < 0
 	}
-	if !bytes.Equal(a.NextHop.Addr, b.NextHop.Addr) {
-		return bytes.Compare(a.NextHop.Addr, b.NextHop.Addr) < 0
+	if !bytes.Equal(a.NextHopAddr, b.NextHopAddr) {
+		return bytes.Compare(a.NextHopAddr, b.NextHopAddr) < 0
 	}
-	if a.NextHop.Iface != b.NextHop.Iface {
-		return a.NextHop.Iface < b.NextHop.Iface
+	if a.OutIface != b.OutIface {
+		return a.OutIface < b.OutIface
 	}
-	return a.NextHop.Weight < b.NextHop.Weight
+	return a.Weight < b.Weight
 
 }
 
-// Transform raw routes data to list of Route objects.
-func (plugin *RouteConfigurator) transformRoute(routeInput *l3.StaticRoutes_Route) ([]*vppcalls.Route, error) {
-	var routes []*vppcalls.Route
-	if routeInput != nil {
-		var (
-			ifIndex uint32
-			exists  bool
-		)
-		if routeInput.DestinationAddress == "" {
-			return nil, fmt.Errorf("Route does not contain destination address")
-		}
-		parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DestinationAddress)
-		if err != nil {
-			return nil, err
-		}
-		vrfID := routeInput.VrfId
-
-		for _, nextHop := range routeInput.NextHops {
-
-			ifName := nextHop.OutgoingInterface
-			if ifName == "" {
-				log.Infof("Outgoing interface not set for next hop %v, route skipped", nextHop.Address)
-				continue
-			}
-			ifIndex, _, exists = plugin.SwIfIndexes.LookupIdx(ifName)
-			if !exists {
-				log.Infof("Interface %v not found, route skipped", ifName)
-			}
-			if !exists {
-				ifIndex = vppcalls.NextHopOutgoingIfUnset
-			}
-			nextHopIP := net.ParseIP(nextHop.Address)
-			if isIpv6 {
-				nextHopIP = nextHopIP.To16()
-			} else {
-				nextHopIP = nextHopIP.To4()
-			}
-			route := &vppcalls.Route{
-				VrfID:     vrfID,
-				DstAddr:   *parsedDestIP,
-				MultiPath: routeInput.Multipath,
-				NextHop: vppcalls.NextHopList{
-					Addr:   nextHopIP,
-					Iface:  ifIndex,
-					Weight: nextHop.Weight,
-				},
-			}
-			routes = append(routes, route)
-		}
+// TransformRoute converts raw route data to Route object
+func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcalls.Route, error) {
+	if routeInput == nil {
+		log.Infof("Route input is empty")
+		return nil, nil
 	}
+	if routeInput.DstIpAddr == "" {
+		log.Infof("Route does not contain destination address")
+		return nil, nil
+	}
+	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)
+	if err != nil {
+		return nil, err
+	}
+	vrfID := routeInput.VrfId
 
-	return routes, nil
+	ifName := routeInput.OutgoingInterface
+	if ifName == "" {
+		log.Infof("Outgoing interface not set for next hop %v, route skipped", routeInput.NextHopAddr)
+		return nil, nil
+	}
+	if ifIndex == 0 {
+		// Unset outgoing interface
+		ifIndex = vppcalls.NextHopOutgoingIfUnset
+	}
+	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
+	if isIpv6 {
+		nextHopIP = nextHopIP.To16()
+	} else {
+		nextHopIP = nextHopIP.To4()
+	}
+	route := &vppcalls.Route{
+		VrfID:       vrfID,
+		DstAddr:     *parsedDestIP,
+		NextHopAddr: nextHopIP,
+		OutIface:    ifIndex,
+		Weight:      routeInput.Weight,
+	}
+	return route, nil
 }
 
 func (plugin *RouteConfigurator) diffRoutes(new []*vppcalls.Route, old []*vppcalls.Route) (toBeDeleted []*vppcalls.Route, toBeAdded []*vppcalls.Route) {

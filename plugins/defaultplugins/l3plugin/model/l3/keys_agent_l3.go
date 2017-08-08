@@ -15,6 +15,7 @@
 package l3
 
 import (
+	"net"
 	"strconv"
 	"strings"
 )
@@ -33,8 +34,11 @@ func VrfKeyPrefix() string {
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
-func RouteKey(vrf uint32, net string) string {
-	return strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1) + net
+func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
+	dstNetAddr := dstAddr.IP.String()
+	dstNetMask, _ := dstAddr.Mask.Size()
+	identifier := dstNetAddr + "m" + strconv.Itoa(dstNetMask) + "-" + nextHopAddr
+	return strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1) + identifier
 }
 
 // ParseRouteKey parses VRF label and route address from a route key.

@@ -22,20 +22,14 @@ import (
 	"net"
 )
 
-// Route represents a forward IP route entry.
-type Route struct {
-	VrfID     uint32
-	DstAddr   net.IPNet
-	MultiPath bool
-	NextHop   NextHopList
-}
-
-// NextHopList defines the parameters of gateway to which packets should be forwarded
+// Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
 // when a given routing table entry is applied.
-type NextHopList struct {
-	Addr   net.IP
-	Iface  uint32
-	Weight uint32
+type Route struct {
+	VrfID       uint32
+	DstAddr     net.IPNet
+	NextHopAddr net.IP
+	OutIface    uint32
+	Weight      uint32
 }
 
 const (
@@ -52,10 +46,14 @@ const (
 	NextHopOutgoingIfUnset uint32 = ^uint32(0)
 )
 
-// VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
+// VppAddDelRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
+func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error {
 	req := &ip.IPAddDelRoute{}
-	req.IsAdd = 1
+	if delete {
+		req.IsAdd = 0
+	} else {
+		req.IsAdd = 1
+	}
 
 	// Destination address (route set identifier)
 	ipAddr := route.DstAddr.IP
@@ -73,16 +71,11 @@ func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
 	}
 	req.DstAddressLength = byte(prefix)
 
-	// Enable multipath if desired
-	if route.MultiPath {
-		req.IsMultipath = 1
-	}
-
 	// Next hop address and parameters
-	nextHopAddr := route.NextHop.Addr
+	nextHopAddr := route.NextHopAddr
 	req.NextHopAddress = []byte(nextHopAddr)
-	req.NextHopSwIfIndex = route.NextHop.Iface
-	req.NextHopWeight = uint8(route.NextHop.Weight)
+	req.NextHopSwIfIndex = route.OutIface
+	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopTableID = route.VrfID
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset
@@ -92,38 +85,8 @@ func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
 	req.CreateVrfIfNeeded = 1
 	req.TableID = route.VrfID
 
-	// Send message
-	reply := &ip.IPAddDelRouteReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-
-	if err != nil {
-		return err
-	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
-	}
-
-	return nil
-}
-
-// VppDelRoute removes route from config
-func VppDelRoute(route *Route, vppChan *govppapi.Channel) error {
-	req := &ip.IPAddDelRoute{}
-	req.IsAdd = 0
-
-	// Destination address (route set identifier)
-	ipAddr := route.DstAddr.IP
-	isIpv6, err := addrs.IsIPv6(ipAddr.String())
-	if err != nil {
-		return err
-	}
-	if isIpv6 {
-		req.IsIpv6 = 1
-		req.DstAddress = []byte(ipAddr.To16())
-	} else {
-		req.IsIpv6 = 0
-		req.DstAddress = []byte(ipAddr.To4())
-	}
+	// Multi path is always true
+	req.IsMultipath = 1
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}

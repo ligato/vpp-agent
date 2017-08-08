@@ -16,15 +16,11 @@ RPD_NAME="rpd"
 #
 
 # VSWITCH - add static route to 112.1.1.3/32 via 8.42.0.1
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/112.1.1.3/32 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/112.1.1.3m32-8.42.0.1 - << EOF
 {
   "description": "Static route",
-  "destination_address": "112.1.1.3/32",
-  "next_hops": [
-    {
-      "address": "8.42.0.1"
-    }
-  ]
+  "dst_ip_addr": "112.1.1.3/32",
+  "next_hop_addr": "8.42.0.1"
 }
 EOF
 

@@ -15,69 +15,62 @@
 package l3plugin
 
 import (
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/onsi/gomega"
 	"net"
 	"testing"
 )
 
-var routeOne = &Route{
-	0,
-	net.IPNet{
+var routeOne = &vppcalls.Route{
+	VrfID: 0,
+	DstAddr: net.IPNet{
 		IP:   net.ParseIP("10.1.1.0").To4(),
 		Mask: net.CIDRMask(24, 8*net.IPv4len),
 	},
-	NextHop{
-		net.ParseIP("192.168.1.1").To4(),
-		1,
-		5,
-	},
+	NextHopAddr: net.ParseIP("192.168.1.1").To4(),
+	OutIface:    1,
+	Weight:      5,
 }
 
-var routeTwo = &Route{
-	0,
-	net.IPNet{
+var routeTwo = &vppcalls.Route{
+	VrfID: 0,
+	DstAddr: net.IPNet{
 		IP:   net.ParseIP("172.16.1.0").To4(),
 		Mask: net.CIDRMask(24, 8*net.IPv4len),
 	},
-	NextHop{
-		net.ParseIP("10.10.1.1").To4(),
-		2,
-		5,
-	},
+	NextHopAddr: net.ParseIP("10.10.1.1").To4(),
+	OutIface:    2,
+	Weight:      5,
 }
 
-var routeThree = &Route{
-	0,
-	net.IPNet{
+var routeThree = &vppcalls.Route{
+	VrfID: 0,
+	DstAddr: net.IPNet{
 		IP:   net.ParseIP("172.16.1.0").To4(),
 		Mask: net.CIDRMask(24, 8*net.IPv4len),
 	},
-	NextHop{
-		net.ParseIP("10.10.1.1").To4(),
-		2,
-		5,
-	},
+	NextHopAddr: net.ParseIP("10.10.1.1").To4(),
+	OutIface:    2,
+	Weight:      5,
 }
 
-var routeThreeW = &Route{
-	0,
-	net.IPNet{
+var routeThreeW = &vppcalls.Route{
+	VrfID: 0,
+	DstAddr: net.IPNet{
 		IP:   net.ParseIP("172.16.1.0").To4(),
 		Mask: net.CIDRMask(24, 8*net.IPv4len),
 	},
-	NextHop{
-		net.ParseIP("10.10.1.1").To4(),
-		2,
-		10,
-	},
+	NextHopAddr: net.ParseIP("10.10.1.1").To4(),
+	OutIface:    2,
+	Weight:      10,
 }
 
 func TestDiffRoutesAddedOnly(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{}
+	routesOld := []*vppcalls.Route{}
 
-	routes := []*Route{
+	routes := []*vppcalls.Route{
 		routeOne,
 		routeTwo,
 	}
@@ -93,12 +86,12 @@ func TestDiffRoutesAddedOnly(t *testing.T) {
 func TestDiffRoutesDeleteOnly(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{
+	routesOld := []*vppcalls.Route{
 		routeOne,
 		routeTwo,
 	}
 
-	routes := []*Route{}
+	routes := []*vppcalls.Route{}
 
 	cfg := RouteConfigurator{}
 	del, add := cfg.diffRoutes(routes, routesOld)
@@ -111,11 +104,11 @@ func TestDiffRoutesDeleteOnly(t *testing.T) {
 func TestDiffRoutesOneAdded(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{
+	routesOld := []*vppcalls.Route{
 		routeOne,
 	}
 
-	routes := []*Route{
+	routes := []*vppcalls.Route{
 		routeOne,
 		routeTwo,
 	}
@@ -130,12 +123,12 @@ func TestDiffRoutesOneAdded(t *testing.T) {
 func TestDiffRoutesNoChange(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{
+	routesOld := []*vppcalls.Route{
 		routeTwo,
 		routeOne,
 	}
 
-	routes := []*Route{
+	routes := []*vppcalls.Route{
 		routeOne,
 		routeTwo,
 	}
@@ -149,11 +142,11 @@ func TestDiffRoutesNoChange(t *testing.T) {
 func TestDiffRoutesWeightChange(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{
+	routesOld := []*vppcalls.Route{
 		routeThree,
 	}
 
-	routes := []*Route{
+	routes := []*vppcalls.Route{
 		routeThreeW,
 	}
 
@@ -169,13 +162,13 @@ func TestDiffRoutesWeightChange(t *testing.T) {
 func TestDiffRoutesMultipleChanges(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
-	routesOld := []*Route{
+	routesOld := []*vppcalls.Route{
 		routeOne,
 		routeTwo,
 		routeThree,
 	}
 
-	routes := []*Route{
+	routes := []*vppcalls.Route{
 		routeThreeW,
 		routeTwo,
 	}

@@ -16,7 +16,7 @@ package defaultplugins
 
 import (
 	"strings"
-
+	"strconv"
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -120,7 +120,7 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 			numXCons := resyncAppendXCons(resyncData, req)
 			log.Debug("Received RESYNC XConnects values ", numXCons)
 		} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
-			numL3FIBs := resyncAppendRoutes(resyncData, req)
+			numL3FIBs := resyncAppendRoutes(resyncData, key, req)
 			log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
 		} else {
 			log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
@@ -128,18 +128,31 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	}
 	return req
 }
-func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func resyncAppendRoutes(resyncData datasync.KeyValIterator, key string, req *DataResyncReq) int {
 	num := 0
 	for {
 		if staticRouteData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &l3.StaticRoutes_Route{}
-			err := staticRouteData.GetValue(value)
-			if err == nil {
-				req.StaticRoutes = append(req.StaticRoutes, value)
-				num++
+			route := &l3.StaticRoutes_Route{}
+			err := staticRouteData.GetValue(route)
+			if err != nil {
+				continue
 			}
+			_, vrfIndex, _ := l3.ParseRouteKey(key)
+			// Ensure every route has the corresponding VRF index
+			intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
+			if err != nil {
+				continue
+			}
+			if vrfIndex != strconv.Itoa(int(route.VrfId)) {
+				log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
+					intVrfKeyIndex, route.VrfId)
+				route.VrfId = uint32(intVrfKeyIndex)
+			}
+			req.StaticRoutes = append(req.StaticRoutes, route)
+			num++
+
 		}
 	}
 	return num
@@ -425,7 +438,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return err
 		}
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
-		isRoute, _, _ := l3.ParseRouteKey(key)
+		isRoute, vrfFromKey, _ := l3.ParseRouteKey(key)
 		if isRoute {
 			// Route
 			var value, prevValue l3.StaticRoutes_Route
@@ -433,8 +446,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return err
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-				log.Printf("ROUTE DATA: %v, %v", value, prevValue)
-				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
 					return err
 				}
 			} else {

@@ -132,13 +132,13 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator
 func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Route, prevValue *l3.StaticRoutes_Route,
-	changeType db.PutDel) error {
+	vrfFromKey string, changeType db.PutDel) error {
 	log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if db.Delete == changeType {
 		return plugin.routeConfigurator.DeleteRoute(prevValue)
 	} else if diff {
-		return plugin.routeConfigurator.ModifyRoute(value, prevValue)
+		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
-	return plugin.routeConfigurator.ConfigureRoutes(value)
+	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
 }

@@ -34,30 +34,14 @@ func (m *StaticRoutes) GetRoute() []*StaticRoutes_Route {
 }
 
 type StaticRoutes_Route struct {
-	VrfId              uint32                         `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
-	Description        string                         `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	DestinationAddress string                         `protobuf:"bytes,3,opt,name=destination_address,proto3" json:"destination_address,omitempty"`
-	Multipath          bool                           `protobuf:"varint,4,opt,name=multipath,proto3" json:"multipath,omitempty"`
-	NextHops           []*StaticRoutes_Route_NextHops `protobuf:"bytes,5,rep,name=next_hops" json:"next_hops,omitempty"`
+	VrfId             uint32 `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
+	Description       string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	DstIpAddr         string `protobuf:"bytes,3,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
+	NextHopAddr       string `protobuf:"bytes,4,opt,name=next_hop_addr,proto3" json:"next_hop_addr,omitempty"`
+	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
+	Weight            uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
 }
 
 func (m *StaticRoutes_Route) Reset()         { *m = StaticRoutes_Route{} }
 func (m *StaticRoutes_Route) String() string { return proto.CompactTextString(m) }
 func (*StaticRoutes_Route) ProtoMessage()    {}
-
-func (m *StaticRoutes_Route) GetNextHops() []*StaticRoutes_Route_NextHops {
-	if m != nil {
-		return m.NextHops
-	}
-	return nil
-}
-
-type StaticRoutes_Route_NextHops struct {
-	Address           string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	OutgoingInterface string `protobuf:"bytes,2,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
-	Weight            uint32 `protobuf:"varint,3,opt,name=weight,proto3" json:"weight,omitempty"`
-}
-
-func (m *StaticRoutes_Route_NextHops) Reset()         { *m = StaticRoutes_Route_NextHops{} }
-func (m *StaticRoutes_Route_NextHops) String() string { return proto.CompactTextString(m) }
-func (*StaticRoutes_Route_NextHops) ProtoMessage()    {}
