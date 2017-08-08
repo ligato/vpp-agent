@@ -16,6 +16,7 @@ package cassandra_test
 
 import (
 	"errors"
+
 	"github.com/gocql/gocql"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
@@ -24,8 +25,8 @@ import (
 )
 
 // test data
-var JamesBond = &User{"James Bond", "James", "Bond"}
-var PeterBond = &User{"Peter Bond", "Peter", "Bond"}
+var JamesBond = &User{ID: "James Bond", FirstName: "James", LastName: "Bond"}
+var PeterBond = &User{ID: "Peter Bond", FirstName: "Peter", LastName: "Bond"}
 
 // instance that represents users table (used in queries to define columns)
 var UserTable = &User{}
@@ -37,9 +38,27 @@ var UserTable = &User{}
 
 // User is simple structure for testing purposes
 type User struct {
-	ID        string `cql:"id"`
-	FirstName string `cql:"first_name"`
-	LastName  string `cql:"last_name"`
+	ID                string `cql:"id"`
+	FirstName         string `cql:"first_name"`
+	LastName          string `cql:"last_name"`
+	ExportedButNotCql string `cql:"-"`
+	notExported       string
+}
+
+// CustomizedTablenameAndSchema implements sql.TableName, sql.SchemaName interfaces
+type CustomizedTablenameAndSchema struct {
+	ID       string `cql:"id"`
+	LastName string `cql:"last_name"`
+}
+
+// TableName implements sql.TableName interface
+func (entity *CustomizedTablenameAndSchema) TableName() string {
+	return "my_custom_name"
+}
+
+// SchemaName implements sql.SchemaName interface
+func (entity *CustomizedTablenameAndSchema) SchemaName() string {
+	return "my_custom_schema"
 }
 
 // simple structure that holds values of one row for mock iterator
@@ -59,8 +78,8 @@ func mockQuery(sessionMock *gockle.SessionMock, query sql.Expression, rows ...*r
 
 }
 
-// mockPut is a helper for testing. It setups mock iterator with any parameters/arguments
-func mockPut(sessionMock *gockle.SessionMock, query string, binding []interface{}) {
+// mockExec is a helper for testing. It setups mock iterator with any parameters/arguments
+func mockExec(sessionMock *gockle.SessionMock, query string, binding []interface{}) {
 	sessionMock.When("Exec", query, mock.Any).Return(nil)
 	sessionMock.When("Close").Return()
 }

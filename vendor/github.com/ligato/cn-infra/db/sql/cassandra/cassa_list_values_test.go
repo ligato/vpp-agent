@@ -33,10 +33,15 @@ func TestListValues1_convenient(t *testing.T) {
 	db := cassandra.NewBrokerUsingSession(session)
 
 	query := sql.FROM(UserTable, sql.WHERE(sql.Field(&UserTable.LastName, sql.EQ("Bond"))))
+
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
+	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
+		"SELECT id, first_name, last_name FROM User WHERE last_name = ?"))
+
 	mockQuery(session, query, cells(JamesBond), cells(PeterBond))
 
 	users := &[]User{}
-	err := sql.SliceIt(users, db.ListValues(query))
+	err = sql.SliceIt(users, db.ListValues(query))
 
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	gomega.Expect(users).ToNot(gomega.BeNil())
@@ -142,3 +147,28 @@ func TestListValues4_iteratorScanMap(t *testing.T) {
 	//gomega.Expect(users).To(gomega.BeEquivalentTo([]*User{&JamesBond, &PeterBond}))
 }
 */
+
+// TestListValues5_customTableSchema checks that generated SQL statements
+// contain customized table name & schema (see interfaces sql.TableName, sql.SchemaName)
+func TestListValues5_customTableSchema(t *testing.T) {
+	gomega.RegisterTestingT(t)
+
+	session := mockSession()
+	defer session.Close()
+	db := cassandra.NewBrokerUsingSession(session)
+
+	entity := &CustomizedTablenameAndSchema{ID: "id", LastName: "Bond"}
+	query := sql.FROM(entity, sql.WHERE(sql.Field(&entity.LastName, sql.EQ("Bond"))))
+	mockQuery(session, query, cells(entity))
+
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
+	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
+		"SELECT id, last_name FROM my_custom_schema.my_custom_name WHERE last_name = ?"))
+
+	users := &[]CustomizedTablenameAndSchema{}
+	err = sql.SliceIt(users, db.ListValues(query))
+
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+	gomega.Expect(users).ToNot(gomega.BeNil())
+	gomega.Expect(users).To(gomega.BeEquivalentTo(&[]CustomizedTablenameAndSchema{*entity}))
+}

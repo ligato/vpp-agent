@@ -30,7 +30,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavours/linuxlocal"
+	"github.com/ligato/vpp-agent/flavors/linuxlocal"
 )
 
 // init sets the default logging level
@@ -48,11 +48,11 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavour := linuxlocal.Flavour{}
+	flavor := linuxlocal.Flavor{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
-	agentVar := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavour.Plugins(), examplePlugin)...)
+	agentVar := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)

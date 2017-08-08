@@ -1,24 +1,30 @@
-# Plugin Lifecytle
+# Plugin Lifecycle
 
-Each plugin implements Init() and Close() method (see the [plugin_api.go](../../core/pluginapi.go)) 
-and optionally AfterInit(). Those methods are called sequncialy by (see the [agent_core.go](../../core/agent_core.go)).
+Each plugin must implement the Init() and Close() methods (see 
+[plugin_api.go][1]. A plugin may optionally implement the AfterInit() 
+method. These methods are called sequentially startup by [agent_core.go][2]. 
 
-There are following rules for implementing the methods:
+There are following rules for what to put in the methods:
 ## Init()
-* Initialize maps & channels here to avoid nil pointers later.
-* Process configs here (see the [Config Guidelins](CONFIG.md))
-* Propagate errors. If an error occurs, agent stops since it is not properly initialized and calls Close() methods.
-* Start watching the GO channels here (but not subscribed yet) in a go routine.
-* Initialize GO lang Context & Cancel Function to stop go routines gracefully.
+* Initialize maps & channels to avoid nil pointers later.
+* Process configs (see the [Config Guidelins][3]
+* Propagate errors. If an error occurs, the Agent stops since it is not
+  properly initialized and calls Close() methods.
+* Start watching  GO channels (but not subscribed yet) in a go routine.
+* Initialize the GO lang Context & Cancel Function so that go routines 
+  can be stopped gracefully.
 
 ## AfterInit()
-* Connect clients & start servers here (see the [System Integration Guidelines](SYSTEM_INTEGRATION.md))
-* Propagate errors. Agent will stop because it is not properly initialized and calls Close() methods.
+* Connect clients & start servers here (see the 
+  [System Integration Guidelines][4]
+* Propagate errors. Agent will stop because it is not properly initialized 
+  and calls Close() methods.
 * Subscribe for watching data (see the go channel in the example below).
 
 ## Close()
 * Cancel the go routines by calling GO lang (Context) Cancel function.
-* Disconnect clients & stop servers here, release resources. For that try to use package [safeclose](../../utils/safeclose)
+* Disconnect clients & stop servers, release resources. Try achieving 
+  that using the [safeclose](../../utils/safeclose) package.
 * Propagate errors. Agent will log those errors.
 
 ## Example
@@ -105,5 +111,7 @@ func (plugin * PluginXY) Close() error {
     return err 
 }
 ```
-
-
+[1]: ../../core/pluginapi.go
+[2]: ../../core/agent_core.go
+[3]: CONFIG.md
+[4]: SYSTEM_INTEGRATION.md

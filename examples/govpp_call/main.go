@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavours/vpp"
+	"github.com/ligato/vpp-agent/flavors/vpp"
 	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -49,7 +49,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	f := vpp.Flavour{}
+	f := vpp.Flavor{}
 
 	// Example plugin (GOVPP call)
 	examplePlugin := ExamplePlugin{}

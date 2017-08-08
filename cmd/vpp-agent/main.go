@@ -21,13 +21,13 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	vpp_flavor "github.com/ligato/vpp-agent/flavours/vpp"
+	vpp_flavor "github.com/ligato/vpp-agent/flavors/vpp"
 )
 
 // runs statically linked binary of Agent Core Plugins (called "vpp_flavor") with ETCD & Kafka connectors
 func main() {
 
-	f := vpp_flavor.Flavour{}
+	f := vpp_flavor.Flavor{}
 	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, f.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)

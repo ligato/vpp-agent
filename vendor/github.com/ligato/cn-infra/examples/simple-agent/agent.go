@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/examples/simple-agent/generic"
+	"github.com/ligato/cn-infra/flavors/etcdkafka"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"os"
@@ -26,7 +26,7 @@ import (
 func main() {
 	logroot.Logger().SetLevel(logging.DebugLevel)
 
-	f := generic.Flavour{}
+	f := etcdkafka.Flavor{}
 	agent := core.NewAgent(logroot.Logger(), 15*time.Second, f.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
