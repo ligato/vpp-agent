@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavours/vpp"
+	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"time"
@@ -40,7 +40,7 @@ import (
 func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
-	f := vpp.Flavour{}
+	f := vpp.Flavor{}
 	// Example plugin (Index mapping lookup)
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 

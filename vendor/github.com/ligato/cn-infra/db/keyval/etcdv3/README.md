@@ -1,19 +1,22 @@
 # Etcd plugin
 
-Etcd plugin provides access to etcd key-value data store.
+The Etcd plugin provides access to an etcd key-value data store.
 
 **API**
 
-Provides API described in the [skeleton](../plugin), the plugin is documented at the bottom of [doc.go](doc.go).
+Provides API described in the [skeleton](../plugin), the plugin is 
+documented at the bottom of the [doc.go](doc.go) file.
 
 **Configuration**
 
-- Location of the Etcd configuration file can be defined either by command line flag `etcdv3-config` or 
-set via `ETCDV3_CONFIG` environment variable.
+- Location of the Etcd configuration file can be defined either by the 
+  command line flag `etcdv3-config` or set via the `ETCDV3_CONFIG` 
+  environment variable.
 
 **Status Check**
 
-- Etcd plugin has a mechanism to periodically check a status of the Etcd connection.  
+- Etcd plugin has a mechanism to periodically check the status of an 
+  Etcd connection.  
 
 **Dependencies**
 - [Logging](../../../logging/plugin)

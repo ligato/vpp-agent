@@ -16,8 +16,8 @@ package cassandra
 
 import (
 	"github.com/ligato/cn-infra/db/sql"
+	"github.com/ligato/cn-infra/utils/structs"
 	"github.com/willfaught/gockle"
-	r "reflect"
 )
 
 // NewBrokerUsingSession is a constructor. Use it like this:
@@ -104,40 +104,9 @@ func (it *ValIterator) GetNext(outVal interface{}) (stop bool) {
 		return !ok //if not ok than stop
 	}
 
-	ptrs := structFieldPtrs(outVal)
+	ptrs := structs.ListExportedFieldsPtrs(outVal, cqlExported)
 	ok := it.Delegate.Scan(ptrs...)
 	return !ok //if not ok than stop
-}
-
-// structFieldPtrs iterates struct fields and return slice of pointers to field values
-func structFieldPtrs(val interface{}) []interface{} {
-	rVal := r.Indirect(r.ValueOf(val))
-	ptrs := []interface{}{}
-	for i := 0; i < rVal.NumField(); i++ {
-		field := rVal.Field(i)
-
-		switch field.Kind() {
-		case r.Chan, r.Func /*TODO func*/, r.Map, r.Ptr, r.Interface, r.Slice:
-			if field.IsNil() {
-				p := r.New(field.Type().Elem())
-				field.Set(p)
-				ptrs = append(ptrs, p.Interface())
-			} else {
-				ptrs = append(ptrs, field.Interface())
-			}
-			//case r.Ptr, r.Interface, r.Array, r.Map, r.SliceIt, r.UnsafePointer, r.Chan /*TODO slice, map...*/ :
-		default:
-			if field.CanAddr() {
-				ptrs = append(ptrs, field.Addr().Interface())
-			} else if field.IsValid() {
-				ptrs = append(ptrs, field.Interface())
-			} else {
-				panic("invalid field")
-			}
-		}
-	}
-
-	return ptrs
 }
 
 // Close the iterator. Note, the error is important (may occure during marshalling/un-marshalling)

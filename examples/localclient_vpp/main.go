@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/flavours/local"
+	"github.com/ligato/vpp-agent/flavors/local"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -46,12 +46,12 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavour := local.Flavour{}
+	flavor := local.Flavor{}
 
 	// Example plugin
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
-	agentVar := agent.NewAgent(log.StandardLogger(), 15*time.Second, append(flavour.Plugins(), examplePlugin)...)
+	agentVar := agent.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)

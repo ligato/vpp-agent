@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/examples/simple-agent/generic"
+	"github.com/ligato/cn-infra/flavors/generic"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"time"
@@ -36,13 +36,13 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel = make(chan struct{}, 1)
 
-	flavour := generic.Flavour{}
+	flavor := generic.Flavor{}
 
 	// Example plugin (Logger)
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavour.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the logs example is finished
 	go closeExample("logs example finished", closeChannel)

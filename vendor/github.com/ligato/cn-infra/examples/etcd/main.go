@@ -8,7 +8,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/examples/model"
-	"github.com/ligato/cn-infra/examples/simple-agent/generic"
+	"github.com/ligato/cn-infra/flavors/etcdkafka"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -45,14 +45,14 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavour := generic.Flavour{}
+	flavor := etcdkafka.Flavor{}
 	// Resync plugin
 	resyncPlugin := &core.NamedPlugin{PluginName: resync.PluginID, Plugin: &resync.Plugin{}}
 	// Example plugin (ETCD)
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{ServiceLabel: &flavour.ServiceLabel}}
+	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{ServiceLabel: &flavor.Generic.ServiceLabel}}
 
 	// Create new agent
-	agent := core.NewAgent(log, 15*time.Second, append(flavour.Plugins(), resyncPlugin, examplePlugin)...)
+	agent := core.NewAgent(log, 15*time.Second, append(flavor.Plugins(), resyncPlugin, examplePlugin)...)
 
 	// End when the ETCD example is finished
 	go closeExample("etcd txn example finished", closeChannel)
