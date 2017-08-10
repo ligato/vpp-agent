@@ -84,7 +84,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib - << EOF
 }
 EOF
 
-# VSWITCH - create memif master to RNG (bridge domain B2)
+# VSWITCH - create memif master to RNG
 vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rng - << EOF
 {
   "name": "memif-to-rng",
@@ -117,7 +117,7 @@ vpp-agent-ctl -put /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswit
 EOF
 
 
-# VSWITCH - create memif master to USSCHED (bridge domain B2)
+# VSWITCH - create memif master to USSCHED
 vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-ussched - << EOF
 {
   "name": "memif-to-ussched",
@@ -149,7 +149,7 @@ vpp-agent-ctl -put /vnf-agent/${USSCHED_NAME}/vpp/config/v1/interface/memif-to-v
 }
 EOF
 
-# VSWITCH - create memif to VNF 1 (bridge domain B1)
+# VSWITCH - create memif to VNF 1
 vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-1 - << EOF
 {
   "name": "memif-to-vnf-1",
@@ -181,7 +181,7 @@ vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswit
 }
 EOF
 
-# VSWITCH - create memif to vnf 2 (bridge domain B2)
+# VSWITCH - create memif to vnf 2
 vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-2 - << EOF
 {
   "name": "memif-to-vnf-2",
@@ -213,48 +213,34 @@ vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswit
 }
 EOF
 
-# VSWITCH - create bridge domain B2 (needs to be called after the interfaces have been created)
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/bd/B2 - << EOF
+# VSWITCH - create cross-connection between interfaces memif-to-rng and memif-to-ussched
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-rng - << EOF
 {
-  "name": "B2",
-  "flood": true,
-  "unknown_unicast_flood": true,
-  "forward": true,
-  "learn": true,
-  "arp_termination": true,
-  "interfaces": [
-    {
-      "name": "memif-to-rng"
-    },
-    {
-      "name": "memif-to-ussched"
-    },
-    {
-      "name": "memif-to-vnf-1"
-    },
-    {
-      "name": "loop-bvi2",
-      "bridged_virtual_interface": true
-    }
-  ]
+   "receive_interface": "memif-to-rng",
+   "transmit_interface": "memif-to-ussched"
 }
 EOF
 
-# VSWITCH - create bridge domain B1 (needs to be called after the interfaces have been created)
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/bd/B1 - << EOF
+# VSWITCH - create cross-connection between interfaces memif-to-vnf-1 and memif-to-rng
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-1 - << EOF
 {
-  "name": "B1",
-  "flood": true,
-  "unknown_unicast_flood": true,
-  "forward": true,
-  "learn": true,
-  "interfaces": [
-    {
-      "name": "memif-to-vnf-2"
-    },
-    {
-      "name": "vxlan1"
-    }
-  ]
+   "receive_interface": "memif-to-vnf-1",
+   "transmit_interface": "memif-to-rng"
+}
+EOF
+
+# VSWITCH - create cross-connection between interfaces memif-to-ussched and memif-to-vnf-1
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-ussched - << EOF
+{
+   "receive_interface": "memif-to-ussched",
+   "transmit_interface": "memif-to-vnf-1"
+}
+EOF
+
+# VSWITCH - create cross-connection between interfaces memif-to-vnf-2 and vxlan1
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-2 - << EOF
+{
+   "receive_interface": "memif-to-vnf-2",
+   "transmit_interface": "vxlan1"
 }
 EOF
