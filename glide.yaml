@@ -47,3 +47,5 @@ import:
   repo: https://github.com/golang/mock
   subpackages:
   - gomock
+- package: github.com/bennyscetbun/jsongo
+  version: 5240b3f82c6665fe3ccd96bdf5e6f38fe1e1399d
