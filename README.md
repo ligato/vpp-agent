@@ -1,4 +1,4 @@
-``# VPP Agent
+# VPP Agent
 
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
@@ -11,6 +11,7 @@ Please note that the content of this repository is currently **WORK IN PROGRESS*
 The VPP Agent is a Golang implentation of a control/management plane for 
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). 
 
+## Architecture
 The VPP Agent is built on top of the CN-Infra cloud-native platform. It
 is basically a set of VPP-specific plugins that use the CN-Infra platform
 to interact with other services / microservices in the cloud (e.g. a KV 
@@ -30,6 +31,14 @@ VNF Agent plugin, which translates northbound API calls/operations into
 using [protobufs][3], which allow for the same functionality to be accessible
 over multiple transport protocols (HTTP, gRPC, Etcd, ...). Plugins use the 
 [GoVPP library][4] to interact with the VPP.
+
+The following figure shows a cloud-native VNF with its data plane based on
+VPP/DPDK and its management / control planes based on the VNF agent:
+
+![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
+
+
+## Plugins
  
 The set of plugins in the VPP Agent id as follows:
 * [Default VPP Plugins][5] - plugins providing northbound APIs to "default" 
@@ -44,12 +53,16 @@ The set of plugins in the VPP Agent id as follows:
 * [Linux][11] (VETH) - allows optional configuration of Linux virtual ethernet 
   interfaces
 * [CN-Infra datasync][12] - data synchronization after HA events
-* [CN-Infra core][13] - lifecycle management of plugins (loading, initialization,
-  unloading)
+* [CN-Infra core][13] - lifecycle management of plugins (loading, 
+  initialization, unloading)
 
-The VPP agent repository also contains tools & support infrastructure:
+## Tools
+The VPP agent repository also contains tools for building and troubleshooting 
+of VNFs based on the VPP Agent:
 
-* [agentctl](cmd/agentctl) - a CLI tool that shows the state of the agents and can configure the agents
+* [agentctl](cmd/agentctl) - a CLI tool that shows the state of a set of VPP agents 
+   can configure the agents
+* [Docker based development environment](docker)
 
 ## Quickstart
 For a quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
