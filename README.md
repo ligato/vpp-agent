@@ -8,7 +8,7 @@
 
 Please note that the content of this repository is currently **WORK IN PROGRESS**.
 
-The VPP Agent is a Golang implentation of a control/management plane for 
+The VPP Agent is a Golang implementation of a control/management plane for 
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). 
 
 ## Architecture
@@ -25,7 +25,7 @@ The VNF Agent architecture is shown in the following figure:
 
 ![vpp agent](docs/imgs/vpp_agent.png "VPP Agent & its Plugins on top of cn-infra")
 
-Each (northboud) VPP API - L2, L3, ACL, ... - is implemented by a specific
+Each (northbound) VPP API - L2, L3, ACL, ... - is implemented by a specific
 VNF Agent plugin, which translates northbound API calls/operations into 
 (southbound) low level VPP Binary API calls. Northbound APIs are defined 
 using [protobufs][3], which allow for the same functionality to be accessible
@@ -48,7 +48,7 @@ The set of plugins in the VPP Agent id as follows:
   * [L2][7] - Bridge Domains, L2 cross-connects
   * [L3][8] - IP Routes, VRFs...
   * [ACL][9] - VPP access lists (VPP ACL plugin)
-* [GOVPPmux][10] - plugin wrapper arounf GoVPP. Multiplexes plugins' access to
+* [GOVPPmux][10] - plugin wrapper around GoVPP. Multiplexes plugins' access to
   VPP on a single connection.
 * [Linux][11] (VETH) - allows optional configuration of Linux virtual ethernet 
   interfaces
@@ -65,10 +65,11 @@ of VNFs based on the VPP Agent:
 * [Docker based development environment](docker)
 
 ## Quickstart
-For a quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
-on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
+For a quick start with the VPP Agent, you can use pre-build Docker images with
+the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
 
-0. Run ETCD and Kafka on your host (e.g. in Docker [using this procedure](docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host)).
+0. Run ETCD and Kafka on your host (e.g. in Docker 
+[using this procedure](docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host)).
 
 1. Run VPP + VPP Agent in a Docker image:
 ```
