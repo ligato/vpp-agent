@@ -32,15 +32,16 @@ using [protobufs][3], which allow for the same functionality to be accessible
 over multiple transport protocols (HTTP, gRPC, Etcd, ...). Plugins use the 
 [GoVPP library][4] to interact with the VPP.
 
-The following figure shows a cloud-native VNF with its data plane based on
-VPP/DPDK and its management / control planes based on the VNF agent:
+The following figure shows the VN Agent in context of a cloud-native VNF, 
+where the VNF's data plane is implemented using VPP/DPDK and its management
+/ control planes are implemented using the VNF agent:
 
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
 
 
 ## Plugins
  
-The set of plugins in the VPP Agent id as follows:
+The set of plugins in the VPP Agent is as follows:
 * [Default VPP Plugins][5] - plugins providing northbound APIs to "default" 
   VPP functionality (i.e. VPP functions available "out-of-the-box"): 
   * [NET Interfaces][6] - network interface configuration (PCI Ethernet, MEMIF, 
@@ -60,16 +61,22 @@ The set of plugins in the VPP Agent id as follows:
 The VPP agent repository also contains tools for building and troubleshooting 
 of VNFs based on the VPP Agent:
 
-* [agentctl](cmd/agentctl) - a CLI tool that shows the state of a set of VPP agents 
-   can configure the agents
-* [Docker based development environment](docker)
+* [agentctl](cmd/agentctl) - a CLI tool that shows the state of a set of 
+   VPP agents can configure the agents
+* [vpp-agent-ctl](vpp-agent-ctl/main.go) - a utility for testing VNF Agent 
+  configuration. It contains a set of pre-defined configurations that can 
+  be sent to the VPP Agent either interactively or in a script. 
+  predefined parts of configuration (aimed for testing purposes) 
+* [docker](docker) - container-based development environment for the VPP
+  agent and for app/extension plugins.
 
 ## Quickstart
-For a quick start with the VPP Agent, you can use pre-build Docker images with
-the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
+For a quick start with the VPP Agent, you can use pre-built Docker images with
+the Agent and VPP on [Dockerhub][14].
 
-0. Run ETCD and Kafka on your host (e.g. in Docker 
-[using this procedure](docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host)).
+0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
+   Note: **The Agent in the pre-built Docker image will not start if it can't 
+   connect to both Etcd and Kafka**.
 
 1. Run VPP + VPP Agent in a Docker image:
 ```
@@ -119,3 +126,5 @@ If you are interested in contributing, please see the [contribution guidelines](
 [11]: plugins/linuxplugin
 [12]: https://github.com/ligato/cn-infra/tree/master/datasync
 [13]: https://github.com/ligato/cn-infra/tree/master/core
+[14]: https://hub.docker.com/r/ligato/vpp-agent/
+[15]: docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host

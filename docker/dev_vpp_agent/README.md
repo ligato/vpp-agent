@@ -1,16 +1,23 @@
 ## Development Docker Image
 
-This image can be used to get started with the vpp-agent Go code. It contains:
+This image can be used to get started with the vpp-agent Go code. It 
+contains:
 
-- The development environment with all libs & dependencies required to build VPP / Go code,
-- A pre-built vpp ready to be used,
-- A pre-built Go agent.
+- The development environment with all libs & dependencies required 
+  to build both the VPP itself and the VPP Agent
+- A pre-built vpp ready to be used
+- A pre-built VPP Agent agent
 
-### Getting the Image
-You can either download a pre-built image (TODO: in progress) or build the image yourself on your local machine.
+### Getting an Image from Dockerhub
+For a quick start with the VPP Agent, you can use pre-build Docker images with
+the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
+```
+docker pull ligato/vpp-agent
+docker run -it --name vpp --rm ligato/vpp-agent
+```
 
-#### Building Locally
-To build the image on your local machine,  type:
+### Building Locally
+To build the docker image on your local machine,  type:
 ```
 ./build.sh
 ```
@@ -27,7 +34,8 @@ Example:
 ./build.sh --agent 9c35e43e9bfad377f3c2186f30d9853e3f3db3ad --vpp f3bcdbf071c98ed676591bd22c3d3f8601009fa8
 ```
 
-You can still build image using docker build command, but you must specify agent and vpp commit numbers:
+You can still build image using docker build command, but you must 
+explicitly specify the agent and vpp commit numbers:
 ```
 sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg VPP_COMMIT=f3bcdbf071c98ed676591bd22c3d3f8601009fa8 --no-cache .
 ```
@@ -46,7 +54,7 @@ REPOSITORY                       TAG                 IMAGE ID            CREATED
 dev_vpp_agent                    latest              0692f574f21a        11 minutes ago      3.58 GB
 ...
 ```
-Get the details of the newly built image:
+Get the details of the newly built or downloaded image:
 
 ```
 docker image inspect dev_vpp_agent
@@ -60,9 +68,12 @@ Dev_vpp_agent image can be shrunk by typing the command:
 ./shrink.sh
 ```
 
-This will build a new image with the name `dev_vpp_agent_shrink`, that has removed vpp sources and build 
-related files (about 2GB). It is using docker export and import command, but due to 
-[the Docker issue](https://github.com/moby/moby/issues/26173) it will fail on docker older than 1.13.
+This will build a new image with the name `dev_vpp_agent_shrink`, where
+vpp sources and build related files have been removed (in total about 2GB).
+
+The `shrink.sh` script is using docker export and import command, but due
+[Docker issue](https://github.com/moby/moby/issues/26173) it will fail on
+docker older than 1.13.
 
 ```
 $ docker images
@@ -73,26 +84,27 @@ dev_vpp_agent_shrink                                  latest              bd2e76
 ---
 
 ### Starting the Image
-By default, the VPP & the Agent processes will be started automatically in the container. This is useful
-e.g. for deployments with Kubernetes, as described in [this README](../k8s/README.md). However,
-this option is not really demanded for development purposes. This can be overridden by specifying
-another container entrypoint, e.g. bash, as we do in the following steps in this README.
+By default, the VPP & the Agent processes will be started automatically 
+in the container. This is useful e.g. for deployments with Kubernetes, 
+as described in [this README](../k8s/README.md). However, this option is
+not really required for development purposes, and it can be overridden by
+specifying a different container entry point, e.g. bash, as shown below.
 
 To start the image, type:
 ```
 sudo docker run -it --name vpp_agent --privileged --rm dev_vpp_agent bash
 ```
-To open another terminal:
+To open another terminal into the image:
 ```
 sudo docker exec -it vpp_agent bash
 ```
 
 ### Running VPP and the Agent
 
-**NOTE: The Agent will terminate if it cannot connect to VPP and to a Etcd server. 
-If Kafka config is specified, a successful connection to Kafka is also required. 
-If Kafka config is not specified, the Agent will run without it, but all Kafka-related 
-functionality will be disabled.** 
+**NOTE: The Agent will terminate if it cannot connect to VPP and to a Etcd
+server. f Kafka config is specified, a successful connection to Kafka is
+also required. If Kafka config is not specified, the Agent will run without
+it, but all Kafka-related functionality will be disabled.** 
 
 Start VPP in one of two modes: 
  - If you don't need (or don't have) DPDK, use "vpp lite":
@@ -100,16 +112,17 @@ Start VPP in one of two modes:
 ```
 vpp unix { interactive } plugins { plugin dpdk_plugin.so { disable } }
 ```
-Note: you most likely do not have DPDK support if you're doing development on your local laptop.
+Note: you most likely do not have DPDK support if you're doing development
+on your local laptop.
 
 - If you want DPDK (with no PCI devices), use:
 
 ```
 vpp unix { interactive } dpdk { no-pci }
 ```
-Note that for DPDK, you would need to run the container in 
-privileged mode (add `--privileged` option to `docker run`). 
-For more options, please refer to the [VPP documentation](https://wiki.fd.io/view/VPP/Command-line_Arguments).
+Note that for DPDK, you would need to run the container in privileged mode
+(add `--privileged` option to `docker run`). For more options, please refer
+to [VPP documentation](https://wiki.fd.io/view/VPP/Command-line_Arguments).
 
 To run the Agent, do the following:
 - Edit `/opt/vpp-agent/dev/etcd.conf` to point the agent to an ETCD 
@@ -130,7 +143,7 @@ will typically be 172.17.0.1, unless you change your Docker
 networking settings.*
 
 - Edit `/opt/vpp-agent/dev/kafka.conf` to point the agent to a Kafka broker.
- The default configuration is:
+  The default configuration is:
 
 ```
 addrs:
@@ -154,12 +167,12 @@ You can run an ETCD server in a separate container on your local
 host as follows:
 ```
 sudo docker run -p 2379:2379 --name etcd --rm \
-    quay.io/coreos/etcd:v3.0.16 /usr/local/bin/etcd \
+    quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
     -advertise-client-urls http://0.0.0.0:2379 \
     -listen-client-urls http://0.0.0.0:2379
 ```
-(ETCD server will be available on your host OS IP (most likely `172.17.0.1` 
-in the default docker environment) on port `2379`)
+The ETCD server will be available on your host OS IP (most likely 
+`172.17.0.1` in the default docker environment) on port `2379`.
 
 Call the agent via ETCD using the testing client:
 ```
@@ -205,20 +218,33 @@ in the container as follows:
 ```
 sudo docker run -v ~/go/src/github.com/ligato/vpp-agent/:/root/go/src/github.com/ligato/vpp-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
 ```
-Then you can modify the code on you host OS and us the container for building and testing it.
+Then you can modify the code on you host OS and us the container for 
+building and testing it.
 
 ---
 
 ## Example: Using the Development Environment on a MacBook with Gogland
-This section describes the setup of a lightweight, portable development environment on your local notebook (MacBook or MacBook Pro in this example). The MacBook will be the host for the Development Environment container and the folder containing the agent sources will be shared between the host and the container. Then, you can run the IDE, git, and other tools on the host and the compilations/testing in the container.
+This section describes the setup of a lightweight, portable development
+environment on your local notebook (MacBook or MacBook Pro in this example).
+The MacBook will be the host for the Development Environment container 
+and the folder containing the agent sources will be shared between the 
+host and the container. Then, you can run the IDE, git, and other tools 
+on the host and the compilations/testing in the container.
 
 #### Prerequisites
 
-1. Get [Docker for Mac](https://docs.docker.com/docker-for-mac/). If you don't have it already installed, follow the [install instructions](https://docs.docker.com/docker-for-mac/install/).
+1. Get [Docker for Mac](https://docs.docker.com/docker-for-mac/). If you
+   don't have it already installed, follow these
+   [install instructions](https://docs.docker.com/docker-for-mac/install/).
 
-2. Install Go and the [Gogland](https://www.jetbrains.com/go/) IDE. Go can be downloaded from this [repository](https://golang.org/dl/), and its install instructions are [here](https://golang.org/doc/install). Gogland download and install instructions are [here](https://www.jetbrains.com/go/download/).   
+2. Install Go and the [Gogland](https://www.jetbrains.com/go/) IDE. Go 
+   can be downloaded from this [repository](https://golang.org/dl/), and 
+   its install instructions are [here](https://golang.org/doc/install). 
+   The download and install instructions for Gogland  are 
+   [here](https://www.jetbrains.com/go/download/).   
 
-2. Once you have Docker up & running on your Mac, build and verify the Development Environment container [as described above](#getting-the-image).
+2. Once you have Docker up & running on your Mac, build and verify the 
+   Development Environment container [as described above](#getting-the-image).
 
 #### Building and Running the Agent
 For the mixed host-container environment, the folder holding the 
@@ -252,14 +278,21 @@ through these steps.
 
 - In Gogland, set `GOROOT` and `GOPATH` (`Preferences->Go->GOROOT`, `Preferences->Go->GOPATH`). Set `GOROOT` to where Go is installed (default: `/usr/local/go`) and the global `GOPATH` to the location of your Go home folder (`/Users/jmedved/Documents/Git/go-home/` in our example).
 
-- Create a new project in Gogland (`File->New->Project`, ) will popup the project creation window. Enter your newly created Go home folder (`/Users/jmedved/Documents/Git/go-home/` in our example) as the location and accept the default value for the SDK. Click `Create`, and you should now be able to browse the Agent source code in Gogland.
+- Create a new project in Gogland (`File->New->Project`, ) will popup the 
+  project creation window. Enter your newly created Go home folder 
+  (`/Users/jmedved/Documents/Git/go-home/` in our example) as the locatio
+  n and accept the default value for the SDK. Click `Create`, and you 
+  should now be able to browse the Agent source code in Gogland.
 
-- Start the Development Environment container with the -v option, mounting the Go home folder in the container. With our example, and assuming that we want to mount our Go home folder into the `root/go-home` folder, type:
+- Start the Development Environment container with the -v option, mounting
+  the Go home folder in the container. With our example, and assuming that 
+  we want to mount our Go home folder into the `root/go-home` folder, type:
 
 ```
    sudo docker run -v ~/go/src/github.com/ligato/vpp-agent/:/root/go/src/github.com/ligato/vpp-agent/ -it --name vpp_agent --rm dev_vpp_agent bash
 ```
-The above command will put you into the Development Environment container console. 
+The above command will put you into the Development Environment container 
+console. 
 
 **In the container console**:
 
