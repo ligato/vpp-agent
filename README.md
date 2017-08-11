@@ -32,7 +32,7 @@ using [protobufs][3], which allow for the same functionality to be accessible
 over multiple transport protocols (HTTP, gRPC, Etcd, ...). Plugins use the 
 [GoVPP library][4] to interact with the VPP.
 
-The following figure shows the VN Agent in context of a cloud-native VNF, 
+The following figure shows the VPP Agent in context of a cloud-native VNF, 
 where the VNF's data plane is implemented using VPP/DPDK and its management
 / control planes are implemented using the VNF agent:
 
@@ -63,10 +63,9 @@ of VNFs based on the VPP Agent:
 
 * [agentctl](cmd/agentctl) - a CLI tool that shows the state of a set of 
    VPP agents can configure the agents
-* [vpp-agent-ctl](vpp-agent-ctl/main.go) - a utility for testing VNF Agent 
+* [vpp-agent-ctl](cmd/vpp-agent-ctl) - a utility for testing VNF Agent 
   configuration. It contains a set of pre-defined configurations that can 
   be sent to the VPP Agent either interactively or in a script. 
-  predefined parts of configuration (aimed for testing purposes) 
 * [docker](docker) - container-based development environment for the VPP
   agent and for app/extension plugins.
 
