@@ -1,8 +1,11 @@
 # Executables
 
-This package groups executables that can be built out of sources in this repository:
+This package groups executables that can be built from sources in this 
+repository:
 
-- [vpp-agent](vpp-agent/main.go) main executable that allows to manage VPP
-- [agentctl](agentctl/agentctl.go) CLI tool that allows to show the state and to configure agents connected to
-                                   etcd
-- [vpp-agent-ctl](vpp-agent-ctl/main.go) utility that allows to setup predefined parts of configuration (aimed for testing purposes) 
+- [vpp-agent](vpp-agent/main.go) - the VPP Agent executable
+- [agentctl](agentctl/agentctl.go) - CLI tool that allows to show the state 
+  and to configure agents connected to etcd
+- [vpp-agent-ctl](vpp-agent-ctl/main.go) - a utility for testing VNF Agent 
+  configuration. It contains a set of pre-defined configurations that can 
+  be sent to the VPP Agent either interactively or in a script.
