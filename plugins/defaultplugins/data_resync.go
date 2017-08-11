@@ -16,17 +16,16 @@ package defaultplugins
 
 import (
 	"strings"
-
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-
+	"strconv"
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -48,7 +47,7 @@ type DataResyncReq struct {
 	// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-	StaticRoutes *l3.StaticRoutes
+	StaticRoutes []*l3.StaticRoutes_Route
 }
 
 // NewDataResyncReq is a constructor
@@ -71,7 +70,7 @@ func NewDataResyncReq() *DataResyncReq {
 		// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
 		XConnects: []*l2.XConnectPairs_XConnectPair{},
 		// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-		StaticRoutes: nil}
+		StaticRoutes: []*l3.StaticRoutes_Route{}}
 }
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
@@ -120,8 +119,8 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			log.Debug("Received RESYNC XConnects values ", numXCons)
-		} else if strings.HasPrefix(key, l3.RouteKey()) {
-			numL3FIBs := resyncAppendRoutes(resyncData, req)
+		} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
+			numL3FIBs := resyncAppendRoutes(resyncData, key, req)
 			log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
 		} else {
 			log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
@@ -129,14 +128,31 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	}
 	return req
 }
-func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func resyncAppendRoutes(resyncData datasync.KeyValIterator, key string, req *DataResyncReq) int {
 	num := 0
-	if staticRouteData, stop := resyncData.GetNext(); !stop {
-		value := &l3.StaticRoutes{}
-		err := staticRouteData.GetValue(value)
-		if err == nil {
-			req.StaticRoutes = value
+	for {
+		if staticRouteData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			route := &l3.StaticRoutes_Route{}
+			err := staticRouteData.GetValue(route)
+			if err != nil {
+				continue
+			}
+			_, vrfIndex, _ := l3.ParseRouteKey(key)
+			// Ensure every route has the corresponding VRF index
+			intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
+			if err != nil {
+				continue
+			}
+			if vrfIndex != strconv.Itoa(int(route.VrfId)) {
+				log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
+					intVrfKeyIndex, route.VrfId)
+				route.VrfId = uint32(intVrfKeyIndex)
+			}
+			req.StaticRoutes = append(req.StaticRoutes, route)
 			num++
+
 		}
 	}
 	return num
@@ -295,7 +311,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.RouteKey())
+			l3.VrfKeyPrefix())
 	if err != nil {
 		return err
 	}
@@ -319,7 +335,6 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
 		return nil
 	}
-
 	log.Debug("Start processing change for key: ", key)
 	if strings.HasPrefix(key, acl.KeyPrefix()) {
 		var value, prevValue acl.AccessLists_Acl
@@ -422,17 +437,24 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return err
 		}
-	} else if strings.HasPrefix(key, l3.RouteKey()) {
-		var value, prevValue l3.StaticRoutes
-		if err := dataChng.GetValue(&value); err != nil {
-			return err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+		isRoute, vrfFromKey, _ := l3.ParseRouteKey(key)
+		if isRoute {
+			// Route
+			var value, prevValue l3.StaticRoutes_Route
+			if err := dataChng.GetValue(&value); err != nil {
+				return err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		} else {
-			return err
+			// Vrf
+			// TODO vrf not implemented yet
 		}
 	} else {
 		log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!

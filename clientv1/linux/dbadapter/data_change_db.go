@@ -26,6 +26,7 @@ import (
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	"net"
 )
 
 // NewDataChangeDSL is a constructor
@@ -99,7 +100,7 @@ func (dsl *PutDSL) XConnect(val *vpp_l2.XConnectPairs_XConnectPair) linux.PutDSL
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route
-func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes) linux.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes_Route) linux.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
@@ -151,8 +152,8 @@ func (dsl *DeleteDSL) XConnect(rxIfaceName string) linux.DeleteDSL {
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route
-func (dsl *DeleteDSL) StaticRoute() linux.DeleteDSL {
-	dsl.vppDelete.StaticRoute()
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddrInput net.IP) linux.DeleteDSL {
+	dsl.vppDelete.StaticRoute(vrf, dstAddrInput, nextHopAddrInput)
 	return dsl
 }
 

@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"net"
+
 	"github.com/ligato/cn-infra/core"
 	agent "github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
@@ -120,6 +122,12 @@ func (plugin *ExamplePlugin) resyncVPP() {
 
 // reconfigureVPP simulates a set of changes in the configuration related to VPP plugins.
 func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
+	_, dstNetAddr, err := net.ParseCIDR("192.168.2.1/32")
+	if err != nil {
+		return
+	}
+	nextHopAddr := net.ParseIP("10.1.1.3")
+
 	select {
 	case <-time.After(15 * time.Second):
 		// simulate configuration change exactly 15seconds after resync
@@ -132,7 +140,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
-			StaticRoute(). /* remove the route going through memif1 */
+			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
 			log.Errorf("Failed to reconfigure VPP: %v", err)
@@ -295,19 +303,11 @@ var (
 	}
 
 	// routeThroughMemif1 is an example route configuration, with memif1 being the next hop.
-	routeThroughMemif1 = l3.StaticRoutes{
-		Ip: []*l3.StaticRoutes_Ip{
-			{
-				Description:        "Description",
-				VrfId:              0,
-				DestinationAddress: "192.168.2.1",
-				NextHops: []*l3.StaticRoutes_Ip_NextHop{
-					{
-						Address: memif1AsMaster.IpAddresses[0],
-						Weight:  5,
-					},
-				},
-			},
-		},
+	routeThroughMemif1 = l3.StaticRoutes_Route{
+		Description: "Description",
+		VrfId:       0,
+		DstIpAddr:   "192.168.2.1",
+		NextHopAddr: memif1AsMaster.IpAddresses[0],
+		Weight:      5,
 	}
 )

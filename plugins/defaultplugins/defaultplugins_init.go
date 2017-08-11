@@ -71,18 +71,18 @@ type Plugin struct {
 	bdConfigurator    *l2plugin.BDConfigurator
 	fibConfigurator   *l2plugin.FIBConfigurator
 	xcConfigurator    *l2plugin.XConnectConfigurator
+	routeConfigurator *l3plugin.RouteConfigurator
 	bdIndexes         bdidx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
 	fibIndexes        idxvpp.NameToIdxRW
 	fibDesIndexes     idxvpp.NameToIdxRW
 	xcIndexes         idxvpp.NameToIdxRW
+	routeIndexes      idxvpp.NameToIdxRW
 	errorIndexes      idxvpp.NameToIdxRW
 	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
 	bdIdxWatchCh      chan bdidx.ChangeDto
 	linuxIfIdxWatchCh chan idxvpp.NameToIdxDto
-
-	routeConfigurator *l3plugin.RouteConfigurator
 
 	resyncConfigChan chan datasync.ResyncEvent
 	resyncStatusChan chan datasync.ResyncEvent
@@ -338,9 +338,13 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
+	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "route_indexes", nil)
+
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
+		GoVppmux:      plugin.GoVppmux,
+		RouteIndexes:  plugin.routeIndexes,
+		RouteIndexSeq: 1,
+		SwIfIndexes:   plugin.swIfIndexes,
 	}
 	err := plugin.routeConfigurator.Init()
 	if err != nil {

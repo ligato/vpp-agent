@@ -240,13 +240,13 @@ func (plugin *Plugin) removeErrorLog(key string) {
 	if prefix == interfaces.InterfacePrefix {
 		key := interfaces.InterfaceErrorKey(name)
 		plugin.Transport.PublishData(key, nil)
-		log.Infof("Error log for interface %v cleared", name)
+		log.Infof("Error status log for interface %v cleared", name)
 	} else if prefix == l2.BdPrefix {
 		key := l2.BridgeDomainErrorKey(name)
 		plugin.Transport.PublishData(key, nil)
-		log.Infof("Error log for bridge domain %v cleared", name)
+		log.Infof("Error status log for bridge domain %v cleared", name)
 	} else {
-		log.Warnf("Unknown type of prefix: %v", prefix)
+		log.Infof("Error status log: unknown type of prefix: %v", prefix)
 	}
 }
 

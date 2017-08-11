@@ -14,13 +14,46 @@
 
 package l3
 
-// Prefixes
-const (
-	// RoutesPrefix is the relative key prefix for routes.
-	RoutesPrefix = "vpp/config/v1/vrf/0/fib" //TODO <VRF>
+import (
+	"net"
+	"strconv"
+	"strings"
 )
 
-// RouteKey returns the keys used in ETCD to store vpp routes for vpp instance.
-func RouteKey() string {
+// Prefixes
+const (
+	// VrfPrefix is the relative key prefix for VRFs.
+	VrfPrefix = "vpp/config/v1/vrf/"
+	// RoutesPrefix is the relative key prefix for routes.
+	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/fib/"
+)
+
+// VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
+func VrfKeyPrefix() string {
+	return VrfPrefix
+}
+
+// RouteKey returns the key used in ETCD to store vpp route for vpp instance
+func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
+	dstNetAddr := dstAddr.IP.String()
+	dstNetMask, _ := dstAddr.Mask.Size()
+	identifier := dstNetAddr + "m" + strconv.Itoa(dstNetMask) + "-" + nextHopAddr
+	return strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1) + identifier
+}
+
+// ParseRouteKey parses VRF label and route address from a route key.
+func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, routeAddress string) {
+	if strings.HasPrefix(key, VrfKeyPrefix()) {
+		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())
+		routeComps := strings.Split(vrfSuffix, "/")
+		if len(routeComps) >= 3 && routeComps[1] == "fib" {
+			return true, routeComps[0], routeComps[2]
+		}
+	}
+	return false, "", ""
+}
+
+// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
+func RouteKeyPrefix() string {
 	return RoutesPrefix
 }

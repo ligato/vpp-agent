@@ -34,7 +34,7 @@ type DataResyncDSL interface {
 	// XConnect adds Cross Connect to the RESYNC request
 	XConnect(xcon *l2.XConnectPairs_XConnectPair) DataResyncDSL
 	// StaticRoute adds L3 Static Route to the RESYNC request
-	StaticRoute(staticRoute *l3.StaticRoutes) DataResyncDSL
+	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request
 	ACL(acl *acl.AccessLists_Acl) DataResyncDSL
 	// Send propagates the request to the plugins
