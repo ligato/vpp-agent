@@ -12,7 +12,7 @@ ${timeout_etcd}=      30s
 Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
     Log Many       ${node}    ${vswitch}
-    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
+    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${AGENT_VPP_1_DOCKER_IMAGE}
@@ -31,7 +31,7 @@ Add Agent VPP Node
 Add Agent VPP Node With Physical Int
     [Arguments]    ${node}    ${vswitch}=${FALSE}    @{int_nums}
     Log Many       ${node}    ${vswitch}    ${int_nums}
-    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
+    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${AGENT_VPP_1_DOCKER_IMAGE}
