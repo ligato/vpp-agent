@@ -1,33 +1,34 @@
 # NameToIdx
 
-The NameToIdx is extension of NamedMapping. It allows Agent plugins that interact 
-with VPP to map between VPP interface handles (the `sw_if_index` entities) 
-and the string-based object identifiers used by northbound clients of the 
-Agent.
+The NameToIdx mapping is an extension of the NamedMapping mapping. It is 
+used by VPP Agent plugins that interact with VPP to map between VPP 
+interface handles (the `sw_if_index` entities) and the string-based 
+object identifiers used by northbound clients of the Agent.
 
-The mapping are used to implement the re-configuration, and state 
-re-synchronization after failures. Furthermore, a registry may be shared 
-between plugins. For example, `ifplugin` exposes the `sw_if_index->name` 
-mapping so that other plugins may reference interfaces from objects that 
-depend on them (such as bridge domains, IP routes, etc.)
+The mappings are used to implement the re-configuration and state 
+re-synchronization after failures. Furthermore, a mapping registry may
+be shared between plugins. For example, `ifplugin` exposes the 
+`sw_if_index->name` mapping so that other plugins may reference interfaces
+from objects that depend on them, such as bridge domains or IP routes.
 
 **API**
 
 *Mapping*
 
 Every plugin is allowed to allocate a new mapping using the function 
-`NewNameToIdxRW(logger, owner, title, indexfunction)`, giving in-memory-only storage capabilities.
-Specifying indexFunction allows to query mapping by secondary indexes computed from metadata.
+`NewNameToIdxRW(logger, owner, title, indexfunction)`, giving in-memory-only
+storage capabilities. Specifying an indexFunction allows to query mappings
+by secondary indices computed from metadata.
  
-The `NameToIdxRW` interface supports read and write operations. While the registry
-owner is allowed to do both reads and writes, only the read interface `NameToIdx` is 
-typically exposed to the other plugins. See for example the `sw_if_index->name` 
-mapping maintained by the `ifplugin`. Its read-only interface supports index-
-by-name and name-by-index looks up with the `LookupIdx` and `LookupName` 
-functions. Additionally, it is possible to watch for changes in the registry
-by using the `Watch` function. The write access is used by the
-registry owner to register a new mapping using the `RegisterName` functions,
-and to remove existing pair with the `UnregisterName` function.
+The `NameToIdxRW` interface supports read and write operations. While the 
+registry owner is allowed to do both reads and writes, only the read 
+interface `NameToIdx` is typically exposed to the other plugins. See for 
+example the `sw_if_index->name` mapping defined in `ifplugin`. Its read-only
+interface supports index-by-name and name-by-index look-ups using the 
+`LookupIdx` and `LookupName` functions. Additionally, a client can use the 
+`Watch` function to watch for changes in the registry. The registry owner 
+can  register a new mapping using the `RegisterName` function and remove 
+an existing mapping using the `UnregisterName` function.
 
 **Example**
 

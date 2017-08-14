@@ -2,22 +2,34 @@
 ![VPP agent 10.000 feet](imgs/vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
 
 Brief description:
-* SFC Controller - renders desired network stitching configuration for multiple agents to the Data Store
-* Control Plane APPs - renders specific VPP configuration for multiple agents to the Data Store
-* Client v1 - Control plane can use the Client v1 (VPP Agent Client v1) for submitting configuration for VPP Agents.
-              The Client v1 is based on generated GO structures from protobuf messages & set of helper methods
-              that generate keys and store the data to key the value Data Store.
-* Data Store (ETCD, Redis, etc.) to:
-  * store the VPP configuration
-  * operational state (network counters & statistics, errors...)
-* VPP vSwitch - privileged container that cross connects multiple VNFs
-* VPP VNF - container that runs VPP that acts as Virtual Network Function 
-* Non VPP VNF - non VPP containers can interact together with VPP containers (see below MEMIFs, VETH)
-* Messaging - AD-HOC events (e.g. link UP/Down)
+* **SFC Controller** - renders a logical network topology (which defines how
+  VNF are interconnected at the logical level) onto a given physical 
+  network, and creates configuration for VNFs and network devices. 
+  
+* **Control Plane Apps** - renders specific VPP configuration for multiple 
+  agents to the Data Store
+* **Client v1** - the control plane can use the Client v1 library (VPP Agent 
+  Client v1) for submitting configuration requests to one or more  VPP 
+  Agents. The Client v1 library is based on generated GO structures from 
+  protobuf messages. The library contais helper methods for working with
+  KV Data Stores used for generation of keys and storing/retrieving data
+  in the Data Store under a given key.
+* **Data Store** (ETCD, Redis, etc.) to:
+  * store VPP configuration; this data is put into the Data Store by one
+    or more orchestrators and retrieved by one or more VPP Agents.
+  * store operational state, such as network counters /statistics or errors; 
+    this data is put into the Data Store by one or more VPP Agents and 
+    retrieved by one or more monitoring/analytics applications. 
+* **VPP vSwitch** - privileged container that cross connects multiple VNFs
+* **VPP VNF** - a container with a Virtual Network Function implementation 
+  based on  VPP 
+* **Non VPP VNF** - container with a non-VPP based Virtual Network Function;
+  that can nevertheless interact with VPP containers (see below MEMIFs, VETH)
+* **Messaging** - AD-HOC events (e.g. link UP/Down)
 
 # Requirements
-VPP Agent was designed with following principal requirements:
-* Modular design with API contract
+The VPP Agent was designed to meet the following requirements:
+* Modular design with API contracts
 * Cloud native
 * Fault tolerant
 * Rapid deployment
@@ -25,54 +37,70 @@ VPP Agent was designed with following principal requirements:
 
 
 ## Modular design with API contract
-The code is organized into multiple plugins. Each plugin exposes specific API. This approach allows 
-to extend the functionality by introducing new plugins and enables integration of plugins by using the API.
+The VPP Agent code base is a collection of plugins. Each plugin provides
+a specific service defined by the service's API. VPP Agent's functionality
+can be easily extended by introducing new plugins. Well-defined API 
+contracts facilitate integration of new plugins into the VPP Agent or 
+integration of multiple plugins into a new application.
 
 ## Cloud native
-Assumption: data plane & control plane can be divided to multiple microservices.
-Each microservice is independent. Therefore, it may occur that the configuration is incomplete: 
-an object can refer to a non-existing object in configuration. 
-Incomplete: one object refers the non existing object in configuration.
-VPP agent can handle this - it skips incomplete part of configuration.
-Later when the configuration is updated it tries again to configure what was skipped.
+Assumption: both data plane and control plane can be implemented as a set 
+of microservices, where each microservice is independent of other 
+microservices. Therefore, the overall configuration of a system may be 
+incomplete at times, since one object may refer to another object owned by
+a service that has not been instantiated yet. The VPP agent can handle this
+use - at first it skips incomplete part of configuration, and later, when
+the configuration is updated, it tries again to configure what was skipped.
 
-VPP Agent is usually deployed in a container together with VPP.
-There can be many of these containers. Containers can be used in many different infrastructures 
-(on-premise, hybrid, or public cloud). The VPP + VPP Agent containers have been tested with 
-[Kubernetes](https://kubernetes.io/).
+The VPP Agent is usually deployed in a container together with VPP. There
+can be many of these containers in a given cloud or in a more complex data 
+plane implementation. Containers can be used in many different 
+infrastructures (on-premise, hybrid, or public cloud). The VPP + VPP Agent 
+containers have been tested with [Kubernetes](https://kubernetes.io/).
 
 
-Control Plane microservices do not really depended on current lifecycle phase of the VPP Agents.
-Control Plane can render the data to the Data Store even if VPP Agents are not started.
-This is possible because:
-- Control Plane does not access the VPP Agents directly but it rather accesses the Data Store
-- Data structures are using logical names of objects inside the configuration (not internal identifiers of the VPP).
-  See the [protobuf](https://developers.google.com/protocol-buffers/) definitions in model sub folders of VPP Agent. 
+Control Plane microservices do not really depend on the current lifecycle
+phase of the VPP Agents. Control Plane can render config data for one or 
+more VPP Agents and store it in the KV Data Store even if (some of) the 
+VPP Agents have not been started yet. This is possible because:
+- The Control Plane does not access the VPP Agents directly, but it rather 
+  accesses the KV Data Store; the VPP Agents are responsible for downloading
+  their data from the Data Store. 
+- Data structures in configuration files use logical object names, not 
+  internal identifiers of the VPP). See the 
+  [protobuf](https://developers.google.com/protocol-buffers/) 
+  definitions in the `model` sub folders in various VPP Agent plugins. 
 
 ## Fault tolerant
-Each microservice has it's own lifecycle therefore the agent is designed in the way that 
-it recovers from situations that different microservice (db, message bus...) is temporary unavailable.
+Each microservice has its own lifecycle, therefore the VPP Agent is 
+designed to recover from HA events even when some subset of microservices 
+(e.g. db, message bus...) are temporary unavailable.
 
-The same principle can be applied also for VPP Agent Process & VPP Process inside one container.
-VPP Agent checks the VPP actual configuration and does data synchronization by polling latest
-configuration from the Data Store.
+The same principle can be applied also for the VPP Agent process and the
+VPP process inside one container. The VPP Agent checks the VPP actual 
+configuration and does data synchronization by polling latest configuration
+from the KV Data Store.
 
 VPP Agent also reports status of the VPP in probes & Status Check Plugin.  
 
 In general VPP Agents:
  * propagate errors to upper layers & report to the Status Check Plugin
- * fault recovery is is performed with two different strategies:
-   * easily recoverable errors: retry data synchronization (Data Store configuration -> VPP Binary API calls)
-   * otherwise: report error to control plane which can failover or recreate the microservice
+ * fault recovery is performed with two different strategies:
+   * easily recoverable errors: retry data synchronization (Data Store 
+     configuration -> VPP Binary API calls)
+   * otherwise: report error to control plane which can failover or 
+     recreate the microservice
 
 ## Rapid deployment
 
-Containers allow to reduce deployment time to seconds. This is due to the fact that containers are created at process level 
-and there is no need to boot OS. More over K8s helps with (un)deploying different version of multiple instances 
-of microservices.
+Containers allow to reduce deployment time to seconds. This is due to the 
+fact that containers are created at process level  and there is no need to 
+boot the OS. More over K8s helps with (un)deploying different version of 
+multiple instances of microservices.
 
 ## High performance & minimal footprint
-Performance optimization is currently work in progress. Several bottlenecks that can be optimized have been identified:
+Performance optimization is currently work in progress. Several bottlenecks
+that can be optimized have been identified:
 - GOVPP
 - minimize context switching
 - replace blocking calls to non-blocking calls
