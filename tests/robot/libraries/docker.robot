@@ -11,7 +11,7 @@ ${timeout_etcd}=      30s
 *** Keywords ***
 Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
-    Log            ${node}    ${vswitch}
+    Log Many       ${node}    ${vswitch}
     ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -29,7 +29,7 @@ Add Agent VPP Node
     Log List    ${NODES}
 
 Add Agent VPP Node With Physical Int
-    [Arguments]    ${node}    ${vswitch}=${FALSE}    @{int_nums
+    [Arguments]    ${node}    ${vswitch}=${FALSE}    @{int_nums}
     Log Many       ${node}    ${vswitch}    ${int_nums}
     ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
     Log    ${add_params}
