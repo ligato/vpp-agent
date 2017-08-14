@@ -17,19 +17,19 @@ package linuxlocal
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
+	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/flavors/generic"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/cn-infra/flavors/generic"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 )
 
 // Flavor glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
 type Flavor struct {
 	injected         bool
-	Generic 		 generic.Flavor
-	Etcd    		 etcdv3.Plugin
+	Generic          generic.Flavor
+	Etcd             etcdv3.Plugin
 	LinuxLocalClient localclient.Plugin
 	Resync           resync.Plugin
 	GoVPP            govppmux.GOVPPPlugin
@@ -48,7 +48,6 @@ func (f *Flavor) Inject() error {
 	f.Etcd.LogFactory = &f.Generic.Logrus
 	f.Etcd.ServiceLabel = &f.Generic.ServiceLabel
 	f.Etcd.StatusCheck = &f.Generic.StatusCheck
-
 
 	f.GoVPP.StatusCheck = &f.Generic.StatusCheck
 	f.GoVPP.LogFactory = &f.Generic.Logrus

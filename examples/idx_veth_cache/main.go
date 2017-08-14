@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -30,13 +31,25 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
-	"fmt"
 )
 
-// init sets the default logging level
+// *************************************************************************
+// This file contains examples of linux plugin name-to-index cache operations
+//
+// Two more transport adapters for different agents are registered using
+// OfDifferentAgent() and their interface name-to-idx mapping is cached
+// with linux_if.Cache() as a new map
+//
+// These new maps are watched and all new events are logged.
+//
+// VETH interfaces are then created on agents using both of the transports and
+// data presence in cached name-to-idx map is verified
+// ************************************************************************/
+
+// Init sets the default logging level
 func init() {
 	log.SetOutput(os.Stdout)
-	log.SetLevel(logging.DebugLevel)
+	log.SetLevel(logging.InfoLevel)
 }
 
 /********
@@ -62,7 +75,7 @@ func main() {
 
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(40 * time.Second)
+	time.Sleep(25 * time.Second)
 	log.Info(message)
 	closeChannel <- struct{}{}
 }
@@ -74,18 +87,15 @@ func closeExample(message string, closeChannel chan struct{}) {
 // PluginID of example plugin
 const PluginID core.PluginName = "example-plugin"
 
-// ExamplePlugin demonstrates the use of the localclient to locally transport example configuration
-// into linuxplugin and default VPP plugins.
+// ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin
 type ExamplePlugin struct {
-	agent1 datasync.TransportAdapter
-	agent2 datasync.TransportAdapter
-
+	agent1           datasync.TransportAdapter
+	agent2           datasync.TransportAdapter
 	linuxIfIdx       idxvpp.NameToIdxRW
 	linuxIfIdxAgent1 idxvpp.NameToIdxRW
 	linuxIfIdxAgent2 idxvpp.NameToIdxRW
-
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
+	wg               sync.WaitGroup
+	cancel           context.CancelFunc
 }
 
 // Init initializes example plugin
@@ -119,7 +129,7 @@ func (plugin *ExamplePlugin) Init() error {
 	return err
 }
 
-// Close cleans up the resources.
+// Close cleans up the resources
 func (plugin *ExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
@@ -128,9 +138,8 @@ func (plugin *ExamplePlugin) Close() error {
 	return nil
 }
 
-
-// resyncLinuxAndVPP propagates snapshot of the whole initial configuration to linuxplugin and VPP plugins.
-func (plugin *ExamplePlugin) publish() error{
+// publish propagates example configuration to ETCD
+func (plugin *ExamplePlugin) publish() error {
 	log.Infof("Putting interfaces to ETCD")
 
 	// VETH pair in default namespace
@@ -154,11 +163,11 @@ func (plugin *ExamplePlugin) publish() error{
 		return err
 	}
 	log.Info("Successfully applied initial Linux&VPP configuration")
-	
+
 	return err
 }
 
-// uses the NameToIndexMapping to watch changes
+// Uses the NameToIndexMapping to watch changes
 func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan idxvpp.NameToIdxDto) (err error) {
 	var watching = true
 	for watching {
@@ -168,11 +177,11 @@ func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan idxvpp.NameToIdxDto) (e
 				log.WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
 					"Name": swIfIdxEvent.Name,
 					"Del":  swIfIdxEvent.Del,
-				}).Warn("xxx event received") // todo change to info
+				}).Info("Event received")
 			}
 		case <-time.After(10 * time.Second):
 			watching = false
-			log.Warnf("Watching stopped") // todo change to info
+			log.Info("Watching stopped")
 		}
 	}
 
@@ -184,16 +193,14 @@ func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan idxvpp.NameToIdxDto) (e
 	return nil
 }
 
-// use the NameToIndexMapping to lookup
+// Uses the NameToIndexMapping to lookup changes
 func (plugin *ExamplePlugin) lookup() bool {
-	log.Warnf("lookup started") // todo remove
-
 	var (
 		loopback bool
-		veth11 bool
-		veth12 bool
-		veth21 bool
-		veth22 bool
+		veth11   bool
+		veth12   bool
+		veth21   bool
+		veth22   bool
 	)
 
 	// Look for loopback interface
@@ -205,7 +212,7 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 11 default namespace interface on agent1
 	for i := 0; i <= 3; i++ {
 		if _, _, veth11 = plugin.linuxIfIdxAgent1.LookupIdx(veth11DefaultNs.Name); veth11 {
-			log.Info("Interface found on agent1 : veth11Def")
+			log.Info("Interface found on agent1: veth11Def")
 			break
 		} else if i == 3 {
 			log.Warn("Interface not found on agent1: veth11Def")
@@ -258,7 +265,7 @@ func (plugin *ExamplePlugin) lookup() bool {
 	if loopback && veth11 && veth12 && veth21 && veth22 {
 		return true
 	}
- 	return false
+	return false
 }
 
 // Interface data

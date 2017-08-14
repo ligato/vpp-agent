@@ -48,12 +48,13 @@ type Plugin struct {
 }
 
 var (
-	// gPlugin holds the global instance of the Plugin
+	// gPlugin holds the global instance of the Linux Plugin
 	gPlugin *Plugin
 )
 
-// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux interface indexes.
-// This mapping is especially helpful for plugins that need to watch for newly added or deleted Linux interfaces.
+// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+// Linux interfaces.
 func GetLinuxIfIndexes() idxvpp.NameToIdxRW {
 	return gPlugin.ifIndexes
 }

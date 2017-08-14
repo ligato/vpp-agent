@@ -27,26 +27,28 @@ import (
 	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 )
 
-// Cache the VETH interfaces of a particular agent by watching transport
+const ipAddressKey = "ipAddrKey"
+
+// Cache the VETH interfaces of a particular agent by watching transport. If change appears, it is registered in
+// idx map
 func Cache(watcher datasync.Watcher, caller core.PluginName) idxvpp.NameToIdxRW {
-	resyncName := fmt.Sprintf("iface-cache-%s-%s", caller, watcher)
-	swIdx := nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata)
+	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
+	linuxIfIdx := nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata)
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),
-		IDX:           swIdx,
+		IDX:           linuxIfIdx,
 		DataPrototype: &linux_ifaces.LinuxInterfaces_Interface{Name: "aaa"},
 		ParseName:     ParseNameFromKey,
 	}
 
 	go helper.DoWatching(resyncName, watcher)
 
-	return swIdx
+	return linuxIfIdx
 }
 
 // IndexMetadata creates indexes for metadata. Index for IPAddress will be created
 func IndexMetadata(metaData interface{}) map[string][]string {
-
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*linux_ifaces.LinuxInterfaces_Interface)
 	if !ok || ifMeta == nil {
@@ -55,18 +57,17 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 
 	ip := ifMeta.IpAddresses
 	if ip != nil {
-		indexes["ipAddrKey"] = ip
+		indexes[ipAddressKey] = ip
 	}
 	return indexes
 }
 
-// ParseNameFromKey returns suffix of the ky
+// ParseNameFromKey returns suffix of the key (name)
 func ParseNameFromKey(key string) (name string, err error) {
 	lastSlashPos := strings.LastIndex(key, "/")
 	if lastSlashPos > 0 && lastSlashPos < len(key)-1 {
 		return key[lastSlashPos+1:], nil
 	}
 
-	return key, fmt.Errorf("wrong format of the key %s", key)
+	return key, fmt.Errorf("Incorrect format of the key %s", key)
 }
-
