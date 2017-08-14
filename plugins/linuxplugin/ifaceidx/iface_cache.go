@@ -38,7 +38,7 @@ func Cache(watcher datasync.Watcher, caller core.PluginName) idxvpp.NameToIdxRW 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),
 		IDX:           linuxIfIdx,
-		DataPrototype: &linux_ifaces.LinuxInterfaces_Interface{Name: "aaa"},
+		DataPrototype: &linux_ifaces.LinuxInterfaces_Interface{Name: "linux_iface"},
 		ParseName:     ParseNameFromKey,
 	}
 

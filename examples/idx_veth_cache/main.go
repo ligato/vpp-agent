@@ -63,9 +63,13 @@ func main() {
 
 	flavor := linuxlocal.Flavor{}
 	// Example plugin and dependencies
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{
+		Linux: &flavor.Linux,
+	}}
+
 	// Create new agent
 	agentVar := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+
 
 	// End when the idx_veth_cache example is finished
 	go closeExample("idx_veth_cache example finished", closeChannel)
@@ -89,9 +93,14 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin
 type ExamplePlugin struct {
+	// Linux plugin dependency
+	Linux			 *linuxplugin.Plugin
+
+	// Other agents transport
 	agent1           datasync.TransportAdapter
 	agent2           datasync.TransportAdapter
-	linuxIfIdx       idxvpp.NameToIdxRW
+
+	linuxIfIdxLocal  idxvpp.NameToIdxRW
 	linuxIfIdxAgent1 idxvpp.NameToIdxRW
 	linuxIfIdxAgent2 idxvpp.NameToIdxRW
 	wg               sync.WaitGroup
@@ -104,14 +113,18 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.agent1 = datasync.OfDifferentAgent("agent1")
 	plugin.agent2 = datasync.OfDifferentAgent("agent2")
 	// Receive linux interfaces mapping
-	plugin.linuxIfIdx = linuxplugin.GetLinuxIfIndexes()
+	if plugin.Linux != nil {
+		plugin.linuxIfIdxLocal = plugin.Linux.GetLinuxIfIndexes()
+	} else {
+		return fmt.Errorf("Linux plugin not initialized")
+	}
 	// Cache the agent1/agent2 name-to-idx mapping to separate mapping within plugin example
 	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.agent1, PluginID)
 	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.agent2, PluginID)
 	// Init chan to sent watch updates
 	linuxIfIdxChan := make(chan idxvpp.NameToIdxDto)
 	// Register all agents (incl. local) to watch name-to-idx mapping changes
-	plugin.linuxIfIdx.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
+	plugin.linuxIfIdxLocal.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
 	plugin.linuxIfIdxAgent1.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
 	plugin.linuxIfIdxAgent2.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
 
@@ -204,7 +217,7 @@ func (plugin *ExamplePlugin) lookup() bool {
 	)
 
 	// Look for loopback interface
-	if _, _, loopback = plugin.linuxIfIdx.LookupIdx("lo"); loopback {
+	if _, _, loopback = plugin.linuxIfIdxLocal.LookupIdx("lo"); loopback {
 		log.Info("Interface found: loopback")
 	} else {
 		log.Warn("Interface not found: loopback") // todo remove
