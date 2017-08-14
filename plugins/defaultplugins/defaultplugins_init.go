@@ -184,7 +184,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// get pointer to the map with Linux interface indexes
 	if plugin.Linux != nil {
-		plugin.linuxIfIndexes = plugin.Linux.GetIfIndexes()
+		plugin.linuxIfIndexes = linuxplugin.GetLinuxIfIndexes()
 	} else {
 		plugin.linuxIfIndexes = nil
 	}

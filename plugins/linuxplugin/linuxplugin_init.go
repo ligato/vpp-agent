@@ -47,10 +47,15 @@ type Plugin struct {
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
-// GetIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux interface indexes.
+var (
+	// gPlugin holds the global instance of the Plugin
+	gPlugin *Plugin
+)
+
+// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux interface indexes.
 // This mapping is especially helpful for plugins that need to watch for newly added or deleted Linux interfaces.
-func (plugin *Plugin) GetIfIndexes() idxvpp.NameToIdx {
-	return plugin.ifIndexes
+func GetLinuxIfIndexes() idxvpp.NameToIdxRW {
+	return gPlugin.ifIndexes
 }
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
@@ -81,6 +86,8 @@ func (plugin *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
+
+	gPlugin = plugin
 
 	return nil
 }
