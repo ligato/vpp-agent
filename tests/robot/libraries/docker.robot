@@ -10,10 +10,12 @@ ${timeout_etcd}=      30s
 
 *** Keywords ***
 Add Agent VPP Node
-    [Arguments]    ${node}
-    Log            ${node}
+    [Arguments]    ${node}    ${vswitch}=${FALSE}
+    Log            ${node}    ${vswitch}
+    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
+    Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${AGENT_VPP_1_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${AGENT_VPP_1_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -27,10 +29,12 @@ Add Agent VPP Node
     Log List    ${NODES}
 
 Add Agent VPP Node With Physical Int
-    [Arguments]    ${node}    @{int_nums}
-    Log Many       ${node}    ${int_nums}
+    [Arguments]    ${node}    @{int_nums}    ${vswitch}=${FALSE}
+    Log Many       ${node}    ${int_nums}    ${vswitch}
+    ${add_params}=    Set Variable If    ${vswitch}    ${EMPTY}    --pid=host  -v "/var/run/docker.sock:/var/run/docker.sock"
+    Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${AGENT_VPP_1_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${AGENT_VPP_1_DOCKER_IMAGE}
     ${devs}=               Set Variable    ${EMPTY}
     :FOR    ${int_num}    IN    @{int_nums}
     \    ${devs}=    Set Variable    ${devs}${\n}dev ${DOCKER_PHYSICAL_INT_${int_num}}
