@@ -6,7 +6,7 @@ contains:
 - The development environment with all libs & dependencies required 
   to build both the VPP itself and the VPP Agent
 - A pre-built vpp ready to be used
-- A pre-built VPP Agent agent
+- A pre-built VPP Agent
 
 ### Getting an Image from Dockerhub
 For a quick start with the VPP Agent, you can use pre-build Docker images with
@@ -102,7 +102,7 @@ sudo docker exec -it vpp_agent bash
 ### Running VPP and the Agent
 
 **NOTE: The Agent will terminate if it cannot connect to VPP and to a Etcd
-server. f Kafka config is specified, a successful connection to Kafka is
+server. If Kafka config is specified, a successful connection to Kafka is
 also required. If Kafka config is not specified, the Agent will run without
 it, but all Kafka-related functionality will be disabled.** 
 
@@ -280,8 +280,8 @@ through these steps.
 
 - Create a new project in Gogland (`File->New->Project`, ) will popup the 
   project creation window. Enter your newly created Go home folder 
-  (`/Users/jmedved/Documents/Git/go-home/` in our example) as the locatio
-  n and accept the default value for the SDK. Click `Create`, and you 
+  (`/Users/jmedved/Documents/Git/go-home/` in our example) as the location
+  and accept the default value for the SDK. Click `Create`, and you 
   should now be able to browse the Agent source code in Gogland.
 
 - Start the Development Environment container with the -v option, mounting
