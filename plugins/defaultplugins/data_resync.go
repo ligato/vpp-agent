@@ -15,8 +15,6 @@
 package defaultplugins
 
 import (
-	"strings"
-	"strconv"
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -26,6 +24,8 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"strconv"
+	"strings"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
