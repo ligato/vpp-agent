@@ -29,8 +29,8 @@ Add Agent VPP Node
     Log List    ${NODES}
 
 Add Agent VPP Node With Physical Int
-    [Arguments]    ${node}    ${vswitch}=${FALSE}    @{int_nums}
-    Log Many       ${node}    ${vswitch}    ${int_nums}
+    [Arguments]    ${node}    ${int_nums}    ${vswitch}=${FALSE}
+    Log Many       ${node}    ${int_nums}    ${vswitch}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}

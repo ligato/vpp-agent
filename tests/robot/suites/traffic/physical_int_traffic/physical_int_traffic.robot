@@ -22,8 +22,10 @@ ${RESYNC_WAIT}=        30s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
-    Add Agent VPP Node With Physical Int    agent_vpp_1    1
-    Add Agent VPP Node With Physical Int    agent_vpp_2    2
+    ${phys_ints}=    Create List    1
+    Add Agent VPP Node With Physical Int    agent_vpp_1    ${phys_ints}
+    ${phys_ints}=    Create List    2
+    Add Agent VPP Node With Physical Int    agent_vpp_2    ${phys_ints}
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
@@ -146,8 +148,10 @@ Remove VPP Nodes
     Remove All Nodes
 
 Start VPP1 And VPP2 Again
-    Add Agent VPP Node With Physical Int    agent_vpp_1    1
-    Add Agent VPP Node With Physical Int    agent_vpp_2    2
+    ${phys_ints}=    Create List    1
+    Add Agent VPP Node With Physical Int    agent_vpp_1    ${phys_ints}
+    ${phys_ints}=    Create List    2
+    Add Agent VPP Node With Physical Int    agent_vpp_2    ${phys_ints}
     Sleep    ${RESYNC_WAIT}
 
 Show Interfaces And Other Objects After Resync
