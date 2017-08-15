@@ -1,30 +1,37 @@
 # Architecture
-![VPP agent 10.000 feet](imgs/vpp_agent_10K_feet.png "VPP Agent - 10.000 feet view on the architecture")
+![VPP agent 10.000 feet](imgs/vpp_agent_10K_feet.png)
 
 Brief description:
-* **SFC Controller** - renders a logical network topology (which defines how
-  VNF are interconnected at the logical level) onto a given physical 
-  network, and creates configuration for VNFs and network devices. 
+* **SFC Controller** - renders a logical network topology (which defines
+  how VNF are logically interconnected) onto a given physical network, and
+   VNF placement; the rednering process creates configuration for VNFs and
+   network devices. 
   
 * **Control Plane Apps** - renders specific VPP configuration for multiple 
   agents to the Data Store
-* **Client v1** - the control plane can use the Client v1 library (VPP Agent 
-  Client v1) for submitting configuration requests to one or more  VPP 
-  Agents. The Client v1 library is based on generated GO structures from 
-  protobuf messages. The library contais helper methods for working with
-  KV Data Stores used for generation of keys and storing/retrieving data
-  in the Data Store under a given key.
+
+* **Clientv1** - VPP Agent clients clients(app, tools, the control plane)
+ can use the clientv1 library to interact with one or more VPP Agents. The
+  clientv1 library is based on generated GO structures from protobuf 
+  messages. The library contais helper methods for working with KV Data 
+  Stores used for generation of keys and storing/retrieving data in the 
+  Data Store under a given key.
+
 * **Data Store** (ETCD, Redis, etc.) to:
-  * store VPP configuration; this data is put into the Data Store by one
-    or more orchestrators and retrieved by one or more VPP Agents.
-  * store operational state, such as network counters /statistics or errors; 
+  * Store VPP configuration; this data is put into the Data Store by one
+    or more orchestrator apps and retrieved by one or more VPP Agents.
+  * Store operational state, such as network counters /statistics or errors; 
     this data is put into the Data Store by one or more VPP Agents and 
     retrieved by one or more monitoring/analytics applications. 
+
 * **VPP vSwitch** - privileged container that cross connects multiple VNFs
+
 * **VPP VNF** - a container with a Virtual Network Function implementation 
   based on  VPP 
+
 * **Non VPP VNF** - container with a non-VPP based Virtual Network Function;
   that can nevertheless interact with VPP containers (see below MEMIFs, VETH)
+
 * **Messaging** - AD-HOC events (e.g. link UP/Down)
 
 # Requirements
