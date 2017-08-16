@@ -32,11 +32,11 @@ Testsuite Setup
 Testsuite Teardown
     [Documentation]      *Testsuite Teardown*
     Make Datastore Snapshots    teardown
+    Log All SSH Outputs
     Remove All Nodes
     Stop ETCD Server
     Stop VPP Ctl Container
     Stop Kafka Server
-    Log All SSH Outputs
     Get Connections
     Close All Connections
 
@@ -53,8 +53,8 @@ Test Teardown
     Stop VPP Ctl Container
     Stop Kafka Server
     Stop ETCD Server
-    Remove All Nodes
     Log All SSH Outputs
+    Remove All Nodes
     Get Connections
     Close All Connections
 
