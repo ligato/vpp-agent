@@ -9,16 +9,21 @@
 Please note that the content of this repository is currently **WORK IN PROGRESS**.
 
 The VPP Agent is a Golang implementation of a control/management plane for 
-[VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). 
+[VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
+Agent is built on top of the [CN-Infra platform][16] for developing 
+cloud-native Virtual Network Functions (VNFs). 
+
+The VPP Agent can be used as-is as a management/control agent for VNFs 
+based on off-the-shelf VPP (for example, a VPP-based vswitch), or as a
+platform for developing customized VNFs with customized VPP-based data.
 
 ## Architecture
-The VPP Agent is built on top of the CN-Infra cloud-native platform. It
-is basically a set of VPP-specific plugins that use the CN-Infra platform
-to interact with other services / microservices in the cloud (e.g. a KV 
-data store, messaging, log warehouse, etc.). The VPP Agent provides a 
-model-driven, high-level API to VPP functionality. Clients that consume
-this API may be external (via REST or gRPC API, Etcd or a message bus), 
-or other other App/Extension plugins in a larger CN-Infra based 
+The VPP Agent is basically a set of VPP-specific plugins that use the 
+CN-Infra platform to interact with other services / microservices in the
+cloud (e.g. a KV data store, messaging, log warehouse, etc.). The VPP Agent
+provides a model-driven, high-level API to VPP functionality. Clients that
+consume this API may be external (via REST or gRPC API, Etcd or a message
+bus), or other other App/Extension plugins in a larger CN-Infra based 
 application/VNF. 
 
 The VNF Agent architecture is shown in the following figure: 
@@ -94,10 +99,12 @@ docker exec -it vpp agentctl show
 docker exec -it vpp vppctl
 ```
 
+## Documentation
+GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
+
 ## Next Steps
 Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
 
-GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 
 ### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
@@ -127,3 +134,4 @@ If you are interested in contributing, please see the [contribution guidelines](
 [13]: https://github.com/ligato/cn-infra/tree/master/core
 [14]: https://hub.docker.com/r/ligato/vpp-agent/
 [15]: docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host
+[16]: https://github.com/ligato/cn-infra
