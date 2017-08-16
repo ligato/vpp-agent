@@ -22,7 +22,7 @@ Configure Environment
     Start SFC Controller Container With Own Config    basic.conf
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
-    Add Agent VPP Node    agent_vpp_3
+    Add Agent Node    agent_1
 
 Check Memif Interface On VPP1
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
