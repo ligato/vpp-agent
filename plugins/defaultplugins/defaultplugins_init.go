@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
@@ -55,7 +56,7 @@ type Plugin struct {
 	aclL2Indexes    idxvpp.NameToIdxRW
 
 	swIfIndexes          ifaceidx.SwIfIndexRW
-	linuxIfIndexes       idxvpp.NameToIdx
+	linuxIfIndexes       ifaceidx2.LinuxIfIndex
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -82,7 +83,7 @@ type Plugin struct {
 	errorIndexes      idxvpp.NameToIdxRW
 	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
 	bdIdxWatchCh      chan bdidx.ChangeDto
-	linuxIfIdxWatchCh chan idxvpp.NameToIdxDto
+	linuxIfIdxWatchCh chan ifaceidx2.LinuxIfIndexDto
 
 	resyncConfigChan chan datasync.ResyncEvent
 	resyncStatusChan chan datasync.ResyncEvent
@@ -130,7 +131,7 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
 	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
-	plugin.linuxIfIdxWatchCh = make(chan idxvpp.NameToIdxDto, 100)
+	plugin.linuxIfIdxWatchCh = make(chan ifaceidx2.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
 	// create plugin context, save cancel function into the plugin handle

@@ -21,23 +21,20 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 )
 
-const ipAddressKey = "ipAddrKey"
-
 // Cache the VETH interfaces of a particular agent by watching transport. If change appears, it is registered in
 // idx map
-func Cache(watcher datasync.Watcher, caller core.PluginName) idxvpp.NameToIdxRW {
+func Cache(watcher datasync.Watcher, caller core.PluginName) LinuxIfIndex {
 	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
-	linuxIfIdx := nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata)
+	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),
-		IDX:           linuxIfIdx,
+		IDX:           linuxIfIdx.GetMapping(),
 		DataPrototype: &linux_ifaces.LinuxInterfaces_Interface{Name: "linux_iface"},
 		ParseName:     ParseNameFromKey,
 	}
@@ -45,21 +42,6 @@ func Cache(watcher datasync.Watcher, caller core.PluginName) idxvpp.NameToIdxRW 
 	go helper.DoWatching(resyncName, watcher)
 
 	return linuxIfIdx
-}
-
-// IndexMetadata creates indexes for metadata. Index for IPAddress will be created
-func IndexMetadata(metaData interface{}) map[string][]string {
-	indexes := map[string][]string{}
-	ifMeta, ok := metaData.(*linux_ifaces.LinuxInterfaces_Interface)
-	if !ok || ifMeta == nil {
-		return indexes
-	}
-
-	ip := ifMeta.IpAddresses
-	if ip != nil {
-		indexes[ipAddressKey] = ip
-	}
-	return indexes
 }
 
 // ParseNameFromKey returns suffix of the key (name)

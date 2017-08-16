@@ -26,8 +26,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/flavors/linuxlocal"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
@@ -100,9 +98,9 @@ type ExamplePlugin struct {
 	agent1           datasync.TransportAdapter
 	agent2           datasync.TransportAdapter
 
-	linuxIfIdxLocal  idxvpp.NameToIdxRW
-	linuxIfIdxAgent1 idxvpp.NameToIdxRW
-	linuxIfIdxAgent2 idxvpp.NameToIdxRW
+	linuxIfIdxLocal  linux_if.LinuxIfIndex
+	linuxIfIdxAgent1 linux_if.LinuxIfIndex
+	linuxIfIdxAgent2 linux_if.LinuxIfIndex
 	wg               sync.WaitGroup
 	cancel           context.CancelFunc
 }
@@ -122,11 +120,11 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.agent1, PluginID)
 	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.agent2, PluginID)
 	// Init chan to sent watch updates
-	linuxIfIdxChan := make(chan idxvpp.NameToIdxDto)
+	linuxIfIdxChan := make(chan linux_if.LinuxIfIndexDto)
 	// Register all agents (incl. local) to watch name-to-idx mapping changes
-	plugin.linuxIfIdxLocal.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
-	plugin.linuxIfIdxAgent1.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
-	plugin.linuxIfIdxAgent2.Watch(PluginID, nametoidx.ToChan(linuxIfIdxChan))
+	plugin.linuxIfIdxLocal.WatchNameToIdx(PluginID, linuxIfIdxChan)
+	plugin.linuxIfIdxAgent1.WatchNameToIdx(PluginID, linuxIfIdxChan)
+	plugin.linuxIfIdxAgent2.WatchNameToIdx(PluginID, linuxIfIdxChan)
 
 	log.Info("Initialization of the example plugin has completed")
 
@@ -181,7 +179,7 @@ func (plugin *ExamplePlugin) publish() error {
 }
 
 // Uses the NameToIndexMapping to watch changes
-func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan idxvpp.NameToIdxDto) (err error) {
+func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan linux_if.LinuxIfIndexDto) (err error) {
 	var watching = true
 	for watching {
 		select {
