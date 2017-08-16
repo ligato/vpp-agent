@@ -67,8 +67,9 @@ Log All SSH Outputs
     ...                       Logs all connections outputs
     [Timeout]                 120s
     :FOR    ${id}    IN    @{NODES}
-    \    Log ${id}_term Output
-    \    Log ${id}_vat Output
+    \    Log ${id} Output
+    \    Run Keyword If    "vpp" in ${id}    Log ${id}_term Output
+    \    Run Keyword If    "vpp" in ${id}    Log ${id}_vat Output          
     Log docker Output
 
 Log ${machine} Output

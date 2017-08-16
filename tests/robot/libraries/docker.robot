@@ -9,20 +9,31 @@ Library       RequestsLibrary
 ${timeout_etcd}=      30s
 
 *** Keywords ***
+Add Agent Node
+    [Arguments]    ${node}
+    Log Many       ${node}
+    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
+    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
+    Append To List    ${NODES}    ${node}
+    Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
+    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Log List    ${NODES}
+
 Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
     Log Many       ${node}    ${vswitch}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${AGENT_VPP_1_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     vpp_term: Open VPP Terminal    ${node}
     vat_term: Open VAT Terminal    ${node}
-
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
@@ -34,7 +45,7 @@ Add Agent VPP Node With Physical Int
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${AGENT_VPP_1_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params}  ${${node}_DOCKER_IMAGE}
     ${devs}=               Set Variable    ${EMPTY}
     :FOR    ${int_num}    IN    @{int_nums}
     \    ${devs}=    Set Variable    ${devs}${\n}dev ${DOCKER_PHYSICAL_INT_${int_num}}
@@ -50,7 +61,6 @@ Add Agent VPP Node With Physical Int
     Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     vpp_term: Open VPP Terminal    ${node}
     vat_term: Open VAT Terminal    ${node}
-
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
     ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
@@ -64,17 +74,25 @@ Remove All Nodes
 
 Remove Node
     [Arguments]    ${node}
+    Log    ${node}
     ${log}=    Execute On Machine    docker    ${DOCKER_COMMAND} logs --details -t ${node}    log=false
     Append To File    ${RESULTS_FOLDER}/output_${node}_container_agent.log    ${log}
     Log ${node} Output
     Switch Connection    ${node}
     Close Connection
-    Switch Connection    ${node}_term
-    Close Connection
-    Switch Connection    ${node}_vat
-    Close Connection
+    Run Keyword If    "vpp" in ${node}    Remove VPP Connections    ${node}
     Remove Values From List    ${NODES}    ${node}
     Execute On Machine    docker    ${DOCKER_COMMAND} rm -f ${node}
+
+Remove VPP Connections
+    [Arguments]    ${node}
+    Log    ${node}
+    Log ${node}_term Output
+    Switch Connection    ${node}_term
+    Close Connection
+    Log ${node}_vat Output
+    Switch Connection    ${node}_vat
+    Close Connection
    
 Check ETCD Running
     ${out}=   Write To Machine    docker     ${DOCKER_COMMAND} exec -it etcd etcdctl version
