@@ -80,7 +80,7 @@ Remove Node
     Log ${node} Output
     Switch Connection    ${node}
     Close Connection
-    Run Keyword If    "vpp" in ${node}    Remove VPP Connections    ${node}
+    Run Keyword If    "vpp" in "${node}"    Remove VPP Connections    ${node}
     Remove Values From List    ${NODES}    ${node}
     Execute On Machine    docker    ${DOCKER_COMMAND} rm -f ${node}
 
