@@ -306,8 +306,8 @@ var (
 	routeThroughMemif1 = l3.StaticRoutes_Route{
 		Description: "Description",
 		VrfId:       0,
-		DstIpAddr:   "192.168.2.1",
-		NextHopAddr: memif1AsMaster.IpAddresses[0],
+		DstIpAddr:   "192.168.2.1/32",
+		NextHopAddr: "192.168.1.1", // Memif1AsMaster
 		Weight:      5,
 	}
 )

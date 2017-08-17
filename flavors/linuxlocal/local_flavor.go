@@ -17,8 +17,11 @@ package linuxlocal
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
-	"github.com/ligato/cn-infra/flavors/generic"
+	"github.com/ligato/cn-infra/httpmux"
+	"github.com/ligato/cn-infra/logging/logmanager"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/cn-infra/statuscheck"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -28,9 +31,12 @@ import (
 // Flavor glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
 type Flavor struct {
 	injected         bool
-	Generic          generic.Flavor
-	Etcd             etcdv3.Plugin
+	Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
+	HTTP             httpmux.Plugin
+	LogManager       logmanager.Plugin
+	ServiceLabel     servicelabel.Plugin
+	StatusCheck      statuscheck.Plugin
 	Resync           resync.Plugin
 	GoVPP            govppmux.GOVPPPlugin
 	Linux            linuxplugin.Plugin
@@ -43,22 +49,20 @@ func (f *Flavor) Inject() error {
 		return nil
 	}
 	f.injected = true
-	f.Generic.Inject()
-
-	f.Etcd.LogFactory = &f.Generic.Logrus
-	f.Etcd.ServiceLabel = &f.Generic.ServiceLabel
-	f.Etcd.StatusCheck = &f.Generic.StatusCheck
-
-	f.GoVPP.StatusCheck = &f.Generic.StatusCheck
-	f.GoVPP.LogFactory = &f.Generic.Logrus
-	f.VPP.ServiceLabel = &f.Generic.ServiceLabel
+	f.HTTP.LogFactory = &f.Logrus
+	f.LogManager.ManagedLoggers = &f.Logrus
+	f.LogManager.HTTP = &f.HTTP
+	f.StatusCheck.HTTP = &f.HTTP
+	f.GoVPP.StatusCheck = &f.StatusCheck
+	f.GoVPP.LogFactory = &f.Logrus
+	f.VPP.ServiceLabel = &f.ServiceLabel
 	f.VPP.Linux = &f.Linux
 	f.VPP.GoVppmux = &f.GoVPP
 
 	return nil
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins + (their ETCD Connector/Adapter with RESYNC)
+// Plugins combines Generic Plugins and Standard VPP Plugins
 func (f *Flavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
