@@ -15,17 +15,17 @@
 package defaultplugins
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"strconv"
-	"strings"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -298,7 +298,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.bdIndexes.WatchNameToIdx(PluginID, plugin.bdIdxWatchCh)
 	log.Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.Watch(PluginID, nametoidx.ToChan(plugin.linuxIfIdxWatchCh))
+		plugin.linuxIfIndexes.WatchNameToIdx(PluginID, plugin.linuxIfIdxWatchCh)
 		log.Debug("linuxIfIndexes watch registration finished")
 	}
 
