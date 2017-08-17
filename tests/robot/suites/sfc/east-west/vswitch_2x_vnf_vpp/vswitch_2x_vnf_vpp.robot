@@ -60,7 +60,7 @@ Show Interfaces And Other Objects After Config
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
     Execute In Container    agent_vpp_2    ip a
-    Execute In Container    agent_vpp_3    ip a
+    Execute In Container    agent_1    ip a
 
 Check Ping Agnet2 -> Agent3
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
