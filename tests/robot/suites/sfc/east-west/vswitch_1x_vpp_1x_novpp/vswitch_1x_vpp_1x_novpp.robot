@@ -27,7 +27,7 @@ Configure Environment
     Sleep    ${SYNC_SLEEP}
 
 Check Ints On Vswitch
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
 # veth check not supported yet
     vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
 
@@ -76,7 +76,7 @@ Start Agent Nodes Again
     Sleep    ${SYNC_SLEEP}
 
 Check Ints On Vswitch After Resync
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
 # veth check not supported yet
     vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
 
