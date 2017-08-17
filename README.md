@@ -21,10 +21,11 @@ platform for developing customized VNFs with customized VPP-based data.
 The VPP Agent is basically a set of VPP-specific plugins that use the 
 CN-Infra platform to interact with other services / microservices in the
 cloud (e.g. a KV data store, messaging, log warehouse, etc.). The VPP Agent
-provides a model-driven, high-level API to VPP functionality. Clients that
-consume this API may be external (via REST or gRPC API, Etcd or a message
-bus), or other other App/Extension plugins in a larger CN-Infra based 
-application/VNF. 
+exposes VPP functionality to client apps via a higher-level model-driven 
+API. Clients that consume this API may be either external (connecting to 
+the VPP Agent via REST, gRPC API, Etcd or message bus transport), or local
+Apps and/or Extension plugins running on the same CN-Infra platform in the 
+same Linux process. 
 
 The VNF Agent architecture is shown in the following figure: 
 
