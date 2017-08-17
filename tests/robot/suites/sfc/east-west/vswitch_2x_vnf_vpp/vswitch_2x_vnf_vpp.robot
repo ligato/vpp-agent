@@ -27,8 +27,8 @@ Configure Environment
     Sleep    ${SYNC_SLEEP}
 
 Check Memifs On Vswitch
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
 
 Check Memif Interface On VPP2
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
@@ -82,8 +82,8 @@ Start Agent Nodes Again
     Sleep    ${SYNC_SLEEP}
 
 Check Memifs On Vswitch After Resync
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
 
 Check Memif Interface On VPP2 After Resync
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
