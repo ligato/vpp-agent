@@ -22,7 +22,7 @@ Configure Environment
     [Tags]    setup
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
-    Add Agent VPP Node    agent_1
+    Add Agent Node    agent_1
     Start SFC Controller Container With Own Config    basic.conf
     Sleep    ${SYNC_SLEEP}
 
@@ -72,7 +72,7 @@ Remove Agent Nodes
 Start Agent Nodes Again
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
-    Add Agent VPP Node    agent_1
+    Add Agent Node    agent_1
     Sleep    ${SYNC_SLEEP}
 
 Check Ints On Vswitch After Resync
