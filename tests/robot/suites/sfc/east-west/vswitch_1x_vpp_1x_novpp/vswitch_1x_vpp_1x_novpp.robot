@@ -29,7 +29,7 @@ Configure Environment
 Check Ints On Vswitch
     vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
 # veth check not supported yet
-    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_afpacket1    enabled=1
 
 Check Memif Interface On VPP2
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
@@ -78,7 +78,7 @@ Start Agent Nodes Again
 Check Ints On Vswitch After Resync
     vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
 # veth check not supported yet
-    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_afpacket1    enabled=1
 
 Check Memif Interface On VPP2 After Resync
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
