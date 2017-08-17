@@ -26,6 +26,10 @@ Configure Environment
     Start SFC Controller Container With Own Config    basic.conf
     Sleep    ${SYNC_SLEEP}
 
+Check Memifs On Vswitch
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  conencted=1  enabled=1
+
 Check Memif Interface On VPP2
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
 
@@ -60,7 +64,7 @@ Show Interfaces And Other Objects
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
     Execute In Container    agent_vpp_2    ip a
-    Execute In Container    agent_1    ip a
+    Execute In Container    agent_vpp_3    ip a
 
 Check Ping Agnet2 -> Agent3
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
@@ -76,6 +80,10 @@ Start Agent Nodes Again
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
     Sleep    ${SYNC_SLEEP}
+
+Check Memifs On Vswitch After Resync
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  conencted=1  enabled=1
+    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  conencted=1  enabled=1
 
 Check Memif Interface On VPP2 After Resync
     vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
@@ -111,7 +119,7 @@ Show Interfaces And Other Objects After Resync
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
     Execute In Container    agent_vpp_2    ip a
-    Execute In Container    agent_1    ip a
+    Execute In Container    agent_vpp_3    ip a
 
 Check Ping Agnet2 -> Agent3 After Resync
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
