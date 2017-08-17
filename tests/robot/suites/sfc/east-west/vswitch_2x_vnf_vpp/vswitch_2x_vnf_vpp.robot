@@ -20,7 +20,6 @@ ${SYNC_SLEEP}=         10s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
-    Start SFC Controller Container With Own Config    basic.conf
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
@@ -33,7 +32,7 @@ Check Memif Interface On VPP2
 Check Memif Interface On VPP3
     vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1 
 
-Show Interfaces And Other Objects After Config
+Show Interfaces And Other Objects
     vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_2
     vpp_term: Show Interfaces    agent_vpp_3
@@ -67,6 +66,57 @@ Check Ping Agnet2 -> Agent3
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
 
 Check Ping Agnet3 -> Agent2
+    vpp_term: Check Ping    agent_vpp_3    10.0.0.1
+
+Remove Agent Nodes
+    Remove All Nodes
+
+Start Agent Nodes Again
+    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    Add Agent VPP Node    agent_vpp_2
+    Add Agent VPP Node    agent_vpp_3
+    Sleep    ${SYNC_SLEEP}
+
+Check Memif Interface On VPP2 After Resync
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
+
+Check Memif Interface On VPP3 After Resync
+    vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1
+
+Show Interfaces And Other Objects After Resync
+    vpp_term: Show Interfaces    agent_vpp_1
+    vpp_term: Show Interfaces    agent_vpp_2
+    vpp_term: Show Interfaces    agent_vpp_3
+    Write To Machine    agent_vpp_1_term    show int addr
+    Write To Machine    agent_vpp_2_term    show int addr
+    Write To Machine    agent_vpp_3_term    show int addr
+    Write To Machine    agent_vpp_1_term    show h
+    Write To Machine    agent_vpp_2_term    show h
+    Write To Machine    agent_vpp_3_term    show h
+    Write To Machine    agent_vpp_1_term    show br
+    Write To Machine    agent_vpp_2_term    show br
+    Write To Machine    agent_vpp_3_term    show br
+    Write To Machine    agent_vpp_1_term    show br 1 detail
+    Write To Machine    agent_vpp_2_term    show br 1 detail
+    Write To Machine    agent_vpp_3_term    show br 1 detail
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Write To Machine    agent_vpp_2_term    show vxlan tunnel
+    Write To Machine    agent_vpp_3_term    show vxlan tunnel
+    Write To Machine    agent_vpp_1_term    show err
+    Write To Machine    agent_vpp_2_term    show err
+    Write To Machine    agent_vpp_3_term    show err
+    vat_term: Interfaces Dump    agent_vpp_1
+    vat_term: Interfaces Dump    agent_vpp_2
+    vat_term: Interfaces Dump    agent_vpp_3
+    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
+    Execute In Container    agent_vpp_1    ip a
+    Execute In Container    agent_vpp_2    ip a
+    Execute In Container    agent_1    ip a
+
+Check Ping Agnet2 -> Agent3 After Resync
+    vpp_term: Check Ping    agent_vpp_2    10.0.0.10
+
+Check Ping Agnet3 -> Agent2 After Resync
     vpp_term: Check Ping    agent_vpp_3    10.0.0.1
 
 Done
