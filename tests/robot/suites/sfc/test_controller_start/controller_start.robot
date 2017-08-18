@@ -14,7 +14,7 @@ Suite Teardown    Suite Cleanup
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${FINAL_SLEEP}=        30m
+${FINAL_SLEEP}=        3s
 
 *** Test Cases ***
 Configure Environment

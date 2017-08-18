@@ -20,7 +20,8 @@ ${ENV}=                common
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
-    Add Agent VPP Node With Physical Int    agent_vpp_1    1    2
+    ${phys_ints}=    Create List    1    2
+    Add Agent VPP Node With Physical Int    agent_vpp_1    ${phys_ints}
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
