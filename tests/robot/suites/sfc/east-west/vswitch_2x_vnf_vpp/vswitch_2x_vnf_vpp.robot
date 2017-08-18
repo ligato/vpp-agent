@@ -65,6 +65,7 @@ Show Interfaces And Other Objects
     Execute In Container    agent_vpp_1    ip a
     Execute In Container    agent_vpp_2    ip a
     Execute In Container    agent_vpp_3    ip a
+    Make Datastore Snapshots    before_resync
 
 Check Ping Agnet2 -> Agent3
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
