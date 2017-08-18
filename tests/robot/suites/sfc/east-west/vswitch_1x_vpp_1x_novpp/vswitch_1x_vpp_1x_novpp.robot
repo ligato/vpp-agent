@@ -61,10 +61,10 @@ Show Interfaces And Other Objects
     Execute In Container    agent_1    ip a
     Make Datastore Snapshots    before_resync
 
-Check Ping Agnet2 -> Agent3
+Check Ping VPP2 -> Agent1
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
 
-Check Ping Agnet3 -> Agent2
+Check Ping Agnet1 -> VPP2
     linux: Check Ping    agent_1    10.0.0.1
 
 Remove Agent Nodes
@@ -110,10 +110,10 @@ Show Interfaces And Other Objects After Resync
     Execute In Container    agent_vpp_2    ip a
     Execute In Container    agent_1    ip a
 
-Check Ping Agnet2 -> Agent3 After Resync
+Check Ping VPP2 -> Agent1 After Resync
     vpp_term: Check Ping    agent_vpp_2    10.0.0.10
 
-Check Ping Agnet3 -> Agent2 After Resync
+Check Ping Agnet1 -> VPP2 After Resync
     linux: Check Ping    agent_1    10.0.0.1
 
 Done
