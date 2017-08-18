@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavors/linuxlocal"
+	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
@@ -59,7 +59,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := linuxlocal.Flavor{}
+	flavor := vpp.Flavor{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{
 		Linux: &flavor.Linux,
