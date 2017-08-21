@@ -157,3 +157,8 @@ Add VPP Agent ${node}
 Start VPP On Node ${node}
     Log     ${node}
     Execute In Container    ${node}   vpp unix { cli-listen localhost:5002 } plugins { plugin dpdk_plugin.so { disable } } &
+    Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    vpp_term: Open VPP Terminal    ${node}
+    vat_term: Open VAT Terminal    ${node}
+
