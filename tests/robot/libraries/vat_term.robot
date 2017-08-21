@@ -163,6 +163,29 @@ vat_term: Check Physical Interface State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
+vat_term: Check Loopback Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    Log Many             ${node}    ${name}    ${desired_state}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${internal_index}=   vat_term: Get Interface Index    ${node}    ${internal_name}
+    Log                  ${internal_index}
+    ${interfaces}=       vat_term: Interfaces Dump    ${node}
+    Log                  ${interfaces}
+    ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
+    Log                  ${int_state}
+    ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${enabled}=          Set Variable    ${int_state["admin_up_down"]}
+    ${mtu}=              Set Variable    ${int_state["mtu"]}
+    ${dec_mac}=          Set Variable    ${int_state["l2_address"]}
+    ${mac}=              Convert Dec MAC To Hex    ${dec_mac}
+    ${actual_state}=     Create List    enabled=${enabled}    mtu=${mtu}    mac=${mac}
+    :FOR    ${ip}    IN    @{ipv4_list}
+    \    Append To List    ${actual_state}    ipv4=${ip}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
 vat_term: Check Memif Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Log Many             ${node}    ${name}    ${desired_state}
