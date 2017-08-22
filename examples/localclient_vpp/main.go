@@ -36,8 +36,8 @@ import (
 
 // init sets the default logging level
 func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logging.DebugLevel)
+	log.DefaultLogger().SetOutput(os.Stdout)
+	log.DefaultLogger().SetLevel(logging.DebugLevel)
 }
 
 /********
@@ -54,7 +54,7 @@ func main() {
 	// Example plugin
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
-	agentVar := agent.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+	agentVar := agent.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)
@@ -65,7 +65,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -93,7 +93,7 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)
 
-	log.Info("Initialization of the example plugin has completed")
+	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
@@ -102,7 +102,7 @@ func (plugin *ExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.Info("Closed example plugin")
+	log.DefaultLogger().Info("Closed example plugin")
 	return nil
 }
 
@@ -115,9 +115,9 @@ func (plugin *ExamplePlugin) resyncVPP() {
 		StaticRoute(&routeThroughMemif1).
 		Send().ReceiveReply()
 	if err != nil {
-		log.Errorf("Failed to apply initial VPP configuration: %v", err)
+		log.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
 	} else {
-		log.Info("Successfully applied initial VPP configuration")
+		log.DefaultLogger().Info("Successfully applied initial VPP configuration")
 	}
 }
 
@@ -145,13 +145,13 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
-			log.Errorf("Failed to reconfigure VPP: %v", err)
+			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
 		} else {
-			log.Info("Successfully reconfigured VPP")
+			log.DefaultLogger().Info("Successfully reconfigured VPP")
 		}
 	case <-ctx.Done():
 		// cancel the scheduled re-configuration
-		log.Info("Planned VPP re-configuration was canceled")
+		log.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
 }
