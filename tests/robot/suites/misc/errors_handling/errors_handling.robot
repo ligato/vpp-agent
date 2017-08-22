@@ -17,7 +17,8 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${MAC_GOOD}=      a2:01:01:01:01:01
-${MAC_BAD}=       a2:01:01:01:01:01:xy
+${MAC_BAD1}=       a2:01:01:01:01:01:xy
+${MAC_BAD2}=       a2:01:01:01:01:01:zz
 
 *** Test Cases ***
 Configure Environment
@@ -38,8 +39,8 @@ Interface Should Not Be Present
     Should Be Empty    ${out}
 
 Add Memif With Wrong MAC
-    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
-    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_BAD}
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD1}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
+    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_BAD1}
     ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
     Log Many    ${int_error_key}
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
@@ -57,7 +58,7 @@ Correct MAC In Memif
     Should Be Empty    ${out}
 
 Set Wrong MAC To Memif Again
-    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD2}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MAC_GOOD}   
     ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
     ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
