@@ -14,7 +14,7 @@ Execute On Machine     [Arguments]              ${machine}               ${comma
                        Switch Connection        ${machine}
                        ${out}   ${stderr}=      Execute Command          ${command}    return_stderr=True
                        Log Many                 ${out}                   ${stderr}
-                       ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
+                       ${status}=               Run Keyword And Return Status    Should Be Empty    ${stderr}
                        Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} on ${machine}    level=WARN
                        Run Keyword If           '${log}'=='true'         Append To File    ${RESULTS_FOLDER}/output_${machine}.log    *** Command: ${command}${\n}${out}${\n}*** Error: ${stderr}${\n}
                        [Return]                 ${out}
