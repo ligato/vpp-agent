@@ -20,8 +20,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 )
 

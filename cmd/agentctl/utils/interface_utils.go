@@ -17,11 +17,12 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
 // Interface flag names
