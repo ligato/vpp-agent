@@ -55,6 +55,7 @@ type StaticRoutes_Ip_NextHop struct {
 	Address           string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	OutgoingInterface string `protobuf:"bytes,2,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
 	Weight            uint32 `protobuf:"varint,3,opt,name=weight,proto3" json:"weight,omitempty"`
+	Preference        uint32 `protobuf:"varint,4,opt,name=preference,proto3" json:"preference,omitempty"`
 }
 
 func (m *StaticRoutes_Ip_NextHop) Reset()         { *m = StaticRoutes_Ip_NextHop{} }

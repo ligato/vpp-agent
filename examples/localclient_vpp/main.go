@@ -338,8 +338,9 @@ var (
 				DestinationAddress: "192.168.2.1",
 				NextHops: []*l3.StaticRoutes_Ip_NextHop{
 					{
-						Address: memif1AsMaster.IpAddresses[0],
-						Weight:  5,
+						Address:    memif1AsMaster.IpAddresses[0],
+						Weight:     5,
+						Preference: 1,
 					},
 				},
 			},

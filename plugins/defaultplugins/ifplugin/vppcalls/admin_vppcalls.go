@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 )
