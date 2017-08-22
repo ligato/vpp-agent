@@ -457,7 +457,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// TODO vrf not implemented yet
 		}
 	} else {
-		log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
+		log.DefaultLogger().Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
 	return false, nil
 }

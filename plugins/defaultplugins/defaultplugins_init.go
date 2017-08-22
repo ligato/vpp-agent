@@ -48,7 +48,7 @@ type Plugin struct {
 	Watcher      datasync.KeyValProtoWatcher
 	ServiceLabel *servicelabel.Plugin
 	GoVppmux     *govppmux.GOVPPPlugin
-	Kafka        kafka.Mux
+	Kafka        *kafka.Plugin
 	Linux        *linuxplugin.Plugin
 	//TODO Kafka PubSub `inject:""` instead of kafkaConn
 
@@ -91,8 +91,8 @@ type Plugin struct {
 	changeChan       chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	kafkaConn        *mux.Connection
 
-	watchConfigReg datasync.WatchDataRegistration
-	watchStatusReg datasync.WatchDataRegistration
+	watchConfigReg datasync.WatchRegistration
+	watchStatusReg datasync.WatchRegistration
 
 	errorChannel chan ErrCtx
 	errorIdxSeq  uint32
@@ -118,9 +118,7 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	log.DefaultLogger().Debug("Initializing interface plugin")
 
-	if plugin.Kafka != nil {
-		plugin.kafkaConn = plugin.Kafka.NewConnection(string(PluginID))
-	}
+	plugin.kafkaConn = plugin.Kafka.NewConnection(string(PluginID))
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)

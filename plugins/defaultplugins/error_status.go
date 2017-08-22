@@ -15,13 +15,13 @@
 package defaultplugins
 
 import (
+	"strings"
+	"time"
+
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"strings"
-	"time"
 )
 
 // ErrCtx is an error context struct which stores event change with object identifier (name, etc) and returned error (can be nil)
