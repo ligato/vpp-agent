@@ -17,11 +17,12 @@ package linuxlocal
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/logging/logmanager"
+	"github.com/ligato/cn-infra/rpc/rest"
+
+	"github.com/ligato/cn-infra/flavors/local"
 	//"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -30,13 +31,15 @@ import (
 
 // Flavor glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
 type Flavor struct {
+	Local  local.FlavorLocal
+
 	injected         bool
 	//Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
 	HTTP             rest.Plugin
 	LogManager       logmanager.Plugin
 	ServiceLabel     servicelabel.Plugin
-	StatusCheck      statuscheck.Plugin
+
 	Resync           resync.Plugin
 	GoVPP            govppmux.GOVPPPlugin
 	Linux            linuxplugin.Plugin
@@ -49,13 +52,13 @@ func (f *Flavor) Inject() error {
 		return nil
 	}
 	f.injected = true
-	//f.HTTP.LogFactory = &f.Logrus
-	//f.LogManager.ManagedLoggers = &f.Logrus
-	f.LogManager.HTTP = &f.HTTP
-	//f.StatusCheck.HTTP = &f.HTTP
-	f.GoVPP.StatusCheck = &f.StatusCheck
-	//f.GoVPP.LogFactory = &f.Logrus
-	f.VPP.ServiceLabel = &f.ServiceLabel
+
+
+	f.Local.Inject()
+
+	f.GoVPP.StatusCheck = &f.Local.StatusCheck
+	f.GoVPP.Deps.PluginInfraDeps = *f.Local.InfraDeps("GOVPP")
+	f.VPP.Deps.PluginInfraDeps = *f.Local.InfraDeps("default-plugins")
 	f.VPP.Linux = &f.Linux
 	f.VPP.GoVppmux = &f.GoVPP
 
