@@ -4,9 +4,9 @@ Library      OperatingSystem
 #Library      SSHLibrary      timeout=60s
 #Library      String
 
-Resource     ../../variables/${VARIABLES}_variables.robot
+Resource     ../../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../libraries/all_libs.robot
+Resource     ../../../libraries/all_libs.robot
 
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
