@@ -29,8 +29,8 @@ Show Interfaces Before Setup
 
 Interface Should Not Be Present
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${AFP1_MAC_GOOD}
-    ${int_key}=    Set Variable    /vnf-agent/${node}/vpp/status/v1/interface/vpp1_afpacket1
-    ${int_error_key}=    Set Variable    /vnf-agent/${node}/vpp/status/v1/interface/error/vpp1_afpacket1
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_afpacket1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_afpacket1
     Log Many    ${int_key}    ${int_error_key}
     ${out}=    vpp_ctl: Read Key    ${int_key}
     Shoud Be Empty    ${out}
