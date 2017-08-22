@@ -16,8 +16,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${AFP1_MAC_GOOD}=           a2:01:01:01:01:01
-${AFP1_MAC_BAD}=           a2:01:01:01:01:01:xy
+${AFP1_MAC_GOOD}=      a2:01:01:01:01:01
+${AFP1_MAC_BAD}=       a2:01:01:01:01:01:xy
 
 *** Test Cases ***
 Configure Environment
@@ -28,7 +28,7 @@ Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
 Interface Should Not Be Present
-    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${AFP1_MAC}
+    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${AFP1_MAC_GOOD}
     ${int_key}=    Set Variable    /vnf-agent/${node}/vpp/status/v1/interface/vpp1_afpacket1
     ${int_error_key}=    Set Variable    /vnf-agent/${node}/vpp/status/v1/interface/error/vpp1_afpacket1
     Log Many    ${int_key}    ${int_error_key}
