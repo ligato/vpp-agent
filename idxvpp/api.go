@@ -32,7 +32,7 @@ type NameToIdxDto struct {
 // NameToIdxDtoWithoutMeta is the part of NameToIdxDto that can be reused
 // by indices with typed metadata
 type NameToIdxDtoWithoutMeta struct {
-	idxmap.NamedMappingDtoWithoutMeta
+	idxmap.NamedMappingEvent
 
 	Idx uint32
 }

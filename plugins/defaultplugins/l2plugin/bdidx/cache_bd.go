@@ -25,9 +25,9 @@ import (
 )
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport)
-func Cache(watcher datasync.Watcher, caller core.PluginName) BDIndex {
+func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) BDIndex {
 	resyncName := fmt.Sprintf("bd-cache-%s", watcher)
-	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata))
+	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        l2.BridgeDomainKeyPrefix(),

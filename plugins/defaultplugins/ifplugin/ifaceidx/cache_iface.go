@@ -26,9 +26,9 @@ import (
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport)
 // Beware: the indexes in cache do not correspond to the real indexes.
-func Cache(watcher datasync.Watcher, caller core.PluginName) SwIfIndex {
+func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) SwIfIndex {
 	resyncName := fmt.Sprintf("iface-cache-%s-%s", caller, watcher)
-	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata))
+	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        interfaces.InterfaceKeyPrefix(),

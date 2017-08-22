@@ -64,10 +64,8 @@ func (plugin *GOVPPPlugin) Init() error {
 	// register for providing status reports (push mode)
 	plugin.StatusCheck.Register(PluginID, nil)
 
-	govppLogger, err := plugin.LogFactory.NewLogger("GoVpp")
-	if err != nil {
-		return err
-	}
+	govppLogger := plugin.LogFactory.NewLogger("GoVpp")
+
 	govppLogger.SetLevel(logging.InfoLevel)
 	if logger, ok := govppLogger.(*log.Logger); ok {
 		govpp.SetLogger(logger.StandardLogger())

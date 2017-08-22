@@ -37,11 +37,11 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 
 		_, _, found := plugin.swIfIndexes.LookupIdx(ifaceName)
 		if !found {
-			log.Debug("deleting obsolete status begin ", key)
+			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
 			err := plugin.Transport.PublishData(key, nil /*means delete*/)
-			log.Debug("deleting obsolete status end ", key, err)
+			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
 		} else {
-			log.WithField("ifaceName", ifaceName).Debug("interface status is needed")
+			log.DefaultLogger().WithField("ifaceName", ifaceName).Debug("interface status is needed")
 		}
 	}
 
@@ -62,16 +62,16 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			if plugin.kafkaConn != nil && ifState.Type == intf.UPDOWN {
 				json, err := json.Marshal(ifState.State)
 				if err != nil {
-					log.Error(err)
+					log.DefaultLogger().Error(err)
 				} else {
 
 					// send kafka message
 					_, err = plugin.kafkaConn.SendSyncString(kafkaIfStateTopic,
 						fmt.Sprintf("%s", ifState.State.Name), string(json))
 					if err != nil {
-						log.Error(err)
+						log.DefaultLogger().Error(err)
 					} else {
-						log.Debug("Sending Kafka notification")
+						log.DefaultLogger().Debug("Sending Kafka notification")
 					}
 				}
 			}
@@ -92,11 +92,11 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		}
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
-			log.Debug("deleting obsolete status begin ", key)
+			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
 			err := plugin.Transport.PublishData(key, nil)
-			log.Debug("deleting obsolete status end ", key, err)
+			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
 		} else {
-			log.WithField("bdName", bdName).Debug("bridge domain status required")
+			log.DefaultLogger().WithField("bdName", bdName).Debug("bridge domain status required")
 		}
 	}
 
@@ -116,13 +116,13 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
 					plugin.Transport.PublishData(key, nil)
-					log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
+					log.DefaultLogger().Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
 					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
 					plugin.Transport.PublishData(key, bdState.State)
-					log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
+					log.DefaultLogger().Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
 				} else {
-					log.Warnf("Unable to process bridge domain state with Idx %v and Name %v",
+					log.DefaultLogger().Warnf("Unable to process bridge domain state with Idx %v and Name %v",
 						bdState.State.Index, bdState.State.InternalName)
 				}
 			}

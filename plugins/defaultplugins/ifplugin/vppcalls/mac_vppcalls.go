@@ -43,6 +43,6 @@ func SetInterfaceMac(ifIdx uint32, macAddress string, vppChan *govppapi.Channel)
 	if 0 != reply.Retval {
 		return fmt.Errorf("Adding MAC address returned %d", reply.Retval)
 	}
-	log.WithFields(log.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
+	log.DefaultLogger().WithFields(log.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
 	return nil
 }

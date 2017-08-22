@@ -39,7 +39,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case resyncStatusEv := <-plugin.resyncStatusChan:
 			var wasError error
 			for key, vals := range resyncStatusEv.GetValues() {
-				log.Debugf("trying to delete obsolete status for key %v begin ", key)
+				log.DefaultLogger().Debugf("trying to delete obsolete status for key %v begin ", key)
 				if strings.HasPrefix(key, interfaces.IfStatePrefix) {
 					keys := []string{}
 					for {
@@ -90,7 +90,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.Error(err)
+						log.DefaultLogger().Error(err)
 					}
 				})
 				// TODO propagate error
@@ -98,7 +98,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
 				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.Error(err)
+						log.DefaultLogger().Error(err)
 					}
 				})
 				// TODO propagate error
@@ -119,14 +119,14 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			if !bdIdxEv.IsDelete() {
 				plugin.fibConfigurator.ResolveCreatedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.Error(err)
+						log.DefaultLogger().Error(err)
 					}
 				})
 				// TODO propagate error
 			} else {
 				plugin.fibConfigurator.ResolveDeletedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.Error(err)
+						log.DefaultLogger().Error(err)
 					}
 				})
 				// TODO propagate error
@@ -134,7 +134,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			bdIdxEv.Done()
 
 		case <-ctx.Done():
-			log.Debug("Stop watching events")
+			log.DefaultLogger().Debug("Stop watching events")
 			return
 		}
 	}
