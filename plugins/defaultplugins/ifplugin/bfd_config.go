@@ -42,7 +42,7 @@ import (
 type BFDConfigurator struct {
 	GoVppmux     *govppmux.GOVPPPlugin
 	SwIfIndexes  ifaceidx.SwIfIndex
-	ServiceLabel *servicelabel.Plugin
+	ServiceLabel servicelabel.ReaderAPI
 	BfdIDSeq     uint32
 	// Base mappings
 	bfdSessionsIndexes   idxvpp.NameToIdxRW
@@ -56,8 +56,7 @@ type BFDConfigurator struct {
 // Init members and channels
 func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKeyIndexes idxvpp.NameToIdxRW, bfdEchoFunctionIndex idxvpp.NameToIdxRW,
 	bfdRemovedAuthIndex idxvpp.NameToIdxRW) (err error) {
-	vppLabel := plugin.ServiceLabel.GetAgentLabel()
-	log.DefaultLogger().WithField("vppLabel", vppLabel).Debug("Initializing BFD configurator")
+	log.DefaultLogger().WithField("vppLabel", plugin.ServiceLabel).Debug("Initializing BFD configurator")
 	plugin.bfdSessionsIndexes = bfdSessionIndexes
 	plugin.bfdKeysIndexes = bfdKeyIndexes
 	plugin.bfdEchoFunctionIndex = bfdEchoFunctionIndex

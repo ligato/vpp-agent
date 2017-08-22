@@ -81,7 +81,7 @@ func resyncAppendInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	log.DefaultLogger().Debug("subscribeWatcher begin")
 
-	plugin.watchDataReg, err = plugin.watcher.
+	plugin.watchDataReg, err = plugin.Watcher.
 		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan, interfaces.InterfaceKeyPrefix())
 	if err != nil {
 		return err

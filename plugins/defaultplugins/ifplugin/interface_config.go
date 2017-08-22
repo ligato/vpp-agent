@@ -50,7 +50,7 @@ import (
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
 	GoVppmux     *govppmux.GOVPPPlugin
-	ServiceLabel *servicelabel.Plugin
+	ServiceLabel servicelabel.ReaderAPI
 	Linux        *linuxplugin.Plugin
 
 	swIfIndexes ifaceidx.SwIfIndexRW

@@ -293,16 +293,16 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 // put here all registration for above channel select (it ensures proper order during initialization
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	log.DefaultLogger().Debug("subscribeWatcher begin")
-	plugin.swIfIndexes.WatchNameToIdx(PluginID, plugin.ifIdxWatchCh)
+	plugin.swIfIndexes.WatchNameToIdx(plugin.id, plugin.ifIdxWatchCh)
 	log.DefaultLogger().Debug("swIfIndexes watch registration finished")
-	plugin.bdIndexes.WatchNameToIdx(PluginID, plugin.bdIdxWatchCh)
+	plugin.bdIndexes.WatchNameToIdx(plugin.id, plugin.bdIdxWatchCh)
 	log.DefaultLogger().Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.WatchNameToIdx(PluginID, plugin.linuxIfIdxWatchCh)
+		plugin.linuxIfIndexes.WatchNameToIdx(plugin.id, plugin.linuxIfIdxWatchCh)
 		log.DefaultLogger().Debug("linuxIfIndexes watch registration finished")
 	}
 
-	plugin.watchConfigReg, err = plugin.Watcher.
+	plugin.watchConfigReg, err = plugin.Watch.
 		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
 			acl.KeyPrefix(),
 			intf.InterfaceKeyPrefix(),
@@ -316,7 +316,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	plugin.watchStatusReg, err = plugin.Watcher.
+	plugin.watchStatusReg, err = plugin.Watch.
 		Watch("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
 			intf.InterfaceStateKeyPrefix(), l2.BridgeDomainStateKeyPrefix())
 	if err != nil {

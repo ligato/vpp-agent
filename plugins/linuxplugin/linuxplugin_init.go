@@ -33,7 +33,7 @@ const PluginID core.PluginName = "linuxplugin"
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	watcher datasync.KeyValProtoWatcher // data watcher adapter
+	Watcher datasync.KeyValProtoWatcher // data watcher adapter
 
 	ifIndexes      ifaceidx.LinuxIfIndexRW
 	ifConfigurator *LinuxInterfaceConfigurator
