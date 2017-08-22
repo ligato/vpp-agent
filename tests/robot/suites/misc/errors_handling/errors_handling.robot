@@ -16,8 +16,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${AFP1_MAC_GOOD}=      a2:01:01:01:01:01
-${AFP1_MAC_BAD}=       a2:01:01:01:01:01:xy
+${MAC_GOOD}=      a2:01:01:01:01:01
+${MAC_BAD}=       a2:01:01:01:01:01:xy
 
 *** Test Cases ***
 Configure Environment
@@ -28,17 +28,17 @@ Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
 Interface Should Not Be Present
-    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${AFP1_MAC_GOOD}
-    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_afpacket1
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_afpacket1
+    vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_GOOD}
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
     Log Many    ${int_key}    ${int_error_key}
     ${out}=    vpp_ctl: Read Key    ${int_key}
     Should Be Empty    ${out}
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
     Should Be Empty    ${out}
 
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
 
-    vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=${AFP1_MAC_BAD}    host_int=vpp1_veth2
 
 test_end
    sleep   5
