@@ -15,7 +15,7 @@ if [ ! -d "$VPP_CACHE_DIR" ]; then
     yes | make install-dep     
     make bootstrap     
     make pkg-deb
-    cd $(WORKDIR}
+    cd ${WORKDIR}
 
     # copy deb packages to cache dir
     mkdir $VPP_CACHE_DIR
