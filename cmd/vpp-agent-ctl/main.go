@@ -26,6 +26,9 @@ import (
 
 	"github.com/namsral/flag"
 
+	"net"
+
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
@@ -39,7 +42,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
-	"net"
 )
 
 var (
@@ -48,7 +50,7 @@ var (
 )
 
 func main() {
-	log = logroot.Logger()
+	log = logroot.StandardLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 
@@ -393,7 +395,7 @@ func etcdDump(bDB *etcdv3.BytesConnectionEtcd, key string) {
 }
 
 func etcdDel(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	found, err := bDB.Delete(key, keyval.WithPrefix())
+	found, err := bDB.Delete(key, datasync.WithPrefix())
 	if err != nil {
 		log.Error(err)
 		return

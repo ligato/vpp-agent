@@ -28,7 +28,7 @@ import (
 func main() {
 
 	f := vpp_flavor.Flavor{}
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, f.Plugins()...)
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, f.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
 	if err != nil {
@@ -37,6 +37,6 @@ func main() {
 }
 
 func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logging.DebugLevel)
+	log.DefaultLogger().SetOutput(os.Stdout)
+	log.DefaultLogger().SetLevel(logging.DebugLevel)
 }
