@@ -168,7 +168,7 @@ func (*SwInterfaceEvent) GetMessageName() string {
 	return "sw_interface_event"
 }
 func (*SwInterfaceEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.ReplyMessage // TODO: govpp needs to be fixed to guess the type of this message correctly
 }
 func (*SwInterfaceEvent) GetCrcString() string {
 	return "bf7f46f2"
