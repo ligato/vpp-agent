@@ -16,11 +16,14 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+
+	"strings"
+
 	"git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
-	"net"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
@@ -163,18 +166,21 @@ func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.ACLRule, 
 		if rule.Matches != nil && rule.Matches.IpRule != nil {
 			// Concerned to ip rules only
 			ipRule := rule.Matches.IpRule
+			// L3
 			if ipRule.Ip != nil {
 				aclRule, err = ipACL(ipRule.Ip, aclRule)
 				if err != nil {
 					return aclIPRules, err
 				}
-			} else if ipRule.Icmp != nil {
+			}
+			// ICMP/L4
+			if ipRule.Icmp != nil {
 				aclRule = icmpACL(ipRule.Icmp, aclRule)
 			} else if ipRule.Tcp != nil {
 				aclRule = tcpACL(ipRule.Tcp, aclRule)
 			} else if ipRule.Udp != nil {
 				aclRule = udpACL(ipRule.Udp, aclRule)
-			} else {
+			} else if ipRule.Other != nil {
 				aclRule = otherACL(ipRule.Other, aclRule)
 			}
 			aclIPRules = append(aclIPRules, *aclRule)
@@ -230,20 +236,34 @@ func transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.MacipA
 }
 
 func ipACL(ipRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Ip, aclRule *acl_api.ACLRule) (*acl_api.ACLRule, error) {
-	aclRule.Proto = 0 // Ignore L4
 	sourceNetwork := net.ParseIP(ipRule.SourceNetwork)
 	destinationNetwork := net.ParseIP(ipRule.DestinationNetwork)
-	if sourceNetwork.To4() != nil && destinationNetwork.To4() != nil {
+	if len(strings.TrimSpace(ipRule.SourceNetwork)) != 0 &&
+		(sourceNetwork.To4() == nil && sourceNetwork.To16() == nil) {
+		return aclRule, fmt.Errorf("Source address %v is invalid", ipRule.SourceNetwork)
+	}
+	if len(strings.TrimSpace(ipRule.DestinationNetwork)) != 0 &&
+		(destinationNetwork.To4() == nil && destinationNetwork.To16() == nil) {
+		return aclRule, fmt.Errorf("Destination address %v is invalid", ipRule.DestinationNetwork)
+	}
+
+	// beware: IPv4 address can be converted to IPv6
+	if (sourceNetwork.To4() != nil && destinationNetwork.To4() == nil && destinationNetwork.To16() != nil) ||
+		(sourceNetwork.To4() == nil && sourceNetwork.To16() != nil && destinationNetwork.To4() != nil) {
+		return aclRule, fmt.Errorf("Source address %v and destionation address %v have different IP versions",
+			ipRule.SourceNetwork, ipRule.DestinationNetwork)
+	}
+	if sourceNetwork.To4() != nil || destinationNetwork.To4() != nil {
 		aclRule.IsIpv6 = 0
 		aclRule.SrcIPAddr = sourceNetwork.To4()
 		aclRule.DstIPAddr = destinationNetwork.To4()
-	} else if sourceNetwork.To16() != nil && destinationNetwork.To16() != nil {
+	} else if sourceNetwork.To16() != nil || destinationNetwork.To16() != nil {
 		aclRule.IsIpv6 = 1
 		aclRule.SrcIPAddr = sourceNetwork.To16()
 		aclRule.DstIPAddr = destinationNetwork.To16()
 	} else {
-		return aclRule, fmt.Errorf("Source address %v and destionation address %v have different IP version or missing",
-			ipRule.SourceNetwork, ipRule.DestinationNetwork)
+		// both empty
+		aclRule.IsIpv6 = 0
 	}
 	return aclRule, nil
 }

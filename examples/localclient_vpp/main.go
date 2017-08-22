@@ -26,6 +26,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/flavours/local"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -129,6 +130,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			Interface(&memif2).            /* newly added memif interface */
 			Interface(&tap1Enabled).       /* enable tap1 interface */
 			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
+			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
@@ -168,25 +170,25 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
  *                                                   *
  *****************************************************/
 
-/*****************************************************
- * After Data Change Request                         *
- *                                                   *
- *  +---------------------------------------------+  *
- *  |                                             |  *
- *  +---------+                        +----------+  *
- *  | tap1    |-------+         +------| memif1   |  *
- *  | ENABLED |       |         |      | SLAVE    |  *
- *  +---------+       |         |      +----------+  *
- *  |              Bridge    xconnect             |  *
- *  |              domain       |      +----------+  *
- *  |                 |         |      | memif2   |  *
- *  |  +------------+ |         +------| SLAVE    |  *
- *  |  | loopback1  |-+                +----------|  *
- *  |  +------------+                             |  *
- *  |                                             |  *
- *  +---------------------------------------------+  *
- *                                                   *
- *****************************************************/
+/********************************************************
+ * After Data Change Request                            *
+ *                                                      *
+ *  +------------------------------------------------+  *
+ *  |                                                |  *
+ *  +---------+ +------+                  +----------+  *
+ *  | tap1    |-| acl1 |-+         +------| memif1   |  *
+ *  | ENABLED | +------+ |         |      | SLAVE    |  *
+ *  +---------+          |         |      +----------+  *
+ *  |                  Bridge   xconnect             |  *
+ *  |                  domain      |      +----------+  *
+ *  |                    |         |      | memif2   |  *
+ *  |  +------------+    |         +------| SLAVE    |  *
+ *  |  | loopback1  |----+                +----------|  *
+ *  |  +------------+                                |  *
+ *  |                                                |  *
+ *  +------------------------------------------------+  *
+ *                                                      *
+ ********************************************************/
 
 var (
 	// memif1AsMaster is an example of a memory interface configuration. (Master=true, with IPv4 address).
@@ -254,6 +256,39 @@ var (
 			HostIfName: "linux-tap1",
 		},
 		Mtu: 1500,
+	}
+
+	acl1 = acl.AccessLists_Acl{
+		AclName: "acl1",
+		Rules: []*acl.AccessLists_Acl_Rule{
+			{
+				RuleName: "rule1",
+				Actions: &acl.AccessLists_Acl_Rule_Actions{
+					AclAction: acl.AclAction_DENY,
+				},
+				Matches: &acl.AccessLists_Acl_Rule_Matches{
+					IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+						Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+							DestinationNetwork: "10.1.1.0/24",
+							SourceNetwork:      "10.1.2.0/24",
+						},
+						Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
+							DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+								LowerPort: 50,
+								UpperPort: 150,
+							},
+							SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+								LowerPort: 1000,
+								UpperPort: 2000,
+							},
+						},
+					},
+				},
+			},
+		},
+		Interfaces: &acl.AccessLists_Acl_Interfaces{
+			Egress: []string{"tap1"},
+		},
 	}
 
 	// loopback1 is an example of a loopback interface configuration (without IP address assigned).

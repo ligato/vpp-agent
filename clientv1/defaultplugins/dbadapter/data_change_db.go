@@ -100,7 +100,7 @@ func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes) defaultplugins.PutDSL {
 
 // ACL create or update request for the Access Control List
 func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(), val)
+	dsl.parent.txn.Put(acl.Key(val.AclName), val)
 
 	return dsl
 }
