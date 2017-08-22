@@ -5,10 +5,35 @@ package l2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xad274edf
+const VlAPIVersion = 0x7bf05f3c
+
+// MacEntry represents the VPP binary API data type 'mac_entry'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 3:
+//
+//        ["mac_entry",
+//            ["u32", "sw_if_index"],
+//            ["u8", "mac_addr", 6],
+//            ["u8", "is_del"],
+//            ["u8", "spare"],
+//            {"crc" : "0xa741caef"}
+//        ],
+//
+type MacEntry struct {
+	SwIfIndex uint32
+	MacAddr   []byte `struc:"[6]byte"`
+	IsDel     uint8
+	Spare     uint8
+}
+
+func (*MacEntry) GetTypeName() string {
+	return "mac_entry"
+}
+func (*MacEntry) GetCrcString() string {
+	return "a741caef"
+}
 
 // BridgeDomainSwIf represents the VPP binary API data type 'bridge_domain_sw_if'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 3:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 10:
 //
 //        ["bridge_domain_sw_if",
 //            ["u32", "context"],
@@ -31,7 +56,7 @@ func (*BridgeDomainSwIf) GetCrcString() string {
 }
 
 // L2XconnectDetails represents the VPP binary API message 'l2_xconnect_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 11:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 18:
 //
 //        ["l2_xconnect_details",
 //            ["u16", "_vl_msg_id"],
@@ -60,7 +85,7 @@ func NewL2XconnectDetails() api.Message {
 }
 
 // L2XconnectDump represents the VPP binary API message 'l2_xconnect_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 18:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 25:
 //
 //        ["l2_xconnect_dump",
 //            ["u16", "_vl_msg_id"],
@@ -86,7 +111,7 @@ func NewL2XconnectDump() api.Message {
 }
 
 // L2FibTableDetails represents the VPP binary API message 'l2_fib_table_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 24:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 31:
 //
 //        ["l2_fib_table_details",
 //            ["u16", "_vl_msg_id"],
@@ -123,7 +148,7 @@ func NewL2FibTableDetails() api.Message {
 }
 
 // L2FibTableDump represents the VPP binary API message 'l2_fib_table_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 35:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 42:
 //
 //        ["l2_fib_table_dump",
 //            ["u16", "_vl_msg_id"],
@@ -151,7 +176,7 @@ func NewL2FibTableDump() api.Message {
 }
 
 // L2FibClearTable represents the VPP binary API message 'l2_fib_clear_table'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 42:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 49:
 //
 //        ["l2_fib_clear_table",
 //            ["u16", "_vl_msg_id"],
@@ -177,7 +202,7 @@ func NewL2FibClearTable() api.Message {
 }
 
 // L2FibClearTableReply represents the VPP binary API message 'l2_fib_clear_table_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 48:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 55:
 //
 //        ["l2_fib_clear_table_reply",
 //            ["u16", "_vl_msg_id"],
@@ -204,7 +229,7 @@ func NewL2FibClearTableReply() api.Message {
 }
 
 // L2fibFlushAll represents the VPP binary API message 'l2fib_flush_all'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 54:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 61:
 //
 //        ["l2fib_flush_all",
 //            ["u16", "_vl_msg_id"],
@@ -230,7 +255,7 @@ func NewL2fibFlushAll() api.Message {
 }
 
 // L2fibFlushAllReply represents the VPP binary API message 'l2fib_flush_all_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 60:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 67:
 //
 //        ["l2fib_flush_all_reply",
 //            ["u16", "_vl_msg_id"],
@@ -257,7 +282,7 @@ func NewL2fibFlushAllReply() api.Message {
 }
 
 // L2fibFlushBd represents the VPP binary API message 'l2fib_flush_bd'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 66:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 73:
 //
 //        ["l2fib_flush_bd",
 //            ["u16", "_vl_msg_id"],
@@ -285,7 +310,7 @@ func NewL2fibFlushBd() api.Message {
 }
 
 // L2fibFlushBdReply represents the VPP binary API message 'l2fib_flush_bd_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 73:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 80:
 //
 //        ["l2fib_flush_bd_reply",
 //            ["u16", "_vl_msg_id"],
@@ -312,7 +337,7 @@ func NewL2fibFlushBdReply() api.Message {
 }
 
 // L2fibFlushInt represents the VPP binary API message 'l2fib_flush_int'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 79:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 86:
 //
 //        ["l2fib_flush_int",
 //            ["u16", "_vl_msg_id"],
@@ -340,7 +365,7 @@ func NewL2fibFlushInt() api.Message {
 }
 
 // L2fibFlushIntReply represents the VPP binary API message 'l2fib_flush_int_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 86:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 93:
 //
 //        ["l2fib_flush_int_reply",
 //            ["u16", "_vl_msg_id"],
@@ -367,7 +392,7 @@ func NewL2fibFlushIntReply() api.Message {
 }
 
 // L2fibAddDel represents the VPP binary API message 'l2fib_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 92:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 99:
 //
 //        ["l2fib_add_del",
 //            ["u16", "_vl_msg_id"],
@@ -407,7 +432,7 @@ func NewL2fibAddDel() api.Message {
 }
 
 // L2fibAddDelReply represents the VPP binary API message 'l2fib_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 105:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 112:
 //
 //        ["l2fib_add_del_reply",
 //            ["u16", "_vl_msg_id"],
@@ -433,8 +458,102 @@ func NewL2fibAddDelReply() api.Message {
 	return &L2fibAddDelReply{}
 }
 
+// WantL2MacsEvents represents the VPP binary API message 'want_l2_macs_events'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 118:
+//
+//        ["want_l2_macs_events",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "learn_limit"],
+//            ["u8", "scan_delay"],
+//            ["u8", "max_macs_in_event"],
+//            ["u8", "enable_disable"],
+//            ["u32", "pid"],
+//            {"crc" : "0xc043c52c"}
+//        ],
+//
+type WantL2MacsEvents struct {
+	LearnLimit     uint32
+	ScanDelay      uint8
+	MaxMacsInEvent uint8
+	EnableDisable  uint8
+	Pid            uint32
+}
+
+func (*WantL2MacsEvents) GetMessageName() string {
+	return "want_l2_macs_events"
+}
+func (*WantL2MacsEvents) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*WantL2MacsEvents) GetCrcString() string {
+	return "c043c52c"
+}
+func NewWantL2MacsEvents() api.Message {
+	return &WantL2MacsEvents{}
+}
+
+// WantL2MacsEventsReply represents the VPP binary API message 'want_l2_macs_events_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 129:
+//
+//        ["want_l2_macs_events_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x97d6535f"}
+//        ],
+//
+type WantL2MacsEventsReply struct {
+	Retval int32
+}
+
+func (*WantL2MacsEventsReply) GetMessageName() string {
+	return "want_l2_macs_events_reply"
+}
+func (*WantL2MacsEventsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*WantL2MacsEventsReply) GetCrcString() string {
+	return "97d6535f"
+}
+func NewWantL2MacsEventsReply() api.Message {
+	return &WantL2MacsEventsReply{}
+}
+
+// L2MacsEvent represents the VPP binary API message 'l2_macs_event'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 135:
+//
+//        ["l2_macs_event",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "pid"],
+//            ["u32", "n_macs"],
+//            ["vl_api_mac_entry_t", "mac", 0, "n_macs"],
+//            {"crc" : "0x2a1cc4f5"}
+//        ],
+//
+type L2MacsEvent struct {
+	Pid   uint32
+	NMacs uint32 `struc:"sizeof=Mac"`
+	Mac   []MacEntry
+}
+
+func (*L2MacsEvent) GetMessageName() string {
+	return "l2_macs_event"
+}
+func (*L2MacsEvent) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*L2MacsEvent) GetCrcString() string {
+	return "2a1cc4f5"
+}
+func NewL2MacsEvent() api.Message {
+	return &L2MacsEvent{}
+}
+
 // L2Flags represents the VPP binary API message 'l2_flags'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 111:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 143:
 //
 //        ["l2_flags",
 //            ["u16", "_vl_msg_id"],
@@ -466,7 +585,7 @@ func NewL2Flags() api.Message {
 }
 
 // L2FlagsReply represents the VPP binary API message 'l2_flags_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 120:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 152:
 //
 //        ["l2_flags_reply",
 //            ["u16", "_vl_msg_id"],
@@ -495,7 +614,7 @@ func NewL2FlagsReply() api.Message {
 }
 
 // BridgeDomainSetMacAge represents the VPP binary API message 'bridge_domain_set_mac_age'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 127:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 159:
 //
 //        ["bridge_domain_set_mac_age",
 //            ["u16", "_vl_msg_id"],
@@ -525,7 +644,7 @@ func NewBridgeDomainSetMacAge() api.Message {
 }
 
 // BridgeDomainSetMacAgeReply represents the VPP binary API message 'bridge_domain_set_mac_age_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 135:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 167:
 //
 //        ["bridge_domain_set_mac_age_reply",
 //            ["u16", "_vl_msg_id"],
@@ -552,7 +671,7 @@ func NewBridgeDomainSetMacAgeReply() api.Message {
 }
 
 // BridgeDomainAddDel represents the VPP binary API message 'bridge_domain_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 141:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 173:
 //
 //        ["bridge_domain_add_del",
 //            ["u16", "_vl_msg_id"],
@@ -594,7 +713,7 @@ func NewBridgeDomainAddDel() api.Message {
 }
 
 // BridgeDomainAddDelReply represents the VPP binary API message 'bridge_domain_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 155:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 187:
 //
 //        ["bridge_domain_add_del_reply",
 //            ["u16", "_vl_msg_id"],
@@ -621,7 +740,7 @@ func NewBridgeDomainAddDelReply() api.Message {
 }
 
 // BridgeDomainDump represents the VPP binary API message 'bridge_domain_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 161:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 193:
 //
 //        ["bridge_domain_dump",
 //            ["u16", "_vl_msg_id"],
@@ -649,7 +768,7 @@ func NewBridgeDomainDump() api.Message {
 }
 
 // BridgeDomainDetails represents the VPP binary API message 'bridge_domain_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 168:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 200:
 //
 //        ["bridge_domain_details",
 //            ["u16", "_vl_msg_id"],
@@ -694,7 +813,7 @@ func NewBridgeDomainDetails() api.Message {
 }
 
 // BridgeFlags represents the VPP binary API message 'bridge_flags'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 183:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 215:
 //
 //        ["bridge_flags",
 //            ["u16", "_vl_msg_id"],
@@ -726,7 +845,7 @@ func NewBridgeFlags() api.Message {
 }
 
 // BridgeFlagsReply represents the VPP binary API message 'bridge_flags_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 192:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 224:
 //
 //        ["bridge_flags_reply",
 //            ["u16", "_vl_msg_id"],
@@ -755,7 +874,7 @@ func NewBridgeFlagsReply() api.Message {
 }
 
 // L2InterfaceVlanTagRewrite represents the VPP binary API message 'l2_interface_vlan_tag_rewrite'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 199:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 231:
 //
 //        ["l2_interface_vlan_tag_rewrite",
 //            ["u16", "_vl_msg_id"],
@@ -791,7 +910,7 @@ func NewL2InterfaceVlanTagRewrite() api.Message {
 }
 
 // L2InterfaceVlanTagRewriteReply represents the VPP binary API message 'l2_interface_vlan_tag_rewrite_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 210:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 242:
 //
 //        ["l2_interface_vlan_tag_rewrite_reply",
 //            ["u16", "_vl_msg_id"],
@@ -818,7 +937,7 @@ func NewL2InterfaceVlanTagRewriteReply() api.Message {
 }
 
 // L2InterfacePbbTagRewrite represents the VPP binary API message 'l2_interface_pbb_tag_rewrite'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 216:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 248:
 //
 //        ["l2_interface_pbb_tag_rewrite",
 //            ["u16", "_vl_msg_id"],
@@ -858,7 +977,7 @@ func NewL2InterfacePbbTagRewrite() api.Message {
 }
 
 // L2InterfacePbbTagRewriteReply represents the VPP binary API message 'l2_interface_pbb_tag_rewrite_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 229:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 261:
 //
 //        ["l2_interface_pbb_tag_rewrite_reply",
 //            ["u16", "_vl_msg_id"],

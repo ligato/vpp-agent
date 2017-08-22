@@ -126,8 +126,8 @@ func (plugin *InterfaceStateUpdater) AfterInit() (err error) {
 func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	var err error
 
-	// subscribe for receiving SwInterfaceSetFlags notifications
-	plugin.vppNotifSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewSwInterfaceSetFlags)
+	// subscribe for receiving SwInterfaceEvents notifications
+	plugin.vppNotifSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewSwInterfaceEvent)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 		select {
 		case msg := <-plugin.notifChan:
 			switch notif := msg.(type) {
-			case *interfaces.SwInterfaceSetFlags:
+			case *interfaces.SwInterfaceEvent:
 				plugin.processIfStateNotification(notif)
 			case *interfaces.VnetInterfaceSimpleCounters:
 				plugin.processIfCounterNotification(notif)
@@ -236,7 +236,7 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 }
 
 // processIfStateNotification process a VPP state notification.
-func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwInterfaceSetFlags) {
+func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwInterfaceEvent) {
 	//plugin.access.Lock() not needed because of channel synchronization
 	//defer plugin.access.Unlock()
 
@@ -285,7 +285,7 @@ func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
 
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (plugin *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceSetFlags) (
+func (plugin *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
 	iface *intf.InterfacesState_Interface, found bool, err error) {
 
 	ifState, found, err := plugin.getIfStateData(vppMsg.SwIfIndex)

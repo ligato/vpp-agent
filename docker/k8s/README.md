@@ -1,11 +1,10 @@
 ## Deploying VPP Agent Docker Images Using Kubernetes
 
-This document describes how the development Docker image can be deployed on an one-node 
-development Kubernetes cluster using [kubeadm](https://kubernetes.io/docs/getting-started-guides/kubeadm/) 
-with [Calico](http://docs.projectcalico.org/v2.2/getting-started/kubernetes/installation/hosted/kubeadm/) 
-networking on Linux.
+This document describes how the development Docker image can be deployed 
+on an one-node development Kubernetes cluster using kubeadm][1] with 
+[Calico] networking on Linux.
 
-Works for kubeadm version 1.6.3.
+The recipe described here has been tested with kubeadm version 1.6.3.
 
 Init kubeadm master:
 ```
@@ -24,7 +23,8 @@ kubectl apply -f http://docs.projectcalico.org/v2.2/getting-started/kubernetes/i
 ```
 
 Start ETCD on the host 
-(a new ETCD instance on port 22379, since already running ETCD deployed by kubeadm does not accept remote connections):
+(a new ETCD instance on port 22379, since already running ETCD deployed 
+by kubeadm does not accept remote connections):
 ```
 sudo docker run -p 22379:2379 --name etcd --rm \
     quay.io/coreos/etcd:v3.0.16 /usr/local/bin/etcd \
@@ -104,3 +104,6 @@ kubectl describe pods | grep 'Container ID:'
 docker logs 8511cbbbecff744a06fae94b861f8030bd7be52d2c2db0533b63ac151d36b13c
 docker logs 81ed74b291611b4a9f6db2a9d37aba56d4fddc1125400d19fadfc96adb33cc6b
 ```
+
+[1]: https://kubernetes.io/docs/getting-started-guides/kubeadm/
+[2]: http://docs.projectcalico.org/v2.2/getting-started/kubernetes/installation/hosted/kubeadm/ 
