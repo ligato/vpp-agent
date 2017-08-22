@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/statuscheck"
+	"github.com/ligato/cn-infra/health/statuscheck"
 )
 
 // PluginID used in the Agent Core flavors

@@ -16,6 +16,7 @@ package kvproto
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
@@ -28,11 +29,6 @@ type ProtoWrapper struct {
 
 type protoBroker struct {
 	broker     keyval.BytesBroker
-	serializer keyval.Serializer
-}
-
-type protoWatcher struct {
-	watcher    keyval.BytesWatcher
 	serializer keyval.Serializer
 }
 
@@ -102,18 +98,20 @@ func (pdb *protoBroker) NewTxn() keyval.ProtoTxn {
 // Put writes the provided key-value item into the data store.
 //
 // Returns an error if the item could not be written, ok otherwise.
-func (db *ProtoWrapper) Put(key string, value proto.Message, opts ...keyval.PutOption) error {
+func (db *ProtoWrapper) Put(key string, value proto.Message, opts ...datasync.PutOption) error {
 	return putProtoInternal(db.broker, db.serializer, key, value, opts...)
 }
 
 // Put writes the provided key-value item into the data store.
 //
 // Returns an error if the item could not be written, ok otherwise.
-func (pdb *protoBroker) Put(key string, value proto.Message, opts ...keyval.PutOption) error {
+func (pdb *protoBroker) Put(key string, value proto.Message, opts ...datasync.PutOption) error {
 	return putProtoInternal(pdb.broker, pdb.serializer, key, value, opts...)
 }
 
-func putProtoInternal(broker keyval.BytesBroker, serializer keyval.Serializer, key string, value proto.Message, opts ...keyval.PutOption) error {
+func putProtoInternal(broker keyval.BytesBroker, serializer keyval.Serializer, key string, value proto.Message,
+	opts ...datasync.PutOption) error {
+
 	// Marshal value to protobuf
 	binData, err := serializer.Marshal(value)
 	if err != nil {
@@ -124,28 +122,20 @@ func putProtoInternal(broker keyval.BytesBroker, serializer keyval.Serializer, k
 }
 
 // Delete removes from datastore key-value items stored under key.
-func (db *ProtoWrapper) Delete(key string, opts ...keyval.DelOption) (existed bool, err error) {
+func (db *ProtoWrapper) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return db.broker.Delete(key, opts...)
 }
 
 // Delete removes from datastore key-value items stored under key.
-func (pdb *protoBroker) Delete(key string, opts ...keyval.DelOption) (existed bool, err error) {
+func (pdb *protoBroker) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return pdb.broker.Delete(key, opts...)
 }
 
 // Watch subscribes for changes in datastore associated with the key. respChannel is used for delivery watch events
-func (db *ProtoWrapper) Watch(resp chan keyval.ProtoWatchResp, keys ...string) error {
-	byteCh := make(chan keyval.BytesWatchResp, 0)
-	err := db.broker.Watch(byteCh, keys...)
-	if err != nil {
-		return err
-	}
-	go func() {
-		for msg := range byteCh {
-			resp <- NewWatchResp(db.serializer, msg)
-		}
-	}()
-	return nil
+func (db *ProtoWrapper) Watch(resp func(keyval.ProtoWatchResp), keys ...string) error {
+	return db.broker.Watch(func(msg keyval.BytesWatchResp) {
+		resp(NewWatchResp(db.serializer, msg))
+	}, keys...)
 }
 
 // GetValue retrieves one key-value item from the datastore. The item
@@ -226,6 +216,12 @@ func listKeysProtoInternal(broker keyval.BytesBroker, prefix string) (keyval.Pro
 	return &protoKeyIterator{ctx}, nil
 }
 
+// Close does nothing since db cursors are not needed.
+// The method needs to be here to implement Iterator API.
+func (ctx *protoKeyValIterator) Close() error {
+	return nil
+}
+
 // GetNext returns the following item from the result set. If data was returned, found is set to true.
 func (ctx *protoKeyValIterator) GetNext() (kv keyval.ProtoKeyVal, stop bool) {
 	pair, stop := ctx.delegate.GetNext()
@@ -236,24 +232,15 @@ func (ctx *protoKeyValIterator) GetNext() (kv keyval.ProtoKeyVal, stop bool) {
 	return &protoKeyVal{pair, ctx.serializer}, stop
 }
 
+// Close does nothing since db cursors are not needed.
+// The method needs to be here to implement Iterator API.
+func (ctx *protoKeyIterator) Close() error {
+	return nil
+}
+
 // GetNext returns the following item from the result set. If data was returned, found is set to true.
 func (ctx *protoKeyIterator) GetNext() (key string, rev int64, stop bool) {
 	return ctx.delegate.GetNext()
-}
-
-// Watch for changes in datastore respChannel is used for receiving watch events
-func (pdb *protoWatcher) Watch(resp chan keyval.ProtoWatchResp, keys ...string) error {
-	byteCh := make(chan keyval.BytesWatchResp, 0)
-	err := pdb.watcher.Watch(byteCh, keys...)
-	if err != nil {
-		return err
-	}
-	go func() {
-		for msg := range byteCh {
-			resp <- NewWatchResp(pdb.serializer, msg)
-		}
-	}()
-	return nil
 }
 
 // GetValue returns the value of the pair

@@ -13,8 +13,10 @@
 // limitations under the License.
 
 /*
-Package kafka provides the capability for a user to send and receive messages via Kafka.
-It provides sync and async Producers for sending Kafka messages and a Consumer for retrieving Kafka messages.
+Package kafka is an implementation of a Kafka broker client, providing the
+capability to send and receive messages through the Kafka message bus. It
+provides sync and async Producers for sending Kafka messages and a Consumer
+for retrieving Kafka messages.
 
 A Producer sends messages to Kafka. Two types of producers are available synchronous and asynchronous. Request to
 send a message using synchronous producer blocks until the message is published or an error is returned. On the contrary

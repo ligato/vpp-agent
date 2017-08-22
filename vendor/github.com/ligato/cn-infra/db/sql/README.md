@@ -1,15 +1,19 @@
-# SQL like datastore
+# SQL-like datastore
 
-The package defines API for access data store using SQL. `Broker` interface allows to read and manipulate data.
-`Watcher` provides functions for monitoring of changes in a datastore. 
+The `sql` package defines the API for accessing a data store using SQL. 
+The `Broker` interface allows reading and manipulating data. The `Watcher` 
+API provides functions for monitoring of changes in a data store. 
 
 
 Features:
--	User of the API has control about the SQL statements, types & binding which are passed to the `Broker`.  
+-	The user of the API has control over the SQL statements, types & bindings 
+    which are passed to the `Broker`.  
 -   Expressions:
-    -  There ale helper functions that tends to avoid writing SQL strings. 
-    -  It is up to the User if there will be used only expressions writen using helper function
-    -  The user can even write by hand portions of SQL statements (sql.Exp helper function) 
-       and combine them with other expressions. 
--	Optionally user can use reflection to simplify repetitive work with Iterators & GO structures
--   The is supposed to be reused among different databases. For each there is specific implementation.
+    -  Helper functions alleviate the need to write SQL strings. 
+    -  The user can choose to only write expressions using helper function
+    -  The user can write portions of SQL statements by hand (the sql.Exp 
+       helper function) and combine them with other expressions 
+-	The user can optionally use reflection to simplify repetitive work with
+    Iterators & Go structures
+-   The API will be reused for different databases. A specific implementation
+    will be provided for each database.

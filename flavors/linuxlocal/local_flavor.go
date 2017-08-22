@@ -17,11 +17,11 @@ package linuxlocal
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/httpmux"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/statuscheck"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -33,7 +33,7 @@ type Flavor struct {
 	injected         bool
 	Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
-	HTTP             httpmux.Plugin
+	HTTP             rest.Plugin
 	LogManager       logmanager.Plugin
 	ServiceLabel     servicelabel.Plugin
 	StatusCheck      statuscheck.Plugin

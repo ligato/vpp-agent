@@ -15,9 +15,10 @@
 package msg
 
 import (
+	"strings"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
-	"strings"
 )
 
 // DataMsgRequestToKVs TODO

@@ -22,11 +22,10 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// NewWatcher creates a new instance of Watcher.
+// NewWatcher creates a new instance of KeyValProtoWatcher.
 func NewWatcher() *Watcher {
 	return &Watcher{subscriptions: map[string]*Subscription{}, access: sync.Mutex{}, lastRev: NewLatestRev()}
 }
@@ -85,9 +84,9 @@ func (adapter *Watcher) WatchDataBase(resyncName string, changeChan chan datasyn
 	return reg, nil
 }
 
-// WatchData just appends channels
-func (adapter *Watcher) WatchData(resyncName string, changeChan chan datasync.ChangeEvent,
-	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchDataRegistration, error) {
+// Watch just appends channels
+func (adapter *Watcher) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
+	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 	return adapter.WatchDataBase(resyncName, changeChan, resyncChan, keyPrefixes...)
 }
 
@@ -111,7 +110,7 @@ func (adapter *Watcher) PropagateChanges(txData map[string] /*key*/ datasync.Cha
 				if strings.HasPrefix(key, prefix) {
 					var prev datasync.LazyValueWithRev
 					var curRev int64
-					if db.Delete == val.GetChangeType() {
+					if datasync.Delete == val.GetChangeType() {
 						_, prev = adapter.lastRev.Del(key)
 						if prev != nil {
 							curRev = prev.GetRevision() + 1
@@ -124,7 +123,7 @@ func (adapter *Watcher) PropagateChanges(txData map[string] /*key*/ datasync.Cha
 						func(sub *Subscription, key string, val datasync.ChangeValue) func(done chan error) {
 							return func(done chan error) {
 								sub.ChangeChan <- &ChangeEvent{key, val.GetChangeType(),
-									val, curRev, prev, NewDoneChannel(done)}
+															   val, curRev, prev, NewDoneChannel(done)}
 							}
 						}(sub, key, val))
 				}
@@ -141,7 +140,7 @@ func (adapter *Watcher) PropagateChanges(txData map[string] /*key*/ datasync.Cha
 			return err
 		}
 	case <-time.After(5 * time.Second):
-		log.Warn("Timeout of aggregated change callback")
+		logroot.StandardLogger().Warn("Timeout of aggregated change callback")
 	}
 
 	return nil

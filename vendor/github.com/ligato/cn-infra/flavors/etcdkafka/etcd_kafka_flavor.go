@@ -16,18 +16,22 @@ package etcdkafka
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
-	"github.com/ligato/cn-infra/flavors/generic"
+	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
-// Flavor glues together generic.Flavor plugins with:
+// FlavorRPC glues together generic.FlavorRPC plugins with:
 // - ETCD (useful for watching config.)
 // - Kafka plugins (useful for publishing events)
 type Flavor struct {
-	Generic generic.Flavor
-	Etcd    etcdv3.Plugin
-	Kafka   kafka.Plugin
+	rpc.FlavorRPC
+
+	ETCD         etcdv3.Plugin
+	ETCDDataSync kvdbsync.Plugin
+
+	Kafka kafka.Plugin
 
 	injected bool
 }
@@ -36,18 +40,21 @@ type Flavor struct {
 func (f *Flavor) Inject() error {
 	if f.injected {
 		return nil
+	} else {
+		f.injected = true
 	}
 
-	f.Generic.Inject()
+	f.FlavorRPC.Inject()
 
-	f.Etcd.LogFactory = &f.Generic.Logrus
-	f.Etcd.ServiceLabel = &f.Generic.ServiceLabel
-	f.Etcd.StatusCheck = &f.Generic.StatusCheck
-	f.Kafka.LogFactory = &f.Generic.Logrus
-	f.Kafka.ServiceLabel = &f.Generic.ServiceLabel
-	f.Kafka.StatusCheck = &f.Generic.StatusCheck
+	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("ETCD")
+	f.ETCDDataSync.Deps.PluginLogDeps = *f.LogDeps("ETCDDataSync")
+	f.ETCDDataSync.KvPlugin = &f.ETCD
+	f.ETCDDataSync.ResyncOrch = &f.ResyncOrch
+	f.ETCDDataSync.ServiceLabel = &f.ServiceLabel
 
-	f.injected = true
+	f.StatusCheck.Transport = &f.ETCDDataSync
+
+	f.Kafka.Deps.PluginInfraDeps = *f.InfraDeps("Kafka")
 
 	return nil
 }

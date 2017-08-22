@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package kvproto provides a wrapper that simplifies storing and retrieving
-// of proto-modelled data into/from a key-value datastore.
+// Package kvproto provides a wrapper that simplifies the storing and
+// retrieving of proto-modelled data into/from a key-value data store.
 package kvproto

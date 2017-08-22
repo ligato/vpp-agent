@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package messaging groups clients for multiple messaging systems.
+// Package messaging is the parent package for implementations of various
+// messaging clients, e.g. Kafka.
 package messaging

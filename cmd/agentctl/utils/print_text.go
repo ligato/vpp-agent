@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"bytes"
-	"github.com/ligato/cn-infra/statuscheck/model/status"
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/logrusorgru/aurora.git"
 )

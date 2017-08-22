@@ -18,31 +18,31 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// Adapter implements datasync.TransportAdapter but allows optionally implement these WatchData / PublishData
+// Adapter implements datasync.TransportAdapter but allows optionally implement these Watch / Put
 type Adapter struct {
-	Watcher   datasync.Watcher
-	Publisher datasync.Publisher
+	Watcher   datasync.KeyValProtoWatcher
+	Publisher datasync.KeyProtoValWriter
 }
 
-// WatchData using Kafka Watcher Topic Watcher
-func (adapter *Adapter) WatchData(resyncName string, changeChan chan datasync.ChangeEvent,
-	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchDataRegistration, error) {
+// Watch using Kafka KeyValProtoWatcher Topic KeyValProtoWatcher
+func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
+	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
 	if adapter.Watcher != nil {
-		return adapter.Watcher.WatchData(resyncName, changeChan, resyncChan, keyPrefixes...)
+		return adapter.Watcher.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 	}
-	log.Debug("Watcher is nil")
+	logroot.StandardLogger().Debug("KeyValProtoWatcher is nil")
 
 	return nil, nil
 }
 
-// PublishData using Kafka Watcher Topic Publisher
-func (adapter *Adapter) PublishData(key string, data proto.Message) error {
+// Put using Kafka KeyValProtoWatcher Topic KeyProtoValWriter
+func (adapter *Adapter) Put(key string, data proto.Message) error {
 	if adapter.Publisher != nil {
-		return adapter.Publisher.PublishData(key, data)
+		return adapter.Publisher.Put(key, data)
 	}
 
 	return nil

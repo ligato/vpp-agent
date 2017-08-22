@@ -15,11 +15,8 @@
 package plugin
 
 import (
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/persisted/dbsync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
@@ -31,43 +28,23 @@ type Connection interface {
 
 // Skeleton of a KV plugin is a generic part of KV plugin.
 type Skeleton struct {
-	Logger       logging.Logger
-	serviceLabel *servicelabel.Plugin
+	serviceLabel servicelabel.ReaderAPI
 	name         string
-	logFactory   logging.LogFactory
-	conn         Connection
 	protoWrapper *kvproto.ProtoWrapper
-	connect      func(logger logging.Logger) (Connection, error)
+	connection   Connection
 }
 
 // NewSkeleton creates a new instance of the Skeleton with the given connector.
 // The connection is established in AfterInit phase.
-func NewSkeleton(name string, factory logging.LogFactory, serviceLabel *servicelabel.Plugin, connector func(log logging.Logger) (Connection, error)) *Skeleton {
-	return &Skeleton{serviceLabel: serviceLabel, name: name, logFactory: factory, connect: connector}
+func NewSkeleton(name string, serviceLabel servicelabel.ReaderAPI,
+	connection Connection) *Skeleton {
+	return &Skeleton{serviceLabel: serviceLabel, name: name, connection: connection}
 }
 
 // Init is called on plugin startup
 func (plugin *Skeleton) Init() (err error) {
-	plugin.Logger, err = plugin.logFactory.NewLogger(plugin.name)
-	if err != nil {
-		return err
-	}
-	plugin.conn, err = plugin.connect(plugin.Logger)
-	if err != nil {
-		return err
-	}
-	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.conn, &keyval.SerializerJSON{})
-
-	prefixedBroker := plugin.conn.NewBroker(plugin.serviceLabel.GetAgentPrefix())
-	prefixedWatcher := plugin.conn.NewWatcher(plugin.serviceLabel.GetAgentPrefix())
-	datasync.RegisterTransport(dbsync.NewAdapter(plugin.name, prefixedBroker, prefixedWatcher))
-	datasync.RegisterTransportOfDifferentAgent(func(microserviceLabel string) datasync.TransportAdapter {
-		dbOfDifferentAgent := plugin.conn.NewBroker(plugin.serviceLabel.GetDifferentAgentPrefix(microserviceLabel))
-		dbWOfDifferentAgent := plugin.conn.NewWatcher(plugin.serviceLabel.GetDifferentAgentPrefix(microserviceLabel))
-		return dbsync.NewAdapter(microserviceLabel, dbOfDifferentAgent, dbWOfDifferentAgent)
-	})
+	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.connection, &keyval.SerializerJSON{})
 	return err
-
 }
 
 // AfterInit is called once all plugin have been initialized. The connection to datastore
@@ -78,7 +55,7 @@ func (plugin *Skeleton) AfterInit() (err error) {
 
 // Close cleans up the resources
 func (plugin *Skeleton) Close() error {
-	return safeclose.Close(plugin.conn)
+	return safeclose.Close(plugin.connection)
 }
 
 // NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message

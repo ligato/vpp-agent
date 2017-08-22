@@ -78,16 +78,16 @@ type Broker interface {
 	// Example usage 1:
 	//
 	//    query := sql.FROM(JamesBond, sql.WHERE(sql.PK(&JamesBond.ID))
-	//    err := db.Delete(query)
+	//    err := datasync.Delete(query)
 	//
 	// Example usage 2:
 	//
-	//    err := db.Delete("from User where ID='James Bond'")
+	//    err := datasync.Delete("from User where ID='James Bond'")
 	//
 	// Example usage 3:
 	//
 	//    query := sql.FROM(UserTable, sql.WHERE(sql.Field(&UserTable.LastName, sql.EQ("Bond")))
-	//    err := db.Delete(query)
+	//    err := datasync.Delete(query)
 	//
 	Delete(fromWhere Expression) error
 

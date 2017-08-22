@@ -12,11 +12,4 @@ Log manager plugin allows to view and modify log levels of loggers using REST AP
    `<log-level>` is one of `debug`,`info`,`warning`,`error`,`fatal`,`panic`
    
 `<host>` and `<port>` are determined by configuration of HTTPmux.
-   
-**Configuration**
-
-\-
-
-**Dependencies**
-- [HTTPmux](../../httpmux)
-- [Logging](../../logging/plugin)
+ 

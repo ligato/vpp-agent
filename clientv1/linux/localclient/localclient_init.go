@@ -16,7 +16,7 @@ package localclient
 
 import (
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/persisted/dbsync/local"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 )
 

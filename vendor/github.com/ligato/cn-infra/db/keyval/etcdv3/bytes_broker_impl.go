@@ -20,6 +20,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/namespace"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
@@ -112,7 +113,7 @@ func (db *BytesConnectionEtcd) Close() error {
 // using a prefix pass keyval.Root constant as argument.
 func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
+		opTimeout:                         db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
 }
 
 // NewWatcher creates a new instance of a proxy that provides
@@ -121,11 +122,11 @@ func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 // using a prefix pass keyval.Root constant as argument.
 func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
+		opTimeout:                         db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
 }
 
 // Put calls Put function of BytesConnectionEtcd. KeyPrefix defined in constructor is prepended to key argument.
-func (pdb *BytesBrokerWatcherEtcd) Put(key string, data []byte, opts ...keyval.PutOption) error {
+func (pdb *BytesBrokerWatcherEtcd) Put(key string, data []byte, opts ...datasync.PutOption) error {
 	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, key, data, opts)
 }
 
@@ -157,42 +158,19 @@ func (pdb *BytesBrokerWatcherEtcd) ListKeys(prefix string) (keyval.BytesKeyItera
 }
 
 // Delete calls delete function of BytesConnectionEtcd. KeyPrefix defined in constructor is prepended to the key argument.
-func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...keyval.DelOption) (existed bool, err error) {
+func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return deleteInternal(pdb.Logger, pdb.kv, pdb.opTimeout, key, opts...)
 }
 
-// Watch starts subscription for changes associated with the selected keys. KeyPrefix defined in constructor is prepended to all
-// keys in the argument list. The prefix is removed from the keys used in watch events. Watch events will be delivered to respChan.
-func (pdb *BytesBrokerWatcherEtcd) Watch(respChan chan keyval.BytesWatchResp, keys ...string) error {
-	var err error
-	for _, k := range keys {
-		err = watchInternal(pdb.Logger, pdb.watcher, pdb.closeCh, k, respChan)
-		if err != nil {
-			break
-		}
-	}
-	return err
-}
-
-func handleWatchEvent(log logging.Logger, respChan chan keyval.BytesWatchResp, ev *clientv3.Event) {
-
-	var resp keyval.BytesWatchResp
+func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *clientv3.Event) {
 	if ev.Type == mvccpb.DELETE {
-		resp = NewBytesWatchDelResp(string(ev.Kv.Key), ev.Kv.ModRevision)
+		resp(NewBytesWatchDelResp(string(ev.Kv.Key), ev.Kv.ModRevision))
 	} else if ev.IsCreate() || ev.IsModify() {
 		if ev.Kv.Value != nil {
-			resp = NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, ev.Kv.ModRevision)
+			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, ev.Kv.ModRevision))
 			log.Debug("NewBytesWatchPutResp")
 		}
 	}
-	if resp != nil {
-		select {
-		case respChan <- resp:
-		case <-time.After(defaultOpTimeout):
-			log.Warn("Unable to deliver watch event before timeout.")
-		}
-	}
-
 }
 
 // NewTxn creates a new transaction. A transaction can
@@ -211,10 +189,10 @@ func newTxnInternal(kv clientv3.KV) keyval.BytesTxn {
 }
 
 // Watch starts subscription for changes associated with the selected keys. Watch events will be delivered to respChan.
-func (db *BytesConnectionEtcd) Watch(respChan chan keyval.BytesWatchResp, keys ...string) error {
+func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), keys ...string) error {
 	var err error
 	for _, k := range keys {
-		err = watchInternal(db.Logger, db.etcdClient, db.closeCh, k, respChan)
+		err = watchInternal(db.Logger, db.etcdClient, db.closeCh, k, resp)
 		if err != nil {
 			break
 		}
@@ -223,7 +201,7 @@ func (db *BytesConnectionEtcd) Watch(respChan chan keyval.BytesWatchResp, keys .
 }
 
 // watchInternal starts the watch subscription for key.
-func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan struct{}, key string, respChan chan keyval.BytesWatchResp) error {
+func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan struct{}, key string, resp func(keyval.BytesWatchResp)) error {
 
 	recvChan := watcher.Watch(context.Background(), key, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
@@ -232,7 +210,7 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 			select {
 			case wresp := <-recvChan:
 				for _, ev := range wresp.Events {
-					handleWatchEvent(log, respChan, ev)
+					handleWatchEvent(log, resp, ev)
 				}
 			case <-closeCh:
 				log.WithField("key", key).Debug("Watch ended")
@@ -245,11 +223,11 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 
 // Put writes the provided key-value item into the data store.
 // Returns an error if the item could not be written, nil otherwise.
-func (db *BytesConnectionEtcd) Put(key string, binData []byte, opts ...keyval.PutOption) error {
+func (db *BytesConnectionEtcd) Put(key string, binData []byte, opts ...datasync.PutOption) error {
 	return putInternal(db.Logger, db.etcdClient, db.lessor, db.opTimeout, key, binData, opts...)
 }
 
-func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, key string, binData []byte, opts ...keyval.PutOption) error {
+func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, key string, binData []byte, opts ...datasync.PutOption) error {
 
 	deadline := time.Now().Add(opTimeout)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
@@ -257,7 +235,7 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 
 	var etcdOpts []clientv3.OpOption
 	for _, o := range opts {
-		if withTTL, ok := o.(*keyval.WithTTLOpt); ok && withTTL.TTL > 0 {
+		if withTTL, ok := o.(*datasync.WithTTLOpt); ok && withTTL.TTL > 0 {
 			lease, err := lessor.Grant(ctx, int64(withTTL.TTL/time.Second))
 			if err != nil {
 				return err
@@ -275,18 +253,18 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 }
 
 // Delete removes data identified by the key.
-func (db *BytesConnectionEtcd) Delete(key string, opts ...keyval.DelOption) (existed bool, err error) {
+func (db *BytesConnectionEtcd) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return deleteInternal(db.Logger, db.etcdClient, db.opTimeout, key, opts...)
 }
 
-func deleteInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration, key string, opts ...keyval.DelOption) (existed bool, err error) {
+func deleteInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration, key string, opts ...datasync.DelOption) (existed bool, err error) {
 	deadline := time.Now().Add(opTimeout)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
 	var etcdOpts []clientv3.OpOption
 	for _, o := range opts {
-		if _, ok := o.(*keyval.WithPrefixOpt); ok {
+		if _, ok := o.(*datasync.WithPrefixOpt); ok {
 			etcdOpts = append(etcdOpts, clientv3.WithPrefix())
 		}
 	}
@@ -413,6 +391,18 @@ func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 	rev = ctx.resp.Kvs[ctx.index].ModRevision
 	ctx.index++
 	return key, rev, false
+}
+
+// Close does nothing since db cursors are not needed.
+// The method needs to be here to implement Iterator API.
+func (ctx *bytesKeyIterator) Close() error {
+	return nil
+}
+
+// Close does nothing since db cursors are not needed.
+// The method needs to be here to implement Iterator API.
+func (kv *bytesKeyVal) Close() error {
+	return nil
 }
 
 // GetValue returns the value of the pair

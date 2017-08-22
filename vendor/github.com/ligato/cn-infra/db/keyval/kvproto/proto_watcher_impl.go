@@ -19,10 +19,26 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
+type protoWatcher struct {
+	watcher    keyval.BytesWatcher
+	serializer keyval.Serializer
+}
+
 // protoWatchResp represents watch notification. Data is unmarshaled data to proto.Message structure
 type protoWatchResp struct {
 	serializer keyval.Serializer
 	keyval.BytesWatchResp
+}
+
+// Watch for changes in datastore respChannel is used for receiving watch events
+func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), keys ...string) error {
+	err := pdb.watcher.Watch(func(msg keyval.BytesWatchResp) {
+		resp(NewWatchResp(pdb.serializer, msg))
+	}, keys...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // NewWatchResp initialize proto watch response from byte WatchResponse

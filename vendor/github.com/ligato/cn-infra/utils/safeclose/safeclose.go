@@ -16,9 +16,10 @@ package safeclose
 
 import (
 	"errors"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"io"
 	"reflect"
+
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // CloserWithoutErr is similar interface to GoLang Closer but Close() does not return error
@@ -30,7 +31,7 @@ type CloserWithoutErr interface {
 func Close(obj interface{}) error {
 	defer func() {
 		if r := recover(); r != nil {
-			logroot.Logger().Error("Recovered in safeclose", r)
+			logroot.StandardLogger().Error("Recovered in safeclose", r)
 		}
 	}()
 
@@ -46,7 +47,7 @@ func Close(obj interface{}) error {
 			}
 		} else if closer, ok := obj.(io.Closer); ok {
 			if closer != nil {
-				logroot.Logger().Debug("closer: ", closer)
+				logroot.StandardLogger().Debug("closer: ", closer)
 				err := closer.Close()
 				return err
 			}
@@ -70,7 +71,7 @@ func Close(obj interface{}) error {
 func CloseAll(objs ...interface{}) (details []error, errOccured error) {
 	defer func() {
 		if r := recover(); r != nil {
-			logroot.Logger().Error("Recovered in safeclose", r)
+			logroot.StandardLogger().Error("Recovered in safeclose", r)
 		}
 	}()
 
