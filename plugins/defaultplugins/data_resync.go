@@ -302,8 +302,8 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		log.DefaultLogger().Debug("linuxIfIndexes watch registration finished")
 	}
 
-	plugin.watchConfigReg, err = plugin.Transport.
-		WatchData("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
+	plugin.watchConfigReg, err = plugin.Watcher.
+		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
 			acl.KeyPrefix(),
 			intf.InterfaceKeyPrefix(),
 			bfd.SessionKeyPrefix(),
@@ -316,8 +316,8 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	plugin.watchStatusReg, err = plugin.Transport.
-		WatchData("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
+	plugin.watchStatusReg, err = plugin.Watcher.
+		Watch("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
 			intf.InterfaceStateKeyPrefix(), l2.BridgeDomainStateKeyPrefix())
 	if err != nil {
 		return err

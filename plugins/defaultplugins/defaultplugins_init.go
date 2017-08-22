@@ -44,7 +44,8 @@ import (
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	Transport    datasync.TransportAdapter `inject:""`
+	Transport    datasync.KeyProtoValWriter `inject:""`
+	Watcher      datasync.KeyValProtoWatcher
 	ServiceLabel *servicelabel.Plugin
 	GoVppmux     *govppmux.GOVPPPlugin
 	Kafka        kafka.Mux
@@ -115,8 +116,6 @@ func plugin() *Plugin {
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator & ifStateUpdater
 func (plugin *Plugin) Init() error {
-	plugin.Transport = datasync.GetTransport()
-
 	log.DefaultLogger().Debug("Initializing interface plugin")
 
 	if plugin.Kafka != nil {
