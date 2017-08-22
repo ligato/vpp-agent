@@ -417,6 +417,8 @@ func createRoute(db keyval.ProtoBroker) {
 	//routes.Ip[0].NextHops[0].Address = "2587:db8:0:0:0:ff00:42:8329"
 	routes.Ip[0].NextHops[0].Address = "192.168.1.5"
 	routes.Ip[0].NextHops[0].Weight = 5
+	routes.Ip[0].NextHops[0].Preference = 1
+
 
 	path := l3.RouteKey()
 	db.Put(path, &routes)

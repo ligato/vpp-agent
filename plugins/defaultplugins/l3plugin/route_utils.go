@@ -16,11 +16,12 @@ package l3plugin
 
 import (
 	"bytes"
+	"net"
+	"sort"
+
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"net"
-	"sort"
 )
 
 // Route represents a forward IP route entry.
@@ -33,9 +34,10 @@ type Route struct {
 // NextHop defines the parameters of gateway to which packets should be forwarded
 // when a given routing table entry is applied.
 type NextHop struct {
-	addr   net.IP
-	intf   uint32
-	weight uint32
+	addr       net.IP
+	intf       uint32
+	weight     uint8
+	preference uint8
 }
 
 // SortedRoutes type is used to implement sort interface for slice of Route
@@ -66,7 +68,8 @@ func eqRoutes(a *Route, b *Route) bool {
 		bytes.Equal(a.destAddr.Mask, b.destAddr.Mask) &&
 		bytes.Equal(a.nexthop.addr, b.nexthop.addr) &&
 		a.nexthop.intf == b.nexthop.intf &&
-		a.nexthop.weight == b.nexthop.weight
+		a.nexthop.weight == b.nexthop.weight &&
+		a.nexthop.preference == b.nexthop.preference
 }
 
 func lessRoute(a *Route, b *Route) bool {
@@ -85,8 +88,10 @@ func lessRoute(a *Route, b *Route) bool {
 	if a.nexthop.intf != b.nexthop.intf {
 		return a.nexthop.intf < b.nexthop.intf
 	}
-	return a.nexthop.weight < b.nexthop.weight
-
+	if a.nexthop.weight != b.nexthop.weight {
+		return a.nexthop.weight < b.nexthop.weight
+	}
+	return a.nexthop.preference < b.nexthop.preference
 }
 
 func (plugin *RouteConfigurator) protoRoutesToStruct(r *l3.StaticRoutes) []*Route {
@@ -125,7 +130,7 @@ func (plugin *RouteConfigurator) protoRoutesToStruct(r *l3.StaticRoutes) []*Rout
 				route := &Route{
 					vrfID,
 					*parsedDestIP,
-					NextHop{nextHopIP, ifindex, nextHop.Weight},
+					NextHop{nextHopIP, ifindex, uint8(nextHop.Weight), uint8(nextHop.Preference)},
 				}
 				result = append(result, route)
 			}

@@ -160,6 +160,7 @@ func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error 
 	req.NextHopAddress = []byte(route.nexthop.addr)
 	req.NextHopSwIfIndex = route.nexthop.intf
 	req.NextHopWeight = uint8(route.nexthop.weight)
+	req.NextHopPreference = uint8(route.nexthop.preference)
 	req.NextHopTableID = route.vrfID
 
 	req.NextHopViaLabel = nextHopViaLabelUnset
