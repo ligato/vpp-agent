@@ -33,7 +33,7 @@ const PluginID core.PluginName = "linuxplugin"
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	transport datasync.TransportAdapter // data transport adapter
+	watcher datasync.KeyValProtoWatcher // data watcher adapter
 
 	ifIndexes      ifaceidx.LinuxIfIndexRW
 	ifConfigurator *LinuxInterfaceConfigurator
@@ -41,7 +41,7 @@ type Plugin struct {
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
 
-	watchDataReg datasync.WatchDataRegistration
+	watchDataReg datasync.WatchRegistration
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -57,9 +57,7 @@ func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
 func (plugin *Plugin) Init() error {
 	var err error
-	plugin.transport = datasync.GetTransport()
-
-	log.Debug("Initializing Linux interface plugin")
+	log.DefaultLogger().Debug("Initializing Linux interface plugin")
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
@@ -72,7 +70,7 @@ func (plugin *Plugin) Init() error {
 	go plugin.watchEvents(ctx)
 
 	// Interface indexes
-	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "linux_if_indexes", nil))
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID, "linux_if_indexes", nil))
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}

@@ -38,7 +38,7 @@ func NewDataResyncReq() *DataResyncReq {
 
 // DataResync delegates resync request only to interface configurator for now.
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
-	log.Info("resync the Linux Configuration")
+	log.DefaultLogger().Info("resync the Linux Configuration")
 
 	plugin.ifConfigurator.Resync(req.Interfaces)
 
@@ -48,14 +48,14 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		log.Debug("Received RESYNC key ", key)
+		log.DefaultLogger().Debug("Received RESYNC key ", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 			numInterfaces := resyncAppendInterface(resyncData, req)
-			log.Debug("Received RESYNC interface values ", numInterfaces)
+			log.DefaultLogger().Debug("Received RESYNC interface values ", numInterfaces)
 		} else {
-			log.Warn("ignoring ", resyncEv)
+			log.DefaultLogger().Warn("ignoring ", resyncEv)
 		}
 	}
 	return req
@@ -79,15 +79,15 @@ func resyncAppendInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 }
 
 func (plugin *Plugin) subscribeWatcher() (err error) {
-	log.Debug("subscribeWatcher begin")
+	log.DefaultLogger().Debug("subscribeWatcher begin")
 
-	plugin.watchDataReg, err = plugin.transport.
-		WatchData("linuxplugin", plugin.changeChan, plugin.resyncChan, interfaces.InterfaceKeyPrefix())
+	plugin.watchDataReg, err = plugin.watcher.
+		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan, interfaces.InterfaceKeyPrefix())
 	if err != nil {
 		return err
 	}
 
-	log.Debug("data transport watch finished")
+	log.DefaultLogger().Debug("data watcher watch finished")
 
 	return nil
 }
@@ -95,7 +95,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) error {
 	var err error
 	key := dataChng.GetKey()
-	log.Debug("Start processing change for key: ", key)
+	log.DefaultLogger().Debug("Start processing change for key: ", key)
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
@@ -108,7 +108,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 			err = plugin.dataChangeIface(diff, &value, &prevValue, dataChng.GetChangeType())
 		}
 	} else {
-		log.Warn("ignoring change ", dataChng) //NOT ERROR!
+		log.DefaultLogger().Warn("ignoring change ", dataChng) //NOT ERROR!
 	}
 	return err
 }
