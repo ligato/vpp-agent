@@ -77,10 +77,10 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case dataChng := <-plugin.changeChan:
 			// For FIBs only: if changePropagateRequest ends up without errors, the dataChng.Done is called in l2fib_vppcalls,
 			// otherwise the dataChng.Done is called here
-			err := plugin.changePropagateRequest(dataChng, dataChng.Done)
+			callbackCalled, err := plugin.changePropagateRequest(dataChng, dataChng.Done)
 			// When the request propagation is completed, send the error context (even if the error is nil)
 			plugin.errorChannel <- ErrCtx{dataChng, err}
-			if err != nil {
+			if !callbackCalled {
 				dataChng.Done(err)
 			}
 
