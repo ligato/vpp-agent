@@ -15,6 +15,7 @@ if [ ! -d "$VPP_CACHE_DIR" ]; then
     docker cp $id:/vpp-deb/vpp.tar .
     docker rm -v $id
 
+    mkdir $VPP_CACHE_DIR
     tar -xvf vpp.tar -C $VPP_CACHE_DIR
 
 #    # latest vpp requires newer NASM
