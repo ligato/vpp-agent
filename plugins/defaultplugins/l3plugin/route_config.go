@@ -75,11 +75,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 		config.VrfId = uint32(intVrfFromKey)
 	}
 	// Transform route data
-	ifIndex, _, exists := plugin.SwIfIndexes.LookupIdx(config.OutgoingInterface)
-	if !exists {
-		log.Infof("Route outgoing interface %v not found", config.OutgoingInterface)
-	}
-	route, err := TransformRoute(config, ifIndex)
+	route, err := TransformRoute(config, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}
@@ -102,10 +98,6 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
 	log.Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	// Transform new route data
-	newIfIndex, _, exists := plugin.SwIfIndexes.LookupIdx(newConfig.OutgoingInterface)
-	if !exists {
-		log.Infof("New route outgoing interface %v not found", newConfig.OutgoingInterface)
-	}
 	// Validate new route data Vrf
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(newConfig.VrfId) {
@@ -117,16 +109,12 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		}
 		newConfig.VrfId = uint32(intVrfFromKey)
 	}
-	newRoute, err := TransformRoute(newConfig, newIfIndex)
+	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}
 	// Transform old route data
-	oldIfIndex, _, exists := plugin.SwIfIndexes.LookupIdx(oldConfig.OutgoingInterface)
-	if !exists {
-		log.Infof("Old route outgoing interface %v not found", oldConfig.OutgoingInterface)
-	}
-	oldRoute, err := TransformRoute(oldConfig, oldIfIndex)
+	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}
@@ -156,11 +144,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
 	log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Transform route data
-	ifIndex, _, exists := plugin.SwIfIndexes.LookupIdx(config.OutgoingInterface)
-	if !exists {
-		log.Infof("Route outgoing interface %v not found", config.OutgoingInterface)
-	}
-	route, err := TransformRoute(config, ifIndex)
+	route, err := TransformRoute(config, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}

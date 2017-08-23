@@ -328,73 +328,73 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	return nil
 }
 
-func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) error {
+func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {
 	key := dataChng.GetKey()
 
 	// Skip potential changes on error keys
 	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
-		return nil
+		return false, nil
 	}
 	log.Debug("Start processing change for key: ", key)
 	if strings.HasPrefix(key, acl.KeyPrefix()) {
 		var value, prevValue acl.AccessLists_Acl
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, intf.InterfaceKeyPrefix()) {
 		var value, prevValue intf.Interfaces_Interface
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeIface(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
 		var value, prevValue bfd.SingleHopBFD_Session
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeBfdSession(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
 		var value, prevValue bfd.SingleHopBFD_Key
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeBfdKey(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
 		var value, prevValue bfd.SingleHopBFD_EchoFunction
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeBfdEchoFunction(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 		fib, _, _ := l2.ParseFibKey(key)
@@ -402,40 +402,40 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// L2 FIB entry
 			var value, prevValue l2.FibTableEntries_FibTableEntry
 			if err := dataChng.GetValue(&value); err != nil {
-				return err
+				return false, err
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 				if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-					return err
+					return true, err
 				}
 			} else {
-				return err
+				return false, err
 			}
 		} else {
 			// Bridge domain
 			var value, prevValue l2.BridgeDomains_BridgeDomain
 			if err := dataChng.GetValue(&value); err != nil {
-				return err
+				return false, err
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 				if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-					return err
+					return false, err
 				}
 			} else {
-				return err
+				return false, err
 			}
 		}
 	} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 		var value, prevValue l2.XConnectPairs_XConnectPair
 		if err := dataChng.GetValue(&value); err != nil {
-			return err
+			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeXCon(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-				return err
+				return false, err
 			}
 		} else {
-			return err
+			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
 		isRoute, vrfFromKey, _ := l3.ParseRouteKey(key)
@@ -443,14 +443,14 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// Route
 			var value, prevValue l3.StaticRoutes_Route
 			if err := dataChng.GetValue(&value); err != nil {
-				return err
+				return false, err
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
-					return err
+					return false, err
 				}
 			} else {
-				return err
+				return false, err
 			}
 		} else {
 			// Vrf
@@ -459,5 +459,5 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	} else {
 		log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
-	return nil
+	return false, nil
 }

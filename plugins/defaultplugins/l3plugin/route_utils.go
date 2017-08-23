@@ -22,6 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
 	"sort"
+	"fmt"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route
@@ -76,7 +78,7 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 }
 
 // TransformRoute converts raw route data to Route object
-func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcalls.Route, error) {
+func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex) (*vppcalls.Route, error) {
 	if routeInput == nil {
 		log.Infof("Route input is empty")
 		return nil, nil
@@ -92,14 +94,17 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcall
 	vrfID := routeInput.VrfId
 
 	ifName := routeInput.OutgoingInterface
-	if ifName == "" {
-		log.Infof("Outgoing interface not set for next hop %v, route skipped", routeInput.NextHopAddr)
-		return nil, nil
+
+	ifIndex := vppcalls.NextHopOutgoingIfUnset
+	if ifName != "" {
+		var exists bool
+		ifIndex, _, exists = index.LookupIdx(ifName)
+		if !exists {
+			return nil, fmt.Errorf("Route outgoing interface %v not found", ifName)
+		}
 	}
-	if ifIndex == 0 {
-		// Unset outgoing interface
-		ifIndex = vppcalls.NextHopOutgoingIfUnset
-	}
+
+
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
 		nextHopIP = nextHopIP.To16()

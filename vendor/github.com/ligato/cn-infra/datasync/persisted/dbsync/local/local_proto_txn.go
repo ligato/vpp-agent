@@ -71,9 +71,7 @@ func (txn *ProtoTxn) Commit() error {
 
 		kvs[key] = syncbase.NewChange(key, item.Data, 0, changeType)
 	}
-	txn.commit(kvs)
-
-	return nil
+	return txn.commit(kvs)
 }
 
 // ProtoTxnItem is used in ProtoTxn
