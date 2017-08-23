@@ -68,7 +68,6 @@ func main() {
 	// Create new agent
 	agentVar := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
-
 	// End when the idx_veth_cache example is finished
 	go closeExample("idx_veth_cache example finished", closeChannel)
 
@@ -92,11 +91,11 @@ const PluginID core.PluginName = "example-plugin"
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin
 type ExamplePlugin struct {
 	// Linux plugin dependency
-	Linux			 *linuxplugin.Plugin
+	Linux *linuxplugin.Plugin
 
 	// Other agents transport
-	agent1           datasync.TransportAdapter
-	agent2           datasync.TransportAdapter
+	agent1 datasync.TransportAdapter
+	agent2 datasync.TransportAdapter
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
