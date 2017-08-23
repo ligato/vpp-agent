@@ -16,14 +16,14 @@ package l3plugin
 
 import (
 	"bytes"
+	"fmt"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
 	"sort"
-	"fmt"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route
@@ -54,7 +54,8 @@ func eqRoutes(a *vppcalls.Route, b *vppcalls.Route) bool {
 		bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) &&
 		bytes.Equal(a.NextHopAddr, b.NextHopAddr) &&
 		a.OutIface == b.OutIface &&
-		a.Weight == b.Weight
+		a.Weight == b.Weight &&
+		a.Preference == b.Preference
 }
 
 func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
@@ -72,6 +73,9 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 	}
 	if a.OutIface != b.OutIface {
 		return a.OutIface < b.OutIface
+	}
+	if a.Preference != b.Preference {
+		return a.Preference < b.Preference
 	}
 	return a.Weight < b.Weight
 
@@ -104,7 +108,6 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex)
 		}
 	}
 
-
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
 		nextHopIP = nextHopIP.To16()
@@ -117,6 +120,7 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex)
 		NextHopAddr: nextHopIP,
 		OutIface:    ifIndex,
 		Weight:      routeInput.Weight,
+		Preference:  routeInput.Preference,
 	}
 	return route, nil
 }

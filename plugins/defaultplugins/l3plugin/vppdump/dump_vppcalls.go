@@ -119,8 +119,9 @@ func dumpStaticRouteDetails(routes map[uint32]*StaticRoutes, tableID uint32,
 			OutgoingInterfaceSwIfIdx:    path.SwIfIndex,
 			OutgoingInterfaceConfigured: path.SwIfIndex < ^uint32(0),
 			StaticRoutes_Route_NextHops: l3nb.StaticRoutes_Route_NextHops{
-				Address: nextHopAddr,
-				Weight:  path.Weight,
+				Address:    nextHopAddr,
+				Weight:     path.Weight,
+				Preference: uint32(path.Preference),
 			},
 		})
 	}

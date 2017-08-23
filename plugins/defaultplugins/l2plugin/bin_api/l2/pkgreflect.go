@@ -23,6 +23,7 @@ var Types = map[string]reflect.Type{
 	"L2InterfacePbbTagRewriteReply":  reflect.TypeOf((*L2InterfacePbbTagRewriteReply)(nil)).Elem(),
 	"L2InterfaceVlanTagRewrite":      reflect.TypeOf((*L2InterfaceVlanTagRewrite)(nil)).Elem(),
 	"L2InterfaceVlanTagRewriteReply": reflect.TypeOf((*L2InterfaceVlanTagRewriteReply)(nil)).Elem(),
+	"L2MacsEvent":                    reflect.TypeOf((*L2MacsEvent)(nil)).Elem(),
 	"L2XconnectDetails":              reflect.TypeOf((*L2XconnectDetails)(nil)).Elem(),
 	"L2XconnectDump":                 reflect.TypeOf((*L2XconnectDump)(nil)).Elem(),
 	"L2fibAddDel":                    reflect.TypeOf((*L2fibAddDel)(nil)).Elem(),
@@ -33,6 +34,9 @@ var Types = map[string]reflect.Type{
 	"L2fibFlushBdReply":              reflect.TypeOf((*L2fibFlushBdReply)(nil)).Elem(),
 	"L2fibFlushInt":                  reflect.TypeOf((*L2fibFlushInt)(nil)).Elem(),
 	"L2fibFlushIntReply":             reflect.TypeOf((*L2fibFlushIntReply)(nil)).Elem(),
+	"MacEntry":                       reflect.TypeOf((*MacEntry)(nil)).Elem(),
+	"WantL2MacsEvents":               reflect.TypeOf((*WantL2MacsEvents)(nil)).Elem(),
+	"WantL2MacsEventsReply":          reflect.TypeOf((*WantL2MacsEventsReply)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
@@ -54,6 +58,7 @@ var Functions = map[string]reflect.Value{
 	"NewL2InterfacePbbTagRewriteReply":  reflect.ValueOf(NewL2InterfacePbbTagRewriteReply),
 	"NewL2InterfaceVlanTagRewrite":      reflect.ValueOf(NewL2InterfaceVlanTagRewrite),
 	"NewL2InterfaceVlanTagRewriteReply": reflect.ValueOf(NewL2InterfaceVlanTagRewriteReply),
+	"NewL2MacsEvent":                    reflect.ValueOf(NewL2MacsEvent),
 	"NewL2XconnectDetails":              reflect.ValueOf(NewL2XconnectDetails),
 	"NewL2XconnectDump":                 reflect.ValueOf(NewL2XconnectDump),
 	"NewL2fibAddDel":                    reflect.ValueOf(NewL2fibAddDel),
@@ -64,6 +69,8 @@ var Functions = map[string]reflect.Value{
 	"NewL2fibFlushBdReply":              reflect.ValueOf(NewL2fibFlushBdReply),
 	"NewL2fibFlushInt":                  reflect.ValueOf(NewL2fibFlushInt),
 	"NewL2fibFlushIntReply":             reflect.ValueOf(NewL2fibFlushIntReply),
+	"NewWantL2MacsEvents":               reflect.ValueOf(NewWantL2MacsEvents),
+	"NewWantL2MacsEventsReply":          reflect.ValueOf(NewWantL2MacsEventsReply),
 }
 
 var Variables = map[string]reflect.Value{}

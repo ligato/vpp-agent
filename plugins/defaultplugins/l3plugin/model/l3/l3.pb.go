@@ -40,6 +40,7 @@ type StaticRoutes_Route struct {
 	NextHopAddr       string `protobuf:"bytes,4,opt,name=next_hop_addr,proto3" json:"next_hop_addr,omitempty"`
 	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
 	Weight            uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
+	Preference        uint32 `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
 }
 
 func (m *StaticRoutes_Route) Reset()         { *m = StaticRoutes_Route{} }
