@@ -38,7 +38,7 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 		_, _, found := plugin.swIfIndexes.LookupIdx(ifaceName)
 		if !found {
 			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
-			err := plugin.Transport.Put(key, nil /*means delete*/)
+			err := plugin.Publish.Put(key, nil /*means delete*/)
 			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
 		} else {
 			log.DefaultLogger().WithField("ifaceName", ifaceName).Debug("interface status is needed")
@@ -56,7 +56,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	for {
 		select {
 		case ifState := <-plugin.ifStateChan:
-			plugin.Transport.Put(intf.InterfaceStateKey(ifState.State.Name), ifState.State)
+			plugin.Publish.Put(intf.InterfaceStateKey(ifState.State.Name), ifState.State)
 
 			// marshall data into JSON & send kafka message
 			if plugin.kafkaConn != nil && ifState.Type == intf.UPDOWN {
@@ -93,7 +93,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
 			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
-			err := plugin.Transport.Put(key, nil)
+			err := plugin.Publish.Put(key, nil)
 			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
 		} else {
 			log.DefaultLogger().WithField("bdName", bdName).Debug("bridge domain status required")
@@ -115,11 +115,11 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
-					plugin.Transport.Put(key, nil)
+					plugin.Publish.Put(key, nil)
 					log.DefaultLogger().Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
 					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
-					plugin.Transport.Put(key, bdState.State)
+					plugin.Publish.Put(key, bdState.State)
 					log.DefaultLogger().Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
 				} else {
 					log.DefaultLogger().Warnf("Unable to process bridge domain state with Idx %v and Name %v",

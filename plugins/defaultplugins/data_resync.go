@@ -293,12 +293,12 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 // put here all registration for above channel select (it ensures proper order during initialization
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	log.DefaultLogger().Debug("subscribeWatcher begin")
-	plugin.swIfIndexes.WatchNameToIdx(plugin.id, plugin.ifIdxWatchCh)
+	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIdxWatchCh)
 	log.DefaultLogger().Debug("swIfIndexes watch registration finished")
-	plugin.bdIndexes.WatchNameToIdx(plugin.id, plugin.bdIdxWatchCh)
+	plugin.bdIndexes.WatchNameToIdx(plugin.PluginName, plugin.bdIdxWatchCh)
 	log.DefaultLogger().Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.WatchNameToIdx(plugin.id, plugin.linuxIfIdxWatchCh)
+		plugin.linuxIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.linuxIfIdxWatchCh)
 		log.DefaultLogger().Debug("linuxIfIndexes watch registration finished")
 	}
 

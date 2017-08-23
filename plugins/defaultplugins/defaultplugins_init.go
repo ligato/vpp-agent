@@ -22,14 +22,11 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/localdeps"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -43,25 +40,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	Deps		 							// inject
-	Transport    datasync.KeyProtoValWriter // inject
-	Watch    datasync.KeyValProtoWatcher // inject
-
-	logger       logging.PluginLogger
-	id			 core.PluginName
-	serviceLabel servicelabel.ReaderAPI
-
-	EtcdSync	kvdbsync.Plugin
-
-	GoVppmux     *govppmux.GOVPPPlugin
-	Kafka        *kafka.Plugin
-	Linux        *linuxplugin.Plugin
-	//TODO Kafka PubSub `inject:""` instead of kafkaConn
+	Deps
 
 	aclConfigurator *aclplugin.ACLConfigurator
 	aclL3L4Indexes  idxvpp.NameToIdxRW
@@ -115,7 +98,13 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps // inject
+	// inject all below
+	localdeps.PluginInfraDeps
+	Publish datasync.KeyProtoValWriter
+	Watch   datasync.KeyValProtoWatcher
+	Kafka        *kafka.Plugin
+	GoVppmux     *govppmux.GOVPPPlugin
+	Linux        *linuxplugin.Plugin
 }
 
 var (
@@ -133,15 +122,9 @@ func plugin() *Plugin {
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator & ifStateUpdater
 func (plugin *Plugin) Init() error {
-	plugin.logger = plugin.Deps.Log
-	plugin.id = plugin.Deps.PluginName
-	plugin.serviceLabel = plugin.Deps.ServiceLabel
+	plugin.Log.Debug("Initializing interface plugin")
 
-
-
-	plugin.logger.Debug("Initializing interface plugin")
-
-	plugin.kafkaConn = plugin.Kafka.NewConnection(string(plugin.id))
+	plugin.kafkaConn = plugin.Kafka.NewConnection(string(plugin.PluginName))
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
@@ -200,7 +183,7 @@ func (plugin *Plugin) Init() error {
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface indexes
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id,
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 
 	// get pointer to the map with Linux interface indexes
@@ -211,16 +194,16 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 
 	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "bfd_session_indexes", nil)
+	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_session_indexes", nil)
 
 	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "bfd_auth_keys_indexes", nil)
+	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_auth_keys_indexes", nil)
 
 	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "bfd_echo_function_index", nil)
+	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_echo_function_index", nil)
 
 	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "bfd_removed_auth_keys", nil)
+	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{GoVppmux: plugin.GoVppmux}
@@ -229,35 +212,35 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		case plugin.ifStateChan <- state:
 			// OK
 		default:
-			plugin.logger.Debug("Unable to send to the ifState channel - channel buffer full.")
+			plugin.Log.Debug("Unable to send to the ifState channel - channel buffer full.")
 		}
 	})
 
-	plugin.logger.Debug("ifStateUpdater Initialized")
+	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.serviceLabel, Linux: plugin.Linux}
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
 
-	plugin.logger.Debug("ifConfigurator Initialized")
+	plugin.Log.Debug("ifConfigurator Initialized")
 
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
 		GoVppmux:     plugin.GoVppmux,
-		ServiceLabel: plugin.serviceLabel,
+		ServiceLabel: plugin.ServiceLabel,
 		SwIfIndexes:  plugin.swIfIndexes,
 		BfdIDSeq:     1,
 	}
 	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
 
-	plugin.logger.Debug("bfdConfigurator Initialized")
+	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	return nil
 }
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
 	var err error
-	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "acl_l3_l4_indexes", nil)
+	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "acl_l3_l4_indexes", nil)
 
-	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "acl_l2_indexes", nil)
+	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "acl_l2_indexes", nil)
 
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
 		GoVppmux:       plugin.GoVppmux,
@@ -271,22 +254,22 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	plugin.logger.Debug("aclConfigurator Initialized")
+	plugin.Log.Debug("aclConfigurator Initialized")
 
 	return nil
 }
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
 	// Bridge domain indexes
-	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id,
+	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName,
 		"bd_indexes", bdidx.IndexMetadata))
 
 	// Interface to bridge domain indexes - desired state
-	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "if_to_bd_des_indexes", nil)
+	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "if_to_bd_des_indexes", nil)
 
 	// Interface to bridge domain indexes - current state
 
-	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "if_to_bd_real_indexes", nil)
+	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "if_to_bd_real_indexes", nil)
 
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
 		GoVppmux:           plugin.GoVppmux,
@@ -305,12 +288,12 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		case plugin.bdStateChan <- state:
 			// OK
 		default:
-			plugin.logger.Debug("Unable to send to the bdState channel: buffer is full.")
+			plugin.Log.Debug("Unable to send to the bdState channel: buffer is full.")
 		}
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "fib_indexes", nil)
+	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "fib_indexes", nil)
 
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
 		GoVppmux:      plugin.GoVppmux,
@@ -324,7 +307,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 xConnect indexes
 
-	plugin.xcIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "xc_indexes", nil)
+	plugin.xcIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "xc_indexes", nil)
 
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
 		GoVppmux:    plugin.GoVppmux,
@@ -339,27 +322,27 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		return err
 	}
 
-	plugin.logger.Debug("bdConfigurator Initialized")
+	plugin.Log.Debug("bdConfigurator Initialized")
 
 	err = plugin.fibConfigurator.Init()
 	if err != nil {
 		return err
 	}
 
-	plugin.logger.Debug("fibConfigurator Initialized")
+	plugin.Log.Debug("fibConfigurator Initialized")
 
 	err = plugin.xcConfigurator.Init()
 	if err != nil {
 		return err
 	}
 
-	plugin.logger.Debug("xcConfigurator Initialized")
+	plugin.Log.Debug("xcConfigurator Initialized")
 
 	return nil
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
-	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "route_indexes", nil)
+	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "route_indexes", nil)
 
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
 		GoVppmux:      plugin.GoVppmux,
@@ -372,14 +355,14 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 
-	plugin.logger.Debug("routeConfigurator Initialized")
+	plugin.Log.Debug("routeConfigurator Initialized")
 
 	return nil
 }
 
 func (plugin *Plugin) initErrorHandler() error {
 
-	plugin.errorIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.id, "error_indexes", nil)
+	plugin.errorIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "error_indexes", nil)
 
 	// Init mapping index
 	plugin.errorIdxSeq = 1
@@ -388,7 +371,7 @@ func (plugin *Plugin) initErrorHandler() error {
 
 // AfterInit delegates to ifStateUpdater
 func (plugin *Plugin) AfterInit() error {
-	plugin.logger.Debug("vpp plugins AfterInit begin")
+	plugin.Log.Debug("vpp plugins AfterInit begin")
 
 	//err := plugin.ifConfigurator.AfterInit()
 	err := plugin.ifStateUpdater.AfterInit()
@@ -396,7 +379,7 @@ func (plugin *Plugin) AfterInit() error {
 		return err
 	}
 
-	plugin.logger.Debug("vpp plugins AfterInit finished successfully")
+	plugin.Log.Debug("vpp plugins AfterInit finished successfully")
 
 	return nil
 }

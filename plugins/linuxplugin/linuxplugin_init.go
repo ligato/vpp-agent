@@ -33,7 +33,7 @@ const PluginID core.PluginName = "linuxplugin"
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
-	Watcher datasync.KeyValProtoWatcher // data watcher adapter
+	Deps
 
 	ifIndexes      ifaceidx.LinuxIfIndexRW
 	ifConfigurator *LinuxInterfaceConfigurator
@@ -45,6 +45,12 @@ type Plugin struct {
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+}
+
+// Deps is here to group injected dependencies of plugin
+// to not mix with other plugin fields.
+type Deps struct {
+	Watcher datasync.KeyValProtoWatcher // injected
 }
 
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux

@@ -48,7 +48,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := linuxlocal.Flavor{}
+	flavor := linuxlocal.FlavorVppLocal{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
