@@ -33,7 +33,8 @@ type Flavor struct {
 	injected         bool
 	Logrus           logrus.Plugin
 	LinuxLocalClient localclient.Plugin
-	HTTP             httpmux.Plugin
+	RestHTTP     httpmux.Plugin
+	ProbeHTTP    httpmux.Plugin
 	LogManager       logmanager.Plugin
 	ServiceLabel     servicelabel.Plugin
 	StatusCheck      statuscheck.Plugin
@@ -49,10 +50,13 @@ func (f *Flavor) Inject() error {
 		return nil
 	}
 	f.injected = true
-	f.HTTP.LogFactory = &f.Logrus
+	f.RestHTTP.LogFactory = &f.Logrus
+	f.RestHTTP.InstanceIdentifier = httpmux.Rest
+	f.ProbeHTTP.LogFactory = &f.Logrus
+	f.ProbeHTTP.InstanceIdentifier = httpmux.Probe
 	f.LogManager.ManagedLoggers = &f.Logrus
-	f.LogManager.HTTP = &f.HTTP
-	f.StatusCheck.HTTP = &f.HTTP
+	f.LogManager.HTTP = &f.RestHTTP
+	f.StatusCheck.HTTP = &f.ProbeHTTP
 	f.GoVPP.StatusCheck = &f.StatusCheck
 	f.GoVPP.LogFactory = &f.Logrus
 	f.VPP.ServiceLabel = &f.ServiceLabel
