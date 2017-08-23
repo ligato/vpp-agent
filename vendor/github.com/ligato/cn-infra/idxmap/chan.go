@@ -15,9 +15,10 @@
 package idxmap
 
 import (
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"time"
+
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // DefaultNotifTimeout for delivery of notification
@@ -32,10 +33,10 @@ func ToChan(ch chan NamedMappingGenericEvent, opts ...interface{}) func(dto Name
 
 	for _, opt := range opts {
 		switch opt.(type) {
-		case *WithLoggerOpt:
-			logger = opt.(*WithLoggerOpt).logger
-		case *WithTimeoutOpt:
-			timeout = opt.(*WithTimeoutOpt).timeout
+		case *core.WithLoggerOpt:
+			logger = opt.(*core.WithLoggerOpt).Logger
+		case *core.WithTimeoutOpt:
+			timeout = opt.(*core.WithTimeoutOpt).Timeout
 		}
 	}
 
@@ -46,24 +47,4 @@ func ToChan(ch chan NamedMappingGenericEvent, opts ...interface{}) func(dto Name
 			logger.Warn("Unable to deliver notification")
 		}
 	}
-}
-
-// WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
-type WithTimeoutOpt struct {
-	timeout time.Duration
-}
-
-// WithTimeout creates an option for ToChan function that defines a timeout for notification delivery.
-func WithTimeout(timeout time.Duration) *WithTimeoutOpt {
-	return &WithTimeoutOpt{timeout: timeout}
-}
-
-// WithLoggerOpt defines a logger that logs if delivery of notification is unsuccessful.
-type WithLoggerOpt struct {
-	logger logging.Logger
-}
-
-// WithLogger creates an option for ToChan function that specifies a logger to be used.
-func WithLogger(logger logging.Logger) *WithLoggerOpt {
-	return &WithLoggerOpt{logger: logger}
 }

@@ -12,6 +12,10 @@ type PluginConfig interface {
 	// GetValue parse configuration for a plugin a store the results in data.
 	// Argument data is a pointer to instance of a go structure.
 	GetValue(data interface{}) (found bool, err error)
+
+	// GetConfigName returns usually derived config name from plugin name
+	// PluginName + "-config"
+	GetConfigName() string
 }
 
 // ForPlugin returns API that is injectable to a particular Plugin
@@ -43,4 +47,9 @@ func (p *pluginConfig) GetValue(config interface{}) (found bool, err error) {
 	}
 
 	return true, nil
+}
+
+// GetConfigName - see description in PluginConfig.GetConfigName
+func (p *pluginConfig) GetConfigName() string {
+	return p.configFile
 }

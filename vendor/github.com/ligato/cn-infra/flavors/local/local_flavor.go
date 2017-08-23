@@ -41,9 +41,9 @@ type FlavorLocal struct {
 // Inject does nothing (it is here for potential later extensibility)
 // Composite flavors embedding local flavor are supposed to call this
 // method.
-func (f *FlavorLocal) Inject() error {
+func (f *FlavorLocal) Inject() (ok bool) {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -51,7 +51,7 @@ func (f *FlavorLocal) Inject() error {
 	f.StatusCheck.Deps.PluginName = core.PluginName("status-check")
 	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("resync-orch")
 
-	return nil
+	return true
 }
 
 // Plugins combines all Plugins in flavor to the list
@@ -96,5 +96,5 @@ func (f *FlavorLocal) InfraDeps(pluginName string) *localdeps.PluginInfraDeps {
 		*f.LogDeps(pluginName),
 		config.ForPlugin(pluginName),
 		&f.StatusCheck,
-		&f.ServiceLabel, }
+		&f.ServiceLabel}
 }

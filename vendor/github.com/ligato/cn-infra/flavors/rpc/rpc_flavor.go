@@ -31,18 +31,13 @@ type FlavorRPC struct {
 
 	HealthRPC probe.Plugin
 	LogMngRPC logmanager.Plugin
-
-	injected bool
 }
 
 // Inject sets object references
-func (f *FlavorRPC) Inject() error {
-	if f.injected {
-		return nil
+func (f *FlavorRPC) Inject() (allReadyInjected bool) {
+	if !f.FlavorLocal.Inject() {
+		return false
 	}
-	f.injected = true
-
-	f.FlavorLocal.Inject()
 
 	f.HTTP.Deps.PluginLogDeps = *f.LogDeps("http")
 
@@ -55,7 +50,7 @@ func (f *FlavorRPC) Inject() error {
 	f.HealthRPC.Deps.StatusCheck = &f.StatusCheck
 	//TODO f.HealthRPC.Transport inject restsync
 
-	return nil
+	return true
 }
 
 // Plugins combines all Plugins in flavor to the list

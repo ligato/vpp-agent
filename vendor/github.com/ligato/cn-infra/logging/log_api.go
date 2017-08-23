@@ -43,6 +43,9 @@ type Logger interface {
 	WithField(key string, value interface{}) LogWithLevel
 	// WithFields creates multiple structured fields
 	WithFields(fields map[string]interface{}) LogWithLevel
+
+	// GetName return the logger name
+	GetName() string
 }
 
 // LogFactory is API for the plugins that want to create their own loggers.

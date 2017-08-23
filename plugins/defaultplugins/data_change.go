@@ -23,7 +23,6 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	"github.com/ligato/cn-infra/datasync"
 )
 
 // dataChangeACL propagates to the particular aclConfigurator

@@ -330,7 +330,7 @@ func del(keyPrefix string, opt ...datasync.DelOption) {
 	var found bool
 	var err error
 
-	found, err = broker.Delete(keyPrefix, opt)
+	found, err = broker.Delete(keyPrefix, opt...)
 	if err != nil {
 		log.Error(err.Error())
 		return

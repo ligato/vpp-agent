@@ -15,31 +15,36 @@
 package datasync
 
 import (
-	"github.com/ligato/cn-infra/logging"
 	"time"
 )
 
 // PutOption defines options for Put operation. The particular options can be found below.
 type PutOption interface {
+	//PutOptionMark is just for marking implementation that it implements this interface
+	PutOptionMark()
 }
 
 // DelOption defines options for Del operation. The particular options can be found below.
 type DelOption interface {
+	//DelOptionMark is just for marking implementation that it implements this interface
+	DelOptionMark()
 }
 
 // WithTTLOpt defines a TTL for data being put. Once TTL elapses the data is removed from data store.
 type WithTTLOpt struct {
+	PutOptionMarker
 	TTL time.Duration
 }
 
 // WithTTL creates new instance of TTL option. Once TTL elapses data is removed.
 // Beware: some implementation might be using TTL with lower precision.
 func WithTTL(TTL time.Duration) *WithTTLOpt {
-	return &WithTTLOpt{TTL}
+	return &WithTTLOpt{TTL: TTL}
 }
 
 // WithPrefixOpt applies an operation to all items with the specified prefix.
 type WithPrefixOpt struct {
+	DelOptionMarker
 }
 
 // WithPrefix creates new instance of WithPrefixOpt.
@@ -47,22 +52,14 @@ func WithPrefix() *WithPrefixOpt {
 	return &WithPrefixOpt{}
 }
 
-// WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
-type WithTimeoutOpt struct {
-	Timeout time.Duration
-}
+// PutOptionMarker is meant for anonymous composition in With*Opt structs
+type PutOptionMarker struct{}
 
-// WithTimeout creates an option for ToChan function that defines a timeout for notification delivery.
-func WithTimeout(timeout time.Duration) *WithTimeoutOpt {
-	return &WithTimeoutOpt{timeout}
-}
+// PutOptionMark  is just for marking implementation that it implements this interface
+func (marker *PutOptionMarker) PutOptionMark() {}
 
-// WithLoggerOpt defines a logger that logs if delivery of notification is unsuccessful.
-type WithLoggerOpt struct {
-	Logger logging.Logger
-}
+// DelOptionMarker is meant for anonymous composition in With*Opt structs
+type DelOptionMarker struct{}
 
-// WithLogger creates an option for ToChan function that specifies a logger to be used.
-func WithLogger(logger logging.Logger) *WithLoggerOpt {
-	return &WithLoggerOpt{logger}
-}
+// DelOptionMark is just for marking implementation that it implements this interface
+func (marker *DelOptionMarker) DelOptionMark() {}

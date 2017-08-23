@@ -50,13 +50,10 @@ type FlavorEtcdKafka struct {
 }
 
 // Inject sets object references
-func (f *FlavorEtcdKafka) Inject() error {
-	if f.injected {
-		return nil
+func (f *FlavorEtcdKafka) Inject() (allReadyInjected bool) {
+	if !f.FlavorRPC.Inject() {
+		return false
 	}
-	f.injected = true
-
-	f.FlavorRPC.Inject()
 
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3")
 	f.ETCDDataSync.Deps.PluginLogDeps = *f.LogDeps("etcdv3-datasync")
@@ -68,7 +65,7 @@ func (f *FlavorEtcdKafka) Inject() error {
 
 	f.Kafka.Deps.PluginInfraDeps = *f.InfraDeps("kafka")
 
-	return nil
+	return true
 }
 
 // Plugins combines all Plugins in flavor to the list

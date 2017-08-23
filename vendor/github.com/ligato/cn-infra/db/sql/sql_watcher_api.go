@@ -30,7 +30,7 @@ type WatchResp interface {
 }
 
 // ToChan TODO
-func ToChan(respChan chan WatchResp) func(event WatchResp) {
+func ToChan(respChan chan WatchResp, options ...interface{}) func(event WatchResp) {
 	return func(WatchResp) {
 		/*select {
 		case respChan <- resp:

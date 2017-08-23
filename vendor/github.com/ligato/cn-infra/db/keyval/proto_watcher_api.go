@@ -15,9 +15,11 @@
 package keyval
 
 import (
+	"time"
+
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"time"
 )
 
 // ProtoWatcher define API for monitoring changes in a datastore
@@ -41,10 +43,10 @@ func ToChanProto(ch chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatc
 
 	for _, opt := range opts {
 		switch opt.(type) {
-		case *datasync.WithLoggerOpt:
-			logger = opt.(*datasync.WithLoggerOpt).Logger
-		case *datasync.WithTimeoutOpt:
-			timeout = opt.(*datasync.WithTimeoutOpt).Timeout
+		case *core.WithLoggerOpt:
+			logger = opt.(*core.WithLoggerOpt).Logger
+		case *core.WithTimeoutOpt:
+			timeout = opt.(*core.WithTimeoutOpt).Timeout
 		}
 	}
 
