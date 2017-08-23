@@ -100,11 +100,11 @@ type Plugin struct {
 type Deps struct {
 	// inject all below
 	localdeps.PluginInfraDeps
-	Publish datasync.KeyProtoValWriter
-	Watch   datasync.KeyValProtoWatcher
-	Kafka        *kafka.Plugin
-	GoVppmux     *govppmux.GOVPPPlugin
-	Linux        *linuxplugin.Plugin
+	Publish  datasync.KeyProtoValWriter
+	Watch    datasync.KeyValProtoWatcher
+	Kafka    *kafka.Plugin
+	GoVppmux *govppmux.GOVPPPlugin
+	Linux    *linuxplugin.Plugin
 }
 
 var (

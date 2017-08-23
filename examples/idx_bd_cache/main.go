@@ -60,7 +60,7 @@ const PluginID core.PluginName = "example-plugin"
 type examplePlugin struct {
 	agent1      datasync.KeyValProtoWatcher
 	agent2      datasync.KeyValProtoWatcher
-	writer 		datasync.KeyProtoValWriter
+	writer      datasync.KeyProtoValWriter
 	bdIdxLocal  bdidx.BDIndex
 	bdIdxAgent1 bdidx.BDIndex
 	bdIdxAgent2 bdidx.BDIndex

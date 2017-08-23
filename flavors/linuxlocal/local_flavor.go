@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-
 )
 
 // FlavorVppLocal glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
@@ -33,7 +32,7 @@ type FlavorVppLocal struct {
 	Linux            linuxplugin.Plugin
 	VPP              defaultplugins.Plugin
 
-	injected         bool
+	injected bool
 }
 
 // Inject sets object references

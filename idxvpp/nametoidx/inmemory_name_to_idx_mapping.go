@@ -136,7 +136,7 @@ func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.
 		msg := idxvpp.NameToIdxDto{
 			NameToIdxDtoWithoutMeta: idxvpp.NameToIdxDtoWithoutMeta{
 				NamedMappingEvent: dto.NamedMappingEvent,
-				Idx: internalMeta.idx},
+				Idx:               internalMeta.idx},
 			Metadata: internalMeta.meta,
 		}
 		callback(msg)

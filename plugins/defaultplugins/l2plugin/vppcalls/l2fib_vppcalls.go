@@ -125,7 +125,7 @@ func (fib *L2FibVppCalls) WatchFIBReplies() {
 
 		if fib.waitingForReply.Len() == 0 {
 			log.DefaultLogger().WithField("MessageID", vppReply.MessageID). //TODO WithField("err", vppReply.Error).
-									Error("Unexpected message ", vppReply)
+											Error("Unexpected message ", vppReply)
 			continue
 		}
 

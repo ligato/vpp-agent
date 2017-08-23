@@ -31,7 +31,7 @@ import (
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
-	Deps	// inject
+	Deps // inject
 
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter

@@ -78,9 +78,9 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
-	exampleConfigurator *ExampleConfigurator           // Plugin configurator
-	exampleIdx          idxvpp.NameToIdxRW             // Name-to-index mapping
-	exIdxWatchChannel   chan idxvpp.NameToIdxDto       // Channel to watch changes in mapping
+	exampleConfigurator *ExampleConfigurator       // Plugin configurator
+	exampleIdx          idxvpp.NameToIdxRW         // Name-to-index mapping
+	exIdxWatchChannel   chan idxvpp.NameToIdxDto   // Channel to watch changes in mapping
 	watchDataReg        datasync.WatchRegistration // To subscribe to mapping change events
 }
 
