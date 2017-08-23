@@ -24,8 +24,8 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
 // PluginID used in the Agent Core flavors
@@ -35,7 +35,7 @@ const PluginID core.PluginName = "linuxplugin"
 type Plugin struct {
 	transport datasync.TransportAdapter // data transport adapter
 
-	ifIndexes      idxvpp.NameToIdxRW
+	ifIndexes      ifaceidx.LinuxIfIndexRW
 	ifConfigurator *LinuxInterfaceConfigurator
 
 	resyncChan chan datasync.ResyncEvent
@@ -47,9 +47,10 @@ type Plugin struct {
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
-// GetIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux interface indexes.
-// This mapping is especially helpful for plugins that need to watch for newly added or deleted Linux interfaces.
-func (plugin *Plugin) GetIfIndexes() idxvpp.NameToIdx {
+// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+// Linux interfaces.
+func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return plugin.ifIndexes
 }
 
@@ -71,7 +72,7 @@ func (plugin *Plugin) Init() error {
 	go plugin.watchEvents(ctx)
 
 	// Interface indexes
-	plugin.ifIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "linux_if_indexes", nil)
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "linux_if_indexes", nil))
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}

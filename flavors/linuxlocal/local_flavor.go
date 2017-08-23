@@ -62,7 +62,7 @@ func (f *Flavor) Inject() error {
 	return nil
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins + (their ETCD Connector/Adapter with RESYNC)
+// Plugins combines Generic Plugins and Standard VPP Plugins
 func (f *Flavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)

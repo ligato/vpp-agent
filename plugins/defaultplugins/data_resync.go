@@ -15,11 +15,11 @@
 package defaultplugins
 
 import (
-	"strings"
 	"strconv"
+	"strings"
+
 	"github.com/ligato/cn-infra/datasync"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
@@ -298,7 +298,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.bdIndexes.WatchNameToIdx(PluginID, plugin.bdIdxWatchCh)
 	log.Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.Watch(PluginID, nametoidx.ToChan(plugin.linuxIfIdxWatchCh))
+		plugin.linuxIfIndexes.WatchNameToIdx(PluginID, plugin.linuxIfIdxWatchCh)
 		log.Debug("linuxIfIndexes watch registration finished")
 	}
 

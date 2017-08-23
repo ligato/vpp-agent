@@ -41,7 +41,7 @@ import:
   subpackages:
   - cmd/generic
 - package: github.com/ungerik/pkgreflect
-  version: 71c5bcab7c39861b211c096350622c8d02c02ba5
+  version: 19795ed2f31d7a9c56753ae69871ba2623cc1211
 - package: github.com/golang/mock
   version: bd3c8e81be01eef76d4b503f5e687d2d1354d2d9
   repo: https://github.com/golang/mock
@@ -49,3 +49,5 @@ import:
   - gomock
 - package: github.com/bennyscetbun/jsongo
   version: 5240b3f82c6665fe3ccd96bdf5e6f38fe1e1399d
+- package: github.com/sirupsen/logrus
+  version: v1.0.0
