@@ -14,7 +14,7 @@ import (
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
-	Base   etcdkafka.Flavor
+	Base   etcdkafka.FlavorEtcdKafka
 	Redis  redis.Plugin
 	RedisSync kvdbsync.Plugin
 	Resync resync.Plugin
