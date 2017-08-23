@@ -55,7 +55,7 @@ Correct MAC In Memif
     ${out}=    vpp_ctl: Read Key    ${int_key}
     Should Not Be Empty    ${out}
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
-    Should Be Empty    ${out}
+    Should Contain    ${out}    error_data
 
 Set Wrong MAC To Memif Again
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD2}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
@@ -67,6 +67,8 @@ Set Wrong MAC To Memif Again
     Should Be Empty    ${out}
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
     Should Contain    ${out}    error_data
+    Should Contain    ${out}    ${MAC_BAD1}
+    Should Contain    ${out}    ${MAC_BAD2}
 
 Delete Memif
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif1
@@ -79,11 +81,8 @@ Delete Memif
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
     Should Be Empty    ${out}
 
-
-test_end
-   sleep   5
-
-Show Interfaces And Other Objects After Setup
+Show Interfaces And Other Objects After Test
+    Sleep    5s
     vpp_term: Show Interfaces    agent_vpp_1
     Write To Machine    agent_vpp_1_term    show int addr
     Write To Machine    agent_vpp_1_term    show h
