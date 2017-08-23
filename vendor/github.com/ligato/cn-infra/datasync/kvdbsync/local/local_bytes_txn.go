@@ -69,9 +69,7 @@ func (txn *BytesTxn) Commit() error {
 
 		kvs[key] = syncbase.NewChangeBytes(key, item.Data, 0, changeType)
 	}
-	txn.commit(kvs)
-
-	return nil
+	return txn.commit(kvs)
 }
 
 // BytesTxnItem is used in BytesTxn

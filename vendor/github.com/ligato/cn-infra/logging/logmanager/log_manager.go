@@ -45,9 +45,9 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginLogDeps      // inject
-	LogRegistry logging.Registry // inject
-	HTTP        *rest.Plugin     // inject
+	localdeps.PluginLogDeps                  // inject
+	LogRegistry             logging.Registry // inject
+	HTTP                    *rest.Plugin     // inject
 }
 
 // Init is called at plugin initialization. It register the following handlers:

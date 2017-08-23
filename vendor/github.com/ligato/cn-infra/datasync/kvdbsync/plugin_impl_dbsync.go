@@ -25,16 +25,16 @@ import (
 
 // Plugin dbsync implements Plugin interface
 type Plugin struct {
-	Deps // inject
+	Deps    // inject
 	adapter *watcher
 }
 
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps       // inject
-	ResyncOrch resync.Subscriber    // inject
-	KvPlugin   keyval.KvProtoPlugin // inject
+	localdeps.PluginInfraDeps                      // inject
+	ResyncOrch                resync.Subscriber    // inject
+	KvPlugin                  keyval.KvProtoPlugin // inject
 }
 
 // Init uses provided connection to build new transport watcher
@@ -58,7 +58,7 @@ func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEv
 		return nil, err
 	}
 
-	resyncReg := plugin.ResyncOrch.Register(plugin.String())
+	resyncReg := plugin.ResyncOrch.Register(resyncName)
 	_, err = watchAndResyncBrokerKeys(resyncReg, changeChan, resyncChan, plugin.adapter, keyPrefixes...)
 	if err != nil {
 		return nil, err

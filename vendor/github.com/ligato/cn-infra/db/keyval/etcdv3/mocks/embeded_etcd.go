@@ -63,7 +63,7 @@ func (embd *Embedded) CleanDs() {
 	}
 }
 
-// Client is a getter for embeded etcd client
+// Client is a getter for embedded etcd client
 func (embd *Embedded) Client() *clientv3.Client {
 	return embd.client
 }

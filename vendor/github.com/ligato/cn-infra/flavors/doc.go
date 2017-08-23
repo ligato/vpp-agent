@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The flavors package contains reusable cn-infra flavors (collection of plugins
+// Package flavors contains reusable cn-infra flavors (collection of plugins
 // with initialized dependencies):
 // - generic flavor is prepared for minimalistic cn-infra based applications;
 // - etcd + kafka flavor extends generic flavor and is meant for applications

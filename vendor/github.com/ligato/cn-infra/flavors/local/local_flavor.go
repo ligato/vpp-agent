@@ -43,9 +43,8 @@ type FlavorLocal struct {
 func (f *FlavorLocal) Inject() error {
 	if f.injected {
 		return nil
-	} else {
-		f.injected = true
 	}
+	f.injected = true
 
 	f.StatusCheck.Deps.Log = f.LoggerFor("StatusCheck")
 	f.StatusCheck.Deps.PluginName = core.PluginName("StatusCheck")
@@ -70,7 +69,7 @@ func (f *FlavorLocal) LogRegistry() logging.Registry {
 	return f.logRegistry
 }
 
-// LogDeps for getting PlugginLogger instance.
+// LoggerFor for getting PlugginLogger instance.
 // This method is just convenient shortcut for Flavor.Inject()
 func (f *FlavorLocal) LoggerFor(pluginName string) logging.PluginLogger {
 	return logging.ForPlugin(pluginName, f.LogRegistry())
@@ -85,12 +84,12 @@ func (f *FlavorLocal) LogDeps(pluginName string) *localdeps.PluginLogDeps {
 
 }
 
-// LogDeps for getting PlugginLogger instance.
+// InfraDeps returns common dependencies.
 // This method is just convenient shortcut for Flavor.Inject()
 func (f *FlavorLocal) InfraDeps(pluginName string) *localdeps.PluginInfraDeps {
 
 	return &localdeps.PluginInfraDeps{
 		*f.LogDeps(pluginName),
 		&f.StatusCheck,
-		&f.ServiceLabel, }
+		&f.ServiceLabel}
 }

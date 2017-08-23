@@ -23,6 +23,7 @@ import (
 
 	"github.com/onsi/gomega"
 )
+
 /*TODO change test to WithField
 func TestEntryWithError(t *testing.T) {
 

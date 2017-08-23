@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
-// FlavorRPC glues together generic.FlavorRPC plugins with:
+// Flavor glues together generic.FlavorRPC plugins with:
 // - ETCD (useful for watching config.)
 // - Kafka plugins (useful for publishing events)
 type Flavor struct {
@@ -40,9 +40,8 @@ type Flavor struct {
 func (f *Flavor) Inject() error {
 	if f.injected {
 		return nil
-	} else {
-		f.injected = true
 	}
+	f.injected = true
 
 	f.FlavorRPC.Inject()
 

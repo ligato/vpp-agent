@@ -54,5 +54,4 @@ type Config struct {
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
-
 }

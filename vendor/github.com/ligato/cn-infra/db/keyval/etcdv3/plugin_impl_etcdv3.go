@@ -78,6 +78,11 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
+	return nil
+}
+
+// AfterInit is called by the Agent Core after all plugins have been initialized.
+func (p *Plugin) AfterInit() error {
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
@@ -90,7 +95,6 @@ func (p *Plugin) Init() error {
 	} else {
 		p.Log.Warnf("Unable to start status check for etcd")
 	}
-
 	return nil
 }
 

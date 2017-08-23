@@ -158,6 +158,6 @@ type prefixedLogFactory struct {
 	delegate LogFactory
 }
 
-func (factory *prefixedLogFactory) NewLogger(name string) (Logger) {
+func (factory *prefixedLogFactory) NewLogger(name string) Logger {
 	return factory.delegate.NewLogger(factory.prefix + name)
 }

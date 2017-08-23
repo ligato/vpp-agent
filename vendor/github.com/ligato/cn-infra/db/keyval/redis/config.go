@@ -81,7 +81,7 @@ type Client interface {
 	/*
 		But that means we'll have to mock each and every method in Cmdable for unit tests,
 		making it a whole lot more complicated.  When the time comes, it may be more manageable
-		to only delcare (duplicate) the methods we need from Cmdable.  As follows:
+		to only declare (duplicate) the methods we need from Cmdable.  As follows:
 			Del(keys ...string) *goredis.IntCmd
 			Get(key string) *goredis.StringCmd
 			MGet(keys ...string) *goredis.SliceCmd

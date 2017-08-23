@@ -21,7 +21,7 @@ type PluginLogDeps struct {
 // - to report/write plugin status to StatusCheck
 // - to know micro-service label prefix
 type PluginInfraDeps struct {
-	PluginLogDeps                               //inject
-	StatusCheck  statuscheck.PluginStatusWriter //inject
-	ServiceLabel servicelabel.ReaderAPI         //inject
+	PluginLogDeps                                //inject
+	StatusCheck   statuscheck.PluginStatusWriter //inject
+	ServiceLabel  servicelabel.ReaderAPI         //inject
 }

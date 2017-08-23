@@ -39,9 +39,8 @@ type FlavorRPC struct {
 func (f *FlavorRPC) Inject() error {
 	if f.injected {
 		return nil
-	} else {
-		f.injected = true
 	}
+	f.injected = true
 
 	f.FlavorLocal.Inject()
 

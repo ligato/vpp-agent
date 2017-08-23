@@ -15,8 +15,8 @@
 package datasync
 
 import (
-	"time"
 	"github.com/ligato/cn-infra/logging"
+	"time"
 )
 
 // PutOption defines options for Put operation. The particular options can be found below.
@@ -46,7 +46,6 @@ type WithPrefixOpt struct {
 func WithPrefix() *WithPrefixOpt {
 	return &WithPrefixOpt{}
 }
-
 
 // WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
 type WithTimeoutOpt struct {

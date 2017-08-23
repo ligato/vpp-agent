@@ -51,7 +51,7 @@ func (s *DataMsgServiceServer) DataChanges(stream msg.DataMsgService_DataChanges
 				if strings.HasPrefix(chng.Key, keyPrefix) {
 					sub.ChangeChan <- msg.NewChangeWatchResp(chng, func(err2 error) {
 						err = stream.Send(&msg.DataChangeReply{Key: chng.Key, OperationType: chng.OperationType,
-							Result:                                 0 /*TODO VPP Result*/ })
+							Result: 0 /*TODO VPP Result*/})
 						if err != nil {
 							logroot.StandardLogger().Error(err) //Not able to propagate it somewhere else
 						}
@@ -80,14 +80,14 @@ func (s *DataMsgServiceServer) DataResyncs(ctx context.Context, req *msg.DataRes
 		err := localtxn.Commit()*/
 		var err error
 		if err != nil {
-			return &msg.DataResyncReplies{MsgId: replySeq(), Error: &msg.Error{err.Error()} /*TODO all other fields*/ }, err
+			return &msg.DataResyncReplies{MsgId: replySeq(), Error: &msg.Error{err.Error()} /*TODO all other fields*/}, err
 		}
 
-		return &msg.DataResyncReplies{MsgId: replySeq() /*TODO all other fields*/ }, nil
+		return &msg.DataResyncReplies{MsgId: replySeq() /*TODO all other fields*/}, nil
 	}
 
 	err := errors.New("unexpected place - nil resyncs")
-	return &msg.DataResyncReplies{MsgId: replySeq(), Error: &msg.Error{err.Error()} /*TODO all other fields*/ }, err
+	return &msg.DataResyncReplies{MsgId: replySeq(), Error: &msg.Error{err.Error()} /*TODO all other fields*/}, err
 }
 
 func replySeq() *msg.Seq {

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// AgentT is simmilar to what testing.T is in golang packages.
+// AgentT is similar to what testing.T is in golang packages.
 type AgentT struct {
 	agent *core.Agent
 	t *testing.T

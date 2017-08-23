@@ -123,7 +123,7 @@ func (adapter *Watcher) PropagateChanges(txData map[string] /*key*/ datasync.Cha
 						func(sub *Subscription, key string, val datasync.ChangeValue) func(done chan error) {
 							return func(done chan error) {
 								sub.ChangeChan <- &ChangeEvent{key, val.GetChangeType(),
-															   val, curRev, prev, NewDoneChannel(done)}
+									val, curRev, prev, NewDoneChannel(done)}
 							}
 						}(sub, key, val))
 				}
