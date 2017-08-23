@@ -41,7 +41,7 @@ func (f *Flavor) Inject() error {
 	f.RedisSync.ResyncOrch = &f.Base.ResyncOrch
 
 	// Aggregated transport
-	adapters := []datasync.KeyProtoValWriter{&f.Base.ETCDDataSync/*, &f.RedisSync*/}
+	adapters := []datasync.KeyProtoValWriter{&f.Base.ETCDDataSync, &f.RedisSync}
 	compositePublisher := datasync.CompositeKVProtoWriter{
 		Adapters: adapters,
 	}
