@@ -101,6 +101,7 @@ type Deps struct {
 	// inject all below
 	localdeps.PluginInfraDeps
 	Publish  datasync.KeyProtoValWriter
+	PublishStatistics datasync.CompositeKVProtoWriter // use multiple transports (currently etcd and redis)
 	Watch    datasync.KeyValProtoWatcher
 	Kafka    *kafka.Plugin
 	GoVppmux *govppmux.GOVPPPlugin
