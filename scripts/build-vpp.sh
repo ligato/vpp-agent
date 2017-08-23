@@ -8,21 +8,30 @@ WORKDIR="$(pwd)"
 if [ ! -d "$VPP_CACHE_DIR" ]; then
     echo "Building VPP binaries."
 
+    date
+    echo "!! start"
     # latest vpp requires newer NASM
     wget http://www.nasm.us/pub/nasm/releasebuilds/2.12.01/nasm-2.12.01.tar.bz2
     tar xfj nasm-2.12.01.tar.bz2
+
+    date
+    echo "!! nasm src cloned"
     cd nasm-2.12.01/
     ./autogen.sh
     ./configure --prefix=/usr/local/
     make
     make install
     cd ..
-
+    date
+    echo "!! nasm installed"
 
     # build VPP
     git clone https://gerrit.fd.io/r/vpp /tmp/vpp
     cd /tmp/vpp
     git checkout ${VPP_COMMIT}
+
+    date
+    echo "!! vpp checked out"
     yes | make install-dep
     make bootstrap
     make pkg-deb
