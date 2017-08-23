@@ -378,15 +378,15 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		return err
 	}
 	for i := range oldAddrs {
-		log.WithField("addr", oldAddrs[i]).Info("Ip removed")
+		log.DefaultLogger().WithField("addr", oldAddrs[i]).Info("Ip removed")
 		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.vppCh)
 		if nil != err {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			wasError = err
 		}
 	}
 
-	log.Info("Ip addrs removed")
+	log.DefaultLogger().Info("Ip addrs removed")
 
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
