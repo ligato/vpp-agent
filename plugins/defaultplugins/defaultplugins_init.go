@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
@@ -55,7 +56,7 @@ type Plugin struct {
 	aclL2Indexes    idxvpp.NameToIdxRW
 
 	swIfIndexes          ifaceidx.SwIfIndexRW
-	linuxIfIndexes       idxvpp.NameToIdx
+	linuxIfIndexes       ifaceidx2.LinuxIfIndex
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -71,18 +72,18 @@ type Plugin struct {
 	bdConfigurator    *l2plugin.BDConfigurator
 	fibConfigurator   *l2plugin.FIBConfigurator
 	xcConfigurator    *l2plugin.XConnectConfigurator
+	routeConfigurator *l3plugin.RouteConfigurator
 	bdIndexes         bdidx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
 	fibIndexes        idxvpp.NameToIdxRW
 	fibDesIndexes     idxvpp.NameToIdxRW
 	xcIndexes         idxvpp.NameToIdxRW
+	routeIndexes      idxvpp.NameToIdxRW
 	errorIndexes      idxvpp.NameToIdxRW
 	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
 	bdIdxWatchCh      chan bdidx.ChangeDto
-	linuxIfIdxWatchCh chan idxvpp.NameToIdxDto
-
-	routeConfigurator *l3plugin.RouteConfigurator
+	linuxIfIdxWatchCh chan ifaceidx2.LinuxIfIndexDto
 
 	resyncConfigChan chan datasync.ResyncEvent
 	resyncStatusChan chan datasync.ResyncEvent
@@ -130,7 +131,7 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
 	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
-	plugin.linuxIfIdxWatchCh = make(chan idxvpp.NameToIdxDto, 100)
+	plugin.linuxIfIdxWatchCh = make(chan ifaceidx2.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
 	// create plugin context, save cancel function into the plugin handle
@@ -184,7 +185,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// get pointer to the map with Linux interface indexes
 	if plugin.Linux != nil {
-		plugin.linuxIfIndexes = plugin.Linux.GetIfIndexes()
+		plugin.linuxIfIndexes = plugin.Linux.GetLinuxIfIndexes()
 	} else {
 		plugin.linuxIfIndexes = nil
 	}
@@ -338,9 +339,13 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
+	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "route_indexes", nil)
+
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
+		GoVppmux:      plugin.GoVppmux,
+		RouteIndexes:  plugin.routeIndexes,
+		RouteIndexSeq: 1,
+		SwIfIndexes:   plugin.swIfIndexes,
 	}
 	err := plugin.routeConfigurator.Init()
 	if err != nil {

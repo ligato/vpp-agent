@@ -90,7 +90,7 @@ func (plugin *FIBConfigurator) Close() error {
 // Add configures provided FIB input. Every entry has to contain info about MAC address, interface and
 // bridge domain. If interface or bridge domain is missing, FIB data is cached and recalled if particular entity is registered
 func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
-	log.Infof("Configuring new FIB table entry with MAC ", fib.PhysAddress)
+	log.Infof("Configuring new FIB table entry with MAC %v", fib.PhysAddress)
 
 	if fib.PhysAddress == "" {
 		return fmt.Errorf("No mac address in FIB entry %v", fib)

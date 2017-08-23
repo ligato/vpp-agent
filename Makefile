@@ -111,7 +111,7 @@ endef
 # build vpp agent only
 define build_vpp_agent_only
     @echo "# building vpp agent"
-    @cd cmd/vpp-agent && go build -v
+    @cd cmd/vpp-agent && go build -v ${LDFLAGS}
     @echo "# done"
 endef
 

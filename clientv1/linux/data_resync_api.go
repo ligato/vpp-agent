@@ -40,7 +40,7 @@ type DataResyncDSL interface {
 	// XConnect adds VPP Cross Connect to the RESYNC request
 	XConnect(xcon *vpp_l2.XConnectPairs_XConnectPair) DataResyncDSL
 	// StaticRoute adds VPP L3 Static Route to the RESYNC request
-	StaticRoute(staticRoute *vpp_l3.StaticRoutes) DataResyncDSL
+	StaticRoute(staticRoute *vpp_l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds VPP Access Control List to the RESYNC request
 	ACL(acl *vpp_acl.AccessLists_Acl) DataResyncDSL
 

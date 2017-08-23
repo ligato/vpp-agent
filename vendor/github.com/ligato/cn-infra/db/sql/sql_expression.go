@@ -51,6 +51,11 @@ func (exp *PrefixedExp) String() string {
 	if exp.AfterPrefix == nil {
 		return exp.Prefix
 	}
+
+	if exp.Prefix == "FROM" && len(exp.Binding) > 0 {
+		return exp.Prefix + " " + EntityTableName(exp.Binding[0]) + " " + exp.AfterPrefix.String()
+	}
+
 	return exp.Prefix + " " + exp.AfterPrefix.String()
 }
 
@@ -95,6 +100,8 @@ func SELECT(entity interface{}, afterKeyword Expression, binding ...interface{})
 }
 
 // FROM keyword of SQL expression
+// Note, pointerToAStruct is assigned to Expression.binding.
+// The implementation is supposed try to cast to the sql.TableName & sql.SchemaName.
 func FROM(pointerToAStruct interface{}, afterKeyword Expression) Expression {
 	return &PrefixedExp{"FROM", afterKeyword, "", []interface{}{pointerToAStruct}}
 }

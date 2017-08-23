@@ -10,9 +10,6 @@ VNF_NAME="vnf-vpp"
 # sudo docker run -it --name ussched -e MICROSERVICE_LABEL=ussched-vpp -v/tmp/:/tmp/ --privileged --rm dev_vpp_agent
 # sudo docker run -it --name vnf -e MICROSERVICE_LABEL=vnf-vpp -v/tmp/:/tmp/ --privileged --rm dev_vpp_agent
 
-# WARNING: to assign an interface into a bridge domain, you first need create the interface and then create
-# (or re-create) the bridge domain. This limitation will be addressed soon.
-
 # VSWITCH - configure physical interface GigabitEthernet0/8/0
 # !!! needs to exist and be whitelisted in VPP, e.g. dpdk { dev 0000:00:08.0 } !!!
 # This works for my VirtualBox ethernet interface:
@@ -70,20 +67,12 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop-bvi2 
 EOF
 
 # VSWITCH - add static route to 6.0.0.0/24 via GigabitEthernet0/8/0
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0m24-8.42.0.1 - << EOF
 {
-  "ip": [
-    {
-      "description": "Static route",
-      "destination_address": "6.0.0.0/24",
-      "next_hops": [
-        {
-          "address": "8.42.0.1",
-          "outgoing_interface": "GigabitEthernet0/8/0"
-        }
-      ]
-    }
-  ]
+  "description": "Static route",
+  "dst_ip_addr": "6.0.0.0/24",
+  "next_hop_addr": "8.42.0.1",
+  "outgoing_interface": "GigabitEthernet0/8/0"
 }
 EOF
 

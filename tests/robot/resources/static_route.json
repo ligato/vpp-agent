@@ -1,0 +1,14 @@
+{
+  "ip": [
+    {
+      "description": "Route for another subnet",
+      "destination_address": "${ip}/${prefix}",
+      "next_hops": [
+        {
+          "address": "${next_hop}",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

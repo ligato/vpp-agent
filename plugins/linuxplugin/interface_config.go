@@ -27,7 +27,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 
@@ -35,6 +34,7 @@ import (
 
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
@@ -71,7 +71,7 @@ type LinuxInterfaceConfigurator struct {
 	cfgLock sync.Mutex
 
 	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */
-	ifIndexes idxvpp.NameToIdxRW
+	ifIndexes ifaceidx.LinuxIfIndexRW
 
 	/* interface caches (managed interfaces only) */
 	intfByName          map[string]*LinuxInterfaceConfig   /* interface name -> interface configuration */
@@ -90,7 +90,7 @@ type LinuxInterfaceConfigurator struct {
 }
 
 // Init linuxplugin and start go routines
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes idxvpp.NameToIdxRW) error {
+func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	log.Debug("Initializing LinuxInterfaceConfigurator")
 	plugin.ifIndexes = ifIndexes
 

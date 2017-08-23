@@ -1,0 +1,10 @@
+{
+  "name": "${name}",
+  "type": 0,
+  "enabled": ${enabled},
+  "phys_address": "${mac}",
+  "mtu": ${mtu},
+  "ip_addresses": [
+    "${ip}/${prefix}"
+  ]
+}

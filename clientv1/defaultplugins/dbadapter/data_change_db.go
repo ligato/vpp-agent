@@ -23,6 +23,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"net"
 )
 
 // NewDataChangeDSL is a constructor
@@ -92,8 +93,9 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 }
 
 // StaticRoute create or update the L3 Static Route
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(), val)
+func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
+	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
+	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr), val)
 
 	return dsl
 }
@@ -154,8 +156,9 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 }
 
 // StaticRoute create or update the L3 Static Route
-func (dsl *DeleteDSL) StaticRoute() defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey())
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
+	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
+	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String()))
 
 	return dsl
 }

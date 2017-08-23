@@ -19,45 +19,30 @@ import proto "github.com/gogo/protobuf/proto"
 var _ = proto.Marshal
 
 type StaticRoutes struct {
-	Ip []*StaticRoutes_Ip `protobuf:"bytes,1,rep,name=ip" json:"ip,omitempty"`
+	Route []*StaticRoutes_Route `protobuf:"bytes,1,rep,name=route" json:"route,omitempty"`
 }
 
 func (m *StaticRoutes) Reset()         { *m = StaticRoutes{} }
 func (m *StaticRoutes) String() string { return proto.CompactTextString(m) }
 func (*StaticRoutes) ProtoMessage()    {}
 
-func (m *StaticRoutes) GetIp() []*StaticRoutes_Ip {
+func (m *StaticRoutes) GetRoute() []*StaticRoutes_Route {
 	if m != nil {
-		return m.Ip
+		return m.Route
 	}
 	return nil
 }
 
-type StaticRoutes_Ip struct {
-	VrfId              uint32                     `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
-	Description        string                     `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	DestinationAddress string                     `protobuf:"bytes,3,opt,name=destination_address,proto3" json:"destination_address,omitempty"`
-	NextHops           []*StaticRoutes_Ip_NextHop `protobuf:"bytes,100,rep,name=next_hops" json:"next_hops,omitempty"`
+type StaticRoutes_Route struct {
+	VrfId             uint32 `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
+	Description       string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	DstIpAddr         string `protobuf:"bytes,3,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
+	NextHopAddr       string `protobuf:"bytes,4,opt,name=next_hop_addr,proto3" json:"next_hop_addr,omitempty"`
+	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
+	Weight            uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
+	Preference        uint32 `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
 }
 
-func (m *StaticRoutes_Ip) Reset()         { *m = StaticRoutes_Ip{} }
-func (m *StaticRoutes_Ip) String() string { return proto.CompactTextString(m) }
-func (*StaticRoutes_Ip) ProtoMessage()    {}
-
-func (m *StaticRoutes_Ip) GetNextHops() []*StaticRoutes_Ip_NextHop {
-	if m != nil {
-		return m.NextHops
-	}
-	return nil
-}
-
-type StaticRoutes_Ip_NextHop struct {
-	Address           string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	OutgoingInterface string `protobuf:"bytes,2,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
-	Weight            uint32 `protobuf:"varint,3,opt,name=weight,proto3" json:"weight,omitempty"`
-	Preference        uint32 `protobuf:"varint,4,opt,name=preference,proto3" json:"preference,omitempty"`
-}
-
-func (m *StaticRoutes_Ip_NextHop) Reset()         { *m = StaticRoutes_Ip_NextHop{} }
-func (m *StaticRoutes_Ip_NextHop) String() string { return proto.CompactTextString(m) }
-func (*StaticRoutes_Ip_NextHop) ProtoMessage()    {}
+func (m *StaticRoutes_Route) Reset()         { *m = StaticRoutes_Route{} }
+func (m *StaticRoutes_Route) String() string { return proto.CompactTextString(m) }
+func (*StaticRoutes_Route) ProtoMessage()    {}

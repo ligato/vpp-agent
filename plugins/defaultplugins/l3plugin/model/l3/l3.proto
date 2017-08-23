@@ -3,20 +3,18 @@ syntax = "proto3";
 package l3;
 
 message StaticRoutes {
-    message Ip {
-        uint32 vrf_id = 1;                   /* VRF identifier */
+    message Route {
+        uint32 vrf_id = 1;                   /* VRF identifier, field required for remote client. This value should be
+                                                consistent with VRF ID in static route key. If it is not, value from
+                                                key will be preffered and this field will be overriden.  */
         string description = 2;              /* optional description */
-        string destination_address = 3;      /* ip address + prefix in format <address>/<prefix> */
-
-        message NextHop {
-            string address = 1;              /* next hop address */
-            string outgoing_interface = 2;   /* outgoing interface name */
-            uint32 weight = 3;               /* weight (used for unequal cost load balancing) */
-            uint32 preference = 4;           /* The preference of the path. Lowest preference is preferred.  */
+        string dst_ip_addr = 3;              /* ip address + prefix in format <address>/<prefix> */
+        string next_hop_addr = 4;            /* next hop address */
+        string outgoing_interface = 5;       /* outgoing interface name */
+        uint32 weight = 6;                   /* weight (used for unequal cost load balncing) */
+	    uint32 preference = 7;               /* The preference of the path. Lowest preference is preferred.  */
                                              /* Only paths with the best preference contribute to forwarding. */
                                              /* (a poor man's primary and backup) */
-        }
-        repeated NextHop next_hops = 100;    /* list of the next hops (load balancing in case of multiple next hops) */
     }
-    repeated Ip ip = 1; /* list of IP static routes */
+    repeated Route route = 1;                /* list of IP static routes */
 }

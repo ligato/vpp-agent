@@ -1,0 +1,13 @@
+{
+  "name": "${name}",
+  "type": 0,
+  "enabled": ${enabled},
+  "phys_address": "${mac}",
+  "veth": {
+    "peer_if_name": "${peer}"
+  },
+  "mtu": ${mtu},
+  "ip_addresses": [
+    "${ip}/${prefix}"
+  ]
+}

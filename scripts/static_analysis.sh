@@ -13,14 +13,14 @@ function static_analysis() {
   local CMD=$(${TOOL} "${PWD}/cmd${SELECTOR}")
   local PLUGINS=$(${TOOL} "${PWD}/plugins${SELECTOR}")
   local EXAMPLES=$(${TOOL} "${PWD}/examples${SELECTOR}")
-  local FLAVOURS=$(${TOOL} "${PWD}/flavours${SELECTOR}")
+  local FLAVORS=$(${TOOL} "${PWD}/flavors${SELECTOR}")
   local IDXVPP=$(${TOOL} "${PWD}/idxvpp${SELECTOR}")
 
   local ALL="$CLIENTV1
 $CMD
 $PLUGINS
 $EXAMPLES
-$FLAVOURS
+$FLAVORS
 $IDXVPP
 "
 

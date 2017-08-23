@@ -19,16 +19,16 @@
 package l3plugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"strconv"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -36,28 +36,15 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1routes". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
-	GoVppmux    *govppmux.GOVPPPlugin
-	vppChan     *govppapi.Channel
-	SwIfIndexes ifaceidx.SwIfIndex
+	GoVppmux      *govppmux.GOVPPPlugin
+	RouteIndexes  idxvpp.NameToIdxRW
+	RouteIndexSeq uint32
+	SwIfIndexes   ifaceidx.SwIfIndex
+	vppChan       *govppapi.Channel
 }
-
-const (
-	// The constant that has to be assigned into the field next hop via label in ip_add_del_route binary message
-	// if next hop via label is not defined.
-	// equals to MPLS_LABEL_INVALID defined in VPP
-	nextHopViaLabelUnset uint32 = 0xfffff + 1
-
-	// Default value for field classify_table_index in ip_add_del_route binary message
-	classifyTableIndexUnset uint32 = ^uint32(0)
-
-	// The constant that has to be assigned into the field next_hop_outgoing_interface in ip_add_del_route binary message
-	// if outgoing interface for next hop is not defined.
-	nextHopOutgoingIfUnset uint32 = ^uint32(0)
-)
 
 // Init members (channels...) and start go routines
 func (plugin *RouteConfigurator) Init() (err error) {
-
 	log.Debug("Initializing L3 plugin")
 
 	// Init VPP API channel
@@ -74,105 +61,102 @@ func (plugin *RouteConfigurator) Init() (err error) {
 	return nil
 }
 
-// ConfigureRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) ConfigureRoutes(config *l3.StaticRoutes) (wasError error) {
-	routes := plugin.protoRoutesToStruct(config)
-
-	for i := range routes {
-		err := plugin.vppAddRoute(routes[i])
+// ConfigureRoute process the NB config and propagates it to bin api calls
+func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
+	log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	// Validate VRF index from key and it's value in data
+	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
+	if intVrfFromKey != int(config.VrfId) {
+		log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
+			intVrfFromKey, config.VrfId)
 		if err != nil {
-			wasError = err
+			return err
 		}
+		config.VrfId = uint32(intVrfFromKey)
 	}
-
-	return wasError
-}
-
-// ModifyRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) ModifyRoutes(newConfig *l3.StaticRoutes, oldConfig *l3.StaticRoutes) (
-	wasError error) {
-	newRoutes := plugin.protoRoutesToStruct(newConfig)
-	oldRoutes := plugin.protoRoutesToStruct(oldConfig)
-	toBeDeleted, toBeAdded := plugin.diffRoutes(newRoutes, oldRoutes)
-	for i := range toBeDeleted {
-		err := plugin.vppDelRoute(toBeDeleted[i])
-		if err != nil {
-			wasError = err
-		}
-	}
-	for i := range toBeAdded {
-		err := plugin.vppAddRoute(toBeAdded[i])
-		if err != nil {
-			wasError = err
-		}
-	}
-
-	return wasError
-}
-
-// DeleteRoutes process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) DeleteRoutes(config *l3.StaticRoutes) (wasError error) {
-	routes := plugin.protoRoutesToStruct(config)
-	for i := range routes {
-		err := plugin.vppDelRoute(routes[i])
-		if err != nil {
-			wasError = err
-		}
-	}
-
-	return wasError
-}
-func (plugin *RouteConfigurator) vppAddRoute(route *Route) error {
-	log.WithField("Route", *route).Debug("Adding")
-	return plugin.vppAddDelRoute(route, true)
-}
-
-func (plugin *RouteConfigurator) vppDelRoute(route *Route) error {
-	log.WithField("Route", *route).Debug("Deleting")
-	return plugin.vppAddDelRoute(route, false)
-}
-
-func (plugin *RouteConfigurator) vppAddDelRoute(route *Route, isAdd bool) error {
-	// prepare the message
-	req := &ip.IPAddDelRoute{}
-	if isAdd {
-		req.IsAdd = 1
-	} else {
-
-		req.IsAdd = 0
-	}
-	isIpv6, err := addrs.IsIPv6(route.destAddr.IP.String())
+	// Transform route data
+	route, err := TransformRoute(config, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}
-	if isIpv6 {
-		req.IsIpv6 = 1
-		req.DstAddress = []byte(route.destAddr.IP.To16())
-	} else {
-		req.IsIpv6 = 0
-		req.DstAddress = []byte(route.destAddr.IP.To4())
+	// Create and register new route
+	if route != nil {
+		err := vppcalls.VppAddDelRoute(route, plugin.vppChan, false)
+		if err != nil {
+			return err
+		}
+		routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
+		plugin.RouteIndexes.RegisterName(routeIdentifier, plugin.RouteIndexSeq, nil)
+		plugin.RouteIndexSeq++
+		log.Infof("Route %v registered", routeIdentifier)
 	}
-	prefix, _ := route.destAddr.Mask.Size()
-	req.DstAddressLength = byte(prefix)
-	req.TableID = route.vrfID
-	req.ClassifyTableIndex = classifyTableIndexUnset
 
-	req.NextHopAddress = []byte(route.nexthop.addr)
-	req.NextHopSwIfIndex = route.nexthop.intf
-	req.NextHopWeight = uint8(route.nexthop.weight)
-	req.NextHopPreference = uint8(route.nexthop.preference)
-	req.NextHopTableID = route.vrfID
+	return nil
+}
 
-	req.NextHopViaLabel = nextHopViaLabelUnset
-	reply := &ip.IPAddDelRouteReply{}
-	err = plugin.vppChan.SendRequest(req).ReceiveReply(reply)
-
+// ModifyRoute process the NB config and propagates it to bin api calls
+func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
+	log.Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	// Transform new route data
+	// Validate new route data Vrf
+	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
+	if intVrfFromKey != int(newConfig.VrfId) {
+		// To update VRF in static route, the route has to be removed and a new one with appropriate key should be created
+		log.Warnf("VRF index was changed to (%v) while the VRF in the key is (%v), using value from the key",
+			newConfig.VrfId, intVrfFromKey)
+		if err != nil {
+			return err
+		}
+		newConfig.VrfId = uint32(intVrfFromKey)
+	}
+	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes)
 	if err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
+	// Transform old route data
+	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes)
+	if err != nil {
+		return err
 	}
+	// Remove and unregister old route
+	err = vppcalls.VppAddDelRoute(oldRoute, plugin.vppChan, false)
+	if err != nil {
+		return err
+	}
+	oldRouteIdentifier := routeIdentifier(oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
+	plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
+	log.Infof("Old route %v unregistered", oldRouteIdentifier)
+
+	// Create and register new route
+	err = vppcalls.VppAddDelRoute(newRoute, plugin.vppChan, true)
+	if err != nil {
+		return err
+	}
+	newRouteIdentifier := routeIdentifier(newRoute.DstAddr.String(), newRoute.NextHopAddr.String())
+	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
+	plugin.RouteIndexSeq++
+	log.Infof("New route %v registered", newRouteIdentifier)
+
+	return nil
+}
+
+// DeleteRoute process the NB config and propagates it to bin api calls
+func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
+	log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	// Transform route data
+	route, err := TransformRoute(config, plugin.SwIfIndexes)
+	if err != nil {
+		return err
+	}
+	// Remove and unregister route
+	err = vppcalls.VppAddDelRoute(route, plugin.vppChan, true)
+	if err != nil {
+		return err
+	}
+	routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
+	plugin.RouteIndexes.UnregisterName(routeIdentifier)
+	log.Infof("Route %v unregistered", routeIdentifier)
+
 	return nil
 }
 
@@ -195,4 +179,9 @@ func (plugin *RouteConfigurator) checkMsgCompatibility() error {
 // Close GOVPP channel
 func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
+}
+
+// Creates unique identifier which serves as a name in name to index mapping
+func routeIdentifier(destination string, nextHop string) string {
+	return destination + "-" + nextHop
 }

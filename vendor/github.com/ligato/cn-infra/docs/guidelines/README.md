@@ -4,7 +4,7 @@ Implementation aspects & how-tos:
 * Plugins
   * Lifecycle 
   * [Dependencies](PLUGIN_DEPENDENCIES.md)
-  * [Flavors](PLUGIN_FLAVOURS.md)
+  * [Flavours](PLUGIN_FLAVORS.md)
 * [System integration](SYSTEM_INTEGRATION.md) - connecting to DB / Message Bus, calling RPCs
 
 Implementation is not good enough without:

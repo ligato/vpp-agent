@@ -2,9 +2,7 @@
 set -e
 
 VPP_CACHE_DIR=$HOME/build-cache/vpp
-VPP_COMMIT="5f22f4ddded8ac41487dab3069ff8d77c3916205"
-VPP_IMG_TAG="5f22f4d"
-WORKDIR="$(pwd)"
+VPP_COMMIT="8e4222fc7e23a478b021930ade3cb7d20938e398"
 
 if [ ! -d "$VPP_CACHE_DIR" ]; then
     echo "Building VPP binaries."
@@ -15,6 +13,7 @@ if [ ! -d "$VPP_CACHE_DIR" ]; then
     docker cp $id:/vpp-deb/vpp.tar .
     docker rm -v $id
 
+    # copy deb packages to cache dir
     mkdir $VPP_CACHE_DIR
     tar -xvf vpp.tar -C $VPP_CACHE_DIR
 

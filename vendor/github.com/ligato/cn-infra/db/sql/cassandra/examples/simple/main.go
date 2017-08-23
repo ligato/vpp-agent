@@ -35,6 +35,12 @@ type User struct {
 	WrapIP *Wrapper01 //used for custom (un)marshalling
 	Udt03  *Udt03
 	Udt04  Udt04
+	UdtCol []Udt03
+}
+
+// SchemaName demo schema name
+func (entity *User) SchemaName() string {
+	return "demo"
 }
 
 func main() {
@@ -71,7 +77,6 @@ func exampleKeyspace() (err error) {
 func example() (err error) {
 	// connect to the cluster
 	cluster := gocql.NewCluster("172.17.0.1")
-	cluster.Keyspace = "demo"
 	session, err := cluster.CreateSession()
 	if err != nil {
 		return err
@@ -95,23 +100,28 @@ func exampleDDL(session *gocql.Session) (err error) {
 		Exec(); err != nil {
 		return err
 	}
-	if err := session.Query(`CREATE TYPE IF NOT EXISTS udt03 (
+	if err := session.Query(`CREATE TYPE IF NOT EXISTS demo.udt03 (
 		tx text,
 		tx2 text)`).Exec(); err != nil {
 		return err
 	}
-	if err := session.Query(`CREATE TYPE IF NOT EXISTS udt04 (
+	if err := session.Query(`CREATE TYPE IF NOT EXISTS demo.udt04 (
 		ahoj text,
 		caf frozen<udt03>)`).Exec(); err != nil {
 		return err
 	}
 
-	if err := session.Query(`CREATE TABLE IF NOT EXISTS user (
+	if err := session.Query(`DROP TABLE IF EXISTS demo.user;`).
+		Exec(); err != nil {
+		return err
+	}
+	if err := session.Query(`CREATE TABLE IF NOT EXISTS demo.user (
 			userid text PRIMARY KEY,
 				first_name text,
 				last_name text,
 				Udt03 frozen<Udt03>,
 				Udt04 frozen<Udt04>,
+				UdtCol list<frozen<Udt03>>,
 				NetIP inet,
 				WrapIP text,
 				emails set<text>,
@@ -122,7 +132,7 @@ func exampleDDL(session *gocql.Session) (err error) {
 		return err
 	}
 
-	if err := session.Query("CREATE INDEX IF NOT EXISTS demo_users_last_name ON user (last_name);").
+	if err := session.Query("CREATE INDEX IF NOT EXISTS demo_users_last_name ON demo.user (last_name);").
 		Exec(); err != nil {
 		return err
 	}
@@ -137,10 +147,10 @@ func exampleDML(session *gocql.Session) (err error) {
 	}
 	db := cassandra.NewBrokerUsingSession(gockle.NewSession(session))
 	written := &User{"Fero", "Mrkva", /*ip01, */
-		//"kkk",
 		&Wrapper01{ipPrefix01}, &Udt03{Tx: "tx1", Tx2: "tx2" /*, Inet1: "201.202.203.204"*/},
 
 		Udt04{"kuk", &Udt03{Tx: "txxxxxxxxx1", Tx2: "txxxxxxxxx2" /*, Inet1: "201.202.203.204"*/}},
+		[]Udt03{{Tx: "txt1Col", Tx2: "txt2Col"}},
 	}
 	err = db.Put(sql.Exp("userid='Fero Mrkva'"), written)
 	if err == nil {
