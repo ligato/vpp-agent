@@ -64,7 +64,7 @@ Set Wrong MAC To Memif Again
     ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
     Log Many    ${int_key}    ${int_error_key}
     ${out}=    vpp_ctl: Read Key    ${int_key}
-    Should Be Empty    ${out}
+    Should Contain    ${out}    vpp1_memif1
     ${out}=    vpp_ctl: Read Key    ${int_error_key}
     Should Contain    ${out}    error_data
     Should Contain    ${out}    ${MAC_BAD1}
