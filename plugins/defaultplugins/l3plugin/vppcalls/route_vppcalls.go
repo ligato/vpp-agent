@@ -30,6 +30,7 @@ type Route struct {
 	NextHopAddr net.IP
 	OutIface    uint32
 	Weight      uint32
+	Preference  uint32
 }
 
 const (
@@ -76,6 +77,7 @@ func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error 
 	req.NextHopAddress = []byte(nextHopAddr)
 	req.NextHopSwIfIndex = route.OutIface
 	req.NextHopWeight = uint8(route.Weight)
+	req.NextHopPreference = uint8(route.Preference)
 	req.NextHopTableID = route.VrfID
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset

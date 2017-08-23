@@ -53,6 +53,7 @@ func CheckMsgCompatibilityForInterface(vppChan *govppapi.Channel) error {
 		&tap.SwInterfaceTapDump{},
 		&tap.SwInterfaceTapDetails{},
 
+		&interfaces.SwInterfaceEvent{},
 		&interfaces.SwInterfaceSetFlags{},
 		&interfaces.SwInterfaceSetFlagsReply{},
 		&interfaces.SwInterfaceAddDelAddress{},
