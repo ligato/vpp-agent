@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -46,9 +47,9 @@ func (f *FlavorLocal) Inject() error {
 	}
 	f.injected = true
 
-	f.StatusCheck.Deps.Log = f.LoggerFor("StatusCheck")
-	f.StatusCheck.Deps.PluginName = core.PluginName("StatusCheck")
-	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("ResyncOrch")
+	f.StatusCheck.Deps.Log = f.LoggerFor("status-check")
+	f.StatusCheck.Deps.PluginName = core.PluginName("status-check")
+	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("resync-orch")
 
 	return nil
 }
@@ -69,13 +70,16 @@ func (f *FlavorLocal) LogRegistry() logging.Registry {
 	return f.logRegistry
 }
 
-// LoggerFor for getting PlugginLogger instance.
+// LoggerFor for getting PlugginLogger instance:
+// - logger name is pre-initialized (see logging.ForPlugin)
 // This method is just convenient shortcut for Flavor.Inject()
 func (f *FlavorLocal) LoggerFor(pluginName string) logging.PluginLogger {
 	return logging.ForPlugin(pluginName, f.LogRegistry())
 }
 
-// LogDeps for getting PlugginLogger instance.
+// LogDeps for getting PlugginLofDeps instance.
+// - pluginName argument value is assigned to Plugin
+// - logger name is pre-initialized (see logging.ForPlugin)
 // This method is just convenient shortcut for Flavor.Inject()
 func (f *FlavorLocal) LogDeps(pluginName string) *localdeps.PluginLogDeps {
 	return &localdeps.PluginLogDeps{
@@ -84,12 +88,13 @@ func (f *FlavorLocal) LogDeps(pluginName string) *localdeps.PluginLogDeps {
 
 }
 
-// InfraDeps returns common dependencies.
+// InfraDeps for getting PlugginInfraDeps instance:
+// - config file is preinitialized by pluginName (see config.ForPlugin method)
 // This method is just convenient shortcut for Flavor.Inject()
 func (f *FlavorLocal) InfraDeps(pluginName string) *localdeps.PluginInfraDeps {
-
 	return &localdeps.PluginInfraDeps{
 		*f.LogDeps(pluginName),
+		config.ForPlugin(pluginName),
 		&f.StatusCheck,
-		&f.ServiceLabel}
+		&f.ServiceLabel, }
 }

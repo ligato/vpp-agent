@@ -28,7 +28,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := etcdkafka.Flavor{}
+	flavor := etcdkafka.FlavorEtcdKafka{}
 
 	// Example plugin (Kafka)
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{Kafka: &flavor.Kafka}}

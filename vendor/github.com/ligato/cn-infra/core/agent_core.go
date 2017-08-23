@@ -70,7 +70,9 @@ func (agent *Agent) Start() error {
 	doneChannel := make(chan struct{}, 0)
 	errChannel := make(chan error, 0)
 
-	flag.Parse()
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	go func() {
 		err := agent.initPlugins()

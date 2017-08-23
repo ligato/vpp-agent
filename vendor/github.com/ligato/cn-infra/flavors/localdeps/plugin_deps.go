@@ -1,6 +1,7 @@
 package localdeps
 
 import (
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
@@ -21,7 +22,8 @@ type PluginLogDeps struct {
 // - to report/write plugin status to StatusCheck
 // - to know micro-service label prefix
 type PluginInfraDeps struct {
-	PluginLogDeps                                //inject
-	StatusCheck   statuscheck.PluginStatusWriter //inject
-	ServiceLabel  servicelabel.ReaderAPI         //inject
+	PluginLogDeps                               // inject
+	config.PluginConfig                         // inject
+	StatusCheck  statuscheck.PluginStatusWriter // inject
+	ServiceLabel servicelabel.ReaderAPI         // inject
 }

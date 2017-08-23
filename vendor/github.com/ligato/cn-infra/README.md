@@ -94,14 +94,19 @@ in one of the following functional areas:
   
 * **Miscellaneous** - value-add plugins supporting the operation of a 
     CN-Infra based application: 
+  - [Config](config) - helpers for loading plugin configuration.
   - [Datasync](datasync/resync) - provides data resynchronization after HA 
     events (restart or connectivity restoration after an outage) for data
     stores, gRPC and REST.
+  - [Flavors](flavors) - predefined reusable collection of plugins.
+  - [IDX Map](idxmap) - reusable thread-safe map with advanced features:
+     - multiple subscribers for watching changes in the map
+     - secondary indexes
   - [ServiceLabel](servicelabel) - provides setting and retrieval of a 
-    unique identifier for a CN-Infra based app. A cloud app typically needs
-    a unique identifier so that it can differentiated from other instances 
-    of the same app or from other apps (e.g. to have its own space in a kv 
-    data store).
+      unique identifier for a CN-Infra based app. A cloud app typically needs
+      a unique identifier so that it can differentiated from other instances 
+      of the same app or from other apps (e.g. to have its own space in a kv 
+      data store).
    
 ## Quickstart
 The following code shows the initialization/start of a simple agent 
@@ -109,7 +114,7 @@ application built on the CN-Infra platform. The code for this example
 can be found [here](examples/simple-agent/agent.go).
 ```
 func main() {
-	flavor := generic.Flavor{}
+	flavor := rpc.FlavorRPC{}
 	agent := core.NewAgent(logroot.Logger(), 15*time.Second, flavor.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)

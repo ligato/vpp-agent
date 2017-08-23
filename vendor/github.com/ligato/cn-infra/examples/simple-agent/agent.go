@@ -27,7 +27,7 @@ import (
 func main() {
 	logroot.StandardLogger().SetLevel(logging.DebugLevel)
 
-	f := etcdkafka.Flavor{}
+	f := etcdkafka.FlavorEtcdKafka{}
 	agent := core.NewAgent(logroot.StandardLogger(), 15*time.Second, f.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
