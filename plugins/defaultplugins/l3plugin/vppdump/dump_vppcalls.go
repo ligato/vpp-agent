@@ -58,7 +58,7 @@ func DumpStaticRoutes(vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
@@ -73,7 +73,7 @@ func DumpStaticRoutes(vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)

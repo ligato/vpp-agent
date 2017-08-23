@@ -16,9 +16,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/buger/goterm"
 	"sort"
 	"strings"
+
+	"github.com/buger/goterm"
 )
 
 // Used as a header/info message

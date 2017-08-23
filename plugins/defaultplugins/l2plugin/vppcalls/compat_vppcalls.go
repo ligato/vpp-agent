@@ -35,7 +35,7 @@ func CheckMsgCompatibilityForBridgeDomains(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 	}
 	return err
 }
@@ -52,7 +52,7 @@ func CheckMsgCompatibilityForL2FIB(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 	}
 	return err
 }
@@ -67,7 +67,7 @@ func CheckMsgCompatibilityForL2XConnect(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 	}
 	return err
 }

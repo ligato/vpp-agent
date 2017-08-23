@@ -26,9 +26,9 @@ Example:
 ./build.sh --agent 9c35e43e9bfad377f3c2186f30d9853e3f3db3ad
 ```
 
-You can still build image using docker build command, but you must specify agent and vpp commit numbers:
+You can still build image using docker build command, but you must specify agent commit number:
 ```
-sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg --no-cache .
+sudo docker build -t dev_cn_infra --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg --no-cache .
 ```
 
 #### Verifying a Created or Downloaded Image
@@ -64,3 +64,6 @@ To open another terminal:
 sudo docker exec -it simple_agent bash
 ```
 
+#### How to run examples
+There are examples as an simple illustration of the cn-infra functionality. 
+You can find more info about how to run examples in [this README](../../examples/README.md) .

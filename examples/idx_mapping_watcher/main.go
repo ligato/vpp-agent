@@ -50,7 +50,7 @@ func main() {
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
 
 	// End when the idx_mapping_watcher example is finished
 	go closeExample("idx_mapping_watcher example finished", closeChannel)
@@ -61,7 +61,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(7 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -78,17 +78,17 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
-	exampleConfigurator *ExampleConfigurator           // Plugin configurator
-	exampleIdx          idxvpp.NameToIdxRW             // Name-to-index mapping
-	exIdxWatchChannel   chan idxvpp.NameToIdxDto       // Channel to watch changes in mapping
-	watchDataReg        datasync.WatchDataRegistration // To subscribe to mapping change events
+	exampleConfigurator *ExampleConfigurator       // Plugin configurator
+	exampleIdx          idxvpp.NameToIdxRW         // Name-to-index mapping
+	exIdxWatchChannel   chan idxvpp.NameToIdxDto   // Channel to watch changes in mapping
+	watchDataReg        datasync.WatchRegistration // To subscribe to mapping change events
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Init new name-to-index mapping
-	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.Logger(), PluginID, "example_index", nil)
+	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID, "example_index", nil)
 
 	// Initialize configurator
 	plugin.exampleConfigurator = &ExampleConfigurator{
@@ -108,7 +108,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// Subscribe name-to-index watcher
 	plugin.exampleIdx.Watch(PluginID, nametoidx.ToChan(plugin.exIdxWatchChannel))
 
-	log.Info("Initialization of the custom plugin for the idx-mapping watcher example is completed")
+	log.DefaultLogger().Info("Initialization of the custom plugin for the idx-mapping watcher example is completed")
 
 	return err
 }
@@ -133,7 +133,7 @@ type ExampleConfigurator struct {
 
 // Init members of configurator (none in this example)
 func (configurator *ExampleConfigurator) Init() (err error) {
-	log.Info("Default plugin configurator ready")
+	log.DefaultLogger().Info("Default plugin configurator ready")
 
 	go func() {
 		// This function registers several name to index items to registry owned by the configurator
@@ -160,7 +160,7 @@ func (configurator *ExampleConfigurator) RegisterTestData(index int) {
 	// is nil. Metadata are optional.
 	configurator.exampleIndex.RegisterName(name, configurator.exampleIDSeq, nil)
 	configurator.exampleIDSeq++
-	log.Infof("Name %v registered", name)
+	log.DefaultLogger().Infof("Name %v registered", name)
 }
 
 /***********
@@ -169,11 +169,11 @@ func (configurator *ExampleConfigurator) RegisterTestData(index int) {
 
 // Watch on name to index mapping changes created in configurator
 func (plugin *ExamplePlugin) watchEvents() {
-	log.Info("Watcher started")
+	log.DefaultLogger().Info("Watcher started")
 	for {
 		select {
 		case exIdx := <-plugin.exIdxWatchChannel:
-			log.Infof("Index event arrived to watcher, key %v", exIdx.Idx)
+			log.DefaultLogger().Infof("Index event arrived to watcher, key %v", exIdx.Idx)
 			if exIdx.IsDelete() {
 				// IsDelete flag recognizes what kind of event arrived (put or delete)
 			}

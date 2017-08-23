@@ -17,7 +17,6 @@ package syncbase
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db"
 )
 
 // NewChangeIterator creates a new instance of ChangeIterator.
@@ -32,9 +31,9 @@ type ChangeIterator struct {
 }
 
 // GetNext TODO
-func (it *ChangeIterator) GetNext() (kv datasync.KeyVal, changeType db.PutDel, allReceived bool) {
+func (it *ChangeIterator) GetNext() (kv datasync.KeyVal, changeType datasync.PutDel, allReceived bool) {
 	if it.index >= len(it.data) {
-		return nil, db.Put, true
+		return nil, datasync.Put, true
 	}
 
 	ret := it.data[it.index]
@@ -43,22 +42,22 @@ func (it *ChangeIterator) GetNext() (kv datasync.KeyVal, changeType db.PutDel, a
 }
 
 // NewChange creates a new instance of Change.
-func NewChange(key string, value proto.Message, rev int64, changeType db.PutDel) *Change {
+func NewChange(key string, value proto.Message, rev int64, changeType datasync.PutDel) *Change {
 	return &Change{changeType, &KeyVal{key, &lazyProto{value}, rev}}
 }
 
 // NewChangeBytes creates a new instance of NewChangeBytes.
-func NewChangeBytes(key string, value []byte, rev int64, changeType db.PutDel) *Change {
+func NewChangeBytes(key string, value []byte, rev int64, changeType datasync.PutDel) *Change {
 	return &Change{changeType, &KeyValBytes{key, value, rev}}
 }
 
 // Change represents a single Key-value pair plus changeType
 type Change struct {
-	changeType db.PutDel
+	changeType datasync.PutDel
 	datasync.KeyVal
 }
 
 // GetChangeType returns type of the change.
-func (kv *Change) GetChangeType() db.PutDel {
+func (kv *Change) GetChangeType() datasync.PutDel {
 	return kv.changeType
 }

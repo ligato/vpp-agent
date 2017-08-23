@@ -15,10 +15,11 @@
 package utils_test
 
 import (
+	"testing"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 // Test01PrintDataAsJson reads buffer created according to provided etcd data and verifies all flags used within JSON

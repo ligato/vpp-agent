@@ -37,7 +37,7 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel) (*acl.ACLInterf
 
 // DumpIPAcl test function
 func DumpIPAcl(vppChannel *govppapi.Channel) error {
-	log.Print("List of ACLs:")
+	log.DefaultLogger().Print("List of ACLs:")
 	req := &acl.ACLDump{}
 	req.ACLIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -50,7 +50,7 @@ func DumpIPAcl(vppChannel *govppapi.Channel) error {
 		if stop {
 			break
 		}
-		log.Printf("ACL index: %v, rule count: %v, tag: %v", msg.ACLIndex, msg.Count, string(msg.Tag[:]))
+		log.DefaultLogger().Printf("ACL index: %v, rule count: %v, tag: %v", msg.ACLIndex, msg.Count, string(msg.Tag[:]))
 
 	}
 	return nil
@@ -70,7 +70,7 @@ func DumpMacIPAcl(vppChannel *govppapi.Channel) error {
 		if stop {
 			break
 		}
-		log.Print(msg.ACLIndex)
+		log.DefaultLogger().Print(msg.ACLIndex)
 	}
 	return nil
 }
@@ -93,7 +93,7 @@ func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, vppChannel *govppapi.Channel) 
 		if !found {
 			continue
 		}
-		log.Printf("Interface %v is in %v acl in direction %v and applied in %v",
+		log.DefaultLogger().Printf("Interface %v is in %v acl in direction %v and applied in %v",
 			name, msg.Count, msg.NInput, msg.Acls)
 	}
 	return nil

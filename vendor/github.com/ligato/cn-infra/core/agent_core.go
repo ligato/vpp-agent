@@ -30,10 +30,12 @@ var (
 	BuildDate    string
 )
 
-// Agent holds all Agent's state.
+// Agent implements startup & shutdown procedure.
 type Agent struct {
+	// The startup/initialization must take no longer that maxStartup.
 	MaxStartupTime time.Duration
-	plugins        []*NamedPlugin
+	// plugin list
+	plugins []*NamedPlugin
 	logging.Logger
 }
 
@@ -54,7 +56,14 @@ func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*Named
 	return &a
 }
 
-// Start starts/initializes all plugins on the Start/Stop list.
+// Start starts/initializes all plugins on the list.
+// First it runs Init() method among all plugins in the list
+// Then it tries to run AfterInit() method among all plugins t
+// hat implements this optional method.
+// It stops when first error occurs by calling Close() method
+// for already initialized plugins in reverse order.
+// The startup/initialization must take no longer that maxStartup.
+// duration otherwise error occurs.
 func (agent *Agent) Start() error {
 	agent.WithFields(logging.Fields{"BuildVersion": BuildVersion, "BuildDate": BuildDate}).Info("Starting the agent...")
 
@@ -85,12 +94,16 @@ func (agent *Agent) Start() error {
 		agent.Info("All plugins initialized successfully")
 		return nil
 	case <-time.After(agent.MaxStartupTime):
+		//TODO FIX - stop the initialization and close already initialized
 		return fmt.Errorf("%s", "Some plugins not intialized before timeout")
 	}
 }
 
-// Stop gracefully shuts down the Agent. It is called when the user
-// interrupts the Agent.
+// Stop gracefully shuts down the Agent. It is called usually when the user
+// interrupts the Agent from the EventLoopWithInterrupt().
+//
+// This implementation tries to call Close() method on every plugin on the list
+// in revers order. It continues event if some error occurred.
 func (agent *Agent) Stop() error {
 	agent.Info("Stopping agent...")
 	errMsg := ""
@@ -115,7 +128,7 @@ func (agent *Agent) Stop() error {
 	return nil
 }
 
-// initPlugins calls Init() an all plugins on the Start/Stop list
+// initPlugins calls Init() an all plugins on the list
 func (agent *Agent) initPlugins() error {
 	for i, plug := range agent.plugins {
 		err := plug.Init()
@@ -135,9 +148,8 @@ func (agent *Agent) initPlugins() error {
 	return nil
 }
 
-// handleAfterInit calls the Post-Init handlers for plugins that can only
-// finish their initialization after  all other plugins have been
-// initialized (currently HTTP and Kafka plugins)
+// handleAfterInit calls the AfterInit handlers for plugins that can only
+// finish their initialization after  all other plugins have been initialized.
 func (agent *Agent) handleAfterInit() error {
 	for _, plug := range agent.plugins {
 		if plug2, ok := plug.Plugin.(PostInit); ok {

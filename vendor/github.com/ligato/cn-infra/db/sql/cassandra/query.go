@@ -38,7 +38,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 		return "", nil, err
 	}
 
-	bindings = structs.ListExportedFieldsPtrs(entity, cqlExported)
+	_, bindings = structs.ListExportedFieldsPtrs(entity, cqlExported, filterOutPK)
 	whereBinding := whereCondtionStr.Binding()
 	if whereBinding != nil {
 		bindings = append(bindings, whereBinding...)
@@ -164,6 +164,21 @@ func cqlExportedWithFieldName(field *r.StructField) (fieldName string, exported 
 	return field.Name, true
 }
 
+// isFieldPK checks the pk tag in StructField and parses the field name
+func isFieldPK(field *r.StructField) (isPK bool) {
+	result := false
+	pk := field.Tag.Get("pk")
+	if len(pk) > 0 {
+		result = true
+	}
+	return result
+}
+
+// filterOutPK used to filter out primary key from update statements only
+func filterOutPK(field *r.StructField) (filterPK bool) {
+	return !isFieldPK(field)
+}
+
 func fieldName(field *r.StructField) (name string, exported bool) {
 	structExported := structs.FieldExported(field)
 	if !structExported {
@@ -195,8 +210,9 @@ func selectFields(val interface{} /*, opts Options*/) (statement string) {
 }
 
 // SliceOfFields generates slice of translated (cql tag) field names
+// used in creating update statement only
 func sliceOfFieldNames(val interface{} /*, opts Options*/) (fieldNames []string) {
-	fields := structs.ListExportedFields(val)
+	fields := structs.ListExportedFields(val, filterOutPK)
 	fieldNames = []string{}
 	for _, field := range fields {
 		fieldName, exported := fieldName(field)
@@ -208,9 +224,10 @@ func sliceOfFieldNames(val interface{} /*, opts Options*/) (fieldNames []string)
 	return fieldNames
 }
 
-// SliceOfFieldsWithVals generates slice of translated (cql tag) field names with field values
-func SliceOfFieldsWithVals(val interface{} /*, opts Options*/) (fieldNames []string, vals []interface{}) {
-	fields, vals := structs.ListExportedFieldsWithVals(val)
+// SliceOfFieldsWithValPtrs generates slice of translated (cql tag) field names with field values
+// used for unit testing purposes only - list_values test
+func SliceOfFieldsWithValPtrs(val interface{} /*, opts Options*/) (fieldNames []string, vals []interface{}) {
+	fields, vals := structs.ListExportedFieldsPtrs(val)
 
 	fieldNames = []string{}
 	for _, field := range fields {

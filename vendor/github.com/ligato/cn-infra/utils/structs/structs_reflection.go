@@ -29,10 +29,18 @@ func FindField(pointerToAField interface{}, pointerToAStruct interface{}) (field
 
 	strct := reflect.Indirect(reflect.ValueOf(pointerToAStruct))
 	numField := strct.NumField()
+
 	for i := 0; i < numField; i++ {
 		sf := strct.Field(i)
 
-		if sf.CanAddr() {
+		//logroot.StandardLogger().Info("xxxxxxxxxxx ", sf.Kind().String(), " ", sf.String())
+
+		if sf.Kind() == reflect.Ptr || sf.Kind() == reflect.Interface {
+			if fieldVal.Interface() == sf {
+				field := strct.Type().Field(i)
+				return &field, true
+			}
+		} else if sf.CanAddr() {
 			if fieldVal.Pointer() == sf.Addr().Pointer() {
 				field := strct.Type().Field(i)
 				return &field, true
@@ -59,26 +67,6 @@ func ListExportedFields(val interface{}, predicates ...ExportedPredicate) []*ref
 	return ret
 }
 
-// ListExportedFieldsWithVals returns all fields of a structure that starts wit uppercase letter with values
-func ListExportedFieldsWithVals(val interface{}, predicates ...ExportedPredicate) (fields []*reflect.StructField, values []interface{}) {
-	valRefl := reflect.Indirect(reflect.ValueOf(val))
-	valType := valRefl.Type()
-	len := valType.NumField()
-	fields = []*reflect.StructField{}
-	values = []interface{}{}
-	for i := 0; i < len; i++ {
-		structField := valType.Field(i)
-
-		if FieldExported(&structField, predicates...) {
-			// if exported
-			fields = append(fields, &structField)
-			values = append(values, valRefl.Field(i).Interface())
-		}
-	}
-
-	return fields, values
-}
-
 // ExportedPredicate defines a callback (used in func FieldExported)
 type ExportedPredicate func(field *reflect.StructField) bool
 
@@ -100,9 +88,13 @@ func FieldExported(field *reflect.StructField, predicates ...ExportedPredicate) 
 }
 
 // ListExportedFieldsPtrs iterates struct fields and return slice of pointers to field values
-func ListExportedFieldsPtrs(val interface{}, predicates ...ExportedPredicate) []interface{} {
+func ListExportedFieldsPtrs(val interface{}, predicates ...ExportedPredicate) (
+	fields []*reflect.StructField, valPtrs []interface{}) {
+
 	rVal := reflect.Indirect(reflect.ValueOf(val))
-	ptrs := []interface{}{}
+	valPtrs = []interface{}{}
+	fields = []*reflect.StructField{}
+
 	for i := 0; i < rVal.NumField(); i++ {
 		field := rVal.Field(i)
 		structField := rVal.Type().Field(i)
@@ -115,28 +107,30 @@ func ListExportedFieldsPtrs(val interface{}, predicates ...ExportedPredicate) []
 			if field.IsNil() {
 				p := reflect.New(field.Type().Elem())
 				field.Set(p)
-				ptrs = append(ptrs, p.Interface())
+				valPtrs = append(valPtrs, p.Interface())
 			} else {
-				ptrs = append(ptrs, field.Interface())
+				valPtrs = append(valPtrs, field.Interface())
 			}
 		case reflect.Slice, reflect.Chan, reflect.Map:
 			if field.IsNil() {
 				p := reflect.New(field.Type())
 				field.Set(p.Elem())
-				ptrs = append(ptrs, field.Addr().Interface())
+				valPtrs = append(valPtrs, field.Addr().Interface())
 			} else {
-				ptrs = append(ptrs, field.Interface())
+				valPtrs = append(valPtrs, field.Interface())
 			}
 		default:
 			if field.CanAddr() {
-				ptrs = append(ptrs, field.Addr().Interface())
+				valPtrs = append(valPtrs, field.Addr().Interface())
 			} else if field.IsValid() {
-				ptrs = append(ptrs, field.Interface())
+				valPtrs = append(valPtrs, field.Interface())
 			} else {
 				panic("invalid field")
 			}
 		}
+
+		fields = append(fields, &structField)
 	}
 
-	return ptrs
+	return fields, valPtrs
 }

@@ -17,10 +17,11 @@ package client
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/Shopify/sarama"
 	"github.com/bsm/sarama-cluster"
 	"github.com/ligato/cn-infra/logging"
-	"strings"
 )
 
 // RequiredAcks is used in Produce Requests to tell the broker how many replica acknowledgements

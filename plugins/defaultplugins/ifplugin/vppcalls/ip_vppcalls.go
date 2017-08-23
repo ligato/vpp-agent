@@ -46,7 +46,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 		req.IsIpv6 = 0
 	}
 
-	log.Debug("add req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
+	log.DefaultLogger().Debug("add req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
@@ -57,7 +57,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 	if 0 != reply.Retval {
 		return fmt.Errorf("Adding IP address returned %d", reply.Retval)
 	}
-	log.WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
+	log.DefaultLogger().WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
 	return nil
 
 }
@@ -84,7 +84,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 		req.IsIpv6 = 0
 	}
 
-	log.Debug("del req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
+	log.DefaultLogger().Debug("del req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
 	// send the message
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
@@ -96,7 +96,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 	if 0 != reply.Retval {
 		return fmt.Errorf("Removing IP address returned %d", reply.Retval)
 	}
-	log.WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
+	log.DefaultLogger().WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
 	return nil
 
 }

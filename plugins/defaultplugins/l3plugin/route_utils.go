@@ -84,11 +84,11 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 // TransformRoute converts raw route data to Route object
 func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex) (*vppcalls.Route, error) {
 	if routeInput == nil {
-		log.Infof("Route input is empty")
+		log.DefaultLogger().Infof("Route input is empty")
 		return nil, nil
 	}
 	if routeInput.DstIpAddr == "" {
-		log.Infof("Route does not contain destination address")
+		log.DefaultLogger().Infof("Route does not contain destination address")
 		return nil, nil
 	}
 	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)

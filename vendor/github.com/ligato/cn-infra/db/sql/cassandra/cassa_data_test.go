@@ -28,8 +28,14 @@ import (
 var JamesBond = &User{ID: "James Bond", FirstName: "James", LastName: "Bond"}
 var PeterBond = &User{ID: "Peter Bond", FirstName: "Peter", LastName: "Bond"}
 
+var myID gocql.UUID = gocql.TimeUUID()
+var MyTweet = &Tweet{ID: myID.String(), Text: "hello"}
+
 // instance that represents users table (used in queries to define columns)
 var UserTable = &User{}
+
+// instance that represents tweets table (used in queries to define columns)
+var TweetTable = &Tweet{}
 
 //var UsersTypeInfo = map[string /*FieldName*/ ]gocql.TypeInfo{
 //runtimeutils.GetFunctionName(UserTable.GetLastName): gocql.NewNativeType(0x03, gocql.TypeVarchar, ""),
@@ -38,16 +44,22 @@ var UserTable = &User{}
 
 // User is simple structure for testing purposes
 type User struct {
-	ID                string `cql:"id"`
+	ID                string `cql:"id" pk:"id"`
 	FirstName         string `cql:"first_name"`
 	LastName          string `cql:"last_name"`
 	ExportedButNotCql string `cql:"-"`
 	notExported       string
 }
 
+// Tweet structure using uuid for testing purposes
+type Tweet struct {
+	ID   string `cql:"id" pk:"id"`
+	Text string `cql:"text"`
+}
+
 // CustomizedTablenameAndSchema implements sql.TableName, sql.SchemaName interfaces
 type CustomizedTablenameAndSchema struct {
-	ID       string `cql:"id"`
+	ID       string `cql:"id" pk:"id"`
 	LastName string `cql:"last_name"`
 }
 
@@ -86,7 +98,7 @@ func mockExec(sessionMock *gockle.SessionMock, query string, binding []interface
 
 // cells is a helper that harvests all exported fields values
 func cells(entity interface{}) (cellsInRow *row) {
-	fields, values := cassandra.SliceOfFieldsWithVals(entity)
+	fields, values := cassandra.SliceOfFieldsWithValPtrs(entity)
 	return &row{values, fields}
 }
 

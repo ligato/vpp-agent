@@ -19,10 +19,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"os"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // IfaceCommonFields are fields common for interface of any type

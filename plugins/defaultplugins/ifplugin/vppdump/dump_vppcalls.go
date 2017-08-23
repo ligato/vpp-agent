@@ -58,7 +58,7 @@ func DumpInterfaces(vppChan *govppapi.Channel) (map[uint32]*Interface, error) {
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 
@@ -125,7 +125,7 @@ func dumpIPAddressDetails(vppChan *govppapi.Channel, ifs map[uint32]*Interface, 
 				break // break out of the loop
 			}
 			if err != nil {
-				log.Error(err)
+				log.DefaultLogger().Error(err)
 				return err
 			}
 			processIPDetails(ifs, ipDetails)
@@ -177,7 +177,7 @@ func dumpMemifDetails(vppChan *govppapi.Channel, ifs map[uint32]*Interface) erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return err
 		}
 		ifs[memifDetails.SwIfIndex].Memif = &ifnb.Interfaces_Interface_Memif{
@@ -205,7 +205,7 @@ func dumpTapDetails(vppChan *govppapi.Channel, ifs map[uint32]*Interface) error 
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return err
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
@@ -226,7 +226,7 @@ func dumpVxlanDetails(vppChan *govppapi.Channel, ifs map[uint32]*Interface) erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return err
 		}
 		if vxlanDetails.IsIpv6 == 1 {

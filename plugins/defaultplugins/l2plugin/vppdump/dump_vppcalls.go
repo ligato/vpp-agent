@@ -33,7 +33,7 @@ func DumpBridgeDomainIDs(vppChannel *govppapi.Channel) ([]uint32, error) {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return activeDomains, err
 		}
 		if stop {
@@ -78,7 +78,7 @@ func DumpBridgeDomains(vppChan *govppapi.Channel) (map[uint32]*BridgeDomain, err
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 
@@ -129,7 +129,7 @@ func DumpFIBTableEntries(vppChan *govppapi.Channel) (map[string]*FIBTableEntry, 
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 
@@ -177,7 +177,7 @@ func DumpXConnectPairs(vppChan *govppapi.Channel) (map[uint32]*XConnectPairs, er
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
+			log.DefaultLogger().Error(err)
 			return nil, err
 		}
 

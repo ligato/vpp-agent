@@ -28,7 +28,3 @@ set via `KAFKA_CONFIG` env variable.
 **Status Check**
 
 - Kafka plugin has a mechanism to periodically check a connection status of the Kafka server.  
-
-**Dependencies**
-- [Logging](../../logging/plugin)
-- [ServiceLabel](../../servicelabel)

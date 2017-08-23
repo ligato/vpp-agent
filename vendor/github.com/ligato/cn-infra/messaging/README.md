@@ -1,3 +1,4 @@
 # Messaging
 
-The package contains implementation for messaging systems. Currently, only kafka is supported.
+The package contains the implementation of a front-end for messaging systems. 
+Currently, only kafka is supported.

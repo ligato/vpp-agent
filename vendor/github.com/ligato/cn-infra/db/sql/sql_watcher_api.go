@@ -14,9 +14,7 @@
 
 package sql
 
-import (
-	"github.com/ligato/cn-infra/db"
-)
+import "github.com/ligato/cn-infra/datasync"
 
 // Watcher define API for monitoring changes in a datastore
 type Watcher interface {
@@ -26,7 +24,7 @@ type Watcher interface {
 
 // WatchResp represents a notification about change. It is sent through the watch resp channel.
 type WatchResp interface {
-	GetChangeType() db.PutDel
+	GetChangeType() datasync.PutDel
 	// GetValue returns the value in the event
 	GetValue(outBinding interface{}) error
 }

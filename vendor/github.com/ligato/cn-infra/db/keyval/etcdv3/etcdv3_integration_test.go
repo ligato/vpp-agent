@@ -15,55 +15,46 @@
 package etcdv3
 
 import (
-	"context"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/embed"
-	"github.com/coreos/etcd/etcdserver/api/v3client"
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/onsi/gomega"
-	"io/ioutil"
-	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/coreos/etcd/etcdserver/api/v3client"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/etcdv3/mocks"
+	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/onsi/gomega"
 )
 
 const (
-	etcdStartTimeout = 30
-	prefix           = "/my/prefix/"
-	key              = "key"
-	watchKey         = "vals/"
+	prefix   = "/my/prefix/"
+	key      = "key"
+	watchKey = "vals/"
 )
 
 var (
 	broker          *BytesConnectionEtcd
 	prefixedBroker  keyval.BytesBroker
 	prefixedWatcher keyval.BytesWatcher
-	embd            embededEtcd
+	embd            mocks.Embedded
 )
-
-type embededEtcd struct {
-	tmpDir string
-	etcd   *embed.Etcd
-	client *clientv3.Client
-}
 
 func TestDataBroker(t *testing.T) {
 
 	//setup
-	embd.start(t)
-	defer embd.stop()
+	embd.Start(t)
+	defer embd.Stop()
 	gomega.RegisterTestingT(t)
 
 	t.Run("putGetValue", testPutGetValuePrefixed)
-	embd.cleanDs()
+	embd.CleanDs()
 	t.Run("simpleWatcher", testPrefixedWatcher)
-	embd.cleanDs()
+	embd.CleanDs()
 	t.Run("listValues", testPrefixedListValues)
-	embd.cleanDs()
+	embd.CleanDs()
 	t.Run("txn", testPrefixedTxn)
-	embd.cleanDs()
+	embd.CleanDs()
 	t.Run("testDelWithPrefix", testDelWithPrefix)
 }
 
@@ -103,7 +94,7 @@ func testPrefixedWatcher(t *testing.T) {
 	defer teardownBrokers()
 
 	watchCh := make(chan keyval.BytesWatchResp)
-	err := prefixedWatcher.Watch(watchCh, watchKey)
+	err := prefixedWatcher.Watch(keyval.ToChan(watchCh), watchKey)
 	gomega.Expect(err).To(gomega.BeNil())
 
 	wg := sync.WaitGroup{}
@@ -195,7 +186,7 @@ func testDelWithPrefix(t *testing.T) {
 	gomega.Expect(found).To(gomega.BeTrue())
 	gomega.Expect(err).To(gomega.BeNil())
 
-	_, err = broker.Delete("something/a", keyval.WithPrefix())
+	_, err = broker.Delete("something/a", datasync.WithPrefix())
 	gomega.Expect(err).To(gomega.BeNil())
 
 	_, found, _, err = broker.GetValue("something/a/val1")
@@ -224,48 +215,9 @@ func expectWatchEvent(t *testing.T, wg *sync.WaitGroup, watchCh chan keyval.Byte
 	wg.Done()
 }
 
-func (embd *embededEtcd) start(t *testing.T) {
-	dir, err := ioutil.TempDir("", "etcd")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	cfg := embed.NewConfig()
-	cfg.Dir = dir
-	embd.etcd, err = embed.StartEtcd(cfg)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-
-	}
-
-	select {
-	case <-embd.etcd.Server.ReadyNotify():
-		logroot.Logger().Debug("Server is ready!")
-	case <-time.After(etcdStartTimeout * time.Second):
-		embd.etcd.Server.Stop() // trigger a shutdown
-		t.Error("Server took too long to start!")
-		t.FailNow()
-	}
-	embd.client = v3client.New(embd.etcd.Server)
-}
-
-func (embd *embededEtcd) stop() {
-	embd.etcd.Close()
-	os.RemoveAll(embd.tmpDir)
-}
-
-// cleanDs deletes all key-value pair stored
-func (embd *embededEtcd) cleanDs() {
-	if embd.client != nil {
-		embd.client.Delete(context.Background(), "", clientv3.WithPrefix())
-	}
-}
-
 func setupBrokers(t *testing.T) {
 	var err error
-	broker, err = NewEtcdConnectionUsingClient(v3client.New(embd.etcd.Server), logroot.Logger())
+	broker, err = NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logroot.StandardLogger())
 
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(broker).NotTo(gomega.BeNil())

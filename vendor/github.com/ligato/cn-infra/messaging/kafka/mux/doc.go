@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mux implements a multiplexer that allows to share a single connection to kafka brokers among
-// multiple entities.
+// Package mux implements a multiplexer that allows plugins to share a
+// single connection to a Kafka broker.
 package mux

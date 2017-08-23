@@ -26,7 +26,7 @@ import (
 
 // VppAddArpTerminationTableEntry adds ARP termination entry
 func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, vppChan *govppapi.Channel) error {
-	log.Println("Adding arp termination entry")
+	log.DefaultLogger().Println("Adding arp termination entry")
 
 	parsedMac, errMac := net.ParseMAC(mac)
 	if errMac != nil {
@@ -59,14 +59,14 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 	if 0 != reply.Retval {
 		return fmt.Errorf("Adding arp entry returned %d", reply.Retval)
 	}
-	log.WithFields(log.Fields{"Bridge domain": bridgeDomainID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry added.")
+	log.DefaultLogger().WithFields(log.Fields{"Bridge domain": bridgeDomainID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry added.")
 
 	return nil
 }
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry
 func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, vppChan *govppapi.Channel) error {
-	log.Println("'Deleting' arp entry")
+	log.DefaultLogger().Println("'Deleting' arp entry")
 
 	parsedMac, errMac := net.ParseMAC(mac)
 	if errMac != nil {
@@ -98,7 +98,7 @@ func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, vppCh
 	if 0 != reply.Retval {
 		return fmt.Errorf("Deleting arp entry returned %d", reply.Retval)
 	}
-	log.WithFields(log.Fields{"bdID": bdID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry removed.")
+	log.DefaultLogger().WithFields(log.Fields{"bdID": bdID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry removed.")
 
 	return nil
 }

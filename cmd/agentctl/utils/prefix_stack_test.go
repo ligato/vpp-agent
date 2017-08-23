@@ -15,9 +15,10 @@
 package utils_test
 
 import (
+	"testing"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 // Test01GetPrefix tests whether prefix can be obtained using GetPrefix() method

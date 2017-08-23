@@ -49,7 +49,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *api
 		if 0 != reply.Retval {
 			return 0, fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
+		log.DefaultLogger().Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
 		return reply.ACLIndex, nil
 	}
 	return 0, fmt.Errorf("No rules found for ACL %v", aclName)
@@ -77,10 +77,10 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *
 		if 0 != reply.Retval {
 			return 0, fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
+		log.DefaultLogger().Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
 		return reply.ACLIndex, nil
 	}
-	log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
+	log.DefaultLogger().Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
 	return 0, fmt.Errorf("No rules found for ACL %v", aclName)
 }
 
@@ -107,10 +107,10 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 		if 0 != reply.Retval {
 			return fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, aclIndex)
+		log.DefaultLogger().Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, aclIndex)
 		return nil
 	}
-	log.Debugf("No Ip ACL rules written for ACL %v", aclName)
+	log.DefaultLogger().Debugf("No Ip ACL rules written for ACL %v", aclName)
 	return nil
 }
 
@@ -127,7 +127,7 @@ func DeleteIPAcl(aclIndex uint32, vppChannel *api.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("Error %v while removing L3/L4 ACL %v", reply.Retval, aclIndex)
 	}
-	log.Infof("L3/L4 ACL %v removed", aclIndex)
+	log.DefaultLogger().Infof("L3/L4 ACL %v removed", aclIndex)
 
 	return nil
 }
@@ -145,7 +145,7 @@ func DeleteMacIPAcl(aclIndex uint32, vppChannel *api.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("Error %v while removing L2 ACL %v", reply.Retval, aclIndex)
 	}
-	log.Infof("L2 ACL %v removed", aclIndex)
+	log.DefaultLogger().Infof("L2 ACL %v removed", aclIndex)
 
 	return nil
 }
@@ -316,6 +316,6 @@ func udpACL(udpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp, aclRule *acl_a
 }
 
 func otherACL(otherRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Other, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	log.Warnf("Unknown protocol: %v", otherRule.Protocol)
+	log.DefaultLogger().Warnf("Unknown protocol: %v", otherRule.Protocol)
 	return aclRule
 }

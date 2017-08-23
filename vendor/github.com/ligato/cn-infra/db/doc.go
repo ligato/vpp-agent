@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package db groups clients for different databases.
+// Package db is the parent package for Data Broker client implementations
+// for various key-value and SQL data stores.
 package db
