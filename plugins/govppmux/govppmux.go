@@ -87,6 +87,11 @@ func (plugin *GOVPPPlugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 
+	// register for providing status reports (push mode)
+	plugin.StatusCheck.Register(plugin.PluginName, nil)
+	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
+	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
+
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.handleVPPConnectionEvents(ctx)
@@ -98,11 +103,6 @@ func (plugin *GOVPPPlugin) Init() error {
 func (plugin *GOVPPPlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
-
-	// register for providing status reports (push mode)
-	plugin.StatusCheck.Register(plugin.PluginName, nil)
-	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
-	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
 
 	defer func() {
 		if plugin.vppConn != nil {

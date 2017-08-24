@@ -8,8 +8,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/cn-infra/db/keyval/redis"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
 )
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
@@ -36,7 +36,7 @@ func (f *Flavor) Inject() error {
 
 	// Redis plugin
 	f.Redis.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis")
-	f.RedisSync.Deps.PluginLogDeps = *f.Base.LogDeps("redis-datasync")
+	f.RedisSync.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis-datasync")
 	f.RedisSync.KvPlugin = &f.Redis
 	f.RedisSync.ResyncOrch = &f.Base.ResyncOrch
 
