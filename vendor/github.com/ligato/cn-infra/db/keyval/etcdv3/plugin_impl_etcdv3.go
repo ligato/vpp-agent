@@ -46,6 +46,11 @@ func (p *Plugin) Init() (err error) {
 	// Retrieve config
 	var cfg Config
 	_, err = p.PluginConfig.GetValue(&cfg)
+	// need to be strict about config presence for ETCD
+	//if !found {
+	//	p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+	//	return nil
+	//}
 	if err != nil {
 		return err
 	}

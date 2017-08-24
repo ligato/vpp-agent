@@ -28,7 +28,7 @@ import (
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
-	Deps         // inject
+	Deps // inject
 	subscription chan (*client.ConsumerMessage)
 	mx           *mux.Multiplexer
 	consumer     *client.Consumer
@@ -53,7 +53,11 @@ func (p *Plugin) Init() (err error) {
 
 	// Get config data
 	config := &mux.Config{}
-	p.PluginConfig.GetValue(config)
+	found, err := p.PluginConfig.GetValue(config)
+	if !found {
+		p.Log.Info("kafka config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		return nil //skip loading the plugin
+	}
 	if err != nil {
 		return err
 	}

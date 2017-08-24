@@ -1,7 +1,7 @@
 package config
 
 import (
-	"flag"
+	"github.com/namsral/flag"
 )
 
 // PluginConfig is API for plugins to access configuration.
@@ -23,25 +23,16 @@ type PluginConfig interface {
 //
 // It tries to lookup `plugin + "-config"` in flags.
 func ForPlugin(pluginName string) PluginConfig {
-	plugCfg := pluginName + "-config"
-	flg := flag.CommandLine.Lookup(plugCfg)
-	if flg != nil {
-		val := flg.Value.String()
-		if val != "" {
-			plugCfg = val
-		}
-	}
-
-	return &pluginConfig{configFile: plugCfg}
+	return &pluginConfig{pluginName: pluginName}
 }
 
 type pluginConfig struct {
-	configFile string
+	pluginName string
 }
 
 // GetValue binds the configuration to config method argument
 func (p *pluginConfig) GetValue(config interface{}) (found bool, err error) {
-	err = ParseConfigFromYamlFile(p.configFile, config) //TODO switch to Viper
+	err = ParseConfigFromYamlFile(p.GetConfigName(), config) //TODO switch to Viper
 	if err != nil {
 		return false, err
 	}
@@ -51,5 +42,15 @@ func (p *pluginConfig) GetValue(config interface{}) (found bool, err error) {
 
 // GetConfigName - see description in PluginConfig.GetConfigName
 func (p *pluginConfig) GetConfigName() string {
-	return p.configFile
+	plugCfg := p.pluginName + "-config"
+	flg := flag.CommandLine.Lookup(plugCfg)
+	if flg != nil {
+		val := flg.Value.String()
+
+		if val != "" {
+			plugCfg = val
+		}
+	}
+
+	return plugCfg
 }

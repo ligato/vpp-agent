@@ -309,14 +309,14 @@ func (logger *Logger) withFields(fields Fields, depth ...int) *LogMsg {
 	for k, v := range fields {
 		f[k] = v
 	}
-	/*TODO
+
 	if _, ok := f[tagKey]; !ok {
 		f[tagKey] = logger.GetTag()
 	}
 	if _, ok := f[locKey]; !ok {
 		f[locKey] = logger.GetLineInfo(d)
 	}
-	*/
+
 	entry := logger.std.WithFields(f)
 	return &LogMsg{
 		logger: logger,

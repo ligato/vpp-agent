@@ -24,31 +24,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-/*TODO change test to WithField
-func TestEntryWithError(t *testing.T) {
-
-	gomega.RegisterTestingT(t)
-
-	defer func() {
-		ErrorKey = "error"
-	}()
-
-	err := fmt.Errorf("kaboom at layer %d", 4711)
-
-	gomega.Expect(err).To(gomega.BeEquivalentTo(WithError(err).Entry.Data["error"]))
-
-	logger := NewLogger("testLogger")
-	logger.std.Out = &bytes.Buffer{}
-	entry := NewEntry(logger)
-
-	gomega.Expect(err).To(gomega.BeEquivalentTo(entry.WithError(err).Entry.Data["error"]))
-
-	ErrorKey = "err"
-
-	gomega.Expect(err).To(gomega.BeEquivalentTo(entry.WithError(err).Entry.Data["err"]))
-
-}*/
-
 func TestEntryPanicln(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
