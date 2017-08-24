@@ -38,6 +38,13 @@ type NamedMapping interface {
 
 	// Watch subscribes to receive notifications about the changes in the
 	// mapping. To receive changes through channel ToChan utility can be used.
+	//
+	// Example usage:
+	//
+	//  map.Watch(plugin.PluginName, ToChan(myChannel))
+	//
+	//  map.Watch(plugin.PluginName, func(msgNamedMappingGenericEvent) {/*handle callback*/ return nil})
+	//
 	Watch(subscriber core.PluginName, callback func(NamedMappingGenericEvent)) error
 }
 

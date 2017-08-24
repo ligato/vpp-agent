@@ -17,6 +17,7 @@ package keyval
 import (
 	"time"
 
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
 )
@@ -44,10 +45,10 @@ func ToChan(ch chan BytesWatchResp, opts ...interface{}) func(dto BytesWatchResp
 
 	for _, opt := range opts {
 		switch opt.(type) {
-		case *datasync.WithLoggerOpt:
-			logger = opt.(*datasync.WithLoggerOpt).Logger
-		case *datasync.WithTimeoutOpt:
-			timeout = opt.(*datasync.WithTimeoutOpt).Timeout
+		case *core.WithLoggerOpt:
+			logger = opt.(*core.WithLoggerOpt).Logger
+		case *core.WithTimeoutOpt:
+			timeout = opt.(*core.WithTimeoutOpt).Timeout
 		}
 	}
 

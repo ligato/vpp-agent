@@ -4,13 +4,32 @@
 ```go
 	package xy
 	import (
-	    "github.com/ligato/cn-infra/logging"
+	    "github.com/ligato/cn-infra/flavors/localdeps"
+	    "github.com/ligato/cn-infra/datasync"
 	)
 	
-	type Plugin struct {
-		LogFactory     logging.LogFactory `inject:`
-		//other dependencies ...
+	type PluginXY struct {
+	    // dependencies
+	    Dep
+
+		//other fields (usually private fields) ...
 	}
+	
+	type Dep struct {
+	    localdeps.PluginLogDeps //Plugin Logger & Plugin Name
+	    
+	    //other dependencies:
+	    
+	    Watcher datasync.KeyValProtoWatcher
+	}
+	
+    func (plugin *PluginXY) Init() error {
+        //using the dependency (following line is shortcut for plugin.Dep.PluginLogDeps.Log)
+        plugin.Log.Info("using injected logger in flavor")
+        
+        return nil
+    }  
+
 ```
 	
 2. For plugins, constructors are not needed. The reasons:

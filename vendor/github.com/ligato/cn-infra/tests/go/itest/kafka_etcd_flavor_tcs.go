@@ -32,7 +32,7 @@ func (t *suiteFlavorKafkaEtcd) Setup(flavor core.Flavor, golangT *testing.T) {
 //
 //     kafkamock, _, _ := kafkamux.Mock(t)
 //     MockEtcdKafkaFlavor(T)
-func MockEtcdKafkaFlavor(t *testing.T) (*etcdkafka.Flavor, *KafkaEtcdFlavorMocks) {
+func MockEtcdKafkaFlavor(t *testing.T) (*etcdkafka.FlavorEtcdKafka, *KafkaEtcdFlavorMocks) {
 	flavorRPC, httpMock := MockFlavorRPC()
 	kafkaMock := kafkamux.Mock(t)
 
@@ -46,7 +46,7 @@ func MockEtcdKafkaFlavor(t *testing.T) (*etcdkafka.Flavor, *KafkaEtcdFlavorMocks
 		panic(err)
 	}
 
-	return &etcdkafka.Flavor{
+	return &etcdkafka.FlavorEtcdKafka{
 		FlavorRPC: *flavorRPC,
 		ETCD:      *etcdv3.FromExistingConnection(etcdBytesCon, &flavorRPC.ServiceLabel),
 		Kafka:     *kafka.FromExistingMux(kafkaMock.Mux),

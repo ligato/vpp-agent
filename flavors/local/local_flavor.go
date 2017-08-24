@@ -25,7 +25,7 @@ import (
 
 // Flavor glues together multiple plugins to mange VPP configuration using local client.
 type Flavor struct {
-	Base        etcdkafka.Flavor
+	Base        etcdkafka.FlavorEtcdKafka
 	LocalClient localclient.Plugin
 	Resync      resync.Plugin
 	GoVPP       govppmux.GOVPPPlugin

@@ -2,8 +2,10 @@
 
 ## Flags & Environment variables
 
-1. Ligato source code uses the [flag package](https://github.com/namsral/flag)
-   to define & parse command line flags and/or environment variables. 
+1. Ligato source code uses [flag](github.com/namsral/flag) package to define & parse command 
+   line flags and/or environment variables. Plan is to incorporate
+   [Viper](https://github.com/spf13/viper)
+   that is backward compatible with golang flag package. 
 
 2. The package level init() function defines one or more flags. If the 
    package is imported, then the flag is defined.
@@ -86,10 +88,8 @@ files. Flags can be used to specify the name of the configuration file.
     package xy
 
     import (
-    "github.com/namsral/flag"
+    "github.com/ligato/cn-infra/flavors/localdeps"
     )
-    
-    var defaultConfigName string
     
     type ConfigXY struct {
         HTTPport string
@@ -97,18 +97,19 @@ files. Flags can be used to specify the name of the configuration file.
     }
     
     type PluginXY struct {
-        Config *ConfigXY //can be injected
-        ConfigName string //can be injected
+        Dep // injected 
+    }
+    
+    type Dep struct {
+        localdeps.PluginInfraDeps //(config name is derived from plugin name)    
+        //other fields...
     }
     
     func (plugin *PluginXY) Init() error {
-        //load configuration
-        if plugin.Config == nil {
-           //apply global settings
-           if plugin.ConfigName == "" {
-              plugin.ConfigName = defaultConfigName
-           }
-           //load config: ConfigBroker.GetValue(plugin.ConfigName, plugin.Config)
+        cfg := &ConfigXY{}
+        _, err := plugin.PluginConfig.GetValue(cfg)
+        if err != nil {
+            return err
         }
         
         return nil

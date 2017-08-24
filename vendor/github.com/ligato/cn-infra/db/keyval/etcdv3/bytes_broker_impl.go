@@ -127,7 +127,7 @@ func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 
 // Put calls Put function of BytesConnectionEtcd. KeyPrefix defined in constructor is prepended to key argument.
 func (pdb *BytesBrokerWatcherEtcd) Put(key string, data []byte, opts ...datasync.PutOption) error {
-	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, key, data, opts)
+	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, key, data, opts...)
 }
 
 // NewTxn creates new transaction. KeyPrefix defined in constructor will be prepended to all key arguments in the transaction.
@@ -227,7 +227,8 @@ func (db *BytesConnectionEtcd) Put(key string, binData []byte, opts ...datasync.
 	return putInternal(db.Logger, db.etcdClient, db.lessor, db.opTimeout, key, binData, opts...)
 }
 
-func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, key string, binData []byte, opts ...datasync.PutOption) error {
+func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTimeout time.Duration, key string,
+	binData []byte, opts ...datasync.PutOption) error {
 
 	deadline := time.Now().Add(opTimeout)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)

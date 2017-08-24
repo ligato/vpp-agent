@@ -21,17 +21,13 @@ import (
 	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/config"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/namsral/flag"
 )
 
 const (
 	// healthCheckProbeKey is a key used to probe Etcd state
 	healthCheckProbeKey string = "/probe-etcd-connection"
 )
-
-var defaultConfigFileName string
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
@@ -43,21 +39,24 @@ type Plugin struct {
 // to not mix with other plugin fields.
 type Deps struct {
 	localdeps.PluginInfraDeps // inject
-	ConfigFileName string     // inject optionally
 }
 
 // Init is called at plugin startup. The connection to etcd is established.
-func (p *Plugin) Init() error {
-	var err error
-
+func (p *Plugin) Init() (err error) {
 	// Retrieve config
-	cfg, err := p.retrieveConfig()
+	var cfg Config
+	_, err = p.PluginConfig.GetValue(&cfg)
+	// need to be strict about config presence for ETCD
+	//if !found {
+	//	p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+	//	return nil
+	//}
 	if err != nil {
 		return err
 	}
 
 	// Init connection
-	etcdConfig, err := ConfigToClientv3(cfg)
+	etcdConfig, err := ConfigToClientv3(&cfg)
 	if err != nil {
 		return err
 	}
@@ -95,6 +94,7 @@ func (p *Plugin) AfterInit() error {
 	} else {
 		p.Log.Warnf("Unable to start status check for etcd")
 	}
+
 	return nil
 }
 
@@ -108,28 +108,6 @@ func FromExistingConnection(connection keyval.CoreBrokerWatcher, sl servicelabel
 func (p *Plugin) Close() error {
 	_, err := safeclose.CloseAll(p.Skeleton)
 	return err
-}
-
-func init() {
-	flag.StringVar(&defaultConfigFileName, "etcdv3-config", "", "Location of the Etcd configuration file; also set via 'ETCDV3_CONFIG' env variable.")
-}
-
-func (p *Plugin) retrieveConfig() (*Config, error) {
-	cfg := &Config{}
-	var configFile string
-	if p.ConfigFileName != "" {
-		configFile = p.ConfigFileName
-	} else if defaultConfigFileName != "" {
-		configFile = defaultConfigFileName
-	}
-
-	if configFile != "" {
-		err := config.ParseConfigFromYamlFile(configFile, cfg)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return cfg, nil
 }
 
 // String returns if set Deps.PluginName or "kvdbsync" otherwise

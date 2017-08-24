@@ -229,7 +229,6 @@ func TestDefaultFieldsAreNotPrefixed(t *testing.T) {
 	})
 }
 
-/*TODO Lukas
 func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 
 	var buffer bytes.Buffer
@@ -259,9 +258,8 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 	gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("omg it is!"))
 	gomega.Expect(fields["context"]).To(gomega.BeEquivalentTo("eating raw fish"))
 	gomega.Expect(fields["fields.msg"]).To(gomega.BeNil(), "should not have prefixed previous `msg` entry")
-}*/
+}
 
-/*TODO*/
 func TestGetSetLevelRace(t *testing.T) {
 	logger := NewLogger("testLogger")
 

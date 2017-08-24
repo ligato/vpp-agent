@@ -64,9 +64,8 @@ type Deps struct {
 // Init is the plugin entry point called by the Agent Core
 func (p *Plugin) Init() (err error) {
 	// Start Init() and AfterInit() for new probe in case the port is different from agent http
-
 	if p.HTTP.HTTPport != httpPort {
-		childPlugNameHTTP := p.String() + "_HTTP"
+		childPlugNameHTTP := p.String() + "-HTTP"
 		p.HTTP = &rest.Plugin{
 			Deps: rest.Deps{
 				PluginLogDeps: localdeps.PluginLogDeps{
@@ -93,9 +92,16 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called by the Agent Core after all plugins have been initialized.
 func (p *Plugin) AfterInit() error {
 	if p.HTTP != nil {
-		p.Log.Infof("Starting health probes on port %v", p.HTTP.HTTPport)
-		p.HTTP.RegisterHTTPHandler(livenessProbePath, p.livenessProbeHandler, "GET")
-		p.HTTP.RegisterHTTPHandler(readinessProbePath, p.readinessProbeHandler, "GET")
+		if p.StatusCheck != nil{
+			p.Log.Infof("Starting health http-probe on port %v", p.HTTP.HTTPport)
+			p.HTTP.RegisterHTTPHandler(livenessProbePath,  p.livenessProbeHandler, "GET")
+			p.HTTP.RegisterHTTPHandler(readinessProbePath, p.readinessProbeHandler, "GET")
+
+		} else {
+			p.Log.Info("Unable to register http-probe handler, StatusCheck is nil")
+		}
+	} else {
+		p.Log.Info("Unable to register http-probe handler, HTTP is nil")
 	}
 
 	return nil

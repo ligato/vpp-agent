@@ -56,7 +56,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	for {
 		select {
 		case ifState := <-plugin.ifStateChan:
-			plugin.Publish.Put(intf.InterfaceStateKey(ifState.State.Name), ifState.State)
+			plugin.PublishStatistics.Put(intf.InterfaceStateKey(ifState.State.Name), ifState.State)
 
 			// marshall data into JSON & send kafka message
 			if plugin.kafkaConn != nil && ifState.Type == intf.UPDOWN {

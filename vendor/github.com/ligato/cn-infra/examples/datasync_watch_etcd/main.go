@@ -16,7 +16,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/config"
+	"github.com/ligato/cn-infra/config"
 )
 
 // *************************************************************************
@@ -45,7 +45,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := etcdkafka.Flavor{}
+	flavor := etcdkafka.FlavorEtcdKafka{}
 	// Example plugin that shows watching ETCD using datasync API
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{ServiceLabel: &flavor.ServiceLabel}}
 

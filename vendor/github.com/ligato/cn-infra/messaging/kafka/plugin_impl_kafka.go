@@ -24,18 +24,11 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/namsral/flag"
 )
-
-var configFile string
-
-func init() {
-	flag.StringVar(&configFile, "kafka-config", "", "Location of the Kafka configuration file; also set via 'KAFKA_CONFIG' env variable.")
-}
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
-	Deps         // inject
+	Deps // inject
 	subscription chan (*client.ConsumerMessage)
 	mx           *mux.Multiplexer
 	consumer     *client.Consumer
@@ -60,11 +53,13 @@ func (p *Plugin) Init() (err error) {
 
 	// Get config data
 	config := &mux.Config{}
-	if configFile != "" {
-		config, err = mux.ConfigFromFile(configFile)
-		if err != nil {
-			return err
-		}
+	found, err := p.PluginConfig.GetValue(config)
+	if !found {
+		p.Log.Info("kafka config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		return nil //skip loading the plugin
+	}
+	if err != nil {
+		return err
 	}
 	clientConfig := p.getClientConfig(config, p.Log, topic)
 
@@ -90,7 +85,7 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	if p.mx == nil {
-		p.mx, err = mux.InitMultiplexer(configFile, p.ServiceLabel.GetAgentLabel(), p.Log)
+		p.mx, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), p.Log)
 	}
 
 	return err

@@ -23,12 +23,13 @@ package flavorexample
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/flavors/rpc"
+	"github.com/ligato/cn-infra/rpc/rest"
 )
 
 type CompositeFlavor struct {
-	rpc.FlavorRPC //Reused Flavor
-	PluginXY PluginXY
+	rpc.FlavorRPC     // Reused Flavor
+	PluginXY PluginXY // Added custom plugin to flavor
 	injected bool
 }
 
@@ -54,11 +55,17 @@ func (Flavor *CompositeFlavor) Plugins() []*core.NamedPlugin {
 
 
 type PluginXY struct {
-    HTTP httpmux.HttpHandlers
+    Dep // plugin dependencies
+}
+
+type Dep struct {
+    HTTP rest.HTTPHandlers // injected, this plugin just depends on the API interface
 }
 
 func (plugin* PluginXY) Init() error {
-    // do something
+    // use injected dependency
+    plugin.HTTP.RegisterHTTPHandler(...)
+    
     return nil
 }
 
