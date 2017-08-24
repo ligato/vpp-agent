@@ -19,8 +19,8 @@ type Flavor struct {
 	//RedisSync kvdbsync.Plugin
 	Resync resync.Plugin
 	GoVPP  govppmux.GOVPPPlugin
-	VPP    defaultplugins.Plugin
 	Linux  linuxplugin.Plugin
+	VPP    defaultplugins.Plugin
 
 	injected bool
 }
