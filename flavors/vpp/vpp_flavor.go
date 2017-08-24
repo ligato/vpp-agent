@@ -2,21 +2,21 @@ package vpp
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
+	//"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/resync"
+	//"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/flavors/etcdkafka"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/cn-infra/db/keyval/redis"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 )
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
 	Base   etcdkafka.FlavorEtcdKafka
-	Redis  redis.Plugin
-	RedisSync kvdbsync.Plugin
+	//Redis  redis.Plugin
+	//RedisSync kvdbsync.Plugin
 	Resync resync.Plugin
 	GoVPP  govppmux.GOVPPPlugin
 	VPP    defaultplugins.Plugin
@@ -35,13 +35,13 @@ func (f *Flavor) Inject() error {
 	f.Base.Inject()
 
 	// Redis plugin
-	f.Redis.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis")
-	f.RedisSync.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis-datasync")
-	f.RedisSync.KvPlugin = &f.Redis
-	f.RedisSync.ResyncOrch = &f.Base.ResyncOrch
+	//f.Redis.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis")
+	//f.RedisSync.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("redis-datasync")
+	//f.RedisSync.KvPlugin = &f.Redis
+	//f.RedisSync.ResyncOrch = &f.Base.ResyncOrch
 
 	// Aggregated transport
-	adapters := []datasync.KeyProtoValWriter{&f.Base.ETCDDataSync, &f.RedisSync}
+	adapters := []datasync.KeyProtoValWriter{&f.Base.ETCDDataSync, /*&f.RedisSync*/}
 	compositePublisher := datasync.CompositeKVProtoWriter{
 		Adapters: adapters,
 	}
