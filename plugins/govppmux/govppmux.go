@@ -23,21 +23,15 @@ import (
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
-	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/statuscheck"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
-
-// PluginID used in the Agent Core flavors
-const PluginID core.PluginName = "GOVPP"
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
-	LogFactory  logging.LogFactory
-	StatusCheck *statuscheck.Plugin
-
-	logging.Logger
+	Deps // inject
 
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter
@@ -45,6 +39,12 @@ type GOVPPPlugin struct {
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+}
+
+// Deps is here to group injected dependencies of plugin
+// to not mix with other plugin fields.
+type Deps struct {
+	localdeps.PluginInfraDeps // inject
 }
 
 // FromExistingAdapter is used mainly for testing purposes.
@@ -61,22 +61,18 @@ func FromExistingAdapter(vppAdapter adapter.VppAdapter) *GOVPPPlugin {
 func (plugin *GOVPPPlugin) Init() error {
 	var err error
 
-	// register for providing status reports (push mode)
-	plugin.StatusCheck.Register(PluginID, nil)
+	govppLogger := plugin.Deps.Log.NewLogger("GoVpp")
+	if govppLogger, ok := govppLogger.(*logrus.Logger); ok {
+		govppLogger.SetLevel(logging.InfoLevel)
+		govpp.SetLogger(govppLogger.StandardLogger())
+	}
 
-	govppLogger, err := plugin.LogFactory.NewLogger("GoVpp")
-	if err != nil {
-		return err
-	}
-	govppLogger.SetLevel(logging.InfoLevel)
-	if logger, ok := govppLogger.(*log.Logger); ok {
-		govpp.SetLogger(logger.StandardLogger())
-	}
+	plugin.PluginName = plugin.Deps.PluginName
 
 	if plugin.vppAdapter == nil {
 		plugin.vppAdapter = vppapiclient.NewVppAdapter()
 	} else {
-		govppLogger.Info("Reusing existing vppAdapter") //this is used for testing
+		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing
 	}
 
 	plugin.vppConn, plugin.vppConChan, err = govpp.AsyncConnect(plugin.vppAdapter)
@@ -91,9 +87,6 @@ func (plugin *GOVPPPlugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 
-	plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.OK, nil)
-	govppLogger.Debug("govpp connect success ", plugin.vppConn)
-
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.handleVPPConnectionEvents(ctx)
@@ -105,6 +98,11 @@ func (plugin *GOVPPPlugin) Init() error {
 func (plugin *GOVPPPlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
+
+	// register for providing status reports (push mode)
+	plugin.StatusCheck.Register(plugin.PluginName, nil)
+	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
+	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
 
 	defer func() {
 		if plugin.vppConn != nil {
@@ -146,9 +144,9 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
-				plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.OK, nil)
+				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 			} else {
-				plugin.StatusCheck.ReportStateChange(PluginID, statuscheck.Error, errors.New("VPP disconnected"))
+				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, errors.New("VPP disconnected"))
 			}
 
 		case <-ctx.Done():

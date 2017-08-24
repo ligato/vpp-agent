@@ -143,7 +143,7 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.Logger())
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.StandardLogger())
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.Logger())
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.StandardLogger())
 	if err != nil {
 		return nil, err
 	}

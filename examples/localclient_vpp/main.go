@@ -28,6 +28,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -35,8 +36,8 @@ import (
 
 // init sets the default logging level
 func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logging.DebugLevel)
+	log.DefaultLogger().SetOutput(os.Stdout)
+	log.DefaultLogger().SetLevel(logging.DebugLevel)
 }
 
 /********
@@ -53,7 +54,7 @@ func main() {
 	// Example plugin
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
-	agentVar := agent.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+	agentVar := agent.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)
@@ -64,7 +65,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -92,7 +93,7 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)
 
-	log.Info("Initialization of the example plugin has completed")
+	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
@@ -101,7 +102,7 @@ func (plugin *ExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.Info("Closed example plugin")
+	log.DefaultLogger().Info("Closed example plugin")
 	return nil
 }
 
@@ -114,9 +115,9 @@ func (plugin *ExamplePlugin) resyncVPP() {
 		StaticRoute(&routeThroughMemif1).
 		Send().ReceiveReply()
 	if err != nil {
-		log.Errorf("Failed to apply initial VPP configuration: %v", err)
+		log.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
 	} else {
-		log.Info("Successfully applied initial VPP configuration")
+		log.DefaultLogger().Info("Successfully applied initial VPP configuration")
 	}
 }
 
@@ -137,19 +138,20 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			Interface(&memif2).            /* newly added memif interface */
 			Interface(&tap1Enabled).       /* enable tap1 interface */
 			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
+			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
 			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
-			log.Errorf("Failed to reconfigure VPP: %v", err)
+			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
 		} else {
-			log.Info("Successfully reconfigured VPP")
+			log.DefaultLogger().Info("Successfully reconfigured VPP")
 		}
 	case <-ctx.Done():
 		// cancel the scheduled re-configuration
-		log.Info("Planned VPP re-configuration was canceled")
+		log.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
 }
@@ -176,25 +178,25 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
  *                                                   *
  *****************************************************/
 
-/*****************************************************
- * After Data Change Request                         *
- *                                                   *
- *  +---------------------------------------------+  *
- *  |                                             |  *
- *  +---------+                        +----------+  *
- *  | tap1    |-------+         +------| memif1   |  *
- *  | ENABLED |       |         |      | SLAVE    |  *
- *  +---------+       |         |      +----------+  *
- *  |              Bridge    xconnect             |  *
- *  |              domain       |      +----------+  *
- *  |                 |         |      | memif2   |  *
- *  |  +------------+ |         +------| SLAVE    |  *
- *  |  | loopback1  |-+                +----------|  *
- *  |  +------------+                             |  *
- *  |                                             |  *
- *  +---------------------------------------------+  *
- *                                                   *
- *****************************************************/
+/********************************************************
+ * After Data Change Request                            *
+ *                                                      *
+ *  +------------------------------------------------+  *
+ *  |                                                |  *
+ *  +---------+ +------+                  +----------+  *
+ *  | tap1    |-| acl1 |-+         +------| memif1   |  *
+ *  | ENABLED | +------+ |         |      | SLAVE    |  *
+ *  +---------+          |         |      +----------+  *
+ *  |                  Bridge   xconnect             |  *
+ *  |                  domain      |      +----------+  *
+ *  |                    |         |      | memif2   |  *
+ *  |  +------------+    |         +------| SLAVE    |  *
+ *  |  | loopback1  |----+                +----------|  *
+ *  |  +------------+                                |  *
+ *  |                                                |  *
+ *  +------------------------------------------------+  *
+ *                                                      *
+ ********************************************************/
 
 var (
 	// memif1AsMaster is an example of a memory interface configuration. (Master=true, with IPv4 address).
@@ -262,6 +264,39 @@ var (
 			HostIfName: "linux-tap1",
 		},
 		Mtu: 1500,
+	}
+
+	acl1 = acl.AccessLists_Acl{
+		AclName: "acl1",
+		Rules: []*acl.AccessLists_Acl_Rule{
+			{
+				RuleName: "rule1",
+				Actions: &acl.AccessLists_Acl_Rule_Actions{
+					AclAction: acl.AclAction_DENY,
+				},
+				Matches: &acl.AccessLists_Acl_Rule_Matches{
+					IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+						Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+							DestinationNetwork: "10.1.1.0/24",
+							SourceNetwork:      "10.1.2.0/24",
+						},
+						Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
+							DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+								LowerPort: 50,
+								UpperPort: 150,
+							},
+							SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+								LowerPort: 1000,
+								UpperPort: 2000,
+							},
+						},
+					},
+				},
+			},
+		},
+		Interfaces: &acl.AccessLists_Acl_Interfaces{
+			Egress: []string{"tap1"},
+		},
 	}
 
 	// loopback1 is an example of a loopback interface configuration (without IP address assigned).

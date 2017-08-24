@@ -38,7 +38,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			dataChng.Done(err)
 
 		case <-ctx.Done():
-			log.Debug("Stop watching events")
+			log.DefaultLogger().Debug("Stop watching events")
 			return
 		}
 	}

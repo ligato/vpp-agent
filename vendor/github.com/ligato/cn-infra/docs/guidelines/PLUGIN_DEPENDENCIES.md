@@ -19,7 +19,7 @@
     see []StartAgent in the example main() function the 
     [simple agent example](../../examples/simple-agent)
 
-3. You can prefer [hand written code](../../examples/simple-agent/generic/generic.go) 
-   that injects all dependencies between plugins or [automatic injection](https://godoc.org/github.com/facebookgo/inject)
+3. Prefer [hand written code](../../flavors/rpc/rpc_flavor.go) 
+   that injects all dependencies between plugins
    
 4. Reusable combination of multiple plugins is called a [Flavor](PLUGIN_FLAVORS.md).

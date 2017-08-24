@@ -2,12 +2,12 @@ package mux
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"sync"
-	"time"
 )
 
 // Multiplexer encapsulates clients to kafka cluster (syncProducer, asyncProducer, consumer).
@@ -38,7 +38,7 @@ type Multiplexer struct {
 
 	// Mapping provides the mapping of subscribed consumers organized by topics(key of the first map)
 	// name of the consumer(key of the second map)
-	mapping map[string]*map[string]chan *client.ConsumerMessage
+	mapping map[string]*map[string]func(*client.ConsumerMessage)
 
 	// factory that crates consumer used in the Multiplexer
 	consumerFactory func(topics []string, groupId string) (*client.Consumer, error)
@@ -47,9 +47,9 @@ type Multiplexer struct {
 
 // asyncMeta is auxiliary structure used by Multiplexer to distribute consumer messages
 type asyncMeta struct {
-	successChan chan *client.ProducerMessage
-	errorChan   chan *client.ProducerError
-	usersMeta   interface{}
+	successClb func(*client.ProducerMessage)
+	errorClb   func(error *client.ProducerError)
+	usersMeta  interface{}
 }
 
 // NewMultiplexer creates new instance of Kafka Multiplexer
@@ -59,7 +59,7 @@ func NewMultiplexer(consumerFactory ConsumerFactory, syncP *client.SyncProducer,
 		syncProducer:  syncP,
 		asyncProducer: asyncP,
 		name:          name,
-		mapping:       map[string]*map[string]chan *client.ConsumerMessage{},
+		mapping:       map[string]*map[string]func(*client.ConsumerMessage){},
 		closeCh:       make(chan struct{}),
 	}
 
@@ -72,27 +72,17 @@ func (mux *Multiplexer) watchAsyncProducerChannels() {
 		select {
 		case err := <-mux.asyncProducer.Config.ErrorChan:
 			mux.Println("Failed to produce message", err.Err)
-			errMsg := err.Msg
+			errMsg := err.ProducerMessage
 
-			if errMeta, ok := errMsg.Metadata.(*asyncMeta); ok && errMeta.errorChan != nil {
-				err.Msg.Metadata = errMeta.usersMeta
-				select {
-				case errMeta.errorChan <- err:
-				default:
-					//case <-time.NewTimer(time.Second).C:
-					mux.Warn("Unable to send error notification")
-				}
+			if errMeta, ok := errMsg.Metadata.(*asyncMeta); ok && errMeta.errorClb != nil {
+				err.ProducerMessage.Metadata = errMeta.usersMeta
+				errMeta.errorClb(err)
 			}
 		case success := <-mux.asyncProducer.Config.SuccessChan:
 
-			if succMeta, ok := success.Metadata.(*asyncMeta); ok && succMeta.successChan != nil {
+			if succMeta, ok := success.Metadata.(*asyncMeta); ok && succMeta.successClb != nil {
 				success.Metadata = succMeta.usersMeta
-				select {
-				case succMeta.successChan <- success:
-				default:
-					//case <-time.NewTimer(time.Second).C:
-					mux.Warn("Unable to send success notification")
-				}
+				succMeta.successClb(success)
 			}
 		case <-mux.asyncProducer.GetCloseChannel():
 			mux.Debug("Closing watch loop for async producer")
@@ -168,16 +158,12 @@ func (mux *Multiplexer) propagateMessage(msg *client.ConsumerMessage) {
 
 	// notify consumers
 	if found {
-		for _, ch := range *cons {
+		for _, clb := range *cons {
 			// if we are not able to write into the channel we should skip the receiver
 			// and report an error to avoid deadlock
 			mux.Debug("offset ", msg.Offset, string(msg.Value), string(msg.Key), msg.Partition)
 
-			select {
-			case ch <- msg:
-			case <-time.After(time.Second):
-				mux.Error("Unable to deliver message before the timeout.")
-			}
+			clb(msg)
 		}
 	}
 }

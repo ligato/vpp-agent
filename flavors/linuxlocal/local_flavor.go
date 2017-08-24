@@ -16,46 +16,37 @@ package linuxlocal
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/httpmux"
-	"github.com/ligato/cn-infra/logging/logmanager"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/statuscheck"
+	"github.com/ligato/cn-infra/flavors/local"
+
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
-// Flavor glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
-type Flavor struct {
-	injected         bool
-	Logrus           logrus.Plugin
+// FlavorVppLocal glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
+type FlavorVppLocal struct {
+	local.FlavorLocal
 	LinuxLocalClient localclient.Plugin
-	HTTP             httpmux.Plugin
-	LogManager       logmanager.Plugin
-	ServiceLabel     servicelabel.Plugin
-	StatusCheck      statuscheck.Plugin
-	Resync           resync.Plugin
 	GoVPP            govppmux.GOVPPPlugin
 	Linux            linuxplugin.Plugin
 	VPP              defaultplugins.Plugin
+
+	injected bool
 }
 
 // Inject sets object references
-func (f *Flavor) Inject() error {
+func (f *FlavorVppLocal) Inject() error {
 	if f.injected {
 		return nil
 	}
 	f.injected = true
-	f.HTTP.LogFactory = &f.Logrus
-	f.LogManager.ManagedLoggers = &f.Logrus
-	f.LogManager.HTTP = &f.HTTP
-	f.StatusCheck.HTTP = &f.HTTP
-	f.GoVPP.StatusCheck = &f.StatusCheck
-	f.GoVPP.LogFactory = &f.Logrus
-	f.VPP.ServiceLabel = &f.ServiceLabel
+
+	f.FlavorLocal.Inject()
+
+	f.GoVPP.StatusCheck = &f.FlavorLocal.StatusCheck
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
 	f.VPP.Linux = &f.Linux
 	f.VPP.GoVppmux = &f.GoVPP
 
@@ -63,7 +54,7 @@ func (f *Flavor) Inject() error {
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins
-func (f *Flavor) Plugins() []*core.NamedPlugin {
+func (f *FlavorVppLocal) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
 }

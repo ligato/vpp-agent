@@ -114,7 +114,7 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
 func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName string, interfaceIndex uint32) *intf.Interfaces_Interface {
 	if plugin.Linux == nil {
-		log.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about a new Linux interface")
+		log.DefaultLogger().WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about a new Linux interface")
 		return nil
 	}
 	plugin.hostInterfaces[interfaceName] = struct{}{}
@@ -123,7 +123,7 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName s
 	if found {
 		if !afpacket.pending {
 			// this should not happen, log as warning
-			log.WithFields(log.Fields{"ifName": afpacket.config.Name, "hostIfName": interfaceName}).Warn(
+			log.DefaultLogger().WithFields(log.Fields{"ifName": afpacket.config.Name, "hostIfName": interfaceName}).Warn(
 				"Re-creating already configured AFPacket interface")
 			// remove the existing afpacket and let the interface configurator to re-create it
 			plugin.DeleteAfPacketInterface(afpacket.config)
@@ -137,7 +137,7 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName s
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
 func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName string) {
 	if plugin.Linux == nil {
-		log.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about removed Linux interface")
+		log.DefaultLogger().WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about removed Linux interface")
 		return
 	}
 	delete(plugin.hostInterfaces, interfaceName)
@@ -160,12 +160,12 @@ func (plugin *AFPacketConfigurator) addToCache(afpacket *intf.Interfaces_Interfa
 	config := &AfPacketConfig{config: afpacket, pending: pending}
 	plugin.afPacketByHostIf[afpacket.Afpacket.HostIfName] = config
 	plugin.afPacketByName[afpacket.Name] = config
-	log.Debugf("Afpacket interface with name %v added to cache (hostIf: %s, pending: %t)",
+	log.DefaultLogger().Debugf("Afpacket interface with name %v added to cache (hostIf: %s, pending: %t)",
 		afpacket.Name, afpacket.Afpacket.HostIfName, pending)
 }
 
 func (plugin *AFPacketConfigurator) removeFromCache(afpacket *intf.Interfaces_Interface) {
 	delete(plugin.afPacketByName, afpacket.Name)
 	delete(plugin.afPacketByHostIf, afpacket.Afpacket.HostIfName)
-	log.Debugf("Afpacket interface with name %v removed from cache", afpacket.Name)
+	log.DefaultLogger().Debugf("Afpacket interface with name %v removed from cache", afpacket.Name)
 }

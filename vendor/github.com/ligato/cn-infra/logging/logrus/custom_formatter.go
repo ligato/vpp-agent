@@ -17,9 +17,10 @@ package logrus
 import (
 	"bytes"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // CustomFormatter allows to turn off logging of some fields.

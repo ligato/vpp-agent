@@ -15,11 +15,12 @@
 package utils_test
 
 import (
+	"strings"
+	"testing"
+
 	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
-	"strings"
-	"testing"
 )
 
 // Test01VppPrintJsonData tests VPPs and config presence in the output + the presence of a statistics data

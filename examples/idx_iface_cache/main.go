@@ -16,6 +16,8 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
@@ -25,7 +27,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/testing"
-	"time"
 )
 
 // Start Agent plugins selected for this example
@@ -38,7 +39,7 @@ func main() {
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{}}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
 
 	// End when the idx_iface_cache example is finished
 	go closeExample("idx_iface_cache example finished", closeChannel)
@@ -49,7 +50,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(12 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -58,8 +59,9 @@ const PluginID core.PluginName = "example-plugin"
 
 // used for demonstration of SwIfIndexes - see Init()
 type examplePlugin struct {
-	agent1        datasync.TransportAdapter
-	agent2        datasync.TransportAdapter
+	agent1        datasync.KeyValProtoWatcher
+	agent2        datasync.KeyValProtoWatcher
+	writer        datasync.KeyProtoValWriter
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
 	swIfIdxAgent2 ifaceidx.SwIfIndex
@@ -67,8 +69,9 @@ type examplePlugin struct {
 
 // initialize transport & SwIfIndexes then watch, publish & lookup
 func (plugin *examplePlugin) Init() (err error) {
-	plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "rpd", "vschxy"*/)
-	plugin.agent2 = datasync.OfDifferentAgent("agent2")
+	//plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "rpd", "vschxy"*/)
+	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
+
 	// /vnf-agent/agent0/vpp/config/v1/interface/
 	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
 	// /vnf-agent/agent1/vpp/config/v1/interface/
@@ -86,12 +89,12 @@ func (plugin *examplePlugin) Init() (err error) {
 // prepares test data for different agents
 func (plugin *examplePlugin) publish() (err error) {
 	iface1 := &testing.Memif100012
-	err = plugin.agent1.PublishData(interfaces.InterfaceKey(iface1.Name), iface1)
+	err = plugin.writer.Put(interfaces.InterfaceKey(iface1.Name), iface1)
 	if err != nil {
 		return err
 	}
 	iface2 := &testing.Memif100013
-	err = plugin.agent2.PublishData(interfaces.InterfaceKey(iface2.Name), iface2)
+	err = plugin.writer.Put(interfaces.InterfaceKey(iface2.Name), iface2)
 	return err
 }
 
@@ -108,7 +111,7 @@ func (plugin *examplePlugin) consume() (err error) {
 			select {
 			case swIfIdxEvent, done := <-swIfIdxChan:
 				if !done {
-					log.WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
+					log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
 						"Name": swIfIdxEvent.Name, //ingresXY, egresXY
 						"Del":  swIfIdxEvent.Del,
 						"IP":   swIfIdxEvent.Metadata.IpAddresses,
@@ -129,7 +132,7 @@ func (plugin *examplePlugin) consume() (err error) {
 func (plugin *examplePlugin) lookup() (err error) {
 	// /vnf-agent/agent0/vpp/config/v1/interface/egresXY
 	if _, iface0, found0 := plugin.swIfIdxLocal.LookupIdx("local0"); found0 {
-		log.Println("local0 IPs:", iface0.IpAddresses)
+		log.DefaultLogger().Println("local0 IPs:", iface0.IpAddresses)
 	}
 
 	for i := 0; i < 10; i++ {

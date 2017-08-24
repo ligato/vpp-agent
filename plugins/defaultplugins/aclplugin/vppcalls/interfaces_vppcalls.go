@@ -31,7 +31,7 @@ func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndex
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(ingressInterface)
 		if !found {
-			log.Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
+			log.DefaultLogger().Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
 			continue
 		}
 		// All previously assigned ACLs have to be dumped and added to acl list
@@ -64,7 +64,7 @@ func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndex
 		if reply.Retval != 0 {
 			return fmt.Errorf("Set interface %v to ACL %v returned %v", ingressInterface, aclIndex, reply.Retval)
 		}
-		log.Debugf("Interface %v set to ACL %v as ingress", ingressInterface, aclIndex)
+		log.DefaultLogger().Debugf("Interface %v set to ACL %v as ingress", ingressInterface, aclIndex)
 	}
 
 	return nil
@@ -77,7 +77,7 @@ func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexe
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(egressInterfaces)
 		if !found {
-			log.Debugf("Set interface to ACL: Interface %v not found ", egressInterfaces)
+			log.DefaultLogger().Debugf("Set interface to ACL: Interface %v not found ", egressInterfaces)
 			continue
 		}
 		// All previously assigned ACLs have to be dumped and added to acl list
@@ -108,7 +108,7 @@ func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexe
 		if reply.Retval != 0 {
 			return fmt.Errorf("Set interface %v to ACL %v returned %v", egressInterfaces, aclIndex, reply.Retval)
 		}
-		log.Debugf("Interface %v set to ACL %v as egress", egressInterfaces, aclIndex)
+		log.DefaultLogger().Debugf("Interface %v set to ACL %v as egress", egressInterfaces, aclIndex)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes if
 	for _, ingressInterface := range interfaces {
 		ifIndex, _, found := swIfIndexes.LookupIdx(ingressInterface)
 		if !found {
-			log.Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
+			log.DefaultLogger().Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
 			continue
 		}
 		req := &acl_api.MacipACLInterfaceAddDel{}
@@ -136,7 +136,7 @@ func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes if
 		if reply.Retval != 0 {
 			return fmt.Errorf("Set interface %v to L2 ACL %v returned %v", ingressInterface, aclIndex, reply.Retval)
 		}
-		log.Debugf("Interface %v set to L2 ACL %v as ingress", ingressInterface, aclIndex)
+		log.DefaultLogger().Debugf("Interface %v set to L2 ACL %v as ingress", ingressInterface, aclIndex)
 	}
 
 	return nil
@@ -149,7 +149,7 @@ func RemoveIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []strin
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(ingressInterface)
 		if !found {
-			log.Debugf("Remove interface from ACL: Interface %v not found ", ingressInterface)
+			log.DefaultLogger().Debugf("Remove interface from ACL: Interface %v not found ", ingressInterface)
 			continue
 		}
 		// All assigned ACLs have to be dumped
@@ -182,7 +182,7 @@ func RemoveIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []strin
 			return fmt.Errorf("Remove ACL %v from interface %v returned error %v", removedACLIndex,
 				removedACLIndex, reply.Retval)
 		}
-		log.Debugf("ACL %v removed from interface %v (ingress)", removedACLIndex, ingressInterface)
+		log.DefaultLogger().Debugf("ACL %v removed from interface %v (ingress)", removedACLIndex, ingressInterface)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func RemoveIPEgressACLFromInterfaces(removedACLIndex uint32, interfaces []string
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(egressInterface)
 		if !found {
-			log.Debugf("Remove interface from ACL: Interface %v not found ", egressInterface)
+			log.DefaultLogger().Debugf("Remove interface from ACL: Interface %v not found ", egressInterface)
 			continue
 		}
 		// All assigned ACLs have to be dumped
@@ -226,7 +226,7 @@ func RemoveIPEgressACLFromInterfaces(removedACLIndex uint32, interfaces []string
 			return fmt.Errorf("Remove ACL %v from interface %v returned error %v", removedACLIndex,
 				removedACLIndex, reply.Retval)
 		}
-		log.Debugf("ACL %v removed from interface %v (egress)", removedACLIndex, egressInterface)
+		log.DefaultLogger().Debugf("ACL %v removed from interface %v (egress)", removedACLIndex, egressInterface)
 	}
 	return nil
 }
@@ -236,7 +236,7 @@ func RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []st
 	for _, ingressInterface := range interfaces {
 		ifIndex, _, found := swIfIndexes.LookupIdx(ingressInterface)
 		if !found {
-			log.Debugf("Remove interface from ACL: Interface %v not found ", ingressInterface)
+			log.DefaultLogger().Debugf("Remove interface from ACL: Interface %v not found ", ingressInterface)
 			continue
 		}
 		req := &acl_api.MacipACLInterfaceAddDel{}
@@ -254,7 +254,7 @@ func RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []st
 			return fmt.Errorf("Remove L2 ACL %v from interface %v returned error %v", removedACLIndex,
 				removedACLIndex, reply.Retval)
 		}
-		log.Debugf("L2 ACL %v removed from interface %v (ingress)", removedACLIndex, ingressInterface)
+		log.DefaultLogger().Debugf("L2 ACL %v removed from interface %v (ingress)", removedACLIndex, ingressInterface)
 	}
 	return nil
 }

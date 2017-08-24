@@ -16,24 +16,20 @@ package mem
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	"sync"
-	"time"
 )
-
-// NotifTimeout for delivery of notification
-const NotifTimeout = 2 * time.Second
 
 // item stored in mapping
 type mappingItem struct {
 	// name identifies item in the mapping (primary index)
 	name string
 	// stored data
-	metadata interface{}
-	// indexed contains fields extracted from metadata (secondary indexes). Extracted field can be used as lookup criteria.
+	value interface{}
+	// indexed contains fields extracted from value (secondary indexes). Extracted field can be used as lookup criteria.
 	indexed map[string][]string
 }
 
@@ -46,7 +42,7 @@ type memNamedMapping struct {
 	// register of secondary indexes
 	indexes map[string] /* index name */ map[string] /* index value */ *nameSet
 	// subscribers to whom notifications are delivered
-	subscribers map[core.PluginName]func(idxmap.NamedMappingDto)
+	subscribers map[core.PluginName]func(idxmap.NamedMappingGenericEvent)
 	owner       core.PluginName
 	title       string
 }
@@ -60,38 +56,38 @@ func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 	mem.nameToIdx = map[string]*mappingItem{}
 	mem.indexes = map[string]map[string]*nameSet{}
 	mem.createIndexes = indexFunction
-	mem.subscribers = map[core.PluginName]func(idxmap.NamedMappingDto){}
+	mem.subscribers = map[core.PluginName]func(idxmap.NamedMappingGenericEvent){}
 	mem.owner = owner
 	mem.title = title
 	return &mem
 }
 
-// RegisterName adds an item to the mapping associated with the name. If there is an already stored
+// Put adds an item to the mapping associated with the name. If there is an already stored
 // item with that name, it is overwritten.
-func (mem *memNamedMapping) RegisterName(name string, metadata interface{}) {
+func (mem *memNamedMapping) Put(name string, value interface{}) {
 	mem.access.Lock()
 	defer mem.access.Unlock()
 
-	mem.putNameToIdx(name, metadata)
+	mem.putNameToIdx(name, value)
 
-	mem.publishToChannel(name, metadata)
+	mem.publishToChannel(name, value)
 
 }
 
-// UnregisterName removes an item associated with the given name from the mapping.
-func (mem *memNamedMapping) UnregisterName(name string) (metadata interface{}, found bool) {
+// Delete removes an item associated with the given name from the mapping.
+func (mem *memNamedMapping) Delete(name string) (value interface{}, found bool) {
 	mem.access.Lock()
 	defer mem.access.Unlock()
 
 	item, found := mem.nameToIdx[name]
 	if found {
-		metadata = item.metadata
+		value = item.value
 
-		mem.publishDelToChannel(name, item.metadata) //TODO improve and not send nil
+		mem.publishDelToChannel(name, item.value) //TODO improve and not send nil
 		mem.removeNameIdx(name)
 	}
 
-	return metadata, found
+	return value, found
 }
 
 // GetRegistryTitle returns the title assigned to the registry.
@@ -99,20 +95,20 @@ func (mem *memNamedMapping) GetRegistryTitle() string {
 	return mem.title
 }
 
-// Lookup looks up an item in the mapping by name (primary index).
-func (mem *memNamedMapping) Lookup(name string) (metadata interface{}, exists bool) {
+// GetValue looks up an item in the mapping by name (primary index).
+func (mem *memNamedMapping) GetValue(name string) (value interface{}, exists bool) {
 	mem.access.RLock()
 	defer mem.access.RUnlock()
 
 	item, found := mem.nameToIdx[name]
 	if found {
-		return item.metadata, found
+		return item.value, found
 	}
 	return
 }
 
-// ListNames returns all names in the mapping.
-func (mem *memNamedMapping) ListNames() (names []string) {
+// ListAllNames returns all names in the mapping.
+func (mem *memNamedMapping) ListAllNames() (names []string) {
 	mem.access.RLock()
 	defer mem.access.RUnlock()
 
@@ -125,13 +121,13 @@ func (mem *memNamedMapping) ListNames() (names []string) {
 	return ret
 }
 
-// LookupByMetadata looks up the items by secondary indexes. It returns all
+// ListNames looks up the items by secondary indexes. It returns all
 // names matching the selection.
-func (mem *memNamedMapping) LookupByMetadata(key string, value string) []string {
+func (mem *memNamedMapping) ListNames(field string, value string) []string {
 	mem.access.RLock()
 	defer mem.access.RUnlock()
 
-	ix, found := mem.indexes[key]
+	ix, found := mem.indexes[field]
 	if !found {
 		return nil
 	}
@@ -145,7 +141,7 @@ func (mem *memNamedMapping) LookupByMetadata(key string, value string) []string 
 }
 
 // Watch allows to subscribe for tracking changes in the mapping. When an item is added or removed, the given callback is triggered.
-func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxmap.NamedMappingDto)) error {
+func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxmap.NamedMappingGenericEvent)) error {
 	mem.Debug("Watch ", subscriber)
 	mem.access.Lock()
 	defer mem.access.Unlock()
@@ -159,25 +155,13 @@ func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxm
 	return nil
 }
 
-// ToChan creates a callback that can be passed to the Watch function in order to receive
-// notifications through a channel. If the notification can not be delivered until timeout it is dropped.
-func ToChan(ch chan idxmap.NamedMappingDto) func(dto idxmap.NamedMappingDto) {
-	return func(dto idxmap.NamedMappingDto) {
-		select {
-		case ch <- dto:
-		case <-time.After(NotifTimeout):
-			logroot.Logger().Warn("Unable to deliver notification")
-		}
-	}
-}
-
 func (mem *memNamedMapping) updateIndexes(item *mappingItem, name string) {
 	if mem.createIndexes == nil {
 		return
 	}
 	mem.removeIndexes(item, name)
 
-	item.indexed = mem.createIndexes(item.metadata)
+	item.indexed = mem.createIndexes(item.value)
 	for key, vals := range item.indexed {
 		ix, keyExists := mem.indexes[key]
 		if !keyExists {
@@ -228,15 +212,15 @@ func (mem *memNamedMapping) putNameToIdx(name string, metadata interface{}) {
 	mem.updateIndexes(item, name)
 }
 
-func (mem *memNamedMapping) publishToChannel(name string, metadata interface{}) {
+func (mem *memNamedMapping) publishToChannel(name string, value interface{}) {
 	for subscriber, clb := range mem.subscribers {
 		if clb != nil {
-			dto := idxmap.NamedMappingDto{NamedMappingDtoWithoutMeta: idxmap.NamedMappingDtoWithoutMeta{
+			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
 				Owner:         mem.owner,
 				RegistryTitle: mem.title,
 				Name:          name,
 				Del:           false},
-				Metadata: metadata,
+				Value: value,
 			}
 			mem.Debug("publish write to ", subscriber, dto)
 			clb(dto)
@@ -244,15 +228,15 @@ func (mem *memNamedMapping) publishToChannel(name string, metadata interface{}) 
 	}
 }
 
-func (mem *memNamedMapping) publishDelToChannel(name string, metadata interface{}) {
+func (mem *memNamedMapping) publishDelToChannel(name string, value interface{}) {
 	for subscriber, clb := range mem.subscribers {
 		if clb != nil {
-			dto := idxmap.NamedMappingDto{NamedMappingDtoWithoutMeta: idxmap.NamedMappingDtoWithoutMeta{
+			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
 				Owner:         mem.owner,
 				RegistryTitle: mem.title,
 				Name:          name,
 				Del:           true},
-				Metadata: metadata,
+				Value: value,
 			}
 			mem.Debug("publish del to ", subscriber, dto)
 			clb(dto)

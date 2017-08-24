@@ -17,14 +17,10 @@
 package defaultplugins
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 )
-
-// PluginID used in the Agent Core flavors
-const PluginID core.PluginName = "ifplugin"
 
 // GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
 // This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.

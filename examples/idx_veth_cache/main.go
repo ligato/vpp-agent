@@ -46,8 +46,8 @@ import (
 
 // Init sets the default logging level
 func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logging.InfoLevel)
+	log.DefaultLogger().SetOutput(os.Stdout)
+	log.DefaultLogger().SetLevel(logging.InfoLevel)
 }
 
 /********
@@ -66,8 +66,7 @@ func main() {
 	}}
 
 	// Create new agent
-	agentVar := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
-
+	agentVar := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
 
 	// End when the idx_veth_cache example is finished
 	go closeExample("idx_veth_cache example finished", closeChannel)
@@ -78,7 +77,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -92,11 +91,12 @@ const PluginID core.PluginName = "example-plugin"
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin
 type ExamplePlugin struct {
 	// Linux plugin dependency
-	Linux			 *linuxplugin.Plugin
+	Linux            *linuxplugin.Plugin
 
 	// Other agents transport
-	agent1           datasync.TransportAdapter
-	agent2           datasync.TransportAdapter
+	agent1           datasync.KeyValProtoWatcher
+	agent2           datasync.KeyValProtoWatcher
+	writer           datasync.KeyProtoValWriter
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
@@ -108,8 +108,9 @@ type ExamplePlugin struct {
 // Init initializes example plugin
 func (plugin *ExamplePlugin) Init() error {
 	// Access DB of agent1 and agent2
-	plugin.agent1 = datasync.OfDifferentAgent("agent1")
-	plugin.agent2 = datasync.OfDifferentAgent("agent2")
+	//plugin.agent1 = datasync.OfDifferentAgent("agent1") todo
+	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
+
 	// Receive linux interfaces mapping
 	if plugin.Linux != nil {
 		plugin.linuxIfIdxLocal = plugin.Linux.GetLinuxIfIndexes()
@@ -126,7 +127,7 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.linuxIfIdxAgent1.WatchNameToIdx(PluginID, linuxIfIdxChan)
 	plugin.linuxIfIdxAgent2.WatchNameToIdx(PluginID, linuxIfIdxChan)
 
-	log.Info("Initialization of the example plugin has completed")
+	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 
 	var err error
 	err = plugin.publish()
@@ -145,35 +146,35 @@ func (plugin *ExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.Info("Closed example plugin")
+	log.DefaultLogger().Info("Closed example plugin")
 	return nil
 }
 
 // publish propagates example configuration to ETCD
 func (plugin *ExamplePlugin) publish() error {
-	log.Infof("Putting interfaces to ETCD")
+	log.DefaultLogger().Infof("Putting interfaces to ETCD")
 
 	// VETH pair in default namespace
 	vethDef := &veth11DefaultNs
 	vethDefPeer := &veth12DefaultNs
 
 	// Push VETH pair to agent1
-	err := plugin.agent1.PublishData(linux_intf.InterfaceKey(vethDef.Name), vethDef)
-	err = plugin.agent1.PublishData(linux_intf.InterfaceKey(vethDefPeer.Name), vethDefPeer)
+	err := plugin.writer.Put(linux_intf.InterfaceKey(vethDef.Name), vethDef)
+	err = plugin.writer.Put(linux_intf.InterfaceKey(vethDefPeer.Name), vethDefPeer)
 
 	// VETH pair in custom namespace
 	vethNs1 := &veth21Ns1
 	vethNs2Peer := &veth22Ns2
 
 	// Publish VETH pair to agent2
-	err = plugin.agent2.PublishData(linux_intf.InterfaceKey(vethNs1.Name), vethDef)
-	err = plugin.agent2.PublishData(linux_intf.InterfaceKey(vethNs2Peer.Name), vethNs2Peer)
+	err = plugin.writer.Put(linux_intf.InterfaceKey(vethNs1.Name), vethDef)
+	err = plugin.writer.Put(linux_intf.InterfaceKey(vethNs2Peer.Name), vethNs2Peer)
 
 	if err != nil {
-		log.Errorf("Failed to apply initial Linux&VPP configuration: %v", err)
+		log.DefaultLogger().Errorf("Failed to apply initial Linux&VPP configuration: %v", err)
 		return err
 	}
-	log.Info("Successfully applied initial Linux&VPP configuration")
+	log.DefaultLogger().Info("Successfully applied initial Linux&VPP configuration")
 
 	return err
 }
@@ -185,14 +186,14 @@ func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan linux_if.LinuxIfIndexDt
 		select {
 		case swIfIdxEvent, done := <-linuxIfIdxChan:
 			if !done {
-				log.WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
+				log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
 					"Name": swIfIdxEvent.Name,
 					"Del":  swIfIdxEvent.Del,
 				}).Info("Event received")
 			}
 		case <-time.After(10 * time.Second):
 			watching = false
-			log.Info("Watching stopped")
+			log.DefaultLogger().Info("Watching stopped")
 		}
 	}
 
@@ -216,17 +217,17 @@ func (plugin *ExamplePlugin) lookup() bool {
 
 	// Look for loopback interface
 	if _, _, loopback = plugin.linuxIfIdxLocal.LookupIdx("lo"); loopback {
-		log.Info("Interface found: loopback")
+		log.DefaultLogger().Info("Interface found: loopback")
 	} else {
-		log.Warn("Interface not found: loopback") // todo remove
+		log.DefaultLogger().Warn("Interface not found: loopback") // todo remove
 	}
 	// Look for VETH 11 default namespace interface on agent1
 	for i := 0; i <= 3; i++ {
 		if _, _, veth11 = plugin.linuxIfIdxAgent1.LookupIdx(veth11DefaultNs.Name); veth11 {
-			log.Info("Interface found on agent1: veth11Def")
+			log.DefaultLogger().Info("Interface found on agent1: veth11Def")
 			break
 		} else if i == 3 {
-			log.Warn("Interface not found on agent1: veth11Def")
+			log.DefaultLogger().Warn("Interface not found on agent1: veth11Def")
 		} else {
 			// Try several times in case cache is not updated yet
 			time.Sleep(1 * time.Second)
@@ -236,10 +237,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 12 default namespace interface on agent1
 	for i := 0; i <= 3; i++ {
 		if _, _, veth12 = plugin.linuxIfIdxAgent1.LookupIdx(veth12DefaultNs.Name); veth12 {
-			log.Info("Interface found on agent1: veth12Def")
+			log.DefaultLogger().Info("Interface found on agent1: veth12Def")
 			break
 		} else if i == 3 {
-			log.Warn("Interface not found on agent1: veth12Def")
+			log.DefaultLogger().Warn("Interface not found on agent1: veth12Def")
 		} else {
 			// Try several times in case cache is not updated yet
 			time.Sleep(1 * time.Second)
@@ -249,10 +250,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 21 ns1 namespace interface on agent2
 	for i := 0; i <= 3; i++ {
 		if _, _, veth21 = plugin.linuxIfIdxAgent2.LookupIdx(veth21Ns1.Name); veth21 {
-			log.Info("Interface found on agent2: veth21ns1")
+			log.DefaultLogger().Info("Interface found on agent2: veth21ns1")
 			break
 		} else if i == 3 {
-			log.Warn("Interface not found on agent2 : veth21ns1")
+			log.DefaultLogger().Warn("Interface not found on agent2 : veth21ns1")
 		} else {
 			// Try several times in case cache is not updated yet
 			time.Sleep(1 * time.Second)
@@ -262,10 +263,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 22 ns2 namespace interface on agent2
 	for i := 0; i <= 3; i++ {
 		if _, _, veth22 = plugin.linuxIfIdxAgent2.LookupIdx(veth22Ns2.Name); veth22 {
-			log.Info("Interface found on agent2: veth22ns2")
+			log.DefaultLogger().Info("Interface found on agent2: veth22ns2")
 			break
 		} else if i == 3 {
-			log.Warn("Interface not found on agent2: veth22ns2")
+			log.DefaultLogger().Warn("Interface not found on agent2: veth22ns2")
 		} else {
 			// Try several times in case cache is not updated yet
 			time.Sleep(1 * time.Second)

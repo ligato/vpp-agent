@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/generic"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/namsral/flag"
 	"time"
+
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/rpc"
+	log "github.com/ligato/cn-infra/logging/logroot"
+	"github.com/namsral/flag"
 )
 
 // *************************************************************************
@@ -24,7 +25,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := generic.Flavor{}
+	flavor := rpc.FlavorRPC{}
 
 	// Example plugin (flags)
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
@@ -40,7 +41,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(8 * time.Second)
-	log.Info(message)
+	log.StandardLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -65,7 +66,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// function.
 	registerFlags()
 
-	log.Info("Initialization of the custom plugin for the flags example is completed")
+	log.StandardLogger().Info("Initialization of the custom plugin for the flags example is completed")
 
 	go func() {
 		// logFlags shows the runtime values of CLI flags registered in RegisterFlags()
@@ -98,7 +99,7 @@ var (
 
 // RegisterFlags contains examples of how to register flags of various types
 func registerFlags() {
-	log.Info("Registering flags")
+	log.StandardLogger().Info("Registering flags")
 	flag.StringVar(&testFlagString, "ep-string", "my-value",
 		"Example of a string flag.")
 	flag.IntVar(&testFlagInt, "ep-int", 1122,
@@ -118,12 +119,12 @@ func registerFlags() {
 // LogFlags shows the runtime values of CLI flags
 func logFlags() {
 	time.Sleep(3 * time.Second)
-	log.Info("Logging flags")
-	log.Infof("testFlagString:'%s'", testFlagString)
-	log.Infof("testFlagInt:'%d'", testFlagInt)
-	log.Infof("testFlagInt64:'%d'", testFlagInt64)
-	log.Infof("testFlagUint:'%d'", testFlagUint)
-	log.Infof("testFlagUint64:'%d'", testFlagUint64)
-	log.Infof("testFlagBool:'%v'", testFlagBool)
-	log.Infof("testFlagDur:'%v'", testFlagDur)
+	log.StandardLogger().Info("Logging flags")
+	log.StandardLogger().Infof("testFlagString:'%s'", testFlagString)
+	log.StandardLogger().Infof("testFlagInt:'%d'", testFlagInt)
+	log.StandardLogger().Infof("testFlagInt64:'%d'", testFlagInt64)
+	log.StandardLogger().Infof("testFlagUint:'%d'", testFlagUint)
+	log.StandardLogger().Infof("testFlagUint64:'%d'", testFlagUint64)
+	log.StandardLogger().Infof("testFlagBool:'%v'", testFlagBool)
+	log.StandardLogger().Infof("testFlagDur:'%v'", testFlagDur)
 }

@@ -53,6 +53,7 @@ func CheckMsgCompatibilityForInterface(vppChan *govppapi.Channel) error {
 		&tap.SwInterfaceTapDump{},
 		&tap.SwInterfaceTapDetails{},
 
+		&interfaces.SwInterfaceEvent{},
 		&interfaces.SwInterfaceSetFlags{},
 		&interfaces.SwInterfaceSetFlagsReply{},
 		&interfaces.SwInterfaceAddDelAddress{},
@@ -66,7 +67,7 @@ func CheckMsgCompatibilityForInterface(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 	}
 	return err
 }
@@ -87,7 +88,7 @@ func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 	}
 	return err
 }

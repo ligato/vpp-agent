@@ -16,11 +16,12 @@ package client
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/bsm/sarama-cluster"
 	"github.com/ligato/cn-infra/logging"
-	"sync"
-	"time"
 )
 
 // clusterConsumer defines an interface that allows to mock the implementation of

@@ -87,7 +87,7 @@ func (swi *swIfIndex) RegisterName(name string, idx uint32, ifMeta *intf.Interfa
 
 // IndexMetadata creates indexes for metadata. Index for IPAddress will be created
 func IndexMetadata(metaData interface{}) map[string][]string {
-	log.Debug("IndexMetadata ", metaData)
+	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*intf.Interfaces_Interface)

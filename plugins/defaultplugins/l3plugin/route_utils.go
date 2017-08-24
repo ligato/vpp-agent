@@ -16,8 +16,10 @@ package l3plugin
 
 import (
 	"bytes"
+	"fmt"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
@@ -52,7 +54,8 @@ func eqRoutes(a *vppcalls.Route, b *vppcalls.Route) bool {
 		bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) &&
 		bytes.Equal(a.NextHopAddr, b.NextHopAddr) &&
 		a.OutIface == b.OutIface &&
-		a.Weight == b.Weight
+		a.Weight == b.Weight &&
+		a.Preference == b.Preference
 }
 
 func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
@@ -71,18 +74,21 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 	if a.OutIface != b.OutIface {
 		return a.OutIface < b.OutIface
 	}
+	if a.Preference != b.Preference {
+		return a.Preference < b.Preference
+	}
 	return a.Weight < b.Weight
 
 }
 
 // TransformRoute converts raw route data to Route object
-func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcalls.Route, error) {
+func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex) (*vppcalls.Route, error) {
 	if routeInput == nil {
-		log.Infof("Route input is empty")
+		log.DefaultLogger().Infof("Route input is empty")
 		return nil, nil
 	}
 	if routeInput.DstIpAddr == "" {
-		log.Infof("Route does not contain destination address")
+		log.DefaultLogger().Infof("Route does not contain destination address")
 		return nil, nil
 	}
 	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)
@@ -92,14 +98,16 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcall
 	vrfID := routeInput.VrfId
 
 	ifName := routeInput.OutgoingInterface
-	if ifName == "" {
-		log.Infof("Outgoing interface not set for next hop %v, route skipped", routeInput.NextHopAddr)
-		return nil, nil
+
+	ifIndex := vppcalls.NextHopOutgoingIfUnset
+	if ifName != "" {
+		var exists bool
+		ifIndex, _, exists = index.LookupIdx(ifName)
+		if !exists {
+			return nil, fmt.Errorf("Route outgoing interface %v not found", ifName)
+		}
 	}
-	if ifIndex == 0 {
-		// Unset outgoing interface
-		ifIndex = vppcalls.NextHopOutgoingIfUnset
-	}
+
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
 		nextHopIP = nextHopIP.To16()
@@ -112,6 +120,7 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, ifIndex uint32) (*vppcall
 		NextHopAddr: nextHopIP,
 		OutIface:    ifIndex,
 		Weight:      routeInput.Weight,
+		Preference:  routeInput.Preference,
 	}
 	return route, nil
 }

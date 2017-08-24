@@ -15,12 +15,13 @@
 package utils_test
 
 import (
+	"testing"
+
 	"github.com/buger/goterm"
 	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
 	"github.com/ligato/vpp-agent/cmd/agentctl/testing/then"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 // Test01TableWithoutData tests basic output without any data (no data message)

@@ -1,11 +1,12 @@
 package mux
 
 import (
+	"io/ioutil"
+
 	"github.com/Shopify/sarama"
 	"github.com/ghodss/yaml"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
-	"io/ioutil"
 )
 
 // DefAddress default kafka address/port (if not specified in config)

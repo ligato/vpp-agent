@@ -172,3 +172,27 @@ func TestListValues5_customTableSchema(t *testing.T) {
 	gomega.Expect(users).ToNot(gomega.BeNil())
 	gomega.Expect(users).To(gomega.BeEquivalentTo(&[]CustomizedTablenameAndSchema{*entity}))
 }
+
+// TestListValues6_uuid checks whether we are able to retrieve uuid field
+func TestListValues6_uuid(t *testing.T) {
+	gomega.RegisterTestingT(t)
+
+	session := mockSession()
+	defer session.Close()
+	db := cassandra.NewBrokerUsingSession(session)
+
+	query := sql.FROM(TweetTable, sql.WHERE(sql.Field(&TweetTable.ID, sql.EQ(myID))))
+
+	sqlStr, _, err := cassandra.SelectExpToString(query)
+	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
+		"SELECT id, text FROM Tweet WHERE id = ?"))
+
+	mockQuery(session, query, cells(MyTweet))
+
+	tweets := &[]Tweet{}
+	err = sql.SliceIt(tweets, db.ListValues(query))
+
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+	gomega.Expect(tweets).ToNot(gomega.BeNil())
+	gomega.Expect(tweets).To(gomega.BeEquivalentTo(&[]Tweet{*MyTweet}))
+}

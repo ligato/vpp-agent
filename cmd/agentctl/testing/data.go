@@ -15,10 +15,11 @@
 package testing
 
 import (
+	"strconv"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"strconv"
 )
 
 // TableData with 3x VPP, every with 3 interfaces. With such a data, all filtering options can be tested

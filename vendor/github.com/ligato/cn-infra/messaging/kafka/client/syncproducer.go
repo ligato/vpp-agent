@@ -18,9 +18,10 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/Shopify/sarama"
 	"github.com/ligato/cn-infra/logging"
-	"sync"
 )
 
 // SyncProducer allows to publish messages to kafka using synchronous API.

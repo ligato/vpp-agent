@@ -49,10 +49,10 @@ func init() {
 		var err error
 		gConfig, err = nametoidx.ConfigFromFile(idxMapConfigFile)
 		if err != nil {
-			log.WithFields(log.Fields{"filepath": idxMapConfigFile, "err": err}).Warn(
+			log.DefaultLogger().WithFields(log.Fields{"filepath": idxMapConfigFile, "err": err}).Warn(
 				"Failed to load idxmap configuration file")
 		} else {
-			log.WithFields(log.Fields{"filepath": idxMapConfigFile}).Debug(
+			log.DefaultLogger().WithFields(log.Fields{"filepath": idxMapConfigFile}).Debug(
 				"Loaded idxmap configuration file")
 		}
 	}
@@ -60,7 +60,7 @@ func init() {
 
 // Marshalling loads the config and starts watching for changes.
 func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxvpp.NameToIdxRW) error {
-	log.Debug("Persistence")
+	log.DefaultLogger().Debug("Persistence")
 
 	changes := make(chan idxvpp.NameToIdxDto, 1000)
 	fileName := idxMap.GetRegistryTitle() + ".json"
@@ -132,7 +132,7 @@ func (persist *NameToIdxPersist) Init() error {
 // loadIdxMapFile loads persistently stored entries of the associated registry.
 func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxRW) error {
 	if _, err := os.Stat(persist.filePath); os.IsNotExist(err) {
-		log.WithFields(log.Fields{"Filepath": persist.filePath}).Debug(
+		log.DefaultLogger().WithFields(log.Fields{"Filepath": persist.filePath}).Debug(
 			"Persistent storage for name to index mapping doesn't exist yet")
 		return nil
 	}
@@ -147,7 +147,7 @@ func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxR
 	}
 
 	for name, idx := range persist.nameToIdx {
-		log.WithFields(log.Fields{"name": name, "idx": idx}).Debug(
+		log.DefaultLogger().WithFields(log.Fields{"name": name, "idx": idx}).Debug(
 			"Loaded mapping from the persistent storage")
 		loadedFromFile.RegisterName(name, idx, nil)
 	}
@@ -170,7 +170,7 @@ func (persist *NameToIdxPersist) periodicIdxMapSync(offset time.Duration) error 
 			offset = 0
 			err := persist.syncMapping()
 			if err != nil {
-				log.WithFields(log.Fields{"Error": err, "Filepath": persist.filePath}).Error(
+				log.DefaultLogger().WithFields(log.Fields{"Error": err, "Filepath": persist.filePath}).Error(
 					"Failed to sync idxMap with the persistent storage")
 			}
 		}

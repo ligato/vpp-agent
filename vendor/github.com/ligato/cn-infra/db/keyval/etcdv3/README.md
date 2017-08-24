@@ -17,7 +17,3 @@ documented at the bottom of the [doc.go](doc.go) file.
 
 - Etcd plugin has a mechanism to periodically check the status of an 
   Etcd connection.  
-
-**Dependencies**
-- [Logging](../../../logging/plugin)
-- [ServiceLabel](../../../servicelabel)

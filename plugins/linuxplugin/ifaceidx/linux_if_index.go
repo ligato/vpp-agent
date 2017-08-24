@@ -24,7 +24,6 @@ import (
 
 const ipAddressIndexKey = "ipAddrKey"
 
-
 // LinuxIfIndex provides read-only access to mapping between software interface indexes and interface names
 type LinuxIfIndex interface {
 	// GetMapping returns internal read-only mapping with metadata of type interface{}.
@@ -121,7 +120,7 @@ func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber core.PluginName, plugi
 
 // IndexMetadata creates indexes for metadata. Index for IPAddress will be created
 func IndexMetadata(metaData interface{}) map[string][]string {
-	log.Debug("IndexMetadata ", metaData)
+	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*interfaces.LinuxInterfaces_Interface)
@@ -143,4 +142,3 @@ func (linuxIfIdx *linuxIfIndex) castMetadata(meta interface{}) *interfaces.Linux
 
 	return nil
 }
-

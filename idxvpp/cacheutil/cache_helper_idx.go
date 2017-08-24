@@ -17,7 +17,6 @@ package cacheutil
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db"
 	"github.com/ligato/vpp-agent/idxvpp"
 )
 
@@ -33,11 +32,11 @@ type CacheHelper struct {
 const placeHolderIndex uint32 = 0
 
 // DoWatching is supposed to be used as a go routine. It select the data from channels in arguments.
-func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.Watcher) {
+func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.KeyValProtoWatcher) {
 	changeChan := make(chan datasync.ChangeEvent, 100)
 	resyncChan := make(chan datasync.ResyncEvent, 100)
 
-	watcher.WatchData(resyncName, changeChan, resyncChan, helper.Prefix)
+	watcher.Watch(resyncName, changeChan, resyncChan, helper.Prefix)
 
 	for {
 		select {
@@ -57,14 +56,14 @@ func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.Watche
 func (helper *CacheHelper) DoChange(dataChng datasync.ChangeEvent) error {
 	var err error
 	switch dataChng.GetChangeType() {
-	case db.Put:
+	case datasync.Put:
 		current := proto.Clone(helper.DataPrototype)
 		dataChng.GetValue(current)
 		name, err := helper.ParseName(dataChng.GetKey())
 		if err == nil {
 			helper.IDX.RegisterName(name, placeHolderIndex, current)
 		}
-	case db.Delete:
+	case datasync.Delete:
 		name, err := helper.ParseName(dataChng.GetKey())
 		if err == nil {
 			helper.IDX.UnregisterName(name)

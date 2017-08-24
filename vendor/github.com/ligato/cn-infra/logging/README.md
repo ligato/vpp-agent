@@ -1,3 +1,4 @@
 # Logging
 
-The package defines logging API used in the cn-infra. Default logger implementation is based on Logrus library.
+The package defines the logging API used in CN-Infra. The default logger 
+implementation is based on the Logrus library.

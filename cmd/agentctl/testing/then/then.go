@@ -15,8 +15,9 @@
 package then
 
 import (
-	"github.com/onsi/gomega"
 	"strings"
+
+	"github.com/onsi/gomega"
 )
 
 // ContainsItems can be used to verify if the provided item(s) is present in the table. It could be an agent label, an interface or

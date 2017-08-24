@@ -26,6 +26,9 @@ import (
 
 	"github.com/namsral/flag"
 
+	"net"
+
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
@@ -39,7 +42,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
-	"net"
 )
 
 var (
@@ -48,7 +50,7 @@ var (
 )
 
 func main() {
-	log = logroot.Logger()
+	log = logroot.StandardLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 
@@ -200,6 +202,7 @@ func createACL(db keyval.ProtoBroker) {
 	accessList.Acl[0].Rules[0].Actions.AclAction = acl.AclAction_PERMIT
 	accessList.Acl[0].Rules[0].Matches = new(acl.AccessLists_Acl_Rule_Matches)
 
+	//// Actions
 	//accessList.Acl[0].Rules[1] = new(acl.AccessLists_Acl_Rule)
 	//accessList.Acl[0].Rules[1].Actions = new(acl.AccessLists_Acl_Rule_Actions)
 	//accessList.Acl[0].Rules[1].Actions.AclAction = acl.AclAction_PERMIT
@@ -219,10 +222,28 @@ func createACL(db keyval.ProtoBroker) {
 	//// Ipv6Rule
 	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "12001:0db8:0a0b:12f0:0000:0000:0000:0000"
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "1201:0db8:0a0b:12f0:0000:0000:0000:0000"
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "5064:ff9b:0000:0000:0000:0000:0000:0000"
+	//
+	//// Ipv4Rule with empty destination address
+	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.2"
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = ""
+	//
+	//// Ipv6Rule with empty source address
+	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = ""
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "0064:ff9b:0000:0000:0000:0000:0000:0000"
 	//
-	////// Icmpv4 Rule
+	//// Ip Rule with empty source and destination addresses
+	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = ""
+	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = ""
+	//
+	//// Icmpv4 Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
 	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpTypeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange)
@@ -232,7 +253,7 @@ func createACL(db keyval.ProtoBroker) {
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpCodeRange.First = 1150
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpCodeRange.Last = 1250
 	//
-	//// Icmpv6 Rule
+	//// Icmpv6 Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
 	//accessList.Acl[0].Rules[2].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp)
 	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpTypeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange)
@@ -241,20 +262,19 @@ func createACL(db keyval.ProtoBroker) {
 	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange)
 	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange.First = 1150
 	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange.Last = 1250
-	//
-	//// Tcp Rule
+	//// Tcp Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
 	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.LowerPort = 150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.UpperPort = 250
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.LowerPort = 1150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.UpperPort = 1250
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsValue = 10
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsMask = 20
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp)
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange)
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.LowerPort = 150
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.UpperPort = 250
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange)
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.LowerPort = 1150
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.UpperPort = 1250
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsValue = 10
+	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsMask = 20
 	//
-	//// Udp Rule
+	//// Udp Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
 	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Udp)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.SourcePortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_SourcePortRange)
@@ -264,7 +284,7 @@ func createACL(db keyval.ProtoBroker) {
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.DestinationPortRange.LowerPort = 1150
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.DestinationPortRange.UpperPort = 1250
 	//
-	//// Other
+	//// Other (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
 	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	//accessList.Acl[0].Rules[0].Matches.IpRule.Other = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Other)
 	//
@@ -375,7 +395,7 @@ func etcdDump(bDB *etcdv3.BytesConnectionEtcd, key string) {
 }
 
 func etcdDel(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	found, err := bDB.Delete(key, keyval.WithPrefix())
+	found, err := bDB.Delete(key, datasync.WithPrefix())
 	if err != nil {
 		log.Error(err)
 		return

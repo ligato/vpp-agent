@@ -24,7 +24,7 @@ import (
 
 // VppAddBridgeDomain adds new bridge domain
 func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomain, vppChan *govppapi.Channel) error {
-	log.Debug("Adding VPP bridge domain ", bridgeDomain.Name)
+	log.DefaultLogger().Debug("Adding VPP bridge domain ", bridgeDomain.Name)
 	req := &l2ba.BridgeDomainAddDel{}
 	req.BdID = bdIdx
 	req.IsAdd = 1
@@ -46,13 +46,13 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 		return fmt.Errorf("Adding bridge domain returned %d", reply.Retval)
 	}
 
-	log.WithFields(log.Fields{"Name": bridgeDomain.Name, "Index": bdIdx}).Print("Bridge domain added.")
+	log.DefaultLogger().WithFields(log.Fields{"Name": bridgeDomain.Name, "Index": bdIdx}).Print("Bridge domain added.")
 	return nil
 }
 
 // VppUpdateBridgeDomain updates bridge domain parameters
 func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, vppChan *govppapi.Channel) error {
-	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
+	log.DefaultLogger().Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
 
 	if oldBdIdx != 0 {
 		VppDeleteBridgeDomain(oldBdIdx, vppChan)
@@ -79,7 +79,7 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 		return fmt.Errorf("Updating bridge domain returned %d", reply.Retval)
 	}
 
-	log.WithFields(log.Fields{"Name": newBridgeDomain.Name, "Index": newBdIdx}).Debug("Bridge domain Updated.")
+	log.DefaultLogger().WithFields(log.Fields{"Name": newBridgeDomain.Name, "Index": newBdIdx}).Debug("Bridge domain Updated.")
 	return nil
 }
 
@@ -92,11 +92,11 @@ func VppDeleteBridgeDomain(bdIdx uint32, vppChan *govppapi.Channel) error {
 	reply := &l2ba.BridgeDomainAddDelReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
-		log.WithFields(log.Fields{"Error": err}).Error("Error while removing bridge domain")
+		log.DefaultLogger().WithFields(log.Fields{"Error": err}).Error("Error while removing bridge domain")
 		return err
 	}
 	if 0 != reply.Retval {
-		log.WithFields(log.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+		log.DefaultLogger().WithFields(log.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 	}
 
 	return nil

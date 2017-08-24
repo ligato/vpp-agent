@@ -44,7 +44,7 @@ func CheckMsgCompatibilityForACL(vppChannel *govppapi.Channel) error {
 	}
 	err := vppChannel.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.Error(err)
+		log.DefaultLogger().Error(err)
 		return err
 	}
 	return nil

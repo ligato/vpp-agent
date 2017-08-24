@@ -69,13 +69,13 @@ func NewNameToIdx(logger logging.Logger, owner core.PluginName, title string,
 
 // RegisterName inserts or updates index and metadata for the given name.
 func (mem *nameToIdxMem) RegisterName(name string, idx uint32, metadata interface{}) {
-	mem.internal.RegisterName(name, &nameToIdxMeta{idx, metadata})
+	mem.internal.Put(name, &nameToIdxMeta{idx, metadata})
 }
 
 // UnregisterName removes data associated with the given name.
 func (mem *nameToIdxMem) UnregisterName(name string) (idx uint32, metadata interface{}, found bool) {
 
-	meta, found := mem.internal.UnregisterName(name)
+	meta, found := mem.internal.Delete(name)
 	if found {
 		if internalMeta, ok := meta.(*nameToIdxMeta); ok {
 			return internalMeta.idx, internalMeta.meta, found
@@ -92,7 +92,7 @@ func (mem *nameToIdxMem) GetRegistryTitle() string {
 // LookupIdx allows to retrieve previously stored index for particular name.
 func (mem *nameToIdxMem) LookupIdx(name string) (uint32, interface{}, bool) {
 
-	meta, found := mem.internal.Lookup(name)
+	meta, found := mem.internal.GetValue(name)
 	if found {
 		if internalMeta, ok := meta.(*nameToIdxMeta); ok {
 			return internalMeta.idx, internalMeta.meta, found
@@ -103,11 +103,11 @@ func (mem *nameToIdxMem) LookupIdx(name string) (uint32, interface{}, bool) {
 
 // LookupName looks up the name associated with the given softwareIfIndex.
 func (mem *nameToIdxMem) LookupName(idx uint32) (name string, metadata interface{}, exists bool) {
-	res := mem.internal.LookupByMetadata(idxKey, strconv.FormatUint(uint64(idx), 10))
+	res := mem.internal.ListNames(idxKey, strconv.FormatUint(uint64(idx), 10))
 	if len(res) != 1 {
 		return
 	}
-	m, found := mem.internal.Lookup(res[0])
+	m, found := mem.internal.GetValue(res[0])
 	if found {
 		if internalMeta, ok := m.(*nameToIdxMeta); ok {
 			return res[0], internalMeta.meta, found
@@ -117,26 +117,26 @@ func (mem *nameToIdxMem) LookupName(idx uint32) (name string, metadata interface
 }
 
 func (mem *nameToIdxMem) LookupNameByMetadata(key string, value string) []string {
-	return mem.internal.LookupByMetadata(key, value)
+	return mem.internal.ListNames(key, value)
 }
 
 // ListNames returns all names in the mapping
 func (mem *nameToIdxMem) ListNames() (names []string) {
-	return mem.internal.ListNames()
+	return mem.internal.ListAllNames()
 }
 
 // Watch start monitoring of change in the mapping. When a change occurs the callback is called.
 // To receive changes through channel ToChan utility can be used.
 func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.NameToIdxDto)) {
-	watcher := func(dto idxmap.NamedMappingDto) {
-		internalMeta, ok := dto.Metadata.(*nameToIdxMeta)
+	watcher := func(dto idxmap.NamedMappingGenericEvent) {
+		internalMeta, ok := dto.Value.(*nameToIdxMeta)
 		if !ok {
 			return
 		}
 		msg := idxvpp.NameToIdxDto{
 			NameToIdxDtoWithoutMeta: idxvpp.NameToIdxDtoWithoutMeta{
-				NamedMappingDtoWithoutMeta: dto.NamedMappingDtoWithoutMeta,
-				Idx: internalMeta.idx},
+				NamedMappingEvent: dto.NamedMappingEvent,
+				Idx:               internalMeta.idx},
 			Metadata: internalMeta.meta,
 		}
 		callback(msg)
@@ -150,8 +150,8 @@ func ToChan(ch chan idxvpp.NameToIdxDto) func(dto idxvpp.NameToIdxDto) {
 	return func(dto idxvpp.NameToIdxDto) {
 		select {
 		case ch <- dto:
-		case <-time.After(mem.NotifTimeout):
-			logroot.Logger().Warn("Unable to deliver notification")
+		case <-time.After(idxmap.DefaultNotifTimeout):
+			logroot.StandardLogger().Warn("Unable to deliver notification")
 		}
 	}
 }

@@ -34,10 +34,6 @@ import:
   version: v2.1.8
 - package: github.com/Songmu/prompter
   version: 0.1.0
-- package: github.com/garyburd/redigo
-  version: v1.1.0
-- package: github.com/rafaeljusto/redigomock
-  version: v2.0
 - package: github.com/gocql/gocql
   version: 88748c7b290d13b288055f5dea4d1c49d44db06d
 - package: gopkg.in/inf.v0
@@ -58,6 +54,11 @@ import:
   version: 2788f0dbd16903de03cb8186e5c7d97b69ad387b
 - package: github.com/unrolled/render
   version: a0ec58421ddf111bd7efd3b7087399ca7d5da2f1
+- package: github.com/go-redis/redis
+  version: v6.5.3
+- package: github.com/alicebob/miniredis
+  version: 2.1.0
+- package: github.com/howeyc/crc16
 testImport:
 - package: github.com/onsi/gomega
   version: v1.1.0

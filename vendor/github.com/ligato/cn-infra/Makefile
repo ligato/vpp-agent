@@ -32,9 +32,10 @@ define test_cover_only
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit7.out ./db/keyval/redis
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit8.out ./db/sql/cassandra
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit9.out ./idxmap/mem
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit10.out ./tests/go/itest
     @echo "# merging coverage results"
     @cd vendor/github.com/wadey/gocovmerge && go install -v
-    @gocovmerge ${COVER_DIR}coverage_unit1.out ${COVER_DIR}coverage_unit2.out ${COVER_DIR}coverage_unit3.out ${COVER_DIR}coverage_unit4.out ${COVER_DIR}coverage_unit5.out ${COVER_DIR}coverage_unit6.out ${COVER_DIR}coverage_unit7.out  ${COVER_DIR}coverage_unit8.out ${COVER_DIR}coverage_unit9.out > ${COVER_DIR}coverage.out
+    @gocovmerge ${COVER_DIR}coverage_unit1.out ${COVER_DIR}coverage_unit2.out ${COVER_DIR}coverage_unit3.out ${COVER_DIR}coverage_unit4.out ${COVER_DIR}coverage_unit5.out ${COVER_DIR}coverage_unit6.out ${COVER_DIR}coverage_unit7.out  ${COVER_DIR}coverage_unit8.out ${COVER_DIR}coverage_unit9.out ${COVER_DIR}coverage_unit10.out > ${COVER_DIR}coverage.out
     @echo "# coverage data generated into ${COVER_DIR}coverage.out"
     @echo "# done"
 endef
@@ -73,10 +74,10 @@ endef
 # build plugin example only
 define build_plugin_examples_only
     @echo "# building plugin examples"
-    @cd examples/etcd && go build -v ${LDFLAGS}
+    @cd examples/datasync_watch_etcd && go build -v ${LDFLAGS}
     @cd examples/flags && go build -v ${LDFLAGS}
     @cd examples/kafka && go build -v ${LDFLAGS}
-    @cd examples/logs && go build -v ${LDFLAGS}
+    @cd examples/logs_in_plugin && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
     @echo "# done"
 endef
@@ -85,22 +86,22 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd db/keyval/etcdv3/examples && make build
-    @cd db/keyval/redis/examples && make build
-    @cd db/sql/cassandra/examples/simple && go build
-    @cd logging/logrus/examples && make build
-    @cd messaging/kafka/examples && make build
+    @cd examples/etcdv3_broker && make build
+    @cd examples/redis_broker && make build
+    @cd examples/cassandra_broker && go build
+    @cd examples/logs_logrus && make build
+    @cd examples/kafka_broker && make build
     @echo "# done"
 endef
 
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
-    @cd db/keyval/etcdv3/examples && make clean
-    @cd db/keyval/redis/examples && make clean
-    @cd db/sql/cassandra/examples/simple && rm -f simple
-    @cd logging/logrus/examples && make clean
-    @cd messaging/kafka/examples && make clean
+    @cd examples/etcdv3_broker && make clean
+    @cd examples/redis_broker && make clean
+    @cd examples/cassandra_broker && rm -f simple
+    @cd examples/logs_logrus && make clean
+    @cd examples/kafka_broker && make clean
     @echo "# done"
 endef
 
