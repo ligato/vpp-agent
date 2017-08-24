@@ -60,11 +60,16 @@ Get All Loggers On ${node}
     ${out}=     rest_api: Get Loggers List    agent_vpp_1
     Log Many    ${out}
     Should Contain     ${out}    defaultLogger
-    Should Contain     ${out}    EtcdClient
-    Should Contain     ${out}    GoVpp
+    Should Contain     ${out}    ETCDDataSync
+    Should Contain     ${out}    govpp
     Should Contain     ${out}    HTTP
-    Should Contain     ${out}    LogManager
-    Should Contain     ${out}    KafkaClient
+    Should Contain     ${out}    LogMngRPC
+    Should Contain     ${out}    Kafka
+    Should Contain     ${out}    ResyncOrch
+    Should Contain     ${out}    ETCD
+    Should Contain     ${out}    StatusCheck
+    Should Contain     ${out}    default-plugins
+    Should Contain     ${out}    HealthRPC
 
 Change Log Level On ${node} From ${old_level} To ${expected_level} On ${logger_name}
     Log Many     ${node}   ${old_level}   ${expected_level}    ${logger_name}
