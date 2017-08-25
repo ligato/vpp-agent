@@ -40,7 +40,7 @@ Check Agent State Data In ETCD
     Get Agent Status For agent_vpp_1 From ETCD Should be OK
 
 Check Plugins State Data In ETCD
-    Get GOVPP Plugin Status For agent_vpp_1 From ETCD
+    Get govpp Plugin Status For agent_vpp_1 From ETCD
 
 
 Change API Port
@@ -60,16 +60,17 @@ Get All Loggers On ${node}
     ${out}=     rest_api: Get Loggers List    agent_vpp_1
     Log Many    ${out}
     Should Contain     ${out}    defaultLogger
-    Should Contain     ${out}    ETCDDataSync
+    Should Contain     ${out}    etcdv3
+    Should Contain     ${out}    govppGoVpp
+    Should Contain     ${out}    resync-orch
     Should Contain     ${out}    govpp
-    Should Contain     ${out}    HTTP
-    Should Contain     ${out}    LogMngRPC
-    Should Contain     ${out}    Kafka
-    Should Contain     ${out}    ResyncOrch
-    Should Contain     ${out}    ETCD
-    Should Contain     ${out}    StatusCheck
     Should Contain     ${out}    default-plugins
-    Should Contain     ${out}    HealthRPC
+    Should Contain     ${out}    http
+    Should Contain     ${out}    health-rpc
+    Should Contain     ${out}    etcdv3-datasync
+    Should Contain     ${out}    status-check
+    Should Contain     ${out}    log-mng-rpc
+    Should Contain     ${out}    kafka
 
 Change Log Level On ${node} From ${old_level} To ${expected_level} On ${logger_name}
     Log Many     ${node}   ${old_level}   ${expected_level}    ${logger_name}
@@ -131,7 +132,7 @@ Get ${plugin} Plugin Status For ${node} From ETCD
 
 
 Start Agent On ${node} With Port ${port}
-    ${out}=    Execute In Container    ${node}    vpp-agent -http-port ${port} --etcdv3-config=${AGENT_VPP_ETCD_CONF_PATH} --kafka-config=${AGENT_VPP_KAFKA_CONF_PATH} &
+    ${out}=    Execute In Container    ${node}    vpp-agent -http-probe-port ${port} --etcdv3-config=${AGENT_VPP_ETCD_CONF_PATH} --kafka-config=${AGENT_VPP_KAFKA_CONF_PATH} &
     Log Many   ${out}
     [Return]  ${out}
 
