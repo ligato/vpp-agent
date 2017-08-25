@@ -30,8 +30,8 @@ Miscellaneous:
   - [agentctl CLI tool](cmd/agentctl) that show state & configuration of VPP agents
   - [docker](docker): container-based development environment for the VPP agent
 - other features inherited from cn-infra:
- - [health](https://github.com/ligato/cn-infra/tree/master/health): status check & k8s HTTP/REST probes
- - [logging](https://github.com/ligato/cn-infra/tree/master/logging): changing log level at runtime
+  - [health](https://github.com/ligato/cn-infra/tree/master/health): status check & k8s HTTP/REST probes
+  - [logging](https://github.com/ligato/cn-infra/tree/master/logging): changing log level at runtime
 
 ### Extensibility & integration
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
