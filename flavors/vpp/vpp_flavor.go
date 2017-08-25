@@ -14,10 +14,10 @@ import (
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
+	*rpc.FlavorLocal
 	*rpc.FlavorRPC
 	*etcdkafka.FlavorEtcdKafka
 	*redis.FlavorRedis
-	Resync    resync.Plugin
 	GoVPP     govppmux.GOVPPPlugin
 	Linux     linuxplugin.Plugin
 	VPP       defaultplugins.Plugin
@@ -32,32 +32,33 @@ func (f *Flavor) Inject() error {
 	}
 	f.injected = true
 
+	if f.FlavorLocal == nil {
+		f.FlavorLocal = &rpc.FlavorLocal{}
+	}
+	f.FlavorLocal.Inject()
+
+	if f.FlavorEtcdKafka == nil {
+		f.FlavorEtcdKafka = &etcdkafka.FlavorEtcdKafka{FlavorLocal: f.FlavorLocal}
+	}
+	f.FlavorEtcdKafka.Inject()
+	
 	if f.FlavorRPC == nil {
-		f.FlavorRPC = &rpc.FlavorRPC{}
+		f.FlavorRPC = &rpc.FlavorRPC{FlavorLocal: f.FlavorLocal}
 	}
 	f.FlavorRPC.Inject()
 
-	if f.FlavorEtcdKafka == nil {
-		f.FlavorEtcdKafka = &etcdkafka.FlavorEtcdKafka{FlavorLocal: f.FlavorRPC.FlavorLocal}
-	}
-	f.FlavorEtcdKafka.Inject()
-
 	if f.FlavorRedis == nil {
-		f.FlavorRedis = &redis.FlavorRedis{}
+		f.FlavorRedis = &redis.FlavorRedis{FlavorLocal: f.FlavorLocal}
 	}
 	f.FlavorRedis.Inject()
 
 
-
-	// Aggregated transport
-	compositePublisher := datasync.CompositeKVProtoWriter{
-		Adapters: []datasync.KeyProtoValWriter{&f.FlavorEtcdKafka.ETCDDataSync, &f.FlavorRedis.RedisDataSync},
-	}
-
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("govpp")
 	f.VPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("default-plugins")
 	f.VPP.Deps.Publish = &f.FlavorEtcdKafka.ETCDDataSync
-	f.VPP.Deps.PublishStatistics = compositePublisher
+	f.VPP.Deps.PublishStatistics = datasync.CompositeKVProtoWriter{
+		Adapters: []datasync.KeyProtoValWriter{&f.FlavorEtcdKafka.ETCDDataSync, &f.FlavorRedis.RedisDataSync},
+	}
 	f.VPP.Deps.Watch = &f.FlavorEtcdKafka.ETCDDataSync
 	f.VPP.Deps.Kafka = &f.FlavorEtcdKafka.Kafka
 	f.VPP.Deps.GoVppmux = &f.GoVPP
