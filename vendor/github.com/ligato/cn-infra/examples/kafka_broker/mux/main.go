@@ -24,6 +24,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
+	"time"
 )
 
 func main() {
@@ -33,7 +34,10 @@ func main() {
 		os.Exit(1)
 	}
 	cn := mx.NewConnection("plugin")
-	cn.SendSyncString("test", "key", "value")
+	offset, err := cn.SendSyncString("test", "key", "value")
+	if err == nil {
+		fmt.Println("Sync published ", offset)
+	}
 
 	succCh := make(chan *client.ProducerMessage)
 	errCh := make(chan *client.ProducerError)
@@ -59,6 +63,8 @@ func main() {
 			select {
 			case msg := <-consumerChan:
 				fmt.Println(string(msg.Key), string(msg.Value))
+			case <-time.After(3 * time.Second):
+				break eventLoop
 			case <-signalChan:
 				break eventLoop
 			}

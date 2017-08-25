@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package kvdbsync implements the datasync API for data stores. The datasync
-// API contains the Data Broker & KeyValProtoWatcher APIs, which are basically facades
-// in front of different key-value or SQL stores.
+// Package kvdbsync implements the key-value data store client and server
+// that satisfythe datasync API. The datasync API contains the Data Broker
+// & KeyValProtoWatcher APIs, which are basically facades in front of
+// different key-value or SQL stores.
 //
 // A key-value store is used as a transport channel between a remote client
-// and the agent(server). It stores data/configuration for multiple agents(servers).
-// Therefore, a client only needs to know the address of the key-value store
-// but not the addresses of individual agents. The client can write
-// data/configuration independently of the agent's (server) lifecycle.
+// and the agent(server). It stores data/configuration for multiple agents
+// (servers). Therefore, a client only needs to know the address of the
+// key-value store but not the addresses of individual agents. The client
+// can write data/configuration independently of the agent's (server's)
+// lifecycle.
 //
-// The Data KeyValProtoWatcher is used during regular operation to efficiently propagate
-// data/configuration changes from the key & value store to the agents(servers).
-// Upon receiving data change events the watcher makes incremental updates to VPP.
-// When data resynchronization (RESYNC) is triggered then the Data Broker is used
-// to read all particular keys & values from the key-value store. Reading all
-// particular keys & values is more reliable but less efficient data synchronization.
+// The Data KeyValProtoWatcher is used during regular operation to efficiently
+// propagate data/configuration changes from the key & value store to the
+// agents (servers). Upon receiving a data change event, the watcher makes
+// an incremental update to its data. When data resynchronization (RESYNC) is
+// triggered, then the Data Broker is used to read all particular keys &
+// values from the key-value store. Reading all particular keys & values is
+// a more reliable but less efficient data synchronization method.
 package kvdbsync

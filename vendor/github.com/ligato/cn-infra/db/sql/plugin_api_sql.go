@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package grpcsync implements (in ALPHA VERSION) the gRPC transport client
-// and server that satisfy the datasync API. See the definition of the
-// service in ../../syncbase/msg package). This implementation is special
-// (comparing to dbsync or msgsync) because it does not use any intermediate
-// persistence between the client and the server. Therefore the client does
-// remote  calls to each individual server/agent instance (and needs to know
-// its IP address & port).
-package grpcsync
+package sql
+
+// BrokerPlugin provides unifying interface for different SQL like datastore implementations.
+type BrokerPlugin interface {
+	// NewBroker returns a Broker instance that work with Data Base
+	NewBroker() Broker
+}

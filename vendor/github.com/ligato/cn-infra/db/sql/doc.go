@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sql is an abstraction of a data store that supports an SQL-like
-// query language, and it defines the Data Broker client API (comprising
-// the Broker and KeyValProtoWatcher APIs) for accessing data in a SQL data store.
+// Package sql provides an abstraction of a data store that supports
+// an SQL-like query language and a definition of the Data Broker client
+// API. The Data Broker client API consists of the the Broker and
+// KeyValProtoWatcher APIs for accessing data in an SQL data store.
 package sql
