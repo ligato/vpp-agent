@@ -437,7 +437,7 @@ func deleteRoute(db keyval.ProtoBroker, routeDstIP string, routeNhIP string) {
 		log.Errorf("Error parsing address %v", routeDstIP)
 		return
 	}
-	path := l3.RouteKey(0, dstNetAddr, "192.168.1.12")
+	path := l3.RouteKey(0, dstNetAddr, "192.168.1.13")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }

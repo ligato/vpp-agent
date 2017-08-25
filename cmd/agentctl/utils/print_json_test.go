@@ -55,9 +55,13 @@ func Test01VppPrintJsonData(t *testing.T) {
 	gomega.Expect(strings.Contains(output, utils.BdState)).To(gomega.BeTrue())
 	gomega.Expect(strings.Count(output, utils.BdState)).To(gomega.BeEquivalentTo(2))
 
-	// Check fib table (should be once per vpp)
-	gomega.Expect(strings.Contains(output, utils.FibConfig)).To(gomega.BeTrue())
-	gomega.Expect(strings.Count(output, utils.FibConfig)).To(gomega.BeEquivalentTo(2))
+	// Check L2 fib table (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.L2FibConfig)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.L2FibConfig)).To(gomega.BeEquivalentTo(2))
+
+	// Check L3 fib table (should be once per vpp)
+	gomega.Expect(strings.Contains(output, utils.L3FibConfig)).To(gomega.BeTrue())
+	gomega.Expect(strings.Count(output, utils.L3FibConfig)).To(gomega.BeEquivalentTo(2))
 
 	// Test statistics presence (including empty)
 	gomega.Expect(strings.Contains(output, "statistics")).To(gomega.BeTrue())
@@ -112,7 +116,7 @@ func Test04PrintJsonMetadata(t *testing.T) {
 
 	gomega.Expect(strings.Contains(output, "Keys")).To(gomega.BeTrue())
 	count := strings.Count(output, "Keys")
-	gomega.Expect(count).To(gomega.BeEquivalentTo(10))
+	gomega.Expect(count).To(gomega.BeEquivalentTo(12))
 }
 
 // Test05PrintJsonEmptyBuffer tests empty buffer using non-existing vpp filter

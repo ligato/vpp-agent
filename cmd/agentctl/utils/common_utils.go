@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // Common exit flags
@@ -84,7 +85,7 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 		dataType += "/" + localDataType
 	}
 
-	// In case localDataType is equal to 'bd' or 'interface', verify next item to identify error/fib key
+	// In case localDataType is equal to 'bd', 'interface' or 'vrf', verify next item to identify error/fib key
 	if len(ps) > 5 {
 		// Recognize interface error key
 		if ps[4] == "interface" && ps[5] == "error" {
@@ -120,6 +121,16 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 				params = ps[7:]
 			} else {
 				params = []string{}
+			}
+			return label, dataType, params, plugStatCfgRev
+		}
+		// Recognize static route
+		if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
+			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
+			params = ps[5:6]
+
+			if len(ps) > 7 {
+				params = append(params, ps[7:]...)
 			}
 			return label, dataType, params, plugStatCfgRev
 		}

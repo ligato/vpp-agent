@@ -12,7 +12,7 @@ message StaticRoutes {
         string next_hop_addr = 4;            /* next hop address */
         string outgoing_interface = 5;       /* outgoing interface name */
         uint32 weight = 6;                   /* weight (used for unequal cost load balncing) */
-	    uint32 preference = 7;               /* The preference of the path. Lowest preference is preferred.  */
+        uint32 preference = 7;               /* The preference of the path. Lowest preference is preferred.  */
                                              /* Only paths with the best preference contribute to forwarding. */
                                              /* (a poor man's primary and backup) */
     }

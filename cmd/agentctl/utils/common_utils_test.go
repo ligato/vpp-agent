@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/onsi/gomega"
 )
 
@@ -118,4 +119,35 @@ func Test08ParseKeyFib(t *testing.T) {
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FIBPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{mac-address}"}))
+}
+
+// Test09ParseKeyRoute tests whether all parameters for ParseKey() functions are correct for provided
+// route key
+func Test09ParseKeyRoute(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	label, dataType, params, _ := utils.
+		ParseKey("/vnf-agent/agent1/vpp/config/v1/vrf/vrf1/fib/192.168.1.0/24/192.168.2.1")
+
+	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
+	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf1", "192.168.1.0", "24", "192.168.2.1"}))
+
+	label, dataType, params, _ = utils.
+		ParseKey("/vnf-agent/agent2/vpp/config/v1/vrf/vrf2/fib/2001:db8:abcd:0012::0/64/2001:db8::1")
+
+	gomega.Expect(label).To(gomega.BeEquivalentTo("agent2"))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
+	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf2", "2001:db8:abcd:0012::0", "64", "2001:db8::1"}))
+}
+
+// Test10ParseKeyVrf tests whether all parameters for ParseKey() functions are correct for provided
+// vrf key
+func Test10ParseKeyVrf(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	label, dataType, params, _ := utils.
+		ParseKey("/vnf-agent/agent1/vpp/config/v1/vrf/vrf1")
+
+	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.VrfKeyPrefix()))
+	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf1"}))
 }
