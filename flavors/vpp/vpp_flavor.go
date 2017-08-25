@@ -5,16 +5,17 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/etcdkafka"
+	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/flavors/redis"
+	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/cn-infra/flavors/redis"
-	"github.com/ligato/cn-infra/flavors/rpc"
 )
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
-	*rpc.FlavorLocal
+	*local.FlavorLocal
 	*rpc.FlavorRPC
 	*etcdkafka.FlavorEtcdKafka
 	*redis.FlavorRedis
