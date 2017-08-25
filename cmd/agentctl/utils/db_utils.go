@@ -109,7 +109,7 @@ type XconnectWithMD struct {
 // Etcd metadata
 type StaticRoutesWithMD struct {
 	VppMetaData
-	l3.StaticRoutes
+	Routes []*l3.StaticRoutes_Route
 }
 
 // VppStatusWithMD contains a VPP Status data record and its Etcd
@@ -357,12 +357,17 @@ func readXconnectFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []
 }
 
 func readRoutesFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
-	routes := l3.StaticRoutes{}
-	found, rev, err := readDataFromDb(db, key, &routes)
+	route := &l3.StaticRoutes_Route{}
+	found, rev, err := readDataFromDb(db, key, route)
+	fmt.Printf("readRouteFromDb: '%v'\n", route)
+
 	if found && err == nil {
+		staticRoutes := vd.StaticRoutes.Routes
+		staticRoutes = append(staticRoutes, route)
 		vd.StaticRoutes =
-			StaticRoutesWithMD{VppMetaData{rev, key}, routes}
+			StaticRoutesWithMD{VppMetaData{rev, key}, staticRoutes}
 	}
+	fmt.Printf("readRoutesFromDb vd: '%+v'\n", vd)
 	return vd, err
 }
 

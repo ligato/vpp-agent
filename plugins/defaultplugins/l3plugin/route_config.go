@@ -19,6 +19,8 @@
 package l3plugin
 
 import (
+	"strconv"
+
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -28,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"strconv"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes

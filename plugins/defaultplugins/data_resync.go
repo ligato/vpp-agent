@@ -114,49 +114,74 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			log.DefaultLogger().Debug("Received RESYNC BFD Echo values ", numBfdEchos)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
-			numBDs := resyncAppendBDs(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC BD values ", numBDs)
+			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
+			if numBDs > 0 {
+				log.DefaultLogger().Debug("Received RESYNC BD values ", numBDs)
+			}
+			if numL2FIBs > 0 {
+				log.DefaultLogger().Debug("Received RESYNC L2 FIB values ", numL2FIBs)
+			}
 		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			log.DefaultLogger().Debug("Received RESYNC XConnects values ", numXCons)
-		} else if strings.HasPrefix(key, l3.RouteKeyPrefix()) {
-			numL3FIBs := resyncAppendRoutes(resyncData, key, req)
-			log.DefaultLogger().Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, key, req)
+			if numVRFs > 0 {
+				log.DefaultLogger().Debug("Received RESYNC VRF values ", numVRFs)
+			}
+			if numL3FIBs > 0 {
+				log.DefaultLogger().Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+			}
 		} else {
 			log.DefaultLogger().Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
 	}
 	return req
 }
-func resyncAppendRoutes(resyncData datasync.KeyValIterator, key string, req *DataResyncReq) int {
-	num := 0
+
+func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq) error {
+	route := &l3.StaticRoutes_Route{}
+	err := fibData.GetValue(route)
+	if err != nil {
+		return err
+	}
+	// Ensure every route has the corresponding VRF index
+	intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
+	if err != nil {
+		return err
+	}
+	if vrfIndex != strconv.Itoa(int(route.VrfId)) {
+		log.DefaultLogger().Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
+			intVrfKeyIndex, route.VrfId)
+		route.VrfId = uint32(intVrfKeyIndex)
+	}
+
+	req.StaticRoutes = append(req.StaticRoutes, route)
+	return nil
+}
+
+func resyncAppendVRFs(resyncData datasync.KeyValIterator, key string, req *DataResyncReq) (numVRFs, numL3FIBs int) {
+	numVRFs = 0
+	numL3FIBs = 0
 	for {
-		if staticRouteData, stop := resyncData.GetNext(); stop {
+		if vrfData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			route := &l3.StaticRoutes_Route{}
-			err := staticRouteData.GetValue(route)
-			if err != nil {
-				continue
+			key := vrfData.GetKey()
+			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
+			if fib {
+				err := resyncAppendL3FIB(vrfData, vrfIndex, req)
+				if err == nil {
+					numL3FIBs++
+				}
+			} else {
+				log.DefaultLogger().Warn("VRF RESYNC is not implemented")
 			}
-			_, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
-			// Ensure every route has the corresponding VRF index
-			intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
-			if err != nil {
-				continue
-			}
-			if vrfIndex != strconv.Itoa(int(route.VrfId)) {
-				log.DefaultLogger().Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
-					intVrfKeyIndex, route.VrfId)
-				route.VrfId = uint32(intVrfKeyIndex)
-			}
-			req.StaticRoutes = append(req.StaticRoutes, route)
-			num++
-
 		}
 	}
-	return num
+	return numVRFs, numL3FIBs
 }
+
 func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
 	for {
@@ -173,7 +198,7 @@ func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 	}
 	return num
 }
-func resyncAppendFIB(fibData datasync.KeyVal, req *DataResyncReq) error {
+func resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) error {
 	value := &l2.FibTableEntries_FibTableEntry{}
 	err := fibData.GetValue(value)
 	if err == nil {
@@ -182,31 +207,31 @@ func resyncAppendFIB(fibData datasync.KeyVal, req *DataResyncReq) error {
 	return err
 }
 
-func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	num := 0
+func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) (numBDs, numL2FIBs int) {
+	numBDs = 0
+	numL2FIBs = 0
 	for {
 		if bridgeDomainData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			key := bridgeDomainData.GetKey()
-			fib, _, fibMac := l2.ParseFibKey(key)
+			fib, _, _ := l2.ParseFibKey(key)
 			if fib {
-				log.DefaultLogger().Debugf("Received RESYNC L2 FIB entry (%s)", fibMac)
-				err := resyncAppendFIB(bridgeDomainData, req)
+				err := resyncAppendL2FIB(bridgeDomainData, req)
 				if err == nil {
-					num++
+					numL2FIBs++
 				}
 			} else {
 				value := &l2.BridgeDomains_BridgeDomain{}
 				err := bridgeDomainData.GetValue(value)
 				if err == nil {
 					req.BridgeDomains = append(req.BridgeDomains, value)
-					num++
+					numBDs++
 				}
 			}
 		}
 	}
-	return num
+	return numBDs, numL2FIBs
 }
 
 func resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
@@ -455,6 +480,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			// Vrf
 			// TODO vrf not implemented yet
+			log.DefaultLogger().Warn("VRFs are not supported yet")
 		}
 	} else {
 		log.DefaultLogger().Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
