@@ -18,9 +18,10 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/Shopify/sarama"
 	"github.com/ligato/cn-infra/logging"
-	"sync"
 )
 
 // AsyncProducer allows to publish message to kafka using asynchronous API.
@@ -234,8 +235,8 @@ func (ref *AsyncProducer) errorHandler(in <-chan *sarama.ProducerError) {
 				Partition: msg.Partition,
 			}
 			perr2 := &ProducerError{
-				Msg: pmsg,
-				Err: err,
+				ProducerMessage: pmsg,
+				Err:             err,
 			}
 			val, _ := msg.Value.Encode()
 			ref.Errorf("message %s errored in topic(%s)/partition(%d)/offset(%d)\n", string(val), pmsg.Topic, pmsg.Partition, pmsg.Offset)

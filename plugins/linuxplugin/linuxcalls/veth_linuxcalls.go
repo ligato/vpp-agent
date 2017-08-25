@@ -26,7 +26,7 @@ import (
 
 // AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
 func AddVethInterface(ifName, peerIfName string) error {
-	log.WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
+	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
 
 	// Veth pair params
 	veth := &netlink.Veth{
@@ -47,7 +47,7 @@ func AddVethInterface(ifName, peerIfName string) error {
 
 // DelVethInterface calls LinkDel Netlink API for the Netlink.Veth interface type.
 func DelVethInterface(ifName, peerIfName string) error {
-	log.WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
+	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
 
 	// Veth pair params
 	veth := &netlink.Veth{

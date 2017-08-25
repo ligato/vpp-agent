@@ -38,7 +38,7 @@ func main() {
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{}}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
 
 	// End when the idx_bd_cache example is finished
 	go closeExample("idx_bd_cache example finished", closeChannel)
@@ -49,7 +49,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(15 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -58,8 +58,9 @@ const PluginID core.PluginName = "example-plugin"
 
 // used for demonstration of Bridge Domain Indexes - see Init()
 type examplePlugin struct {
-	agent1      datasync.TransportAdapter
-	agent2      datasync.TransportAdapter
+	agent1      datasync.KeyValProtoWatcher
+	agent2      datasync.KeyValProtoWatcher
+	writer      datasync.KeyProtoValWriter
 	bdIdxLocal  bdidx.BDIndex
 	bdIdxAgent1 bdidx.BDIndex
 	bdIdxAgent2 bdidx.BDIndex
@@ -67,8 +68,9 @@ type examplePlugin struct {
 
 // initialize transport & SwIfIndexes then watch, publish & lookup
 func (plugin *examplePlugin) Init() (err error) {
-	plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "br1", "br2"*/)
-	plugin.agent2 = datasync.OfDifferentAgent("agent2")
+	//plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "br1", "br2"*/)
+	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
+
 	// /vnf-agent/agent0/vpp/config/v1/interface/
 	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
 	// /vnf-agent/agent1/vpp/config/v1/bd/
@@ -92,7 +94,7 @@ func (plugin *examplePlugin) publish() (err error) {
 		return err
 	}
 	br2 := &testing.BDMemif100011ToMemif100012
-	err = plugin.agent2.PublishData(l2.BridgeDomainKey(br2.Name), br2)
+	err = plugin.writer.Put(l2.BridgeDomainKey(br2.Name), br2)
 	return err
 }
 
@@ -108,7 +110,7 @@ func (plugin *examplePlugin) consume() (err error) {
 		for watching {
 			select {
 			case bdIdxEvent := <-bdIdxChan:
-				log.WithFields(logging.Fields{"RegistryTitle": bdIdxEvent.RegistryTitle,
+				log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": bdIdxEvent.RegistryTitle,
 					"Name":   bdIdxEvent.Name, //br1, br2
 					"Del":    bdIdxEvent.Del,
 					"IFaces": bdIdxEvent.Metadata.Interfaces}).
@@ -128,7 +130,7 @@ func (plugin *examplePlugin) consume() (err error) {
 func (plugin *examplePlugin) lookup() (err error) {
 	// /vnf-agent/agent0/vpp/config/v1/interface/egresXY
 	if _, iface0, found0 := plugin.bdIdxLocal.LookupIdx("local0"); found0 {
-		log.Println("local0 IPs:", iface0.Interfaces)
+		log.DefaultLogger().Println("local0 IPs:", iface0.Interfaces)
 	}
 
 	for i := 0; i < 10; i++ {

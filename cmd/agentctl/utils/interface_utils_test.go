@@ -15,9 +15,10 @@
 package utils_test
 
 import (
+	"testing"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 // Test01UpdateIpv4Address tests correct function of UpdateIpv4Address()

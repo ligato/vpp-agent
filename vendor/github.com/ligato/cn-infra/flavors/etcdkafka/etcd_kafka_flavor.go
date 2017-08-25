@@ -16,44 +16,49 @@ package etcdkafka
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
-	"github.com/ligato/cn-infra/flavors/generic"
-	"github.com/ligato/cn-infra/messaging/kafka"
+	"github.com/ligato/cn-infra/flavors/etcd"
+	"github.com/ligato/cn-infra/flavors/kafka"
+	"github.com/ligato/cn-infra/flavors/local"
 )
 
-// Flavor glues together generic.Flavor plugins with:
-// - ETCD (useful for watching config.)
+// FlavorEtcdKafka glues together FlavorLocal plugins with:
+// - ETCD (useful for watching northbound config.)
 // - Kafka plugins (useful for publishing events)
-type Flavor struct {
-	Generic generic.Flavor
-	Etcd    etcdv3.Plugin
-	Kafka   kafka.Plugin
+type FlavorEtcdKafka struct {
+	*local.FlavorLocal
+	*etcd.FlavorEtcd
+	*kafka.FlavorKafka
 
 	injected bool
 }
 
 // Inject sets object references
-func (f *Flavor) Inject() error {
+func (f *FlavorEtcdKafka) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
-
-	f.Generic.Inject()
-
-	f.Etcd.LogFactory = &f.Generic.Logrus
-	f.Etcd.ServiceLabel = &f.Generic.ServiceLabel
-	f.Etcd.StatusCheck = &f.Generic.StatusCheck
-	f.Kafka.LogFactory = &f.Generic.Logrus
-	f.Kafka.ServiceLabel = &f.Generic.ServiceLabel
-	f.Kafka.StatusCheck = &f.Generic.StatusCheck
-
 	f.injected = true
 
-	return nil
+	if f.FlavorLocal == nil {
+		f.FlavorLocal = &local.FlavorLocal{}
+	}
+	f.FlavorLocal.Inject()
+
+	if f.FlavorEtcd == nil {
+		f.FlavorEtcd = &etcd.FlavorEtcd{FlavorLocal: f.FlavorLocal}
+	}
+	f.FlavorEtcd.Inject()
+
+	if f.FlavorKafka == nil {
+		f.FlavorKafka = &kafka.FlavorKafka{FlavorLocal: f.FlavorLocal}
+	}
+	f.FlavorKafka.Inject()
+
+	return true
 }
 
 // Plugins combines all Plugins in flavor to the list
-func (f *Flavor) Plugins() []*core.NamedPlugin {
+func (f *FlavorEtcdKafka) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
 }

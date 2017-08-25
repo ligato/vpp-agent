@@ -193,7 +193,7 @@ vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
     Log Many    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/static_fib.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bd/fib/${mac}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bd/${bd_name}/fib/${mac}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}

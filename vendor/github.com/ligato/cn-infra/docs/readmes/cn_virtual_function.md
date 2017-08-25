@@ -24,3 +24,6 @@ Depending on the desired functionality, scale and performance, a cloud-
 native VNF may provide a high-performance data plane, such as the [VPP][2].
 
 Cloud-native VNFs are also known as "CNFs".
+
+[1]: https://12factor.net
+[2]: https://fd.io

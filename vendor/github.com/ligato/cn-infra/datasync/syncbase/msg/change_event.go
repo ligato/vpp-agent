@@ -16,9 +16,10 @@ package msg
 
 import (
 	"encoding/json"
+
 	"github.com/golang/protobuf/proto"
-	"github.com/ligato/cn-infra/db"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // NewChangeWatchResp is a constructor
@@ -33,12 +34,12 @@ type ChangeWatchResp struct {
 }
 
 // GetChangeType - see the comment in implemented interface datasync.ChangeEvent
-func (ev *ChangeWatchResp) GetChangeType() db.PutDel {
+func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
 	if ev.message.OperationType == PutDel_DEL {
-		return db.Delete
+		return datasync.Delete
 	}
 
-	return db.Put
+	return datasync.Put
 }
 
 // GetKey returns the key associated with the change
@@ -69,6 +70,6 @@ func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (prevExists bool,
 func (ev *ChangeWatchResp) Done(err error) {
 	//TODO publish response to the topic
 	if err != nil {
-		log.Error(err)
+		logroot.StandardLogger().Error(err)
 	}
 }

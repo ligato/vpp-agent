@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package etcdv3 contains abstraction on top of the key-value data store.
+// Package etcdv3 is the implementation of the key-value Data Broker client
+// API for the etcdv3 key-value data store.  See cn-infra/db/keyval for the
+// definition of the key-value Data Broker client API.
 //
 // The entity that provides access to the data store is called BytesConnectionEtcd.
 //
@@ -47,12 +49,12 @@
 //
 //    db := etcd.NewEtcdConnectionUsingClient(client)
 //
-// Created BytesConnectionEtcd implements Broker and Watcher interfaces. The example of use can be seen below.
+// Created BytesConnectionEtcd implements Broker and KeyValProtoWatcher interfaces. The example of use can be seen below.
 //
 // To insert single key-value pair into etcd run:
 //		db.Put(key, data)
 // To remove a value identified by key:
-//      db.Delete(key)
+//      datasync.Delete(key)
 //
 // In addition to single key-value pair approach, the transaction API is provided. Transaction
 // executes multiple operations in a more efficient way than one by one execution.

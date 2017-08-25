@@ -3,7 +3,6 @@ package mem
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db"
 	"github.com/ligato/cn-infra/idxmap"
 )
 
@@ -16,11 +15,11 @@ type CacheHelper struct {
 }
 
 // DoWatching is supposed to be used as a go routine. It select the data from channels in arguments.
-func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.Watcher) {
+func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.KeyValProtoWatcher) {
 	changeChan := make(chan datasync.ChangeEvent, 100)
 	resyncChan := make(chan datasync.ResyncEvent, 100)
 
-	watcher.WatchData(resyncName, changeChan, resyncChan, helper.Prefix)
+	watcher.Watch(resyncName, changeChan, resyncChan, helper.Prefix)
 
 	for {
 		select {
@@ -35,33 +34,33 @@ func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.Watche
 }
 
 // DoChange calls:
-// - RegisterName in case of db.Put
-// - UnregisterName in case of data.Del
+// - Put in case of datasync.Put
+// - Delete in case of data.Del
 func (helper *CacheHelper) DoChange(dataChng datasync.ChangeEvent) error {
 	var err error
 	switch dataChng.GetChangeType() {
-	case db.Put:
+	case datasync.Put:
 		current := proto.Clone(helper.DataPrototype)
 		dataChng.GetValue(current)
 		name, err := helper.ParseName(dataChng.GetKey())
 		if err == nil {
-			helper.IDX.RegisterName(name, current)
+			helper.IDX.Put(name, current)
 		}
-	case db.Delete:
+	case datasync.Delete:
 		name, err := helper.ParseName(dataChng.GetKey())
 		if err == nil {
-			helper.IDX.UnregisterName(name)
+			helper.IDX.Delete(name)
 		}
 	}
 	return err
 }
 
 // DoResync list keys&values in ResyncEvent and then:
-// - RegisterName (for names that are part of ResyncEvent)
-// - UnregisterName (for names that are not part of ResyncEvent)
+// - Put (for names that are part of ResyncEvent)
+// - Delete (for names that are not part of ResyncEvent)
 func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 	var wasError error
-	//idx.RegisterName()
+	//idx.Put()
 	ifaces, found := resyncEv.GetValues()[helper.Prefix]
 	if found {
 		// Step 1: fill the existing things
@@ -77,7 +76,7 @@ func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 			} else {
 				current := proto.Clone(helper.DataPrototype)
 				item.GetValue(current)
-				helper.IDX.RegisterName(ifaceName, current)
+				helper.IDX.Put(ifaceName, current)
 				resyncNames[ifaceName] = nil
 			}
 		}
@@ -86,7 +85,7 @@ func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 		existingNames := []string{} //TODO
 		for _, existingName := range existingNames {
 			if _, found := resyncNames[existingName]; !found {
-				helper.IDX.UnregisterName(existingName)
+				helper.IDX.Delete(existingName)
 			}
 		}
 	}

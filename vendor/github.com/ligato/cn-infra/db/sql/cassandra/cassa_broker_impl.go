@@ -49,7 +49,7 @@ type ErrIterator struct {
 
 // Put - see the description in interface sql.Broker.Put().
 // Put generates statement & binding for gocql Exec()
-func (pdb *BrokerCassa) Put(where sql.Expression, pointerToAStruct interface{} /*TODO TTL, opts ...keyval.PutOption*/) error {
+func (pdb *BrokerCassa) Put(where sql.Expression, pointerToAStruct interface{} /*TODO TTL, opts ...datasync.PutOption*/) error {
 	statement, bindings, err := PutExpToString(where, pointerToAStruct)
 
 	if err != nil {
@@ -104,7 +104,7 @@ func (it *ValIterator) GetNext(outVal interface{}) (stop bool) {
 		return !ok //if not ok than stop
 	}
 
-	ptrs := structs.ListExportedFieldsPtrs(outVal, cqlExported)
+	_, ptrs := structs.ListExportedFieldsPtrs(outVal, cqlExported)
 	ok := it.Delegate.Scan(ptrs...)
 	return !ok //if not ok than stop
 }

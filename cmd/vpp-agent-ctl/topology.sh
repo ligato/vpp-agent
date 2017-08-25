@@ -67,7 +67,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop-bvi2 
 EOF
 
 # VSWITCH - add static route to 6.0.0.0/24 via GigabitEthernet0/8/0
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0m24-8.42.0.1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0/24/8.42.0.1 - << EOF
 {
   "description": "Static route",
   "dst_ip_addr": "6.0.0.0/24",

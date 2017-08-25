@@ -19,7 +19,8 @@ import (
 	"os/signal"
 )
 
-// EventLoopWithInterrupt initializes Agent with plugins. Agent is stopped when CloseChannel is closed or SIGINT is received.
+// EventLoopWithInterrupt starts the agent and waits for the channel event event.
+// Agent is stopped when CloseChannel is closed or user interrupt (SIGINT) is received.
 func EventLoopWithInterrupt(agent *Agent, closeChan chan struct{}) error {
 	err := agent.Start()
 	if err != nil {

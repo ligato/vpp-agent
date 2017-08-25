@@ -28,9 +28,9 @@ import (
 
 // Cache the VETH interfaces of a particular agent by watching transport. If change appears, it is registered in
 // idx map
-func Cache(watcher datasync.Watcher, caller core.PluginName) LinuxIfIndex {
+func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) LinuxIfIndex {
 	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
-	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), caller, resyncName, IndexMetadata))
+	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),

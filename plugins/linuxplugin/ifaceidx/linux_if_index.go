@@ -120,7 +120,7 @@ func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber core.PluginName, plugi
 
 // IndexMetadata creates indexes for metadata. Index for IPAddress will be created
 func IndexMetadata(metaData interface{}) map[string][]string {
-	log.Debug("IndexMetadata ", metaData)
+	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*interfaces.LinuxInterfaces_Interface)

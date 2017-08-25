@@ -15,18 +15,19 @@
 package client
 
 import (
-	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/onsi/gomega"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/onsi/gomega"
 )
 
 func ExampleAsyncProducer() {
-	log := logroot.Logger()
+	log := logroot.StandardLogger()
 
 	//init config
-	config := NewConfig(logroot.Logger())
+	config := NewConfig(logroot.StandardLogger())
 	config.SetBrokers("localhost:9091", "localhost:9092")
 	config.SetSendSuccess(true)
 	config.SetSuccessChan(make(chan *ProducerMessage))

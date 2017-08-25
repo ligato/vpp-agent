@@ -26,20 +26,22 @@ import (
 
 	"github.com/namsral/flag"
 
+	"net"
+
+	"github.com/ligato/cn-infra/config"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/cn-infra/utils/config"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
-	"net"
 )
 
 var (
@@ -48,7 +50,7 @@ var (
 )
 
 func main() {
-	log = logroot.Logger()
+	log = logroot.StandardLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 
@@ -393,7 +395,7 @@ func etcdDump(bDB *etcdv3.BytesConnectionEtcd, key string) {
 }
 
 func etcdDel(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	found, err := bDB.Delete(key, keyval.WithPrefix())
+	found, err := bDB.Delete(key, datasync.WithPrefix())
 	if err != nil {
 		log.Error(err)
 		return
@@ -435,7 +437,7 @@ func deleteRoute(db keyval.ProtoBroker, routeDstIP string, routeNhIP string) {
 		log.Errorf("Error parsing address %v", routeDstIP)
 		return
 	}
-	path := l3.RouteKey(0, dstNetAddr, "192.168.1.12")
+	path := l3.RouteKey(0, dstNetAddr, "192.168.1.13")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }

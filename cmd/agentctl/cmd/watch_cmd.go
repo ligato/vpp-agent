@@ -17,11 +17,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/buger/goterm"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 var watchCommand = &cobra.Command{

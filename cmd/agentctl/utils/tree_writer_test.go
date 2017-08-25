@@ -16,11 +16,12 @@ package utils_test
 
 import (
 	"fmt"
+	"testing"
+	"text/template"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/onsi/gomega"
-	"testing"
-	"text/template"
 )
 
 // Test01TreeWriter Tests functionality of FlushTree() called with tree writer. If the provided template is processed

@@ -23,7 +23,7 @@ import (
 
 // VppSetL2XConnect creates xConnect between two existing interfaces
 func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppChan *govppapi.Channel) error {
-	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
+	log.DefaultLogger().Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 
 	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.TxSwIfIndex = transmitIfaceIndex
@@ -39,13 +39,13 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppCh
 		return fmt.Errorf("Creating xConnect returned %d", reply.Retval)
 	}
 
-	log.WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect created.")
+	log.DefaultLogger().WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect created.")
 	return nil
 }
 
 // VppUnsetL2XConnect removes xConnect between two interfaces
 func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppChan *govppapi.Channel) error {
-	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
+	log.DefaultLogger().Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 
 	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.RxSwIfIndex = receiveIfaceIndex
@@ -61,6 +61,6 @@ func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vpp
 		return fmt.Errorf("Removing xConnect returned %d", reply.Retval)
 	}
 
-	log.WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect removed.")
+	log.DefaultLogger().WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect removed.")
 	return nil
 }

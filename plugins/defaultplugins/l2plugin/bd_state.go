@@ -58,7 +58,7 @@ type BridgeDomainStateNotification struct {
 func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
-	log.Info("Initializing BridgeDomainStateUpdater")
+	log.DefaultLogger().Info("Initializing BridgeDomainStateUpdater")
 
 	plugin.bdIndex = bdIndexes
 	plugin.swIfIndexes = swIfIndexes
@@ -88,9 +88,9 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 	defer plugin.wg.Done()
 
 	if plugin.notificationChan != nil {
-		log.Info("watchVPPNotifications for bridge domain state started")
+		log.DefaultLogger().Info("watchVPPNotifications for bridge domain state started")
 	} else {
-		log.Error("failed to start watchVPPNotifications for bridge domain state")
+		log.DefaultLogger().Error("failed to start watchVPPNotifications for bridge domain state")
 		return
 	}
 
@@ -108,7 +108,7 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 					})
 				}
 			default:
-				log.WithFields(log.Fields{"MessageName": msg.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
+				log.DefaultLogger().WithFields(log.Fields{"MessageName": msg.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
 			}
 		case bdIdxDto := <-plugin.bdIdxChan:
 			bdIdxDto.Done()
@@ -132,7 +132,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 	bdState.Index = msg.BdID
 	name, _, found := plugin.bdIndex.LookupName(msg.BdID)
 	if !found {
-		log.Warnf("Unable to store bridge domain state, index %v is not in the mapping", msg.BdID)
+		log.DefaultLogger().Warnf("Unable to store bridge domain state, index %v is not in the mapping", msg.BdID)
 		return bdState
 	}
 	bdState.InternalName = name
@@ -157,7 +157,7 @@ func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.Br
 		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
 		name, _, found := plugin.swIfIndexes.LookupName(swIfaceDetails.SwIfIndex)
 		if !found {
-			log.Debugf("Interface name for index %v not found for bridge domain status", swIfaceDetails)
+			log.DefaultLogger().Debugf("Interface name for index %v not found for bridge domain status", swIfaceDetails)
 			bdIfaceState.Name = "unknown"
 		} else {
 			bdIfaceState.Name = name

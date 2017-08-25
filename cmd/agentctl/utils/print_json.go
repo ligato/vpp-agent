@@ -18,11 +18,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/logrusorgru/aurora.git"
 )
 
@@ -35,8 +37,10 @@ const (
 	BdConfig = "BRIDGE DOMAINS CONFIG"
 	// BdState labels used by json formatter
 	BdState = "BRIDGE DOMAINS State"
-	// FibConfig labels used by json formatter
-	FibConfig = "FIB TABLE"
+	// L2FibConfig labels used by json formatter
+	L2FibConfig = "L2 FIB TABLE"
+	// L3FibConfig labels used by json formatter
+	L3FibConfig = "L3 FIB TABLE"
 	// Format
 	indent    = "  "
 	emptyJSON = "{}"
@@ -65,7 +69,8 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		ifaceStateDataRoot, ifaceStateKeys := getInterfaceStateData(vd.Interfaces)
 		l2ConfigDataRoot, l2Keys := getL2ConfigData(vd.BridgeDomains)
 		l2StateDataRoot, l2Keys := getL2StateData(vd.BridgeDomains)
-		fibDataRoot, fibKeys := getFIBData(vd.FibTableEntries)
+		l2FibDataRoot, l2FibKeys := getL2FIBData(vd.FibTableEntries)
+		l3FibDataRoot, l3FibKeys := getL3FIBData(vd.StaticRoutes)
 
 		// Interface config data
 		jsConfData, err := json.MarshalIndent(ifaceConfDataRoot, "", indent)
@@ -87,9 +92,13 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		if err != nil {
 			wasError = err
 		}
-
-		// FIB data
-		jsFIBData, err := json.MarshalIndent(fibDataRoot, "", indent)
+		// L2 FIB data
+		jsL2FIBData, err := json.MarshalIndent(l2FibDataRoot, "", indent)
+		if err != nil {
+			wasError = err
+		}
+		// L3 FIB data
+		jsL3FIBData, err := json.MarshalIndent(l3FibDataRoot, "", indent)
 		if err != nil {
 			wasError = err
 		}
@@ -111,9 +120,13 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			printLabel(buffer, key+": - "+BdState+"\n", indent, l2Keys)
 			fmt.Fprintf(buffer, "%s\n", jsL2StateData)
 		}
-		if string(jsFIBData) != emptyJSON {
-			printLabel(buffer, key+": -"+FibConfig+"\n", indent, fibKeys)
-			fmt.Fprintf(buffer, "%s\n", jsFIBData)
+		if string(jsL2FIBData) != emptyJSON {
+			printLabel(buffer, key+": -"+L2FibConfig+"\n", indent, l2FibKeys)
+			fmt.Fprintf(buffer, "%s\n", jsL2FIBData)
+		}
+		if string(jsL3FIBData) != emptyJSON {
+			printLabel(buffer, key+": - "+L3FibConfig+"\n", indent, l3FibKeys)
+			fmt.Fprintf(buffer, "%s\n", jsL3FIBData)
 		}
 
 	}
@@ -229,13 +242,29 @@ func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string
 	return &l2StateRoot, keyset
 }
 
-// Get FIB data and create full FIB proto structure
-func getFIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
+// Get L2 FIB data and create full L2 FIB proto structure
+func getL2FIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
 	fibRoot := l2.FibTableEntries{}
 	fibRoot.FibTableEntry = fibData.FibTable
 	var keyset []string
 	for _, fib := range fibData.FibTable {
 		keyset = append(keyset, l2.FibKey(fib.BridgeDomain, fib.PhysAddress))
+	}
+	sort.Strings(keyset)
+
+	return &fibRoot, keyset
+}
+
+// Get L3 FIB data and create full L3 FIB proto structure
+func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
+	fibRoot := l3.StaticRoutes{}
+	fibRoot.Route = fibData.Routes
+	var keyset []string
+	for _, fib := range fibData.Routes {
+		_, dstNetAddr, err := net.ParseCIDR(fib.DstIpAddr)
+		if err == nil {
+			keyset = append(keyset, l3.RouteKey(fib.VrfId, dstNetAddr, fib.NextHopAddr))
+		}
 	}
 	sort.Strings(keyset)
 

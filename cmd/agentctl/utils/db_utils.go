@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/statuscheck/model/status"
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -109,7 +109,7 @@ type XconnectWithMD struct {
 // Etcd metadata
 type StaticRoutesWithMD struct {
 	VppMetaData
-	l3.StaticRoutes
+	Routes []*l3.StaticRoutes_Route
 }
 
 // VppStatusWithMD contains a VPP Status data record and its Etcd
@@ -357,11 +357,14 @@ func readXconnectFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []
 }
 
 func readRoutesFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
-	routes := l3.StaticRoutes{}
-	found, rev, err := readDataFromDb(db, key, &routes)
+	route := &l3.StaticRoutes_Route{}
+	found, rev, err := readDataFromDb(db, key, route)
+
 	if found && err == nil {
+		staticRoutes := vd.StaticRoutes.Routes
+		staticRoutes = append(staticRoutes, route)
 		vd.StaticRoutes =
-			StaticRoutesWithMD{VppMetaData{rev, key}, routes}
+			StaticRoutesWithMD{VppMetaData{rev, key}, staticRoutes}
 	}
 	return vd, err
 }

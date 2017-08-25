@@ -1,8 +1,9 @@
 package addrs
 
 import (
-	"github.com/onsi/gomega"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 func TestMacIntToString(t *testing.T) {

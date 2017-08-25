@@ -15,10 +15,12 @@
 package testing
 
 import (
+	"strconv"
+
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"strconv"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // TableData with 3x VPP, every with 3 interfaces. With such a data, all filtering options can be tested
@@ -122,7 +124,7 @@ func JSONData() utils.EtcdDump {
 		},
 	}
 
-	// Fib data
+	// L2 Fib data
 	fibTableEntries := []*l2.FibTableEntries_FibTableEntry{}
 	fibTableEntry := &l2.FibTableEntries_FibTableEntry{
 		PhysAddress: "ff:ff:ff:ff:ff:ff",
@@ -131,6 +133,22 @@ func JSONData() utils.EtcdDump {
 
 	fibData := utils.FibTableWithMD{
 		FibTable: fibTableEntries,
+	}
+
+	// L3 Fib data
+	l3FibTableEntries := []*l3.StaticRoutes_Route{}
+	l3FibTableEntry := &l3.StaticRoutes_Route{
+		VrfId:             1,
+		DstIpAddr:         "192.168.2.0/24",
+		NextHopAddr:       "192.168.1.1",
+		OutgoingInterface: "eth0",
+		Weight:            5,
+		Preference:        0,
+	}
+	l3FibTableEntries = append(l3FibTableEntries, l3FibTableEntry)
+
+	l3FibData := utils.StaticRoutesWithMD{
+		Routes: l3FibTableEntries,
 	}
 
 	etcdDump := make(map[string]*utils.VppData)
@@ -146,12 +164,14 @@ func JSONData() utils.EtcdDump {
 		Interfaces:      interfaceMap,
 		BridgeDomains:   bridgeDomainMap,
 		FibTableEntries: fibData,
+		StaticRoutes:    l3FibData,
 	}
 
 	etcdDump["vpp2"] = &utils.VppData{
 		Interfaces:      interfaceMap,
 		BridgeDomains:   bridgeDomainMap,
 		FibTableEntries: fibData,
+		StaticRoutes:    l3FibData,
 	}
 
 	return etcdDump

@@ -38,15 +38,16 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences are applied
 // through the VPP binary API.
 type FIBConfigurator struct {
-	GoVppmux      *govppmux.GOVPPPlugin
-	SwIfIndexes   ifaceidx.SwIfIndex
-	BdIndexes     bdidx.BDIndex
-	IfToBdIndexes idxvpp.NameToIdxRW //TODO use rather BdIndexes.LookupNameByIfaceName
-	FibIndexes    idxvpp.NameToIdxRW
-	FibIndexSeq   uint32
-	FibDesIndexes idxvpp.NameToIdxRW // Serves as a cache for FIBs which cannot be configured immediately
-	vppChannel    *govppapi.Channel
-	vppcalls      *vppcalls.L2FibVppCalls
+	GoVppmux        *govppmux.GOVPPPlugin
+	SwIfIndexes     ifaceidx.SwIfIndex
+	BdIndexes       bdidx.BDIndex
+	IfToBdIndexes   idxvpp.NameToIdxRW //TODO use rather BdIndexes.LookupNameByIfaceName
+	FibIndexes      idxvpp.NameToIdxRW
+	FibIndexSeq     uint32
+	FibDesIndexes   idxvpp.NameToIdxRW // Serves as a cache for FIBs which cannot be configured immediately
+	syncVppChannel  *govppapi.Channel
+	asyncVppChannel *govppapi.Channel
+	vppcalls        *vppcalls.L2FibVppCalls
 }
 
 // FIBMeta metadata holder holds information about entry interface and bridge domain
@@ -59,23 +60,27 @@ type FIBMeta struct {
 
 // Init goroutines, mappings, channels, ...
 func (plugin *FIBConfigurator) Init() (err error) {
-	log.Debug("Initializing L2 Bridge domains")
+	log.DefaultLogger().Debug("Initializing L2 Bridge domains")
 
 	// Init local mapping
-	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.Logger(), "l2plugin", "fib_des_indexes", nil)
+	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "fib_des_indexes", nil)
 
-	// Init VPP API channel
-	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	// Init 2 VPP API channels to separate synchronous and asynchronous communication
+	plugin.syncVppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	plugin.asyncVppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
 
-	err = vppcalls.CheckMsgCompatibilityForL2FIB(plugin.vppChannel)
+	err = vppcalls.CheckMsgCompatibilityForL2FIB(plugin.syncVppChannel)
 	if err != nil {
 		return err
 	}
 
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.vppChannel)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel)
 	go plugin.vppcalls.WatchFIBReplies()
 
 	return nil
@@ -83,14 +88,14 @@ func (plugin *FIBConfigurator) Init() (err error) {
 
 // Close vpp channel
 func (plugin *FIBConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChannel, plugin.vppcalls)
+	_, err := safeclose.CloseAll(plugin.syncVppChannel, plugin.asyncVppChannel, plugin.vppcalls)
 	return err
 }
 
 // Add configures provided FIB input. Every entry has to contain info about MAC address, interface and
 // bridge domain. If interface or bridge domain is missing, FIB data is cached and recalled if particular entity is registered
 func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
-	log.Infof("Configuring new FIB table entry with MAC %v", fib.PhysAddress)
+	log.DefaultLogger().Infof("Configuring new FIB table entry with MAC %v", fib.PhysAddress)
 
 	if fib.PhysAddress == "" {
 		return fmt.Errorf("No mac address in FIB entry %v", fib)
@@ -104,29 +109,29 @@ func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callba
 	// Check bridge domain presence
 	bdIndex, _, bdFound := plugin.BdIndexes.LookupIdx(fib.BridgeDomain)
 	if !bdFound {
-		log.Infof("FIB entry %v is configured for bridge domain %v which does not exists", fib.PhysAddress, fib.BridgeDomain)
+		log.DefaultLogger().Infof("FIB entry %v is configured for bridge domain %v which does not exists", fib.PhysAddress, fib.BridgeDomain)
 	}
 	// Check interface presence
 	ifIndex, _, ifFound := plugin.SwIfIndexes.LookupIdx(fib.OutgoingInterface)
 	if !ifFound {
-		log.Infof("FIB entry %v is configured for interface %v which does not exists", fib.PhysAddress, fib.OutgoingInterface)
+		log.DefaultLogger().Infof("FIB entry %v is configured for interface %v which does not exists", fib.PhysAddress, fib.OutgoingInterface)
 	}
 	// If either interface or bridge domain is missing, cache FIB table to nc_fib_indexes
 	if !bdFound || !ifFound {
 		// FIB table entry is cached and will be configured when all required configuration is available
 		plugin.FibDesIndexes.RegisterName(fib.PhysAddress, plugin.FibIndexSeq, meta)
-		log.Debugf("Uncofigured FIB entry with name %v added to cache", fib.PhysAddress)
+		log.DefaultLogger().Debugf("Uncofigured FIB entry with name %v added to cache", fib.PhysAddress)
 		plugin.FibIndexSeq++
 		return nil
 	}
 
-	log.Debugf("Configuring FIB entry %v for bridge domain %v and interface %v", fib.PhysAddress, bdIndex, ifIndex)
+	log.DefaultLogger().Debugf("Configuring FIB entry %v for bridge domain %v and interface %v", fib.PhysAddress, bdIndex, ifIndex)
 
 	return plugin.vppcalls.Add(fib.PhysAddress, bdIndex, ifIndex, fib.BridgedVirtualInterface,
 		fib.StaticConfig, func(err error) {
 			// Register
 			plugin.FibIndexes.RegisterName(fib.PhysAddress, plugin.FibIndexSeq, meta)
-			log.Debugf("Fib entry with MAC %v registered", fib.PhysAddress)
+			log.DefaultLogger().Debugf("Fib entry with MAC %v registered", fib.PhysAddress)
 			plugin.FibIndexSeq++
 			callback(err)
 		})
@@ -136,7 +141,7 @@ func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callba
 // if all conditions are fulfilled (interface and bridge domain presence), otherwise new configuration is cached
 func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
 	newFib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
-	log.Infof("Modifying FIB table entry with MAC ", newFib.PhysAddress)
+	log.DefaultLogger().Infof("Modifying FIB table entry with MAC ", newFib.PhysAddress)
 
 	// Remove old entry in necessary
 	oldIfIndex, _, ifaceFound := plugin.SwIfIndexes.LookupIdx(oldFib.OutgoingInterface)
@@ -164,16 +169,16 @@ func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
 	// Check bridge domain presence
 	newBdIndex, _, bdFound := plugin.BdIndexes.LookupIdx(newFib.BridgeDomain)
 	if !bdFound {
-		log.Infof("FIB entry %v is configured for bridge domain %v which does not exists", newFib.PhysAddress, newFib.BridgeDomain)
+		log.DefaultLogger().Infof("FIB entry %v is configured for bridge domain %v which does not exists", newFib.PhysAddress, newFib.BridgeDomain)
 	}
 	// Check interface presence
 	newIfIndex, _, ifFound := plugin.SwIfIndexes.LookupIdx(newFib.OutgoingInterface)
 	if !ifFound {
-		log.Infof("FIB entry %v is configured for interface %v which does not exists", newFib.PhysAddress, newFib.OutgoingInterface)
+		log.DefaultLogger().Infof("FIB entry %v is configured for interface %v which does not exists", newFib.PhysAddress, newFib.OutgoingInterface)
 	}
 	if !bdFound || !ifFound {
 		plugin.FibDesIndexes.RegisterName(newFib.PhysAddress, plugin.FibIndexSeq, meta)
-		log.Debugf("Uncofigured FIB entry with name %v added to cache", newFib.PhysAddress)
+		log.DefaultLogger().Debugf("Uncofigured FIB entry with name %v added to cache", newFib.PhysAddress)
 		plugin.FibIndexSeq++
 		return nil
 	}
@@ -190,14 +195,14 @@ func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
 // have to be available. Request does nothing without this info. If interface (or bridge domain) was removed before,
 // provided FIB data is just unregistered and agent assumes, that VPP removed FIB entry itself
 func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
-	log.Infof("Deleting FIB table entry with MAC ", fib.PhysAddress)
+	log.DefaultLogger().Infof("Deleting FIB table entry with MAC ", fib.PhysAddress)
 
 	// Remove from not configured FIB cache if exists
 	plugin.FibDesIndexes.UnregisterName(fib.PhysAddress)
-	log.Debugf("Uncofigured Fib entry with name %v removed from cache", fib.PhysAddress)
+	log.DefaultLogger().Debugf("Uncofigured Fib entry with name %v removed from cache", fib.PhysAddress)
 	// Unregister
 	plugin.FibIndexes.UnregisterName(fib.PhysAddress)
-	log.Debugf("FIB entry with name %v unregistered", fib.PhysAddress)
+	log.DefaultLogger().Debugf("FIB entry with name %v unregistered", fib.PhysAddress)
 
 	ifIndex, _, ifaceFound := plugin.SwIfIndexes.LookupIdx(fib.OutgoingInterface)
 	if !ifaceFound {
@@ -218,10 +223,10 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, cal
 // LookupFIBEntries iterates over all FIBs belonging to provided bridge domain ID and registers any missing configuration
 // for them
 func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
-	log.Infof("Looking up FIB entries")
+	log.DefaultLogger().Infof("Looking up FIB entries")
 	req := &l2ba.L2FibTableDump{}
 	req.BdID = bridgeDomain
-	reqContext := plugin.vppChannel.SendMultiRequest(req)
+	reqContext := plugin.syncVppChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.L2FibTableDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
@@ -239,7 +244,7 @@ func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 			// Interface
 			interfaceName, _, ifFound := plugin.SwIfIndexes.LookupName(msg.SwIfIndex)
 			if !ifFound {
-				log.Errorf("Interface required for metadata not found, cannot be registered")
+				log.DefaultLogger().Errorf("Interface required for metadata not found, cannot be registered")
 				continue
 			}
 			// Bridge domain
@@ -262,12 +267,12 @@ func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 			} else {
 				static = false
 			}
-			log.Debug("Registering FIB table entry with MAC ", macStr)
+			log.DefaultLogger().Debug("Registering FIB table entry with MAC ", macStr)
 			meta := &FIBMeta{interfaceName, domainName, bvi, static}
 			plugin.FibIndexes.RegisterName(macStr, plugin.FibIndexSeq, meta)
 			plugin.FibIndexSeq++
 		} else {
-			log.Debugf("FIB table entry with MAC %v already registered", macStr)
+			log.DefaultLogger().Debugf("FIB table entry with MAC %v already registered", macStr)
 		}
 	}
 
@@ -278,7 +283,7 @@ func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 // is checked for existence. If resolution is successful, new FIB entry is configured, registered and removed from cache
 func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32,
 	callback func(error)) error {
-	log.Infof("Resolve new interface %v from FIB perspective ", interfaceName)
+	log.DefaultLogger().Infof("Resolve new interface %v from FIB perspective ", interfaceName)
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
 	var wasError error
@@ -296,10 +301,10 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 			// Validate interface/bridge domain pair
 			validated := plugin.validateInterfaceBDPair(interfaceName, bdIndex)
 			if !bdFound || !validated {
-				log.Infof("FIB entry %v - required bridge domain not found", mac)
+				log.DefaultLogger().Infof("FIB entry %v - required bridge domain not found", mac)
 				continue
 			} else if !validated {
-				log.Infof("FIB entry %v - bridge domain %v does not contain interface %v",
+				log.DefaultLogger().Infof("FIB entry %v - bridge domain %v does not contain interface %v",
 					mac, bdIndex, interfaceName)
 				continue
 			} else {
@@ -307,14 +312,14 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 				fibStatic := meta.(*FIBMeta).StaticConfig
 				err := plugin.vppcalls.Add(mac, bdIndex, interfaceIndex, fibBvi,
 					fibStatic, func(err error) {
-						log.WithField("Mac", mac).
+						log.DefaultLogger().WithField("Mac", mac).
 							Infof("Previously not configurable FIB entry with is now configured")
 						// Resolve registration
 						plugin.FibIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 						plugin.FibIndexSeq++
-						log.Debug("Registering FIB entry with MAC %v", mac)
+						log.DefaultLogger().Debug("Registering FIB entry with MAC %v", mac)
 						plugin.FibDesIndexes.UnregisterName(mac)
-						log.WithField("Mac", mac).
+						log.DefaultLogger().WithField("Mac", mac).
 							Debugf("Uncofigured FIB entry removed from cache")
 						callback(err)
 					})
@@ -324,7 +329,7 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 			}
 		}
 	}
-	log.Infof("FIB: resolution of created interface %v is done", interfaceName)
+	log.DefaultLogger().Infof("FIB: resolution of created interface %v is done", interfaceName)
 	return wasError
 }
 
@@ -332,7 +337,7 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 // configuration and added to FIB cache (from Agent perspective, FIB entry is not removed when interface is removed)
 func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, interfaceIndex uint32,
 	callback func(error)) error {
-	log.Infof("Resolve removed interface %v from FIB perspective ", interfaceName)
+	log.DefaultLogger().Infof("Resolve removed interface %v from FIB perspective ", interfaceName)
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
 	var wasError error
@@ -353,10 +358,10 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 				err := plugin.vppcalls.Delete(mac, bdIndex, interfaceIndex, func(err error) {
 					// Resolve registration
 					plugin.FibIndexes.UnregisterName(mac)
-					log.Debug("Unregister FIB entry with MAC %v", mac)
+					log.DefaultLogger().Debug("Unregister FIB entry with MAC %v", mac)
 					plugin.FibDesIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 					plugin.FibIndexSeq++
-					log.Debugf("Uncofigured FIB entry with MAC %v added to cache", mac)
+					log.DefaultLogger().Debugf("Uncofigured FIB entry with MAC %v added to cache", mac)
 					callback(err)
 				})
 				if err != nil {
@@ -365,7 +370,7 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 			}
 		}
 	}
-	log.Infof("FIB: resolution of removed interface %v is done", interfaceName)
+	log.DefaultLogger().Infof("FIB: resolution of removed interface %v is done", interfaceName)
 	return wasError
 }
 
@@ -373,7 +378,7 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 // interface is checked for existence. If resolution is successful, new FIB entry is configured, registered and removed
 // from cache
 func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
-	log.Infof("Resolve created bridge domain %v from FIB perspective ", domainID)
+	log.DefaultLogger().Infof("Resolve created bridge domain %v from FIB perspective ", domainID)
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
 	var wasError error
@@ -386,24 +391,24 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 			// Validate interface/bridge domain pair
 			validated := plugin.validateInterfaceBDPair(fibInterface, domainID)
 			if !ifFound {
-				log.Infof("FIB entry %v - required interface %v not found", mac, fibInterface)
+				log.DefaultLogger().Infof("FIB entry %v - required interface %v not found", mac, fibInterface)
 				continue
 			}
 			if !validated {
-				log.Infof("FIB entry %v - required interface %v is not a part of bridge domain %v",
+				log.DefaultLogger().Infof("FIB entry %v - required interface %v is not a part of bridge domain %v",
 					mac, domainID)
 				continue
 			} else {
 				fibBvi := meta.(*FIBMeta).BVI
 				fibStatic := meta.(*FIBMeta).StaticConfig
 				err := plugin.vppcalls.Add(mac, domainID, ifIndex, fibBvi, fibStatic, func(err error) {
-					log.Infof("Previously not configurable FIB entry with MAC %v is now configured", mac)
+					log.DefaultLogger().Infof("Previously not configurable FIB entry with MAC %v is now configured", mac)
 					// Resolve registration
 					plugin.FibIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 					plugin.FibIndexSeq++
-					log.Debug("Registering FIB table entry with MAC ", mac)
+					log.DefaultLogger().Debug("Registering FIB table entry with MAC ", mac)
 					plugin.FibDesIndexes.UnregisterName(mac)
-					log.Debugf("Unconfigured FIB entry with MAC %v removed from cache", mac)
+					log.DefaultLogger().Debugf("Unconfigured FIB entry with MAC %v removed from cache", mac)
 					callback(err)
 				})
 				if err != nil {
@@ -412,14 +417,14 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 			}
 		}
 	}
-	log.Infof("FIB: resolution of created bridge domain %v is done", domainName)
+	log.DefaultLogger().Infof("FIB: resolution of created bridge domain %v is done", domainName)
 	return wasError
 }
 
 // ResolveDeletedBridgeDomain if BD was deleted. All FIB entries belonging to this bridge domain are removed from
 // configuration and added to FIB cache (from Agent perspective, FIB entry is not removed when bridge domain vanishes)
 func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
-	log.Infof("Resolve removed bridge domain %v from FIB perspective ", domainID)
+	log.DefaultLogger().Infof("Resolve removed bridge domain %v from FIB perspective ", domainID)
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
 	var wasError error
@@ -429,7 +434,7 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 			// Check bridge domain
 			fibBridgeDomain := meta.(*FIBMeta).BridgeDomainName
 			if domainName != fibBridgeDomain {
-				log.Warnf("Stopped")
+				log.DefaultLogger().Warnf("Stopped")
 				continue
 			}
 			// Check interface
@@ -441,9 +446,9 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 				err := plugin.vppcalls.Delete(mac, domainID, ifIndex, func(err error) {
 					// Resolve registration
 					plugin.FibIndexes.UnregisterName(mac)
-					log.Debug("Unregister FIB table entry with MAC ", mac)
+					log.DefaultLogger().Debug("Unregister FIB table entry with MAC ", mac)
 					plugin.FibDesIndexes.UnregisterName(mac) // if exists
-					log.Debugf("Uncofigured FIB entry with MAC %v removed from cache", mac)
+					log.DefaultLogger().Debugf("Uncofigured FIB entry with MAC %v removed from cache", mac)
 					callback(err)
 				})
 				if err != nil {
@@ -452,7 +457,7 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 			}
 		}
 	}
-	log.Infof("FIB: resolution of removed bridge domain %v is done", domainName)
+	log.DefaultLogger().Infof("FIB: resolution of removed bridge domain %v is done", domainName)
 	return wasError
 }
 
@@ -460,11 +465,11 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 func (plugin *FIBConfigurator) validateInterfaceBDPair(interfaceName string, bridgeDomainIndex uint32) bool {
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
-		log.Debugf("FIB validation - Interface %v not registered as a pair with any bridge domain", interfaceName)
+		log.DefaultLogger().Debugf("FIB validation - Interface %v not registered as a pair with any bridge domain", interfaceName)
 		return false
 	}
 	if meta == nil {
-		log.Errorf("Interface %v registered as a pair with bridge domain but no meta found", interfaceName)
+		log.DefaultLogger().Errorf("Interface %v registered as a pair with bridge domain but no meta found", interfaceName)
 		return false
 	}
 	wantedIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex

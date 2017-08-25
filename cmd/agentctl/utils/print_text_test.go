@@ -15,12 +15,13 @@
 package utils_test
 
 import (
-	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
-	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/onsi/gomega"
 	"strconv"
 	"strings"
 	"testing"
+
+	data "github.com/ligato/vpp-agent/cmd/agentctl/testing"
+	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
+	"github.com/onsi/gomega"
 )
 
 // Test01VppInterfacePrintText verifies presence of every VPP and an interface from the input data in both

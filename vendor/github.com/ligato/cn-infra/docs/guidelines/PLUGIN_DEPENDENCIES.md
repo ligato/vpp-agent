@@ -4,13 +4,32 @@
 ```go
 	package xy
 	import (
-	    "github.com/ligato/cn-infra/logging"
+	    "github.com/ligato/cn-infra/flavors/localdeps"
+	    "github.com/ligato/cn-infra/datasync"
 	)
 	
-	type Plugin struct {
-		LogFactory     logging.LogFactory `inject:`
-		//other dependencies ...
+	type PluginXY struct {
+	    // dependencies
+	    Dep
+
+		//other fields (usually private fields) ...
 	}
+	
+	type Dep struct {
+	    localdeps.PluginLogDeps //Plugin Logger & Plugin Name
+	    
+	    //other dependencies:
+	    
+	    Watcher datasync.KeyValProtoWatcher
+	}
+	
+    func (plugin *PluginXY) Init() error {
+        //using the dependency (following line is shortcut for plugin.Dep.PluginLogDeps.Log)
+        plugin.Log.Info("using injected logger in flavor")
+        
+        return nil
+    }  
+
 ```
 	
 2. For plugins, constructors are not needed. The reasons:
@@ -19,7 +38,7 @@
     see []StartAgent in the example main() function the 
     [simple agent example](../../examples/simple-agent)
 
-3. You can prefer [hand written code](../../examples/simple-agent/generic/generic.go) 
-   that injects all dependencies between plugins or [automatic injection](https://godoc.org/github.com/facebookgo/inject)
+3. Prefer [hand written code](../../flavors/rpc/rpc_flavor.go) 
+   that injects all dependencies between plugins
    
 4. Reusable combination of multiple plugins is called a [Flavor](PLUGIN_FLAVORS.md).

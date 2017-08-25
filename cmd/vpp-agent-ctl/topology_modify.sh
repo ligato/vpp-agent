@@ -25,7 +25,7 @@ vpp-agent-ctl -del /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-r
 vpp-agent-ctl -del /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswitch
 
 # VSWITCH - add one more static route
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/20.5.0.0m24-8.42.0.1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/20.5.0.0/24/8.42.0.1 - << EOF
 {
   "description": "Static route 2",
   "dst_ip_addr": "20.5.0.0/24",

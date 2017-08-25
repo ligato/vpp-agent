@@ -15,19 +15,46 @@
 package keyval
 
 import (
-	"github.com/ligato/cn-infra/db"
+	"time"
+
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // ProtoWatcher define API for monitoring changes in a datastore
 type ProtoWatcher interface {
 	// Watch starts to monitor changes associated with the keys. Watch events will be delivered to respChan.
-	Watch(respChan chan ProtoWatchResp, key ...string) error
+	Watch(respChan func(ProtoWatchResp), key ...string) error
 }
 
 // ProtoWatchResp represents a notification about change. It is sent through the watch resp channel.
 type ProtoWatchResp interface {
-	ProtoKvPair
-	GetChangeType() db.PutDel
-	// GetPrevValue unmarshals the value before the change into the msg argument
-	GetRevision() int64
+	datasync.ChangeValue
+	datasync.WithKey
+}
+
+// ToChanProto creates a callback that can be passed to the Watch function in order to receive
+// notifications through a channel. If the notification can not be delivered until timeout it is dropped.
+func ToChanProto(ch chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatchResp) {
+
+	timeout := datasync.DefaultNotifTimeout
+	logger := logroot.StandardLogger()
+
+	for _, opt := range opts {
+		switch opt.(type) {
+		case *core.WithLoggerOpt:
+			logger = opt.(*core.WithLoggerOpt).Logger
+		case *core.WithTimeoutOpt:
+			timeout = opt.(*core.WithTimeoutOpt).Timeout
+		}
+	}
+
+	return func(dto ProtoWatchResp) {
+		select {
+		case ch <- dto:
+		case <-time.After(timeout):
+			logger.Warn("Unable to deliver notification")
+		}
+	}
 }

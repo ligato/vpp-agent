@@ -15,22 +15,31 @@
 package core
 
 import (
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"reflect"
+
+	"github.com/ligato/cn-infra/logging/logroot"
 )
+
+// Flavor is structure that contains a particular combination of plugins
+// (fields of plugins)
+type Flavor interface {
+	// Plugins returns list of plugins.
+	// Name of the plugin is supposed to be related to field name of Flavor struct
+	Plugins() []*NamedPlugin
+}
 
 // ListPluginsInFlavor uses reflection to traverse top level fields of Flavor structure.
 // It extracts all plugins and returns them as a slice of NamedPlugins.
-func ListPluginsInFlavor(flavor interface{}) (plugins []*NamedPlugin) {
-	return listPluginsInFlavor(reflect.ValueOf(flavor))
+func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
+	uniqueness := map[PluginName]Plugin{}
+	return listPluginsInFlavor(reflect.ValueOf(flavor), uniqueness)
 }
 
 // listPluginsInFlavor checks every field and tries to cast it to Plugin or inspect its type recursively.
-func listPluginsInFlavor(flavorValue reflect.Value) []*NamedPlugin {
+func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Plugin) []*NamedPlugin {
 	var res []*NamedPlugin
 
 	flavorType := flavorValue.Type()
-	log.WithField("flavorType", flavorType).Debug("ListPluginsInFlavor")
 
 	if flavorType.Kind() == reflect.Ptr {
 		flavorType = flavorType.Elem()
@@ -41,7 +50,6 @@ func listPluginsInFlavor(flavorValue reflect.Value) []*NamedPlugin {
 	}
 
 	if !flavorValue.IsValid() {
-		log.WithField("flavorType", flavorType).Debug("invalid")
 		return res
 	}
 
@@ -54,21 +62,24 @@ func listPluginsInFlavor(flavorValue reflect.Value) []*NamedPlugin {
 
 			exported := field.PkgPath == "" // PkgPath is empty for exported fields
 			if !exported {
-				log.WithField("fieldName", field.Name).Debug("Unexported field")
 				continue
 			}
 
 			fieldVal := flavorValue.Field(i)
 			plug := fieldPlugin(field, fieldVal, pluginType)
 			if plug != nil {
-				res = append(res, &NamedPlugin{PluginName: PluginName(field.Name), Plugin: plug})
-				log.WithField("fieldName", field.Name).Debug("Found plugin ", field.Type)
+				_, found := uniqueness[PluginName(field.Name)]
+				if !found {
+					uniqueness[PluginName(field.Name)] = plug
+					res = append(res, &NamedPlugin{PluginName: PluginName(field.Name), Plugin: plug})
+				}
 			} else {
 				// try to inspect flavor structure recursively
-				res = append(res, listPluginsInFlavor(fieldVal)...)
+				res = append(res, listPluginsInFlavor(fieldVal, uniqueness)...)
 			}
 		}
 	}
+
 	return res
 }
 
@@ -84,7 +95,7 @@ func fieldPlugin(field reflect.StructField, fieldVal reflect.Value, pluginType r
 		}
 	case reflect.Ptr, reflect.Interface:
 		if fieldVal.IsNil() {
-			log.WithField("fieldName", field.Name).Debug("Field is nil ", pluginType)
+			logroot.StandardLogger().WithField("fieldName", field.Name).Debug("Field is nil ", pluginType)
 		} else if plug, ok := fieldVal.Interface().(Plugin); ok {
 			return plug
 		}

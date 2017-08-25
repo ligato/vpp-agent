@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package logmanager provides a plugin that allows to manage log levels of loggers using HTTP.
+// Package logmanager implements the log manager that allows users to set
+// log levels at run-time via a REST API.
 package logmanager

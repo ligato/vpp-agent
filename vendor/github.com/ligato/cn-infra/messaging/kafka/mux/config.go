@@ -2,10 +2,9 @@ package mux
 
 import (
 	"github.com/Shopify/sarama"
-	"github.com/ghodss/yaml"
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
-	"io/ioutil"
 )
 
 // DefAddress default kafka address/port (if not specified in config)
@@ -27,19 +26,12 @@ type ConsumerFactory func(topics []string, groupId string) (*client.Consumer, er
 // valid configuration, the parsed configuration is
 // returned; otherwise, an error is returned.
 func ConfigFromFile(fpath string) (*Config, error) {
-	b, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		return nil, err
-	}
-
 	cfg := &Config{}
-
-	err = yaml.Unmarshal(b, cfg)
+	err := config.ParseConfigFromYamlFile(fpath, cfg)
 	if err != nil {
 		return nil, err
 	}
-
-	return cfg, nil
+	return cfg, err
 }
 
 func getConsumerFactory(config *client.Config) ConsumerFactory {

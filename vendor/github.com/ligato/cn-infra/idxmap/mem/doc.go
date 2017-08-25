@@ -24,9 +24,9 @@
 //
 // To insert a new item into the mapping, execute:
 //
-//     mapping.RegisterName(name, metadata)
+//     mapping.Put(name, value)
 //
-// RegisterName can also be used to overwrite an existing item associated with the name.
+// Put can also be used to overwrite an existing item associated with the name.
 //
 // To retrieve a particular item identified by name run:
 //
@@ -45,7 +45,7 @@
 //
 // If you want to remove an item from the mapping:
 //
-//    mapping.UnregisterName(name)
+//    mapping.Delete(name)
 //
 // To monitor changes, run:
 //    callback := func(notif idxmap.NamedMappingDto) {

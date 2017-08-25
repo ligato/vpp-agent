@@ -14,7 +14,7 @@ func ConfigACL(req *ACLAddReplace, ch *govpp.Channel) error {
 		return err
 	}
 
-	log.Debugf("ACL/REPLACE VPP response: %+v\n", reply)
+	log.DefaultLogger().Debugf("ACL/REPLACE VPP response: %+v\n", reply)
 	if reply.Retval != 0 {
 		return errors.New("VPP returned not success")
 	}
@@ -41,7 +41,7 @@ func DelACL(req *ACLDel, ch *govpp.Channel) error {
 		return err
 	}
 
-	log.Debugf("ACL DEL VPP response: %+v\n", reply)
+	log.DefaultLogger().Debugf("ACL DEL VPP response: %+v\n", reply)
 	if reply.Retval != 0 {
 		return errors.New("VPP returned not success")
 	}
@@ -57,7 +57,7 @@ func ConfigIfACL(ifACL *ACLInterfaceSetACLList, ch *govpp.Channel) error {
 		return err
 	}
 
-	log.Debugf("ACL Interface Set VPP response: %+v\n", reply)
+	log.DefaultLogger().Debugf("ACL Interface Set VPP response: %+v\n", reply)
 	if reply.Retval != 0 {
 		return errors.New("VPP returned not success")
 	}
@@ -74,7 +74,7 @@ func DelIfACL(req *ACLInterfaceSetACLList, ch *govpp.Channel) error {
 		return err
 	}
 
-	log.Debugf("ACL DEL VPP response: %+v\n", reply)
+	log.DefaultLogger().Debugf("ACL DEL VPP response: %+v\n", reply)
 	if reply.Retval != 0 {
 		return errors.New("VPP returned not success")
 	}

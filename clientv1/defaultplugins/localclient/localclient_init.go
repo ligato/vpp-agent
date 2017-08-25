@@ -14,19 +14,13 @@
 
 package localclient
 
-import (
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/persisted/dbsync/local"
-	"github.com/ligato/cn-infra/datasync/syncbase"
-)
-
 // Plugin implements the core.Plugin interface.
 type Plugin struct {
 }
 
 // Init tries to sets the default transport (can be set only if it is nil)
 func (plugin *Plugin) Init() error {
-	return datasync.RegisterTransport(&syncbase.Adapter{Watcher: local.Get()})
+	return nil
 }
 
 // Close does nothing

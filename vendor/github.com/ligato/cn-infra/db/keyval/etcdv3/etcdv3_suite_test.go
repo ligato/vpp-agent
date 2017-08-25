@@ -18,14 +18,15 @@ import (
 	"errors"
 	"testing"
 
+	"time"
+
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/ligato/cn-infra/db"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
-	"time"
 )
 
 var dataBroker *BytesConnectionEtcd
@@ -139,10 +140,10 @@ func (mock *MockTxn) Commit() (*clientv3.TxnResponse, error) {
 func init() {
 	mockKv := &MockKV{}
 	mockKvErr := &MockKVErr{}
-	dataBroker = &BytesConnectionEtcd{Logger: logroot.Logger(), etcdClient: &clientv3.Client{KV: mockKv, Watcher: mockKv}}
-	dataBrokerErr = &BytesConnectionEtcd{Logger: logroot.Logger(), etcdClient: &clientv3.Client{KV: mockKvErr, Watcher: mockKvErr}}
-	pluginDataBroker = &BytesBrokerWatcherEtcd{Logger: logroot.Logger(), kv: mockKv, watcher: mockKv}
-	pluginDataBrokerErr = &BytesBrokerWatcherEtcd{Logger: logroot.Logger(), kv: mockKvErr, watcher: mockKvErr}
+	dataBroker = &BytesConnectionEtcd{Logger: logroot.StandardLogger(), etcdClient: &clientv3.Client{KV: mockKv, Watcher: mockKv}}
+	dataBrokerErr = &BytesConnectionEtcd{Logger: logroot.StandardLogger(), etcdClient: &clientv3.Client{KV: mockKvErr, Watcher: mockKvErr}}
+	pluginDataBroker = &BytesBrokerWatcherEtcd{Logger: logroot.StandardLogger(), kv: mockKv, watcher: mockKv}
+	pluginDataBrokerErr = &BytesBrokerWatcherEtcd{Logger: logroot.StandardLogger(), kv: mockKvErr, watcher: mockKvErr}
 }
 
 func TestNewTxn(t *testing.T) {
@@ -253,8 +254,7 @@ func TestNewWatcher(t *testing.T) {
 
 func TestWatch(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	respChan := make(chan keyval.BytesWatchResp)
-	err := pluginDataBroker.Watch(respChan, "key")
+	err := pluginDataBroker.Watch(func(keyval.BytesWatchResp) {}, "key")
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 }
 
@@ -265,7 +265,7 @@ func TestWatchPutResp(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	createResp := NewBytesWatchPutResp(key, value, rev)
 	gomega.Expect(createResp).NotTo(gomega.BeNil())
-	gomega.Expect(createResp.GetChangeType()).To(gomega.BeEquivalentTo(db.Put))
+	gomega.Expect(createResp.GetChangeType()).To(gomega.BeEquivalentTo(datasync.Put))
 	gomega.Expect(createResp.GetKey()).To(gomega.BeEquivalentTo(key))
 	gomega.Expect(createResp.GetValue()).To(gomega.BeEquivalentTo(value))
 	gomega.Expect(createResp.GetRevision()).To(gomega.BeEquivalentTo(rev))
@@ -277,7 +277,7 @@ func TestWatchDeleteResp(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	createResp := NewBytesWatchDelResp(key, rev)
 	gomega.Expect(createResp).NotTo(gomega.BeNil())
-	gomega.Expect(createResp.GetChangeType()).To(gomega.BeEquivalentTo(db.Delete))
+	gomega.Expect(createResp.GetChangeType()).To(gomega.BeEquivalentTo(datasync.Delete))
 	gomega.Expect(createResp.GetKey()).To(gomega.BeEquivalentTo(key))
 	gomega.Expect(createResp.GetValue()).To(gomega.BeNil())
 	gomega.Expect(createResp.GetRevision()).To(gomega.BeEquivalentTo(rev))

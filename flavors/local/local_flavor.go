@@ -25,7 +25,7 @@ import (
 
 // Flavor glues together multiple plugins to mange VPP configuration using local client.
 type Flavor struct {
-	Base        etcdkafka.Flavor
+	Base        etcdkafka.FlavorEtcdKafka
 	LocalClient localclient.Plugin
 	Resync      resync.Plugin
 	GoVPP       govppmux.GOVPPPlugin
@@ -39,15 +39,14 @@ func (f *Flavor) Inject() error {
 	if f.injected {
 		return nil
 	}
+	f.injected = true
 
 	f.Base.Inject()
 
-	f.GoVPP.StatusCheck = &f.Base.Generic.StatusCheck
-	f.GoVPP.LogFactory = &f.Base.Generic.Logrus
-	f.VPP.ServiceLabel = &f.Base.Generic.ServiceLabel
+	f.GoVPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("govpp")
+	f.VPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("default-plugins")
 	f.VPP.GoVppmux = &f.GoVPP
 
-	f.injected = true
 	return nil
 }
 

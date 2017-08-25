@@ -62,7 +62,7 @@ Platform plugins in the current CN-Infra release provide functionality
 in one of the following functional areas:
 
 * **RPC** - allows to expose application's API via REST or gRPC:
-    * [HTTPmux](httpmux) -  HTTP requests and allows app plugins to define
+    * [REST](rpc/rest) -  HTTP requests and allows app plugins to define
       their own REST APIs.
         
 * **Data Stores** - provides a common data store API for app plugins (the 
@@ -75,7 +75,7 @@ in one of the following functional areas:
   - [Casssandra](db/sql/cassandra) -
     
 * **Messaging** - provides a common API and connectivity to message buses:
-    - Kafka](messaging/kafka) - provides access to Kafka brokers
+    - [Kafka](messaging/kafka) - provides access to a Kafka broker (Sarama)
     
 * **Logging**:
     * [Logrus wrapper](logging/logrus) - implements logging skeleton 
@@ -86,22 +86,27 @@ in one of the following functional areas:
     * [Log Manager](logging/logmanager) - allows the operator to set log
       level for each logger using a REST API.
     
-* **[Health](statuscheck)** - Self health check mechanism between plugins 
+* **[Health](health/statuscheck)** - Self health check mechanism between plugins 
     plus RPCs:
-    - [StatusCheck](statuscheck) - allows to monitor the status of plugins
+    - [StatusCheck](health/statuscheck) - allows to monitor the status of plugins
       and exposes it via HTTP
     - Probes (callable remotely from K8s)
   
 * **Miscellaneous** - value-add plugins supporting the operation of a 
     CN-Infra based application: 
+  - [Config](config) - helpers for loading plugin configuration.
   - [Datasync](datasync/resync) - provides data resynchronization after HA 
     events (restart or connectivity restoration after an outage) for data
     stores, gRPC and REST.
+  - [Flavors](flavors) - predefined reusable collection of plugins.
+  - [IDX Map](idxmap) - reusable thread-safe map with advanced features:
+     - multiple subscribers for watching changes in the map
+     - secondary indexes
   - [ServiceLabel](servicelabel) - provides setting and retrieval of a 
-    unique identifier for a CN-Infra based app. A cloud app typically needs
-    a unique identifier so that it can differentiated from other instances 
-    of the same app or from other apps (e.g. to have its own space in a kv 
-    data store).
+      unique identifier for a CN-Infra based app. A cloud app typically needs
+      a unique identifier so that it can differentiated from other instances 
+      of the same app or from other apps (e.g. to have its own space in a kv 
+      data store).
    
 ## Quickstart
 The following code shows the initialization/start of a simple agent 
@@ -109,7 +114,7 @@ application built on the CN-Infra platform. The code for this example
 can be found [here](examples/simple-agent/agent.go).
 ```
 func main() {
-	flavor := Flavor{}
+	flavor := rpc.FlavorRPC{}
 	agent := core.NewAgent(logroot.Logger(), 15*time.Second, flavor.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
@@ -117,6 +122,20 @@ func main() {
 		os.Exit(1)
 	}
 }
+```
+
+You can run this example code by using pre-build Docker images:
+
+For quick start with the VPP Agent, you can use pre-build Docker images with the Agent and VPP
+on [Dockerhub](https://hub.docker.com/r/ligato/dev-cn-infra/).
+
+1. Run ETCD and Kafka on your host (e.g. in Docker 
+   [using this procedure](examples/simple-agent/README.md)).
+
+2. Run cn-infra example [simple-agent](examples/simple-agent/agent.go).
+```
+docker pull ligato/dev-cn-infra
+docker run -it --name dev-cn-infra --rm ligato/dev-cn-infra
 ```
 
 ## Documentation

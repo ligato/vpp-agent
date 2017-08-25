@@ -36,7 +36,7 @@ var (
 )
 
 func InMemory(reloaded bool) (idxvpp.NameToIdxRW, error) {
-	return NewNameToIdx(logroot.Logger(), "plugin1", "test", nil), nil
+	return NewNameToIdx(logroot.StandardLogger(), "plugin1", "test", nil), nil
 }
 
 func Test01UnregisteredMapsToNothing(t *testing.T) {
@@ -103,7 +103,7 @@ func createIdx(meta interface{}) map[string][]string {
 
 func TestIndexedMetadata(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewNameToIdx(logroot.Logger(), "plugin", "title", createIdx)
+	idxm := NewNameToIdx(logroot.StandardLogger(), "plugin", "title", createIdx)
 
 	res := idxm.LookupNameByMetadata(flagMetaKey, "true")
 	gomega.Expect(res).To(gomega.BeNil())
@@ -152,7 +152,7 @@ func TestIndexedMetadata(t *testing.T) {
 
 func TestOldIndexRemove(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewNameToIdx(logroot.Logger(), "plugin", "title", nil)
+	idxm := NewNameToIdx(logroot.StandardLogger(), "plugin", "title", nil)
 
 	idxm.RegisterName(string(eth0), idx1, nil)
 

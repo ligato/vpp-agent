@@ -15,6 +15,8 @@
 package main
 
 import (
+	"time"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
@@ -23,7 +25,6 @@ import (
 	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"time"
 )
 
 // *************************************************************************
@@ -58,7 +59,7 @@ func main() {
 	namedExamplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(f.Plugins(), namedExamplePlugin)...)
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), namedExamplePlugin)...)
 
 	// End when the GOVPP example is finished
 	go closeExample("GOVPP call example finished", closeChannel)
@@ -69,7 +70,7 @@ func main() {
 // Stop the agent with desired info message
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(10 * time.Second)
-	log.Info(message)
+	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
@@ -102,7 +103,7 @@ func (plugin *ExamplePlugin) Init() error {
 	// Now initialize the plugin configurator
 	err := plugin.exampleConfigurator.Init()
 
-	log.Info("Initialization of the custom plugin for the GOVPP call example is completed")
+	log.DefaultLogger().Info("Initialization of the custom plugin for the GOVPP call example is completed")
 
 	return err
 }
@@ -132,7 +133,7 @@ func (configurator *ExampleConfigurator) Init() (err error) {
 	// sizes for the request and reply Go channels
 	configurator.vppChannel, err = configurator.GoVppmux.NewAPIChannel()
 
-	log.Info("Default plugin configurator ready")
+	log.DefaultLogger().Info("Default plugin configurator ready")
 
 	// Make VPP call
 	go configurator.VppCall()
@@ -156,7 +157,7 @@ func (configurator *ExampleConfigurator) VppCall() {
 	time.Sleep(3 * time.Second)
 
 	// Prepare a simple data
-	log.Info("Preparing data ...")
+	log.DefaultLogger().Info("Preparing data ...")
 	bds1 := buildData("br1")
 	bds2 := buildData("br2")
 	bds3 := buildData("br3")
@@ -172,7 +173,7 @@ func (configurator *ExampleConfigurator) VppCall() {
 	// Generic bin api reply (request: BridgeDomainAddDel)
 	reply := &bin_api.BridgeDomainAddDelReply{}
 
-	log.Info("Sending data to VPP ...")
+	log.DefaultLogger().Info("Sending data to VPP ...")
 
 	// 1. Send the request and receive a reply directly (in one line)
 	configurator.vppChannel.SendRequest(req1).ReceiveReply(reply)
@@ -184,7 +185,7 @@ func (configurator *ExampleConfigurator) VppCall() {
 	reqCtx2.ReceiveReply(reply)
 	reqCtx3.ReceiveReply(reply)
 
-	log.Info("Data sent to VPP")
+	log.DefaultLogger().Info("Data sent to VPP")
 }
 
 // Auxiliary function to build bridge domain data

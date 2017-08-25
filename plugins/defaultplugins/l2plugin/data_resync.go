@@ -16,6 +16,7 @@ package l2plugin
 
 import (
 	"fmt"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
@@ -28,7 +29,7 @@ import (
 
 // Resync writes BDs to the empty VPP
 func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
-	log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BDs begin.")
 
 	// Step 0: Dump actual state of the VPP
 	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan)
@@ -42,7 +43,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 	// Step 1: delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
 	for vppIdx, vppBD := range vppBDs {
-		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.Logger(), pluginID,
+		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), pluginID,
 			"hack_sw_if_indexes", ifaceidx.IndexMetadata))
 
 		// hack to reuse existing binary call wrappers
@@ -72,24 +73,16 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 	}
 
-	log.WithField("cfg", plugin).Debug("RESYNC BDs end. ", wasError)
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BDs end. ", wasError)
 
 	return wasError
 }
 
 // Resync writes FIBs to the empty VPP
 func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEntry) error {
-	log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 
-	for _, fib := range fibConfig {
-		plugin.Add(fib, func(err2 error) {
-			if err2 != nil {
-				log.Error(err2)
-			}
-		})
-	}
-
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.vppChannel)
+	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.syncVppChannel)
 	if err != nil {
 		return err
 	}
@@ -97,14 +90,22 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 		plugin.LookupFIBEntries(domainID)
 	}
 
-	log.WithField("cfg", plugin).Debug("RESYNC FIBs end.")
+	for _, fib := range fibConfig {
+		plugin.Add(fib, func(err2 error) {
+			if err2 != nil {
+				log.DefaultLogger().Error(err2)
+			}
+		})
+	}
+
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC FIBs end.")
 
 	return nil
 }
 
 // Resync writes XCons to the empty VPP
 func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
-	log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
 
 	err := plugin.LookupXConnectPairs()
 	if err != nil {
@@ -119,7 +120,7 @@ func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnect
 		}
 	}
 
-	log.WithField("cfg", plugin).Debug("RESYNC XConnect end. ", wasError)
+	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC XConnect end. ", wasError)
 
 	return wasError
 }
