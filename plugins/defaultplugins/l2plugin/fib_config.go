@@ -38,15 +38,16 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences are applied
 // through the VPP binary API.
 type FIBConfigurator struct {
-	GoVppmux      *govppmux.GOVPPPlugin
-	SwIfIndexes   ifaceidx.SwIfIndex
-	BdIndexes     bdidx.BDIndex
-	IfToBdIndexes idxvpp.NameToIdxRW //TODO use rather BdIndexes.LookupNameByIfaceName
-	FibIndexes    idxvpp.NameToIdxRW
-	FibIndexSeq   uint32
-	FibDesIndexes idxvpp.NameToIdxRW // Serves as a cache for FIBs which cannot be configured immediately
-	vppChannel    *govppapi.Channel
-	vppcalls      *vppcalls.L2FibVppCalls
+	GoVppmux        *govppmux.GOVPPPlugin
+	SwIfIndexes     ifaceidx.SwIfIndex
+	BdIndexes       bdidx.BDIndex
+	IfToBdIndexes   idxvpp.NameToIdxRW //TODO use rather BdIndexes.LookupNameByIfaceName
+	FibIndexes      idxvpp.NameToIdxRW
+	FibIndexSeq     uint32
+	FibDesIndexes   idxvpp.NameToIdxRW // Serves as a cache for FIBs which cannot be configured immediately
+	syncVppChannel  *govppapi.Channel
+	asyncVppChannel *govppapi.Channel
+	vppcalls        *vppcalls.L2FibVppCalls
 }
 
 // FIBMeta metadata holder holds information about entry interface and bridge domain
@@ -64,18 +65,22 @@ func (plugin *FIBConfigurator) Init() (err error) {
 	// Init local mapping
 	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "fib_des_indexes", nil)
 
-	// Init VPP API channel
-	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	// Init 2 VPP API channels to separate synchronous and asynchronous communication
+	plugin.syncVppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	plugin.asyncVppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
 
-	err = vppcalls.CheckMsgCompatibilityForL2FIB(plugin.vppChannel)
+	err = vppcalls.CheckMsgCompatibilityForL2FIB(plugin.syncVppChannel)
 	if err != nil {
 		return err
 	}
 
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.vppChannel)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel)
 	go plugin.vppcalls.WatchFIBReplies()
 
 	return nil
@@ -83,7 +88,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 
 // Close vpp channel
 func (plugin *FIBConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChannel, plugin.vppcalls)
+	_, err := safeclose.CloseAll(plugin.syncVppChannel, plugin.asyncVppChannel, plugin.vppcalls)
 	return err
 }
 
@@ -221,7 +226,7 @@ func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 	log.DefaultLogger().Infof("Looking up FIB entries")
 	req := &l2ba.L2FibTableDump{}
 	req.BdID = bridgeDomain
-	reqContext := plugin.vppChannel.SendMultiRequest(req)
+	reqContext := plugin.syncVppChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.L2FibTableDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
