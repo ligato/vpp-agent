@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package restsync implements (in ALPHA VERSION) the datasync API for the HTTP/REST transport.
-// This implementation is special (comparing to dbsync or bussync) because
-// it does not use any intermediate persistence between the client & server.
-// Therefore the client does remote calls to each individual server/agent
-// instance (and needs to know its IP address & port).
+// Package restsync implements (in ALPHA VERSION) the datasync API for the
+// HTTP/REST transport. This implementation is special (compared to dbsync
+// or bussync) because it does not use any intermediate persistence between
+// the client and the server. Therefore, the client does remote calls to each
+// individual server/agent instance (and needs to know its IP address & port).
 package restsync

@@ -45,7 +45,7 @@ type Broker interface {
 	//    user := &User{}
 	//    found, err := db.GetValue(query, user)
 	//
-	GetValue(query string, outBinding interface{}) (found bool, err error)
+	GetValue(query Expression, outBinding interface{}) (found bool, err error)
 
 	// ListValues returns an iterator that enables to traverse all items returned by the query
 	// Use utilities to:
@@ -95,7 +95,7 @@ type Broker interface {
 	// Example usage:
 	//
 	//  	 err := db.Exec("CREATE INDEX IF NOT EXISTS...")
-	Exec(statement string) error
+	Exec(statement string, bindings ...interface{}) error
 }
 
 // ValIterator is an iterator returned by ListValues call.

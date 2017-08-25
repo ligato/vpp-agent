@@ -22,6 +22,15 @@ func mkfloat(num string) float64 {
 // digits are shifted. Numbers may have an additional exponent or be the special
 // value NaN, Inf, or -Inf.
 func mkdec(num string) (d Decimal) {
+	var r RoundingContext
+	d.Convert(&r, dec(num))
+	return
+}
+
+type dec string
+
+func (s dec) Convert(d *Decimal, _ *RoundingContext) {
+	num := string(s)
 	if num[0] == '-' {
 		d.Neg = true
 		num = num[1:]
@@ -52,7 +61,7 @@ func mkdec(num string) (d Decimal) {
 	for i := range d.Digits {
 		d.Digits[i] -= '0'
 	}
-	return d.normalize()
+	*d = d.normalize()
 }
 
 func byteNum(s string) []byte {
@@ -77,11 +86,11 @@ func TestDecimalString(t *testing.T) {
 		want string
 	}{
 		{want: "0"},
-		{Decimal{Digits: nil, Exp: 1000}, "0"}, // exponent of 1000 is ignored
-		{Decimal{Digits: byteNum("12345"), Exp: 0}, "0.12345"},
-		{Decimal{Digits: byteNum("12345"), Exp: -3}, "0.00012345"},
-		{Decimal{Digits: byteNum("12345"), Exp: +3}, "123.45"},
-		{Decimal{Digits: byteNum("12345"), Exp: +10}, "1234500000"},
+		{Decimal{digits: digits{Digits: nil, Exp: 1000}}, "0"}, // exponent of 1000 is ignored
+		{Decimal{digits: digits{Digits: byteNum("12345"), Exp: 0}}, "0.12345"},
+		{Decimal{digits: digits{Digits: byteNum("12345"), Exp: -3}}, "0.00012345"},
+		{Decimal{digits: digits{Digits: byteNum("12345"), Exp: +3}}, "123.45"},
+		{Decimal{digits: digits{Digits: byteNum("12345"), Exp: +10}}, "1234500000"},
 	} {
 		if got := test.x.String(); got != test.want {
 			t.Errorf("%v == %q; want %q", test.x, got, test.want)

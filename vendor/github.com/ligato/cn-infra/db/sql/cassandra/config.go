@@ -23,17 +23,16 @@ import (
 
 // Config Configuration for Cassandra clients loaded from a configuration file
 type Config struct {
-
 	// A list of host addresses of cluster nodes.
 	Endpoints []string `json:"endpoints"`
 
 	// port for Cassandra (default: 9042)
 	Port int `json:"port"`
 
-	// connection timeout (default: 600ms)
+	// session timeout (default: 600ms)
 	OpTimeout time.Duration `json:"op_timeout"`
 
-	// initial connection timeout, used during initial dial to server (default: 600ms)
+	// initial session timeout, used during initial dial to server (default: 600ms)
 	DialTimeout time.Duration `json:"dial_timeout"`
 
 	// If not zero, gocql attempt to reconnect known DOWN nodes in every ReconnectSleep.

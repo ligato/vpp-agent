@@ -123,6 +123,13 @@ define format_only
     @echo "# done"
 endef
 
+# run test examples
+define test_examples
+    @echo "# Testing examples"
+    @./scripts/test_examples.sh
+    @echo "# done"
+endef
+
 # build all binaries
 build:
 	$(call build_examples_only)
@@ -139,6 +146,10 @@ update-dep:
 # run tests
 test:
 	$(call test_only)
+
+# run smoke tests on examples
+test-examples:
+	$(call test_examples)
 
 # run tests with coverage report
 test-cover:

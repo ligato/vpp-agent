@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package syncbase contains reusable structures in multiple datasync transports.
-// See following reusable structures:
-// - KeyValProtoWatcher that maintains the registrations/subscriptions.
+// Package syncbase defines common structures used in multiple datasync
+// transports. The following reusable structures are defined:
+//
+// - KeyValProtoWatcher maintains watch registrations/subscriptions.
+//
 // - Registry of latest revisions of values per each key synchronized by datasync.
+//
 // - Default implementation of Events & Iterators interfaces defined in data_api.go.
-//   Events & Iterators in this package are reused (but not in all datasync transports).
+//
+// - Events & Iterators in this package are reused by some but all datasync transports.
 package syncbase

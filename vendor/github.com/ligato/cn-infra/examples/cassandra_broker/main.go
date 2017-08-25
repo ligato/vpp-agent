@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/gocql/gocql"
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
-	"github.com/ligato/cn-infra/config"
 	"github.com/willfaught/gockle"
 )
 

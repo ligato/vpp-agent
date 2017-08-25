@@ -2,7 +2,7 @@
 
 ## Flags & Environment variables
 
-1. Ligato source code uses [flag](github.com/namsral/flag) package to define & parse command 
+1. Ligato source code uses [flag](https://github.com/namsral/flag) package to define & parse command 
    line flags and/or environment variables. Plan is to incorporate
    [Viper](https://github.com/spf13/viper)
    that is backward compatible with golang flag package. 
