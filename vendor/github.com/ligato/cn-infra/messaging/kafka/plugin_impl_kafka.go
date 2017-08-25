@@ -94,6 +94,10 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called in the second phase of initialization. The kafka multiplexer
 // is started, all consumers have to be subscribed until this phase.
 func (p *Plugin) AfterInit() error {
+	if p.mx == nil {
+		return nil
+	}
+
 	return p.mx.Start()
 }
 

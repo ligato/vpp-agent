@@ -22,6 +22,18 @@ Also, the client can configure following timeouts:
 - RedialInterval
     - If not zero, gocql attempt to reconnect known DOWN nodes in every ReconnectSleep (ReconnectInterval)
     - Default value is 60s
+- Example
+```go
+    config := &cassandra.Config{
+        Endpoints:      127.0.0.1,
+        Port:           9042,
+        DialTimeout:    600 * time.Millisecond,
+        OpTimeout:      600 * time.Millisecond,
+        RedialInterval: 60 * time.Second,
+    }
+
+    clientConfig, err := cassandra.ConfigToClientConfig(config)
+```
 
 The timeout parameters are defined here [config.go](config.go)
 

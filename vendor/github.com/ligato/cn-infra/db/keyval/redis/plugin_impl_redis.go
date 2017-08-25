@@ -18,22 +18,19 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/namsral/flag"
 )
-
-var defaultConfigFileName string
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
 	Deps
 	*plugin.Skeleton
+	disabled bool
 }
 
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps        //inject
-	ConfigFileName            string // inject optionally
+	localdeps.PluginInfraDeps //inject
 }
 
 // Init is called on plugin startup. It establishes the connection to redis.
@@ -42,6 +39,10 @@ func (p *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
+	if p.disabled {
+		return nil
+	}
+
 	client, err := CreateClient(cfg)
 	if err != nil {
 		return err
@@ -62,19 +63,14 @@ func (p *Plugin) Close() error {
 	return err
 }
 
-func init() {
-	flag.StringVar(&defaultConfigFileName, "redis-config", "",
-		"Location of Redis configuration file; Can also be set via environment variable REDIS_CONFIG")
-}
-
 func (p *Plugin) retrieveConfig() (cfg interface{}, err error) {
-	var configFile string
-	if p.ConfigFileName != "" {
-		configFile = p.ConfigFileName
-	} else if defaultConfigFileName != "" {
-		configFile = defaultConfigFileName
+	found, _ := p.PluginConfig.GetValue(&struct{}{})
+	if !found {
+		p.Log.Info("redis config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		p.disabled = true
+		return nil, nil
 	}
-
+	configFile := p.PluginConfig.GetConfigName()
 	if configFile != "" {
 		cfg, err = LoadConfig(configFile)
 		if err != nil {
@@ -82,4 +78,9 @@ func (p *Plugin) retrieveConfig() (cfg interface{}, err error) {
 		}
 	}
 	return cfg, nil
+}
+
+// Disabled if the plugin was not found
+func (p *Plugin) Disabled() (disabled bool) {
+	return p.disabled
 }

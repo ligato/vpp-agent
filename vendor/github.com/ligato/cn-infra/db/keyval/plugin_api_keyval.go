@@ -25,6 +25,9 @@ type KvProtoPlugin interface {
 	// NewPrefixedWatcher returns a ProtoWatcher instance. Given key prefix is prepended to keys during watch subscribe phase.
 	// The prefix is removed from the key retrieved by GetKey() in ProtoWatchResp. To avoid  using a prefix pass keyval.Root constant as argument.
 	NewWatcher(keyPrefix string) ProtoWatcher
+	// Disabled returns true if there was no configuration and therefore agent
+	// started without connectivity to a particular data store
+	Disabled() bool
 }
 
 // KvBytesPlugin provides unifying interface for different key-value datastore implementations.
