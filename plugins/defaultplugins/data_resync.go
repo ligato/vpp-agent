@@ -115,23 +115,15 @@ func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 			log.DefaultLogger().Debug("Received RESYNC BFD Echo values ", numBfdEchos)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
-			if numBDs > 0 {
-				log.DefaultLogger().Debug("Received RESYNC BD values ", numBDs)
-			}
-			if numL2FIBs > 0 {
-				log.DefaultLogger().Debug("Received RESYNC L2 FIB values ", numL2FIBs)
-			}
+			log.DefaultLogger().Debug("Received RESYNC BD values ", numBDs)
+			log.DefaultLogger().Debug("Received RESYNC L2 FIB values ", numL2FIBs)
 		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			log.DefaultLogger().Debug("Received RESYNC XConnects values ", numXCons)
 		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, key, req)
-			if numVRFs > 0 {
-				log.DefaultLogger().Debug("Received RESYNC VRF values ", numVRFs)
-			}
-			if numL3FIBs > 0 {
-				log.DefaultLogger().Debug("Received RESYNC L3 FIB values ", numL3FIBs)
-			}
+			log.DefaultLogger().Debug("Received RESYNC VRF values ", numVRFs)
+			log.DefaultLogger().Debug("Received RESYNC L3 FIB values ", numL3FIBs)
 		} else {
 			log.DefaultLogger().Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}

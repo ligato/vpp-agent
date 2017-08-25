@@ -359,7 +359,6 @@ func readXconnectFromDb(db keyval.ProtoBroker, vd *VppData, key string, parms []
 func readRoutesFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
 	route := &l3.StaticRoutes_Route{}
 	found, rev, err := readDataFromDb(db, key, route)
-	fmt.Printf("readRouteFromDb: '%v'\n", route)
 
 	if found && err == nil {
 		staticRoutes := vd.StaticRoutes.Routes
@@ -367,7 +366,6 @@ func readRoutesFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData,
 		vd.StaticRoutes =
 			StaticRoutesWithMD{VppMetaData{rev, key}, staticRoutes}
 	}
-	fmt.Printf("readRoutesFromDb vd: '%+v'\n", vd)
 	return vd, err
 }
 

@@ -125,7 +125,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			fmt.Fprintf(buffer, "%s\n", jsL2FIBData)
 		}
 		if string(jsL3FIBData) != emptyJSON {
-			printLabel(buffer, key+": -"+L3FibConfig+"\n", indent, l3FibKeys)
+			printLabel(buffer, key+": - "+L3FibConfig+"\n", indent, l3FibKeys)
 			fmt.Fprintf(buffer, "%s\n", jsL3FIBData)
 		}
 
