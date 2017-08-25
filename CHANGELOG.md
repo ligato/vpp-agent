@@ -41,10 +41,10 @@ New plugins can access API for configured:
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
-VPP Agent is embeddable on different software projects and with different systems
+VPP Agent is embeddable in different software projects and with different systems
 by using [Linux Local Flavor](flavors/linuxlocal) to reuse VPP Agent algorithms.
 For doing this there is [VPP Agent client version 1](clientv1):
-* local client - for configuring embedded VPP Agent (communication inside one operating system process)   
+* local client - for embedded VPP Agent (communication inside one operating system process, VPP Agent effectively used as a library)
 * remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 ## Known Issues
@@ -53,4 +53,4 @@ VPP rejects binary API connectivity when VPP Agent tries to connect
 too early (plan fix this behavior in next release).
 
 ## Compatibility
-VPP version TODO
+VPP version v17.10-rc0~203
