@@ -139,7 +139,7 @@ func resyncAppendRoutes(resyncData datasync.KeyValIterator, key string, req *Dat
 			if err != nil {
 				continue
 			}
-			_, vrfIndex, _ := l3.ParseRouteKey(key)
+			_, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
 			// Ensure every route has the corresponding VRF index
 			intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
 			if err != nil {
@@ -438,7 +438,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
-		isRoute, vrfFromKey, _ := l3.ParseRouteKey(key)
+		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
 		if isRoute {
 			// Route
 			var value, prevValue l3.StaticRoutes_Route
