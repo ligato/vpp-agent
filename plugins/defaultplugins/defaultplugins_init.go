@@ -172,11 +172,6 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 
-	err = plugin.subscribeWatcher()
-	if err != nil {
-		return err
-	}
-
 	gPlugin = plugin
 
 	return nil
@@ -374,8 +369,12 @@ func (plugin *Plugin) initErrorHandler() error {
 func (plugin *Plugin) AfterInit() error {
 	plugin.Log.Debug("vpp plugins AfterInit begin")
 
-	//err := plugin.ifConfigurator.AfterInit()
-	err := plugin.ifStateUpdater.AfterInit()
+	err := plugin.subscribeWatcher()
+	if err != nil {
+		return err
+	}
+
+	err = plugin.ifStateUpdater.AfterInit()
 	if err != nil {
 		return err
 	}
