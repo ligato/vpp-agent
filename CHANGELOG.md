@@ -3,9 +3,9 @@
 ## Major Themes
 
 Algorithms for applying northbound configuration (stored in ETCD key value data store)
-to VPP in proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins): 
+to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins): 
 - network interfaces, especially:
-  - MEMIFs (optimized dataplane network interface tailored for container to container network connectivity)
+  - MEMIFs (optimized dataplane network interface tailored for a container to container network connectivity)
   - VETHs (standard Linux Virtual Ethernet network interface)
   - AF_Packets (for accessing VETHs and similar type of interface)
   - VXLANs, Physical Network Interfaces, loopbacks ...
@@ -34,18 +34,18 @@ Miscellaneous:
  - [logging](https://github.com/ligato/cn-infra/tree/master/logging): changing log level at runtime
 
 ### Extensibility & integration
-Ability extend behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
+Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
 [Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
-VPP Agent is embeddable in different projects and with different systems
+VPP Agent is embeddable on different software projects and with different systems
 by using [Linux Local Flavor](flavors/linuxlocal) to reuse VPP Agent algorithms.
 For doing this there is [VPP Agent client version 1](clientv1):
-* local client - for embedded VPP Agent (communication inside one operating system process)   
-* remote client - for remote configuration while integration with different systems
+* local client - for configuring embedded VPP Agent (communication inside one operating system process)   
+* remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 ## Known Issues
 A rarely occurring problem during startup with binary API connectivity.
