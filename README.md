@@ -97,7 +97,7 @@ docker exec -it vpp agentctl -h
 3. Check the configuration (using agentctl or directly using VPP console):
 ```
 docker exec -it vpp agentctl show
-docker exec -it vpp vppctl
+docker exec -it vpp vppctl -s localhost:5002
 ```
 
 ## Documentation
