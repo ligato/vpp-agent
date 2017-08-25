@@ -3,7 +3,6 @@ package vpp
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/etcdkafka"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/redis"
