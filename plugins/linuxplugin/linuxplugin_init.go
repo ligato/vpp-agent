@@ -62,7 +62,6 @@ func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
 func (plugin *Plugin) Init() error {
-	var err error
 	log.DefaultLogger().Debug("Initializing Linux interface plugin")
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
@@ -82,12 +81,12 @@ func (plugin *Plugin) Init() error {
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
-	err = plugin.subscribeWatcher()
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+// AfterInit runs subscribeWatcher
+func (plugin *Plugin) AfterInit() error {
+	return plugin.subscribeWatcher()
 }
 
 // Close cleans up the resources

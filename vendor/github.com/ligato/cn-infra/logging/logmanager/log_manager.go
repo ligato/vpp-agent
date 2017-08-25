@@ -50,12 +50,17 @@ type Deps struct {
 	HTTP                    *rest.Plugin     // inject
 }
 
-// Init is called at plugin initialization. It register the following handlers:
+// Init does nothing
+func (lm *Plugin) Init() error {
+	return nil
+}
+
+// AfterInit is called at plugin initialization. It register the following handlers:
 // - List all registered loggers:
 //   > curl -X GET http://localhost:<port>/log/list
 // - Set log level for a registered logger:
 //   > curl -X PUT http://localhost:<port>/log/<logger-name>/<log-level>
-func (lm *Plugin) Init() error {
+func (lm *Plugin) AfterInit() error {
 	lm.HTTP.RegisterHTTPHandler(fmt.Sprintf("/log/{%s}/{%s:debug|info|warning|error|fatal|panic}",
 		loggerVarName, levelVarName), lm.logLevelHandler, "PUT")
 	lm.HTTP.RegisterHTTPHandler("/log/list", lm.listLoggersHandler, "GET")

@@ -33,6 +33,7 @@ const (
 type Plugin struct {
 	Deps // inject
 	*plugin.Skeleton
+	disabled bool
 }
 
 // Deps is here to group injected dependencies of plugin
@@ -45,12 +46,12 @@ type Deps struct {
 func (p *Plugin) Init() (err error) {
 	// Retrieve config
 	var cfg Config
-	_, err = p.PluginConfig.GetValue(&cfg)
-	// need to be strict about config presence for ETCD
-	//if !found {
-	//	p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
-	//	return nil
-	//}
+	found, err := p.PluginConfig.GetValue(&cfg)
+	if !found {
+		p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		p.disabled = true
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -82,6 +83,10 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit is called by the Agent Core after all plugins have been initialized.
 func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
+	}
+
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
@@ -116,4 +121,9 @@ func (p *Plugin) String() string {
 		return "kvdbsync"
 	}
 	return string(p.Deps.PluginName)
+}
+
+// Disabled if the plugin was not found
+func (p *Plugin) Disabled() (disabled bool) {
+	return p.disabled
 }

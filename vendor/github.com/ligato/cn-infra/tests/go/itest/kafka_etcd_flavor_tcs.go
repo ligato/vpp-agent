@@ -7,10 +7,13 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	etcdmock "github.com/ligato/cn-infra/db/keyval/etcdv3/mocks"
 	"github.com/ligato/cn-infra/flavors/etcdkafka"
-	"github.com/ligato/cn-infra/rpc/rest/mock"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	kafkamux "github.com/ligato/cn-infra/messaging/kafka/mux"
+	"github.com/ligato/cn-infra/rpc/rest/mock"
+
 	//"github.com/onsi/gomega"
+	"github.com/ligato/cn-infra/flavors/etcd"
+	kafka2 "github.com/ligato/cn-infra/flavors/kafka"
 )
 
 type suiteFlavorKafkaEtcd struct {
@@ -47,9 +50,12 @@ func MockEtcdKafkaFlavor(t *testing.T) (*etcdkafka.FlavorEtcdKafka, *KafkaEtcdFl
 	}
 
 	return &etcdkafka.FlavorEtcdKafka{
-		FlavorRPC: *flavorRPC,
-		ETCD:      *etcdv3.FromExistingConnection(etcdBytesCon, &flavorRPC.ServiceLabel),
-		Kafka:     *kafka.FromExistingMux(kafkaMock.Mux),
+		FlavorEtcd: &etcd.FlavorEtcd{
+			ETCD: *etcdv3.FromExistingConnection(etcdBytesCon, &flavorRPC.ServiceLabel),
+		},
+		FlavorKafka: &kafka2.FlavorKafka{
+			Kafka: *kafka.FromExistingMux(kafkaMock.Mux),
+		},
 	}, &KafkaEtcdFlavorMocks{httpMock, kafkaMock}
 }
 
@@ -58,6 +64,7 @@ type KafkaEtcdFlavorMocks struct {
 	*mock.HTTPMock
 	KafkaMock *kafkamux.KafkaMock
 }
+
 /* TODO
 // TC01 asserts that injection works fine and agent starts & stops
 func (t *suiteFlavorKafkaEtcd) TC01StartStop() {

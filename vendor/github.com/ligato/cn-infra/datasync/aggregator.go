@@ -45,7 +45,10 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 		if err != nil {
 			return nil, err
 		}
-		registrations = append(registrations, watcherReg)
+
+		if watcherReg != nil {
+			registrations = append(registrations, watcherReg)
+		}
 	}
 
 	return &AggregatedRegistration{

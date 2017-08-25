@@ -47,6 +47,7 @@ type Plugin struct {
 	pluginStat  map[string]*status.PluginStatus // plugin's status
 	pluginProbe map[string]PluginStateProbe     // registered status probes
 
+	ctx    context.Context
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
@@ -77,14 +78,7 @@ func (p *Plugin) Init() error {
 	p.pluginProbe = make(map[string]PluginStateProbe)
 
 	// prepare context for all go routines
-	var ctx context.Context
-	ctx, p.cancel = context.WithCancel(context.Background())
-
-	// do periodic status probing for plugins that have provided the probe function
-	go p.periodicProbing(ctx)
-
-	// do periodic updates of the state data in ETCD
-	go p.periodicUpdates(ctx)
+	p.ctx, p.cancel = context.WithCancel(context.Background())
 
 	return nil
 }
@@ -93,6 +87,12 @@ func (p *Plugin) Init() error {
 func (p *Plugin) AfterInit() error {
 	p.access.Lock()
 	defer p.access.Unlock()
+
+	// do periodic status probing for plugins that have provided the probe function
+	go p.periodicProbing(p.ctx)
+
+	// do periodic updates of the state data in ETCD
+	go p.periodicUpdates(p.ctx)
 
 	p.publishAgentData()
 

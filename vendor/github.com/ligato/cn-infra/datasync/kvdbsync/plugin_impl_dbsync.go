@@ -37,9 +37,14 @@ type Deps struct {
 	KvPlugin                  keyval.KvProtoPlugin // inject
 }
 
-// Init uses provided connection to build new transport watcher
+// Init does nothing
 func (plugin *Plugin) Init() error {
-	if plugin.KvPlugin != nil {
+	return nil
+}
+
+// AfterInit uses provided connection to build new transport watcher
+func (plugin *Plugin) AfterInit() error {
+	if plugin.KvPlugin != nil && !plugin.KvPlugin.Disabled() {
 		db := plugin.KvPlugin.NewBroker(plugin.ServiceLabel.GetAgentPrefix())
 		dbW := plugin.KvPlugin.NewWatcher(plugin.ServiceLabel.GetAgentPrefix())
 
@@ -52,6 +57,10 @@ func (plugin *Plugin) Init() error {
 // Watch using ETCD or any other Key Val data store.
 func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
+
+	if plugin.KvPlugin.Disabled() {
+		return nil/*TODO*/, nil
+	}
 
 	reg, err := plugin.adapter.base.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 	if err != nil {
@@ -69,6 +78,10 @@ func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEv
 
 // Put to ETCD or any other data transport (from other Agent Plugins)
 func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
+	if plugin.KvPlugin.Disabled() {
+		return nil
+	}
+
 	return plugin.adapter.db.Put(key, data, opts...)
 }
 

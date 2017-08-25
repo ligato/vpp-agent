@@ -65,7 +65,7 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit is called by the Agent Core after all plugins have been initialized.
 func (p *Plugin) AfterInit() error {
-	if p.session != nil {
+	if p.session == nil && p.clientConfig != nil {
 		session, err := CreateSessionFromConfig(p.clientConfig)
 		if err != nil {
 			return err
@@ -75,7 +75,7 @@ func (p *Plugin) AfterInit() error {
 	}
 
 	/* TODO Register for providing status reports (polling mode)
-	if p.StatusCheck != nil {
+	if p.StatusCheck != nil && p.session != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
 			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
 			if err == nil {

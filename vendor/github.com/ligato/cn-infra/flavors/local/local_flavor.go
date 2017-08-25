@@ -41,7 +41,7 @@ type FlavorLocal struct {
 // Inject does nothing (it is here for potential later extensibility)
 // Composite flavors embedding local flavor are supposed to call this
 // method.
-func (f *FlavorLocal) Inject() (ok bool) {
+func (f *FlavorLocal) Inject() bool {
 	if f.injected {
 		return false
 	}

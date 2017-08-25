@@ -24,20 +24,28 @@ import (
 
 // FlavorRPC glues together multiple plugins that are useful for almost every micro-service
 type FlavorRPC struct {
-	local.FlavorLocal
+	*local.FlavorLocal
 
 	HTTP rest.Plugin
 	//TODO GRPC (& enable/disable using config)
 
 	HealthRPC probe.Plugin
 	LogMngRPC logmanager.Plugin
+
+	injected bool
 }
 
 // Inject sets object references
-func (f *FlavorRPC) Inject() (allReadyInjected bool) {
-	if !f.FlavorLocal.Inject() {
+func (f *FlavorRPC) Inject() bool {
+	if f.injected {
 		return false
 	}
+	f.injected = true
+
+	if f.FlavorLocal == nil {
+		f.FlavorLocal = &local.FlavorLocal{}
+	}
+	f.FlavorLocal.Inject()
 
 	f.HTTP.Deps.PluginLogDeps = *f.LogDeps("http")
 
