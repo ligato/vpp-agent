@@ -34,7 +34,7 @@ func (f *Flavor) Inject() error {
 	f.injected = true
 
 	if f.FlavorLocal == nil {
-		f.FlavorLocal = &rpc.FlavorLocal{}
+		f.FlavorLocal = &local.FlavorLocal{}
 	}
 	f.FlavorLocal.Inject()
 
