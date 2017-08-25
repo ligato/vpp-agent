@@ -14,9 +14,9 @@ import (
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
-	EtcdKafka etcdkafka.FlavorEtcdKafka
-	Redis     redis.FlavorRedis
-	RPC       rpc.FlavorRPC
+	*rpc.FlavorRPC
+	*etcdkafka.FlavorEtcdKafka
+	*redis.FlavorRedis
 	Resync    resync.Plugin
 	GoVPP     govppmux.GOVPPPlugin
 	Linux     linuxplugin.Plugin
@@ -32,25 +32,37 @@ func (f *Flavor) Inject() error {
 	}
 	f.injected = true
 
-	f.EtcdKafka.Inject()
-	f.Redis.Inject()
-	f.RPC.Inject()
+	if f.FlavorRPC == nil {
+		f.FlavorRPC = &rpc.FlavorRPC{}
+	}
+	f.FlavorRPC.Inject()
+
+	if f.FlavorEtcdKafka == nil {
+		f.FlavorEtcdKafka = &etcdkafka.FlavorEtcdKafka{FlavorLocal: f.FlavorRPC.FlavorLocal}
+	}
+	f.FlavorEtcdKafka.Inject()
+
+	if f.FlavorRedis == nil {
+		f.FlavorRedis = &redis.FlavorRedis{}
+	}
+	f.FlavorRedis.Inject()
+
+
 
 	// Aggregated transport
-	adapters := []datasync.KeyProtoValWriter{&f.EtcdKafka.ETCDDataSync, &f.Redis.RedisDataSync}
 	compositePublisher := datasync.CompositeKVProtoWriter{
-		Adapters: adapters,
+		Adapters: []datasync.KeyProtoValWriter{&f.FlavorEtcdKafka.ETCDDataSync, &f.FlavorRedis.RedisDataSync},
 	}
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.EtcdKafka.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.EtcdKafka.FlavorLocal.InfraDeps("default-plugins")
-	f.VPP.Deps.Publish = &f.EtcdKafka.ETCDDataSync
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("govpp")
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("default-plugins")
+	f.VPP.Deps.Publish = &f.FlavorEtcdKafka.ETCDDataSync
 	f.VPP.Deps.PublishStatistics = compositePublisher
-	f.VPP.Deps.Watch = &f.EtcdKafka.ETCDDataSync
-	f.VPP.Deps.Kafka = &f.EtcdKafka.Kafka
+	f.VPP.Deps.Watch = &f.FlavorEtcdKafka.ETCDDataSync
+	f.VPP.Deps.Kafka = &f.FlavorEtcdKafka.Kafka
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 	f.VPP.Deps.Linux = &f.Linux
-	f.VPP.Linux.Deps.Watcher = &f.EtcdKafka.ETCDDataSync
+	f.VPP.Linux.Deps.Watcher = &f.FlavorEtcdKafka.ETCDDataSync
 
 	return nil
 }
