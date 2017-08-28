@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/flavors/etcd"
 	"github.com/ligato/cn-infra/flavors/kafka"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/datasync/resync"
 )
 
 // FlavorEtcdKafka glues together FlavorLocal plugins with:
@@ -33,7 +34,7 @@ type FlavorEtcdKafka struct {
 }
 
 // Inject sets object references
-func (f *FlavorEtcdKafka) Inject() bool {
+func (f *FlavorEtcdKafka) Inject(resyncOrch *resync.Plugin) bool {
 	if f.injected {
 		return false
 	}
@@ -47,7 +48,7 @@ func (f *FlavorEtcdKafka) Inject() bool {
 	if f.FlavorEtcd == nil {
 		f.FlavorEtcd = &etcd.FlavorEtcd{FlavorLocal: f.FlavorLocal}
 	}
-	f.FlavorEtcd.Inject()
+	f.FlavorEtcd.Inject(resyncOrch)
 
 	if f.FlavorKafka == nil {
 		f.FlavorKafka = &kafka.FlavorKafka{FlavorLocal: f.FlavorLocal}
@@ -59,6 +60,6 @@ func (f *FlavorEtcdKafka) Inject() bool {
 
 // Plugins combines all Plugins in flavor to the list
 func (f *FlavorEtcdKafka) Plugins() []*core.NamedPlugin {
-	f.Inject()
+	f.Inject(nil)
 	return core.ListPluginsInFlavor(f)
 }

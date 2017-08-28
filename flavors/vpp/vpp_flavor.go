@@ -10,6 +10,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/cn-infra/datasync/resync"
 )
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
@@ -21,6 +22,7 @@ type Flavor struct {
 	GoVPP     govppmux.GOVPPPlugin
 	Linux     linuxplugin.Plugin
 	VPP       defaultplugins.Plugin
+	ResyncOrch   resync.Plugin
 
 	injected bool
 }
@@ -37,10 +39,12 @@ func (f *Flavor) Inject() error {
 	}
 	f.FlavorLocal.Inject()
 
+	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("resync-orch")
+
 	if f.FlavorEtcdKafka == nil {
 		f.FlavorEtcdKafka = &etcdkafka.FlavorEtcdKafka{FlavorLocal: f.FlavorLocal}
 	}
-	f.FlavorEtcdKafka.Inject()
+	f.FlavorEtcdKafka.Inject(&f.ResyncOrch)
 	
 	if f.FlavorRPC == nil {
 		f.FlavorRPC = &rpc.FlavorRPC{FlavorLocal: f.FlavorLocal}
@@ -50,7 +54,7 @@ func (f *Flavor) Inject() error {
 	if f.FlavorRedis == nil {
 		f.FlavorRedis = &redis.FlavorRedis{FlavorLocal: f.FlavorLocal}
 	}
-	f.FlavorRedis.Inject()
+	f.FlavorRedis.Inject(&f.ResyncOrch)
 
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("govpp")
