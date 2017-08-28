@@ -48,9 +48,6 @@ func (plugin *Plugin) Init() (err error) {
 
 // AfterInit method starts the resync
 func (plugin *Plugin) AfterInit() (err error) {
-	//plugin.access.Lock()
-	//defer plugin.access.Unlock()
-
 	plugin.startResync()
 
 	return nil
@@ -82,13 +79,11 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 
 	reg := NewRegistration(resyncName, make(chan StatusEvent, 0)) /*Zero to have back pressure*/
 	plugin.registrations[resyncName] = reg
-
 	return reg
 }
 
 // call callback on plugins to create/delete/modify objects
 func (plugin *Plugin) startResync() {
-	plugin.Log.Debugf("Resync started: %v", len(plugin.registrations))
 	for regName, reg := range plugin.registrations {
 		plugin.startSingleResync(regName, reg)
 	}

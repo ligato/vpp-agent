@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package etcdv3 is the implementation of the key-value Data Broker client
-// API for the etcdv3 key-value data store.  See cn-infra/db/keyval for the
-// definition of the key-value Data Broker client API.
+// Package etcdv3 implements the key-value Data Broker client API for the
+// etcdv3 key-value data store.  See cn-infra/db/keyval for the definition
+// of the key-value Data Broker client API.
 //
 // The entity that provides access to the data store is called BytesConnectionEtcd.
 //
@@ -45,19 +45,23 @@
 //
 // Connection to etcd is established using the provided config behind the scenes.
 //
-// Alternatively, you may connect to etcd by yourself and initialize the connection object with a given client.
+// Alternatively, you may connect to etcd by yourself and initialize the
+// connection object with a given client.
 //
 //    db := etcd.NewEtcdConnectionUsingClient(client)
 //
-// Created BytesConnectionEtcd implements Broker and KeyValProtoWatcher interfaces. The example of use can be seen below.
+// Created BytesConnectionEtcd implements Broker and KeyValProtoWatcher
+// interfaces. The example of use can be seen below.
 //
 // To insert single key-value pair into etcd run:
 //		db.Put(key, data)
 // To remove a value identified by key:
 //      datasync.Delete(key)
 //
-// In addition to single key-value pair approach, the transaction API is provided. Transaction
-// executes multiple operations in a more efficient way than one by one execution.
+// In addition to single key-value pair approach, the transaction API is
+// provided. Transaction executes multiple operations in a more efficient
+// way than one by one execution.
+//
 //    // create new transaction
 //    txn := db.NewTxn()
 //
@@ -126,7 +130,7 @@
 //              case resp := <-respChan:
 //                 switch resp.GetChangeType() {
 //                 case data.Put:
-//					   key := resp.GetKey()
+//                 key := resp.GetKey()
 //                     value := resp.GetValue()
 //                     rev := resp.GetRevision()
 //                 case data.Delete:
@@ -136,10 +140,14 @@
 //     }
 //
 //
-// BytesConnectionEtcd also allows to create proxy instances(BytesBrokerWatcherEtcd) using NewBroker and NewWatcher methods.
-// Both of them accept prefix argument. The prefix will be automatically prepended to all keys in the put/delete requests made from the
-// proxy instances. In case of get-like calls (GetValue, ListValues, ...) the prefix is trimmed from key of the returned values.
-// They contain only a part following the prefix in the key field. The created proxy instances share the connection of the BytesConnectionEtcd.
+// BytesConnectionEtcd also allows to create proxy instances
+// (BytesBrokerWatcherEtcd) using NewBroker and NewWatcher methods. Both of
+// them accept the prefix argument. The prefix will be automatically
+// prepended to all keys in put/delete requests made from the proxy instances. I
+// n case of get-like calls (GetValue, ListValues, ...) the prefix is trimmed
+// from the key of the returned values. They contain only a part following the
+// prefix in the key field. The created proxy instances share the connection of
+// the BytesConnectionEtcd.
 //
 //      +-----------------------+
 //      | BytesBrokerWatcherEtcd |
@@ -155,15 +163,15 @@
 //      | BytesBrokerWatcherEtcd |
 //      +------------------------+
 //
-// To create proxy instances run
+// To create proxy instances, type:
 //    prefixedBroker := db.NewBroker(prefix)
 //    prefixedWatcher := db.NewWatcher(prefix)
 //
 // The usage is the same as shown above.
 //
-// The package also provides a proto decorator that aims to simplify manipulation of proto modelled data.
-// Proto decorator accepts arguments of type proto.message and the data are marshaled
-// into []byte behind the scenes.
+// The package also provides a proto decorator that simplifies the manipulation
+// of proto modelled data. The proto decorator accepts arguments of type
+// proto.message and  marshals them into []byte slices.
 //
 //
 //      +-------------------+--------------------+       crud/watch         ______
@@ -171,15 +179,18 @@
 //      +-------------------+--------------------+        ([]byte)         +------+
 //        (proto.Message)
 //
-// The API of ProtoWrapperEtcd is very similar to the BytesConnectionEtcd. The difference is that arguments of type []byte
-// are replaced by arguments of type proto.Message and in some case one of the return values is transformed into output argument.
+// The ProtoWrapperEtcd API is very similar to the BytesConnectionEtcd API.
+// The difference is that arguments of type []byte are replaced by arguments
+// of type proto.Message, and in some case one of the return values is
+// transformed into an output argument.
 //
-// Example of decorator initialization
+// Example of the decorator initialization:
 //
 //    // conn is BytesConnectionEtcd initialized as shown at the top of the page
 //    protoBroker := etcd.NewProtoWrapperEtcd(conn)
 //
-// The only difference in Put/Delete functions is the type of the argument, apart from that the usage is the same as described above.
+// The only difference in Put/Delete functions is the type of the argument,
+// apart from that the usage is the same as described above.
 //
 // Example of retrieving single key-value pair using proto decorator:
 //   // if the value exists it is unmarshalled into the msg

@@ -18,7 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"errors"
 	"github.com/gocql/gocql"
+	"strconv"
 )
 
 // Config Configuration for Cassandra clients loaded from a configuration file
@@ -81,12 +83,17 @@ func ConfigToClientConfig(ymlConfig *Config) (*ClientConfig, error) {
 		protoVersion = ymlConfig.ProtocolVersion
 	}
 
+	endpoints, port, err := getEndpointsAndPort(ymlConfig.Endpoints)
+	if err != nil {
+		return nil, err
+	}
+
 	clientConfig := &gocql.ClusterConfig{
-		Hosts:             ymlConfig.Endpoints,
-		Port:              ymlConfig.Port,
-		Timeout:           timeout,
-		ConnectTimeout:    connectTimeout,
-		ReconnectInterval: reconnectInterval,
+		Hosts:             endpoints,
+		Port:              port,
+		Timeout:           timeout * time.Millisecond,
+		ConnectTimeout:    connectTimeout * time.Millisecond,
+		ReconnectInterval: reconnectInterval * time.Second,
 		ProtoVersion:      protoVersion,
 	}
 
@@ -112,4 +119,46 @@ func CreateSessionFromConfig(config *ClientConfig) (*gocql.Session, error) {
 // HostsAsString converts an array of hosts addresses into a comma separated string
 func HostsAsString(hostArr []string) string {
 	return strings.Join(hostArr, ",")
+}
+
+//getEndpointsAndPort does string manipulation to extract []endpoints and port eg: "127.0.0.1:9042" or "127.0.0.1:9042,127.0.0.2:9042"
+func getEndpointsAndPort(endpoints []string) (endpointsR []string, portR int, err error) {
+	var resultEndpoints []string
+	var resultPort int
+
+	if len(endpoints) > 1 {
+		return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+	}
+
+	if len(endpoints[0]) > 0 {
+		v := endpoints[0]
+
+		if !strings.Contains(v, ":") {
+			return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+		}
+
+		if strings.Contains(v, ",") {
+			endpointsAndPort := strings.Split(v, ",")
+			for _, val := range endpointsAndPort {
+				endpointAndPort := strings.Split(val, ":")
+				resultEndpoints = append(resultEndpoints, endpointAndPort[0])
+				resultPort, err = strconv.Atoi(endpointAndPort[1])
+				if err != nil {
+					return nil, 0, err
+				}
+			}
+
+		} else {
+			endpointAndPort := strings.Split(v, ":")
+			resultEndpoints = append(resultEndpoints, endpointAndPort[0])
+			resultPort, err = strconv.Atoi(endpointAndPort[1])
+			if err != nil {
+				return nil, 0, err
+			}
+		}
+	} else {
+		return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+	}
+
+	return resultEndpoints, resultPort, nil
 }

@@ -1,7 +1,6 @@
 endpoints:
-- 127.0.0.1
-port: 9042
-op_timeout: 600000000
-dial_timeout: 600000000
-redial_interval: 60000000000
+- 127.0.0.1:9042
+op_timeout: 600
+dial_timeout: 600
+redial_interval: 60
 protocol_version: 4

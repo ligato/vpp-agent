@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package flavors contains reusable cn-infra flavors (collection of plugins
-// with initialized dependencies):
-// - generic flavor is prepared for minimalistic cn-infra based applications;
-// - etcd + kafka flavor extends generic flavor and is meant for applications
-//   that read northbound configuration from etcd and publish events to Kafka.
+// Package flavors contains predefined cn-infra flavors. A flavor is a
+// re-usable collection of plugins with initialized dependencies. It is
+// typically used as a starting point for developing a cn-infra based app.
+// A flavor contains plugins required by the app. App developers can also
+// define their own flavors or extend one of the predefined flavors.
 package flavors
