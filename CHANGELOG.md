@@ -1,4 +1,4 @@
-# Release v1.0.1 (2017-08-25)
+# Release v1.0.2 (2017-08-28)
 
 ## Major Themes
 
