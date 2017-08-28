@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/flavors/localdeps"
-	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // Plugin dbsync implements Plugin interface
@@ -59,16 +58,15 @@ func (plugin *Plugin) AfterInit() error {
 // Watch using ETCD or any other Key Val data store.
 func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
-	log := logroot.StandardLogger()
 
 	if plugin.KvPlugin.Disabled() {
-		return nil /*TODO*/, nil
+		return nil/*TODO*/, nil
 	}
 
 	if plugin.adapter == nil {
 		return nil, errors.New("Transport adapter is not ready yet")
 	}
-
+	
 	reg, err := plugin.adapter.base.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 	if err != nil {
 		return nil, err
@@ -76,7 +74,6 @@ func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEv
 
 	if plugin.ResyncOrch != nil {
 		resyncReg := plugin.ResyncOrch.Register(resyncName)
-		log.Debugf("Registration: %v", resyncReg)
 		_, err = watchAndResyncBrokerKeys(resyncReg, changeChan, resyncChan, plugin.adapter, keyPrefixes...)
 		if err != nil {
 			return nil, err
@@ -91,11 +88,11 @@ func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOp
 	if plugin.KvPlugin.Disabled() {
 		return nil
 	}
-
+	
 	if plugin.adapter != nil {
-		return plugin.adapter.db.Put(key, data, opts...)
-	}
-
+ 		return plugin.adapter.db.Put(key, data, opts...)
+ 	}
+	
 	return errors.New("Transport adapter is not ready yet")
 }
 

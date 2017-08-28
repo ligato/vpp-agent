@@ -33,7 +33,7 @@ func Test01ParseKeyAgentPrefix(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(status.AgentStatusPrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo(""))
 	gomega.Expect(plugStatCfgRev).To(gomega.BeEquivalentTo(status.StatusPrefix))
 }
 
@@ -46,7 +46,7 @@ func Test02ParseKeyInterfaceConfig(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.InterfacePrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
 // Test03ParseKeyInterfaceStatus tests whether all parameters for ParseKey() functions are correct for provided
@@ -58,7 +58,7 @@ func Test03ParseKeyInterfaceStatus(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfStatePrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
 // Test04ParseKeyInterfaceError tests whether all parameters for ParseKey() functions are correct for provided
@@ -70,7 +70,7 @@ func Test04ParseKeyInterfaceError(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfErrorPrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{interface-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
 // Test05ParseKeyBdConfig tests whether all parameters for ParseKey() functions are correct for provided
@@ -82,7 +82,7 @@ func Test05ParseKeyBdConfig(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdPrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{bd-name}"))
 }
 
 // Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
@@ -94,7 +94,7 @@ func Test06ParseKeyBdState(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdStatePrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{bd-name}"))
 }
 
 // Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
@@ -106,7 +106,7 @@ func Test07ParseKeyBdError(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.BdErrPrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{bd-name}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{bd-name}"))
 }
 
 // Test06ParseKeyBdState tests whether all parameters for ParseKey() functions are correct for provided
@@ -118,7 +118,7 @@ func Test08ParseKeyFib(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FIBPrefix))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"{mac-address}"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("{mac-address}"))
 }
 
 // Test09ParseKeyRoute tests whether all parameters for ParseKey() functions are correct for provided
@@ -130,14 +130,14 @@ func Test09ParseKeyRoute(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf1", "192.168.1.0", "24", "192.168.2.1"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("192.168.1.0/24/192.168.2.1"))
 
 	label, dataType, params, _ = utils.
 		ParseKey("/vnf-agent/agent2/vpp/config/v1/vrf/vrf2/fib/2001:db8:abcd:0012::0/64/2001:db8::1")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent2"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf2", "2001:db8:abcd:0012::0", "64", "2001:db8::1"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("2001:db8:abcd:0012::0/64/2001:db8::1"))
 }
 
 // Test10ParseKeyVrf tests whether all parameters for ParseKey() functions are correct for provided
@@ -149,5 +149,5 @@ func Test10ParseKeyVrf(t *testing.T) {
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.VrfKeyPrefix()))
-	gomega.Expect(params).To(gomega.BeEquivalentTo([]string{"vrf1"}))
+	gomega.Expect(params).To(gomega.BeEquivalentTo("vrf1"))
 }

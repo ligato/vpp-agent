@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package probe implements the K8s readiness and liveliness probe handlers.
 package probe
 
 import (

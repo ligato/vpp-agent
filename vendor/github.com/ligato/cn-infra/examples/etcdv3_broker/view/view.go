@@ -1,4 +1,6 @@
 //go:generate protoc --proto_path=../model/phonebook --gogo_out=../model/phonebook ../model/phonebook/phonebook.proto
+
+// Package view contains an example that shows how to read data from etcdv3.
 package main
 
 import (

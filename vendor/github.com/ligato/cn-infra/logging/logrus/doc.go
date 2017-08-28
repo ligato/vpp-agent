@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package logrus is the Logrus-based implementation of logging API.
+// Package logrus implements the logging API based on the Logrus logger.
 package logrus

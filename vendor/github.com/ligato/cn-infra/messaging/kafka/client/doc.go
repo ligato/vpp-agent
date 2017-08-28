@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package client contains synchronous/asynchronous kafka producer and kafka consumer.
+// Package client implements the synchronous and asynchronous kafka Producers
+// and the kafka Consumer.
 package client
