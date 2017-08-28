@@ -16,10 +16,10 @@ package etcdkafka
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/etcd"
 	"github.com/ligato/cn-infra/flavors/kafka"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/datasync/resync"
 )
 
 // FlavorEtcdKafka glues together FlavorLocal plugins with:
