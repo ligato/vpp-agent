@@ -93,9 +93,9 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called by the Agent Core after all plugins have been initialized.
 func (p *Plugin) AfterInit() error {
 	if p.HTTP != nil {
-		if p.StatusCheck != nil{
+		if p.StatusCheck != nil {
 			p.Log.Infof("Starting health http-probe on port %v", p.HTTP.HTTPport)
-			p.HTTP.RegisterHTTPHandler(livenessProbePath,  p.livenessProbeHandler, "GET")
+			p.HTTP.RegisterHTTPHandler(livenessProbePath, p.livenessProbeHandler, "GET")
 			p.HTTP.RegisterHTTPHandler(readinessProbePath, p.readinessProbeHandler, "GET")
 
 		} else {

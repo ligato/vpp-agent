@@ -80,7 +80,7 @@ testOutput examples/logs_in_plugin/logs_in_plugin "${expected}"
 startEtcd
 expected=("Saving  /phonebook/Peter
 ")
-cmd="examples/etcdv3_broker/editor/editor  --cfg examples/etcdv3_broker/etcd.conf  put  Peter Company 0907"
+cmd="examples/etcdv3_lib/editor/editor  --cfg examples/etcdv3_lib/etcd.conf  put  Peter Company 0907"
 testOutput "${cmd}" "${expected}"
 
 stopEtcd
@@ -94,7 +94,7 @@ Sync published
 Message is stored in topic(test)/partition(0)/offset(1)
 ")
 
-testOutput examples/kafka_broker/mux/mux "${expected}"
+testOutput examples/kafka_lib/mux/mux "${expected}"
 
 stopKafka
 

@@ -5,10 +5,12 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/examples/model"
-	"github.com/ligato/cn-infra/flavors/etcdkafka"
+	"github.com/ligato/cn-infra/flavors/local"
 	log "github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/namsral/flag"
 )
 
 //********************************************************************
@@ -26,20 +28,17 @@ import (
 // HTTP and Log) and example plugin which demonstrates Kafka functionality.
 func main() {
 	// Init close channel to stop the example
-	closeChannel := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{}, 1)
 
-	flavor := etcdkafka.FlavorEtcdKafka{}
-
-	// Example plugin (Kafka)
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{Kafka: &flavor.Kafka}}
+	flavor := ExampleFlavor{}
 
 	// Create new agent
-	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+	agent := core.NewAgent(log.StandardLogger(), 15*time.Second, append(flavor.Plugins())...)
 
 	// End when the kafka example is finished
-	go closeExample("kafka example finished", closeChannel)
+	go closeExample("kafka example finished", exampleFinished)
 
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
 // Stop the agent with desired info message
@@ -47,6 +46,49 @@ func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(10 * time.Second)
 	log.StandardLogger().Info(message)
 	closeChannel <- struct{}{}
+}
+
+/**********
+ * Flavor *
+ **********/
+
+// ETCD flag to load config
+func init() {
+	flag.String("kafka-config", "kafka.conf",
+		"Location of the kafka configuration file")
+}
+
+// ExampleFlavor is a set of plugins required for the datasync example.
+type ExampleFlavor struct {
+	// Local flavor to access to Infra (logger, service label, status check)
+	*local.FlavorLocal
+	// Kafka plugin
+	Kafka kafka.Plugin
+	// Example plugin
+	KafkaExample ExamplePlugin
+
+	injected bool
+}
+
+// Inject sets object references
+func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Init local flavor
+	if ef.FlavorLocal == nil {
+		ef.FlavorLocal = &local.FlavorLocal{}
+	}
+	ef.FlavorLocal.Inject()
+	// Init kafka
+	ef.Kafka.Deps.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("kafka")
+	// Inject kafka to example plugin
+	ef.KafkaExample.Kafka = &ef.Kafka
+
+	return true
+}
+
+// Plugins combines all Plugins in flavor to the list
+func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+	ef.Inject()
+	return core.ListPluginsInFlavor(ef)
 }
 
 /**********************

@@ -15,14 +15,15 @@
 package main
 
 import (
-	"github.com/namsral/flag"
 	"fmt"
+	"github.com/namsral/flag"
 	"os"
-
 	"strings"
 
-	"github.com/ligato/cn-infra/examples/kafka_broker/utils"
+	"github.com/ligato/cn-infra/examples/kafka_lib/utils"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
+	log "github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
@@ -30,50 +31,30 @@ var (
 	brokerList  = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster. You can also set the KAFKA_PEERS environment variable")
 	partitioner = flag.String("partitioner", "hash", "The partitioning scheme to use. Can be `hash`, `manual`, or `random`")
 	partition   = flag.Int("partition", -1, "The partition to produce to.")
-	debug       = flag.Bool("debug", false, "turns on debug logging")
+	debug       = flag.Bool("debug", false, "turn on debug logging")
 	silent      = flag.Bool("silent", false, "Turn off printing the message's topic, partition, and offset to stdout")
 )
 
 func main() {
+	log.StandardLogger().SetLevel(logging.DebugLevel)
 	flag.Parse()
 
 	if *brokerList == "" {
 		printUsageErrorAndExit("no -brokers specified. Alternatively, set the KAFKA_PEERS environment variable")
 	}
 
-	succCh := make(chan *client.ProducerMessage)
-	errCh := make(chan *client.ProducerError)
-
 	// init config
 	config := client.NewConfig(logroot.StandardLogger())
 	config.SetDebug(*debug)
 	config.SetPartition(int32(*partition))
 	config.SetPartitioner(*partitioner)
-	config.SetSendSuccess(true)
-	config.SetSuccessChan(succCh)
-	config.SetSendError(true)
-	config.SetErrorChan(errCh)
 	config.SetBrokers(strings.Split(*brokerList, ",")...)
-
 	// init producer
-	producer, err := client.NewAsyncProducer(config, nil)
+	producer, err := client.NewSyncProducer(config, nil)
 	if err != nil {
+		fmt.Printf("NewSyncProducer errored: %v\n", err)
 		os.Exit(1)
 	}
-
-	go func() {
-	eventLoop:
-		for {
-			select {
-			case <-producer.GetCloseChannel():
-				break eventLoop
-			case msg := <-succCh:
-				fmt.Println("message sent successfully - ", msg)
-			case err := <-errCh:
-				fmt.Println("message errored - ", err)
-			}
-		}
-	}()
 
 	// get command
 	for {
@@ -100,10 +81,9 @@ func main() {
 }
 
 // send message
-func sendMessage(producer *client.AsyncProducer, msg utils.Message) error {
+func sendMessage(producer *client.SyncProducer, msg utils.Message) error {
 	var (
 		msgKey   []byte
-		msgMeta  []byte
 		msgValue []byte
 	)
 
@@ -111,33 +91,28 @@ func sendMessage(producer *client.AsyncProducer, msg utils.Message) error {
 	if msg.Key != "" {
 		msgKey = []byte(msg.Key)
 	}
-	if msg.Metadata != "" {
-		msgMeta = []byte(msg.Metadata)
-	}
 	msgValue = []byte(msg.Text)
 
 	// send message
-	producer.SendMsgByte(msg.Topic, msgKey, msgValue, msgMeta)
-
+	_, err := producer.SendMsgByte(msg.Topic, msgKey, msgValue)
+	if err != nil {
+		log.StandardLogger().Errorf("SendMsg Error: %v", err)
+		return err
+	}
 	fmt.Println("message sent")
 	return nil
 }
 
-func closeProducer(producer *client.AsyncProducer) error {
+func closeProducer(producer *client.SyncProducer) error {
 	// close producer
-	fmt.Println("closing producer ...")
-	err := producer.Close(true)
+	fmt.Println("Closing producer ...")
+	err := producer.Close()
 	if err != nil {
-		fmt.Printf("AsyncProducer close errored: %v\n", err)
+		fmt.Printf("SyncProducer close errored: %v\n", err)
+		log.StandardLogger().Errorf("SyncProducer close errored: %v", err)
 		return err
 	}
 	return nil
-}
-
-func printErrorAndExit(code int, format string, values ...interface{}) {
-	fmt.Fprintf(os.Stderr, "ERROR: %s\n", fmt.Sprintf(format, values...))
-	fmt.Fprintln(os.Stderr)
-	os.Exit(code)
 }
 
 func printUsageErrorAndExit(message string) {
@@ -146,4 +121,9 @@ func printUsageErrorAndExit(message string) {
 	fmt.Fprintln(os.Stderr, "Available command line options:")
 	flag.PrintDefaults()
 	os.Exit(64)
+}
+
+func stdinAvailable() bool {
+	stat, _ := os.Stdin.Stat()
+	return (stat.Mode() & os.ModeCharDevice) == 0
 }

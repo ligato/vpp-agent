@@ -6,7 +6,7 @@ real ETCD and/or Kafka plugins, so for specific examples, they have to be
 started first.
 
 Current examples:
-* **[etcd](etcdv3_broker)** uses the ETCD data broker to write data into 
+* **[etcd](etcdv3_lib)** uses the ETCD data broker to write data into 
   ETCD, which are then caught by the watcher
 * **[flags](flags/main.go)** example registers flags and shows their 
   runtime values

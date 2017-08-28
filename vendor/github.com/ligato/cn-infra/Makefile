@@ -74,7 +74,7 @@ endef
 # build plugin example only
 define build_plugin_examples_only
     @echo "# building plugin examples"
-    @cd examples/datasync_watch_etcd && go build -v ${LDFLAGS}
+    @cd examples/datasync_plugin && go build -v ${LDFLAGS}
     @cd examples/flags && go build -v ${LDFLAGS}
     @cd examples/kafka && go build -v ${LDFLAGS}
     @cd examples/logs_in_plugin && go build -v ${LDFLAGS}
@@ -86,22 +86,22 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/etcdv3_broker && make build
-    @cd examples/redis_broker && make build
-    @cd examples/cassandra_broker && go build
+    @cd examples/etcdv3_lib && make build
+    @cd examples/redis_lib && make build
+    @cd examples/cassandra_lib && go build
     @cd examples/logs_logrus && make build
-    @cd examples/kafka_broker && make build
+    @cd examples/kafka_lib && make build
     @echo "# done"
 endef
 
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
-    @cd examples/etcdv3_broker && make clean
-    @cd examples/redis_broker && make clean
-    @cd examples/cassandra_broker && rm -f simple
+    @cd examples/etcdv3_lib && make clean
+    @cd examples/redis_lib && make clean
+    @cd examples/cassandra_lib && rm -f simple
     @cd examples/logs_logrus && make clean
-    @cd examples/kafka_broker && make clean
+    @cd examples/kafka_lib && make clean
     @echo "# done"
 endef
 

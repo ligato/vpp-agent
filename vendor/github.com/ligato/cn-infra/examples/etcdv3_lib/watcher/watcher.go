@@ -5,13 +5,13 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
-	"github.com/ligato/cn-infra/examples/etcdv3_broker/model/phonebook"
+	"github.com/ligato/cn-infra/examples/etcdv3_lib/model/phonebook"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/config"
 )
 
 func processArgs() (*etcdv3.ClientConfig, error) {
