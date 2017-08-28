@@ -17,8 +17,8 @@ package servicelabel
 import (
 	"fmt"
 
-	"github.com/namsral/flag"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/namsral/flag"
 )
 
 // Plugin exposes the service label(i.e. the string used to identify the particular VNF) to the other plugins.

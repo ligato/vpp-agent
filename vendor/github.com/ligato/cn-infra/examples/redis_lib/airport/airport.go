@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/db/keyval/redis"
-	"github.com/ligato/cn-infra/examples/redis_broker/airport/model"
+	"github.com/ligato/cn-infra/examples/redis_lib/airport/model"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -262,9 +262,9 @@ func printHeaders() {
 		columnSep, flightIDLength*flightSlotCount, departure,
 		columnSep, hangar)
 	dash60 := "-----------------------------------------------------------"
-	waitingGuide := dash60[0: flightIDLength*flightSlotCount]
+	waitingGuide := dash60[0 : flightIDLength*flightSlotCount]
 	runwayGuide := dash60[0:runwayLength]
-	hangarGuide := dash60[0: flightIDLength*hangarSlotCount]
+	hangarGuide := dash60[0 : flightIDLength*hangarSlotCount]
 	fmt.Printf("%s%s%s%s%s%s%s\n",
 		waitingGuide, columnSep, runwayGuide, columnSep, waitingGuide, columnSep, hangarGuide)
 }

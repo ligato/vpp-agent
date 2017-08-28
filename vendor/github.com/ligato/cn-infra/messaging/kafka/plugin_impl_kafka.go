@@ -28,7 +28,7 @@ import (
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
-	Deps // inject
+	Deps         // inject
 	subscription chan (*client.ConsumerMessage)
 	mx           *mux.Multiplexer
 	consumer     *client.Consumer

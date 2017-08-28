@@ -37,9 +37,11 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 
 		_, _, found := plugin.swIfIndexes.LookupIdx(ifaceName)
 		if !found {
-			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
-			err := plugin.Publish.Put(key, nil /*means delete*/)
-			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
+			err := plugin.PublishStatistics.Put(key, nil, /*means delete*/)
+			if err != nil {
+				return err
+			}
+			log.DefaultLogger().Debugf("Obsolete status for %v deleted", key)
 		} else {
 			log.DefaultLogger().WithField("ifaceName", ifaceName).Debug("interface status is needed")
 		}
@@ -92,9 +94,11 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		}
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
-			log.DefaultLogger().Debug("deleting obsolete status begin ", key)
 			err := plugin.Publish.Put(key, nil)
-			log.DefaultLogger().Debug("deleting obsolete status end ", key, err)
+			if err != nil {
+				return err
+			}
+			log.DefaultLogger().Debugf("Obsolete status for %v deleted", key)
 		} else {
 			log.DefaultLogger().WithField("bdName", bdName).Debug("bridge domain status required")
 		}
