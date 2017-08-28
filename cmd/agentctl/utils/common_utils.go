@@ -57,9 +57,10 @@ const (
 // *                ps[0]      ps[1] ps[2]ps[3] ps[4]
 //
 // Example for dataType ... "check/status/v1/"
-func ParseKey(key string) (label string, dataType string, params []string, plugStatCfgRev string) {
+func ParseKey(key string) (label string, dataType string, name string, plugStatCfgRev string) {
 	ps := strings.Split(strings.TrimPrefix(key, servicelabel.GetAllAgentsPrefix()), "/")
 	var plugin, statusConfig, version, localDataType string
+	var params []string
 	if len(ps) > 0 {
 		label = ps[0]
 	}
@@ -97,7 +98,8 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 			} else {
 				params = []string{}
 			}
-			return label, dataType, params, plugStatCfgRev
+
+			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
 		// Recognize bridge domain error key
 		if ps[4] == "bd" && ps[5] == "error" {
@@ -109,7 +111,7 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 			} else {
 				params = []string{}
 			}
-			return label, dataType, params, plugStatCfgRev
+			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
 		// Recognize FIB key
 		if len(ps) > 6 && ps[4] == "bd" && ps[6] == "fib" {
@@ -122,17 +124,16 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 			} else {
 				params = []string{}
 			}
-			return label, dataType, params, plugStatCfgRev
+			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
 		// Recognize static route
 		if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
 			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
-			params = ps[5:6]
 
 			if len(ps) > 7 {
 				params = append(params, ps[7:]...)
 			}
-			return label, dataType, params, plugStatCfgRev
+			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
 		dataType += "/"
 		params = ps[5:]
@@ -140,7 +141,23 @@ func ParseKey(key string) (label string, dataType string, params []string, plugS
 		params = []string{}
 	}
 
-	return label, dataType, params, plugStatCfgRev
+	return label, dataType, rebuildName(params), plugStatCfgRev
+}
+
+// Reconstruct item name in case it contains slashes
+func rebuildName(params []string) string {
+	var itemName string
+	if len(params) > 1 {
+		for _, param := range params {
+			itemName = itemName + "/" + param
+		}
+		// remove first slash
+		return itemName[1:]
+	} else if len(params) == 1 {
+		itemName = params[0]
+		return itemName
+	}
+	return itemName
 }
 
 // GetDbForAllAgents opens a connection to Etcd specified in the command line
