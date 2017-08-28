@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package config contains helpers for parsing of configuration files.
+// Package config contains helper functions for parsing of configuration
+// files.
 package config

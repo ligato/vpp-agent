@@ -18,7 +18,6 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/health/statuscheck"

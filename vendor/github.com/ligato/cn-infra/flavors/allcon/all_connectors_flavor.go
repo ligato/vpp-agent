@@ -52,7 +52,7 @@ func (f *AllConnectorsFlavor) Inject() bool {
 	if f.FlavorEtcd == nil {
 		f.FlavorEtcd = &etcd.FlavorEtcd{FlavorLocal: f.FlavorLocal}
 	}
-	f.FlavorEtcd.Inject()
+	f.FlavorEtcd.Inject(nil)
 
 	if f.FlavorKafka == nil {
 		f.FlavorKafka = &kafka.FlavorKafka{FlavorLocal: f.FlavorLocal}
@@ -62,7 +62,7 @@ func (f *AllConnectorsFlavor) Inject() bool {
 	if f.FlavorRedis == nil {
 		f.FlavorRedis = &redis.FlavorRedis{FlavorLocal: f.FlavorLocal}
 	}
-	f.FlavorRedis.Inject()
+	f.FlavorRedis.Inject(nil)
 
 	if f.FlavorCassandra == nil {
 		f.FlavorCassandra = &cassandra.FlavorCassandra{FlavorLocal: f.FlavorLocal}

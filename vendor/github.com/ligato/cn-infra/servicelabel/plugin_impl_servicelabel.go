@@ -39,8 +39,7 @@ func (p *Plugin) Init() error {
 	if p.MicroserviceLabel == "" {
 		p.MicroserviceLabel = microserviceLabelFlag
 	}
-	log := logroot.StandardLogger()
-	log.Infof("Microservice label: %v", p.MicroserviceLabel)
+	logroot.StandardLogger().Debugf("Microservice label is set to %v", p.MicroserviceLabel)
 	return nil
 }
 

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package servicelabel allows to retrieve a string identifying particular VNF function (service label).
+// Package servicelabel provides support for creating/retrieving an
+// identifier (a service label) for a CN-Infra based app.
 //
 //     p := serviceLabel.Plugin{}
 //     // initialization plugin handled by agent core
