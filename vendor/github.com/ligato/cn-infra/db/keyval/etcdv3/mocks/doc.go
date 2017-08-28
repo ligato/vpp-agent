@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sql provides an abstraction of a data store that supports an
-// SQL-like query language and defines the SQL data broker API. The SQL
-// data broker API consists of the the Broker and KeyValProtoWatcher APIs
-// for accessing data in a SQL data store.
-package sql
+// Package mocks implements an embedded etcdv3 mock used in unit &
+// integration tests.
+package mocks

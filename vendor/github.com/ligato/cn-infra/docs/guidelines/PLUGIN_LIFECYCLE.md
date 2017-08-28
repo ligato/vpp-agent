@@ -40,15 +40,18 @@ import (
 )
 
 type PluginXY struct {
-    Watcher     datasync.Watcher //Injected
-    Logger      logging.Logger
-    ParentCtx   context.Context
-    
+    Dep
     resource    io.Closer
     dataChange  chan datasync.ChangeEvent
     dataResync  chan datasync.ResyncEvent
     data        map[string]interface{}
     cancel      context.CancelFunc
+}
+
+type Dep struct {
+    Watcher     datasync.KeyValProtoWatcher // Inject
+    Logger      logging.Logger              // Inject
+    ParentCtx   context.Context             // inject optionally
 }
 
 func (plugin * PluginXY) Init() (err error) {

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package idxmap provides mapping structure that in addition to built-in map
-// provides notifications about changes in the mapping and allows to retrieve items
-// by fields in the value structure.
+// Package idxmap defines a mapping structure which supports mapping change
+// notifications and retrieval of items by fields in the value structure.
 //
 //  Primary Index                Item                                Secondary indexes
 // ===================================================================================

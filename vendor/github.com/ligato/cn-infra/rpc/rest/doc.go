@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rest provides an HTTP server to app plugins, where a plugin
-// can register at specified URLs one or more HTTP request handlers that
-// will handle HTTP requests at run time.
+// Package rest implements the HTTP server through which plugins can
+// expose their REST APIs to the outside world.
 package rest

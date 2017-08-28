@@ -28,7 +28,7 @@ import (
 )
 
 type CompositeFlavor struct {
-	rpc.FlavorRPC     // Reused Flavor
+	*rpc.FlavorRPC     // Reused Flavor
 	PluginXY PluginXY // Added custom plugin to flavor
 }
 
@@ -45,6 +45,11 @@ func (flavor *CompositeFlavor) Inject() bool {
 
 func (flavor *CompositeFlavor) Plugins() []*core.NamedPlugin {
 	flavor.Inject()
+	
+	if flavor.FlavorRPC == nil {
+	    flavor.FlavorRPC = &rpc.FlavorRPC{}
+	}
+	
 	return core.ListPluginsInFlavor(flavor)
 }
 

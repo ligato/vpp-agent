@@ -59,7 +59,7 @@ func (f *FlavorEtcd) Inject(resyncOrch *resync.Plugin) bool {
 	f.ETCDDataSync.ResyncOrch = resyncOrch
 	f.ETCDDataSync.ServiceLabel = &f.ServiceLabel
 
-	if f.StatusCheck.Transport != nil {
+	if f.StatusCheck.Transport == nil {
 		f.StatusCheck.Transport = &f.ETCDDataSync
 	}
 

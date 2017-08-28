@@ -72,7 +72,7 @@ in one of the following functional areas:
     to etcd
   - [Redis](db/keyval/redis) - implements keyval skeleton provides access
     to redis
-  - [Casssandra](db/sql/cassandra) -
+  - [Casssandra](db/sql/cassandra) - implements sql skeleton provides access to cassandra
     
 * **Messaging** - provides a common API and connectivity to message buses:
     - [Kafka](messaging/kafka) - provides access to a Kafka broker (Sarama)

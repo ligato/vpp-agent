@@ -72,6 +72,12 @@ func main() {
 		fmt.Println(fmt.Errorf("Error in creating keyspace %v", err))
 		os.Exit(1)
 	}
+
+	err = example(session)
+	if err != nil {
+		fmt.Println(fmt.Errorf("Error in executing DML/DDL statements %v", err))
+		os.Exit(1)
+	}
 }
 
 func loadConfig() (cassandra.Config, error) {
