@@ -41,7 +41,7 @@ func (f *Flavor) Inject() error {
 	}
 	f.injected = true
 
-	f.Base.Inject()
+	f.Base.Inject(nil)
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("govpp")
 	f.VPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("default-plugins")
