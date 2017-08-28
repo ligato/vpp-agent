@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/namsral/flag"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // Plugin exposes the service label(i.e. the string used to identify the particular VNF) to the other plugins.
@@ -38,6 +39,8 @@ func (p *Plugin) Init() error {
 	if p.MicroserviceLabel == "" {
 		p.MicroserviceLabel = microserviceLabelFlag
 	}
+	log := logroot.StandardLogger()
+	log.Infof("Microservice label: %v", p.MicroserviceLabel)
 	return nil
 }
 

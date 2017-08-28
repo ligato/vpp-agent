@@ -20,7 +20,6 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 
 	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
@@ -33,7 +32,6 @@ type FlavorLocal struct {
 	logRegistry  logging.Registry
 	ServiceLabel servicelabel.Plugin
 	StatusCheck  statuscheck.Plugin
-	ResyncOrch   resync.Plugin
 
 	injected bool
 }
@@ -49,7 +47,6 @@ func (f *FlavorLocal) Inject() bool {
 
 	f.StatusCheck.Deps.Log = f.LoggerFor("status-check")
 	f.StatusCheck.Deps.PluginName = core.PluginName("status-check")
-	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("resync-orch")
 
 	return true
 }

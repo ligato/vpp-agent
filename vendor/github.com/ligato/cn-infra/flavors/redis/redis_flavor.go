@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/datasync/resync"
 )
 
 // defines redis flags // TODO switch to viper to avoid global configuration
@@ -42,7 +43,7 @@ type FlavorRedis struct {
 }
 
 // Inject sets object references
-func (f *FlavorRedis) Inject() (allReadyInjected bool) {
+func (f *FlavorRedis) Inject(resyncOrch *resync.Plugin) (allReadyInjected bool) {
 	if f.injected {
 		return false
 	}
@@ -56,7 +57,7 @@ func (f *FlavorRedis) Inject() (allReadyInjected bool) {
 	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis")
 	f.RedisDataSync.Deps.PluginLogDeps = *f.LogDeps("redis-datasync")
 	f.RedisDataSync.KvPlugin = &f.Redis
-	f.RedisDataSync.ResyncOrch = &f.ResyncOrch
+	f.RedisDataSync.ResyncOrch = resyncOrch
 	f.RedisDataSync.ServiceLabel = &f.ServiceLabel
 
 	if f.StatusCheck.Transport == nil {
@@ -68,6 +69,6 @@ func (f *FlavorRedis) Inject() (allReadyInjected bool) {
 
 // Plugins combines all Plugins in flavor to the list
 func (f *FlavorRedis) Plugins() []*core.NamedPlugin {
-	f.Inject()
+	f.Inject(nil)
 	return core.ListPluginsInFlavor(f)
 }

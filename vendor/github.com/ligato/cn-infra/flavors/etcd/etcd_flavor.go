@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/datasync/resync"
 )
 
 // defines etcd & kafka flags // TODO switch to viper to avoid global configuration
@@ -41,7 +42,7 @@ type FlavorEtcd struct {
 }
 
 // Inject sets object references
-func (f *FlavorEtcd) Inject() bool {
+func (f *FlavorEtcd) Inject(resyncOrch *resync.Plugin) bool {
 	if f.injected {
 		return false
 	}
@@ -55,7 +56,7 @@ func (f *FlavorEtcd) Inject() bool {
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3")
 	f.ETCDDataSync.Deps.PluginLogDeps = *f.LogDeps("etcdv3-datasync")
 	f.ETCDDataSync.KvPlugin = &f.ETCD
-	f.ETCDDataSync.ResyncOrch = &f.ResyncOrch
+	f.ETCDDataSync.ResyncOrch = resyncOrch
 	f.ETCDDataSync.ServiceLabel = &f.ServiceLabel
 
 	if f.StatusCheck.Transport != nil {
@@ -67,6 +68,6 @@ func (f *FlavorEtcd) Inject() bool {
 
 // Plugins combines all Plugins in flavor to the list
 func (f *FlavorEtcd) Plugins() []*core.NamedPlugin {
-	f.Inject()
+	f.Inject(nil)
 	return core.ListPluginsInFlavor(f)
 }
