@@ -35,7 +35,7 @@ import (
 // data to a binary api message and demonstration of how to send the message
 // to the VPP with:
 //
-// requestContext = goVppChannel.SendRequest(requestMessage)Publisher
+// requestContext = goVppChannel.SendRequest(requestMessage)
 // requestContext.ReceiveReply(replyMessage)
 //
 // Note: this example shows how to work with VPP, so a real proto message

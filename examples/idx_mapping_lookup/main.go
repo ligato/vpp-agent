@@ -91,7 +91,6 @@ type ExamplePlugin struct {
 	exampleIdx   idxvpp.NameToIdxRW // Name to index mapping registry
 	exampleIDSeq uint32             // Provides unique ID for every item stored in mapping
 	// Fields below are used to properly finish the example
-	eventCounter uint8
 	closeChannel *chan struct{}
 }
 
