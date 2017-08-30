@@ -17,8 +17,11 @@ package main
 import (
 	"time"
 
+	"flag"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/localdeps"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
@@ -32,7 +35,7 @@ import (
 // data to a binary api message and demonstration of how to send the message
 // to the VPP with:
 //
-// requestContext = goVppChannel.SendRequest(requestMessage)
+// requestContext = goVppChannel.SendRequest(requestMessage)Publisher
 // requestContext.ReceiveReply(replyMessage)
 //
 // Note: this example shows how to work with VPP, so a real proto message
@@ -48,30 +51,53 @@ import (
 // HTTP and Log), GOVPP, resync plugin and example plugin which demonstrates GOVPP call functionality.
 func main() {
 	// Init close channel to stop the example
-	closeChannel := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{}, 1)
 
-	f := vpp.Flavor{}
-
-	// Example plugin (GOVPP call)
-	examplePlugin := ExamplePlugin{}
-	examplePlugin.GoVppmux = &f.GoVPP
-
-	namedExamplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin}
-
-	// Create new agent
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), namedExamplePlugin)...)
-
-	// End when the GOVPP example is finished
-	go closeExample("GOVPP call example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
+	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// Stop the agent with desired info message
-func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(10 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+/**********
+ * Flavor *
+ **********/
+
+// ETCD flag to load config
+func init() {
+	flag.String("etcdv3-config", "etcd.conf",
+		"Location of the Etcd configuration file")
+}
+
+// ExampleFlavor is a set of plugins required for the datasync example.
+type ExampleFlavor struct {
+	// Local flavor to access to Infra (logger, service label, status check)
+	*vpp.Flavor
+	// Example plugin
+	GovppExample ExamplePlugin
+	// For example purposes, use channel when the example is finished
+	closeChan *chan struct{}
+}
+
+// Inject sets object references
+func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Init local flavor
+	if ef.Flavor == nil {
+		ef.Flavor = &vpp.Flavor{}
+	}
+	ef.Flavor.Inject()
+
+	ef.GovppExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("datasync-example")
+	ef.GovppExample.GoVppmux = &ef.GoVPP
+	ef.GovppExample.closeChannel = ef.closeChan
+
+	return true
+}
+
+// Plugins combines all Plugins in flavor to the list
+func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+	ef.Inject()
+	return core.ListPluginsInFlavor(ef)
 }
 
 /**********************
@@ -87,23 +113,32 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
-	GoVppmux            *govppmux.GOVPPPlugin
-	exampleConfigurator *ExampleConfigurator // Plugin configurator
+	Deps
+
+	exampleIDSeq uint32       // Plugin-specific ID initialization
+	vppChannel   *api.Channel // Vpp channel to communicate with VPP
+	// Fields below are used to properly finish the example
+	eventCounter uint8
+	closeChannel *chan struct{}
 }
 
-// Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
-// The Go native plugin mechanism that was introduced in Go 1.8
-func (plugin *ExamplePlugin) Init() error {
-	// Initialize configurator
-	plugin.exampleConfigurator = &ExampleConfigurator{
-		GoVppmux:     plugin.GoVppmux,
-		exampleIDSeq: 1, // Example ID is plugin-specific number used as a data index
-	}
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	GoVppmux                  *govppmux.GOVPPPlugin
+	localdeps.PluginInfraDeps // injected
+}
 
-	// Now initialize the plugin configurator
-	err := plugin.exampleConfigurator.Init()
+// Init members of plugin
+func (plugin *ExamplePlugin) Init() (err error) {
+	// NewAPIChannel returns a new API channel for communication with VPP via govpp core. It uses default buffer
+	// sizes for the request and reply Go channels
+	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 
-	log.DefaultLogger().Info("Initialization of the custom plugin for the GOVPP call example is completed")
+	plugin.Log.Info("Default plugin plugin ready")
+
+	// Make VPP call
+	go plugin.VppCall()
+	// Make VPP call
 
 	return err
 }
@@ -111,40 +146,8 @@ func (plugin *ExamplePlugin) Init() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
 // allocated by the plugin during its lifetime
 func (plugin *ExamplePlugin) Close() error {
-	plugin.exampleConfigurator.Close()
+	safeclose.CloseAll(plugin.GoVppmux, plugin.vppChannel)
 	return nil
-}
-
-/*************************
- * Example plugin config *
- *************************/
-
-// ExampleConfigurator usually initializes configuration-specific fields or other tasks (e.g. defines GOVPP channels
-// if they are used, checks VPP message compatibility etc.)
-type ExampleConfigurator struct {
-	GoVppmux     *govppmux.GOVPPPlugin
-	exampleIDSeq uint32       // Plugin-specific ID initialization
-	vppChannel   *api.Channel // Vpp channel to communicate with VPP
-}
-
-// Init members of configurator
-func (configurator *ExampleConfigurator) Init() (err error) {
-	// NewAPIChannel returns a new API channel for communication with VPP via govpp core. It uses default buffer
-	// sizes for the request and reply Go channels
-	configurator.vppChannel, err = configurator.GoVppmux.NewAPIChannel()
-
-	log.DefaultLogger().Info("Default plugin configurator ready")
-
-	// Make VPP call
-	go configurator.VppCall()
-	// Make VPP call
-
-	return err
-}
-
-// Close function for example plugin
-func (configurator *ExampleConfigurator) Close() {
-	safeclose.Close(configurator.vppChannel)
 }
 
 /***********
@@ -153,39 +156,42 @@ func (configurator *ExampleConfigurator) Close() {
 
 // VppCall uses created data to convert it to the binary api call. In the example, a bridge domain data are built and
 // transformed to the BridgeDomainAddDel binary api call which is then sent to the VPP
-func (configurator *ExampleConfigurator) VppCall() {
+func (plugin *ExamplePlugin) VppCall() {
 	time.Sleep(3 * time.Second)
 
 	// Prepare a simple data
-	log.DefaultLogger().Info("Preparing data ...")
+	plugin.Log.Info("Preparing data ...")
 	bds1 := buildData("br1")
 	bds2 := buildData("br2")
 	bds3 := buildData("br3")
 
 	// Prepare binary api message from the data
-	req1 := buildBinapiMessage(bds1, configurator.exampleIDSeq)
-	configurator.exampleIDSeq++ // Change (raise) index to ensure every message uses unique ID
-	req2 := buildBinapiMessage(bds2, configurator.exampleIDSeq)
-	configurator.exampleIDSeq++
-	req3 := buildBinapiMessage(bds3, configurator.exampleIDSeq)
-	configurator.exampleIDSeq++
+	req1 := buildBinapiMessage(bds1, plugin.exampleIDSeq)
+	plugin.exampleIDSeq++ // Change (raise) index to ensure every message uses unique ID
+	req2 := buildBinapiMessage(bds2, plugin.exampleIDSeq)
+	plugin.exampleIDSeq++
+	req3 := buildBinapiMessage(bds3, plugin.exampleIDSeq)
+	plugin.exampleIDSeq++
 
 	// Generic bin api reply (request: BridgeDomainAddDel)
 	reply := &bin_api.BridgeDomainAddDelReply{}
 
-	log.DefaultLogger().Info("Sending data to VPP ...")
+	plugin.Log.Info("Sending data to VPP ...")
 
 	// 1. Send the request and receive a reply directly (in one line)
-	configurator.vppChannel.SendRequest(req1).ReceiveReply(reply)
+	plugin.vppChannel.SendRequest(req1).ReceiveReply(reply)
 
 	// 2. Send multiple different requests. Every request returns it's own request context
-	reqCtx2 := configurator.vppChannel.SendRequest(req2)
-	reqCtx3 := configurator.vppChannel.SendRequest(req3)
+	reqCtx2 := plugin.vppChannel.SendRequest(req2)
+	reqCtx3 := plugin.vppChannel.SendRequest(req3)
 	// The context can be used later to get reply
 	reqCtx2.ReceiveReply(reply)
 	reqCtx3.ReceiveReply(reply)
 
-	log.DefaultLogger().Info("Data sent to VPP")
+	plugin.Log.Info("Data successfully sent to VPP")
+	// End the example
+	plugin.Log.Infof("etcd/datasync example finished, sending shutdown ...")
+	*plugin.closeChannel <- struct{}{}
 }
 
 // Auxiliary function to build bridge domain data
