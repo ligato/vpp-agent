@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/vishvananda/netlink"
 
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/linuxcalls"
@@ -85,8 +86,14 @@ type LinuxInterfaceConfigurator struct {
 	dockerClient *docker.Client
 
 	/* management of go routines */
+	ctx    context.Context    // Context within which all goroutines are running
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+
+	/* state data (TBD: will be moved to LinuxInterfaceStateUpdater) */
+	ifWatcherRunning bool
+	ifWatcherNotifCh chan netlink.LinkUpdate
+	ifWatcherDoneCh  chan struct{}
 }
 
 // Init linuxplugin and start go routines
@@ -106,10 +113,11 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 		log.DefaultLogger().Warn("Failed to connect with the docker daemon. Will keep re-connecting in the background.")
 	}
 
-	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	go plugin.trackMicroservices(ctx)
+	plugin.ctx, plugin.cancel = context.WithCancel(context.Background())
+	go plugin.trackMicroservices(plugin.ctx)
 
+	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
+	plugin.ifWatcherDoneCh = make(chan struct{})
 	return nil
 }
 
@@ -126,13 +134,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 	var wasError error
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 
-	// Step 1: Dump actual state of the Linux network stack (subset of it)
-	err := plugin.LookupLinuxInterfaces(interfaces)
-	if err != nil {
-		return err
-	}
-
-	// Step 2: Create missing Linux interfaces and recreate existing ones
+	// Step 1: Create missing Linux interfaces and recreate existing ones
 	for _, iface := range interfaces {
 		err := plugin.ConfigureLinuxInterface(iface)
 		if err != nil {
@@ -140,14 +142,26 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 		}
 	}
 
+	// Step 2: Dump pre-existing and currently not managed interfaces in the current namespace.
+	err := plugin.LookupLinuxInterfaces()
+	if err != nil {
+		return err
+	}
+
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
 	return wasError
 }
 
-// LookupLinuxInterfaces looks up all *non-managed* Linux interfaces in the current namespace and registers them into
-// the name-to-index mapping.
-func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces(managedIfs []*intf.LinuxInterfaces_Interface) error {
+// LookupLinuxInterfaces looks up all currently unmanaged Linux interfaces in the current namespace and registers them into
+// the name-to-index mapping. Furthermore, it triggers goroutine that will watch for newly added interfaces (by another party)
+// unless it is already running.
+func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
+	plugin.startIfWatcher()
+
+	plugin.cfgLock.Lock()
+	defer plugin.cfgLock.Unlock()
+
 	intfs, err := net.Interfaces()
 	if err != nil {
 		return err
@@ -157,14 +171,8 @@ func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces(managedIfs []*in
 		if idx < 0 {
 			continue
 		}
-		managed := false
-		for _, managedIf := range managedIfs {
-			if managedIf.Name == intf.Name {
-				managed = true
-				break
-			}
-		}
-		if managed {
+		_, _, known := plugin.ifIndexes.LookupIdx(intf.Name)
+		if known {
 			continue
 		}
 		log.DefaultLogger().WithFields(log.Fields{"name": intf.Name, "idx": idx}).Debug("Found new Linux interface")
@@ -788,4 +796,53 @@ func (plugin *LinuxInterfaceConfigurator) processTerminatedMicroservice(nsMgmtCt
 			plugin.removeObsoleteVeth(nsMgmtCtx, intf.vethPeer.config.Name, intf.vethPeer.config.Namespace)
 		}
 	}
+}
+
+// TODO: this will become Init method of LinuxInterfaceStateUpdater
+func (plugin *LinuxInterfaceConfigurator) startIfWatcher() error {
+	if !plugin.ifWatcherRunning {
+		plugin.ifWatcherRunning = true
+		err := netlink.LinkSubscribe(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
+		if err != nil {
+			return err
+		}
+		go plugin.watchLinuxInterfaces(plugin.ctx)
+	}
+	return nil
+}
+
+// TODO: move to LinuxInterfaceStateUpdater and use channels to communicate with LinuxInterfaceConfigurator.
+func (plugin *LinuxInterfaceConfigurator) watchLinuxInterfaces(ctx context.Context) {
+	plugin.wg.Add(1)
+	defer plugin.wg.Done()
+
+	for {
+		select {
+		case linkNotif := <-plugin.ifWatcherNotifCh:
+			plugin.processLinkNotification(linkNotif)
+
+		case <-ctx.Done():
+			close(plugin.ifWatcherDoneCh)
+			return
+		}
+	}
+}
+
+// TODO: move to LinuxInterfaceStateUpdater
+func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.Link) {
+	linkAttrs := link.Attrs()
+	log.DefaultLogger().WithFields(log.Fields{"name": linkAttrs.Name}).Debug("Processing Linux link update")
+
+	plugin.cfgLock.Lock()
+	defer plugin.cfgLock.Unlock()
+
+	// register newly added interface only if it is not already managed by this plugin
+	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
+	if !known {
+		log.DefaultLogger().WithFields(log.Fields{"name": linkAttrs.Name, "idx": linkAttrs.Index}).
+			Debug("Found new Linux interface")
+		plugin.ifIndexes.RegisterName(linkAttrs.Name, uint32(linkAttrs.Index), nil)
+	}
+
+	// TODO: process state data
 }
