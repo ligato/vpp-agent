@@ -100,7 +100,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 	}
 
 	// Register
-	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, meta)
+	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, &meta)
 	plugin.XcIndexSeq++
 
 	return nil
@@ -153,7 +153,7 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 	meta := XConnectMeta{
 		TransmitInterface: newConfig.TransmitInterface,
 	}
-	plugin.XcIndexes.RegisterName(newConfig.ReceiveInterface, receiveInterfaceIndex, meta)
+	plugin.XcIndexes.RegisterName(newConfig.ReceiveInterface, receiveInterfaceIndex, &meta)
 	plugin.XcIndexSeq++
 
 	return nil
