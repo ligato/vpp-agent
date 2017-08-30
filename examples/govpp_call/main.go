@@ -87,7 +87,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	}
 	ef.Flavor.Inject()
 
-	ef.GovppExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("datasync-example")
+	ef.GovppExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("govpp-example")
 	ef.GovppExample.GoVppmux = &ef.GoVPP
 	ef.GovppExample.closeChannel = ef.closeChan
 
@@ -99,13 +99,6 @@ func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
 	ef.Inject()
 	return core.ListPluginsInFlavor(ef)
 }
-
-/**********************
- * Example plugin API *
- **********************/
-
-// PluginID of the custom govpp_call plugin
-const PluginID core.PluginName = "example-plugin"
 
 /******************
  * Example plugin *

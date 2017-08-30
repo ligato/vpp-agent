@@ -15,13 +15,15 @@
 package main
 
 import (
+	"time"
+
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"time"
 )
 
 // *************************************************************************
@@ -39,33 +41,44 @@ import (
 // HTTP and Log), and example plugin which demonstrates index mapping lookup functionality.
 func main() {
 	// Init close channel to stop the example
-	closeChannel := make(chan struct{}, 1)
-	f := vpp.Flavor{}
-	// Example plugin (Index mapping lookup)
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+	exampleFinished := make(chan struct{}, 1)
 
-	// Create new agent
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
-
-	// End when the idx_mapping_lookup example is finished
-	go closeExample("idx_mapping_lookup example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
+	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// Stop the agent with desired info message
-func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(7 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+/**********
+ * Flavor *
+ **********/
+
+// ExampleFlavor is a set of plugins required for the datasync example.
+type ExampleFlavor struct {
+	*local.FlavorLocal
+	IdxLookupExample ExamplePlugin
+	// For example purposes, use channel when the example is finished
+	closeChan *chan struct{}
 }
 
-/**********************
- * Example plugin API *
- **********************/
+// Inject sets object references
+func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	if ef.FlavorLocal == nil {
+		ef.FlavorLocal = &local.FlavorLocal{}
+	}
+	ef.FlavorLocal.Inject()
 
-// PluginID of the custom index mapping lookup plugin
-const PluginID core.PluginName = "example-plugin"
+	ef.IdxLookupExample.PluginLogDeps = *ef.LogDeps("idx-mapping-lookup")
+	ef.IdxLookupExample.closeChannel = ef.closeChan
+
+	return true
+}
+
+// Plugins combines all Plugins in flavor to the list
+func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+	ef.Inject()
+	return core.ListPluginsInFlavor(ef)
+}
 
 /******************
  * Example plugin *
@@ -73,32 +86,40 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
+	Deps
+
 	exampleIdx   idxvpp.NameToIdxRW // Name to index mapping registry
 	exampleIDSeq uint32             // Provides unique ID for every item stored in mapping
+	// Fields below are used to properly finish the example
+	eventCounter uint8
+	closeChannel *chan struct{}
+}
+
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	localdeps.PluginLogDeps // injected
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Init new name-to-index mapping
-	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID, "example_index", nil)
+	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "example_index", nil)
 
 	// Set initial ID. After every registration this ID has to be incremented, so new mapping is registered
 	// under unique number
 	plugin.exampleIDSeq = 1
 
-	log.DefaultLogger().Info("Initialization of the custom plugin for the idx-mapping lookup example is completed")
+	plugin.Log.Info("Initialization of the custom plugin for the idx-mapping lookup example is completed")
 
 	// Demonstrate mapping lookup functionality
-	go plugin.exampleMappingUsage()
+	plugin.exampleMappingUsage()
+
+	// End the example
+	plugin.Log.Infof("idx-mapping-lookup example finished, sending shutdown ...")
+	*plugin.closeChannel <- struct{}{}
 
 	return err
-}
-
-// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
-// allocated by the plugin during its lifetime (just for reference, nothing needs to be cleaned up here)
-func (plugin *ExamplePlugin) Close() error {
-	return nil
 }
 
 // Meta structure. It can contain any number of fields of different types. Metadata is optional and can be nil
@@ -109,24 +130,22 @@ type Meta struct {
 
 // Illustration of index-mapping lookup usage
 func (plugin *ExamplePlugin) exampleMappingUsage() {
-	time.Sleep(3 * time.Second)
-
 	// Random name used to registration. Every registered name should be unique
 	name := "example-entity"
 
 	// Register name, unique ID and metadata to example index map. Metadata are optional, can be nil. Name and ID have
 	// to be unique, otherwise the mapping will be overridden
 	plugin.exampleIdx.RegisterName(name, plugin.exampleIDSeq, &Meta{})
-	log.DefaultLogger().Infof("Name %v registered", name)
+	plugin.Log.Infof("Name %v registered", name)
 
 	// Find the registered mapping using lookup index (name has to be known). Function returns an index related to
 	// provided name, a metadata (nil if there are no metadata or mapping was not found) and a bool flag whether
 	// the mapping with provided name was found or not
 	_, meta, found := plugin.exampleIdx.LookupIdx(name)
 	if found && meta != nil {
-		log.DefaultLogger().Infof("Name %v stored in mapping", name)
+		plugin.Log.Infof("Name %v stored in mapping", name)
 	} else {
-		log.DefaultLogger().Errorf("Name %v not found", name)
+		plugin.Log.Errorf("Name %v not found", name)
 	}
 
 	// Find the registered mapping using lookup name (index has to be known). Function returns a name related to
@@ -134,12 +153,12 @@ func (plugin *ExamplePlugin) exampleMappingUsage() {
 	// the mapping with provided index was found or not
 	_, meta, found = plugin.exampleIdx.LookupName(plugin.exampleIDSeq)
 	if found && meta != nil {
-		log.DefaultLogger().Infof("Index %v stored in mapping", plugin.exampleIDSeq)
+		plugin.Log.Infof("Index %v stored in mapping", plugin.exampleIDSeq)
 	} else {
-		log.DefaultLogger().Errorf("Index %v not found", plugin.exampleIDSeq)
+		plugin.Log.Errorf("Index %v not found", plugin.exampleIDSeq)
 	}
 
 	// This is how to remove mapping from registry. Other plugins can be notified about this change
 	plugin.exampleIdx.UnregisterName(name)
-	log.DefaultLogger().Infof("Name %v unregistered", name)
+	plugin.Log.Infof("Name %v unregistered", name)
 }
