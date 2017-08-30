@@ -240,9 +240,11 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 		if create {
 			// the l2xconn needs to be created
 			if !meta.configured {
-				// not yet configured, configure now
+				// not yet configured, try to configure now
 				err = plugin.configureL2XConnectPair(rxIfName, meta.TransmitInterface)
-				meta.configured = true
+				if err != nil {
+					meta.configured = true
+				}
 			}
 		} else {
 			// the l2xconn needs to be delted
