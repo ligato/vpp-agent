@@ -93,6 +93,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 						log.DefaultLogger().Error(err)
 					}
 				})
+				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			} else {
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
@@ -101,6 +102,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 						log.DefaultLogger().Error(err)
 					}
 				})
+				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				// TODO propagate error
 			}
 			ifIdxEv.Done()
