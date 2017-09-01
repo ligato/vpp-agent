@@ -9,9 +9,14 @@ contains:
 - A pre-built VPP Agent
 
 ### Getting an Image from Dockerhub
-No prebuilt Development docker images are currently available on Dockerhub
-at this time. For a quick start with the VPP Agent production image,
-please see [prod_vpp_agent/README.md](../prod_vpp_agent/README.md).
+For a quick start with the VPP Agent, you can use the pre-build Docker 
+Development images with the Agent, VPP, git and all the required tools
+from [Dockerhub](https://hub.docker.com/r/ligato/dev-vpp-agent/).
+```
+docker pull ligato/dev-vpp-agent
+```
+Then you can start the downloaded image as described [here][1]. 
+
 
 ### Building Locally
 To build the docker image on your local machine,  type:
@@ -309,3 +314,4 @@ console.
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
 
+[1]: #-starting-the-image
