@@ -62,8 +62,8 @@ func main() {
 	flavor := vpp.Flavor{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{
-		Linux: &flavor.Linux,
-	}}
+		agent1: flavor.ETCDDataSync.OfDifferentAgent("agent1", flavor),
+		agent2: flavor.ETCDDataSync.OfDifferentAgent("agent2", flavor)}}
 
 	// Create new agent
 	agentVar := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
@@ -107,10 +107,6 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin
 func (plugin *ExamplePlugin) Init() error {
-	// Access DB of agent1 and agent2
-	//plugin.agent1 = datasync.OfDifferentAgent("agent1") todo
-	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
-
 	// Receive linux interfaces mapping
 	if plugin.Linux != nil {
 		plugin.linuxIfIdxLocal = plugin.Linux.GetLinuxIfIndexes()

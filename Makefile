@@ -95,6 +95,13 @@ define format_only
     @echo "# done"
 endef
 
+# run test examples
+define test_examples
+    @echo "# Testing examples"
+    @./vendor/github.com/ligato/cn-infra/scripts/test_examples.sh
+    @echo "# done"
+endef
+
 # build examples only
 define build_examples_only
     @echo "# building examples"
@@ -192,6 +199,10 @@ generate:
 # run tests
 test:
 	$(call test_only)
+
+# run smoke tests on examples
+test-examples:
+	$(call test_examples)
 
 # run tests with coverage report
 test-cover:

@@ -22,20 +22,43 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/servicelabel"
 )
 
 // Plugin dbsync implements Plugin interface
 type Plugin struct {
-	Deps    // inject
+	Deps // inject
 	adapter *watcher
 }
 
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps                      // inject
-	ResyncOrch                resync.Subscriber    // inject
-	KvPlugin                  keyval.KvProtoPlugin // inject
+	localdeps.PluginInfraDeps       // inject
+	ResyncOrch resync.Subscriber    // inject
+	KvPlugin   keyval.KvProtoPlugin // inject
+}
+
+type infraDeps interface {
+	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck):
+	InfraDeps(pluginName string) *localdeps.PluginInfraDeps
+}
+
+// OfDifferentAgent allows access DB of different agent (with a particular microservice label).
+// This method is a shortcut to simplify creating new instance of plugin
+// that is supposed to watch different agent DB.
+// Method intentionally copies instance of plugin (assuming it has set all dependencies)
+// and sets microservice label.
+func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent(
+	microserviceLabel string, infraDeps infraDeps) *Plugin {
+
+	// plugin name suffixed by micorservice label
+	plugin.Deps.PluginInfraDeps = *infraDeps.InfraDeps(string(
+		plugin.Deps.PluginInfraDeps.PluginName) + "-" + microserviceLabel)
+
+	// this is important - here comes microservice label of different agent
+	plugin.Deps.PluginInfraDeps.ServiceLabel = servicelabel.OfDifferentAgent(microserviceLabel)
+	return &plugin // copy (no pointer receiver)
 }
 
 // Init does nothing
@@ -60,7 +83,7 @@ func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEv
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
 	if plugin.KvPlugin.Disabled() {
-		return nil /*TODO*/, nil
+		return nil /*TODO*/ , nil
 	}
 
 	if plugin.adapter == nil {
