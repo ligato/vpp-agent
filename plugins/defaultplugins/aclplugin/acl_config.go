@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package aclplugin is the implementation of the ACL Plugin.
+// Package aclplugin implements the ACL Plugin.
 package aclplugin
 
 import (

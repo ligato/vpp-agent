@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package model defines the acplugin's northbound API. The API is defined
-// in a protobuf data model. The Golang declaration of the API (i.e. the
-// methods and data structures that define the API's functionality) is
-// generated from the protobuf data model.
-package model
+// package bin_api is the parent for packages that define various l2plugin
+// southbound APIs. Each southbound binary API is generated from its
+// corresponding VPP binary API.
+package bin_api

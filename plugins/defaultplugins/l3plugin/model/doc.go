@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package model defines the acplugin's northbound API. The API is defined
+// package model defines the l3plugin's northbound API. The API is defined
 // in a protobuf data model. The Golang declaration of the API (i.e. the
 // methods and data structures that define the API's functionality) is
 // generated from the protobuf data model.
