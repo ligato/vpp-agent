@@ -110,9 +110,9 @@ func (plugin *examplePlugin) consume() (err error) {
 			select {
 			case bdIdxEvent := <-bdIdxChan:
 				log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": bdIdxEvent.RegistryTitle,
-					"Name":   bdIdxEvent.Name, //br1, br2
-					"Del":    bdIdxEvent.Del,
-					"IFaces": bdIdxEvent.Metadata.Interfaces}).
+					"Name":                                                    bdIdxEvent.Name, //br1, br2
+					"Del":                                                     bdIdxEvent.Del,
+					"IFaces":                                                  bdIdxEvent.Metadata.Interfaces}).
 					Info("xxx event received")
 			case <-time.After(10 * time.Second):
 				watching = false
