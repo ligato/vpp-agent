@@ -1,8 +1,8 @@
 #!/bin/bash
 
 set +e
-sudo docker rmi -f dev_vpp_agent_shrink 
-sudo docker rm -f shrink
+sudo docker rmi -f dev_vpp_agent_shrink 2>/dev/null
+sudo docker rm -f shrink 2>/dev/null
 set -e
 
 sudo docker run -itd --name shrink dev_vpp_agent bash
