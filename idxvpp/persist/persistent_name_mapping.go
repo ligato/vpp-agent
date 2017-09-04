@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package persist provides persistent implementation of the interfaces
-// defined in core.name_mapping.go (please see the documentation in there)
+// Package persist asynchronously writes changes in the map (name->idx) to 
+// file.
 package persist
 
 import (
@@ -80,7 +80,8 @@ func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxv
 	return nil
 }
 
-// NameToIdxPersist is a decorator for NameToIdxRW implementing persistent storage.
+// NameToIdxPersist is a watcher for changes in index to name mapping
+// that persists changes in name to idx mapping.
 type NameToIdxPersist struct {
 	// to now about registration
 	registrations chan idxvpp.NameToIdxDto
@@ -102,7 +103,8 @@ type NameToIdxPersist struct {
 	syncAckCh chan error
 }
 
-// NewNameToIdxPersist initializes decorator for persistent storage of index to name mapping.
+// NewNameToIdxPersist creates new instance of watcher of index to name mapping
+// that persists changes in name to idx mapping.
 func NewNameToIdxPersist(fileName string, config *nametoidx.Config, namespace string,
 	registrations chan idxvpp.NameToIdxDto) *NameToIdxPersist {
 
