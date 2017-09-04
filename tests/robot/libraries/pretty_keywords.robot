@@ -37,7 +37,7 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
     Log Many        ${data}
     ${data}=        replace variables           ${data}
     Log Many        ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}m${prefix}-${next_hop}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
     Log Many        ${uri}
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
