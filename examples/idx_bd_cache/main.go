@@ -35,7 +35,9 @@ func main() {
 
 	f := vpp.Flavor{}
 	// Example plugin will show index mapping
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{}}
+	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{
+		agent1: f.ETCDDataSync.OfDifferentAgent("agent1", f),
+		agent2: f.ETCDDataSync.OfDifferentAgent("agent2", f)}}
 
 	// Create new agent
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
@@ -68,9 +70,6 @@ type examplePlugin struct {
 
 // initialize transport & SwIfIndexes then watch, publish & lookup
 func (plugin *examplePlugin) Init() (err error) {
-	//plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "br1", "br2"*/)
-	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
-
 	// /vnf-agent/agent0/vpp/config/v1/interface/
 	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
 	// /vnf-agent/agent1/vpp/config/v1/bd/
@@ -111,9 +110,9 @@ func (plugin *examplePlugin) consume() (err error) {
 			select {
 			case bdIdxEvent := <-bdIdxChan:
 				log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": bdIdxEvent.RegistryTitle,
-					"Name":   bdIdxEvent.Name, //br1, br2
-					"Del":    bdIdxEvent.Del,
-					"IFaces": bdIdxEvent.Metadata.Interfaces}).
+					"Name":                                                    bdIdxEvent.Name, //br1, br2
+					"Del":                                                     bdIdxEvent.Del,
+					"IFaces":                                                  bdIdxEvent.Metadata.Interfaces}).
 					Info("xxx event received")
 			case <-time.After(10 * time.Second):
 				watching = false

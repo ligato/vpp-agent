@@ -62,8 +62,8 @@ func main() {
 	flavor := vpp.Flavor{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{
-		Linux: &flavor.Linux,
-	}}
+		agent1: flavor.ETCDDataSync.OfDifferentAgent("agent1", flavor),
+		agent2: flavor.ETCDDataSync.OfDifferentAgent("agent2", flavor)}}
 
 	// Create new agent
 	agentVar := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
@@ -91,12 +91,12 @@ const PluginID core.PluginName = "example-plugin"
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin
 type ExamplePlugin struct {
 	// Linux plugin dependency
-	Linux            *linuxplugin.Plugin
+	Linux *linuxplugin.Plugin
 
 	// Other agents transport
-	agent1           datasync.KeyValProtoWatcher
-	agent2           datasync.KeyValProtoWatcher
-	writer           datasync.KeyProtoValWriter
+	agent1 datasync.KeyValProtoWatcher
+	agent2 datasync.KeyValProtoWatcher
+	writer datasync.KeyProtoValWriter
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
@@ -107,10 +107,6 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin
 func (plugin *ExamplePlugin) Init() error {
-	// Access DB of agent1 and agent2
-	//plugin.agent1 = datasync.OfDifferentAgent("agent1") todo
-	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
-
 	// Receive linux interfaces mapping
 	if plugin.Linux != nil {
 		plugin.linuxIfIdxLocal = plugin.Linux.GetLinuxIfIndexes()
@@ -187,8 +183,8 @@ func (plugin *ExamplePlugin) consume(linuxIfIdxChan chan linux_if.LinuxIfIndexDt
 		case swIfIdxEvent, done := <-linuxIfIdxChan:
 			if !done {
 				log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
-					"Name": swIfIdxEvent.Name,
-					"Del":  swIfIdxEvent.Del,
+					"Name":                                                    swIfIdxEvent.Name,
+					"Del":                                                     swIfIdxEvent.Del,
 				}).Info("Event received")
 			}
 		case <-time.After(10 * time.Second):

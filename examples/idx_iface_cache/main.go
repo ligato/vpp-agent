@@ -36,7 +36,9 @@ func main() {
 
 	f := vpp.Flavor{}
 	// Example plugin will show index mapping
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{}}
+	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{
+		agent1: f.ETCDDataSync.OfDifferentAgent("agent1", f),
+		agent2: f.ETCDDataSync.OfDifferentAgent("agent2", f)}}
 
 	// Create new agent
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
@@ -69,9 +71,6 @@ type examplePlugin struct {
 
 // initialize transport & SwIfIndexes then watch, publish & lookup
 func (plugin *examplePlugin) Init() (err error) {
-	//plugin.agent1 = datasync.OfDifferentAgent("agent1" /*TODO "rpd", "vschxy"*/)
-	//plugin.agent2 = datasync.OfDifferentAgent("agent2")
-
 	// /vnf-agent/agent0/vpp/config/v1/interface/
 	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
 	// /vnf-agent/agent1/vpp/config/v1/interface/
@@ -112,9 +111,9 @@ func (plugin *examplePlugin) consume() (err error) {
 			case swIfIdxEvent, done := <-swIfIdxChan:
 				if !done {
 					log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
-						"Name": swIfIdxEvent.Name, //ingresXY, egresXY
-						"Del":  swIfIdxEvent.Del,
-						"IP":   swIfIdxEvent.Metadata.IpAddresses,
+						"Name":                                                    swIfIdxEvent.Name,          //ingresXY, egresXY
+						"Del":                                                     swIfIdxEvent.Del,
+						"IP":                                                      swIfIdxEvent.Metadata.IpAddresses,
 					}).Info("xxx event received")
 				}
 			case <-time.After(5 * time.Second):

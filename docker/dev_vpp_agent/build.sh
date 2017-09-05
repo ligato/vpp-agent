@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set +e
-sudo docker rmi -f dev_vpp_agent
+sudo docker rmi -f dev_vpp_agent 2>/dev/null
 set -e
 
 CURRENT_FOLDER=`pwd`
