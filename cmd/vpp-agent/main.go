@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package vpp-agent implements the main() function for the VPP Agent executable.
+// Package vpp-agent implements the main entry point into the VPP Agent,
+// and it is used to build the VPP Agent executable.
 package main
 
 import (

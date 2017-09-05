@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Program vpp-agent-ctl demonstrates usage of the plugins of the VNF agent.
+// package vpp-agent-ctl implements the vpp-agent-ctl test tool for testing
+// of VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
+// be used to demonstrate the usage of VPP Agent plugins and their APIs.
 package main
 
 import (

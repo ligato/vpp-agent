@@ -1,5 +1,5 @@
-// Package testing provides tools and input data for unit testing of ifplugin.
-// What remains to be defined are scenarios.
+// Package testing provides tools and input data for unit testing of the
+// l2plugin. What remains to be defined are scenarios.
 package testing
 
 import (
