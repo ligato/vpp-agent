@@ -127,7 +127,7 @@ Create Next Snapshot Prefix
 
 Check Agent Logs For Errors
     @{logs}=    OperatingSystem.List Files In Directory    ${RESULTS_FOLDER}/    *_container_agent.log
-    Log List    @{logs}
+    Log List    ${logs}
     :FOR    ${log}    IN    @{logs}
     \    ${data}=    Get File    ${RESULTS_FOLDER}/${log}
     \    Should Not Contain    ${data}    exited: agent (exit status
