@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
         # general tools
         iproute2 iputils-ping inetutils-traceroute \
         # vpp requirements
-        openssl python libapr1 \
+        openssl python libapr1 libnuma1 \
         supervisor
 
 # use /opt/vpp-agent/dev as the working directory
