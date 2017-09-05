@@ -1,3 +1,18 @@
+# Release v1.0.3 (2017-09-05)
+
+## Major Themes
+
+Enabled support for wathing data store `OfDifferentAgent()` - see:
+* [examples/idx_iface_cache](examples/idx_iface_cache/main.go)
+* [examples/examples/idx_bd_cache](examples/idx_bd_cache/main.go)
+* [examples/idx_veth_cache](examples/idx_veth_cache/main.go)
+
+Preview of new Kafka client API methods that allows to fill also partition and offset argument. New methods implementation ignores these new parameters for now (fallbacking to existing implementation based on `github.com/bsm/sarama-cluster` and `github.com/Shopify/sarama`).
+
+## Compatibility
+VPP version v17.10-rc0~265-g809bc74 to take advantage of VPP MEMIF fixes.
+
+
 # Release v1.0.2 (2017-08-28)
 
 ## Major Themes
