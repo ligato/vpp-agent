@@ -128,6 +128,16 @@ func (p *Plugin) NewAsyncPublisher(topic string, successClb func(messaging.Proto
 	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
 }
 
+// NewSyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using synchronous API .
+func (p *Plugin) NewSyncPublisherToPartition(topic string, partition int32) messaging.ProtoPublisher {
+	return p.NewProtoConnection("").NewSyncPublisher(topic)
+}
+
+// NewAsyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using asynchronous API.
+func (p *Plugin) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
+}
+
 // NewWatcher creates a watcher that allows to start/stop consuming of messaging published to given topics.
 func (p *Plugin) NewWatcher(name string) messaging.ProtoWatcher {
 	return p.NewProtoConnection(name)

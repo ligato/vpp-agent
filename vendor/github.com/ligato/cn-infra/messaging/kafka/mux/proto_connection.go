@@ -115,6 +115,12 @@ func (conn *ProtoConnection) StopConsuming(topic string) error {
 	return conn.multiplexer.stopConsuming(topic, conn.name)
 }
 
+// ConsumePartition starts consuming messages published to a selected partition of a topic.
+func (conn *ProtoConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string, partition int32) error {
+	conn.multiplexer.Warn("Partition selection not supported yet")
+	return conn.ConsumeTopic(msgClb, topic)
+}
+
 // Watch is an alias for ConsumeTopic method. The alias was added in order to conform to messaging.Mux interface.
 func (conn *ProtoConnection) Watch(msgClb func(messaging.ProtoMessage), topics ...string) error {
 	return conn.ConsumeTopic(msgClb, topics...)
