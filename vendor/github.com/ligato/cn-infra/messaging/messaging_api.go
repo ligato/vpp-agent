@@ -35,8 +35,8 @@ type ProtoPublisher interface {
 
 // ProtoWatcher allows to subscribe for receiving of messages published to given topics.
 type ProtoWatcher interface {
-	ConsumePartition(msgCallback func(ProtoMessage), topic string, partition int32) error
 	Watch(msgCallback func(ProtoMessage), topics ...string) error
+	WatchPartition(msgCallback func(ProtoMessage), topic string, partition int32, offset int64) error
 	StopWatch(topic string) error
 }
 

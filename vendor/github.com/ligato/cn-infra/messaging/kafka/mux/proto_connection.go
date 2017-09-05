@@ -116,14 +116,23 @@ func (conn *ProtoConnection) StopConsuming(topic string) error {
 }
 
 // ConsumePartition starts consuming messages published to a selected partition of a topic.
-func (conn *ProtoConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string, partition int32) error {
-	conn.multiplexer.Warn("Partition selection not supported yet")
+func (conn *ProtoConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string,
+	partition int32, offset int64) error {
+
+	conn.multiplexer.Warn("Partition selection not supported yet - fallback to ConsumeTopic()")
 	return conn.ConsumeTopic(msgClb, topic)
 }
 
 // Watch is an alias for ConsumeTopic method. The alias was added in order to conform to messaging.Mux interface.
 func (conn *ProtoConnection) Watch(msgClb func(messaging.ProtoMessage), topics ...string) error {
 	return conn.ConsumeTopic(msgClb, topics...)
+}
+
+// WatchPartition is an alias for ConsumePartition method. The alias was added in order to conform to
+// messaging.Mux interface.
+func (conn *ProtoConnection) WatchPartition(msgClb func(messaging.ProtoMessage), topic string,
+	partition int32, offset int64) error {
+	return conn.ConsumePartition(msgClb, topic, partition, offset)
 }
 
 // StopWatch is an alias for StopConsuming method. The alias was added in order to conform to messaging.Mux interface.
@@ -136,6 +145,13 @@ func (conn *ProtoConnection) NewSyncPublisher(topic string) messaging.ProtoPubli
 	return &protoSyncPublisherKafka{conn, topic}
 }
 
+// NewSyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition
+// using synchronous API.
+func (conn *ProtoConnection) NewSyncPublisherToPartition(topic string) messaging.ProtoPublisher {
+	conn.multiplexer.Warn("Publishing to selected partition not implemented yet - fallback to NewSyncPublisher()")
+	return &protoSyncPublisherKafka{conn, topic}
+}
+
 // Put publishes a message into kafka
 func (p *protoSyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
 	_, err := p.conn.SendSyncMessage(p.topic, key, message)
@@ -145,6 +161,13 @@ func (p *protoSyncPublisherKafka) Put(key string, message proto.Message, opts ..
 // NewAsyncPublisher creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
 	return &protoAsyncPublisherKafka{conn, topic, successClb, errorClb}
+}
+
+// NewAsyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition
+// using asynchronous API.
+func (conn *ProtoConnection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+	conn.multiplexer.Warn("Publishing to selected partition not implemented yet - fallback to NewAsyncPublisher()")
+	return conn.NewAsyncPublisher(topic, successClb, errorClb)
 }
 
 // Put publishes a message into kafka
