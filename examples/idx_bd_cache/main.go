@@ -36,8 +36,8 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	f := ExampleFlavor{closeChan: &exampleFinished}
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins())...)
+	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
@@ -64,7 +64,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.Flavor.Inject()
 
 	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxBdCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("datasync-example")
+	ef.IdxBdCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-bd-cache-example")
 	ef.IdxBdCacheExample.Publisher = &ef.ETCDDataSync
 	ef.IdxBdCacheExample.Agent1 = ef.ETCDDataSync.OfDifferentAgent("agent1", ef)
 	ef.IdxBdCacheExample.Agent2 = ef.ETCDDataSync.OfDifferentAgent("agent2", ef)
@@ -103,7 +103,7 @@ type Deps struct {
 	localdeps.PluginInfraDeps                            // injected
 }
 
-// Init transport & SwIfIndexes then watch, publish & lookup
+// Init transport & bdIndexes then watch, publish & lookup
 func (plugin *ExamplePlugin) Init() (err error) {
 	// manually initialize 'other' agents (for example purpose only)
 	err = plugin.Agent1.Init()

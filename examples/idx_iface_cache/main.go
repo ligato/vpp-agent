@@ -15,13 +15,14 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
+	"github.com/ligato/cn-infra/flavors/localdeps"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -32,132 +33,198 @@ import (
 // Start Agent plugins selected for this example
 func main() {
 	// Init close channel to stop the example
-	closeChannel := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{}, 1)
 
-	f := vpp.Flavor{}
-	// Example plugin will show index mapping
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &examplePlugin{
-		agent1: f.ETCDDataSync.OfDifferentAgent("agent1", f),
-		agent2: f.ETCDDataSync.OfDifferentAgent("agent2", f)}}
-
-	// Create new agent
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
-
-	// End when the idx_iface_cache example is finished
-	go closeExample("idx_iface_cache example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
+	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// Stop the agent with desired info message
-func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(12 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+/**********
+ * Flavor *
+ **********/
+
+// ExampleFlavor is a set of plugins required for the datasync example.
+type ExampleFlavor struct {
+	// Local flavor to access to Infra (logger, service label, status check)
+	*vpp.Flavor
+	// Example plugin
+	IdxIfaceCacheExample ExamplePlugin
+	// For example purposes, use channel when the example is finished
+	closeChan *chan struct{}
 }
 
-// PluginID of example plugin
-const PluginID core.PluginName = "example-plugin"
+// Inject sets object references
+func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Init local flavor
+	if ef.Flavor == nil {
+		ef.Flavor = &vpp.Flavor{}
+	}
+	ef.Flavor.Inject()
+
+	// Inject infra + transport (publisher, watcher) to example plugin
+	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-iface-cache-example")
+	ef.IdxIfaceCacheExample.Publisher = &ef.ETCDDataSync
+	ef.IdxIfaceCacheExample.Agent1 = ef.ETCDDataSync.OfDifferentAgent("agent1", ef)
+	ef.IdxIfaceCacheExample.Agent2 = ef.ETCDDataSync.OfDifferentAgent("agent2", ef)
+	ef.IdxIfaceCacheExample.closeChannel = ef.closeChan
+
+	return true
+}
+
+// Plugins combines all Plugins in flavor to the list
+func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+	ef.Inject()
+	return core.ListPluginsInFlavor(ef)
+}
+
+/******************
+ * Example plugin *
+ ******************/
 
 // used for demonstration of SwIfIndexes - see Init()
-type examplePlugin struct {
-	agent1        datasync.KeyValProtoWatcher
-	agent2        datasync.KeyValProtoWatcher
-	writer        datasync.KeyProtoValWriter
+type ExamplePlugin struct {
+	Deps
+
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
 	swIfIdxAgent2 ifaceidx.SwIfIndex
+
+	// Fields below are used to properly finish the example
+	closeChannel *chan struct{}
+}
+
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	Publisher                 datasync.KeyProtoValWriter // injected
+	Agent1                    *kvdbsync.Plugin           // injected
+	Agent2                    *kvdbsync.Plugin           // injected
+	localdeps.PluginInfraDeps                            // injected
 }
 
 // initialize transport & SwIfIndexes then watch, publish & lookup
-func (plugin *examplePlugin) Init() (err error) {
-	// /vnf-agent/agent0/vpp/config/v1/interface/
-	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
-	// /vnf-agent/agent1/vpp/config/v1/interface/
-	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.agent1, PluginID)
-	// /vnf-agent/agent2/vpp/config/v1/interface/
-	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.agent2, PluginID)
-
-	if err := plugin.publish(); err != nil {
-		return err
-	}
-
-	return plugin.consume()
-}
-
-// prepares test data for different agents
-func (plugin *examplePlugin) publish() (err error) {
-	iface1 := &testing.Memif100012
-	err = plugin.writer.Put(interfaces.InterfaceKey(iface1.Name), iface1)
+func (plugin *ExamplePlugin) Init() (err error) {
+	// manually initialize 'other' agents (for example purpose only)
+	err = plugin.Agent1.Init()
 	if err != nil {
 		return err
 	}
-	iface2 := &testing.Memif100013
-	err = plugin.writer.Put(interfaces.InterfaceKey(iface2.Name), iface2)
+	err = plugin.Agent2.Init()
+	if err != nil {
+		return err
+	}
+
+	// get access to local interface indexes
+	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
+
+	return nil
+}
+
+// AfterInit - call Cache()
+func (plugin *ExamplePlugin) AfterInit() error {
+	// manually run AfterInit() on 'other' agents (for example purpose only)
+	err := plugin.Agent1.AfterInit()
+	if err != nil {
+		return err
+	}
+	err = plugin.Agent2.AfterInit()
+	if err != nil {
+		return err
+	}
+
+	// Cache other agent's interface index mapping using injected plugin and local plugin name
+	// /vnf-agent/agent1/vpp/config/v1/interface/
+	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
+	// /vnf-agent/agent2/vpp/config/v1/interface/
+	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
+
+	// Run consumer
+	go plugin.consume()
+
+	// Publish test data
+	plugin.publish()
+
+	return nil
+}
+
+// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
+// allocated by the plugin during its lifetime
+func (plugin *ExamplePlugin) Close() error {
+	var wasErr error
+	// Manualy close the agents
+	wasErr = plugin.Agent1.Close()
+	wasErr = plugin.Agent2.Close()
+	_, wasErr = safeclose.CloseAll(plugin.Publisher, plugin.Agent1, plugin.Agent2, plugin.swIfIdxLocal, plugin.swIfIdxAgent1,
+		plugin.swIfIdxAgent2, plugin.closeChannel)
+	return wasErr
+}
+
+// Test data are published to different agents (including local)
+func (plugin *ExamplePlugin) publish() (err error) {
+	// Create interface in local agent
+	iface0 := testing.TapInterfaceBuilder("iface0", "192.168.1.1")
+	err = plugin.Publisher.Put(interfaces.InterfaceKey(iface0.Name), &iface0)
+	if err != nil {
+		return err
+	}
+	// Create interface in agent1
+	iface1 := testing.TapInterfaceBuilder("iface1", "192.168.0.2")
+	err = plugin.Agent1.Put(interfaces.InterfaceKey(iface1.Name), &iface1)
+	if err != nil {
+		return err
+	}
+	// Create interface in agent2
+	iface2 := testing.TapInterfaceBuilder("iface2", "192.168.0.3")
+	err = plugin.Agent2.Put(interfaces.InterfaceKey(iface2.Name), &iface2)
 	return err
 }
 
 // uses the NameToIndexMapping to watch changes
-func (plugin *examplePlugin) consume() (err error) {
+func (plugin *ExamplePlugin) consume() {
+	plugin.Log.Info("Watching started")
 	swIfIdxChan := make(chan ifaceidx.SwIfIdxDto)
-	plugin.swIfIdxLocal.WatchNameToIdx(PluginID, swIfIdxChan)
-	plugin.swIfIdxAgent1.WatchNameToIdx(PluginID, swIfIdxChan)
-	plugin.swIfIdxAgent2.WatchNameToIdx(PluginID, swIfIdxChan)
+	// Subscribe local iface-idx-mapping and both of cache mapping
+	plugin.swIfIdxLocal.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
+	plugin.swIfIdxAgent1.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
+	plugin.swIfIdxAgent2.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
 
-	go func() {
-		var watching = true
-		for watching {
-			select {
-			case swIfIdxEvent, done := <-swIfIdxChan:
-				if !done {
-					log.DefaultLogger().WithFields(logging.Fields{"RegistryTitle": swIfIdxEvent.RegistryTitle, //agent1, agent2
-						"Name":                                                    swIfIdxEvent.Name,          //ingresXY, egresXY
-						"Del":                                                     swIfIdxEvent.Del,
-						"IP":                                                      swIfIdxEvent.Metadata.IpAddresses,
-					}).Info("xxx event received")
-				}
-			case <-time.After(5 * time.Second):
-				watching = false
-			}
+	counter := 0
+
+	watching := true
+	for watching {
+		select {
+		case ifaceIdxEvent := <-swIfIdxChan:
+			plugin.Log.Infof("Event received: interface %v", ifaceIdxEvent.Name)
+			counter++
 		}
+		// Example is expecting 3 events
+		if counter == 3 {
+			watching = false
+		}
+	}
 
-		plugin.lookup()
-	}()
-
-	return nil
+	// Do a lookup whether all mappings were registered
+	plugin.lookup()
 }
 
-// use the NameToIndexMapping to lookup
-func (plugin *examplePlugin) lookup() (err error) {
-	// /vnf-agent/agent0/vpp/config/v1/interface/egresXY
-	if _, iface0, found0 := plugin.swIfIdxLocal.LookupIdx("local0"); found0 {
-		log.DefaultLogger().Println("local0 IPs:", iface0.IpAddresses)
+// use the NameToIndexMapping to lookup local mapping + external cached mappings
+func (plugin *ExamplePlugin) lookup() {
+	plugin.Log.Info("Lookup in progress")
+
+	if index, _, found := plugin.swIfIdxLocal.LookupIdx("iface0"); found {
+		plugin.Log.Infof("interface iface0 (index %v) found in local mapping", index)
 	}
 
-	for i := 0; i < 10; i++ {
-		// /vnf-agent/agent1/vpp/config/v1/interface/ingresXY
-		// Possible usage: for example we need to configure L3 routes to the VPP and we need to know
-		// the next hop IP address
-		if _, iface1, found1 := plugin.swIfIdxAgent1.LookupIdx(testing.Memif100012.Name); found1 {
-			fmt.Println("found ", testing.Memif100012.Name, " IPs:", iface1.IpAddresses)
-			break
-		} else {
-			time.Sleep(100 * time.Millisecond) //to be sure that the cache is updated
-		}
-	}
-	for i := 0; i < 10; i++ {
-		// /vnf-agent/agent2/vpp/config/v1/interface/ingresXY
-		if _, iface2, found2 := plugin.swIfIdxAgent2.LookupIdx(testing.Memif100013.Name); found2 {
-			fmt.Println("found ", testing.Memif100013.Name, " IPs:", iface2.IpAddresses)
-			break
-		} else {
-			time.Sleep(100 * time.Millisecond) //to be sure that the cache is updated
-		}
+	if index, _, found := plugin.swIfIdxAgent1.LookupIdx("iface1"); found {
+		plugin.Log.Infof("interface iface1 (index %v) found in local mapping", index)
 	}
 
-	return err
-}
+	if index, _, found := plugin.swIfIdxAgent2.LookupIdx("iface2"); found {
+		plugin.Log.Infof("interface iface2 (index %v) found in local mapping", index)
+	}
 
-func (plugin *examplePlugin) Close() error {
-	return nil
+	// End the example
+	plugin.Log.Infof("idx-iface-cache example finished, sending shutdown ...")
+	*plugin.closeChannel <- struct{}{}
 }
