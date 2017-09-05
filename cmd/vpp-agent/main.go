@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package vpp-agent implements the main entry point into the VPP Agent,
+// and it is used to build the VPP Agent executable.
 package main
 
 import (
@@ -24,7 +26,12 @@ import (
 	vpp_flavor "github.com/ligato/vpp-agent/flavors/vpp"
 )
 
-// runs statically linked binary of Agent Core Plugins (called "vpp_flavor") with ETCD & Kafka connectors
+// main is the main entry point into the VPP Agent. First, a new CN-Infra
+// Agent (app) is created using the set of plugins defined in vpp_flavor
+// (github.com/ligato/vpp-agent/flavors/vpp). Second, function call to
+// EventLoopWithInterrupt()) initializes and starts all plugins and then
+// waits for the user to terminate the VPP Agent process. All VPP Agent's
+// work from now on is performed by the plugins.
 func main() {
 
 	f := vpp_flavor.Flavor{}
@@ -36,6 +43,8 @@ func main() {
 	}
 }
 
+// init sets the Log output and Log level parameters for VPP Agent's default
+// logger.
 func init() {
 	log.DefaultLogger().SetOutput(os.Stdout)
 	log.DefaultLogger().SetLevel(logging.DebugLevel)

@@ -12,23 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package agentctl contains the agentctl tool for monitoring and configuring
-// of VPP Agents. The tool connects to an Etcd instance, it discovers VPP
-// Agents connected to the instance, and monitors their status. The tool can
-// also write VPP Agent configuration into etcd (note that the VPP Agent does
-// not have to be coneected to Etcd for that, it simply get the config when
-// it connects).
-package main
-
-import (
-	"fmt"
-	"github.com/ligato/vpp-agent/cmd/agentctl/cmd"
-	"os"
-)
-
-func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
+// Package model defines the acplugin's northbound API. The API is defined
+// in a protobuf data model. The Golang declaration of the API (i.e. the
+// methods and data structures that define the API's functionality) is
+// generated from the protobuf data model.
+package model

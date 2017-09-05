@@ -100,7 +100,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 	}
 
 	// Register
-	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, meta)
+	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, &meta)
 	plugin.XcIndexSeq++
 
 	return nil
@@ -153,7 +153,7 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 	meta := XConnectMeta{
 		TransmitInterface: newConfig.TransmitInterface,
 	}
-	plugin.XcIndexes.RegisterName(newConfig.ReceiveInterface, receiveInterfaceIndex, meta)
+	plugin.XcIndexes.RegisterName(newConfig.ReceiveInterface, receiveInterfaceIndex, &meta)
 	plugin.XcIndexSeq++
 
 	return nil
@@ -240,9 +240,11 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 		if create {
 			// the l2xconn needs to be created
 			if !meta.configured {
-				// not yet configured, configure now
+				// not yet configured, try to configure now
 				err = plugin.configureL2XConnectPair(rxIfName, meta.TransmitInterface)
-				meta.configured = true
+				if err != nil {
+					meta.configured = true
+				}
 			}
 		} else {
 			// the l2xconn needs to be delted

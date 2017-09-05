@@ -17,7 +17,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=bin_api
 
 
-// Package aclplugin is the implementation of the ACL Plugin.
+// Package aclplugin implements the ACL Plugin.
 package aclplugin
 
 import (
