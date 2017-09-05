@@ -9,9 +9,23 @@ contains:
 - A pre-built VPP Agent
 
 ### Getting an Image from Dockerhub
-No prebuilt Development docker images are currently available on Dockerhub
-at this time. For a quick start with the VPP Agent production image,
-please see [prod_vpp_agent/README.md](../prod_vpp_agent/README.md).
+For a quick start with the VPP Agent, you can use pre-build Docker images with
+the development version of the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/dev-vpp-agent/).
+```
+# Pull the image from the ligato repository (latest in this case, consider specifying a concrete version)
+docker pull ligato/dev-vpp-agent
+
+# Start dependencies: ETCD and Kafka with default parameters
+docker run -p 2379:2379 --name etcd --rm \
+    quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
+    -advertise-client-urls http://0.0.0.0:2379 \
+    -listen-client-urls http://0.0.0.0:2379
+docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
+ --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
+
+# Create and start the container with the Agent and VPP
+docker run -it --name vpp_agent --rm ligato/dev-vpp-agent
+```
 
 ### Building Locally
 To build the docker image on your local machine,  type:
