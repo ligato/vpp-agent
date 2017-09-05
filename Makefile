@@ -17,9 +17,11 @@ define generate_sources
 	@cd vendor/github.com/golang/mock/mockgen && go install -v
 	@echo "# generating sources"
 	@cd plugins/linuxplugin && go generate
+	@cd plugins/defaultplugins/aclplugin && go generate
 	@cd plugins/defaultplugins/ifplugin && go generate
 	@cd plugins/defaultplugins/l2plugin && go generate
 	@cd plugins/defaultplugins/l3plugin && go generate
+	@cd plugins/defaultplugins/aclplugin/bin_api/acl && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/bfd && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
@@ -92,6 +94,13 @@ endef
 define format_only
     @echo "# formatting the code"
     @./scripts/gofmt.sh
+    @echo "# done"
+endef
+
+# run test examples
+define test_examples
+    @echo "# Testing examples"
+    @./vendor/github.com/ligato/cn-infra/scripts/test_examples.sh
     @echo "# done"
 endef
 
@@ -192,6 +201,10 @@ generate:
 # run tests
 test:
 	$(call test_only)
+
+# run smoke tests on examples
+test-examples:
+	$(call test_examples)
 
 # run tests with coverage report
 test-cover:

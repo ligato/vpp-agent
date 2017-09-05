@@ -22,6 +22,7 @@ script:
   - make lint
   - make
   - make test-cover
+  - make test-examples || true
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

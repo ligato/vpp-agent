@@ -28,6 +28,13 @@ type Plugin struct {
 	MicroserviceLabel string
 }
 
+// OfDifferentAgent sets micorserivce label and returns new instance of Plugin.
+// It is meant for watching DB by prefix of different agent. You can pass/inject
+// instance of this plugin for example to kvdbsync.
+func OfDifferentAgent(microserviceLabel string) *Plugin {
+	return &Plugin{MicroserviceLabel: microserviceLabel}
+}
+
 var microserviceLabelFlag string
 
 func init() {

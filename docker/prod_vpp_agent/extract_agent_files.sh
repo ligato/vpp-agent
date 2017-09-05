@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set +e
-sudo docker rm -f extract
+sudo docker rm -f extract 2>/dev/null
 set -e
 
 sudo docker run -itd --name extract dev_vpp_agent bash

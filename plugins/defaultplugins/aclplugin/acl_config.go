@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate protoc --proto_path=model/acl --gogo_out=model/acl model/acl/acl.proto
+
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=bin_api
+
+
 // Package aclplugin implements the ACL Plugin.
 package aclplugin
 

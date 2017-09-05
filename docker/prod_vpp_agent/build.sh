@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set +e
-sudo docker rmi -f prod_vpp_agent
+sudo docker rmi -f prod_vpp_agent 2>/dev/null
 set -e
 
 ./extract_agent_files.sh

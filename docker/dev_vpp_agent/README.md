@@ -15,12 +15,10 @@ tools, the Ligato and VPP source code, Git, and build tools for both
 the VPP Agent and VPP. The pre-built Development docker images are 
 available from [Dockerhub](https://hub.docker.com/r/ligato/dev-vpp-agent/),
 or you can just type:
-
 ```
 docker pull ligato/dev-vpp-agent
 ```
-Then you can start the downloaded Development image as described [here][1]. 
-
+Then you can start the downloaded Development image as described [here][1].
 
 ### Building Locally
 To build the docker image on your local machine,  type:
