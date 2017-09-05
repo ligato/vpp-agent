@@ -44,7 +44,7 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	flavor := ExampleFlavor{IdxLookupExample: ExamplePlugin{closeChannel: &exampleFinished}}
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -57,19 +57,24 @@ func main() {
 type ExampleFlavor struct {
 	*local.FlavorLocal
 	IdxLookupExample ExamplePlugin
-	// For example purposes, use channel when the example is finished
-	closeChan *chan struct{}
+	// Mark flavor as injected after Inject()
+	injected bool
 }
 
 // Inject sets object references
 func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Every flavor should be injected only once
+	if ef.injected {
+		return false
+	}
+	ef.injected = true
+
 	if ef.FlavorLocal == nil {
 		ef.FlavorLocal = &local.FlavorLocal{}
 	}
 	ef.FlavorLocal.Inject()
 
 	ef.IdxLookupExample.PluginLogDeps = *ef.LogDeps("idx-mapping-lookup")
-	ef.IdxLookupExample.closeChannel = ef.closeChan
 
 	return true
 }

@@ -63,7 +63,7 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	flavor := ExampleFlavor{IdxVethCacheExample: ExamplePlugin{closeChannel: &exampleFinished}}
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -78,12 +78,18 @@ type ExampleFlavor struct {
 	*vpp.Flavor
 	// Example plugin
 	IdxVethCacheExample ExamplePlugin
-	// For example purposes, use channel when the example is finished
-	closeChan *chan struct{}
+	// Mark flavor as injected after Inject()
+	injected bool
 }
 
 // Inject sets object references
 func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Every flavor should be injected only once
+	if ef.injected {
+		return false
+	}
+	ef.injected = true
+
 	// Init local flavor
 	if ef.Flavor == nil {
 		ef.Flavor = &vpp.Flavor{}
@@ -94,9 +100,8 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.IdxVethCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-veth-cache-example")
 	ef.IdxVethCacheExample.Linux = &ef.Linux
 	ef.IdxVethCacheExample.Publisher = &ef.ETCDDataSync
-	ef.IdxVethCacheExample.Agent1 = ef.ETCDDataSync.OfDifferentAgent("agent1", ef)
-	ef.IdxVethCacheExample.Agent2 = ef.ETCDDataSync.OfDifferentAgent("agent2", ef)
-	ef.IdxVethCacheExample.closeChannel = ef.closeChan
+	ef.IdxVethCacheExample.Agent1 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent1", ef)
+	ef.IdxVethCacheExample.Agent2 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent2", ef)
 
 	return true
 }
@@ -192,11 +197,8 @@ func (plugin *ExamplePlugin) Close() error {
 	plugin.wg.Wait()
 
 	var wasErr error
-	// Manually close the agents
-	wasErr = plugin.Agent1.Close()
-	wasErr = plugin.Agent2.Close()
-	_, wasErr = safeclose.CloseAll(plugin.Publisher, plugin.Agent1, plugin.Agent2, plugin.linuxIfIdxLocal,
-		plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2, plugin.closeChannel)
+	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+		plugin.linuxIfIdxLocal, plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2, plugin.closeChannel)
 	return wasErr
 }
 

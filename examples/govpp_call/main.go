@@ -17,8 +17,6 @@ package main
 import (
 	"time"
 
-	"flag"
-
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/localdeps"
@@ -54,7 +52,7 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	flavor := ExampleFlavor{GovppExample: ExamplePlugin{closeChannel: &exampleFinished}}
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -63,24 +61,24 @@ func main() {
  * Flavor *
  **********/
 
-// ETCD flag to load config
-func init() {
-	flag.String("etcdv3-config", "etcd.conf",
-		"Location of the Etcd configuration file")
-}
-
 // ExampleFlavor is a set of plugins required for the datasync example.
 type ExampleFlavor struct {
 	// Local flavor to access to Infra (logger, service label, status check)
 	*vpp.Flavor
 	// Example plugin
 	GovppExample ExamplePlugin
-	// For example purposes, use channel when the example is finished
-	closeChan *chan struct{}
+	// Mark flavor as injected after Inject()
+	injected bool
 }
 
 // Inject sets object references
 func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Every flavor should be injected only once
+	if ef.injected {
+		return false
+	}
+	ef.injected = true
+
 	// Init local flavor
 	if ef.Flavor == nil {
 		ef.Flavor = &vpp.Flavor{}
@@ -89,7 +87,6 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 
 	ef.GovppExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("govpp-example")
 	ef.GovppExample.GoVppmux = &ef.GoVPP
-	ef.GovppExample.closeChannel = ef.closeChan
 
 	return true
 }
@@ -111,7 +108,6 @@ type ExamplePlugin struct {
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example
-	eventCounter uint8
 	closeChannel *chan struct{}
 }
 

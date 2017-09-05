@@ -36,7 +36,7 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{closeChan: &exampleFinished}
+	flavor := ExampleFlavor{IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished}}
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -51,12 +51,18 @@ type ExampleFlavor struct {
 	*vpp.Flavor
 	// Example plugin
 	IdxIfaceCacheExample ExamplePlugin
-	// For example purposes, use channel when the example is finished
-	closeChan *chan struct{}
+	// Mark flavor as injected after Inject()
+	injected bool
 }
 
 // Inject sets object references
 func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Every flavor should be injected only once
+	if ef.injected {
+		return false
+	}
+	ef.injected = true
+
 	// Init local flavor
 	if ef.Flavor == nil {
 		ef.Flavor = &vpp.Flavor{}
@@ -66,9 +72,8 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	// Inject infra + transport (publisher, watcher) to example plugin
 	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-iface-cache-example")
 	ef.IdxIfaceCacheExample.Publisher = &ef.ETCDDataSync
-	ef.IdxIfaceCacheExample.Agent1 = ef.ETCDDataSync.OfDifferentAgent("agent1", ef)
-	ef.IdxIfaceCacheExample.Agent2 = ef.ETCDDataSync.OfDifferentAgent("agent2", ef)
-	ef.IdxIfaceCacheExample.closeChannel = ef.closeChan
+	ef.IdxIfaceCacheExample.Agent1 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent1", ef)
+	ef.IdxIfaceCacheExample.Agent2 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent2", ef)
 
 	return true
 }
@@ -152,11 +157,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // allocated by the plugin during its lifetime
 func (plugin *ExamplePlugin) Close() error {
 	var wasErr error
-	// Manually close the agents
-	wasErr = plugin.Agent1.Close()
-	wasErr = plugin.Agent2.Close()
-	_, wasErr = safeclose.CloseAll(plugin.Publisher, plugin.Agent1, plugin.Agent2, plugin.swIfIdxLocal, plugin.swIfIdxAgent1,
-		plugin.swIfIdxAgent2, plugin.closeChannel)
+	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+		plugin.swIfIdxLocal, plugin.swIfIdxAgent1, plugin.swIfIdxAgent2, plugin.closeChannel)
 	return wasErr
 }
 
