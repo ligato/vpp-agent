@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package bin_api defines the aclplugin's southbound API. The southbound
+// Package binapi defines the aclplugin's southbound API. The southbound
 // API is generated from the ACL VPP binary API.
-package bin_api
+package binapi

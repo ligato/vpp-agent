@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package cmd is the parent for packages that are used to build various
+// Package cmd is the parent for packages that are used to build various
 // executables from vpp-agent sources. VPP Agent agent sources are used
 // to build the executables for the VPP Agent itself and the tools, such
 // as agentctl or vpp-agent-ctl.

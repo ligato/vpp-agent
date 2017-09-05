@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package agentctl/cmd implements the command line interface (CLI) for
+// Package cmd implements the command line interface (CLI) for
 // the agentctl tool.
 package cmd

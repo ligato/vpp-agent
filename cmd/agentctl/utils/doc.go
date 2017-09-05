@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package utils provides utility functions used in agentctl commands.
+// Package utils provides utility functions used in agentctl commands.
 package utils

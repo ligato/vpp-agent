@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package bin_api defines the l3plugin's southbound API. The southbound
+// Package binapi defines the l3plugin's southbound API. The southbound
 // API is generated from the L3 VPP binary API.
-package bin_api
+package binapi
