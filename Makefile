@@ -17,9 +17,11 @@ define generate_sources
 	@cd vendor/github.com/golang/mock/mockgen && go install -v
 	@echo "# generating sources"
 	@cd plugins/linuxplugin && go generate
+	@cd plugins/defaultplugins/aclplugin && go generate
 	@cd plugins/defaultplugins/ifplugin && go generate
 	@cd plugins/defaultplugins/l2plugin && go generate
 	@cd plugins/defaultplugins/l3plugin && go generate
+	@cd plugins/defaultplugins/aclplugin/bin_api/acl && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/bfd && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
