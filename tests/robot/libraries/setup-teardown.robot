@@ -126,7 +126,7 @@ Create Next Snapshot Prefix
     [Return]            ${prefix}
 
 Check Agent Logs For Errors
-    @{logs}=    List Files In Directory    ${RESULTS_FOLDER}/    *_container_agent.log
+    @{logs}=    OperatingSystem.List Files In Directory    ${RESULTS_FOLDER}/    *_container_agent.log
     Log List    @{logs}
     :FOR    ${log}    IN    @{logs}
     \    ${data}=    Get File    ${RESULTS_FOLDER}/${log}
