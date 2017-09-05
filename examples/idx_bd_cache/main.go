@@ -83,7 +83,7 @@ func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
  * Example plugin *
  ******************/
 
-// used for demonstration of Bridge Domain Indexes - see Init()
+// ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init()
 type ExamplePlugin struct {
 	Deps
 
@@ -152,7 +152,7 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // allocated by the plugin during its lifetime
 func (plugin *ExamplePlugin) Close() error {
 	var wasErr error
-	// Manualy close the agents
+	// Manually close the agents
 	wasErr = plugin.Agent1.Close()
 	wasErr = plugin.Agent2.Close()
 	_, wasErr = safeclose.CloseAll(plugin.Publisher, plugin.Agent1, plugin.Agent2, plugin.bdIdxLocal, plugin.bdIdxAgent1,

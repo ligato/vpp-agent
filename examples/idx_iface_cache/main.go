@@ -83,7 +83,7 @@ func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
  * Example plugin *
  ******************/
 
-// used for demonstration of SwIfIndexes - see Init()
+// ExamplePlugin used for demonstration of SwIfIndexes - see Init()
 type ExamplePlugin struct {
 	Deps
 
@@ -103,7 +103,7 @@ type Deps struct {
 	localdeps.PluginInfraDeps                            // injected
 }
 
-// initialize transport & SwIfIndexes then watch, publish & lookup
+// Init initializes transport & SwIfIndexes then watch, publish & lookup
 func (plugin *ExamplePlugin) Init() (err error) {
 	// manually initialize 'other' agents (for example purpose only)
 	err = plugin.Agent1.Init()
@@ -152,7 +152,7 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // allocated by the plugin during its lifetime
 func (plugin *ExamplePlugin) Close() error {
 	var wasErr error
-	// Manualy close the agents
+	// Manually close the agents
 	wasErr = plugin.Agent1.Close()
 	wasErr = plugin.Agent2.Close()
 	_, wasErr = safeclose.CloseAll(plugin.Publisher, plugin.Agent1, plugin.Agent2, plugin.swIfIdxLocal, plugin.swIfIdxAgent1,
