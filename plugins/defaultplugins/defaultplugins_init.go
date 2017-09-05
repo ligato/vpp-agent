@@ -100,12 +100,12 @@ type Plugin struct {
 type Deps struct {
 	// inject all below
 	localdeps.PluginInfraDeps
-	Publish  datasync.KeyProtoValWriter
+	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.CompositeKVProtoWriter // use multiple transports (currently etcd and redis)
-	Watch    datasync.KeyValProtoWatcher
-	Kafka    *kafka.Plugin
-	GoVppmux *govppmux.GOVPPPlugin
-	Linux    *linuxplugin.Plugin
+	Watch             datasync.KeyValProtoWatcher
+	Kafka             *kafka.Plugin
+	GoVppmux          *govppmux.GOVPPPlugin
+	Linux             *linuxplugin.Plugin
 }
 
 var (
@@ -125,7 +125,9 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
-	plugin.kafkaConn = plugin.Kafka.NewConnection(string(plugin.PluginName))
+	if plugin.Kafka != nil {
+		plugin.kafkaConn = plugin.Kafka.NewConnection(string(plugin.PluginName))
+	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
