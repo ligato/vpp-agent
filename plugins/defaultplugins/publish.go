@@ -37,7 +37,7 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 
 		_, _, found := plugin.swIfIndexes.LookupIdx(ifaceName)
 		if !found {
-			err := plugin.PublishStatistics.Put(key, nil, /*means delete*/)
+			err := plugin.PublishStatistics.Put(key, nil /*means delete*/)
 			if err != nil {
 				return err
 			}

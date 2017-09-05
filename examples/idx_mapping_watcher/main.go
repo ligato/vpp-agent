@@ -15,15 +15,17 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"strconv"
 	"time"
+
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/logging/logroot"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // *************************************************************************
@@ -32,6 +34,8 @@ import (
 // The procedure requires a subscriber channel used in the watcher to listen on
 // created, modified or removed items in the registry.
 // ************************************************************************/
+
+const expectedEvents = 5
 
 /********
  * Main *
@@ -42,35 +46,49 @@ import (
 // HTTP and Log), and example plugin which demonstrates index mapping watcher functionality.
 func main() {
 	// Init close channel to stop the example
-	closeChannel := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{}, 1)
 
-	f := vpp.Flavor{}
-
-	// Example plugin (Index mapping watcher)
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-
-	// Create new agent
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(f.Plugins(), examplePlugin)...)
-
-	// End when the idx_mapping_watcher example is finished
-	go closeExample("idx_mapping_watcher example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
+	flavor := ExampleFlavor{IdxWatchExample: ExamplePlugin{closeChannel: &exampleFinished}}
+	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// Stop the agent with desired info message
-func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(7 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+/**********
+ * Flavor *
+ **********/
+
+// ExampleFlavor is a set of plugins required for the datasync example.
+type ExampleFlavor struct {
+	*local.FlavorLocal
+	IdxWatchExample ExamplePlugin
+	// Mark flavor as injected after Inject()
+	injected bool
 }
 
-/**********************
- * Example plugin API *
- **********************/
+// Inject sets object references
+func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+	// Every flavor should be injected only once
+	if ef.injected {
+		return false
+	}
+	ef.injected = true
 
-// PluginID of the custom index mapping watcher plugin
-const PluginID core.PluginName = "example-plugin"
+	if ef.FlavorLocal == nil {
+		ef.FlavorLocal = &local.FlavorLocal{}
+	}
+	ef.FlavorLocal.Inject()
+
+	ef.IdxWatchExample.PluginLogDeps = *ef.LogDeps("idx-watch-lookup")
+
+	return true
+}
+
+// Plugins combines all Plugins in flavor to the list
+func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+	ef.Inject()
+	return core.ListPluginsInFlavor(ef)
+}
 
 /******************
  * Example plugin *
@@ -78,108 +96,90 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
-	exampleConfigurator *ExampleConfigurator       // Plugin configurator
-	exampleIdx          idxvpp.NameToIdxRW         // Name-to-index mapping
-	exIdxWatchChannel   chan idxvpp.NameToIdxDto   // Channel to watch changes in mapping
-	watchDataReg        datasync.WatchRegistration // To subscribe to mapping change events
+	Deps
+
+	exampleIdx        idxvpp.NameToIdxRW         // Name-to-index mapping
+	exampleIDSeq      uint32                     // Unique ID
+	exIdxWatchChannel chan idxvpp.NameToIdxDto   // Channel to watch changes in mapping
+	watchDataReg      datasync.WatchRegistration // To subscribe to mapping change events
+	// Fields below are used to properly finish the example
+	eventCounter uint8
+	closeChannel *chan struct{}
+}
+
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	localdeps.PluginLogDeps // injected
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Init new name-to-index mapping
-	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID, "example_index", nil)
-
-	// Initialize configurator
-	plugin.exampleConfigurator = &ExampleConfigurator{
-		exampleIndex: plugin.exampleIdx, // Pass index mapping
-		exampleIDSeq: 1,                 // Set initial ID
-	}
+	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "example_index", nil)
 
 	// Mapping channel is used to notify about changes in the mapping registry
 	plugin.exIdxWatchChannel = make(chan idxvpp.NameToIdxDto, 100)
 
-	// Start watcher before configurator init
+	plugin.Log.Info("Initialization of the custom plugin for the idx-mapping watcher example is completed")
+
+	// Start watcher before plugin init
 	go plugin.watchEvents()
 
-	// Init configurator
-	err = plugin.exampleConfigurator.Init()
-
-	// Subscribe name-to-index watcher
-	plugin.exampleIdx.Watch(PluginID, nametoidx.ToChan(plugin.exIdxWatchChannel))
-
-	log.DefaultLogger().Info("Initialization of the custom plugin for the idx-mapping watcher example is completed")
-
-	return err
-}
-
-// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
-// allocated by the plugin during its lifetime
-func (plugin *ExamplePlugin) Close() error {
-	plugin.exampleConfigurator.Close()
-	return nil
-}
-
-/*************************
- * Example plugin config *
- *************************/
-
-// ExampleConfigurator usually initializes configuration-specific fields or other tasks (e.g. defines GOVPP channels
-// if they are used, checks VPP message compatibility etc.)
-type ExampleConfigurator struct {
-	exampleIDSeq uint32             // Unique ID
-	exampleIndex idxvpp.NameToIdxRW // Index mapping
-}
-
-// Init members of configurator (none in this example)
-func (configurator *ExampleConfigurator) Init() (err error) {
-	log.DefaultLogger().Info("Default plugin configurator ready")
-
 	go func() {
-		// This function registers several name to index items to registry owned by the configurator
+		// This function registers several name to index items to registry owned by the plugin
 		for i := 1; i <= 5; i++ {
-			configurator.RegisterTestData(i)
+			plugin.RegisterTestData(i)
 		}
 	}()
 
+	// Subscribe name-to-index watcher
+	plugin.exampleIdx.Watch(plugin.PluginName, nametoidx.ToChan(plugin.exIdxWatchChannel))
+
 	return err
 }
-
-// Close function for example plugin (just for representation, there is nothing to close in the example)
-func (configurator *ExampleConfigurator) Close() {}
 
 /************
  * Register *
  ************/
 
 // RegisterTestData registers item to the name to index registry
-func (configurator *ExampleConfigurator) RegisterTestData(index int) {
+func (plugin *ExamplePlugin) RegisterTestData(index int) {
 	// Generate name used in registration. In the example, an index is added to the name to made it unique
 	name := "example-entity-" + strconv.Itoa(index)
 	// Register name to index mapping with name and index. In this example, no metadata is used so the last
 	// is nil. Metadata are optional.
-	configurator.exampleIndex.RegisterName(name, configurator.exampleIDSeq, nil)
-	configurator.exampleIDSeq++
-	log.DefaultLogger().Infof("Name %v registered", name)
+	plugin.exampleIdx.RegisterName(name, plugin.exampleIDSeq, nil)
+	plugin.exampleIDSeq++
+	plugin.Log.Infof("Name %v registered", name)
 }
 
 /***********
  * Watcher *
  ***********/
 
-// Watch on name to index mapping changes created in configurator
+// Watch on name to index mapping changes created in plugin
 func (plugin *ExamplePlugin) watchEvents() {
-	log.DefaultLogger().Info("Watcher started")
+	plugin.Log.Info("Watcher started")
 	for {
 		select {
 		case exIdx := <-plugin.exIdxWatchChannel:
-			log.DefaultLogger().Infof("Index event arrived to watcher, key %v", exIdx.Idx)
+			// Just for example purpose
+			plugin.eventCounter++
+
+			plugin.Log.Infof("Index event arrived to watcher, key %v", exIdx.Idx)
 			if exIdx.IsDelete() {
 				// IsDelete flag recognizes what kind of event arrived (put or delete)
 			}
 			// Done is used to signal to the event producer that the event consumer has processed the event.
 			// User of the API is supposed to clear event with Done()
 			exIdx.Done()
+
+			// End the example when it is done (5 events are expected)
+			if plugin.eventCounter == expectedEvents {
+				plugin.Log.Infof("idx-watch-lookup example finished, sending shutdown ...")
+				*plugin.closeChannel <- struct{}{}
+			}
 		}
 	}
 }
