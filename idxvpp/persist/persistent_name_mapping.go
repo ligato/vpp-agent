@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package persist provides persistent implementation of the interfaces
-// defined in core.name_mapping.go (please see the documentation in there)
+// Package persist provides (TODO)
 package persist
 
 import (
