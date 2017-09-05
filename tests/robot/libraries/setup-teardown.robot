@@ -39,7 +39,7 @@ Testsuite Teardown
     Stop Kafka Server
     Get Connections
     Close All Connections
-    Check Agnet Logs For Errors
+    Check Agent Logs For Errors
 
 Test Setup
     Open Connection To Docker Host
