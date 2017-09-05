@@ -8,7 +8,7 @@ ${terminal_timeout}=      30s
 
 *** Keywords ***
 
-Check VAT Terminal
+vat_term: Check VAT Terminal
     [Arguments]        ${node}
     [Documentation]    Check VAT terminal on node ${node}
     Log Many           ${node}     ${node}_vat    ${VAT_START_COMMAND}    ${${node}_VPP_VAT_PROMPT}
@@ -23,7 +23,7 @@ Check VAT Terminal
 vat_term: Open VAT Terminal
     [Arguments]    ${node}
     [Documentation]    Wait for VAT terminal on node ${node} or timeout
-    wait until keyword succeeds  ${terminal_timeout}    5s   Check VAT Terminal    ${node}
+    wait until keyword succeeds  ${terminal_timeout}    5s   vat_term: Check VAT Terminal    ${node}
 
 
 vat_term: Exit VAT Terminal
