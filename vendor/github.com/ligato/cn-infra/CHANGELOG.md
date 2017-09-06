@@ -1,9 +1,9 @@
 
-# Release v1.0.1 (2017-08-25)
+# Release v1.0.2 (2017-08-28)
 
 ## Major Themes
 
-The major themes for Release v1.0.1 are as follows:
+The major themes for Release v1.0.2 are as follows:
 * Libraries (GO Lang packages) for connecting to Data Bases and Message Bus.
   Set of these libraries provides unified client API and configuration for:
     * [Cassandra](db/sql/cassandra)
