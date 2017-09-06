@@ -66,7 +66,7 @@ based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
 VPP Agent is embeddable in different software projects and with different systems
-by using [Linux Local Flavor](flavors/linuxlocal) to reuse VPP Agent algorithms.
+by using [Local Flavor](flavors/local) to reuse VPP Agent algorithms.
 For doing this there is [VPP Agent client version 1](clientv1):
 * local client - for embedded VPP Agent (communication inside one operating system process, VPP Agent effectively used as a library)
 * remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
