@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	logger "github.com/Sirupsen/logrus"
+	logger "github.com/sirupsen/logrus"
 
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"

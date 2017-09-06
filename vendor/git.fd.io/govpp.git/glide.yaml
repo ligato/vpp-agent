@@ -1,6 +1,6 @@
 package: git.fd.io/govpp.git
 import:
-- package: github.com/Sirupsen/logrus
+- package: github.com/sirupsen/logrus
   version: v0.11.5
 - package: github.com/bennyscetbun/jsongo
 - package: github.com/lunixbochs/struc

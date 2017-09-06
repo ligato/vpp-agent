@@ -23,7 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	logger "github.com/Sirupsen/logrus"
+	logger "github.com/sirupsen/logrus"
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
