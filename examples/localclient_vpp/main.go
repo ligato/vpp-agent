@@ -49,7 +49,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := local.Flavor{}
+	flavor := local.FlavorVppLocal{}
 
 	// Example plugin
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
