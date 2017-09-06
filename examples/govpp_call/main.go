@@ -85,7 +85,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	}
 	ef.Flavor.Inject()
 
-	ef.GovppExample.PluginInfraDeps = *ef.Flavor.InfraDeps("govpp-example")
+	ef.GovppExample.PluginInfraDeps = *ef.Flavor.FlavorVppLocal.InfraDeps("govpp-example")
 	ef.GovppExample.GoVppmux = &ef.GoVPP
 
 	return true

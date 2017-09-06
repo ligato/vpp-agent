@@ -70,7 +70,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.Flavor.Inject()
 
 	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.Flavor.InfraDeps("idx-iface-cache-example")
+	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.Flavor.FlavorVppLocal.InfraDeps("idx-iface-cache-example")
 	ef.IdxIfaceCacheExample.Publisher = &ef.ETCDDataSync
 	ef.IdxIfaceCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
 	ef.IdxIfaceCacheExample.Agent2 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent2", ef)

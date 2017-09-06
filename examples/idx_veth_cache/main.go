@@ -97,7 +97,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.Flavor.Inject()
 
 	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxVethCacheExample.PluginInfraDeps = *ef.Flavor.InfraDeps("idx-veth-cache-example")
+	ef.IdxVethCacheExample.PluginInfraDeps = *ef.Flavor.FlavorVppLocal.FlavorLocal.InfraDeps("idx-veth-cache-example")
 	ef.IdxVethCacheExample.Linux = &ef.Linux
 	ef.IdxVethCacheExample.Publisher = &ef.ETCDDataSync
 	ef.IdxVethCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
