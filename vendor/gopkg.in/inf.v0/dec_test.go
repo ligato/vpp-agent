@@ -1,4 +1,4 @@
-package inf_test
+package inf
 
 import (
 	"bytes"
