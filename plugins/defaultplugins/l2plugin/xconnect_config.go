@@ -18,14 +18,20 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+)
+
+const (
+	transmitInterfaceKey = "TransmitInterface"
 )
 
 // XConnectConfigurator implements PluginHandlerVPP
@@ -59,6 +65,14 @@ func (plugin *XConnectConfigurator) Init() (err error) {
 	if err != nil {
 		return err
 	}
+
+	plugin.XcIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "xconnect", func(meta interface{}) map[string][]string {
+		res := map[string][]string{}
+		if xc, ok := meta.(*XConnectMeta); ok {
+			res[transmitInterfaceKey] = []string{xc.TransmitInterface}
+		}
+		return res
+	})
 
 	return nil
 }
@@ -203,7 +217,7 @@ func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string
 	err = plugin.resolveRxInterface(interfaceName, true)
 
 	// lookup for the interface in tx interfaces
-	rxIfs := plugin.XcIndexes.LookupNameByMetadata("TransmitInterface", interfaceName)
+	rxIfs := plugin.XcIndexes.LookupNameByMetadata(transmitInterfaceKey, interfaceName)
 	for _, rxIf := range rxIfs {
 		err = plugin.resolveRxInterface(rxIf, true)
 	}
@@ -221,7 +235,7 @@ func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string
 	err = plugin.resolveRxInterface(interfaceName, false)
 
 	// lookup for the interface in tx interfaces
-	rxIfs := plugin.XcIndexes.LookupNameByMetadata("TransmitInterface", interfaceName)
+	rxIfs := plugin.XcIndexes.LookupNameByMetadata(transmitInterfaceKey, interfaceName)
 	for _, rxIf := range rxIfs {
 		err = plugin.resolveRxInterface(rxIf, false)
 	}
