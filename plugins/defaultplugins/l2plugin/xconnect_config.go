@@ -256,7 +256,7 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 			if !meta.configured {
 				// not yet configured, try to configure now
 				err = plugin.configureL2XConnectPair(rxIfName, meta.TransmitInterface)
-				if err != nil {
+				if err == nil {
 					// mark as configured and save
 					meta.configured = true
 					plugin.XcIndexes.RegisterName(rxIfName, idx, meta)
