@@ -27,20 +27,12 @@ import (
 
 // Plugin dbsync implements Plugin interface
 type Plugin struct {
-	Deps // inject
+	Deps    // inject
 	adapter *watcher
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
-type Deps struct {
-	localdeps.PluginInfraDeps       // inject
-	ResyncOrch resync.Subscriber    // inject
-	KvPlugin   keyval.KvProtoPlugin // inject
-}
-
 type infraDeps interface {
-	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck):
+	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck)
 	InfraDeps(pluginName string) *localdeps.PluginInfraDeps
 }
 
@@ -59,6 +51,15 @@ func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent
 	// this is important - here comes microservice label of different agent
 	plugin.Deps.PluginInfraDeps.ServiceLabel = servicelabel.OfDifferentAgent(microserviceLabel)
 	return &plugin // copy (no pointer receiver)
+}
+
+
+// Deps is here to group injected dependencies of plugin
+// to not mix with other plugin fields.
+type Deps struct {
+	localdeps.PluginInfraDeps                      // inject
+	ResyncOrch                resync.Subscriber    // inject
+	KvPlugin                  keyval.KvProtoPlugin // inject
 }
 
 // Init does nothing
@@ -83,7 +84,7 @@ func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEv
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
 	if plugin.KvPlugin.Disabled() {
-		return nil /*TODO*/ , nil
+		return nil /*TODO*/, nil
 	}
 
 	if plugin.adapter == nil {
