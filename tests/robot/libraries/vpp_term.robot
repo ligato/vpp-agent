@@ -9,7 +9,7 @@ ${terminal_timeout}=      30s
 
 *** Keywords ***
 
-Check VPP Terminal
+vpp_term: Check VPP Terminal
     [Arguments]        ${node}
     [Documentation]    Check terminal on node ${node}
     Log Many           ${node}    ${${node}_VPP_HOST_PORT}    ${${node}_VPP_TERM_PROMPT}
@@ -21,7 +21,7 @@ Check VPP Terminal
 vpp_term: Open VPP Terminal
     [Arguments]    ${node}
     [Documentation]    Wait for VPP terminal on node ${node} or timeout
-    wait until keyword succeeds  ${terminal_timeout}    5s   Check VPP Terminal    ${node}
+    wait until keyword succeeds  ${terminal_timeout}    5s   vpp_term: Check VPP Terminal    ${node}
 
 vpp_term: Issue Command
     [Arguments]        ${node}     ${command}    ${delay}=${SSH_READ_DELAY}s
