@@ -248,7 +248,7 @@ func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string
 func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create bool) error {
 	var err error
 
-	_, meta, exists := plugin.XcIndexes.LookupIdx(rxIfName)
+	idx, meta, exists := plugin.XcIndexes.LookupIdx(rxIfName)
 	if exists {
 		meta := meta.(*XConnectMeta)
 		if create {
@@ -257,7 +257,9 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 				// not yet configured, try to configure now
 				err = plugin.configureL2XConnectPair(rxIfName, meta.TransmitInterface)
 				if err != nil {
+					// mark as configured and save
 					meta.configured = true
+					plugin.XcIndexes.RegisterName(rxIfName, idx, meta)
 				}
 			}
 		} else {
