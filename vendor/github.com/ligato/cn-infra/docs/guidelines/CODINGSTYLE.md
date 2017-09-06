@@ -8,7 +8,7 @@
   defined (a specific commit ID or a git tag).
 
 # Go Channels & go routines
-
+See [Plugin Lifecycle](PLUGIN_LIFECYCLE.md)
 
 # Func signature
 ## Arguments

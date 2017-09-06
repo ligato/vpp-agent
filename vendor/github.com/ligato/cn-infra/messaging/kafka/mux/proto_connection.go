@@ -25,24 +25,26 @@ type ProtoConnection struct {
 }
 
 type protoSyncPublisherKafka struct {
-	conn  *ProtoConnection
-	topic string
+	conn      *ProtoConnection
+	topic     string
+	partition int32
 }
 
 type protoAsyncPublisherKafka struct {
 	conn         *ProtoConnection
 	topic        string
+	partition    int32
 	succCallback func(messaging.ProtoMessage)
 	errCallback  func(messaging.ProtoMessageErr)
 }
 
 // SendSyncMessage sends a message using the sync API
-func (conn *ProtoConnection) SendSyncMessage(topic string, key string, value proto.Message) (offset int64, err error) {
+func (conn *ProtoConnection) SendSyncMessage(topic string, partition int32, key string, value proto.Message) (offset int64, err error) {
 	data, err := conn.serializer.Marshal(value)
 	if err != nil {
 		return 0, err
 	}
-	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, sarama.StringEncoder(key), sarama.ByteEncoder(data))
+	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data))
 	if err != nil {
 		return 0, err
 	}
@@ -50,7 +52,7 @@ func (conn *ProtoConnection) SendSyncMessage(topic string, key string, value pro
 }
 
 // SendAsyncMessage sends a message using the async API
-func (conn *ProtoConnection) SendAsyncMessage(topic string, key string, value proto.Message, meta interface{}, successClb func(messaging.ProtoMessage), errClb func(messaging.ProtoMessageErr)) error {
+func (conn *ProtoConnection) SendAsyncMessage(topic string, partition int32, key string, value proto.Message, meta interface{}, successClb func(messaging.ProtoMessage), errClb func(messaging.ProtoMessageErr)) error {
 	data, err := conn.serializer.Marshal(value)
 	if err != nil {
 		return err
@@ -75,7 +77,7 @@ func (conn *ProtoConnection) SendAsyncMessage(topic string, key string, value pr
 	}
 
 	auxMeta := &asyncMeta{successClb: succByteClb, errorClb: errByteClb, usersMeta: meta}
-	conn.multiplexer.asyncProducer.SendMsg(topic, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
+	conn.multiplexer.asyncProducer.SendMsg(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
 	return nil
 }
 
@@ -110,6 +112,15 @@ func (conn *ProtoConnection) ConsumeTopic(msgClb func(messaging.ProtoMessage), t
 	return nil
 }
 
+// ConsumePartition is called to start consuming given topic on given partition and offset.
+// Function can be called until the multiplexer is started, it returns an error otherwise.
+// The provided channel should be buffered, otherwise messages might be lost.
+func (conn *ProtoConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string,
+	partition int32, offset int64) error {
+	conn.multiplexer.Warn("Partition selection not supported yet")
+	return conn.ConsumeTopic(msgClb, topic)
+}
+
 // StopConsuming cancels the previously created subscription for consuming the topic.
 func (conn *ProtoConnection) StopConsuming(topic string) error {
 	return conn.multiplexer.stopConsuming(topic, conn.name)
@@ -120,6 +131,13 @@ func (conn *ProtoConnection) Watch(msgClb func(messaging.ProtoMessage), topics .
 	return conn.ConsumeTopic(msgClb, topics...)
 }
 
+// WatchPartition is an alias for ConsumePartition method. The alias was added in order
+// to conform to messaging.Mux interface.
+func (conn *ProtoConnection) WatchPartition(msgClb func(messaging.ProtoMessage), topic string,
+	partition int32, offset int64) error {
+	return conn.ConsumePartition(msgClb, topic, partition, offset)
+}
+
 // StopWatch is an alias for StopConsuming method. The alias was added in order to conform to messaging.Mux interface.
 func (conn *ProtoConnection) StopWatch(topic string) error {
 	return conn.StopConsuming(topic)
@@ -127,21 +145,31 @@ func (conn *ProtoConnection) StopWatch(topic string) error {
 
 // NewSyncPublisher creates a new instance of protoSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewSyncPublisher(topic string) messaging.ProtoPublisher {
-	return &protoSyncPublisherKafka{conn, topic}
+	return &protoSyncPublisherKafka{conn, topic, DefPartition}
+}
+
+// NewSyncPublisherToPartition creates a new instance of protoSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
+func (conn *ProtoConnection) NewSyncPublisherToPartition(topic string, partition int32) messaging.ProtoPublisher {
+	return &protoSyncPublisherKafka{conn, topic, partition}
 }
 
 // Put publishes a message into kafka
 func (p *protoSyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	_, err := p.conn.SendSyncMessage(p.topic, key, message)
+	_, err := p.conn.SendSyncMessage(p.topic, p.partition, key, message)
 	return err
 }
 
 // NewAsyncPublisher creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
-	return &protoAsyncPublisherKafka{conn, topic, successClb, errorClb}
+	return &protoAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}
+}
+
+// NewAsyncPublisherToPartition creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka messages using common messaging API
+func (conn *ProtoConnection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+	return &protoAsyncPublisherKafka{conn, topic, partition, successClb, errorClb}
 }
 
 // Put publishes a message into kafka
 func (p *protoAsyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	return p.conn.SendAsyncMessage(p.topic, key, message, nil, p.succCallback, p.errCallback)
+	return p.conn.SendAsyncMessage(p.topic, p.partition, key, message, nil, p.succCallback, p.errCallback)
 }

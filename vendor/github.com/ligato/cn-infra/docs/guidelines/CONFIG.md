@@ -88,7 +88,7 @@ files. Flags can be used to specify the name of the configuration file.
     package xy
 
     import (
-    "github.com/ligato/cn-infra/flavors/localdeps"
+    "github.com/ligato/cn-infra/flavors/local"
     )
     
     type ConfigXY struct {
@@ -101,7 +101,7 @@ files. Flags can be used to specify the name of the configuration file.
     }
     
     type Dep struct {
-        localdeps.PluginInfraDeps //(config name is derived from plugin name)    
+        local.PluginInfraDeps //(config name is derived from plugin name)    
         //other fields...
     }
     

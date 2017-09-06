@@ -22,7 +22,7 @@ import (
 	"sync"
 	"testing"
 
-	lg "github.com/Sirupsen/logrus"
+	lg "github.com/sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/onsi/gomega"
 )

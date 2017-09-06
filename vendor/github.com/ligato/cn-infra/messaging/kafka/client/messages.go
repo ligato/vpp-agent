@@ -79,9 +79,14 @@ func (cm *ProtoConsumerMessage) GetValue(msg proto.Message) error {
 	return nil
 }
 
-// GetTopic returns topic associated with the message.
+// GetTopic returns a topic associated with the message.
 func (cm *ProtoConsumerMessage) GetTopic() string {
 	return cm.Topic
+}
+
+// GetPartition returns a partition associated with the message.
+func (cm *ProtoConsumerMessage) GetPartition() int32 {
+	return cm.Partition
 }
 
 // ProducerMessage is the collection of elements passed to the Producer in order to send a message.
@@ -177,9 +182,14 @@ type ProtoProducerMessage struct {
 	Serializer keyval.Serializer
 }
 
-// GetTopic returns topic associated with the message.
+// GetTopic returns a topic associated with the message.
 func (ppm *ProtoProducerMessage) GetTopic() string {
 	return ppm.Topic
+}
+
+// GetPartition returns a partition associated with the message.
+func (ppm *ProtoProducerMessage) GetPartition() int32 {
+	return ppm.Partition
 }
 
 // GetKey return key associated with the message.

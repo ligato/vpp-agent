@@ -19,12 +19,13 @@ import (
 	"os"
 	"os/signal"
 
+	"time"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
-	"time"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 	cn := mx.NewConnection("plugin")
-	offset, err := cn.SendSyncString("test", "key", "value")
+	offset, err := cn.SendSyncString("test", mux.DefPartition, "key", "value")
 	if err == nil {
 		fmt.Println("Sync published ", offset)
 	}
@@ -44,7 +45,7 @@ func main() {
 	signalChan := make(chan os.Signal)
 	signal.Notify(signalChan, os.Interrupt)
 
-	cn.SendAsyncString("test", "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
+	cn.SendAsyncString("test", mux.DefPartition, "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
 
 	select {
 	case success := <-succCh:

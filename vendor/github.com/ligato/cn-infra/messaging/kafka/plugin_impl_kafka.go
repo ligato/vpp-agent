@@ -17,7 +17,7 @@ package kafka
 import (
 	"github.com/Shopify/sarama"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging"
@@ -25,6 +25,8 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
+
+const topic = "status-check"
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
@@ -37,7 +39,7 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps //inject
+	local.PluginInfraDeps //inject
 }
 
 // FromExistingMux is used mainly for testing purposes.
@@ -48,7 +50,6 @@ func FromExistingMux(mux *mux.Multiplexer) *Plugin {
 // Init is called at plugin initialization.
 func (p *Plugin) Init() (err error) {
 	// Prepare topic and  subscription for status check client
-	topic := "status-check"
 	p.subscription = make(chan *client.ConsumerMessage)
 
 	// Get config data
@@ -69,6 +70,20 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
+	if p.mx == nil {
+		p.mx, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), p.Log)
+	}
+
+	return err
+}
+
+// AfterInit is called in the second phase of initialization. The kafka multiplexer
+// is started, all consumers have to be subscribed until this phase.
+func (p *Plugin) AfterInit() error {
+	if p.mx == nil {
+		return nil
+	}
+
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
@@ -82,20 +97,6 @@ func (p *Plugin) Init() (err error) {
 		})
 	} else {
 		p.Log.Warnf("Unable to start status check for kafka")
-	}
-
-	if p.mx == nil {
-		p.mx, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), p.Log)
-	}
-
-	return err
-}
-
-// AfterInit is called in the second phase of initialization. The kafka multiplexer
-// is started, all consumers have to be subscribed until this phase.
-func (p *Plugin) AfterInit() error {
-	if p.mx == nil {
-		return nil
 	}
 
 	return p.mx.Start()
@@ -123,8 +124,20 @@ func (p *Plugin) NewSyncPublisher(topic string) messaging.ProtoPublisher {
 	return p.NewProtoConnection("").NewSyncPublisher(topic)
 }
 
+// NewSyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using synchronous API .
+func (p *Plugin) NewSyncPublisherToPartition(topic string, partition int32) messaging.ProtoPublisher {
+	p.Log.Warn("Publishing to a partition not implemented yet")
+	return p.NewProtoConnection("").NewSyncPublisher(topic)
+}
+
 // NewAsyncPublisher creates a publisher that allows to publish messages using asynchronous API.
 func (p *Plugin) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
+}
+
+// NewAsyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using asynchronous API.
+func (p *Plugin) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+	p.Log.Warn("Publishing to a partition not implemented yet")
 	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
 }
 

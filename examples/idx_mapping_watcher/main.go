@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/logging/logroot"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -109,7 +108,7 @@ type ExamplePlugin struct {
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	localdeps.PluginLogDeps // injected
+	local.PluginLogDeps // injected
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.

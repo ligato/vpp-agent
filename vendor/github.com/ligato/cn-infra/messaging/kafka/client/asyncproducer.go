@@ -111,28 +111,24 @@ func (ref *AsyncProducer) SendMsgByte(topic string, key []byte, msg []byte, meta
 	// generate key if none supplied - used by Hash partitioner
 	if key == nil || len(key) == 0 {
 		md5Sum := fmt.Sprintf("%x", md5.Sum(msg))
-		ref.SendMsg(topic, sarama.ByteEncoder([]byte(md5Sum)), sarama.ByteEncoder(msg), metadata)
+		ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder([]byte(md5Sum)), sarama.ByteEncoder(msg), metadata)
 		return
 	}
-	ref.SendMsg(topic, sarama.ByteEncoder(key), sarama.ByteEncoder(msg), metadata)
+	ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg), metadata)
 }
 
 // SendMsg sends an async message to Kafka
-func (ref *AsyncProducer) SendMsg(topic string, key Encoder, msg Encoder, metadata interface{}) {
+func (ref *AsyncProducer) SendMsg(topic string, partition int32, key Encoder, msg Encoder, metadata interface{}) {
 	if msg == nil {
 		return
 	}
 
 	message := &sarama.ProducerMessage{
 		Topic:    topic,
+		Partition: partition,
 		Key:      key,
 		Value:    msg,
 		Metadata: metadata,
-	}
-
-	// manual partition
-	if ref.Partition > -1 {
-		message.Partition = ref.Partition
 	}
 
 	ref.Producer.Input() <- message

@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
@@ -70,10 +70,10 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.Flavor.Inject()
 
 	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-iface-cache-example")
+	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.InfraDeps("idx-iface-cache-example")
 	ef.IdxIfaceCacheExample.Publisher = &ef.ETCDDataSync
-	ef.IdxIfaceCacheExample.Agent1 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent1", ef)
-	ef.IdxIfaceCacheExample.Agent2 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent2", ef)
+	ef.IdxIfaceCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
+	ef.IdxIfaceCacheExample.Agent2 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent2", ef)
 
 	return true
 }
@@ -105,7 +105,7 @@ type Deps struct {
 	Publisher                 datasync.KeyProtoValWriter // injected
 	Agent1                    *kvdbsync.Plugin           // injected
 	Agent2                    *kvdbsync.Plugin           // injected
-	localdeps.PluginInfraDeps                            // injected
+	local.PluginInfraDeps                            // injected
 }
 
 // Init initializes transport & SwIfIndexes then watch, publish & lookup

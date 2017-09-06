@@ -16,15 +16,12 @@ package defaultplugins
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-
 	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-const kafkaIfStateTopic = "if_state" // Kafka topic where interface state changes are published.
+const kafkaIfStateTopic = "if_state" // Messaging topic where interface state changes are published.
 
 // Resync deletes obsolete operation status of network interfaces in DB
 // Obsolete state is one that is not part of SwIfIndex
@@ -50,7 +47,7 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 	return nil
 }
 
-// publishIfState goroutine is used to watch interface state notifications that are propagated to Kafka topic
+// publishIfState goroutine is used to watch interface state notifications that are propagated to Messaging topic
 func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -58,23 +55,24 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	for {
 		select {
 		case ifState := <-plugin.ifStateChan:
-			plugin.PublishStatistics.Put(intf.InterfaceStateKey(ifState.State.Name), ifState.State)
+			key := intf.InterfaceStateKey(ifState.State.Name)
+
+			if plugin.PublishStatistics != nil {
+				err := plugin.PublishStatistics.Put(key, ifState.State)
+				if err != nil {
+					plugin.Log.Error(err)
+				} else {
+					plugin.Log.Debug("Sending Messaging notification")
+				}
+			}
 
 			// marshall data into JSON & send kafka message
-			if plugin.kafkaConn != nil && ifState.Type == intf.UPDOWN {
-				json, err := json.Marshal(ifState.State)
+			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
+				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
-					log.DefaultLogger().Error(err)
+					plugin.Log.Error(err)
 				} else {
-
-					// send kafka message
-					_, err = plugin.kafkaConn.SendSyncString(kafkaIfStateTopic,
-						fmt.Sprintf("%s", ifState.State.Name), string(json))
-					if err != nil {
-						log.DefaultLogger().Error(err)
-					} else {
-						log.DefaultLogger().Debug("Sending Kafka notification")
-					}
+					plugin.Log.Debug("Sending Messaging notification")
 				}
 			}
 

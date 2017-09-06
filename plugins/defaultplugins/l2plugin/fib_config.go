@@ -38,7 +38,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences are applied
 // through the VPP binary API.
 type FIBConfigurator struct {
-	GoVppmux        *govppmux.GOVPPPlugin
+	GoVppmux        govppmux.API
 	SwIfIndexes     ifaceidx.SwIfIndex
 	BdIndexes       bdidx.BDIndex
 	IfToBdIndexes   idxvpp.NameToIdxRW //TODO use rather BdIndexes.LookupNameByIfaceName

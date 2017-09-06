@@ -1,3 +1,5 @@
+# Release v1.0.3 (NOT RELEASED)
+- [FlavorAllConnectors](flavors/connectors) - Inlined plugins: ETCD, Kafka, Redis, Cassandra 
 
 # Release v1.0.2 (2017-08-28)
 
@@ -23,10 +25,10 @@ different [flavors](flavors) (reusable collection of plugins):
       * [statuscheck](health/statuscheck) (RPCs probed from systems such as K8s)
       * [logging](logging/logmanager) (for changing log level at runtime remotely)
     * connector flavors: 
-      * [Cassandra flavor](flavors/cassandra)
-      * [etcdv3 flavor](flavors/etcd)
-      * [Redis flavor](flavors/redis)
-      * [Kafka flavor](flavors/kafka)
+      * Cassandra flavor
+      * etcdv3 flavor
+      * Redis flavor
+      * Kafka flavor
 * [Examples](examples)
 * [Docker](docker) container-based development environment 
 * Helpers:

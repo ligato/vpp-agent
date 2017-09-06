@@ -49,9 +49,9 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
-	GoVppmux     *govppmux.GOVPPPlugin
+	GoVppmux     govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
-	Linux        *linuxplugin.Plugin
+	Linux        linuxplugin.API
 
 	swIfIndexes ifaceidx.SwIfIndexRW
 

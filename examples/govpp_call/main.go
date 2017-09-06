@@ -19,7 +19,7 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
@@ -85,7 +85,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	}
 	ef.Flavor.Inject()
 
-	ef.GovppExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("govpp-example")
+	ef.GovppExample.PluginInfraDeps = *ef.InfraDeps("govpp-example")
 	ef.GovppExample.GoVppmux = &ef.GoVPP
 
 	return true
@@ -114,7 +114,7 @@ type ExamplePlugin struct {
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
 	GoVppmux                  *govppmux.GOVPPPlugin
-	localdeps.PluginInfraDeps // injected
+	local.PluginInfraDeps // injected
 }
 
 // Init members of plugin

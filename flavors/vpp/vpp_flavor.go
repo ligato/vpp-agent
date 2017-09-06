@@ -3,72 +3,53 @@ package vpp
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/flavors/etcdkafka"
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/flavors/redis"
 	"github.com/ligato/cn-infra/flavors/rpc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/vpp-agent/flavors/local"
+	"github.com/ligato/cn-infra/flavors/connectors"
 )
 
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
-	*local.FlavorLocal
+	*local.FlavorVppLocal
 	*rpc.FlavorRPC
-	*etcdkafka.FlavorEtcdKafka
-	*redis.FlavorRedis
-	GoVPP      govppmux.GOVPPPlugin
-	Linux      linuxplugin.Plugin
-	VPP        defaultplugins.Plugin
-	ResyncOrch resync.Plugin
+	*connectors.AllConnectorsFlavor
 
 	injected bool
 }
 
 // Inject sets object references
-func (f *Flavor) Inject() error {
+func (f *Flavor) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
-	if f.FlavorLocal == nil {
-		f.FlavorLocal = &local.FlavorLocal{}
+	f.VPP.Deps.Publish = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+			&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
 	}
-	f.FlavorLocal.Inject()
+	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.Messaging = &f.AllConnectorsFlavor.Kafka
+	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
-	f.ResyncOrch.Deps.PluginLogDeps = *f.LogDeps("resync-orch")
+	return true
+}
 
-	if f.FlavorEtcdKafka == nil {
-		f.FlavorEtcdKafka = &etcdkafka.FlavorEtcdKafka{FlavorLocal: f.FlavorLocal}
+func (f *Flavor) injectEmbedded() {
+	if f.FlavorVppLocal == nil {
+		f.FlavorVppLocal = &local.FlavorVppLocal{}
 	}
-	f.FlavorEtcdKafka.Inject(&f.ResyncOrch)
+	f.FlavorVppLocal.Inject()
 
-	if f.FlavorRPC == nil {
-		f.FlavorRPC = &rpc.FlavorRPC{FlavorLocal: f.FlavorLocal}
+	if f.AllConnectorsFlavor == nil {
+		f.AllConnectorsFlavor = &connectors.AllConnectorsFlavor{FlavorLocal: f.FlavorVppLocal.FlavorLocal}
 	}
 	f.FlavorRPC.Inject()
 
-	if f.FlavorRedis == nil {
-		f.FlavorRedis = &redis.FlavorRedis{FlavorLocal: f.FlavorLocal}
+	if f.FlavorRPC == nil {
+		f.FlavorRPC = &rpc.FlavorRPC{FlavorLocal: f.FlavorVppLocal.FlavorLocal}
 	}
-	f.FlavorRedis.Inject(&f.ResyncOrch)
-
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorEtcdKafka.FlavorLocal.InfraDeps("default-plugins")
-	f.VPP.Deps.Publish = &f.FlavorEtcdKafka.ETCDDataSync
-	f.VPP.Deps.PublishStatistics = datasync.CompositeKVProtoWriter{
-		Adapters: []datasync.KeyProtoValWriter{&f.FlavorEtcdKafka.ETCDDataSync, &f.FlavorRedis.RedisDataSync},
-	}
-	f.VPP.Deps.Watch = &f.FlavorEtcdKafka.ETCDDataSync
-	f.VPP.Deps.Kafka = &f.FlavorEtcdKafka.Kafka
-	f.VPP.Deps.GoVppmux = &f.GoVPP
-	f.VPP.Deps.Linux = &f.Linux
-	f.VPP.Linux.Deps.Watcher = &f.FlavorEtcdKafka.ETCDDataSync
-
-	return nil
+	f.FlavorRPC.Inject()
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins + (their ETCD Connector/Adapter with RESYNC)

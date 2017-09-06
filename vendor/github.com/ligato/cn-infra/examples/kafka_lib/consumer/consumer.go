@@ -16,10 +16,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/namsral/flag"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/namsral/flag"
 
 	"github.com/Shopify/sarama"
 	"github.com/bsm/sarama-cluster"
@@ -32,11 +33,11 @@ import (
 var (
 	brokerList = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster")
 	topicList  = flag.String("topics", "", "REQUIRED: the topics to consume")
-	partitions = flag.String("partitions", "", "The partitions to consume, defaults to 'all' or comma-separated numbers")
+	//partitions = flag.String("partitions", "", "The partitions to consume, defaults to 'all' or comma-separated numbers")
 	groupID    = flag.String("groupid", "", "REQUIRED: the group name")
 	offset     = flag.String("offset", "newest", "The offset to start with. Can be `oldest`, `newest`")
 	debug      = flag.Bool("debug", false, "turns on debug logging")
-	bufferSize = flag.Int("buffer-size", 256, "The buffer size of the message channel.")
+	//bufferSize = flag.Int("buffer-size", 256, "The buffer size of the message channel.")
 	commit     = flag.Bool("commit", false, "Commit offsets (default: true)")
 )
 

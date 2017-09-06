@@ -22,13 +22,15 @@ type BytesPublisher interface {
 }
 
 type bytesSyncPublisherKafka struct {
-	conn  *Connection
-	topic string
+	conn      *Connection
+	topic     string
+	partition int32
 }
 
 type bytesAsyncPublisherKafka struct {
 	conn         *Connection
 	topic        string
+	partition    int32
 	succCallback func(*client.ProducerMessage)
 	errCallback  func(*client.ProducerError)
 }
@@ -65,18 +67,18 @@ func (conn *Connection) StopConsuming(topic string) error {
 }
 
 // SendSyncByte sends a message that uses byte encoder using the sync API
-func (conn *Connection) SendSyncByte(topic string, key []byte, value []byte) (offset int64, err error) {
-	return conn.SendSyncMessage(topic, sarama.ByteEncoder(key), sarama.ByteEncoder(value))
+func (conn *Connection) SendSyncByte(topic string, partition int32, key []byte, value []byte) (offset int64, err error) {
+	return conn.SendSyncMessage(topic, partition, sarama.ByteEncoder(key), sarama.ByteEncoder(value))
 }
 
 // SendSyncString sends a message that uses string encoder using the sync API
-func (conn *Connection) SendSyncString(topic string, key string, value string) (offset int64, err error) {
-	return conn.SendSyncMessage(topic, sarama.StringEncoder(key), sarama.StringEncoder(value))
+func (conn *Connection) SendSyncString(topic string, partition int32, key string, value string) (offset int64, err error) {
+	return conn.SendSyncMessage(topic, partition, sarama.StringEncoder(key), sarama.StringEncoder(value))
 }
 
 //SendSyncMessage sends a message using the sync API
-func (conn *Connection) SendSyncMessage(topic string, key client.Encoder, value client.Encoder) (offset int64, err error) {
-	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, key, value)
+func (conn *Connection) SendSyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder) (offset int64, err error) {
+	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, partition, key, value)
 	if err != nil {
 		return 0, err
 	}
@@ -84,39 +86,49 @@ func (conn *Connection) SendSyncMessage(topic string, key client.Encoder, value 
 }
 
 // SendAsyncByte sends a message that uses byte encoder using the async API
-func (conn *Connection) SendAsyncByte(topic string, key []byte, value []byte, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
-	conn.SendAsyncMessage(topic, sarama.ByteEncoder(key), sarama.ByteEncoder(value), meta, successClb, errClb)
+func (conn *Connection) SendAsyncByte(topic string, partition int32, key []byte, value []byte, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+	conn.SendAsyncMessage(topic, partition, sarama.ByteEncoder(key), sarama.ByteEncoder(value), meta, successClb, errClb)
 }
 
 // SendAsyncString sends a message that uses string encoder using the async API
-func (conn *Connection) SendAsyncString(topic string, key string, value string, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
-	conn.SendAsyncMessage(topic, sarama.StringEncoder(key), sarama.StringEncoder(value), meta, successClb, errClb)
+func (conn *Connection) SendAsyncString(topic string, partition int32, key string, value string, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+	conn.SendAsyncMessage(topic, partition, sarama.StringEncoder(key), sarama.StringEncoder(value), meta, successClb, errClb)
 }
 
 // SendAsyncMessage sends a message using the async API
-func (conn *Connection) SendAsyncMessage(topic string, key client.Encoder, value client.Encoder, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+func (conn *Connection) SendAsyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
 	auxMeta := &asyncMeta{successClb: successClb, errorClb: errClb, usersMeta: meta}
-	conn.multiplexer.asyncProducer.SendMsg(topic, key, value, auxMeta)
+	conn.multiplexer.asyncProducer.SendMsg(topic, partition, key, value, auxMeta)
 }
 
 // NewSyncPublisher creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *Connection) NewSyncPublisher(topic string) BytesPublisher {
-	return &bytesSyncPublisherKafka{conn, topic}
+	return &bytesSyncPublisherKafka{conn, topic, DefPartition}
+}
+
+// NewSyncPublisherToPartition creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
+func (conn *Connection) NewSyncPublisherToPartition(topic string, partition int32) BytesPublisher {
+	return &bytesSyncPublisherKafka{conn, topic, partition}
 }
 
 // Put publishes a message into kafka
 func (p *bytesSyncPublisherKafka) Publish(key string, data []byte) error {
-	_, err := p.conn.SendSyncByte(p.topic, []byte(key), data)
+	_, err := p.conn.SendSyncByte(p.topic, p.partition, []byte(key), data)
 	return err
 }
 
 // NewAsyncPublisher creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
 func (conn *Connection) NewAsyncPublisher(topic string, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) BytesPublisher {
-	return &bytesAsyncPublisherKafka{conn, topic, successClb, errorClb}
+	return &bytesAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}
+}
+
+// NewAsyncPublisherToPartition creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
+func (conn *Connection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) BytesPublisher {
+	return &bytesAsyncPublisherKafka{conn, topic, partition, successClb, errorClb}
 }
 
 // Put publishes a message into kafka
 func (p *bytesAsyncPublisherKafka) Publish(key string, data []byte) error {
-	p.conn.SendAsyncMessage(p.topic, sarama.StringEncoder(key), sarama.ByteEncoder(data), nil, p.succCallback, p.errCallback)
+	p.conn.SendAsyncMessage(p.topic, p.partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), nil, p.succCallback, p.errCallback)
 	return nil
 }

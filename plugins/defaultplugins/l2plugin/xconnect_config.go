@@ -30,7 +30,7 @@ import (
 
 // XConnectConfigurator implements PluginHandlerVPP
 type XConnectConfigurator struct {
-	GoVppmux    *govppmux.GOVPPPlugin
+	GoVppmux    govppmux.API
 	SwIfIndexes ifaceidx.SwIfIndex
 	XcIndexes   idxvpp.NameToIdxRW
 	XcIndexSeq  uint32

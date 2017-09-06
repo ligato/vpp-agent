@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/sirupsen/logrus"
 )
 
 // NewLogRegistry is a constructor

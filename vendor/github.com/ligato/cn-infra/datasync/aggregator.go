@@ -57,7 +57,7 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 }
 
 // Put to every available transport
-func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message) error {
+func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...PutOption) error {
 	if len(ta.Adapters) == 0 {
 		return fmt.Errorf("No transport is available in aggregator")
 	}

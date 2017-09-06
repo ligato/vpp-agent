@@ -103,15 +103,15 @@ func TestSendSync(t *testing.T) {
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err := c1.SendSyncByte("topic", []byte("key"), []byte("value"))
+	_, err := c1.SendSyncByte("topic", DefPartition, []byte("key"), []byte("value"))
 	gomega.Expect(err).To(gomega.BeNil())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err = c1.SendSyncString("topic", "key", "value")
+	_, err = c1.SendSyncString("topic", DefPartition, "key", "value")
 	gomega.Expect(err).To(gomega.BeNil())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err = c1.SendSyncMessage("topic", sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")))
+	_, err = c1.SendSyncMessage("topic", DefPartition, sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")))
 	gomega.Expect(err).To(gomega.BeNil())
 
 	publisher := c1.NewSyncPublisher("test")
@@ -133,13 +133,13 @@ func TestSendAsync(t *testing.T) {
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncByte("topic", []byte("key"), []byte("value"), nil, nil, nil)
+	c1.SendAsyncByte("topic", DefPartition, []byte("key"), []byte("value"), nil, nil, nil)
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncString("topic", "key", "value", nil, nil, nil)
+	c1.SendAsyncString("topic", DefPartition, "key", "value", nil, nil, nil)
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncMessage("topic", sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")), nil, nil, nil)
+	c1.SendAsyncMessage("topic", DefPartition, sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")), nil, nil, nil)
 
 	publisher := c1.NewAsyncPublisher("test", nil, nil)
 	mock.AsyncPub.ExpectInputAndSucceed()

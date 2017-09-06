@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/cn-infra/logging"
@@ -57,7 +57,7 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginLogDeps                               //inject
+	local.PluginLogDeps                               //inject
 	HTTP                    *rest.Plugin                  //inject optionally
 	StatusCheck             statuscheck.AgentStatusReader //inject
 }
@@ -69,7 +69,7 @@ func (p *Plugin) Init() (err error) {
 		childPlugNameHTTP := p.String() + "-HTTP"
 		p.HTTP = &rest.Plugin{
 			Deps: rest.Deps{
-				PluginLogDeps: localdeps.PluginLogDeps{
+				PluginLogDeps: local.PluginLogDeps{
 					Log:        logging.ForPlugin(childPlugNameHTTP, p.Log),
 					PluginName: core.PluginName(childPlugNameHTTP),
 				},

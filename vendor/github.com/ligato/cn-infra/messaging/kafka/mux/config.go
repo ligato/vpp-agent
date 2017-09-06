@@ -7,8 +7,16 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
-// DefAddress default kafka address/port (if not specified in config)
-const DefAddress = "127.0.0.1:9092"
+const (
+	// DefAddress default kafka address/port (if not specified in config)
+	DefAddress = "127.0.0.1:9092"
+	// DefPartition is used if no specific partition is set
+	DefPartition = -1
+	// OffsetNewest is head offset which will be assigned to the new message produced to the partition
+	OffsetNewest = sarama.OffsetNewest
+	// OffsetOldest is oldest offset available on the partition
+	OffsetOldest = sarama.OffsetOldest
+)
 
 // Config holds the settings for kafka multiplexer.
 type Config struct {

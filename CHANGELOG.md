@@ -1,3 +1,12 @@
+# Release v1.0.4 (NOT RELEASED)
+
+## Major Themes
+
+- Upgraded to cn-infra v1.0.3
+  - simplified flavors
+  - kvdbsync more robust while use in extended flavors (not important order of plugins in a particular flavor)
+- pkgreflect cleanup
+
 # Release v1.0.3 (2017-09-05)
 
 ## Major Themes
@@ -36,7 +45,7 @@ Data Synchronization during startup for network interfaces & L2 BD
 
 Data replication and events:
 - Updating operational data in ETCD (VPP indexes such as  sw_if_index) and statistics (port counters).
-- Updating statistics in Redis (optional once redis.conf available - see flag in FlavorRedis).
+- Updating statistics in Redis (optional once redis.conf available - see flags).
 - Publishing link up/down events to Kafka message bus.
 
 Miscellaneous:
