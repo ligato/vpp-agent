@@ -104,7 +104,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 			return err
 		}
 	} else {
-		log.DefaultLogger().Error("l2xConnect")
+		log.DefaultLogger().Warn("rx or tx interface not found, l2xconnect postponed")
 	}
 
 	// Prepare meta
