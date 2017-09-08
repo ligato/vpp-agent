@@ -100,7 +100,6 @@ endef
 # run test examples
 define test_examples
     @echo "# Testing examples"
-    @./vendor/github.com/ligato/cn-infra/scripts/test_examples.sh
     @echo "# done"
 endef
 
