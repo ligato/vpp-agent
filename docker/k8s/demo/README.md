@@ -16,12 +16,12 @@ kafka-server    1/1       Running   0          5s
 ```
 
 ## Deploy Network Service
-Import ETCD configuration for the given scenario:
+Import ETCD configuration for the given scenario (1, 2 or 4):
 ```
 $ sudo ./etcdimport.sh scenario1/etcd.txt
 ```
 
-Deploy vSwitch + VNF PODs:
+Deploy vSwitch + VNF PODs of the given scenario (1, 2 or 4):
 ```
 $ kubectl apply -R -f scenario1
 ```
@@ -41,6 +41,8 @@ vswitch-vpp      1/1       Running   0          26s
 Telnet to the vSwitch VPP:
 ```
 $ telnet localhost 5002
+vpp# show interface
+vpp# quit
 ```
 
 Telnet to the VNF VPP:
@@ -48,6 +50,8 @@ Telnet to the VNF VPP:
 $ kubectl describe pod vnf-vpp | grep IP
 IP:		192.168.65.193
 $ telnet 192.168.65.193 5002
+vpp# show interface
+vpp# quit
 ```
 (use `vnf1-vpp` / `vnf2-vpp` instead of `vnf-vpp` for the scenario 2)
 
@@ -63,5 +67,6 @@ Wipe ETCD (restart it):
 $ kubectl delete -f etcd.yaml
 $ kubectl apply -f etcd.yaml
 ```
-(make sure the POD gets undeployed after `delete` before `apply`, by executing `kubectl get pods`)
+(make sure the POD gets undeployed after `delete` before `apply` by executing `kubectl get pods`)
 
+You can continue with deploying of the next scenario as described in [Deploy Network Service](#Deploy Network Service).
