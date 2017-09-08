@@ -38,17 +38,27 @@ type ConsumerMessage struct {
 	Timestamp  time.Time
 }
 
-// GetTopic return topic associated with the message
+// GetTopic returns the topic associated with the message
 func (cm *ConsumerMessage) GetTopic() string {
 	return cm.Topic
 }
 
-// GetKey returns key associated with the message.
+// GetPartition returns the partition associated with the message
+func (cm *ConsumerMessage) GetPartition() int32 {
+	return cm.Partition
+}
+
+// GetOffset returns the offset associated with the message
+func (cm *ConsumerMessage) GetOffset() int64 {
+	return cm.Offset
+}
+
+// GetKey returns the key associated with the message.
 func (cm *ConsumerMessage) GetKey() string {
 	return string(cm.Key)
 }
 
-// GetValue return value associated with the message.
+// GetValue returns the value associated with the message.
 func (cm *ConsumerMessage) GetValue() []byte {
 	return cm.Value
 }
@@ -65,28 +75,33 @@ func NewProtoConsumerMessage(msg *ConsumerMessage, serializer keyval.Serializer)
 	return &ProtoConsumerMessage{msg, serializer}
 }
 
-// GetKey returns key associated with the message.
+// GetTopic returns the topic associated with the message.
+func (cm *ProtoConsumerMessage) GetTopic() string {
+	return cm.Topic
+}
+
+// GetPartition returns the partition associated with the message.
+func (cm *ProtoConsumerMessage) GetPartition() int32 {
+	return cm.Partition
+}
+
+// GetOffset returns the offset associated with the message.
+func (cm *ProtoConsumerMessage) GetOffset() int64 {
+	return cm.Offset
+}
+
+// GetKey returns the key associated with the message.
 func (cm *ProtoConsumerMessage) GetKey() string {
 	return string(cm.Key)
 }
 
-// GetValue return value associated with the message.
+// GetValue returns the value associated with the message.
 func (cm *ProtoConsumerMessage) GetValue(msg proto.Message) error {
 	err := cm.serializer.Unmarshal(cm.ConsumerMessage.GetValue(), msg)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-// GetTopic returns a topic associated with the message.
-func (cm *ProtoConsumerMessage) GetTopic() string {
-	return cm.Topic
-}
-
-// GetPartition returns a partition associated with the message.
-func (cm *ProtoConsumerMessage) GetPartition() int32 {
-	return cm.Partition
 }
 
 // ProducerMessage is the collection of elements passed to the Producer in order to send a message.
@@ -117,12 +132,22 @@ type ProducerMessage struct {
 	Partition int32
 }
 
-// GetTopic returns topic associated with the message.
+// GetTopic returns the topic associated with the message.
 func (pm *ProducerMessage) GetTopic() string {
 	return pm.Topic
 }
 
-// GetKey returns key associated with the message.
+// GetPartition returns the partition associated with the message.
+func (pm *ProducerMessage) GetPartition() int32 {
+	return pm.Partition
+}
+
+// GetOffset returns the offset associated with the message.
+func (pm *ProducerMessage) GetOffset() int64 {
+	return pm.Offset
+}
+
+// GetKey returns the key associated with the message.
 func (pm *ProducerMessage) GetKey() string {
 	key, _ := pm.Key.Encode()
 	return string(key)
@@ -182,17 +207,22 @@ type ProtoProducerMessage struct {
 	Serializer keyval.Serializer
 }
 
-// GetTopic returns a topic associated with the message.
+// GetTopic returns the topic associated with the message.
 func (ppm *ProtoProducerMessage) GetTopic() string {
 	return ppm.Topic
 }
 
-// GetPartition returns a partition associated with the message.
+// GetPartition returns the partition associated with the message.
 func (ppm *ProtoProducerMessage) GetPartition() int32 {
 	return ppm.Partition
 }
 
-// GetKey return key associated with the message.
+// GetOffset returns the offset associated with the message.
+func (ppm *ProtoProducerMessage) GetOffset() int64 {
+	return ppm.Offset
+}
+
+// GetKey returns the key associated with the message.
 func (ppm *ProtoProducerMessage) GetKey() string {
 	key, _ := ppm.Key.Encode()
 	return string(key)

@@ -47,23 +47,94 @@ func (conn *Connection) ConsumeTopic(msgClb func(message *client.ConsumerMessage
 	}
 
 	for _, topic := range topics {
-		// check if we have already consumed the topic and partition
-		subs, found := conn.multiplexer.mapping[topic]
+		// check if we have already consumed the topic
+		var found bool
+		var subs *consumerSubscription
+	LoopSubs:
+		for _, subscription := range conn.multiplexer.mapping {
+			if subscription.manual == true {
+				// do not mix dynamic and manual mode
+				continue
+			}
+			if subscription.topic == topic {
+				found = true
+				subs = subscription
+				break LoopSubs
+			}
+		}
 
 		if !found {
-			subs = &map[string]func(*client.ConsumerMessage){}
-			conn.multiplexer.mapping[topic] = subs
+			subs = &consumerSubscription{
+				manual:         false, // non-manual example
+				topic:          topic,
+				connectionName: conn.name,
+				byteConsMsg:    msgClb,
+			}
+			// subscribe new topic
+			conn.multiplexer.mapping = append(conn.multiplexer.mapping, subs)
 		}
+
 		// add subscription to consumerList
-		(*subs)[conn.name] = msgClb
-		conn.multiplexer.mapping[topic] = subs
+		subs.byteConsMsg = msgClb
 	}
+
+	return nil
+}
+
+// ConsumeTopicOnPartition is called to start consuming given topic on partition with offset
+// Function can be called until the multiplexer is started, it returns an error otherwise.
+// The provided channel should be buffered, otherwise messages might be lost.
+func (conn *Connection) ConsumeTopicOnPartition(msgClb func(message *client.ConsumerMessage), topic string, partition int32, offset int64) error {
+	conn.multiplexer.rwlock.Lock()
+	defer conn.multiplexer.rwlock.Unlock()
+
+	if conn.multiplexer.started {
+		return fmt.Errorf("ConsumeTopicOnPartition can be called only if the multiplexer has not been started yet")
+	}
+
+	// check if we have already consumed the topic on partition and offset
+	var found bool
+	var subs *consumerSubscription
+
+	for _, subscription := range conn.multiplexer.mapping {
+		if subscription.manual == false {
+			// do not mix dynamic and manual mode
+			continue
+		}
+		if subscription.topic == topic && subscription.partition == partition && subscription.offset == offset {
+			found = true
+			subs = subscription
+			break
+		}
+	}
+
+	if !found {
+		subs = &consumerSubscription{
+			manual:         true, // manual example
+			topic:          topic,
+			partition:      partition,
+			offset:         offset,
+			connectionName: conn.name,
+			byteConsMsg:    msgClb,
+		}
+		// subscribe new topic on partition
+		conn.multiplexer.mapping = append(conn.multiplexer.mapping, subs)
+	}
+
+	// add subscription to consumerList
+	subs.byteConsMsg = msgClb
+
 	return nil
 }
 
 // StopConsuming cancels the previously created subscription for consuming the topic.
 func (conn *Connection) StopConsuming(topic string) error {
 	return conn.multiplexer.stopConsuming(topic, conn.name)
+}
+
+// StopConsumingPartition cancels the previously created subscription for consuming the topic, partition and offset
+func (conn *Connection) StopConsumingPartition(topic string, partition int32, offset int64) error {
+	return conn.multiplexer.stopConsumingPartition(topic, partition, offset, conn.name)
 }
 
 // SendSyncByte sends a message that uses byte encoder using the sync API
@@ -102,13 +173,19 @@ func (conn *Connection) SendAsyncMessage(topic string, partition int32, key clie
 }
 
 // NewSyncPublisher creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
-func (conn *Connection) NewSyncPublisher(topic string) BytesPublisher {
-	return &bytesSyncPublisherKafka{conn, topic, DefPartition}
+func (conn *Connection) NewSyncPublisher(topic string) (BytesPublisher, error) {
+	if conn.multiplexer.partitioner == client.Manual {
+		return nil, fmt.Errorf("unable to use default sync publisher with 'manual' partitioner")
+	}
+	return &bytesSyncPublisherKafka{conn, topic, DefPartition}, nil
 }
 
 // NewSyncPublisherToPartition creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
-func (conn *Connection) NewSyncPublisherToPartition(topic string, partition int32) BytesPublisher {
-	return &bytesSyncPublisherKafka{conn, topic, partition}
+func (conn *Connection) NewSyncPublisherToPartition(topic string, partition int32) (BytesPublisher, error) {
+	if conn.multiplexer.partitioner != client.Manual {
+		return nil, fmt.Errorf("sync publisher to partition can be used only with 'manual' partitioner")
+	}
+	return &bytesSyncPublisherKafka{conn, topic, partition}, nil
 }
 
 // Put publishes a message into kafka
@@ -118,13 +195,19 @@ func (p *bytesSyncPublisherKafka) Publish(key string, data []byte) error {
 }
 
 // NewAsyncPublisher creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
-func (conn *Connection) NewAsyncPublisher(topic string, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) BytesPublisher {
-	return &bytesAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}
+func (conn *Connection) NewAsyncPublisher(topic string, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
+	if conn.multiplexer.partitioner == client.Manual {
+		return nil, fmt.Errorf("unable to use default async publisher with 'manual' partitioner")
+	}
+	return &bytesAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}, nil
 }
 
 // NewAsyncPublisherToPartition creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
-func (conn *Connection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) BytesPublisher {
-	return &bytesAsyncPublisherKafka{conn, topic, partition, successClb, errorClb}
+func (conn *Connection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
+	if conn.multiplexer.partitioner != client.Manual {
+		return nil, fmt.Errorf("async publisher to partition can be used only with 'manual' partitioner")
+	}
+	return &bytesAsyncPublisherKafka{conn, topic, partition, successClb, errorClb}, nil
 }
 
 // Put publishes a message into kafka

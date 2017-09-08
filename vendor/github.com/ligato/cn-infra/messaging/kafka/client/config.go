@@ -39,6 +39,16 @@ const (
 	WaitForAll RequiredAcks = -1
 )
 
+// Partitioner schemes
+const (
+	// Hash scheme (messages with the same key always end up on the same partition)
+	Hash = "hash"
+	// Random scheme (random partition is always used)
+	Random = "random"
+	// Manual scheme (partitions are manually set in the provided message's partition field)
+	Manual = "manual"
+)
+
 // Config struct provides the configuration for a Producer (Sync or Async) and Consumer.
 type Config struct {
 	logging.Logger
@@ -231,16 +241,16 @@ func (ref *Config) SetPartitioner(val string) {
 		} else {
 			ref.Partitioner = sarama.NewHashPartitioner
 		}
-	case "hash":
+	case Hash:
 		ref.Partitioner = sarama.NewHashPartitioner
 		ref.Partition = -1
-	case "random":
+	case Random:
 		ref.Partitioner = sarama.NewRandomPartitioner
 		ref.Partition = -1
-	case "manual":
+	case Manual:
 		ref.Partitioner = sarama.NewManualPartitioner
 		if ref.Partition < 0 {
-			ref.Errorf("Invalid partition %d - defaulting to 0", ref.Partition)
+			ref.Infof("Invalid partition %d - defaulting to 0", ref.Partition)
 			ref.Partition = 0
 		}
 	}

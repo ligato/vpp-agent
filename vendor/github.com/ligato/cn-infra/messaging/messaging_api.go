@@ -21,11 +21,24 @@ import (
 
 // Mux defines API for the plugins that use access to kafka brokers.
 type Mux interface {
-	NewSyncPublisher(topic string) ProtoPublisher
-	NewSyncPublisherToPartition(topic string, partition int32) ProtoPublisher
-	NewAsyncPublisher(topic string, successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) ProtoPublisher
+	// Creates new Kafka synchronous publisher sending messages to given topic. Partitioner has to be set to 'hash' (default)
+	// or 'random' scheme, otherwise an error is thrown
+	NewSyncPublisher(topic string) (ProtoPublisher, error)
+
+	// Creates new Kafka synchronous publisher sending messages to given topic and partition. Partitioner has to be
+	// set to 'manual' scheme, otherwise an error is thrown
+	NewSyncPublisherToPartition(topic string, partition int32) (ProtoPublisher, error)
+
+	// Creates new Kafka asynchronous publisher sending messages to given topic. Partitioner has to be set to 'hash' (default)
+	// or 'random' scheme, otherwise an error is thrown
+	NewAsyncPublisher(topic string, successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
+
+	// Creates new Kafka asynchronous publisher sending messages to given topic and partition. Partitioner has to be
+	// set to 'manual' scheme, otherwise an error is thrown
 	NewAsyncPublisherToPartition(topic string, partition int32,
-		successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) ProtoPublisher
+		successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
+
+	// Initializes new watcher which can start/stop watching on topic, eventually partition and offset
 	NewWatcher(subscriberName string) ProtoWatcher
 }
 
@@ -36,9 +49,18 @@ type ProtoPublisher interface {
 
 // ProtoWatcher allows to subscribe for receiving of messages published to given topics.
 type ProtoWatcher interface {
+	// Watch given topic. Returns error if 'manual' partitioner scheme is chosen
 	Watch(msgCallback func(ProtoMessage), topics ...string) error
-	WatchPartition(msgCallback func(ProtoMessage), topic string, partition int32, offset int64) error
+
+	// Stop watching on topic. Return error if topic is not subscribed
 	StopWatch(topic string) error
+
+	// Watch given topic, partition and offset. Offset is the oldest message index consumed, all previously written
+	// messages are ignored. Manual partitioner must be set, otherwise error is thrown
+	WatchPartition(msgCallback func(ProtoMessage), topic string, partition int32, offset int64) error
+
+	// Stop watching on topic/partition/offset. Return error if such a combination is not subscribed
+	StopWatchPartition(topic string, partition int32, offset int64) error
 }
 
 // ProtoMessage defines functions for inspection of a message receive from messaging system.
@@ -46,6 +68,7 @@ type ProtoMessage interface {
 	keyval.ProtoKvPair
 	GetTopic() string
 	GetPartition() int32
+	GetOffset() int64
 }
 
 // ProtoMessageErr represents a message that was not published successfully to a messaging system.

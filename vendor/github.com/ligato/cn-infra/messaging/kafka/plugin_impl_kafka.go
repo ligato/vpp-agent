@@ -31,8 +31,10 @@ const topic = "status-check"
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
 	Deps         // inject
+
 	subscription chan (*client.ConsumerMessage)
-	mx           *mux.Multiplexer
+	muxDefault   *mux.Multiplexer
+	muxManual    *mux.Multiplexer
 	consumer     *client.Consumer
 }
 
@@ -44,7 +46,7 @@ type Deps struct {
 
 // FromExistingMux is used mainly for testing purposes.
 func FromExistingMux(mux *mux.Multiplexer) *Plugin {
-	return &Plugin{mx: mux}
+	return &Plugin{muxDefault: mux}
 }
 
 // Init is called at plugin initialization.
@@ -70,8 +72,20 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	if p.mx == nil {
-		p.mx, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), p.Log)
+	if p.muxDefault == nil {
+		p.muxDefault, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), client.Hash, p.Log)
+		if err != nil {
+			return err
+		}
+		p.Log.Debug("Default multiplexer initialized")
+	}
+
+	if p.muxManual == nil {
+		p.muxManual, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), client.Manual, p.Log)
+		if err != nil {
+			return err
+		}
+		p.Log.Debug("Manual multiplexer initialized")
 	}
 
 	return err
@@ -80,7 +94,7 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called in the second phase of initialization. The kafka multiplexer
 // is started, all consumers have to be subscribed until this phase.
 func (p *Plugin) AfterInit() error {
-	if p.mx == nil {
+	if p.muxDefault == nil {
 		return nil
 	}
 
@@ -99,46 +113,54 @@ func (p *Plugin) AfterInit() error {
 		p.Log.Warnf("Unable to start status check for kafka")
 	}
 
-	return p.mx.Start()
+	return p.muxDefault.Start()
 }
 
 // Close is called at plugin cleanup phase.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.consumer.Close(), p.mx)
+	_, err := safeclose.CloseAll(p.consumer.Close(), p.muxDefault)
 	return err
 }
 
 // NewConnection returns a new instance of connection to access the kafka brokers.
 func (p *Plugin) NewConnection(name string) *mux.Connection {
-	return p.mx.NewConnection(name)
+	return p.muxDefault.NewConnection(name)
+}
+
+// NewConnectionToPartition returns a new instance of connection to access the kafka brokers.
+func (p *Plugin) NewConnectionToPartition(name string) *mux.Connection {
+	return p.muxManual.NewConnection(name)
 }
 
 // NewProtoConnection returns a new instance of connection to access the kafka brokers. The connection
 // uses proto-modelled messages.
 func (p *Plugin) NewProtoConnection(name string) *mux.ProtoConnection {
-	return p.mx.NewProtoConnection(name, &keyval.SerializerJSON{})
+	return p.muxDefault.NewProtoConnection(name, &keyval.SerializerJSON{})
+}
+// NewProtoConnectionToPartition returns a new instance of connection to access the kafka brokers. The connection
+// uses proto-modelled messages.
+func (p *Plugin) NewProtoConnectionToPartition(name string) *mux.ProtoConnection {
+	return p.muxManual.NewProtoConnection(name, &keyval.SerializerJSON{})
 }
 
 // NewSyncPublisher creates a publisher that allows to publish messages using synchronous API.
-func (p *Plugin) NewSyncPublisher(topic string) messaging.ProtoPublisher {
+func (p *Plugin) NewSyncPublisher(topic string) (messaging.ProtoPublisher, error) {
 	return p.NewProtoConnection("").NewSyncPublisher(topic)
 }
 
 // NewSyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using synchronous API .
-func (p *Plugin) NewSyncPublisherToPartition(topic string, partition int32) messaging.ProtoPublisher {
-	p.Log.Warn("Publishing to a partition not implemented yet")
-	return p.NewProtoConnection("").NewSyncPublisher(topic)
+func (p *Plugin) NewSyncPublisherToPartition(topic string, partition int32) (messaging.ProtoPublisher, error) {
+	return p.NewProtoConnection("").NewSyncPublisherToPartition(topic, partition)
 }
 
 // NewAsyncPublisher creates a publisher that allows to publish messages using asynchronous API.
-func (p *Plugin) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
+func (p *Plugin) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
 	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
 }
 
 // NewAsyncPublisherToPartition creates a publisher that allows to publish messages to selected topic/partition using asynchronous API.
-func (p *Plugin) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) messaging.ProtoPublisher {
-	p.Log.Warn("Publishing to a partition not implemented yet")
-	return p.NewProtoConnection("").NewAsyncPublisher(topic, successClb, errorClb)
+func (p *Plugin) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
+	return p.NewProtoConnection("").NewAsyncPublisherToPartition(topic, partition, successClb, errorClb)
 }
 
 // NewWatcher creates a watcher that allows to start/stop consuming of messaging published to given topics.
