@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/vbatts/tar-split/tar/storage"
 
 	"github.com/docker/docker/pkg/archive"

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/swarmkit/api"
 	"golang.org/x/net/context"
 )

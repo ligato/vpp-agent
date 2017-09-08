@@ -1,4 +1,4 @@
-package inf
+package inf_test
 
 import (
 	"fmt"

@@ -51,7 +51,7 @@ type AllConnectorsFlavor struct {
 }
 
 // Inject sets object references
-	func (f *AllConnectorsFlavor) Inject() bool {
+func (f *AllConnectorsFlavor) Inject() bool {
 	if f.injected {
 		return false
 	}

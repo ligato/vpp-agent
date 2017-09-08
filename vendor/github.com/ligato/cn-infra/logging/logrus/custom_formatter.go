@@ -20,7 +20,7 @@ import (
 	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 // CustomFormatter allows to turn off logging of some fields.

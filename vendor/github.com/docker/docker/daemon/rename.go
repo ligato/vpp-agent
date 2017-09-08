@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	dockercontainer "github.com/docker/docker/container"
 	"github.com/docker/libnetwork"
 )

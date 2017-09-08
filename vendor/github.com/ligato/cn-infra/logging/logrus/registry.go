@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 // NewLogRegistry is a constructor
