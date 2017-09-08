@@ -171,10 +171,30 @@ vpp_ctl: Get Linux Interface Config As Json
     ${output}=            Evaluate             json.loads('''${data}''')    json
     [Return]              ${output}
 
+vpp_ctl: Get Bridge Domain State As Json
+    [Arguments]    ${node}    ${bd}
+    Log Many    ${node}    ${bd}
+    ${key}=               Set Variable    /vnf-agent/${node}/vpp/status/v1/bd/${bd}
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
 vpp_ctl: Get Interface Internal Name
     [Arguments]    ${node}    ${interface}
     Log Many    ${node}    ${interface}
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
+    ${name}=    Set Variable    ${state["internal_name"]}
+    Log    ${name}
+    [Return]    ${name}
+
+vpp_ctl: Get Bridge Domain Internal Name
+    [Arguments]    ${node}    ${bd}
+    Log Many    ${node}    ${bd}
+    ${state}=    vpp_ctl: Get Bridge Domain State As Json    ${node}    ${bd}
     ${name}=    Set Variable    ${state["internal_name"]}
     Log    ${name}
     [Return]    ${name}

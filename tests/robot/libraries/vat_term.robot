@@ -25,7 +25,6 @@ vat_term: Open VAT Terminal
     [Documentation]    Wait for VAT terminal on node ${node} or timeout
     wait until keyword succeeds  ${terminal_timeout}    5s   vat_term: Check VAT Terminal    ${node}
 
-
 vat_term: Exit VAT Terminal
     [Arguments]        ${node}
     Log Many           ${node}     ${node}_vat
@@ -48,6 +47,13 @@ vat_term: Interfaces Dump
     [Documentation]    Executing command sw_interface_dump
     Log Many           ${node}
     ${out}=            vat_term: Issue Command  ${node}  sw_interface_dump
+    [Return]           ${out}
+
+vat_term: Bridge Domain Dump
+    [Arguments]        ${node}
+    [Documentation]    Executing command bridge_domain_dump
+    Log Many           ${node}
+    ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump
     [Return]           ${out}
 
 vat_term: IP FIB Dump
@@ -204,4 +210,11 @@ vat_term: Check Memif Interface State
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
+
+vat_term: Check Bridge Domain State
+    [Arguments]          ${node}    ${bd}    @{desired_state}
+    Log Many             ${node}    ${bd}    ${desired_state}
+    ${internal_name}=    vpp_ctl: Get Bridge Domain Internal Name    ${node}    ${bd}
+    Log                  ${internal_name}
+    ${asdf}=             vat_term: Bridge Domain Dump
 
