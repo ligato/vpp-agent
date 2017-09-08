@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 
 	"github.com/ligato/cn-infra/datasync"
+	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -49,8 +50,8 @@ func (f *FlavorVppLocal) Inject() error {
 	f.FlavorLocal.Inject()
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.Linux.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
-	f.VPP.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
+	f.Linux.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
+	f.VPP.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
 	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
