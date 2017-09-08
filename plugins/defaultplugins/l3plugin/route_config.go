@@ -148,6 +148,9 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 	if err != nil {
 		return err
 	}
+	if route == nil {
+		return nil
+	}
 	// Remove and unregister route
 	err = vppcalls.VppAddDelRoute(route, plugin.vppChan, true)
 	if err != nil {
