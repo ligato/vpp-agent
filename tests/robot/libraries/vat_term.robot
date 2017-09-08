@@ -55,6 +55,7 @@ vat_term: Bridge Domain Dump
     Log Many           ${node}    ${bd_id}
     ${add_params}=     Set Variable If    '''${bd_id}'''==""    ${EMPTY}    bd_id ${bd_id}
     ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump ${add_params}
+    ${out}=            Evaluate    """${out}"""["""${out}""".find('['):"""${out}""".rfind(']')+1]
     [Return]           ${out}
 
 vat_term: IP FIB Dump
