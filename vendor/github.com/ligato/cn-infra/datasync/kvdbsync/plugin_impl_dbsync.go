@@ -61,9 +61,9 @@ func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps           // inject
-	ResyncOrch resync.Subscriber    // inject
-	KvPlugin   keyval.KvProtoPlugin // inject
+	local.PluginInfraDeps                      // inject
+	ResyncOrch            resync.Subscriber    // inject
+	KvPlugin              keyval.KvProtoPlugin // inject
 }
 
 // Init just initializes plugin.registry.
@@ -110,7 +110,7 @@ func (plugin *Plugin) AfterInit() error {
 func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
-	return plugin.registry.Watch(resyncName, changeChan, resyncChan)
+	return plugin.registry.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 }
 
 // Put propagates this call to a particular kvdb.Plugin unless the kvdb.Plugin is Disabled().
