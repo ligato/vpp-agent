@@ -116,6 +116,7 @@ regenerate:
 	make -C test/enumdecl_all regenerate
 	make -C test/int64support regenerate
 	make -C test/issue322 regenerate
+	make -C test/issue330 regenerate
 	make gofmt
 
 tests:
@@ -150,8 +151,8 @@ contributors:
 	git log --format='%aN <%aE>' | sort -fu > CONTRIBUTORS
 
 js:
-ifeq (go1.8, $(findstring go1.8, $(GO_VERSION)))
-	go get github.com/gopherjs/gopherjs
+ifeq (go1.9, $(findstring go1.9, $(GO_VERSION)))
+	go get -u github.com/gopherjs/gopherjs
 	gopherjs build github.com/gogo/protobuf/protoc-gen-gogo
 endif
 

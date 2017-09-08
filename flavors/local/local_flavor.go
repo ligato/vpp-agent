@@ -16,42 +16,51 @@ package local
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/flavors/etcdkafka"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
+	"github.com/ligato/cn-infra/flavors/local"
+
+	"github.com/ligato/cn-infra/datasync"
+	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
-// Flavor glues together multiple plugins to mange VPP configuration using local client.
-type Flavor struct {
-	Base        etcdkafka.FlavorEtcdKafka
-	LocalClient localclient.Plugin
-	Resync      resync.Plugin
-	GoVPP       govppmux.GOVPPPlugin
-	VPP         defaultplugins.Plugin
+// FlavorVppLocal glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
+type FlavorVppLocal struct {
+	*local.FlavorLocal
+	LinuxLocalClient localclient.Plugin
+	GoVPP            govppmux.GOVPPPlugin
+	Linux            linuxplugin.Plugin
+	VPP              defaultplugins.Plugin
 
 	injected bool
 }
 
 // Inject sets object references
-func (f *Flavor) Inject() error {
+func (f *FlavorVppLocal) Inject() error {
 	if f.injected {
 		return nil
 	}
 	f.injected = true
 
-	f.Base.Inject(nil)
+	if f.FlavorLocal == nil {
+		f.FlavorLocal = &local.FlavorLocal{}
+	}
+	f.FlavorLocal.Inject()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.Base.FlavorLocal.InfraDeps("default-plugins")
-	f.VPP.GoVppmux = &f.GoVPP
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
+	f.Linux.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
+	f.VPP.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.VPP.Deps.Linux = &f.Linux
+	f.VPP.Deps.GoVppmux = &f.GoVPP
 
 	return nil
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins
-func (f *Flavor) Plugins() []*core.NamedPlugin {
+func (f *FlavorVppLocal) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
 }

@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ligato/cn-infra.bak20170821c/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/unrolled/render"
 )
@@ -30,14 +30,14 @@ type registerHTTPHandler func(path string, handler func(formatter *render.Render
 	methods ...string) *mux.Route
 
 // NewAdapter is a constructor
-func NewAdapter(registerHTTPHandler registerHTTPHandler, localtransp *syncbase.Watcher) *Adapter {
+func NewAdapter(registerHTTPHandler registerHTTPHandler, localtransp *syncbase.Registry) *Adapter {
 	return &Adapter{registerHTTPHandler: registerHTTPHandler, base: localtransp}
 }
 
 // Adapter is a REST transport adapter in front of Agent Plugins
 type Adapter struct {
 	registerHTTPHandler registerHTTPHandler
-	base                *syncbase.Watcher
+	base                *syncbase.Registry
 }
 
 // RegisterTestHandler is used for runtime testing:

@@ -17,7 +17,6 @@ package local
 import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/localdeps"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -77,8 +76,8 @@ func (f *FlavorLocal) LoggerFor(pluginName string) logging.PluginLogger {
 // - pluginName argument value is assigned to Plugin
 // - logger name is pre-initialized (see logging.ForPlugin)
 // This method is just convenient shortcut for Flavor.Inject()
-func (f *FlavorLocal) LogDeps(pluginName string) *localdeps.PluginLogDeps {
-	return &localdeps.PluginLogDeps{
+func (f *FlavorLocal) LogDeps(pluginName string) *PluginLogDeps {
+	return &PluginLogDeps{
 		logging.ForPlugin(pluginName, f.LogRegistry()),
 		core.PluginName(pluginName)}
 
@@ -87,8 +86,8 @@ func (f *FlavorLocal) LogDeps(pluginName string) *localdeps.PluginLogDeps {
 // InfraDeps for getting PlugginInfraDeps instance:
 // - config file is preinitialized by pluginName (see config.ForPlugin method)
 // This method is just convenient shortcut for Flavor.Inject()
-func (f *FlavorLocal) InfraDeps(pluginName string) *localdeps.PluginInfraDeps {
-	return &localdeps.PluginInfraDeps{
+func (f *FlavorLocal) InfraDeps(pluginName string) *PluginInfraDeps {
+	return &PluginInfraDeps{
 		*f.LogDeps(pluginName),
 		config.ForPlugin(pluginName),
 		&f.StatusCheck,

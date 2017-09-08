@@ -21,7 +21,7 @@ import (
 
 	"io/ioutil"
 
-	"github.com/ligato/cn-infra/datasync/dbsync/local"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 )
 
 // putMessage is just a stub prepared for later implementation

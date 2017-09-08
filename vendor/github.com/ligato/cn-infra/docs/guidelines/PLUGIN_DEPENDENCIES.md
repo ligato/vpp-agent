@@ -4,7 +4,7 @@
 ```go
 	package xy
 	import (
-	    "github.com/ligato/cn-infra/flavors/localdeps"
+	    "github.com/ligato/cn-infra/flavors/local"
 	    "github.com/ligato/cn-infra/datasync"
 	)
 	
@@ -16,7 +16,7 @@
 	}
 	
 	type Dep struct {
-	    localdeps.PluginLogDeps //Plugin Logger & Plugin Name
+	    local.PluginLogDeps //Plugin Logger & Plugin Name
 	    
 	    //other dependencies:
 	    

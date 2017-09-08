@@ -16,9 +16,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/namsral/flag"
 	"os"
 	"strings"
+
+	"github.com/namsral/flag"
 
 	"github.com/ligato/cn-infra/examples/kafka_lib/utils"
 	"github.com/ligato/cn-infra/logging"

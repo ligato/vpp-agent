@@ -36,7 +36,7 @@ type watchBrokerKeys struct {
 type watcher struct {
 	db   keyval.ProtoBroker
 	dbW  keyval.ProtoWatcher
-	base *syncbase.Watcher
+	base *syncbase.Registry
 }
 
 // WatchAndResyncBrokerKeys calls keyval watcher Watch() & resync Register()

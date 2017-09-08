@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -97,11 +97,11 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	ef.Flavor.Inject()
 
 	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxVethCacheExample.PluginInfraDeps = *ef.FlavorLocal.InfraDeps("idx-veth-cache-example")
+	ef.IdxVethCacheExample.PluginInfraDeps = *ef.Flavor.InfraDeps("idx-veth-cache-example")
 	ef.IdxVethCacheExample.Linux = &ef.Linux
 	ef.IdxVethCacheExample.Publisher = &ef.ETCDDataSync
-	ef.IdxVethCacheExample.Agent1 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent1", ef)
-	ef.IdxVethCacheExample.Agent2 = ef.Flavor.FlavorEtcd.ETCDDataSync.OfDifferentAgent("agent2", ef)
+	ef.IdxVethCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
+	ef.IdxVethCacheExample.Agent2 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent2", ef)
 
 	return true
 }
@@ -121,7 +121,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	Linux *linuxplugin.Plugin
+	Linux linuxplugin.API
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
@@ -138,7 +138,7 @@ type Deps struct {
 	Publisher                 datasync.KeyProtoValWriter // injected
 	Agent1                    *kvdbsync.Plugin           // injected
 	Agent2                    *kvdbsync.Plugin           // injected
-	localdeps.PluginInfraDeps                            // injected
+	local.PluginInfraDeps                            // injected
 }
 
 // Init initializes example plugin

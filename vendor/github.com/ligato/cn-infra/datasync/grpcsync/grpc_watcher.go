@@ -31,7 +31,7 @@ import (
 func NewAdapter() *Adapter {
 	grpcServer := grpc.NewServer()
 	//TODO grpcServer.RegisterCodec(json.NewCodec(), "application/json")
-	adapter := &Adapter{syncbase.NewWatcher(), grpcServer}
+	adapter := &Adapter{syncbase.NewRegistry(), grpcServer}
 	msg.RegisterDataMsgServiceServer(grpcServer, &DataMsgServiceServer{adapter})
 	//registerHTTPHandler(grpcServer)
 
@@ -48,7 +48,7 @@ func NewAdapter() *Adapter {
 
 // Adapter is a GRPC transport adapter in front of Agent Plugins
 type Adapter struct {
-	base   *syncbase.Watcher
+	base   *syncbase.Registry
 	server *grpc.Server
 }
 

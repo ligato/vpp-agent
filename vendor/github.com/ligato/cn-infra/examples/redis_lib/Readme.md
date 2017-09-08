@@ -29,7 +29,7 @@ go run simple/simple.go -redis-config=<redis client config yaml>
 ```
 
 ## Airport Example
-  * Simulates aiport operations with four functional modules - arrival, departure, runway and hangar
+  * Simulates airport operations with four functional modules - arrival, departure, runway and hangar
   * Communicates and updates flight info through Redis.
   * Displays flight status, live.
   ___

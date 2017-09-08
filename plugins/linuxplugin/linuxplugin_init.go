@@ -76,18 +76,19 @@ func (plugin *Plugin) Init() error {
 	go plugin.watchEvents(ctx)
 
 	// Interface indexes
-	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID, "linux_if_indexes", nil))
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+		"linux_if_indexes", nil))
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
-	return nil
+	return plugin.subscribeWatcher()
 }
 
 // AfterInit runs subscribeWatcher
 func (plugin *Plugin) AfterInit() error {
-	return plugin.subscribeWatcher()
+	return nil
 }
 
 // Close cleans up the resources

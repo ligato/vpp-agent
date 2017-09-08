@@ -46,7 +46,8 @@ function startEtcd {
         quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
              -advertise-client-urls http://0.0.0.0:2379 \
                  -listen-client-urls http://0.0.0.0:2379 > /dev/null
-    sleep 1
+    # dump etcd content to make sure that etcd is ready
+    docker exec etcd etcdctl get --prefix ""
 }
 
 function stopEtcd {
@@ -57,7 +58,9 @@ function stopEtcd {
 function startKafka {
     docker run -p 2181:2181 -p 9092:9092 --name kafka -d \
  --env ADVERTISED_HOST=0.0.0.0 --env ADVERTISED_PORT=9092 spotify/kafka > /dev/null
-    sleep 2
+    # list kafka topics to ensure that kafka is ready
+    docker exec kafka  /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --list --zookeeper localhost:2181 > /dev/null 2> /dev/null
+
 }
 
 function stopKafka {
@@ -73,7 +76,7 @@ Error log example
 Stopping agent...
 ")
 
-testOutput examples/logs_in_plugin/logs_in_plugin "${expected}"
+testOutput examples/logs_plugin/logs_plugin "${expected}"
 
 #### Etcd #############################################################
 

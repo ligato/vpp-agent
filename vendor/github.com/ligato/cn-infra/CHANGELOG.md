@@ -1,9 +1,11 @@
+# Release v1.0.3 (NOT RELEASED)
+- [FlavorAllConnectors](flavors/connectors) - Inlined plugins: ETCD, Kafka, Redis, Cassandra 
 
-# Release v1.0.1 (2017-08-25)
+# Release v1.0.2 (2017-08-28)
 
 ## Major Themes
 
-The major themes for Release v1.0.1 are as follows:
+The major themes for Release v1.0.2 are as follows:
 * Libraries (GO Lang packages) for connecting to Data Bases and Message Bus.
   Set of these libraries provides unified client API and configuration for:
     * [Cassandra](db/sql/cassandra)
@@ -23,10 +25,10 @@ different [flavors](flavors) (reusable collection of plugins):
       * [statuscheck](health/statuscheck) (RPCs probed from systems such as K8s)
       * [logging](logging/logmanager) (for changing log level at runtime remotely)
     * connector flavors: 
-      * [Cassandra flavor](flavors/cassandra)
-      * [etcdv3 flavor](flavors/etcd)
-      * [Redis flavor](flavors/redis)
-      * [Kafka flavor](flavors/kafka)
+      * Cassandra flavor
+      * etcdv3 flavor
+      * Redis flavor
+      * Kafka flavor
 * [Examples](examples)
 * [Docker](docker) container-based development environment 
 * Helpers:
