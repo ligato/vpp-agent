@@ -82,7 +82,7 @@ def Parse_Memif_Info(info):
 # output - state info list
 def Parse_BD_Details(details):
     state = []
-    line = details.splitlines()[1]:
+    line = details.splitlines()[1]
     if (line.strip().split()[7]) == "on":
         state.append("uuflood=1")
     else:
