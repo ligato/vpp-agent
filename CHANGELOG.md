@@ -6,6 +6,7 @@
   - simplified flavors
   - kvdbsync more robust while use in extended flavors (not important order of plugins in a particular flavor)
 - pkgreflect cleanup
+- updated govpp - waits until vpp is ready to accept a new connection
 
 # Release v1.0.3 (2017-09-05)
 
@@ -27,7 +28,7 @@ VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 ## Major Themes
 
 Algorithms for applying northbound configuration (stored in ETCD key value data store)
-to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins): 
+to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins):
 - network interfaces, especially:
   - MEMIFs (optimized dataplane network interface tailored for a container to container network connectivity)
   - VETHs (standard Linux Virtual Ethernet network interface)
@@ -73,7 +74,7 @@ For doing this there is [VPP Agent client version 1](clientv1):
 
 ## Known Issues
 A rarely occurring problem during startup with binary API connectivity.
-VPP rejects binary API connectivity when VPP Agent tries to connect 
+VPP rejects binary API connectivity when VPP Agent tries to connect
 too early (plan fix this behavior in next release).
 
 ## Compatibility
