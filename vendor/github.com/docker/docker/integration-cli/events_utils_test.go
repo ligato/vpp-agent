@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	eventstestutils "github.com/docker/docker/daemon/events/testutils"
 	"github.com/docker/docker/integration-cli/checker"
 	"github.com/go-check/check"

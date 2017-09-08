@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	container "github.com/docker/docker/api/types/container"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	types "github.com/docker/docker/api/types/swarm"

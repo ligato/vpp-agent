@@ -3,7 +3,7 @@ import:
 - package: github.com/sirupsen/logrus
   version: v1.0.0
 # this is needed to pin version of logrus imported by 3rd party using incorrect case
-- package: github.com/sirupsen/logrus
+- package: github.com/Sirupsen/logrus
   version: v1.0.0
 - package: github.com/coreos/etcd
   version: v3.2.0

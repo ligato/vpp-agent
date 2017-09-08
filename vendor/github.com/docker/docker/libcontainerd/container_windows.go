@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Microsoft/hcsshim"
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/system"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )

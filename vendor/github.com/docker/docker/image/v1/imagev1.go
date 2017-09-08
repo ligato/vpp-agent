@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"

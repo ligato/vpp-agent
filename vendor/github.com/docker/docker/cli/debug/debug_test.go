@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 func TestEnable(t *testing.T) {

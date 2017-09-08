@@ -51,7 +51,7 @@ type AllConnectorsFlavor struct {
 }
 
 // Inject sets object references
-	func (f *AllConnectorsFlavor) Inject() bool {
+func (f *AllConnectorsFlavor) Inject() bool {
 	if f.injected {
 		return false
 	}
@@ -65,10 +65,10 @@ type AllConnectorsFlavor struct {
 	f.FlavorLocal.Inject()
 
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3")
-	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal)
+	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal, &f.ResyncOrch)
 
 	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis")
-	InjectKVDBSync(&f.RedisDataSync, &f.Redis, f.Redis.PluginName, f.FlavorLocal)
+	InjectKVDBSync(&f.RedisDataSync, &f.Redis, f.Redis.PluginName, f.FlavorLocal, &f.ResyncOrch)
 
 	f.Kafka.Deps.PluginInfraDeps = *f.InfraDeps("kafka")
 

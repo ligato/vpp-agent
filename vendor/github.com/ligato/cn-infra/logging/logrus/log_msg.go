@@ -15,7 +15,7 @@
 package logrus
 
 import (
-	lg "github.com/sirupsen/logrus"
+	lg "github.com/Sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
 )
 

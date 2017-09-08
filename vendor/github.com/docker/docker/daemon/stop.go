@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/errors"
 	containerpkg "github.com/docker/docker/container"
 )

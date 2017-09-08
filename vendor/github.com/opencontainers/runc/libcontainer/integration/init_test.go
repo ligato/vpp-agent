@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups/systemd"
 	_ "github.com/opencontainers/runc/libcontainer/nsenter"

@@ -1,16 +1,23 @@
-# Simple example
+# Simple Cassandra example
 
-To start examples you have to have Cassandra running on localhost, if you don't have installed it locally
-you can use the following docker image.
+To start the example, you need to connect to a Cassandra database. If you 
+don't have one running, you can start the following docker image on your
+localhost:
+
 ```
 sudo docker run -p 9042:9042 --name cassandra01 -d cassandra:latest
 ```
 
-In the example connection to etcd is configured using `--cfg` argument.
-If the file is not specified  application tries to connect
- to Cassandra on localhost on default port 9042.
- 
-The example contains one program:
+In the example, the configuration for the connection to cassandra is 
+configured in a yaml-formatted config file. The config file is specified as
+the first CLI argument:
+
 ```
-go run main.go <ClientConfigFilePath>
+go run main.go <config-file-name>
+```
+
+To run the example with the provided default configuration, type:
+
+```
+go run main.go ./client-config.yaml
 ```

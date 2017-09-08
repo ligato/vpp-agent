@@ -5,7 +5,7 @@ package daemon
 import (
 	"runtime"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 // getSize returns the real size & virtual size of the container.

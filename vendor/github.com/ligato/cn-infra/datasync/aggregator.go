@@ -63,7 +63,7 @@ func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...Pu
 	}
 	var wasError error
 	for _, transport := range ta.Adapters {
-		err := transport.Put(key, data)
+		err := transport.Put(key, data, opts...)
 		if err != nil {
 			wasError = err
 		}

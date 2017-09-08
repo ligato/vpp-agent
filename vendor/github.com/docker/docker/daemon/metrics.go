@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/go-metrics"

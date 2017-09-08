@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	containerd "github.com/containerd/containerd/api/grpc/types"
 	"github.com/docker/docker/pkg/idtools"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
