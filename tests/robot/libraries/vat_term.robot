@@ -218,6 +218,7 @@ vat_term: Check Bridge Domain State
     ${bd_id}=            vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
     Log                  ${bd_id}
     ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
+    ${bd_dump}=          Evaluate    json.loads('''${bd_dump}''')    json
     Log                  ${bd_dump}
     ${flood}=            Set Variable    ${bd_dump[0]["flood"]}
     ${forward}=          Set Variable    ${bd_dump[0]["forward"]}
