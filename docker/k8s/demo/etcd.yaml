@@ -22,4 +22,3 @@ spec:
     env:
       - name: ETCDCTL_API
         value: "3"
-

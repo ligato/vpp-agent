@@ -10,15 +10,15 @@ $ kubectl apply -f kafka.yaml
 Verify the ETCD and Kafka PODs are ready:
 ```
 $ kubectl get pods
-NAME             READY     STATUS    RESTARTS   AGE
-etcdv3-server    1/1       Running   0          33m
-kafka-server     1/1       Running   0          6h
+NAME            READY     STATUS    RESTARTS   AGE
+etcdv3-server   1/1       Running   0          12s
+kafka-server    1/1       Running   0          5s
 ```
 
 ## Deploy Network Service
 Import ETCD configuration for the given scenario:
 ```
-$ ./etcdimport.sh scenario1/etcd.txt
+$ sudo ./etcdimport.sh scenario1/etcd.txt
 ```
 
 Deploy vSwitch + VNF PODs:

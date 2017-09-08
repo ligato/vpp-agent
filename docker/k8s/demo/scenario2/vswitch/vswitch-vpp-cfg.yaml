@@ -9,11 +9,6 @@ data:
       nodaemon
       cli-listen localhost:5002
     }
-    cpu {
-      main-core 24
-      corelist-workers 25
-    }
-    api-trace { on }
     dpdk {
       dev default {
         num-rx-queues 1
@@ -27,8 +22,5 @@ data:
       dev 0000:89:00.1 {
         workers 0
       }
-      socket-mem 0,2048
-      no-multi-seg
-      num-mbufs 768000
     }
 

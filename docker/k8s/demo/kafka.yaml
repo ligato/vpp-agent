@@ -19,4 +19,3 @@ spec:
         value: "172.17.0.1"
       - name: ADVERTISED_PORT
         value: "9092"
-

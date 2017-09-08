@@ -9,13 +9,8 @@ data:
       nodaemon
       cli-listen 0.0.0.0:5002
     }
-    cpu {
-      main-core 28
-      corelist-workers 29
-    }
     plugins {
       plugin dpdk_plugin.so {
         disable
       }
     }
-
