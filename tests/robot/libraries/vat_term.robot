@@ -53,7 +53,7 @@ vat_term: Bridge Domain Dump
     [Arguments]        ${node}    ${bd_id}=${EMPTY}
     [Documentation]    Executing command bridge_domain_dump
     Log Many           ${node}    ${bd_id}
-    ${add_params}=     Set Variable If    '''${bd_id}'''==""    ${EMPTY}    bd_id=${bd_id}
+    ${add_params}=     Set Variable If    '''${bd_id}'''==""    ${EMPTY}    bd_id ${bd_id}
     ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump ${add_params}
     [Return]           ${out}
 
@@ -215,7 +215,20 @@ vat_term: Check Memif Interface State
 vat_term: Check Bridge Domain State
     [Arguments]          ${node}    ${bd}    @{desired_state}
     Log Many             ${node}    ${bd}    ${desired_state}
-    ${bd_id}=    vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
+    ${bd_id}=            vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
     Log                  ${bd_id}
-    ${asdf}=             vat_term: Bridge Domain Dump    ${node}    ${bd_id}
+    ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
+    Log                  ${bd_dump}
+    ${flood}=            Set Variable    ${bd_dump["flood"]}
+    ${forward}=          Set Variable    ${bd_dump["forward"]}
+    ${learn}=            Set Variable    ${bd_dump["learn"]}
+    ${bd_details}=       vpp_term: Show Bridge-Domain Detail    ${node}    ${bd_id}
+    Log                  ${bd_details}
+    ${bd_state}=         Parse BD Details    ${bd_details}
+    Log                  ${bd_state}
+    ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
+    Append To List       ${actual_state}    @{bd_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
 

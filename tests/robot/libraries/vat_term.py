@@ -78,3 +78,17 @@ def Parse_Memif_Info(info):
         state.append("connected=0")
     return state
 
+# input - output from show br br_id detail command
+# output - state info list
+def Parse_BD_Details(details):
+    state = []
+    line = details.splitlines()[1]:
+    if (line.strip().split()[7]) == "on":
+        state.append("uuflood=1")
+    else:
+        state.append("uuflood=0")
+    if (line.strip().split()[9]) == "on":
+        state.append("arp_term=1")
+    else:
+        state.append("arp_term=0")
+    return state
