@@ -1,12 +1,13 @@
 ## Demo Scenarios
 ### Scenario 1 - 1 x VNF via memifs
-![Scenario 1](scenario1/scenario1.png)
+<img src="scenario1/scenario1.png" width="350">
+
 
 ### Scenario 2 - 2 x VNF via memifs
-![Scenario 2](scenario2/scenario2.png)
+<img src="scenario2/scenario2.png" width="350">
 
 ### Scenario 4 - 1 x VNF via veths+af_packet
-![Scenario 4](scenario4/scenario4.png)
+<img src="scenario1/scenario1.png" width="350">
 
 
 ## Prepare Phase
