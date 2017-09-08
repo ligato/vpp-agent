@@ -219,9 +219,9 @@ vat_term: Check Bridge Domain State
     Log                  ${bd_id}
     ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
     Log                  ${bd_dump}
-    ${flood}=            Set Variable    ${bd_dump["flood"]}
-    ${forward}=          Set Variable    ${bd_dump["forward"]}
-    ${learn}=            Set Variable    ${bd_dump["learn"]}
+    ${flood}=            Set Variable    ${bd_dump[0]["flood"]}
+    ${forward}=          Set Variable    ${bd_dump[0]["forward"]}
+    ${learn}=            Set Variable    ${bd_dump[0]["learn"]}
     ${bd_details}=       vpp_term: Show Bridge-Domain Detail    ${node}    ${bd_id}
     Log                  ${bd_details}
     ${bd_state}=         Parse BD Details    ${bd_details}
