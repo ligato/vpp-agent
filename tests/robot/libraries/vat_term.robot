@@ -216,6 +216,6 @@ vat_term: Check Bridge Domain State
     [Arguments]          ${node}    ${bd}    @{desired_state}
     Log Many             ${node}    ${bd}    ${desired_state}
     ${bd_id}=    vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
-    Log                  ${internal_name}
+    Log                  ${bd_id}
     ${asdf}=             vat_term: Bridge Domain Dump    ${node}    ${bd_id}
 
