@@ -1,3 +1,9 @@
+# Release v1.0.4 (2017-09-08)
+- Kafka [Kafka Partitions] implemented new methods that allow to specificy partitions & offset parameters.
+Known issue: usable only methods with partitions (not without partitions) of kafka plugin API (these commits were not merged from cn-infra to vpp-agent release).
+- TODO Lukas resync of swifidx cache 
+- Flavors - there are left only local.FlavorVPPLocal & vpp.Flavor
+
 # Release v1.0.3 (2017-09-05)
 
 ## Major Themes
