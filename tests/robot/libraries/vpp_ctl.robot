@@ -191,13 +191,13 @@ vpp_ctl: Get Interface Internal Name
     Log    ${name}
     [Return]    ${name}
 
-vpp_ctl: Get Bridge Domain Internal Name
+vpp_ctl: Get Bridge Domain ID
     [Arguments]    ${node}    ${bd}
     Log Many    ${node}    ${bd}
     ${state}=    vpp_ctl: Get Bridge Domain State As Json    ${node}    ${bd}
-    ${name}=    Set Variable    ${state["internal_name"]}
-    Log    ${name}
-    [Return]    ${name}
+    ${bd_id}=    Set Variable    ${state["index"]}
+    Log    ${bd_id}
+    [Return]    ${bd_id}
 
 vpp_ctl: Put TAP Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true

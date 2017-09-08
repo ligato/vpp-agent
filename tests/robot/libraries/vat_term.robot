@@ -50,10 +50,11 @@ vat_term: Interfaces Dump
     [Return]           ${out}
 
 vat_term: Bridge Domain Dump
-    [Arguments]        ${node}
+    [Arguments]        ${node}    ${bd_id}=${EMPTY}
     [Documentation]    Executing command bridge_domain_dump
-    Log Many           ${node}
-    ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump
+    Log Many           ${node}    ${bd_id}
+    ${add_params}=     Set Variable If    '''${bd_id}'''==""    ${EMPTY}    bd_id=${bd_id}
+    ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump ${add_params}
     [Return]           ${out}
 
 vat_term: IP FIB Dump
@@ -214,7 +215,7 @@ vat_term: Check Memif Interface State
 vat_term: Check Bridge Domain State
     [Arguments]          ${node}    ${bd}    @{desired_state}
     Log Many             ${node}    ${bd}    ${desired_state}
-    ${internal_name}=    vpp_ctl: Get Bridge Domain Internal Name    ${node}    ${bd}
+    ${bd_id}=    vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
     Log                  ${internal_name}
-    ${asdf}=             vat_term: Bridge Domain Dump
+    ${asdf}=             vat_term: Bridge Domain Dump    ${node}    ${bd_id}
 
