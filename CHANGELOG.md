@@ -1,12 +1,16 @@
-# Release v1.0.4 (NOT RELEASED)
+# Release v1.0.4 (2017-09-08)
 
 ## Major Themes
 
-- Upgraded to cn-infra v1.0.3
-  - simplified flavors
-  - kvdbsync more robust while use in extended flavors (not important order of plugins in a particular flavor)
-- pkgreflect cleanup
-- updated govpp - waits until vpp is ready to accept a new connection
+- [Kafka Partitions](messaging/kafka)
+    - Implemented new methods that allow to specificy partitions & offset parameters:
+      * publish: Mux.NewSyncPublisherToPartition() & Mux.NewAsyncPublisherToPartition()
+      * watch: ProtoWatcher.WatchPartition()
+    - Minimalistic examples & documentation for Kafka API will be improved in a later release.
+- [Flavors](flavors)
+    - reduced to only [local.FlavorVppLocal](flavors/linuxlocal/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
+- [goVpp]
+    - updated version waits until vpp is ready to accept a new connection
 
 # Release v1.0.3 (2017-09-05)
 

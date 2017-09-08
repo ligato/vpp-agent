@@ -113,7 +113,7 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 	for {
 		select {
 		case bdState := <-plugin.bdStateChan:
-			if bdState != nil && bdState.State != nil {
+			if bdState != nil && bdState.State != nil && plugin.Publish != nil {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
