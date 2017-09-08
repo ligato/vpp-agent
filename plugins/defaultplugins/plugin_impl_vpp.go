@@ -125,7 +125,11 @@ func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
 	if plugin.Messaging != nil {
-		plugin.ifStateNotifications = plugin.Messaging.NewSyncPublisher(kafkaIfStateTopic)
+		var err error
+		plugin.ifStateNotifications, err = plugin.Messaging.NewSyncPublisher(kafkaIfStateTopic)
+		if err != nil {
+			return err
+		}
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!

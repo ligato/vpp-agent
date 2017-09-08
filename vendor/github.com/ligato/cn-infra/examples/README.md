@@ -28,8 +28,12 @@ Current examples:
   runtime values in an example plugin,
 * **[kafka lib](kafka_lib)** shows how to use the Kafka messaging library
   on set of individual tools (producer, sync and async consumer),
-* **[kafka plugin](kafka_plugin/non_clustered/main.go)** contains a simple plugin which 
-  registers a Kafka consumer and sends a test notification,
+* **[kafka plugin (non-clustered)](kafka_plugin/non_clustered/main.go)** 
+  contains a simple plugin which registers a Kafka consumer and sends a test 
+  notification,
+* **[kafka plugin (clustered)](kafka_plugin/clustered/main.go)** contains 
+  a simple plugin which registers a Kafka consumer watching on specific
+  partition/offset and sends a test notification to partition in Kafka cluster
 * **[logs lib](logs_lib)** shows how to use the logger library and switch 
   between the log levels,
 * **[logs plugin](logs_plugin)** showcases how to ue the logger library in a 

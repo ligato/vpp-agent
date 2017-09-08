@@ -119,11 +119,17 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	plugin.asyncErrorChannel = make(chan messaging.ProtoMessageErr, 0)
 
 	// Create a synchronous publisher for the selected topic.
-	plugin.kafkaSyncPublisher = plugin.Kafka.NewSyncPublisher(topic)
+	plugin.kafkaSyncPublisher, err = plugin.Kafka.NewSyncPublisher(topic)
+	if err != nil {
+		return err
+	}
 
 	// Create an asynchronous publisher for the selected topic.
-	plugin.kafkaAsyncPublisher = plugin.Kafka.NewAsyncPublisher(topic, messaging.ToProtoMsgChan(plugin.asyncMessageChannel),
+	plugin.kafkaAsyncPublisher, err = plugin.Kafka.NewAsyncPublisher(topic, messaging.ToProtoMsgChan(plugin.asyncMessageChannel),
 		messaging.ToProtoMsgErrChan(plugin.asyncErrorChannel))
+	if err != nil {
+		return err
+	}
 
 	plugin.kafkaWatcher = plugin.Kafka.NewWatcher("example-plugin")
 
@@ -188,14 +194,19 @@ func (plugin *ExamplePlugin) producer() {
 	if err != nil {
 		plugin.Log.Errorf("Failed to sync-send a proto message, error %v", err)
 	} else {
-		plugin.Log.Debugf("Sent sync proto message.")
+		plugin.Log.Info("Sync proto message sent")
 	}
 
 	// Asynchronous message with protobuf encoded message. A success event is sent to the app asynchronously
 	// on an event channel when the message has been successfully sent to Kafka. An error message is sent to
 	// the app asynchronously if the message could not be sent.
 	plugin.Log.Info("Sending async Kafka notification (protobuf)")
-	plugin.kafkaAsyncPublisher.Put("async-proto-key", enc)
+	err = plugin.kafkaAsyncPublisher.Put("async-proto-key", enc)
+	if err != nil {
+		plugin.Log.Errorf("Failed to async-send a proto message, error %v", err)
+	} else {
+		plugin.Log.Info("Async proto message sent")
+	}
 }
 
 /*************
@@ -209,8 +220,8 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 
 	// Watch on message channel for sync kafka events
 	for message := range plugin.subscription {
-		plugin.Log.Infof("Received Kafka Message, topic '%s', partition '%v', key: '%s', ",
-			message.GetTopic(), message.GetPartition(), message.GetKey())
+		plugin.Log.Infof("Received Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
+			message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
 		// Let it know that this part of the example is done
 		plugin.syncCaseDone = true
 	}
@@ -222,8 +233,8 @@ func (plugin *ExamplePlugin) asyncEventHandler() {
 	for {
 		select {
 		case message := <-plugin.asyncMessageChannel:
-			plugin.Log.Infof("Received async Kafka Message, topic '%s', partition '%v', key: '%s', ",
-				message.GetTopic(), message.GetPartition(), message.GetKey())
+			plugin.Log.Infof("Received async Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
+				message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
 			// Let it know that this part of the example is done
 			plugin.asyncCaseDone = true
 		case err := <-plugin.asyncErrorChannel:
