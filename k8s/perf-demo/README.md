@@ -7,7 +7,7 @@
 <img src="scenario2/scenario2.png" width="350">
 
 ### Scenario 4 - 1 x VNF via veths+af_packet
-<img src="scenario1/scenario1.png" width="350">
+<img src="scenario4/scenario4.png" width="350">
 
 
 ## Prepare Phase
