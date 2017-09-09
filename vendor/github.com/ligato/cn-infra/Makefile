@@ -75,9 +75,9 @@ endef
 define build_plugin_examples_only
     @echo "# building plugin examples"
     @cd examples/datasync_plugin && go build -v ${LDFLAGS}
-    @cd examples/flags && go build -v ${LDFLAGS}
-    @cd examples/kafka && go build -v ${LDFLAGS}
-    @cd examples/logs_in_plugin && go build -v ${LDFLAGS}
+    @cd examples/flags_plugin && go build -v ${LDFLAGS}
+    @cd examples/kafka_plugin/non_clustered && go build -v ${LDFLAGS}
+    @cd examples/logs_plugin && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
     @echo "# done"
 endef
@@ -86,22 +86,22 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/etcdv3_lib && make build
-    @cd examples/redis_lib && make build
     @cd examples/cassandra_lib && go build
-    @cd examples/logs_logrus && make build
+    @cd examples/etcdv3_lib && make build
     @cd examples/kafka_lib && make build
+    @cd examples/logs_lib && make build
+    @cd examples/redis_lib && make build
     @echo "# done"
 endef
 
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
-    @cd examples/etcdv3_lib && make clean
-    @cd examples/redis_lib && make clean
     @cd examples/cassandra_lib && rm -f simple
-    @cd examples/logs_logrus && make clean
+    @cd examples/etcdv3_lib && make clean
     @cd examples/kafka_lib && make clean
+    @cd examples/logs_lib && make clean
+    @cd examples/redis_lib && make clean
     @echo "# done"
 endef
 
@@ -109,10 +109,10 @@ endef
 define clean_plugin_examples_only
     @echo "# cleaning plugin examples"
     @rm -f examples/simple-agent/simple-agent
-    @rm -f examples/etcd/etcd
-    @rm -f examples/flags/flags
-    @rm -f examples/kafka/kafka
-    @rm -f examples/logs/logs
+    @rm -f examples/datasync_plugin/datasync_plugin
+    @rm -f examples/flags_plugin/flags_plugin
+    @rm -f examples/kafka_plugin/non_clustered/non_clustered
+    @rm -f examples/logs_plugin/logs_plugin
     @echo "# done"
 endef
 

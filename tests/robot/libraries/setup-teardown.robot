@@ -39,6 +39,7 @@ Testsuite Teardown
     Stop Kafka Server
     Get Connections
     Close All Connections
+    Check Agent Logs For Errors
 
 Test Setup
     Open Connection To Docker Host
@@ -124,3 +125,10 @@ Create Next Snapshot Prefix
     Set Global Variable  ${snapshot_num}
     [Return]            ${prefix}
 
+Check Agent Logs For Errors
+    @{logs}=    OperatingSystem.List Files In Directory    ${RESULTS_FOLDER}/    *_container_agent.log
+    Log List    ${logs}
+    :FOR    ${log}    IN    @{logs}
+    \    ${data}=    OperatingSystem.Get File    ${RESULTS_FOLDER}/${log}
+    \    Should Not Contain    ${data}    exited: agent (exit status
+    \    Should Not Contain    ${data}    exited: vpp (exit status

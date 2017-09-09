@@ -16,7 +16,7 @@ package redis
 
 import (
 	"github.com/ligato/cn-infra/db/keyval/plugin"
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
@@ -30,7 +30,7 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginInfraDeps //inject
+	local.PluginInfraDeps //inject
 }
 
 // Init is called on plugin startup. It establishes the connection to redis.

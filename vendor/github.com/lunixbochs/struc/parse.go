@@ -13,12 +13,11 @@ import (
 
 // struc:"int32,big,sizeof=Data"
 
-var tagWordsRe = regexp.MustCompile(`(\[|\b)[^"]+\b+$`)
-
 type strucTag struct {
 	Type   string
 	Order  binary.ByteOrder
 	Sizeof string
+	Skip   bool
 }
 
 func parseStrucTag(tag reflect.StructTag) *strucTag {
@@ -40,6 +39,8 @@ func parseStrucTag(tag reflect.StructTag) *strucTag {
 			t.Order = binary.BigEndian
 		} else if s == "little" {
 			t.Order = binary.LittleEndian
+		} else if s == "skip" {
+			t.Skip = true
 		} else {
 			t.Type = s
 		}
@@ -49,8 +50,8 @@ func parseStrucTag(tag reflect.StructTag) *strucTag {
 
 var typeLenRe = regexp.MustCompile(`^\[(\d*)\]`)
 
-func parseField(f reflect.StructField) (fd *Field, err error) {
-	tag := parseStrucTag(f.Tag)
+func parseField(f reflect.StructField) (fd *Field, tag *strucTag, err error) {
+	tag = parseStrucTag(f.Tag)
 	var ok bool
 	fd = &Field{
 		Name:  f.Name,
@@ -124,19 +125,20 @@ func parseFieldsLocked(v reflect.Value) (Fields, error) {
 		return nil, errors.New("struc: Struct has no fields.")
 	}
 	sizeofMap := make(map[string][]int)
-	fields := make(Fields, 0, v.NumField())
+	fields := make(Fields, v.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		f, err := parseField(field)
+		f, tag, err := parseField(field)
+		if tag.Skip {
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
-		f.CanSet = v.Field(i).CanSet()
-		if !f.CanSet {
+		if !v.Field(i).CanSet() {
 			continue
 		}
 		f.Index = i
-		tag := parseStrucTag(field.Tag)
 		if tag.Sizeof != "" {
 			target, ok := t.FieldByName(tag.Sizeof)
 			if !ok {
@@ -166,7 +168,7 @@ func parseFieldsLocked(v reflect.Value) (Fields, error) {
 				return nil, err
 			}
 		}
-		fields = append(fields, f)
+		fields[i] = f
 	}
 	return fields, nil
 }

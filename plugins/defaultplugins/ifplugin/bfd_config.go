@@ -40,7 +40,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type BFDConfigurator struct {
-	GoVppmux     *govppmux.GOVPPPlugin
+	GoVppmux     govppmux.API
 	SwIfIndexes  ifaceidx.SwIfIndex
 	ServiceLabel servicelabel.ReaderAPI
 	BfdIDSeq     uint32

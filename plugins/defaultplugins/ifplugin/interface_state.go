@@ -66,7 +66,7 @@ const (
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
 type InterfaceStateUpdater struct {
-	GoVppmux       *govppmux.GOVPPPlugin
+	GoVppmux       govppmux.API
 	swIfIndexes    ifaceidx.SwIfIndex
 	publishIfState func(notification *intf.InterfaceStateNotification)
 

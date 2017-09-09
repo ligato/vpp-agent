@@ -1,5 +1,8 @@
 package: github.com/ligato/cn-infra
 import:
+- package: github.com/sirupsen/logrus
+  version: v1.0.0
+# this is needed to pin version of logrus imported by 3rd party using incorrect case
 - package: github.com/Sirupsen/logrus
   version: v1.0.0
 - package: github.com/coreos/etcd
@@ -59,6 +62,5 @@ import:
 - package: github.com/alicebob/miniredis
   version: 2.1.0
 - package: github.com/howeyc/crc16
-testImport:
 - package: github.com/onsi/gomega
   version: v1.1.0

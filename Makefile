@@ -100,27 +100,26 @@ endef
 # run test examples
 define test_examples
     @echo "# Testing examples"
-    @./vendor/github.com/ligato/cn-infra/scripts/test_examples.sh
     @echo "# done"
 endef
 
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/govpp_call && go build -v
-    @cd examples/idx_bd_cache && go build -v
-    @cd examples/idx_iface_cache && go build -v
-    @cd examples/idx_mapping_lookup && go build -v
-    @cd examples/idx_mapping_watcher && go build -v
-    @cd examples/localclient_linux && go build -v
-    @cd examples/localclient_vpp && go build -v
+    @cd examples/govpp_call && go build -v -i
+    @cd examples/idx_bd_cache && go build -v -i
+    @cd examples/idx_iface_cache && go build -v -i
+    @cd examples/idx_mapping_lookup && go build -v -i
+    @cd examples/idx_mapping_watcher && go build -v -i
+    @cd examples/localclient_linux && go build -v -i
+    @cd examples/localclient_vpp && go build -v -i
     @echo "# done"
 endef
 
 # build vpp agent only
 define build_vpp_agent_only
     @echo "# building vpp agent"
-    @cd cmd/vpp-agent && go build -v ${LDFLAGS}
+    @cd cmd/vpp-agent && go build -v -i ${LDFLAGS}
     @echo "# done"
 endef
 
@@ -135,14 +134,14 @@ endef
 # build vpp-agent-ctl only
 define build_vpp_agent_ctl_only
     @echo "# building vpp-agent-ctl"
-    @cd cmd/vpp-agent-ctl && go build -v
+    @cd cmd/vpp-agent-ctl && go build -v -i
     @echo "# done"
 endef
 
 # build-only agentctl
 define build_agentctl_only
  	@echo "# building agentctl"
- 	@cd cmd/agentctl && go build -v
+ 	@cd cmd/agentctl && go build -v -i
  	@echo "# done"
 endef
 

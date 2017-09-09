@@ -15,7 +15,6 @@ func Test(t *testing.T) {
 	go func() {
 		RunTestSuite(&suiteFlavorLocal{T: t}, t)
 		RunTestSuite(&suiteFlavorRPC{T: t}, t)
-		RunTestSuite(&suiteFlavorKafkaEtcd{T: t}, t)
 		RunTestSuite(&suiteFlavorAllConnectors{T: t}, t)
 
 		doneChan <- struct{}{}

@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/flavors/localdeps"
+	"github.com/ligato/cn-infra/flavors/local"
 )
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
@@ -32,7 +32,7 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	localdeps.PluginLogDeps // inject
+	local.PluginLogDeps // inject
 }
 
 // Init initializes variables

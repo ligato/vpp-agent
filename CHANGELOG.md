@@ -1,3 +1,17 @@
+# Release v1.0.4 (2017-09-08)
+
+## Major Themes
+
+- [Kafka Partitions](messaging/kafka)
+    - Implemented new methods that allow to specificy partitions & offset parameters:
+      * publish: Mux.NewSyncPublisherToPartition() & Mux.NewAsyncPublisherToPartition()
+      * watch: ProtoWatcher.WatchPartition()
+    - Minimalistic examples & documentation for Kafka API will be improved in a later release.
+- [Flavors](flavors)
+    - reduced to only [local.FlavorVppLocal](flavors/linuxlocal/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
+- [goVpp]
+    - updated version waits until vpp is ready to accept a new connection
+
 # Release v1.0.3 (2017-09-05)
 
 ## Major Themes
@@ -18,7 +32,7 @@ VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 ## Major Themes
 
 Algorithms for applying northbound configuration (stored in ETCD key value data store)
-to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins): 
+to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins):
 - network interfaces, especially:
   - MEMIFs (optimized dataplane network interface tailored for a container to container network connectivity)
   - VETHs (standard Linux Virtual Ethernet network interface)
@@ -36,7 +50,7 @@ Data Synchronization during startup for network interfaces & L2 BD
 
 Data replication and events:
 - Updating operational data in ETCD (VPP indexes such as  sw_if_index) and statistics (port counters).
-- Updating statistics in Redis (optional once redis.conf available - see flag in FlavorRedis).
+- Updating statistics in Redis (optional once redis.conf available - see flags).
 - Publishing link up/down events to Kafka message bus.
 
 Miscellaneous:
@@ -57,14 +71,14 @@ based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
 VPP Agent is embeddable in different software projects and with different systems
-by using [Linux Local Flavor](flavors/linuxlocal) to reuse VPP Agent algorithms.
+by using [Local Flavor](flavors/local) to reuse VPP Agent algorithms.
 For doing this there is [VPP Agent client version 1](clientv1):
 * local client - for embedded VPP Agent (communication inside one operating system process, VPP Agent effectively used as a library)
 * remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 ## Known Issues
 A rarely occurring problem during startup with binary API connectivity.
-VPP rejects binary API connectivity when VPP Agent tries to connect 
+VPP rejects binary API connectivity when VPP Agent tries to connect
 too early (plan fix this behavior in next release).
 
 ## Compatibility

@@ -7,8 +7,16 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
-// DefAddress default kafka address/port (if not specified in config)
-const DefAddress = "127.0.0.1:9092"
+const (
+	// DefAddress default kafka address/port (if not specified in config)
+	DefAddress = "127.0.0.1:9092"
+	// DefPartition is used if no specific partition is set
+	DefPartition = 0
+	// OffsetNewest is head offset which will be assigned to the new message produced to the partition
+	OffsetNewest = sarama.OffsetNewest
+	// OffsetOldest is oldest offset available on the partition
+	OffsetOldest = sarama.OffsetOldest
+)
 
 // Config holds the settings for kafka multiplexer.
 type Config struct {
@@ -48,7 +56,7 @@ func getConsumerFactory(config *client.Config) ConsumerFactory {
 // InitMultiplexer initialize and returns new kafka multiplexer based on the supplied config file.
 // Name is used as groupId identification of consumer. Kafka allows to store last read offset for
 // a groupId. This is leveraged to deliver unread messages after restart.
-func InitMultiplexer(configFile string, name string, log logging.Logger) (*Multiplexer, error) {
+func InitMultiplexer(configFile string, name string, partitioner string, log logging.Logger) (*Multiplexer, error) {
 
 	var err error
 	muxCfg := &Config{[]string{DefAddress}}
@@ -58,14 +66,14 @@ func InitMultiplexer(configFile string, name string, log logging.Logger) (*Multi
 			return nil, err
 		}
 	}
-	return InitMultiplexerWithConfig(muxCfg, name, log)
+	return InitMultiplexerWithConfig(muxCfg, name, partitioner, log)
 }
 
 // InitMultiplexerWithConfig initialize and returns new kafka multiplexer
 // based on the supplied configuration.
 // Name is used as groupId identification of consumer. Kafka allows to store last read offset for
 // a groupId. This is leveraged to deliver unread messages after restart.
-func InitMultiplexerWithConfig(muxConfig *Config, name string, log logging.Logger) (*Multiplexer, error) {
+func InitMultiplexerWithConfig(muxConfig *Config, name string, partitioner string, log logging.Logger) (*Multiplexer, error) {
 
 	const errorFmt = "Failed to create Kafka %s, Configured broker(s) %v, Error: '%s'"
 
@@ -77,6 +85,7 @@ func InitMultiplexerWithConfig(muxConfig *Config, name string, log logging.Logge
 	config.SetSendError(true)
 	config.SetErrorChan(make(chan *client.ProducerError))
 	config.Brokers = muxConfig.Addrs
+	config.SetPartitioner(partitioner)
 
 	syncProducer, err := client.NewSyncProducer(config, nil)
 	if err != nil {
@@ -90,5 +99,5 @@ func InitMultiplexerWithConfig(muxConfig *Config, name string, log logging.Logge
 		return nil, err
 	}
 
-	return NewMultiplexer(getConsumerFactory(config), syncProducer, asyncProducer, name, log), nil
+	return NewMultiplexer(getConsumerFactory(config), syncProducer, asyncProducer, partitioner, name, log), nil
 }

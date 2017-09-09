@@ -37,7 +37,7 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1routes". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
-	GoVppmux      *govppmux.GOVPPPlugin
+	GoVppmux      govppmux.API
 	RouteIndexes  idxvpp.NameToIdxRW
 	RouteIndexSeq uint32
 	SwIfIndexes   ifaceidx.SwIfIndex
@@ -147,6 +147,9 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 	route, err := TransformRoute(config, plugin.SwIfIndexes)
 	if err != nil {
 		return err
+	}
+	if route == nil {
+		return nil
 	}
 	// Remove and unregister route
 	err = vppcalls.VppAddDelRoute(route, plugin.vppChan, true)

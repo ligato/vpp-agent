@@ -16,8 +16,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/namsral/flag"
 	"os"
+
+	"github.com/namsral/flag"
 
 	"strings"
 

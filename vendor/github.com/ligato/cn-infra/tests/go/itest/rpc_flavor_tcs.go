@@ -23,7 +23,7 @@ func (t *suiteFlavorRPC) Setup(flavor core.Flavor, golangT *testing.T) {
 	t.AgentT.Setup(flavor, t.t)
 }
 
-// MockFlavorRPC initializes generic flavor with HTTP mock
+// MockFlavorRPC initializes RPC flavor with HTTP mock
 func MockFlavorRPC() (*rpc.FlavorRPC, *mock.HTTPMock) {
 	httpMock := &mock.HTTPMock{}
 	return &rpc.FlavorRPC{

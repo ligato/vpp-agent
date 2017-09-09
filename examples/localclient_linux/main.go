@@ -30,7 +30,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/flavors/linuxlocal"
+	"github.com/ligato/vpp-agent/flavors/local"
 )
 
 // init sets the default logging level
@@ -48,7 +48,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := linuxlocal.FlavorVppLocal{}
+	flavor := local.FlavorVppLocal{}
 	// Example plugin and dependencies
 	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 	// Create new agent
@@ -127,12 +127,12 @@ func (plugin *ExamplePlugin) reconfigureLinuxAndVPP(ctx context.Context) {
 		// simulate configuration change exactly 20seconds after resync
 		err := localclient.DataChangeRequest(PluginID).
 			Put().
-			LinuxInterface(&veth11Ns1).     /* move veth11 into the namespace "ns1" */
+			LinuxInterface(&veth11Ns1). /* move veth11 into the namespace "ns1" */
 			LinuxInterface(&veth12WithMtu). /* reconfigure veth12 -- explicitly set Mtu to 1000 */
-			LinuxInterface(&veth21Ns2).     /* create veth21-veth22 pair, put veth21 into the namespace "ns2" */
-			LinuxInterface(&veth22).        /* enable veth22, keep default configuration */
-			VppInterface(&afpacket2).       /* create afpacket2 interface and attach it to veth2 */
-			BD(&BDAfpackets).               /* put afpacket1 and afpacket2 into the same bridge domain */
+			LinuxInterface(&veth21Ns2). /* create veth21-veth22 pair, put veth21 into the namespace "ns2" */
+			LinuxInterface(&veth22). /* enable veth22, keep default configuration */
+			VppInterface(&afpacket2). /* create afpacket2 interface and attach it to veth2 */
+			BD(&BDAfpackets). /* put afpacket1 and afpacket2 into the same bridge domain */
 			Delete().
 			VppInterface(tap1.Name). /* remove the tap interface */
 			Send().ReceiveReply()
@@ -316,10 +316,10 @@ var (
 		MacAge:              0, /* means disable aging */
 		Interfaces: []*vpp_l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "afpacket1",
+				Name:                    "afpacket1",
 				BridgedVirtualInterface: false,
 			}, {
-				Name: "afpacket2",
+				Name:                    "afpacket2",
 				BridgedVirtualInterface: false,
 			},
 		},
