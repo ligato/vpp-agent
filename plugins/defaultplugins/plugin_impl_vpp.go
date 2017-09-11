@@ -102,7 +102,7 @@ type Deps struct {
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
 	Watch             datasync.KeyValProtoWatcher
-	Messaging         messaging.Mux
+	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             linuxplugin.API
 }
@@ -124,13 +124,7 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
-	if plugin.Messaging != nil {
-		var err error
-		plugin.ifStateNotifications, err = plugin.Messaging.NewSyncPublisher(kafkaIfStateTopic)
-		if err != nil {
-			return err
-		}
-	}
+	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
