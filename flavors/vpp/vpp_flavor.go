@@ -17,7 +17,7 @@ type Flavor struct {
 	*local.FlavorLocal
 	*connectors.AllConnectorsFlavor // connectors have to be started before vpp flavor
 	*rpc.FlavorRPC
-	MessagingSync msgsync.PubPlugin
+	IfStatePub msgsync.PubPlugin
 
 	*vpplocal.FlavorVppLocal
 
@@ -38,11 +38,11 @@ func (f *Flavor) Inject() bool {
 		&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
 	}
 
-	f.MessagingSync.Messaging = &f.Kafka
-	f.MessagingSync.PluginInfraDeps = *f.InfraDeps("messaging-sync")
-	f.MessagingSync.Cfg.Topic = kafkaIfStateTopic
+	f.IfStatePub.Messaging = &f.Kafka
+	f.IfStatePub.PluginInfraDeps = *f.InfraDeps("messaging-sync")
+	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
 
-	f.VPP.Deps.IfStatePub = &f.MessagingSync
+	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
