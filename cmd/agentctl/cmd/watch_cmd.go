@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"time"
 
+	"strings"
+
 	"github.com/buger/goterm"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
@@ -121,8 +123,23 @@ func watchFunc(cmd *cobra.Command, args []string) {
 		}
 
 		goterm.Println(table)
-		goterm.Flush()
+		// Flush buffer and ensure that it will not overflow the screen
+		for idx, str := range strings.Split(goterm.Screen.String(), "\n") {
+			if idx > goterm.Height() {
+				return
+			}
+			goterm.Output.WriteString(str + "\n")
+		}
+		// Write buffered data
+		err := goterm.Output.Flush()
+		if err != nil {
+			fmt.Errorf("%v", err)
+		}
+		// Reset buffer to be empty
+		goterm.Screen.Reset()
+
 		fmt.Println("Press Ctrl-C to exit watcher ...")
+
 		// ETCD interface statistics are updated every 10 seconds (interval set directly in VPP)
 		time.Sleep(time.Second)
 	}
