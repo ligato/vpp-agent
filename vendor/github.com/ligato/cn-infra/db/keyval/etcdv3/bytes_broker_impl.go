@@ -74,11 +74,14 @@ type bytesKeyVal struct {
 
 // NewEtcdConnectionWithBytes creates new connection to etcd based on the given config file.
 func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*BytesConnectionEtcd, error) {
+	start := time.Now()
 	etcdClient, err := clientv3.New(*config.Config)
 	if err != nil {
 		log.Errorf("Failed to connect to Etcd etcd(s) %v, Error: '%s'", config.Endpoints, err)
 		return nil, err
 	}
+	etcdConnectTime := time.Since(start)
+	log.WithField("timeInNs", etcdConnectTime.Nanoseconds()).Info("Connecting to etcd took ", etcdConnectTime)
 	conn, err := NewEtcdConnectionUsingClient(etcdClient, log)
 	conn.opTimeout = config.OpTimeout
 	return conn, err

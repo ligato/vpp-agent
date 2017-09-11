@@ -40,6 +40,8 @@ type Mux interface {
 
 	// Initializes new watcher which can start/stop watching on topic, eventually partition and offset
 	NewWatcher(subscriberName string) ProtoWatcher
+	// Disabled if the plugin config was not found
+	Disabled() (disabled bool)
 }
 
 // ProtoPublisher allows to publish a message of type proto.Message into messaging system.

@@ -31,11 +31,11 @@ const topic = "status-check"
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
 	Deps         // inject
-
 	subscription chan (*client.ConsumerMessage)
 	muxDefault   *mux.Multiplexer
 	muxManual    *mux.Multiplexer
 	consumer     *client.Consumer
+	disabled     bool
 }
 
 // Deps is here to group injected dependencies of plugin
@@ -59,6 +59,7 @@ func (p *Plugin) Init() (err error) {
 	found, err := p.PluginConfig.GetValue(config)
 	if !found {
 		p.Log.Info("kafka config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		p.disabled = true
 		return nil //skip loading the plugin
 	}
 	if err != nil {
@@ -166,6 +167,11 @@ func (p *Plugin) NewAsyncPublisherToPartition(topic string, partition int32, suc
 // NewWatcher creates a watcher that allows to start/stop consuming of messaging published to given topics.
 func (p *Plugin) NewWatcher(name string) messaging.ProtoWatcher {
 	return p.NewProtoConnection(name)
+}
+
+// Disabled if the plugin config was not found
+func (p *Plugin) Disabled() (disabled bool) {
+	return p.disabled
 }
 
 // Receive client config according to kafka config data

@@ -17,7 +17,6 @@ package cassandra
 import (
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/willfaught/gockle"
 )
 
@@ -102,8 +101,8 @@ func (p *Plugin) NewBroker() sql.Broker {
 
 // Close resources
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.session)
-	return err
+	p.session.Close()
+	return nil
 }
 
 // String returns if set Deps.PluginName or "cassa-client" otherwise

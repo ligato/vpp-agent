@@ -82,6 +82,10 @@ func NewLogger(name string) *Logger {
 		name:   name,
 	}
 
+	tf := NewTextFormatter()
+	tf.TimestampFormat = "2006-01-02 15:04:05.00000"
+	logger.SetFormatter(tf)
+
 	logger.InitTag("00000000")
 
 	logger.littleBuf.New = func() interface{} {
