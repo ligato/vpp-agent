@@ -15,6 +15,7 @@
 package core
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/ligato/cn-infra/logging/logroot"
@@ -28,15 +29,30 @@ type Flavor interface {
 	Plugins() []*NamedPlugin
 }
 
-// ListPluginsInFlavor uses reflection to traverse top level fields of Flavor structure.
+// ListPluginsInFlavor lists plugins in a Flavor.
 // It extracts all plugins and returns them as a slice of NamedPlugins.
 func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 	uniqueness := map[PluginName]Plugin{}
-	return listPluginsInFlavor(reflect.ValueOf(flavor), uniqueness)
+	l, err := listPluginsInFlavor(reflect.ValueOf(flavor), uniqueness)
+	if err != nil {
+		logroot.StandardLogger().Error("Invalid argument - it does not satisfy the Flavor interface")
+	}
+	return l
 }
 
-// listPluginsInFlavor checks every field and tries to cast it to Plugin or inspect its type recursively.
-func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Plugin) []*NamedPlugin {
+// listPluginsInFlavor lists plugins in a Flavor. If there are multiple
+// instances of a given plugin type, only one plugin instance is listed.
+// A Flavor is composed of multiple Flavor and Plugins. The composition
+// is recursive: a component Flavor contains Plugin components and may
+// contain Flavor components as well. The function recursively lists
+// plugins contained in component Flavors.
+//
+// The function returns an error if the flavorValue argument does not
+// satisfy the Flavor interface. All components in the argument flavorValue
+// must satisfy either the Plugin or the Flavor interface. If they do not,
+// an error is logged, but the function does not return an error.
+// in the argument
+func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Plugin) ([]*NamedPlugin, error) {
 	var res []*NamedPlugin
 
 	flavorType := flavorValue.Type()
@@ -50,7 +66,11 @@ func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Pl
 	}
 
 	if !flavorValue.IsValid() {
-		return res
+		return res, nil
+	}
+
+	if _, ok := flavorValue.Addr().Interface().(Flavor); !ok {
+		return res, errors.New("does not satisfy the Flavor interface")
 	}
 
 	pluginType := reflect.TypeOf((*Plugin)(nil)).Elem()
@@ -75,15 +95,23 @@ func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Pl
 				}
 			} else {
 				// try to inspect flavor structure recursively
-				res = append(res, listPluginsInFlavor(fieldVal, uniqueness)...)
+				l, err := listPluginsInFlavor(fieldVal, uniqueness)
+				if err != nil {
+					logroot.StandardLogger().
+						WithField("fieldName", field.Name).
+						Error("Bad field: must satisfy either Plugin or Flavor interface")
+				} else {
+					res = append(res, l...)
+				}
 			}
 		}
 	}
 
-	return res
+	return res, nil
 }
 
-// fieldPlugin tries to cast given field to Plugin
+// fieldPlugin determines if a given field satisfies the Plugin interface.
+// If yes, the plugin value is returned; if not, nil is returned.
 func fieldPlugin(field reflect.StructField, fieldVal reflect.Value, pluginType reflect.Type) Plugin {
 	switch fieldVal.Kind() {
 	case reflect.Struct:

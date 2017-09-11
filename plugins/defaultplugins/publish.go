@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-const kafkaIfStateTopic = "if_state" // Messaging topic where interface state changes are published.
 
 // Resync deletes obsolete operation status of network interfaces in DB
 // Obsolete state is one that is not part of SwIfIndex

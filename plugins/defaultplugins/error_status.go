@@ -237,6 +237,11 @@ func (plugin *Plugin) removeErrorLog(key string) {
 	// The rest is a prefix
 	prefix := strings.Replace(key, name, "", 1)
 
+	if plugin.Publish == nil {
+		// if there is no publish destination set, there is nothing to be deleted
+		return
+	}
+
 	if prefix == interfaces.InterfacePrefix {
 		key := interfaces.InterfaceErrorKey(name)
 		plugin.Publish.Put(key, nil)

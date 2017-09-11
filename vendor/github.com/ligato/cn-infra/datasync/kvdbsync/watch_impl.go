@@ -99,6 +99,7 @@ func (keys *watchBrokerKeys) watchResync(resyncReg resync.Registration) {
 
 // Resync fills the resyncChan with most recent snapshot (db.ListValues)
 func (keys *watchBrokerKeys) resync() error {
+	startTime := time.Now()
 	its := map[string] /*keyPrefix*/ datasync.KeyValIterator{}
 	for _, keyPrefix := range keys.prefixes {
 		it, err := keys.adapter.db.ListValues(keyPrefix)
@@ -119,7 +120,8 @@ func (keys *watchBrokerKeys) resync() error {
 	case <-time.After(4 * time.Second):
 		logroot.StandardLogger().Warn("Timeout of resync callback")
 	}
-
+	resyncTime := time.Since(startTime)
+	logroot.StandardLogger().WithField("timeInNs", resyncTime.Nanoseconds()).Info("Resync took ", resyncTime)
 	return nil
 }
 

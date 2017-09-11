@@ -3,17 +3,22 @@ package vpp
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/msgsync"
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
 	vpplocal "github.com/ligato/vpp-agent/flavors/local"
 )
 
+const kafkaIfStateTopic = "if_state" // IfStatePub topic where interface state changes are published.
+
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
 	*local.FlavorLocal
 	*connectors.AllConnectorsFlavor // connectors have to be started before vpp flavor
 	*rpc.FlavorRPC
+	IfStatePub msgsync.PubPlugin
+
 	*vpplocal.FlavorVppLocal
 
 	injected bool
@@ -32,8 +37,14 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
 		&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
 	}
+
+	f.IfStatePub.Messaging = &f.Kafka
+	f.IfStatePub.PluginInfraDeps = *f.InfraDeps("messaging-sync")
+	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
+
+	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
-	f.VPP.Deps.Messaging = &f.AllConnectorsFlavor.Kafka
+
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	return true
