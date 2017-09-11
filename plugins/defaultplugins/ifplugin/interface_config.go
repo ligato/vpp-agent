@@ -179,6 +179,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
+	// configure mtu
+	if iface.Mtu != 0 {
+		err := vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.vppCh)
+		if err != nil {
+			wasError = err
+		}
+	}
+
 	// register name to idx mapping
 	plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
 	log.DefaultLogger().WithFields(log.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
@@ -315,6 +323,14 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.vppCh)
 		log.DefaultLogger().Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
 		if nil != err {
+			wasError = err
+		}
+	}
+
+	// mtu
+	if newConfig.Mtu != oldConfig.Mtu {
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh)
+		if err != nil {
 			wasError = err
 		}
 	}
