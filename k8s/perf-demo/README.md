@@ -27,6 +27,23 @@ etcdv3-server   1/1       Running   0          12s
 kafka-server    1/1       Running   0          5s
 ```
 
+
+Modify ETCD configuration files, which contain physical interface names
+`FortyGigabitEthernet89/0/0` and `FortyGigabitEthernet89/0/1`. If this does
+not match your setup, set the names as follows:
+```
+./interfaces.sh GigabitEthernet0/0/1 GigabitEthernet0/0/2
+```
+
+Also modify VPP startup config files for each scenario, to match your HW, e.g.
+[scenario1/vswitch/vswitch-vpp-cfg.yaml](scenario1/vswitch/vswitch-vpp-cfg.yaml).
+PIC addresses of the NICs should match interface names, e.g. ` 0000:89:00.0`
+corresponds to `FortyGigabitEthernet89/0/0`.
+
+If the two above steps are not configured properly, the demo will still work,
+but the vSwitch will lack the physical interfaces.
+
+
 ## Deploy Network Service
 Import ETCD configuration for the given scenario (1, 2 or 4):
 ```
