@@ -102,9 +102,9 @@ type ExamplePlugin struct {
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	Publisher                 datasync.KeyProtoValWriter // injected
-	Agent1                    *kvdbsync.Plugin           // injected
-	Agent2                    *kvdbsync.Plugin           // injected
+	Publisher             datasync.KeyProtoValWriter // injected
+	Agent1                *kvdbsync.Plugin           // injected
+	Agent2                *kvdbsync.Plugin           // injected
 	local.PluginInfraDeps                            // injected
 }
 
@@ -123,6 +123,15 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// get access to local bridge domain indexes
 	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
 
+	// Run consumer
+	go plugin.consume()
+
+	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name
+	// /vnf-agent/agent1/vpp/config/v1/bd/
+	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
+	// /vnf-agent/agent2/vpp/config/v1/bd/
+	plugin.bdIdxAgent2 = bdidx.Cache(plugin.Agent2, plugin.PluginName)
+
 	return nil
 }
 
@@ -137,15 +146,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	if err != nil {
 		return err
 	}
-
-	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name
-	// /vnf-agent/agent1/vpp/config/v1/bd/
-	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
-	// /vnf-agent/agent2/vpp/config/v1/bd/
-	plugin.bdIdxAgent2 = bdidx.Cache(plugin.Agent2, plugin.PluginName)
-
-	// Run consumer
-	go plugin.consume()
 
 	// Publish test data
 	plugin.publish()
@@ -197,7 +197,7 @@ func (plugin *ExamplePlugin) consume() {
 	for watching {
 		select {
 		case bdIdxEvent := <-bdIdxChan:
-			plugin.Log.Infof("Event received: bridge domain %v", bdIdxEvent.Name)
+			plugin.Log.Info("Event received: bridge domain ", bdIdxEvent.Name, " of ", bdIdxEvent.RegistryTitle)
 			counter++
 		}
 		// Example is expecting 3 events

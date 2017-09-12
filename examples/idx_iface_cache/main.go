@@ -123,6 +123,16 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// get access to local interface indexes
 	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
 
+
+	// Run consumer
+	go plugin.consume()
+
+	// Cache other agent's interface index mapping using injected plugin and local plugin name
+	// /vnf-agent/agent1/vpp/config/v1/interface/
+	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
+	// /vnf-agent/agent2/vpp/config/v1/interface/
+	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
+
 	return nil
 }
 
@@ -137,15 +147,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	if err != nil {
 		return err
 	}
-
-	// Cache other agent's interface index mapping using injected plugin and local plugin name
-	// /vnf-agent/agent1/vpp/config/v1/interface/
-	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
-	// /vnf-agent/agent2/vpp/config/v1/interface/
-	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
-
-	// Run consumer
-	go plugin.consume()
 
 	// Publish test data
 	plugin.publish()
@@ -197,7 +198,7 @@ func (plugin *ExamplePlugin) consume() {
 	for watching {
 		select {
 		case ifaceIdxEvent := <-swIfIdxChan:
-			plugin.Log.Infof("Event received: interface %v", ifaceIdxEvent.Name)
+			plugin.Log.Info("Event received: interface ", ifaceIdxEvent.Name, " of ", ifaceIdxEvent.RegistryTitle)
 			counter++
 		}
 		// Example is expecting 3 events
