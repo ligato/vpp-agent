@@ -229,10 +229,11 @@ vat_term: Check Bridge Domain State
     ${bd_state}=         Parse BD Details    ${bd_details}
     Log                  ${bd_state}
     ${etcd_dump}=        Get ETCD Dump
-    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_dump}    ${bd_dump}
+    ${etcd_json}=        Convert_ETCD_Dump_To_JSON    ${etcd_dump}
+    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_json}    ${bd_dump}
     Log                  ${interfaces}
     ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
-    Append To List       ${actual_state}    @{bd_state}
+    Append To List       ${actual_state}    @{bd_state}    @{interfaces}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
