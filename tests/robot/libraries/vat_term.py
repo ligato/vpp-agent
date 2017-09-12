@@ -83,12 +83,37 @@ def Parse_Memif_Info(info):
 def Parse_BD_Details(details):
     state = []
     line = details.splitlines()[1]
-    if (line.strip().split()[7]) == "on":
+    if (line.strip().split()[6]) == "on":
         state.append("uuflood=1")
     else:
         state.append("uuflood=0")
-    if (line.strip().split()[9]) == "on":
+    if (line.strip().split()[8]) == "on":
         state.append("arp_term=1")
     else:
         state.append("arp_term=0")
     return state
+
+# input - etcd dump
+# output - etcd dump converted to json + key, node, name, type atributes
+def Convert_ETCD_Dump_To_JSON(dump):
+    etcd_json = '['
+    key = ''
+    data = ''
+    firstline = True
+    for line in dump.splitlines():
+        if line.strip() != '':
+            if line[0] == '/':
+                if not firstline:
+                    node = key.split('/')[2]
+                    name = key.split('/')[-1]
+                    type = key.split('/')[4]
+                    etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'},'
+                key = line
+                data = ''
+                firstline = False
+            else:
+                data += line 
+    if not firstline:
+        etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'}'
+    etcd_json += ']'
+    return etcd_json

@@ -228,6 +228,9 @@ vat_term: Check Bridge Domain State
     Log                  ${bd_details}
     ${bd_state}=         Parse BD Details    ${bd_details}
     Log                  ${bd_state}
+    ${etcd_dump}=        Get ETCD Dump
+    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_dump}    ${bd_dump}
+    Log                  ${interfaces}
     ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
     Append To List       ${actual_state}    @{bd_state}
     Log List             ${actual_state}
