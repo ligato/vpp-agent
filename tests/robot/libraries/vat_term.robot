@@ -219,17 +219,20 @@ vat_term: Check Bridge Domain State
     ${bd_id}=            vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
     Log                  ${bd_id}
     ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
-    ${bd_dump}=          Evaluate    json.loads('''${bd_dump}''')    json
     Log                  ${bd_dump}
-    ${flood}=            Set Variable    ${bd_dump[0]["flood"]}
-    ${forward}=          Set Variable    ${bd_dump[0]["forward"]}
-    ${learn}=            Set Variable    ${bd_dump[0]["learn"]}
+    ${bd_json}=          Evaluate    json.loads('''${bd_dump}''')    json
+    Log                  ${bd_json}
+    ${flood}=            Set Variable    ${bd_json[0]["flood"]}
+    ${forward}=          Set Variable    ${bd_json[0]["forward"]}
+    ${learn}=            Set Variable    ${bd_json[0]["learn"]}
     ${bd_details}=       vpp_term: Show Bridge-Domain Detail    ${node}    ${bd_id}
     Log                  ${bd_details}
     ${bd_state}=         Parse BD Details    ${bd_details}
     Log                  ${bd_state}
     ${etcd_dump}=        Get ETCD Dump
+    Log                  ${etcd_dump}
     ${etcd_json}=        Convert_ETCD_Dump_To_JSON    ${etcd_dump}
+    Log                  ${etcd_json}
     ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_json}    ${bd_dump}
     Log                  ${interfaces}
     ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
