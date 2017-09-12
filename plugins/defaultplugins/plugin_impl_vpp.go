@@ -41,6 +41,18 @@ import (
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
+// no operation writer that helps avoiding NIL pointer based segmentation fault
+// used as default if some dependency was not injected
+var (
+	// no operation writer that helps avoiding NIL pointer based segmentation fault
+	// used as default if some dependency was not injected
+	noopWriter = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{}}
+
+	// no operation watcher that helps avoiding NIL pointer based segmentation fault
+	// used as default if some dependency was not injected
+	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
+)
+
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
 	Deps
@@ -124,6 +136,8 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
+	plugin.fixNilPointers()
+
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -179,6 +193,26 @@ func (plugin *Plugin) Init() error {
 	gPlugin = plugin
 
 	return nil
+}
+
+// fixNilPointers sets noopWriter & nooWatcher for nil dependencies
+func (plugin *Plugin) fixNilPointers() {
+	if plugin.Deps.Publish == nil {
+		plugin.Deps.Publish = noopWriter
+		plugin.Log.Debug("setting default noop writer for Publish dependency")
+	}
+	if plugin.Deps.PublishStatistics == nil {
+		plugin.Deps.PublishStatistics = noopWriter
+		plugin.Log.Debug("setting default noop writer for PublishStatistics dependency")
+	}
+	if plugin.Deps.IfStatePub == nil {
+		plugin.Deps.IfStatePub = noopWriter
+		plugin.Log.Debug("setting default noop writer for IfStatePub dependency")
+	}
+	if plugin.Deps.Watch == nil {
+		plugin.Deps.Watch = noopWatcher
+		plugin.Log.Debug("setting default noop watcher for Watch dependency")
+	}
 }
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
