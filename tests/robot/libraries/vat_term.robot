@@ -5,6 +5,7 @@ Library      vat_term.py
 
 *** Variables ***
 ${terminal_timeout}=      30s
+${bd_timeout}=            15s
 
 *** Keywords ***
 
@@ -244,9 +245,33 @@ vat_term: Check Bridge Domain State
 vat_term: BD Is Created
     [Arguments]    ${node}    @{interfaces}
     Log Many       ${node}    ${interfaces}
+    Wait Until Keyword Succeeds    ${bd_timeout}   3s    vat_term: Check BD Presence    ${node}    ${interfaces}
+
+vat_term: BD Is Deleted
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    Wait Until Keyword Succeeds    ${bd_timeout}   3s    vat_term: Check BD Presence    ${node}    ${interfaces}    ${FALSE}
+
+vat_term: BD Exists
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    vat_term: Check BD Presence    ${node}    ${interfaces}
+
+vat_term: BD Not Exists
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    vat_term: Check BD Presence    ${node}    ${interfaces}    ${FALSE}
+
+vat_term: Check BD Presence
+    [Arguments]        ${node}     ${interfaces}    ${status}=${TRUE}
+    Log Many           ${node}     ${interfaces}    ${status}
     ${indexes}=    Create List
     :FOR    ${int}    IN    @{interfaces}
     \    ${sw_if_index}=    vpp_ctl: Get Interface Sw If Index    ${node}    ${int}
     \    Append To List    ${indexes}    ${sw_if_index}
     Log List    ${indexes}
+    ${bd_dump}=        vat_term: Bridge Domain Dump    ${node}    
+    Log                ${bd_dump}
+    ${result}=         Run Keyword And Return Status    Check BD Presence    ${bd_dump}    ${indexes}
+    Should Be Equal    ${result}    ${status}
 

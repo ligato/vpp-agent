@@ -142,8 +142,18 @@ def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
         interfaces.append("bvi_int="+etcd_name)
     return interfaces
 
-
-
+def Check_BD_Presence(bd_dump, indexes):
+    bd_dump = json.loads(bd_dump)
+    present = True
+    for bd in bd_dump:
+        for index in indexes:
+            int_present = False
+            for bd_int in bd["sw_if"]:
+                if bd_int["sw_if_index"] == index:
+                    int_present = True
+            if int_present == False:
+                present = False
+    return present
 
 
 x='''[ {
