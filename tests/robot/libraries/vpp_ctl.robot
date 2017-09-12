@@ -197,7 +197,7 @@ vpp_ctl: Get Interface Sw If Index
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
     ${sw_if_index}=    Set Variable    ${state["if_index"]}
     Log    ${sw_if_index}
-    [Return]    ${sw_if_name}
+    [Return]    ${sw_if_index}
 
 vpp_ctl: Get Bridge Domain ID
     [Arguments]    ${node}    ${bd}
