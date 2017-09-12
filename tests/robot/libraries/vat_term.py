@@ -125,21 +125,23 @@ def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
     for int in bd_dump[0]["sw_if"]:
         bd_sw_if_index =  int["sw_if_index"]
         etcd_name = "none"
-#        print bd_sw_if_index
         for key_data in etcd_json:
-#            print key_data["key"]
             if key_data["node"] and key_data["type"] == "status" and "/interface/" in key_data["key"]:
-#                print key_data["name"]
                 if "if_index" in key_data["data"]:
-#                    print key_data["data"]["if_index"]
-#                    print bd_sw_if_index
                     if key_data["data"]["if_index"] == bd_sw_if_index:
                         etcd_name = key_data["data"]["name"]
         interfaces.append("interface="+etcd_name)
+    if bd_dump[0]["bvi_sw_if_index"] != 4294967295:
+        bvi_sw_if_index = bd_dump[0]["bvi_sw_if_index"]
+        etcd_name = "none"
+        for key_data in etcd_json:
+            if key_data["node"] and key_data["type"] == "status" and "/interface/" in key_data["key"]:
+                if "if_index" in key_data["data"]:
+                    if key_data["data"]["if_index"] == bvi_sw_if_index:
+                        etcd_name = key_data["data"]["name"]
+        interfaces.append("bvi_int="+etcd_name)
     return interfaces
 
-
-#    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_json}    ${bd_dump}
 
 
 
