@@ -272,6 +272,6 @@ vat_term: Check BD Presence
     Log List    ${indexes}
     ${bd_dump}=        vat_term: Bridge Domain Dump    ${node}    
     Log                ${bd_dump}
-    ${result}=         Run Keyword And Return Status    Check BD Presence    ${bd_dump}    ${indexes}
+    ${result}=         Check BD Presence    ${bd_dump}    ${indexes}
     Should Be Equal    ${result}    ${status}
 

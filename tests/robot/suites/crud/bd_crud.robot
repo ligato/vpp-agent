@@ -42,6 +42,8 @@ adsf
 dsfds
     vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_tap1
 
+dsdsfds
+    vat_term: BD Is Created    agent_vpp_1    vpp1_afpacket1
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1
