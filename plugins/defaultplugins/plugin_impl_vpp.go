@@ -95,6 +95,7 @@ type Plugin struct {
 	resyncStatusChan     chan datasync.ResyncEvent
 	changeChan           chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	ifStateNotifications messaging.ProtoPublisher
+	ifMtuFromConfig      uint32
 
 	watchConfigReg datasync.WatchRegistration
 	watchStatusReg datasync.WatchRegistration
@@ -121,7 +122,7 @@ type Deps struct {
 
 // DPConfig holds the value of maximum transmission unit in bytes.
 type DPConfig struct {
-	Mtu int32 `json:"mtu"`
+	Mtu uint32 `json:"mtu"`
 }
 
 var (
@@ -144,9 +145,13 @@ func (plugin *Plugin) Init() error {
 	plugin.fixNilPointers()
 
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
-	_, err := plugin.retrieveMtuConfig()
+	config, err := plugin.retrieveMtuConfig()
 	if err != nil {
 		return err
+	}
+	if config != nil {
+		plugin.ifMtuFromConfig = config.Mtu
+		plugin.Log.Debugf("Mtu set to %v", plugin.ifMtuFromConfig)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -261,8 +266,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
+		GoVppmux: plugin.GoVppmux,
+		ServiceLabel: plugin.ServiceLabel,
+		Linux: plugin.Linux,
+	}
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtuFromConfig, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -406,12 +415,12 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
 	config := &DPConfig{}
 	found, err := plugin.PluginConfig.GetValue(config)
-	if err != nil {
-		return nil, err
-	}
 	if !found {
 		plugin.Log.Info("MTU config not found, using default value")
 		return nil, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 	plugin.Log.Info("config found, value set to %v", config.Mtu)
 	return config, err

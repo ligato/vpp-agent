@@ -43,6 +43,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
+// Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
+// is set, use default
+const defaultMtu = 9000
+
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of interfaces as modelled by the proto file "../model/interfaces/interfaces.proto"
 // and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1interface".
@@ -54,6 +58,8 @@ type InterfaceConfigurator struct {
 	Linux        linuxplugin.API
 
 	swIfIndexes ifaceidx.SwIfIndexRW
+	// MTU value read from config
+	cfgMtu		uint32
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -64,10 +70,11 @@ type InterfaceConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, notifChan chan govppapi.Message) (err error) {
+func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, cfgMtu uint32, notifChan chan govppapi.Message) (err error) {
 	log.DefaultLogger().Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
+	plugin.cfgMtu = cfgMtu
 
 	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -180,11 +187,17 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// configure mtu
+	var mtu uint32
 	if iface.Mtu != 0 {
-		err := vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.vppCh)
-		if err != nil {
-			wasError = err
-		}
+		mtu = iface.Mtu
+	} else if plugin.cfgMtu != 0 {
+		mtu = plugin.cfgMtu
+	} else {
+		mtu = defaultMtu
+	}
+	err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
+	if err != nil {
+		wasError = err
 	}
 
 	// register name to idx mapping
@@ -328,12 +341,26 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	// mtu
-	if newConfig.Mtu != oldConfig.Mtu {
-		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh)
+	if newConfig.Mtu == 0 {
+		var mtu uint32
+		if plugin.cfgMtu != 0 {
+			mtu = plugin.cfgMtu
+		} else {
+			mtu = defaultMtu
+		}
+		err := vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
+	} else {
+		if newConfig.Mtu != oldConfig.Mtu {
+			err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh)
+			if err != nil {
+				wasError = err
+			}
+		}
 	}
+
 
 	log.DefaultLogger().WithFields(log.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).Debug("modifyVPPInterface end. ", err)
 
