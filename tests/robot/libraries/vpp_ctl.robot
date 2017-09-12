@@ -191,6 +191,14 @@ vpp_ctl: Get Interface Internal Name
     Log    ${name}
     [Return]    ${name}
 
+vpp_ctl: Get Interface Sw If Index
+    [Arguments]    ${node}    ${interface}
+    Log Many    ${node}    ${interface}
+    ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
+    ${sw_if_index}=    Set Variable    ${state["if_index"]}
+    Log    ${sw_if_index}
+    [Return]    ${sw_if_name}
+
 vpp_ctl: Get Bridge Domain ID
     [Arguments]    ${node}    ${bd}
     Log Many    ${node}    ${bd}

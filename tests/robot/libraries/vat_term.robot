@@ -241,3 +241,12 @@ vat_term: Check Bridge Domain State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
+vat_term: BD Is Created
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    ${indexes}=    Create List
+    :FOR    ${int}    IN    @{interfaces}
+    \    ${sw_if_index}=    vpp_ctl: Get Interface Sw If Index    ${node}    ${int}
+    \    Append To List    ${indexes}    ${sw_if_index}
+    Log List    ${indexes}
+
