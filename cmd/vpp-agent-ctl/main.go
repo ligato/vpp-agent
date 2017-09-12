@@ -517,7 +517,7 @@ func create(db keyval.ProtoBroker, ifname1 string, ipAddr string) {
 	ifs.Interface[0].Enabled = true
 	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
 	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1478
+	//ifs.Interface[0].Mtu = 555
 	ifs.Interface[0].IpAddresses = make([]string, 1)
 	ifs.Interface[0].IpAddresses[0] = "10.1.1.2"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"

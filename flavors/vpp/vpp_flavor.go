@@ -8,12 +8,22 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/namsral/flag"
 )
 
 const kafkaIfStateTopic = "if_state" // IfStatePub topic where interface state changes are published.
+
+// DefaultPluginsConfFlag used as flag name (see implementation in declareFlags())
+// It is used to load configuration of MTU for defaultplugins.
+const DefaultPluginsConfFlag = "default-plugins-config"
+
+// DefaultPluginsConf is default (flag value) - filename for the configuration.
+const DefaultPluginsConf = "defaultplugins.conf"
+
+// DefaultPluginsConfUsage used as flag usage (see implementation in declareFlags())
+const DefaultPluginsConfUsage = "Location of the MTU configuration file; also set via 'MTU_CONFIG' env variable."
 
 // IfStatePubConfFlag used as flag name (see implementation in declareFlags())
 // It is used to load configuration of Cassandra client plugin.
@@ -101,5 +111,6 @@ func (f *Flavor) Plugins() []*core.NamedPlugin {
 }
 
 func declareFlags() {
+	flag.String(DefaultPluginsConfFlag, DefaultPluginsConf, DefaultPluginsConfUsage)
 	flag.String(IfStatePubConfFlag, IfStatePubConf, IfStatePubConfUsage)
 }

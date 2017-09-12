@@ -44,8 +44,6 @@ func (f *FlavorVppLocal) Inject() error {
 	}
 	f.injected = true
 
-	declareFlags()
-
 	if f.FlavorLocal == nil {
 		f.FlavorLocal = &local.FlavorLocal{}
 	}

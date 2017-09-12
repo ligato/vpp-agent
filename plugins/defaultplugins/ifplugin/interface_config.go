@@ -59,7 +59,7 @@ type InterfaceConfigurator struct {
 
 	swIfIndexes ifaceidx.SwIfIndexRW
 	// MTU value read from config
-	cfgMtu		uint32
+	cfgMtu uint32
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -360,7 +360,6 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 			}
 		}
 	}
-
 
 	log.DefaultLogger().WithFields(log.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).Debug("modifyVPPInterface end. ", err)
 

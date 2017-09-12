@@ -267,9 +267,9 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
-		GoVppmux: plugin.GoVppmux,
+		GoVppmux:     plugin.GoVppmux,
 		ServiceLabel: plugin.ServiceLabel,
-		Linux: plugin.Linux,
+		Linux:        plugin.Linux,
 	}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtuFromConfig, plugin.ifVppNotifChan)
 
