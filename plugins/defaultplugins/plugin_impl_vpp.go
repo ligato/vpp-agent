@@ -119,6 +119,11 @@ type Deps struct {
 	Linux             linuxplugin.API
 }
 
+// DPConfig holds the value of maximum transmission unit in bytes.
+type DPConfig struct {
+	Mtu int32 `json:"mtu"`
+}
+
 var (
 	// gPlugin holds the global instance of the Plugin
 	gPlugin *Plugin
@@ -139,6 +144,10 @@ func (plugin *Plugin) Init() error {
 	plugin.fixNilPointers()
 
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
+	_, err := plugin.retrieveMtuConfig()
+	if err != nil {
+		return err
+	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
@@ -163,7 +172,7 @@ func (plugin *Plugin) Init() error {
 	// run error handler
 	go plugin.changePropagateError()
 
-	err := plugin.initIF(ctx)
+	err = plugin.initIF(ctx)
 	if err != nil {
 		return err
 	}
@@ -392,6 +401,20 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	return nil
+}
+
+func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
+	config := &DPConfig{}
+	found, err := plugin.PluginConfig.GetValue(config)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		plugin.Log.Info("MTU config not found, using default value")
+		return nil, nil
+	}
+	plugin.Log.Info("config found, value set to %v", config.Mtu)
+	return config, err
 }
 
 func (plugin *Plugin) initErrorHandler() error {
