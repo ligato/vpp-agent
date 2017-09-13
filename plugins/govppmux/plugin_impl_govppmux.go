@@ -89,7 +89,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 	vppConnectTime := time.Since(startTime)
-	plugin.Log.WithField("timeInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
+	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
 
 	// register for providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
