@@ -37,6 +37,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
@@ -704,7 +705,10 @@ func createEtcdClient() (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker) {
 		log.Fatal(err)
 	}
 
-	bDB, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
+	etcdLogger := logrus.NewLogger("etcdLogger")
+	etcdLogger.SetLevel(logging.WarnLevel)
+
+	bDB, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, etcdLogger)
 	if err != nil {
 		log.Fatal(err)
 	}
