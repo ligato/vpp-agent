@@ -156,7 +156,7 @@ def Check_BD_Presence(bd_dump, indexes):
                     int_present = True
             if int_present == False:
                 bd_present = False
-        if bd_present == False:
-            present = False
+        if bd_present == True:
+            present = True
     return present
 
