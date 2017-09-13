@@ -53,6 +53,10 @@ var (
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
+// Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
+// is set, use default
+const defaultMtu = 9000
+
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
 	Deps
@@ -95,7 +99,7 @@ type Plugin struct {
 	resyncStatusChan     chan datasync.ResyncEvent
 	changeChan           chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	ifStateNotifications messaging.ProtoPublisher
-	ifMtuFromConfig      uint32
+	ifMtu                uint32
 
 	watchConfigReg datasync.WatchRegistration
 	watchStatusReg datasync.WatchRegistration
@@ -150,8 +154,11 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if config != nil {
-		plugin.ifMtuFromConfig = config.Mtu
-		plugin.Log.Debugf("Mtu set to %v", plugin.ifMtuFromConfig)
+		plugin.ifMtu = config.Mtu
+		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
+	} else {
+		plugin.ifMtu = defaultMtu
+		plugin.Log.Infof("Mtu config not found, set to default value %v", plugin.ifMtu)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -271,7 +278,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		ServiceLabel: plugin.ServiceLabel,
 		Linux:        plugin.Linux,
 	}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtuFromConfig, plugin.ifVppNotifChan)
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -416,13 +423,13 @@ func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
 	config := &DPConfig{}
 	found, err := plugin.PluginConfig.GetValue(config)
 	if !found {
-		plugin.Log.Info("MTU config not found, using default value")
+		plugin.Log.Debug("Mtu config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Info("config found, value set to %v", config.Mtu)
+	plugin.Log.Debug("config found, Mtu value %v", config.Mtu)
 	return config, err
 }
 
