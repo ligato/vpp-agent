@@ -92,7 +92,7 @@ Delete BD1 Bridge Domain
 Check That BD2 Is Not Affected By Deleting BD1
     vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
-Show Interfaces And Other Objects After Setup
+Show Interfaces And Other Objects After Test
     vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_2
     Write To Machine    agent_vpp_1_term    show int addr

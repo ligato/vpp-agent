@@ -120,6 +120,8 @@ def Convert_ETCD_Dump_To_JSON(dump):
     etcd_json += ']'
     return etcd_json
 
+# input - node name, bd name, etcd dump converted to json, bridge domain dump
+# output - list of interfaces (etcd names) in bd
 def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
     interfaces = []
     bd_dump = json.loads(bd_dump)
@@ -146,6 +148,8 @@ def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
         interfaces.append("bvi_int=none")
     return interfaces
 
+# input - bridge domain dump, interfaces indexes
+# output - true if bd with int indexes exists, false id bd not exists
 def Check_BD_Presence(bd_dump, indexes):
     bd_dump = json.loads(bd_dump)
     present = False
