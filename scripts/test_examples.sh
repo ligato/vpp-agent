@@ -74,6 +74,8 @@ expected=("All plugins initialized successfully
 Successfully applied initial Linux&VPP configuration
 Successfully reconfigured Linux&VPP
 ")
+
+/usr/bin/vpp "unix { nodaemon cli-listen 0.0.0.0:5002 cli-no-pager } plugins { plugin dpdk_plugin.so {disable}}"
 cmd="examples/localclient_linux/localclient_linux  "
 testOutput "${cmd}" "${expected}"
 
