@@ -7,7 +7,9 @@ import (
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
-	vpplocal "github.com/ligato/vpp-agent/flavors/local"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 const kafkaIfStateTopic = "if_state" // IfStatePub topic where interface state changes are published.
@@ -19,7 +21,9 @@ type Flavor struct {
 	*rpc.FlavorRPC
 	IfStatePub msgsync.PubPlugin
 
-	*vpplocal.FlavorVppLocal
+	GoVPP govppmux.GOVPPPlugin
+	Linux linuxplugin.Plugin
+	VPP   defaultplugins.Plugin
 
 	injected bool
 }
@@ -32,6 +36,11 @@ func (f *Flavor) Inject() bool {
 	f.injected = true
 
 	f.injectEmbedded()
+
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.VPP.Deps.Linux = &f.Linux
+	f.VPP.Deps.GoVppmux = &f.GoVPP
 
 	f.VPP.Deps.Publish = &f.AllConnectorsFlavor.ETCDDataSync
 	f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
@@ -54,10 +63,7 @@ func (f *Flavor) injectEmbedded() {
 	if f.FlavorLocal == nil {
 		f.FlavorLocal = &local.FlavorLocal{}
 	}
-	if f.FlavorVppLocal == nil {
-		f.FlavorVppLocal = &vpplocal.FlavorVppLocal{FlavorLocal: f.FlavorLocal}
-	}
-	f.FlavorVppLocal.Inject()
+	f.FlavorLocal.Inject()
 	if f.FlavorRPC == nil {
 		f.FlavorRPC = &rpc.FlavorRPC{FlavorLocal: f.FlavorLocal}
 	}
