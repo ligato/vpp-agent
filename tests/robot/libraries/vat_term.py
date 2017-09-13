@@ -112,6 +112,8 @@ def Convert_ETCD_Dump_To_JSON(dump):
                 data = ''
                 firstline = False
             else:
+                if line == "null":
+                    line = '{"error":"null"}'
                 data += line 
     if not firstline:
         etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'}'
