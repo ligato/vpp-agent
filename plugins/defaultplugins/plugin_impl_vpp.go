@@ -53,6 +53,10 @@ var (
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
+// Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
+// is set, use default
+const defaultMtu = 9000
+
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
 	Deps
@@ -95,6 +99,7 @@ type Plugin struct {
 	resyncStatusChan     chan datasync.ResyncEvent
 	changeChan           chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	ifStateNotifications messaging.ProtoPublisher
+	ifMtu                uint32
 
 	watchConfigReg datasync.WatchRegistration
 	watchStatusReg datasync.WatchRegistration
@@ -119,6 +124,11 @@ type Deps struct {
 	Linux             linuxplugin.API
 }
 
+// DPConfig holds the value of maximum transmission unit in bytes.
+type DPConfig struct {
+	Mtu uint32 `json:"mtu"`
+}
+
 var (
 	// gPlugin holds the global instance of the Plugin
 	gPlugin *Plugin
@@ -139,6 +149,17 @@ func (plugin *Plugin) Init() error {
 	plugin.fixNilPointers()
 
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
+	config, err := plugin.retrieveMtuConfig()
+	if err != nil {
+		return err
+	}
+	if config != nil {
+		plugin.ifMtu = config.Mtu
+		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
+	} else {
+		plugin.ifMtu = defaultMtu
+		plugin.Log.Infof("Mtu config not found, set to default value %v", plugin.ifMtu)
+	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
@@ -163,7 +184,7 @@ func (plugin *Plugin) Init() error {
 	// run error handler
 	go plugin.changePropagateError()
 
-	err := plugin.initIF(ctx)
+	err = plugin.initIF(ctx)
 	if err != nil {
 		return err
 	}
@@ -252,8 +273,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
+		GoVppmux:     plugin.GoVppmux,
+		ServiceLabel: plugin.ServiceLabel,
+		Linux:        plugin.Linux,
+	}
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -392,6 +417,20 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	return nil
+}
+
+func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
+	config := &DPConfig{}
+	found, err := plugin.PluginConfig.GetValue(config)
+	if !found {
+		plugin.Log.Debug("Mtu config not found")
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	plugin.Log.Debug("config found, Mtu value %v", config.Mtu)
+	return config, err
 }
 
 func (plugin *Plugin) initErrorHandler() error {
