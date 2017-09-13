@@ -40,20 +40,20 @@ Add Interfaces For BDs
 
 Add BD1 Bridge Domain
     @{ints}=    Create List   vpp1_memif1  vpp1_vxlan1    vpp1_afpacket1
-    vat_term: BD Not Exists    @{ints}
+    vat_term: BD Not Exists    node=agent_vpp_1    @{ints}
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
 Check BD1 Is Created
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
+    vat_term: BD Is Created    node=agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
     vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
 
 Add BD2 Bridge Domain
     @{ints}=    Create List   vpp1_memif2  vpp1_vxlan2    bvi_vpp1_loop3
-    vat_term: BD Not Exists    @{ints}
+    vat_term: BD Not Exists    node=agent_vpp_1    @{ints}
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd2    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
 Check BD2 Is Created
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif2    vpp1_vxlan2    bvi_vpp1_loop3
+    vat_term: BD Is Created    node=agent_vpp_1    vpp1_memif2    vpp1_vxlan2    bvi_vpp1_loop3
     vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
 Show Interfaces And Other Objects After Setup
