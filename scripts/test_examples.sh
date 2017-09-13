@@ -78,7 +78,7 @@ Successfully applied initial Linux&VPP configuration
 Successfully reconfigured Linux&VPP
 ")
 
-startVpp
+startVPP
 cmd="examples/localclient_linux/localclient_linux  "
 testOutput "${cmd}" "${expected}"
 
