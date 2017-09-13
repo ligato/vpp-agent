@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 var watchCommand = &cobra.Command{
@@ -89,6 +90,7 @@ func watchFunc(cmd *cobra.Command, args []string) {
 	if len(args) > 2 {
 		utils.ExitWithError(utils.ExitBadArgs, errors.New("Too many arguments, use 'show <label> <interface>'"))
 	}
+
 	// Clear current screen
 	goterm.Clear()
 	for {
@@ -134,7 +136,7 @@ func watchFunc(cmd *cobra.Command, args []string) {
 		// Write (flush) buffered data
 		err := goterm.Output.Flush()
 		if err != nil {
-			fmt.Errorf("%v", err)
+			logroot.StandardLogger().Errorf("%v", err)
 		}
 		// Reset the screen buffer
 		goterm.Screen.Reset()
