@@ -123,19 +123,20 @@ func watchFunc(cmd *cobra.Command, args []string) {
 		}
 
 		goterm.Println(table)
-		// Flush buffer and ensure that it will not overflow the screen
+
+		// Fill the output buffer and ensure that it will not overflow the screen
 		for idx, str := range strings.Split(goterm.Screen.String(), "\n") {
 			if idx > goterm.Height() {
-				return
+				break
 			}
 			goterm.Output.WriteString(str + "\n")
 		}
-		// Write buffered data
+		// Write (flush) buffered data
 		err := goterm.Output.Flush()
 		if err != nil {
 			fmt.Errorf("%v", err)
 		}
-		// Reset buffer to be empty
+		// Reset the screen buffer
 		goterm.Screen.Reset()
 
 		fmt.Println("Press Ctrl-C to exit watcher ...")
