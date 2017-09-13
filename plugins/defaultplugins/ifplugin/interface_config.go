@@ -54,6 +54,8 @@ type InterfaceConfigurator struct {
 	Linux        linuxplugin.API
 
 	swIfIndexes ifaceidx.SwIfIndexRW
+	// MTU value is either read from config or set to default
+	mtu uint32
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -64,10 +66,11 @@ type InterfaceConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, notifChan chan govppapi.Message) (err error) {
+func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
 	log.DefaultLogger().Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
+	plugin.mtu = mtu
 
 	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -177,6 +180,18 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		if nil != err {
 			wasError = err
 		}
+	}
+
+	// configure mtu
+	var mtu uint32
+	if iface.Mtu != 0 {
+		mtu = iface.Mtu
+	} else {
+		mtu = plugin.mtu
+	}
+	err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
+	if err != nil {
+		wasError = err
 	}
 
 	// register name to idx mapping
@@ -315,6 +330,19 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.vppCh)
 		log.DefaultLogger().Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
 		if nil != err {
+			wasError = err
+		}
+	}
+
+	// mtu
+	if newConfig.Mtu == 0 {
+		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.vppCh)
+		if err != nil {
+			wasError = err
+		}
+	} else if newConfig.Mtu != oldConfig.Mtu {
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh)
+		if err != nil {
 			wasError = err
 		}
 	}
