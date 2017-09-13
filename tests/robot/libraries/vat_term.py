@@ -84,9 +84,9 @@ def Parse_BD_Details(details):
     state = []
     line = details.splitlines()[1]
     if (line.strip().split()[6]) == "on":
-        state.append("uuflood=1")
+        state.append("unicast=1")
     else:
-        state.append("uuflood=0")
+        state.append("unicast=0")
     if (line.strip().split()[8]) == "on":
         state.append("arp_term=1")
     else:
@@ -140,45 +140,20 @@ def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
                     if key_data["data"]["if_index"] == bvi_sw_if_index:
                         etcd_name = key_data["data"]["name"]
         interfaces.append("bvi_int="+etcd_name)
+    else:
+        interfaces.append("bvi_int=none")
     return interfaces
 
 def Check_BD_Presence(bd_dump, indexes):
     bd_dump = json.loads(bd_dump)
     present = True
     for bd in bd_dump:
-        print bd
         for index in indexes:
-            print index
             int_present = False
             for bd_int in bd["sw_if"]:
-                print bd_int
                 if bd_int["sw_if_index"] == index:
                     int_present = True
             if int_present == False:
                 present = False
     return present
 
-
-x=[1,2,5]
-y='''[ 
-  {
-    "bd_id": 1,
-    "flood": 1,
-    "forward": 1,
-    "learn": 1,
-    "bvi_sw_if_index": 4294967295,
-    "n_sw_ifs": 2,
-    "sw_if": [ 
-      {
-        "sw_if_index": 2,
-        "shg": 0
-      },
-      {
-        "sw_if_index": 3,
-        "shg": 0
-      }
-    ]
-  }
-]'''
-
-#print Check_BD_Presence(y,x)

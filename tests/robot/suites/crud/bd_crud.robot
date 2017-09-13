@@ -25,25 +25,36 @@ Configure Environment
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
 
-adfa
+Add Interfaces For BDs
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=1    ip=192.168.1.1
     vpp_ctl: Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1    mac=12:11:11:11:11:11    peer=vpp1_veth2    ip=10.10.1.1
     vpp_ctl: Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=12:12:12:12:12:12    peer=vpp1_veth1
     vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5
-    @{ints}=    Create List    vpp1_vxlan1    vpp1_afpacket1
-    vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop1    mac=12:21:21:11:11:11    ip=20.20.1.1
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=vpp1_tap1    mac=32:21:21:11:11:11    ip=30.30.1.1    host_if_name=linux_vpp1_tap1
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:61:62    master=true    id=2    ip=192.168.1.2
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan2    src=192.168.2.1    dst=192.168.2.2    vni=15
+    vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=vpp1_loop2    mac=12:21:21:11:11:12    ip=20.20.2.1
+    vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_vpp1_loop3    mac=12:21:21:11:11:13    ip=20.20.3.1
 
-adsf
-    vat_term: Check Bridge Domain State    agent_vpp_1    vpp1_bd1    asd=asd
+Add BD1 Bridge Domain
+    @{ints}=    Create List   vpp1_memif1  vpp1_vxlan1    vpp1_afpacket1
+    vat_term: BD Not Exists    @{ints}
+    vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
-dsfds
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_tap1
+Check BD1 Is Created
+    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
+    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
 
-dsdsfds
-    vat_term: BD Is Created    agent_vpp_1    vpp1_afpacket1
+Add BD2 Bridge Domain
+    @{ints}=    Create List   vpp1_memif2  vpp1_vxlan2    bvi_vpp1_loop3
+    vat_term: BD Not Exists    @{ints}
+    vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd2    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
+
+Check BD2 Is Created
+    vat_term: BD Is Created    agent_vpp_1    vpp1_memif2    vpp1_vxlan2    bvi_vpp1_loop3
+    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1
