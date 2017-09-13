@@ -146,14 +146,17 @@ def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
 
 def Check_BD_Presence(bd_dump, indexes):
     bd_dump = json.loads(bd_dump)
-    present = True
+    present = False
     for bd in bd_dump:
+        bd_present = True
         for index in indexes:
             int_present = False
             for bd_int in bd["sw_if"]:
                 if bd_int["sw_if_index"] == index:
                     int_present = True
             if int_present == False:
-                present = False
+                bd_present = False
+        if bd_present == False:
+            present = False
     return present
 
