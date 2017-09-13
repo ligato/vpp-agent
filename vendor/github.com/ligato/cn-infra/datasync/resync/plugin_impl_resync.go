@@ -84,10 +84,19 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 
 // call callback on plugins to create/delete/modify objects
 func (plugin *Plugin) startResync() {
+
+	startTime := time.Now()
 	for regName, reg := range plugin.registrations {
+		resyncPartStart := time.Now()
+
 		plugin.startSingleResync(regName, reg)
+
+		resyncPart := time.Since(resyncPartStart)
+		plugin.Log.WithField("durationInNs", resyncPart.Nanoseconds()).Info("Resync of ", regName, " took ", resyncPart)
 	}
 
+	resyncTime := time.Since(startTime)
+	plugin.Log.WithField("durationInNs", resyncTime.Nanoseconds()).Info("Resync took ", resyncTime)
 	// TODO check if there ReportError (if not than report) if error occurred even during Resync
 }
 func (plugin *Plugin) startSingleResync(resyncName string, reg Registration) {

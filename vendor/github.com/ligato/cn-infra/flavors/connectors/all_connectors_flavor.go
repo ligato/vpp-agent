@@ -74,6 +74,8 @@ func (f *AllConnectorsFlavor) Inject() bool {
 
 	f.Cassandra.Deps.PluginInfraDeps = *f.InfraDeps("cassandra")
 
+	f.ResyncOrch.PluginLogDeps = *f.LogDeps("resync-orch")
+
 	return true
 }
 
