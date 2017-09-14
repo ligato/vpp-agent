@@ -36,7 +36,7 @@ const IfStatePubConf = "ifstate-pub.conf"
 // IfStatePubConfUsage used as flag usage (see implementation in declareFlags())
 const IfStatePubConfUsage = "Location of the interface state publish configuration file; also set via 'IFSTATE_PUB_CONFIG' env variable."
 
-// GoVPPConfFlags used as flag name (see implementation in declareFlags())
+// GoVPPConfFlag used as flag name (see implementation in declareFlags())
 // It is used to load configuration of GoVPP client plugin.
 // This flag name is calculated from the name of the plugin.
 const GoVPPConfFlag = "govpp-config"
