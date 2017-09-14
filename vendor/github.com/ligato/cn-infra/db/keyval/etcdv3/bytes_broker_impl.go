@@ -81,7 +81,7 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 		return nil, err
 	}
 	etcdConnectTime := time.Since(start)
-	log.WithField("timeInNs", etcdConnectTime.Nanoseconds()).Info("Connecting to etcd took ", etcdConnectTime)
+	log.WithField("durationInNs", etcdConnectTime.Nanoseconds()).Info("Connecting to etcd took ", etcdConnectTime)
 	conn, err := NewEtcdConnectionUsingClient(etcdClient, log)
 	conn.opTimeout = config.OpTimeout
 	return conn, err

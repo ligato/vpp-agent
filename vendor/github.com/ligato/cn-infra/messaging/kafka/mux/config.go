@@ -5,6 +5,7 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
+	"time"
 )
 
 const (
@@ -87,6 +88,7 @@ func InitMultiplexerWithConfig(muxConfig *Config, name string, partitioner strin
 	config.Brokers = muxConfig.Addrs
 	config.SetPartitioner(partitioner)
 
+	startTime := time.Now()
 	syncProducer, err := client.NewSyncProducer(config, nil)
 	if err != nil {
 		log.Errorf(errorFmt, "SyncProducer", muxConfig.Addrs, err)
@@ -98,6 +100,8 @@ func InitMultiplexerWithConfig(muxConfig *Config, name string, partitioner strin
 		log.Errorf(errorFmt, "AsyncProducer", muxConfig.Addrs, err)
 		return nil, err
 	}
+	kafkaConnect := time.Since(startTime)
+	log.WithField("durationInNs", kafkaConnect.Nanoseconds()).Info("Connecting to kafka took ", kafkaConnect)
 
 	return NewMultiplexer(getConsumerFactory(config), syncProducer, asyncProducer, partitioner, name, log), nil
 }

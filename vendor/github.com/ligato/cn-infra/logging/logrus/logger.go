@@ -326,6 +326,7 @@ func (logger *Logger) withFields(fields Fields, depth ...int) *LogMsg {
 	if _, ok := f[locKey]; !ok {
 		f[locKey] = logger.GetLineInfo(d)
 	}
+	f[loggerKey] = logger.name
 
 	entry := logger.std.WithFields(f)
 	return &LogMsg{

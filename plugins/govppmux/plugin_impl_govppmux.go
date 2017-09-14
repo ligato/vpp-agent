@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"time"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
@@ -75,6 +76,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing
 	}
 
+	startTime := time.Now()
 	plugin.vppConn, plugin.vppConChan, err = govpp.AsyncConnect(plugin.vppAdapter)
 	if err != nil {
 		return err
@@ -86,6 +88,8 @@ func (plugin *GOVPPPlugin) Init() error {
 	if status.State != govpp.Connected {
 		return errors.New("unable to connect to VPP")
 	}
+	vppConnectTime := time.Since(startTime)
+	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
 
 	// register for providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
