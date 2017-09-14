@@ -36,6 +36,17 @@ const IfStatePubConf = "ifstate-pub.conf"
 // IfStatePubConfUsage used as flag usage (see implementation in declareFlags())
 const IfStatePubConfUsage = "Location of the interface state publish configuration file; also set via 'IFSTATE_PUB_CONFIG' env variable."
 
+// GoVPPConfFlag used as flag name (see implementation in declareFlags())
+// It is used to load configuration of GoVPP client plugin.
+// This flag name is calculated from the name of the plugin.
+const GoVPPConfFlag = "govpp-config"
+
+// GoVPPConf  is default (flag value) - filename for the configuration.
+const GoVPPConf = "govpp.conf"
+
+// GoVPPConfUsage used as flag usage (see implementation in declareFlags())
+const GoVPPConfUsage = "Location of the GoVPP configuration file; also set via 'GOVPP_CONFIG' env variable."
+
 // Flavor glues together multiple plugins to translate ETCD configuration into VPP.
 type Flavor struct {
 	*local.FlavorLocal
@@ -113,4 +124,5 @@ func (f *Flavor) Plugins() []*core.NamedPlugin {
 func declareFlags() {
 	flag.String(DefaultPluginsConfFlag, DefaultPluginsConf, DefaultPluginsConfUsage)
 	flag.String(IfStatePubConfFlag, IfStatePubConf, IfStatePubConfUsage)
+	flag.String(GoVPPConfFlag, GoVPPConf, GoVPPConfUsage)
 }

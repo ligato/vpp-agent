@@ -62,3 +62,21 @@ for {
 }
 
 ```
+
+**Configuration**
+
+The plugin allows to configure parameters of vpp health-check probe.
+The items that can be configured are:
+- *health check probe interval* - time between health check probes
+- *health check reply timeout* - if the reply doesn't arrive until timeout
+elapses probe is considered failed
+- *health check threshold* - number of consequent failed health checks
+until an error is reported
+
+Example govpp.conf:
+
+```
+health-check-probe-interval: 1000000000
+health-check-reply-timeout: 100000000
+health-check-threshold: 1
+```

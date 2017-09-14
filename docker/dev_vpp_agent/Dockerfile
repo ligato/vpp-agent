@@ -55,6 +55,7 @@ RUN ./build-agent.sh ${AGENT_COMMIT}
 
 COPY etcd.conf .
 COPY kafka.conf .
+COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 
 WORKDIR /root/
