@@ -24,7 +24,7 @@ import (
 func EventLoopWithInterrupt(agent *Agent, closeChan chan struct{}) error {
 	err := agent.Start()
 	if err != nil {
-		agent.Error("Error loading core", err)
+		agent.Error("Error loading core: ", err)
 		return err
 	}
 

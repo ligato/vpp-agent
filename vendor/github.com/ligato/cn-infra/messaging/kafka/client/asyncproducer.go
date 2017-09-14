@@ -124,11 +124,11 @@ func (ref *AsyncProducer) SendMsg(topic string, partition int32, key Encoder, ms
 	}
 
 	message := &sarama.ProducerMessage{
-		Topic:    topic,
+		Topic:     topic,
 		Partition: partition,
-		Key:      key,
-		Value:    msg,
-		Metadata: metadata,
+		Key:       key,
+		Value:     msg,
+		Metadata:  metadata,
 	}
 
 	ref.Producer.Input() <- message

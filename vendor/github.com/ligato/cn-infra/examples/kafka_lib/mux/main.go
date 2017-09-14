@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	cn := mx.NewConnection("plugin")
+	cn := mx.NewBytesConnection("plugin")
 	offset, err := cn.SendSyncString("test", mux.DefPartition, "key", "value")
 	if err == nil {
 		fmt.Println("Sync published ", offset)

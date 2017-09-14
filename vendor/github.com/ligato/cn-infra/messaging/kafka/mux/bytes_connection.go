@@ -7,8 +7,8 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
-// Connection is an entity that provides access to shared producers/consumers of multiplexer.
-type Connection struct {
+// BytesConnection is an entity that provides access to shared producers/consumers of multiplexer.
+type BytesConnection struct {
 	// multiplexer is used for access to kafka brokers
 	multiplexer *Multiplexer
 
@@ -22,13 +22,13 @@ type BytesPublisher interface {
 }
 
 type bytesSyncPublisherKafka struct {
-	conn      *Connection
+	conn      *BytesConnection
 	topic     string
 	partition int32
 }
 
 type bytesAsyncPublisherKafka struct {
-	conn         *Connection
+	conn         *BytesConnection
 	topic        string
 	partition    int32
 	succCallback func(*client.ProducerMessage)
@@ -38,7 +38,7 @@ type bytesAsyncPublisherKafka struct {
 // ConsumeTopic is called to start consuming of a topic.
 // Function can be called until the multiplexer is started, it returns an error otherwise.
 // The provided channel should be buffered, otherwise messages might be lost.
-func (conn *Connection) ConsumeTopic(msgClb func(message *client.ConsumerMessage), topics ...string) error {
+func (conn *BytesConnection) ConsumeTopic(msgClb func(message *client.ConsumerMessage), topics ...string) error {
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
 
@@ -84,7 +84,7 @@ func (conn *Connection) ConsumeTopic(msgClb func(message *client.ConsumerMessage
 // ConsumeTopicOnPartition is called to start consuming given topic on partition with offset
 // Function can be called until the multiplexer is started, it returns an error otherwise.
 // The provided channel should be buffered, otherwise messages might be lost.
-func (conn *Connection) ConsumeTopicOnPartition(msgClb func(message *client.ConsumerMessage), topic string, partition int32, offset int64) error {
+func (conn *BytesConnection) ConsumeTopicOnPartition(msgClb func(message *client.ConsumerMessage), topic string, partition int32, offset int64) error {
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
 
@@ -128,27 +128,27 @@ func (conn *Connection) ConsumeTopicOnPartition(msgClb func(message *client.Cons
 }
 
 // StopConsuming cancels the previously created subscription for consuming the topic.
-func (conn *Connection) StopConsuming(topic string) error {
+func (conn *BytesConnection) StopConsuming(topic string) error {
 	return conn.multiplexer.stopConsuming(topic, conn.name)
 }
 
 // StopConsumingPartition cancels the previously created subscription for consuming the topic, partition and offset
-func (conn *Connection) StopConsumingPartition(topic string, partition int32, offset int64) error {
+func (conn *BytesConnection) StopConsumingPartition(topic string, partition int32, offset int64) error {
 	return conn.multiplexer.stopConsumingPartition(topic, partition, offset, conn.name)
 }
 
 // SendSyncByte sends a message that uses byte encoder using the sync API
-func (conn *Connection) SendSyncByte(topic string, partition int32, key []byte, value []byte) (offset int64, err error) {
+func (conn *BytesConnection) SendSyncByte(topic string, partition int32, key []byte, value []byte) (offset int64, err error) {
 	return conn.SendSyncMessage(topic, partition, sarama.ByteEncoder(key), sarama.ByteEncoder(value))
 }
 
 // SendSyncString sends a message that uses string encoder using the sync API
-func (conn *Connection) SendSyncString(topic string, partition int32, key string, value string) (offset int64, err error) {
+func (conn *BytesConnection) SendSyncString(topic string, partition int32, key string, value string) (offset int64, err error) {
 	return conn.SendSyncMessage(topic, partition, sarama.StringEncoder(key), sarama.StringEncoder(value))
 }
 
 //SendSyncMessage sends a message using the sync API
-func (conn *Connection) SendSyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder) (offset int64, err error) {
+func (conn *BytesConnection) SendSyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder) (offset int64, err error) {
 	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, partition, key, value)
 	if err != nil {
 		return 0, err
@@ -157,23 +157,23 @@ func (conn *Connection) SendSyncMessage(topic string, partition int32, key clien
 }
 
 // SendAsyncByte sends a message that uses byte encoder using the async API
-func (conn *Connection) SendAsyncByte(topic string, partition int32, key []byte, value []byte, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+func (conn *BytesConnection) SendAsyncByte(topic string, partition int32, key []byte, value []byte, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
 	conn.SendAsyncMessage(topic, partition, sarama.ByteEncoder(key), sarama.ByteEncoder(value), meta, successClb, errClb)
 }
 
 // SendAsyncString sends a message that uses string encoder using the async API
-func (conn *Connection) SendAsyncString(topic string, partition int32, key string, value string, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+func (conn *BytesConnection) SendAsyncString(topic string, partition int32, key string, value string, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
 	conn.SendAsyncMessage(topic, partition, sarama.StringEncoder(key), sarama.StringEncoder(value), meta, successClb, errClb)
 }
 
 // SendAsyncMessage sends a message using the async API
-func (conn *Connection) SendAsyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
+func (conn *BytesConnection) SendAsyncMessage(topic string, partition int32, key client.Encoder, value client.Encoder, meta interface{}, successClb func(*client.ProducerMessage), errClb func(*client.ProducerError)) {
 	auxMeta := &asyncMeta{successClb: successClb, errorClb: errClb, usersMeta: meta}
 	conn.multiplexer.asyncProducer.SendMsg(topic, partition, key, value, auxMeta)
 }
 
 // NewSyncPublisher creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
-func (conn *Connection) NewSyncPublisher(topic string) (BytesPublisher, error) {
+func (conn *BytesConnection) NewSyncPublisher(topic string) (BytesPublisher, error) {
 	if conn.multiplexer.partitioner == client.Manual {
 		return nil, fmt.Errorf("unable to use default sync publisher with 'manual' partitioner")
 	}
@@ -181,7 +181,7 @@ func (conn *Connection) NewSyncPublisher(topic string) (BytesPublisher, error) {
 }
 
 // NewSyncPublisherToPartition creates a new instance of bytesSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
-func (conn *Connection) NewSyncPublisherToPartition(topic string, partition int32) (BytesPublisher, error) {
+func (conn *BytesConnection) NewSyncPublisherToPartition(topic string, partition int32) (BytesPublisher, error) {
 	if conn.multiplexer.partitioner != client.Manual {
 		return nil, fmt.Errorf("sync publisher to partition can be used only with 'manual' partitioner")
 	}
@@ -195,7 +195,7 @@ func (p *bytesSyncPublisherKafka) Publish(key string, data []byte) error {
 }
 
 // NewAsyncPublisher creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
-func (conn *Connection) NewAsyncPublisher(topic string, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
+func (conn *BytesConnection) NewAsyncPublisher(topic string, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
 	if conn.multiplexer.partitioner == client.Manual {
 		return nil, fmt.Errorf("unable to use default async publisher with 'manual' partitioner")
 	}
@@ -203,7 +203,7 @@ func (conn *Connection) NewAsyncPublisher(topic string, successClb func(*client.
 }
 
 // NewAsyncPublisherToPartition creates a new instance of bytesAsyncPublisherKafka that allows to publish async kafka messages using common messaging API
-func (conn *Connection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
+func (conn *BytesConnection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(*client.ProducerMessage), errorClb func(err *client.ProducerError)) (BytesPublisher, error) {
 	if conn.multiplexer.partitioner != client.Manual {
 		return nil, fmt.Errorf("async publisher to partition can be used only with 'manual' partitioner")
 	}

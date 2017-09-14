@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
 // PubPlugin implements KeyProtoValWriter that propagates protobuf messages
@@ -34,7 +35,7 @@ type PubPlugin struct {
 // to not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps               // inject
-	Messaging             messaging.Mux // inject
+	Messaging             *kafka.Plugin // inject
 	Cfg
 }
 
@@ -51,13 +52,13 @@ func (plugin *PubPlugin) Init() error {
 
 // AfterInit uses provided MUX connection to build new publisher.
 func (plugin *PubPlugin) AfterInit() error {
-	if plugin.Messaging != nil && !plugin.Messaging.Disabled() {
+	if !plugin.Messaging.Disabled() {
 		cfg := plugin.Deps.Cfg
 		plugin.PluginConfig.GetValue(&cfg)
 
 		if cfg.Topic != "" {
 			var err error
-			plugin.adapter, err = plugin.Messaging.NewSyncPublisher(cfg.Topic)
+			plugin.adapter, err = plugin.Messaging.NewSyncPublisher("msgsync-connection", cfg.Topic)
 			if err != nil {
 				return err
 			}

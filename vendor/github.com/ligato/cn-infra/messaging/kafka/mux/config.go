@@ -58,7 +58,6 @@ func getConsumerFactory(config *client.Config) ConsumerFactory {
 // Name is used as groupId identification of consumer. Kafka allows to store last read offset for
 // a groupId. This is leveraged to deliver unread messages after restart.
 func InitMultiplexer(configFile string, name string, partitioner string, log logging.Logger) (*Multiplexer, error) {
-
 	var err error
 	muxCfg := &Config{[]string{DefAddress}}
 	if configFile != "" {
@@ -75,7 +74,6 @@ func InitMultiplexer(configFile string, name string, partitioner string, log log
 // Name is used as groupId identification of consumer. Kafka allows to store last read offset for
 // a groupId. This is leveraged to deliver unread messages after restart.
 func InitMultiplexerWithConfig(muxConfig *Config, name string, partitioner string, log logging.Logger) (*Multiplexer, error) {
-
 	const errorFmt = "Failed to create Kafka %s, Configured broker(s) %v, Error: '%s'"
 
 	log.WithField("addrs", muxConfig.Addrs).Debug("Kafka connecting")
@@ -85,7 +83,7 @@ func InitMultiplexerWithConfig(muxConfig *Config, name string, partitioner strin
 	config.SetSuccessChan(make(chan *client.ProducerMessage))
 	config.SetSendError(true)
 	config.SetErrorChan(make(chan *client.ProducerError))
-	config.Brokers = muxConfig.Addrs
+	config.SetBrokers(muxConfig.Addrs...)
 	config.SetPartitioner(partitioner)
 
 	startTime := time.Now()
