@@ -1,3 +1,9 @@
+# Release v1.0.5 (not released yet)
+
+## Major Themes
+
+- [GoVppMux](plugins/govppmux)
+    - configuration file for govpp added
 # Release v1.0.4 (2017-09-08)
 
 ## Major Themes
