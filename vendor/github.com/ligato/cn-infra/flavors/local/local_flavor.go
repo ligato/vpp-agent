@@ -19,15 +19,29 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/namsral/flag"
 )
+
+// LogsFlag used as flag name (see implementation in declareFlags())
+// It is used to define default directory where config files reside.
+// This flag name is calculated from the name of the plugin.
+const LogsFlag = "logs-config"
+
+// LogsFlagDefault - default file name
+const LogsFlagDefault = "logs.conf"
+
+// LogsFlagUsage used as flag usage (see implementation in declareFlags())
+const LogsFlagUsage = "Location of the configuration files; also set via 'LOGS_CONFIG' env variable."
 
 // FlavorLocal glues together very minimal subset of cn-infra plugins
 // that can be embeddable inside different project without running
 // any agent specific server.
 type FlavorLocal struct {
 	logRegistry  logging.Registry
+	Logs         logmanager.Plugin //needs to be first plugin (it updates log level from config)
 	ServiceLabel servicelabel.Plugin
 	StatusCheck  statuscheck.Plugin
 
@@ -42,6 +56,13 @@ func (f *FlavorLocal) Inject() bool {
 		return false
 	}
 	f.injected = true
+
+	declareFlags()
+
+	f.Logs.Deps.LogRegistry = f.LogRegistry()
+	f.Logs.Deps.Log = f.LoggerFor("logs")
+	f.Logs.Deps.PluginName = core.PluginName("logs")
+	f.Logs.Deps.PluginConfig = config.ForPlugin("logs")
 
 	f.StatusCheck.Deps.Log = f.LoggerFor("status-check")
 	f.StatusCheck.Deps.PluginName = core.PluginName("status-check")
@@ -92,4 +113,13 @@ func (f *FlavorLocal) InfraDeps(pluginName string) *PluginInfraDeps {
 		config.ForPlugin(pluginName),
 		&f.StatusCheck,
 		&f.ServiceLabel}
+}
+
+func declareFlags() {
+	if flag.Lookup(config.DirFlag) == nil {
+		flag.String(config.DirFlag, config.DirDefault, config.DirUsage)
+	}
+	if flag.Lookup(LogsFlag) == nil {
+		flag.String(LogsFlag, LogsFlagDefault, LogsFlagUsage)
+	}
 }

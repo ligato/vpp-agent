@@ -69,10 +69,8 @@ func (p *Plugin) Init() (err error) {
 		childPlugNameHTTP := p.String() + "-HTTP"
 		p.HTTP = &rest.Plugin{
 			Deps: rest.Deps{
-				PluginLogDeps: local.PluginLogDeps{
-					Log:        logging.ForPlugin(childPlugNameHTTP, p.Log),
-					PluginName: core.PluginName(childPlugNameHTTP),
-				},
+				Log:        logging.ForPlugin(childPlugNameHTTP, p.Log),
+				PluginName: core.PluginName(childPlugNameHTTP),
 				HTTPport: httpPort,
 			},
 		}

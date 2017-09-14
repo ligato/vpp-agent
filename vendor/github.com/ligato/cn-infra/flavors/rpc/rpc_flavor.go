@@ -18,7 +18,6 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/probe"
-	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
@@ -30,7 +29,6 @@ type FlavorRPC struct {
 	//TODO GRPC (& enable/disable using config)
 
 	HealthRPC probe.Plugin
-	LogMngRPC logmanager.Plugin
 
 	injected bool
 }
@@ -47,11 +45,10 @@ func (f *FlavorRPC) Inject() bool {
 	}
 	f.FlavorLocal.Inject()
 
-	f.HTTP.Deps.PluginLogDeps = *f.LogDeps("http")
+	f.HTTP.Deps.Log = f.LoggerFor("http")
+	f.HTTP.Deps.PluginName = core.PluginName("http")
 
-	f.LogMngRPC.Deps.PluginLogDeps = *f.LogDeps("log-mng-rpc")
-	f.LogMngRPC.LogRegistry = f.FlavorLocal.LogRegistry()
-	f.LogMngRPC.HTTP = &f.HTTP
+	f.Logs.HTTP = &f.HTTP
 
 	f.HealthRPC.Deps.PluginLogDeps = *f.LogDeps("health-rpc")
 	f.HealthRPC.Deps.HTTP = &f.HTTP
