@@ -27,9 +27,9 @@ func TestMultiplexer(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
-	c2 := mock.Mux.NewConnection("c2")
+	c2 := mock.Mux.NewBytesConnection("c2")
 	gomega.Expect(c2).NotTo(gomega.BeNil())
 
 	ch1 := make(chan *client.ConsumerMessage)
@@ -58,9 +58,9 @@ func TestStopConsuming(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
-	c2 := mock.Mux.NewConnection("c2")
+	c2 := mock.Mux.NewBytesConnection("c2")
 	gomega.Expect(c2).NotTo(gomega.BeNil())
 
 	ch1 := make(chan *client.ConsumerMessage)
@@ -96,15 +96,15 @@ func TestStopConsumingPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
-	c2 := mock.Mux.NewConnection("c2")
+	c2 := mock.Mux.NewBytesConnection("c2")
 	gomega.Expect(c2).NotTo(gomega.BeNil())
 
 	ch1 := make(chan *client.ConsumerMessage)
 	ch2 := make(chan *client.ConsumerMessage)
 
-	err := c1.ConsumeTopicOnPartition(ToBytesMsgChan(ch1), "topic1",1, 0)
+	err := c1.ConsumeTopicOnPartition(ToBytesMsgChan(ch1), "topic1", 1, 0)
 	gomega.Expect(err).To(gomega.BeNil())
 	err = c2.ConsumeTopicOnPartition(ToBytesMsgChan(ch2), "topic2", 2, 1)
 	gomega.Expect(err).To(gomega.BeNil())
@@ -142,7 +142,7 @@ func TestSendSync(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()
@@ -173,7 +173,7 @@ func TestSendSyncToCustomPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()
@@ -196,7 +196,7 @@ func TestSendAsync(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()
@@ -224,7 +224,7 @@ func TestSendAsyncToCustomPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewConnection("c1")
+	c1 := mock.Mux.NewBytesConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()

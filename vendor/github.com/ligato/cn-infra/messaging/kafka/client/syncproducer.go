@@ -153,10 +153,10 @@ func (ref *SyncProducer) SendMsg(topic string, partition int32, key sarama.Encod
 		return nil, err
 	}
 	message := &sarama.ProducerMessage{
-		Topic: topic,
+		Topic:     topic,
 		Partition: partition,
-		Value: msg,
-		Key:   key,
+		Value:     msg,
+		Key:       key,
 	}
 
 	partition, offset, err := ref.Producer.SendMessage(message)

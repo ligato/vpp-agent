@@ -24,6 +24,10 @@
 
 ## Kafka
 * kafka.Plugin.Disabled() returned if there is no kafka.conf present
+* Connection in bytes_connection.go renamed to BytesConnection
+* kafka plugin initializes two multiplexers for dynamic mode (automatic partitions) and manual mode.
+  Every multiplexer can create its own connection and provides access to different set of methods 
+  (publishing to partition, watching on partition/offset) 
 * fixes inside Mux.NewSyncPublisher() & Mux.NewAsyncPublisher() related to previous partition changes
 * Known Issues:
   * More than one network connection to Kafka (multiple instances of MUX)

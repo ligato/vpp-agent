@@ -147,7 +147,11 @@ The config file specifies addresses of kafka brokers:
 
 To create a Connection that reuses Multiplexer access to kafka run:
 
-	cn := mx.NewConnection("c1")
+	cn := mx.NewBytesConnection("c1")
+
+	or
+
+	cn := mx.NewProtoConnection("c1")
 
 Afterwards you can produce messages using sync API:
 

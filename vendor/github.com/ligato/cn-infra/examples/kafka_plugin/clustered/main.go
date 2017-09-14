@@ -134,7 +134,7 @@ const (
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Create connection
-	connection := plugin.Kafka.NewProtoConnectionToPartition("example-proto-connection")
+	connection := plugin.Kafka.NewProtoManualConnection("example-proto-connection")
 
 	// Create a synchronous and asynchronous publisher. In manual mode, every publisher has defined partition, where
 	// the messages for given partition will be stored
