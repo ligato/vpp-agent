@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/testing"
+	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 
 // Start Agent plugins selected for this example
@@ -165,19 +165,19 @@ func (plugin *ExamplePlugin) Close() error {
 // Test data are published to different agents (including local)
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create bridge domain in local agent
-	br0 := testing.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
+	br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
 	err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent1
-	br1 := testing.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
+	br1 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
 	err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), &br1)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent2
-	br2 := testing.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
+	br2 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
 	err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), &br2)
 	return err
 }
