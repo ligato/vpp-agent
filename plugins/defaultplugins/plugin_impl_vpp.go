@@ -37,7 +37,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
 
@@ -121,7 +120,14 @@ type Deps struct {
 	Watch             datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
-	Linux             linuxplugin.API
+	Linux             linuxpluginAPI
+}
+
+type linuxpluginAPI interface {
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+	// Linux interfaces.
+	GetLinuxIfIndexes() ifaceidx2.LinuxIfIndex
 }
 
 // DPConfig holds the value of maximum transmission unit in bytes.
