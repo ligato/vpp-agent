@@ -310,7 +310,7 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	// Push to bridge domain state
 	bridgeDomainName, _, found := plugin.BdIndexes.LookupName(bridgeDomainIndex)
 	if !found {
-		return fmt.Errorf("Unable to update status for bridge domain, index %v not found in mapping", bridgeDomainIndex)
+		return fmt.Errorf("unable to update status for bridge domain, index %v not found in mapping", bridgeDomainIndex)
 	}
 	err := plugin.LookupBridgeDomainDetails(bridgeDomainIndex, bridgeDomainName)
 	if err != nil {
@@ -320,11 +320,28 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 }
 
 // ResolveDeletedInterface does nothing
-func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) {
+func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) error {
 	log.DefaultLogger().Print("Interface was removed. Unregister from real state ", interfaceName)
+	// Lookup IfToBdIndexes in order to find a bridge domain for this interface
+	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
+	if !found {
+		log.DefaultLogger().Debugf("Removed interface %s does not belong to any bridge domain", interfaceName)
+		return nil
+	}
+	bdID := meta.(*BridgeDomainMeta).BridgeDomainIndex
+	// Find bridge domain name
+	bdName, meta, found := plugin.BdIndexes.LookupName(bdID)
+	if !found {
+		return fmt.Errorf("unknown bridge domain ID %v", bdID)
+	}
+	err := plugin.LookupBridgeDomainDetails(bdID, bdName)
+	if err != nil {
+		return err
+	}
 	// Unregister removed interface
 	plugin.IfToBdRealStateIdx.UnregisterName(interfaceName)
-	// Nothing else to do here, vpp handles it itself
+
+	return nil
 }
 
 // Store all interface/bridge domain pairs
