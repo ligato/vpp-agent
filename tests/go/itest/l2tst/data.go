@@ -3,8 +3,8 @@
 package l2tst
 
 import (
-	test_if "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/testing"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
 var (
@@ -39,10 +39,10 @@ var (
 		MacAge:              0, /*means disable aging*/
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    test_if.VxlanVni5.Name,
+				Name:                   iftst.VxlanVni5.Name,
 				BridgedVirtualInterface: false,
 			}, {
-				Name:                    test_if.AfPacketVeth1.Name,
+				Name:                    iftst.AfPacketVeth1.Name,
 				BridgedVirtualInterface: false,
 			},
 		},
@@ -50,8 +50,8 @@ var (
 
 	// XConMemif100011ToMemif100012 is an example of cross connect configuration
 	XConMemif100011ToMemif100012 = l2.XConnectPairs_XConnectPair{
-		ReceiveInterface:  test_if.Memif100011Master.Name,
-		TransmitInterface: test_if.Memif100011Master.Name,
+		ReceiveInterface:  iftst.Memif100011Master.Name,
+		TransmitInterface: iftst.Memif100011Master.Name,
 	}
 )
 
