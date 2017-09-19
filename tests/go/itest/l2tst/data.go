@@ -39,7 +39,7 @@ var (
 		MacAge:              0, /*means disable aging*/
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                   iftst.VxlanVni5.Name,
+				Name:                    iftst.VxlanVni5.Name,
 				BridgedVirtualInterface: false,
 			}, {
 				Name:                    iftst.AfPacketVeth1.Name,

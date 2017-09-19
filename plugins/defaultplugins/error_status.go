@@ -74,10 +74,13 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 			return
 		}
 		var ifaceName string
-		if iface.Name == "" && prevValExists {
+		if iface.Name != "" {
+			ifaceName = iface.Name
+		} else if prevValExists && prevIface.Name != "" {
 			ifaceName = prevIface.Name
 		} else {
-			ifaceName = iface.Name
+			log.DefaultLogger().Errorf("Unable to log error for key %v: cannot obtain interface name to build an interface err key", key)
+			return
 		}
 		ifaceErrKey := interfaces.InterfaceErrorKey(ifaceName)
 		ifaceErrList := plugin.composeInterfaceErrors(ifaceName, changeType, errInfo)
@@ -100,10 +103,13 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 			return
 		}
 		var bdName string
-		if bd.Name == "" && prevValExists {
+		if bd.Name != "" {
+			bdName = bd.Name
+		} else if prevValExists && prevBd.Name != "" {
 			bdName = prevBd.Name
 		} else {
-			bdName = bd.Name
+			log.DefaultLogger().Errorf("Unable to log error for key %v: cannot obtain bd name to build a bd err key", key)
+			return
 		}
 		bdErrKey := l2.BridgeDomainErrorKey(bdName)
 		bdErrList := plugin.composeBridgeDomainErrors(bdName, changeType, errInfo)
