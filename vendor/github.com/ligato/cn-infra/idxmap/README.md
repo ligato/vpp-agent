@@ -1,37 +1,54 @@
 # Concept
 
-The idxmap package provides an enhanced mapping structure to help in the following 
-use cases:
-* Caching the the data in key-value store (such as etcd)
-* Exposing local plugin information - idxmap used for exposing one plugin's data to another plugins 
+The idxmap package provides an enhanced mapping structure to help in
+the following use cases:
+* Exposing read-only access to plugin local data for other plugins
+* Secondary indexing
+* Data caching for key-value store (such as etcd)
 
 For more detailed description see the godoc.
 
-## Caching Use Case
-Imagine that you need the data from the key-value store cached (see following diagram) 
-because you need to:
-- either minimize lookups of the key-value store 
-- or you need to lookup by secondary indexes (fields of structured values stored in key value store) 
-
-Therefore idxmap can watch key value store, see:
-- implementation of [cache helper.go](mem/cache_helper.go)
-- example of [caching IP addresses of different containers](https://github.com/ligato/vpp-agent/tree/master/examples/idx_iface_cache) 
-
-![idxmap cache](../docs/imgs/idxmap_cache.png)
-
 ## Exposing plugin local information Use Case
-App plugin needs to expose some structured information to one or multiple app plugins 
-inside the agent (see following diagram).
+App plugins often need to expose some structured information to other
+plugins inside the agent (see the following diagram).
 
-If this structured data is stored in idxmap then, multiple plugins can read its information 
-1. either via Lookup using primary keys or secondary indices;
-2. or watching data changes in the map (using channels or callbacks) 
-   (subscribe for changes and receive notification once an item is added or removed).
+Structured data stored in idxmap are available for (possibly concurrent)
+read access to other plugins:
+1. either via lookup using primary keys or secondary indices;
+2. or via watching for data changes in the map using channels
+   or callbacks (subscribe for changes and receive notification once
+   an item is added, changed or removed).
+
+TODO: remove "\<\<cache\>\>" string from the image
 
 ![idxmap local](../docs/imgs/idxmap_local.png)
 
-Examples:
-* Real world example from [VPP-agent plugin API](https://github.com/ligato/vpp-agent/blob/master/plugins/defaultplugins/defaultplugins_api.go)
+## Caching Use Case
+It is useful to have the data from a key-value store cached when
+you need to:
+- minimize the number of lookups into the key-value store
+- execute lookups by secondary indexes for key-value stores that
+  do not necessarily support secondary indexing (e.g. etcd)
+
+[CacheHelper](mem/cache_helper.go) turns `idxmap` (injected as field
+`IDX`) into an indexed local copy of remotely stored key-value data.
+`CacheHelper` watches the target key-value store for data changes
+and resync events. Received key-value pairs are transformed into
+the name-value (+ secondary indices if defined) pairs and stored into
+the injected idxmap instance.
+For a visual explanation, see the diagram below:
+
+
+![idxmap cache](../docs/imgs/idxmap_cache.png)
+
+See example [caching IP addresses of different containers](https://github.com/ligato/vpp-agent/tree/master/examples/idx_iface_cache).
+The constructor that combines `CacheHelper` with `idxmap` to build
+the cache from the example can be found
+[here](https://github.com/ligato/vpp-agent/blob/master/plugins/defaultplugins/ifplugin/ifaceidx/cache_iface.go)
+
+
+## Examples
+* Real world example from [VPP-agent plugin API](https://github.com/ligato/vpp-agent/blob/master/plugins/defaultplugins/plugin_api_vpp.go)
 * Isolated and simplified examples can be found here: 
   * [lookup](https://github.com/ligato/vpp-agent/tree/master/examples/idx_mapping_lookup)
   * [watch](https://github.com/ligato/vpp-agent/tree/master/examples/idx_mapping_watcher)

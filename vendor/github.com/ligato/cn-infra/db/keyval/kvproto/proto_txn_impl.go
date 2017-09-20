@@ -27,9 +27,9 @@ type protoTxn struct {
 }
 
 // Put adds a new 'put' operation to a previously created transaction.
-// If the key does not exist in the data store, a new key-value item
-// will be added to the data store. If key exists in the data store,
-// the existing value will be overwritten with the value from this
+// If the <key> does not exist in the data store, a new key-value item
+// will be added to the data store. If <key> exists in the data store,
+// the existing value will be overwritten with the <value> from this
 // operation.
 func (tx *protoTxn) Put(key string, value proto.Message) keyval.ProtoTxn {
 	if tx.err != nil {

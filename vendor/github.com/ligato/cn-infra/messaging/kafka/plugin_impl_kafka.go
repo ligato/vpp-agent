@@ -123,7 +123,7 @@ func (p *Plugin) AfterInit() error {
 
 // Close is called at plugin cleanup phase.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.consumer.Close(), p.muxHash)
+	_, err := safeclose.CloseAll(p.consumer, p.muxHash, p.muxManual)
 	return err
 }
 

@@ -21,24 +21,26 @@ import (
 // Expression represents part of SQL statement and optional binding ("?")
 type Expression interface {
 	// Stringer prints default representation of SQL to String
-	// Different implementations can override this using package specific func ExpToString()
+	// Different implementations can override this using package specific
+	// func ExpToString().
 	String() string
 
-	// Binding are values referenced ("?") from the statement
+	// Binding are values referenced ("?") from the statement.
 	GetBinding() []interface{}
 
-	// Accepts calls the methods on Visitor
+	// Accepts calls the methods on Visitor.
 	Accept(Visitor)
 }
 
-// Visitor for traversing expression tree
+// Visitor is used for traversing expression tree.
 type Visitor interface {
 	VisitPrefixedExp(*PrefixedExp)
 	VisitFieldExpression(*FieldExpression)
 }
 
-// PrefixedExp covers many SQL constructions. It implements sql.Expression interface.
-// Instance of this structure is returned by many helper functions below.
+// PrefixedExp covers many SQL constructions. It implements sql.Expression
+// interface. Instance of this structure is returned by many helper functions
+// below.
 type PrefixedExp struct {
 	Prefix      string
 	AfterPrefix Expression
@@ -46,7 +48,7 @@ type PrefixedExp struct {
 	Binding     []interface{}
 }
 
-// String returns Prefix + " " + AfterPrefix
+// String returns Prefix + " " + AfterPrefix.
 func (exp *PrefixedExp) String() string {
 	if exp.AfterPrefix == nil {
 		return exp.Prefix
@@ -69,13 +71,13 @@ func (exp *PrefixedExp) Accept(visitor Visitor) {
 	visitor.VisitPrefixedExp(exp)
 }
 
-// FieldExpression for addressing field of an entity in SQL expression
+// FieldExpression for addressing field of an entity in SQL expression.
 type FieldExpression struct {
 	PointerToAField interface{}
 	AfterField      Expression
 }
 
-// String returns Prefix + " " + AfterPrefix
+// String returns Prefix + " " + AfterPrefix.
 func (exp *FieldExpression) String() string {
 	prefix := fmt.Sprint("<field on ", exp.PointerToAField, ">")
 	if exp.AfterField == nil {
@@ -94,7 +96,7 @@ func (exp *FieldExpression) Accept(visitor Visitor) {
 	visitor.VisitFieldExpression(exp)
 }
 
-// SELECT keyword of SQL expression
+// SELECT keyword of SQL expression.
 func SELECT(entity interface{}, afterKeyword Expression, binding ...interface{}) Expression {
 	return &PrefixedExp{"SELECT", FROM(entity, afterKeyword), "", binding}
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/messaging"
-	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
 // PubPlugin implements KeyProtoValWriter that propagates protobuf messages
@@ -35,7 +34,7 @@ type PubPlugin struct {
 // to not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps               // inject
-	Messaging             *kafka.Plugin // inject
+	Messaging             messaging.Mux // inject
 	Cfg
 }
 

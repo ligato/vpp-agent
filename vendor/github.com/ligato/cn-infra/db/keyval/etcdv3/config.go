@@ -27,9 +27,10 @@ import (
 	"github.com/coreos/etcd/pkg/tlsutil"
 )
 
-// Config represents a part of etcd configuration that can be
-// loaded from a file. The Config might be afterwards transformed into
-// ClientConfig using ConfigToClientv3 function.
+// Config represents a part of the etcd configuration that can be
+// loaded from a file. Usually, the Config is next transformed into
+// ClientConfig using ConfigToClientv3() function for use with the coreos/etcd
+// package.
 type Config struct {
 	Endpoints             []string      `json:"endpoints"`
 	DialTimeout           time.Duration `json:"dial-timeout"`
@@ -41,23 +42,32 @@ type Config struct {
 	CAfile                string        `json:"ca-file"`
 }
 
-// ClientConfig extends clientv3.Config with configuration options introduced by this package.
+// ClientConfig extends clientv3.Config with configuration options introduced
+// by this package.
 type ClientConfig struct {
 	*clientv3.Config
 
-	// OpTimeout is the maximum amount of time the client will wait on a pending operation before timing out.
+	// OpTimeout is the maximum amount of time the client will wait on a pending
+	// operation before timing out.
 	OpTimeout time.Duration
 }
 
-// default timeout for connecting to etcd.
+// defaultDialTimeout defines the default timeout for connecting to etcd.
 const defaultDialTimeout = 1 * time.Second
 
-// default timeout for any request-reply etcd operation.
+// defaultOpTimeout defines the default timeout for any request-reply etcd
+// operation.
 const defaultOpTimeout = 3 * time.Second
 
-// ConfigToClientv3 transforms the configuration modelled by yaml structure
-// into ClientConfig. If the endpoints are not specified the function tries to load endpoints
-// ETCDV3_ENDPOINTS environment variable.
+// ConfigToClientv3 transforms yaml configuration <yc> modelled by Config
+// into ClientConfig, which is ready for use with the underlying coreos/etcd
+// package.
+// If the etcd endpoint addresses are not specified in the configuration,
+// the function will query the ETCDV3_ENDPOINTS environment variable
+// for a non-empty value. In neither the config nor the environment specify the
+// endpoint location, a default address "127.0.0.1:2379" is assumed.
+// The function may return error only if TLS connection is selected and the
+// CA or client certificate is not accessible/valid.
 func ConfigToClientv3(yc *Config) (*ClientConfig, error) {
 
 	dialTimeout := defaultDialTimeout

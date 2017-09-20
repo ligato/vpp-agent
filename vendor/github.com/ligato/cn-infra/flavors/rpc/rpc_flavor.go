@@ -21,19 +21,22 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
-// FlavorRPC glues together multiple plugins that are useful for almost every micro-service
+// FlavorRPC glues together multiple plugins that provide RPC-like access.
+// They are typically used to enable remote management for other plugins.
 type FlavorRPC struct {
 	*local.FlavorLocal
 
 	HTTP rest.Plugin
 	//TODO GRPC (& enable/disable using config)
+	HTTPProbe rest.ForkPlugin
 
 	HealthRPC probe.Plugin
+	//TODO PrometheusRPC probe.PrometheusPlugin
 
 	injected bool
 }
 
-// Inject sets object references
+// Inject initializes flavor references/dependencies.
 func (f *FlavorRPC) Inject() bool {
 	if f.injected {
 		return false
@@ -45,20 +48,34 @@ func (f *FlavorRPC) Inject() bool {
 	}
 	f.FlavorLocal.Inject()
 
-	f.HTTP.Deps.Log = f.LoggerFor("http")
-	f.HTTP.Deps.PluginName = core.PluginName("http")
+	rest.DeclareHTTPPortFlag("http")
+	httpPlugDeps := *f.InfraDeps("http")
+	f.HTTP.Deps.Log = httpPlugDeps.Log
+	f.HTTP.Deps.PluginConfig = httpPlugDeps.PluginConfig
+	f.HTTP.Deps.PluginName = httpPlugDeps.PluginName
 
 	f.Logs.HTTP = &f.HTTP
 
+	rest.DeclareHTTPPortFlag("http-probe")
+	httpProbeDeps := *f.InfraDeps("http-probe", local.WithConf())
+	f.HTTPProbe.Deps.Log = httpProbeDeps.Log
+	f.HTTPProbe.Deps.PluginConfig = httpProbeDeps.PluginConfig
+	f.HTTPProbe.Deps.PluginName = httpProbeDeps.PluginName
+	f.HTTPProbe.Deps.DefaultHTTP = &f.HTTP
+
 	f.HealthRPC.Deps.PluginLogDeps = *f.LogDeps("health-rpc")
-	f.HealthRPC.Deps.HTTP = &f.HTTP
+	f.HealthRPC.Deps.HTTP = &f.HTTPProbe
 	f.HealthRPC.Deps.StatusCheck = &f.StatusCheck
 	//TODO f.HealthRPC.Transport inject restsync
+
+	//TODO f.PrometheusRPC.Deps.PluginLogDeps = *f.LogDeps("health-prometheus-rpc")
+	//f.PrometheusRPC.Deps.HTTP = &f.HTTPProbe
+	//f.PrometheusRPC.Deps.StatusCheck = &f.StatusCheck
 
 	return true
 }
 
-// Plugins combines all Plugins in flavor to the list
+// Plugins combines all Plugins in flavor to the list.
 func (f *FlavorRPC) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)

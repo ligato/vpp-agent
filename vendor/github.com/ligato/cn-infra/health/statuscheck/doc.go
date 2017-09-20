@@ -26,7 +26,7 @@
 //
 // If probe is not nil, statuscheck will periodically probe the plugin
 // state through the provided function. Otherwise, it is expected that the
-// plugin itself will report state updates through ReportStateChange():
+// plugin itself will report state updates through ReportStateChange(), e.g.:
 //   statuscheck.ReportStateChange(PluginID, statuscheck.OK, nil)
 //
 // The default status of a plugin after registering is Init.

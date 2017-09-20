@@ -16,6 +16,9 @@ import (
 // FlagSuffix is added to plugin name while loading plugins configuration
 const FlagSuffix = "-config"
 
+// EnvSuffix is added to plugin name while loading plugins configuration from ENV variable
+const EnvSuffix = "_CONFIG"
+
 // DirFlag used as flag name (see implementation in declareFlags())
 // It is used to define default directory where config files reside.
 // This flag name is calculated from the name of the plugin.
@@ -44,8 +47,32 @@ type PluginConfig interface {
 // ForPlugin returns API that is injectable to a particular Plugin
 // to read it's configuration.
 //
-// It tries to lookup `plugin + "-config"` in flags.
-func ForPlugin(pluginName string) PluginConfig {
+// It tries to lookup `plugin + "-config"` in flags and declare
+// the flag if it still not exists. It uses following opts.
+// opts (used for defining flag if it was not already defined):
+// - default value
+// - usage
+func ForPlugin(pluginName string, opts ...string) PluginConfig {
+	flgName := pluginName + FlagSuffix
+	flg := flag.CommandLine.Lookup(flgName)
+	if flg == nil && len(opts) > 0 {
+		var flagDefault, flagUsage string
+
+		if len(opts) > 0 && opts[0] != "" {
+			flagDefault = opts[0]
+		} else {
+			flagDefault = pluginName + ".conf"
+		}
+		if len(opts) > 1 && opts[1] != "" {
+			flagUsage = opts[1]
+		} else {
+			flagUsage = "Location of the " + pluginName +
+				" Client configuration file; also set via '" +
+				strings.ToUpper(pluginName) + EnvSuffix + "' env variable."
+		}
+		flag.String(flgName, flagDefault, flagUsage)
+	}
+
 	return &pluginConfig{pluginName: pluginName}
 }
 

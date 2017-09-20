@@ -20,34 +20,38 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// Serializer is responsible for transformation of data stored in etcd.
+// Serializer is used to make conversions between raw and formatted data.
+// Currently supported formats are JSON and protobuf.
 type Serializer interface {
 	Unmarshal(data []byte, protoData proto.Message) error
 	Marshal(message proto.Message) ([]byte, error)
 }
 
-// SerializerProto serializes proto message using proto serializer
+// SerializerProto serializes proto message using proto serializer.
 type SerializerProto struct{}
 
-// SerializerJSON serialize proto message using json serializer
+// SerializerJSON serializes proto message using JSON serializer.
 type SerializerJSON struct{}
 
-// Unmarshal unmarshals data from slice of bytes into the provided protobuf message
+// Unmarshal deserializes data from slice of bytes into the provided protobuf
+// message using proto marshaller.
 func (sp *SerializerProto) Unmarshal(data []byte, protoData proto.Message) error {
 	return proto.Unmarshal(data, protoData)
 }
 
-// Marshal transforms data from proto message to the slice of bytes using proto marshaller
+// Marshal serializes data from proto message to the slice of bytes using proto
+// marshaller.
 func (sp *SerializerProto) Marshal(message proto.Message) ([]byte, error) {
 	return proto.Marshal(message)
 }
 
-// Unmarshal unmarshals data from slice of bytes into the provided protobuf message
+// Unmarshal deserialize data from slice of bytes into the provided protobuf
+// message using JSON marshaller.
 func (sj *SerializerJSON) Unmarshal(data []byte, protoData proto.Message) error {
 	return json.Unmarshal(data, protoData)
 }
 
-// Marshal marshals proto message using json marshaller
+// Marshal serializes proto message to the slice of bytes using json marshaller.
 func (sj *SerializerJSON) Marshal(message proto.Message) ([]byte, error) {
 	return json.Marshal(message)
 }

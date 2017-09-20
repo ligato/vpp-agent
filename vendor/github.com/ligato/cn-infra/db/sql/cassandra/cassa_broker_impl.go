@@ -20,7 +20,7 @@ import (
 	"github.com/willfaught/gockle"
 )
 
-// NewBrokerUsingSession is a constructor. Use it like this:
+// NewBrokerUsingSession is a Broker constructor. Use it like this:
 //
 // session := gockle.NewSession(gocql.NewCluster("172.17.0.1"))
 // defer db.Close()
@@ -48,7 +48,8 @@ type ErrIterator struct {
 }
 
 // Put - see the description in interface sql.Broker.Put().
-// Put generates statement & binding for gocql Exec()
+// Put generates statement & binding for gocql Exec().
+// Any error returned from gockle.Session.Exec is propagated upwards.
 func (pdb *BrokerCassa) Put(where sql.Expression, pointerToAStruct interface{} /*TODO TTL, opts ...datasync.PutOption*/) error {
 	statement, bindings, err := PutExpToString(where, pointerToAStruct)
 
