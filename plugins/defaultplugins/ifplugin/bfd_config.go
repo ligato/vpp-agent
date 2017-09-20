@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ifplugin is the implementation of the Interface plugin.deps.
 package ifplugin
 
 //go:generate protoc --proto_path=model/bfd --gogo_out=model/bfd model/bfd/bfd.proto

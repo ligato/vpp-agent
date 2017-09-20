@@ -1,3 +1,4 @@
+// Package vpp defines the standard flavor used for full-featured VPP agents.
 package vpp
 
 import (
