@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
-// StandardLogger returns a global logger. Please notice, that recommended
+// StandardLogger returns a global default logger. Please notice, that recommended
 // approach is to create a custom logger.
 func StandardLogger() logging.Logger {
 	return logrus.DefaultLogger()

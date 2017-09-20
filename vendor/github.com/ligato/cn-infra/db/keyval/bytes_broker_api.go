@@ -16,45 +16,52 @@ package keyval
 
 import "github.com/ligato/cn-infra/datasync"
 
-// BytesBroker allows to store, retrieve and remove data in a key-value form
+// BytesBroker allows to store, retrieve and remove data in a key-value form.
 type BytesBroker interface {
-	// Put puts single key-value pair into etcd. The behavior of put can be adjusted using PutOptions.
+	// Put puts single key-value pair into etcd.
+	// The behavior of put can be adjusted using PutOptions.
 	Put(key string, data []byte, opts ...datasync.PutOption) error
-	// NewTxn creates a transaction
+	// NewTxn creates a transaction.
 	NewTxn() BytesTxn
-	// GetValue retrieves one item under the provided key
+	// GetValue retrieves one item under the provided key.
 	GetValue(key string) (data []byte, found bool, revision int64, err error)
-	// ListValues returns an iterator that enables to traverse all items stored under the provided key
+	// ListValues returns an iterator that enables to traverse all items stored
+	// under the provided <key>.
 	ListValues(key string) (BytesKeyValIterator, error)
-	// ListKeys is similar to the ListValues the difference is that values are not fetched
+	// ListKeys returns an iterator that allows to traverse all keys from data
+	// store that share the given <prefix>
 	ListKeys(prefix string) (BytesKeyIterator, error)
-	// Delete removes data stored under the key
+	// Delete removes data stored under the <key>
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 
-// BytesKvPair groups getters for key-value pair
+// BytesKvPair groups getters for a key-value pair.
 type BytesKvPair interface {
-	// GetValue returns the value of the pair
+	// GetValue returns the value of the pair.
 	GetValue() []byte
 
 	datasync.WithKey
 }
 
-// BytesKeyVal represents a single item in data store
+// BytesKeyVal represents a single item in data store.
 type BytesKeyVal interface {
 	BytesKvPair
 	datasync.WithRevision
 }
 
-// BytesKeyValIterator is an iterator returned by ListValues call
+// BytesKeyValIterator is an iterator returned by ListValues call.
 type BytesKeyValIterator interface {
 	// GetNext retrieves the following item from the context.
+	// When there are no more items to get, <stop> is returned as *true*
+	// and <kv> is simply *nil*.
 	GetNext() (kv BytesKeyVal, stop bool)
 }
 
-// BytesKeyIterator is an iterator returned by ListKeys call
+// BytesKeyIterator is an iterator returned by ListKeys call.
 type BytesKeyIterator interface {
-	// GetNext retrieves the following item from the context.
+	// GetNext retrieves the following key from the context.
+	// When there are no more keys to get, <stop> is returned as *true*
+	// and <key>, <rev> are default values.
 	GetNext() (key string, rev int64, stop bool)
 }
 

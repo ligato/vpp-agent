@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package etcd_example; /* Generated code will be in the ectd_example package*/
+package etcdexample; /* Generated code will be in the ectd_example package*/
 
 message EtcdExample {
     string string_val = 1; /* Example of a string value */

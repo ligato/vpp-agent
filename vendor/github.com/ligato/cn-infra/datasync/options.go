@@ -18,25 +18,31 @@ import (
 	"time"
 )
 
-// PutOption defines options for Put operation. The particular options can be found below.
+// PutOption defines options for Put operation.
+// The available options can be found below.
 type PutOption interface {
-	//PutOptionMark is just for marking implementation that it implements this interface
+	// PutOptionMark is used just to mark structures implementing PutOption
+	// interface.
 	PutOptionMark()
 }
 
-// DelOption defines options for Del operation. The particular options can be found below.
+// DelOption defines options for Del operation.
+// The available options can be found below.
 type DelOption interface {
-	//DelOptionMark is just for marking implementation that it implements this interface
+	// DelOptionMark is used to mark structures implementing DelOption
+	// interface.
 	DelOptionMark()
 }
 
-// WithTTLOpt defines a TTL for data being put. Once TTL elapses the data is removed from data store.
+// WithTTLOpt defines TTL for Put operation.
+// Once TTL elapses, the associated data are removed from data store.
 type WithTTLOpt struct {
 	PutOptionMarker
 	TTL time.Duration
 }
 
-// WithTTL creates new instance of TTL option. Once TTL elapses data is removed.
+// WithTTL creates a new instance of TTL option.
+// Once TTL elapses, the associated data are removed.
 // Beware: some implementation might be using TTL with lower precision.
 func WithTTL(TTL time.Duration) *WithTTLOpt {
 	return &WithTTLOpt{TTL: TTL}
@@ -47,19 +53,21 @@ type WithPrefixOpt struct {
 	DelOptionMarker
 }
 
-// WithPrefix creates new instance of WithPrefixOpt.
+// WithPrefix creates a new instance of WithPrefixOpt.
 func WithPrefix() *WithPrefixOpt {
 	return &WithPrefixOpt{}
 }
 
-// PutOptionMarker is meant for anonymous composition in With*Opt structs
+// PutOptionMarker is meant for anonymous composition in With*Opt structs.
 type PutOptionMarker struct{}
 
-// PutOptionMark  is just for marking implementation that it implements this interface
+// PutOptionMark is used just to mark structures implementing PutOption
+// interface.
 func (marker *PutOptionMarker) PutOptionMark() {}
 
-// DelOptionMarker is meant for anonymous composition in With*Opt structs
+// DelOptionMarker is meant for anonymous composition in With*Opt structs.
 type DelOptionMarker struct{}
 
-// DelOptionMark is just for marking implementation that it implements this interface
+// DelOptionMark is used just to mark structures implementing DelOption
+// interface.
 func (marker *DelOptionMarker) DelOptionMark() {}

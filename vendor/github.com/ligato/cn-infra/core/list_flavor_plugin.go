@@ -32,7 +32,7 @@ type Flavor interface {
 // ListPluginsInFlavor lists plugins in a Flavor.
 // It extracts all plugins and returns them as a slice of NamedPlugins.
 func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
-	uniqueness := map[PluginName]Plugin{}
+	uniqueness := map[Plugin] /*nil*/ interface{}{}
 	l, err := listPluginsInFlavor(reflect.ValueOf(flavor), uniqueness)
 	if err != nil {
 		logroot.StandardLogger().Error("Invalid argument - it does not satisfy the Flavor interface")
@@ -52,7 +52,9 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 // must satisfy either the Plugin or the Flavor interface. If they do not,
 // an error is logged, but the function does not return an error.
 // in the argument
-func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Plugin) ([]*NamedPlugin, error) {
+func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[Plugin] /*nil*/ interface{}) ([]*NamedPlugin, error) {
+	logroot.StandardLogger().Error("inspect flavor structure ", flavorValue.Type())
+
 	var res []*NamedPlugin
 
 	flavorType := flavorValue.Type()
@@ -86,12 +88,26 @@ func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Pl
 			}
 
 			fieldVal := flavorValue.Field(i)
-			plug := fieldPlugin(field, fieldVal, pluginType)
-			if plug != nil {
-				_, found := uniqueness[PluginName(field.Name)]
-				if !found {
-					uniqueness[PluginName(field.Name)] = plug
-					res = append(res, &NamedPlugin{PluginName: PluginName(field.Name), Plugin: plug})
+			plug, implementsPlugin := fieldPlugin(field, fieldVal, pluginType)
+			if implementsPlugin {
+				if plug != nil {
+					_, found := uniqueness[plug]
+					if !found {
+						uniqueness[plug] = nil
+						res = append(res, &NamedPlugin{PluginName: PluginName(field.Name), Plugin: plug})
+
+						logroot.StandardLogger().
+							WithField("fieldName", field.Name).
+							Debug("Found plugin in flavor ", field.Type)
+					} else {
+						logroot.StandardLogger().
+							WithField("fieldName", field.Name).
+							Debug("Found plugin in flavor with non unique name")
+					}
+				} else {
+					logroot.StandardLogger().
+						WithField("fieldName", field.Name).
+						Debug("Found nil plugin in flavor")
 				}
 			} else {
 				// try to inspect flavor structure recursively
@@ -112,22 +128,29 @@ func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[PluginName]Pl
 
 // fieldPlugin determines if a given field satisfies the Plugin interface.
 // If yes, the plugin value is returned; if not, nil is returned.
-func fieldPlugin(field reflect.StructField, fieldVal reflect.Value, pluginType reflect.Type) Plugin {
+func fieldPlugin(field reflect.StructField, fieldVal reflect.Value, pluginType reflect.Type) (
+	plugin Plugin, implementsPlugin bool) {
+
 	switch fieldVal.Kind() {
 	case reflect.Struct:
 		ptrType := reflect.PtrTo(fieldVal.Type())
-		if ptrType.Implements(pluginType) && fieldVal.CanAddr() {
-			if plug, ok := fieldVal.Addr().Interface().(Plugin); ok {
-				return plug
+		if ptrType.Implements(pluginType) {
+			if fieldVal.CanAddr() {
+				if plug, ok := fieldVal.Addr().Interface().(Plugin); ok {
+					return plug, true
+				}
 			}
+			return nil, true
 		}
 	case reflect.Ptr, reflect.Interface:
-		if fieldVal.IsNil() {
-			logroot.StandardLogger().WithField("fieldName", field.Name).Debug("Field is nil ", pluginType)
-		} else if plug, ok := fieldVal.Interface().(Plugin); ok {
-			return plug
+		if plug, ok := fieldVal.Interface().(Plugin); ok {
+			if fieldVal.IsNil() {
+				logroot.StandardLogger().WithField("fieldName", field.Name).Debug("Field is nil ", pluginType)
+				return nil, true
+			}
+			return plug, true
 		}
 
 	}
-	return nil
+	return nil, false
 }

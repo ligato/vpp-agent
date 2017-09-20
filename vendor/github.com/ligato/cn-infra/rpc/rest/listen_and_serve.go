@@ -20,12 +20,13 @@ import (
 	"time"
 )
 
-// ListenAndServe is a function that used Config & Handler to handle HTTP Requests.
-// It return instance of io.Closer to close the HTTP Server during cleanup.
+// ListenAndServe is a function that uses <config> & <handler> to handle
+// HTTP Requests.
+// It return an instance of io.Closer to close the HTTP Server during cleanup.
 type ListenAndServe func(config Config, handler http.Handler) (
 	httpServer io.Closer, err error)
 
-// FromExistingServer is used mainly for testing purpose
+// FromExistingServer is used mainly for testing purposes
 //
 // Example:
 //
@@ -36,7 +37,7 @@ func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
 	return &Plugin{listenAndServe: listenAndServe}
 }
 
-// ListenAndServeHTTP start http server
+// ListenAndServeHTTP starts a http server.
 func ListenAndServeHTTP(config Config, handler http.Handler) (httpServer io.Closer, err error) {
 	server := &http.Server{
 		Addr:              config.Endpoint,

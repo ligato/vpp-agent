@@ -16,7 +16,6 @@ package cassandra
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	r "reflect"
 	"strings"
@@ -119,16 +118,16 @@ func (visitor *toStringVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
 // VisitPrefixedExp generates part of SQL expression
 func (visitor *toStringVisitor) VisitFieldExpression(exp *sql.FieldExpression) {
 	if visitor.entity == nil {
-		visitor.lastError = errors.New("not found entity")
+		visitor.lastError = ErrMissingVisitorEntity
 	} else {
 		field, found := structs.FindField(exp.PointerToAField, visitor.entity)
 		if !found {
-			visitor.lastError = errors.New("not found field in entity")
+			visitor.lastError = ErrMissingEntityField
 			return
 		}
 		fieldName, found := fieldName(field)
 		if !found {
-			visitor.lastError = errors.New("not exported field in entity")
+			visitor.lastError = ErrUnexportedEntityField
 			return
 		}
 		visitor.generated.WriteString(" ")

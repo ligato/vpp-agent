@@ -13,6 +13,6 @@
 // limitations under the License.
 
 // Package plugin contains a keyval plugin skeleton used in various
-// key-value data store clients (e.g. etcdv3/plugin_impl.go,
-// redis/plugin_impl.go).
+// key-value data store clients (e.g. etcdv3/plugin_impl_etcdv3.go,
+// redis/plugin_impl_redis.go).
 package plugin

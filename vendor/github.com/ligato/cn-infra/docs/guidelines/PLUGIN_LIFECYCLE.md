@@ -1,8 +1,9 @@
 # Plugin Lifecycle
 
-Each plugin must implement the Init() and Close() methods (see 
-[plugin_spi.go][1]. A plugin may optionally implement the AfterInit() 
-method. These methods are called sequentially startup by [agent_core.go][2]. 
+Each plugin must implement the Init() and Close() methods (see
+[plugin_spi.go][1]. A plugin may optionally implement the AfterInit()
+method. These methods are called sequentially at startup
+by [agent_core.go][2].
 
 There are following rules for what to put in the methods:
 ## Init()
@@ -11,19 +12,19 @@ There are following rules for what to put in the methods:
 * Propagate errors. If an error occurs, the Agent stops since it is not
   properly initialized and calls Close() methods.
 * Start watching  GO channels (but not subscribed yet) in a go routine.
-* Initialize the GO lang Context & Cancel Function so that go routines 
+* Initialize the GO lang Context & Cancel Function so that go routines
   can be stopped gracefully.
 
 ## AfterInit()
-* Connect clients & start servers here (see the 
+* Connect clients & start servers here (see the
   [System Integration Guidelines][4]
-* Propagate errors. Agent will stop because it is not properly initialized 
-  and calls Close() methods.
+* Propagate errors. Agent will stop because it is not properly
+  initialized and calls Close() methods.
 * Subscribe for watching data (see the go channel in the example below).
 
 ## Close()
 * Cancel the go routines by calling GO lang (Context) Cancel function.
-* Disconnect clients & stop servers, release resources. Try achieving 
+* Disconnect clients & stop servers, release resources. Try achieving
   that using the [safeclose](../../utils/safeclose) package.
 * Propagate errors. Agent will log those errors.
 
@@ -59,23 +60,23 @@ func (plugin * PluginXY) Init() (err error) {
     if plugin.resource, err = connectResouce(); err != nil {
         return err//propagate resource
     }
-    
-    
+
+
     // initialize maps (to avoid segmentation fault)
     plugin.data = make(map[string]interface{})
-    
+
     // initialize channels & start go routines
     plugin.dataChange = make(chan datasync.ChangeEvent, 100)
     plugin.dataResync = make(chan datasync.ResyncEvent, 100)
-    
+
     // initiate context & cancel function (to stop go routine)
     var ctx context.Context
     if plugin.ParentCtx == nil {
-        ctx, plugin.cancel = context.WithCancel(context.Background())    
+        ctx, plugin.cancel = context.WithCancel(context.Background())
     } else {
         ctx, plugin.cancel = context.WithCancel(plugin.ParentCtx)
-    }   
-    
+    }
+
     go func() {
         for {
             select {
@@ -89,7 +90,7 @@ func (plugin * PluginXY) Init() (err error) {
             }
         }
     }()
-    
+
     return nil
 }
 
@@ -108,10 +109,10 @@ func (plugin * PluginXY) AfterInit() error {
 func (plugin * PluginXY) Close() error {
     // cancel watching the channels
     plugin.cancel()
-    
+
     // close all resources / channels
     _, err := safeclose.CloseAll(plugin.dataChange, plugin.dataResync, plugin.resource)
-    return err 
+    return err
 }
 ```
 [1]: ../../core/plugin_spi.go

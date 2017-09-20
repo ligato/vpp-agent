@@ -6,7 +6,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 )
 
-// CacheHelper is a helper which implementation is reused among multiple typesafe Caches.
+// CacheHelper is a base cache implementation reused by multiple typesafe Caches.
 type CacheHelper struct {
 	IDX           idxmap.NamedMappingRW
 	Prefix        string
@@ -14,7 +14,8 @@ type CacheHelper struct {
 	ParseName     func(key string) (name string, err error)
 }
 
-// DoWatching is supposed to be used as a go routine. It select the data from channels in arguments.
+// DoWatching reflects data change and data resync events received from
+// <watcher> into the idxmap.
 func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.KeyValProtoWatcher) {
 	changeChan := make(chan datasync.ChangeEvent, 100)
 	resyncChan := make(chan datasync.ResyncEvent, 100)
@@ -92,6 +93,7 @@ func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 	return wasError
 }
 
+// String returns the cache prefix.
 func (helper *CacheHelper) String() string {
 	return helper.Prefix
 }
