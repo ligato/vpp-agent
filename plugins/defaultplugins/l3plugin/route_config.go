@@ -15,7 +15,7 @@
 //go:generate protoc --proto_path=model/l3 --gogo_out=model/l3 model/l3/l3.proto
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=bin_api
 
-// Package l3plugin implements the L3 plugin that handles the L3 FIB.
+// Package l3plugin implements the L3 plugin that handles L3 FIBs.
 package l3plugin
 
 import (

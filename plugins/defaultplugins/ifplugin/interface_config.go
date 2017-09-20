@@ -23,7 +23,8 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=bin_api
 
-// Package ifplugin is the implementation of the Interface plugin.deps.
+// Package ifplugin implements the Interface plugin that handles management
+// of VPP interfaces.
 package ifplugin
 
 import (

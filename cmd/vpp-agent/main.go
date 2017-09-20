@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package vpp-agent implements the main entry point into the VPP Agent,
+// Package vpp-agent implements the main entry point into the VPP Agent
 // and it is used to build the VPP Agent executable.
 package main
 
