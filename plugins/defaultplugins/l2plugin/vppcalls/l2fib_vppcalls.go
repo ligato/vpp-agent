@@ -19,7 +19,6 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"strconv"
 	"strings"
@@ -82,7 +81,7 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq) error {
 	// Convert MAC address
 	macHex := strings.Replace(logicalReq.MAC, ":", "", -1)
-	macHex = (macHex + "0000") // EUI-48 correction
+	macHex = macHex + "0000" // EUI-48 correction
 	macInt, errMac := strconv.ParseUint(macHex, 16, 64)
 	if errMac != nil {
 		log.DefaultLogger().Debug(errMac)
@@ -138,18 +137,13 @@ func (fib *L2FibVppCalls) WatchFIBReplies() {
 			reply := &l2ba.L2fibAddDelReply{}
 			err := fib.vppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
 			if err != nil || 0 != reply.Retval {
-				err = fmt.Errorf("Adding/del Static fib entry returned %d", reply.Retval)
+				err = fmt.Errorf("adding/del Static fib entry returned %d", reply.Retval)
 				logicalReq.callback(err)
 			} else {
 				logicalReq.callback(nil)
 			}
 		}
 	}
-}
-
-// Close vpp channel
-func (fib *L2FibVppCalls) Close() error {
-	return safeclose.Close(fib.vppChan)
 }
 
 // Parse true=1 false=0
