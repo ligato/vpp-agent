@@ -88,7 +88,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 
 // Close vpp channel
 func (plugin *FIBConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.syncVppChannel, plugin.asyncVppChannel, plugin.vppcalls)
+	_, err := safeclose.CloseAll(plugin.syncVppChannel, plugin.asyncVppChannel)
 	return err
 }
 
