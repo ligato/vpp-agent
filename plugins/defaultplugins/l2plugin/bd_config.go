@@ -319,7 +319,7 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	return nil
 }
 
-// ResolveDeletedInterface does nothing
+// ResolveDeletedInterface removes interface from bridge domain operational status
 func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) error {
 	log.DefaultLogger().Print("Interface was removed. Unregister from real state ", interfaceName)
 	// Lookup IfToBdIndexes in order to find a bridge domain for this interface
