@@ -251,7 +251,7 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 	return nil
 }
 
-// LookupBridgeDomainDetails looks up all VPP BDs and saves their name-to-index mapping
+// LookupBridgeDomainDetails looks for existing bridge domain and propagates to the state
 func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName string) error {
 	stateMsg := BridgeDomainStateMessage{}
 	var wasError error
@@ -334,6 +334,7 @@ func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) erro
 	if !found {
 		return fmt.Errorf("unknown bridge domain ID %v", bdID)
 	}
+	// Dump bridge domain and update its state
 	err := plugin.LookupBridgeDomainDetails(bdID, bdName)
 	if err != nil {
 		return err
