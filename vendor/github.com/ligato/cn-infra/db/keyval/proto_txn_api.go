@@ -16,13 +16,19 @@ package keyval
 
 import "github.com/golang/protobuf/proto"
 
-// ProtoTxn allows to group operations into the transaction. Transaction executes multiple operations
-// in a more efficient way in contrast to executing them one by one.
+// ProtoTxn allows to group operations into the transaction.
+// It is like BytesTxn, except that data are protobuf/JSON formatted.
+// Transaction executes multiple operations in a more efficient way in contrast
+// to executing them one by one.
 type ProtoTxn interface {
-	// Put adds put operation into the transaction
+	// Put adds put operation (write formatted <data> under the given <key>)
+	// into the transaction.
 	Put(key string, data proto.Message) ProtoTxn
-	// Delete adds delete operation, which removes value identified by the key, into the transaction
+	// Delete adds delete operation (removal of <data> under the given <key>)
+	// into the transaction.
 	Delete(key string) ProtoTxn
-	// Commit tries to commit the transaction.
+	// Commit tries to execute all the operations of the transaction.
+	// In the end, either all of them have been successfully applied or none
+	// of them and an error is returned.
 	Commit() error
 }

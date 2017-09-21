@@ -22,19 +22,23 @@ import (
 )
 
 // ProtoBroker is decorator that allows to read/write proto file modelled data.
-// It marshals/unmarshals go structures to slice of bytes and vice versa behind the scenes.
+// It marshals/unmarshals go structures to slice of bytes and vice versa behind
+// the scenes.
 type ProtoBroker interface {
-	// Put puts single key-value pair into key value store
+	// Put puts single key-value pair into key value store.
 	datasync.KeyProtoValWriter
-	// NewTxn creates a transaction
+	// NewTxn creates a transaction.
 	NewTxn() ProtoTxn
-	// GetValue retrieves one item under the provided key. If the item exists it is unmarshaled into the reqObj.
+	// GetValue retrieves one item under the provided <key>. If the item exists,
+	// it is unmarshaled into the <reqObj>.
 	GetValue(key string, reqObj proto.Message) (found bool, revision int64, err error)
-	// ListValues returns an iterator that enables to traverse all items stored under the provided key
+	// ListValues returns an iterator that enables to traverse all items stored
+	// under the provided <key>.
 	ListValues(key string) (ProtoKeyValIterator, error)
-	// ListKeys is similar to the ListValues the difference is that values are not fetched
+	// ListKeys returns an iterator that allows to traverse all keys from data
+	// store that share the given <prefix>
 	ListKeys(prefix string) (ProtoKeyIterator, error)
-	// Delete removes data stored under the key
+	// Delete removes data stored under the <key>.
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 

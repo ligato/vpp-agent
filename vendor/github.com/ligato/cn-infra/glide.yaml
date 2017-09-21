@@ -4,6 +4,7 @@ import:
   version: v1.0.0
 # this is needed to pin version of logrus imported by 3rd party using incorrect case
 - package: github.com/Sirupsen/logrus
+  repo: https://github.com/sirupsen/logrus.git
   version: v1.0.0
 - package: github.com/coreos/etcd
   version: v3.2.0
@@ -64,3 +65,7 @@ import:
 - package: github.com/howeyc/crc16
 - package: github.com/onsi/gomega
   version: v1.1.0
+- package: github.com/prometheus/client_golang
+  version: v0.8.0
+  subpackages:
+  - prometheus/promhttp

@@ -14,13 +14,18 @@
 
 package keyval
 
-// BytesTxn allows to group operations into the transaction. Transaction executes multiple operations
-// in a more efficient way in contrast to executing them one by one.
+// BytesTxn allows to group operations into the transaction.
+// Transaction executes multiple operations in a more efficient way in contrast
+// to executing them one by one.
 type BytesTxn interface {
-	// Put adds store operation into transaction
+	// Put adds put operation (write raw <data> under the given <key>) into
+	// the transaction.
 	Put(key string, data []byte) BytesTxn
-	// Delete adds delete operation, which removes value identified by the key, into the transaction
+	// Delete adds delete operation (removal of <data> under the given <key>)
+	// into the transaction.
 	Delete(key string) BytesTxn
-	// Commit tries to commit the transaction
+	// Commit tries to execute all the operations of the transaction.
+	// In the end, either all of them have been successfully applied or none
+	// of them and an error is returned.
 	Commit() error
 }

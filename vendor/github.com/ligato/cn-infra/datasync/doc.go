@@ -18,8 +18,11 @@
 // connected to a CN-Infra app. Transport can be, for example, HTTP or gRPC.
 //
 // These events are processed asynchronously.
-// The app plugin that watches data changes gives callback for each event
-// (e.g. successful configuration or an error).
+// With each event, app plugin also receives a separate callback which is used
+// to propagate any errors encountered during the event processing back
+// to the user of datasync package. A successfully finalized event processing
+// should be signaled by sending nil value (meaning no error) via the associated
+// callback.
 //
 // See the examples under the dedicated examples package.
 package datasync

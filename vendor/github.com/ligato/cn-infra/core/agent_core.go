@@ -30,7 +30,7 @@ var (
 	BuildDate    string
 )
 
-// Agent implements startup & shutdown procedure.
+// Agent implements startup & shutdown procedures.
 type Agent struct {
 	// plugin list
 	plugins []*NamedPlugin
@@ -65,6 +65,13 @@ const (
 )
 
 // NewAgent returns a new instance of the Agent with plugins.
+// <logger> will be used to log messages related to the agent life-cycle,
+// but not for the plugins themselves.
+// <maxStartup> puts a time limit on initialization of all provided plugins.
+// Agent.Start() returns ErrPluginsInitTimeout error if one or more plugins fail
+// to initialize inside the specified time limit.
+// <plugins> is a variable list of plugins to load. ListPluginsInFlavor() helper
+// method can be used to obtain the list from a given flavor.
 func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*NamedPlugin) *Agent {
 	a := Agent{
 		plugins,
@@ -74,14 +81,18 @@ func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*Named
 	return &a
 }
 
-// Start starts/initializes all plugins on the list.
-// First it runs Init() method among all plugins in the list
-// Then it tries to run AfterInit() method among all plugins t
-// hat implements this optional method.
-// It stops when first error occurs by calling Close() method
-// for already initialized plugins in reverse order.
-// The startup/initialization must take no longer that maxStartup.
-// duration otherwise error occurs.
+// Start starts/initializes all selected plugins.
+// The first iteration tries to run Init() method on every plugin from the list.
+// If any of the plugins fails to initialize (Init() return non-nil error),
+// initialization is cancelled by calling Close() method for already initialized
+// plugins in the reverse order. The encountered error is returned by this
+// function as-is.
+// The second iteration does the same for the AfterInit() method. The difference
+// is that AfterInit() is an optional method (not required by the Plugin
+// interface, only suggested by PostInit interface) and therefore not necessarily
+// called on every plugin.
+// The startup/initialization must take no longer than maxStartup time limit,
+// otherwise ErrPluginsInitTimeout error is returned.
 func (agent *Agent) Start() error {
 	agent.WithFields(logging.Fields{"BuildVersion": BuildVersion, "BuildDate": BuildDate}).Info("Starting the agent...")
 
@@ -135,7 +146,7 @@ func (agent *Agent) Start() error {
 // interrupts the Agent from the EventLoopWithInterrupt().
 //
 // This implementation tries to call Close() method on every plugin on the list
-// in revers order. It continues event if some error occurred.
+// in the reverse order. It continues even if some error occurred.
 func (agent *Agent) Stop() error {
 	agent.Info("Stopping agent...")
 	errMsg := ""

@@ -1,8 +1,8 @@
 Implementation aspects & how-tos:
 * [Configuration](CONFIG.md)
-* Logging
+* [Logging](LOGGING.md)
 * Plugins
-  * Lifecycle 
+  * [Lifecycle](PLUGIN_LIFECYCLE.md)
   * [Dependencies](PLUGIN_DEPENDENCIES.md)
   * [Flavours](PLUGIN_FLAVORS.md)
 * [System integration](SYSTEM_INTEGRATION.md) - connecting to DB / Message Bus, calling RPCs
@@ -10,5 +10,5 @@ Implementation aspects & how-tos:
 Implementation is not good enough without:
 * [Comments, READMEs, doc.go](DOCUMENTING.md)
 * [Examples](EXAMPLES.md)
-* Testing
+* [Testing](TESTING.md)
 * Proper [coding style](CODINGSTYLE.md)

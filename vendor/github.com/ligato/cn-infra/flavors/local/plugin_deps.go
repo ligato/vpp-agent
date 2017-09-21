@@ -24,21 +24,23 @@ import (
 
 // PluginLogDeps is minimal set of plugin dependencies that
 // will probably use every plugin to:
-// - log using plugin logger or child (prefixed) logger (if plugin needs more than one)
-// - to know the PluginName
+// - log messages using plugin logger or child (prefixed) logger (in case plugin
+//   needs more than one)
+// - to learn the plugin name
 type PluginLogDeps struct {
-	Log        logging.PluginLogger //inject
-	PluginName core.PluginName      //inject
+	Log        logging.PluginLogger // inject
+	PluginName core.PluginName      // inject
 }
 
-// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
-// allocated by the plugin during its lifetime. This is default empty implementation to not bother plugins
-// that does not need to implement this method.
+// Close is called by Agent Core when the Agent is shutting down.
+// It is supposed to clean up resources that were allocated by the plugin
+// during its lifetime. This is a default empty implementation used to not bother
+// plugins that do not need to implement this method.
 func (plugin *PluginLogDeps) Close() error {
 	return nil
 }
 
-// PluginInfraDeps is standard set of plugin dependencies that
+// PluginInfraDeps is a standard set of plugin dependencies that
 // will need probably every connector to DB/Messaging:
 // - to report/write plugin status to StatusCheck
 // - to know micro-service label prefix
