@@ -59,18 +59,12 @@ Get All Loggers On ${node}
     Log Many    ${node}
     ${out}=     rest_api: Get Loggers List    agent_vpp_1
     Log Many    ${out}
-     Should Contain     ${out}    defaultLogger
      Should Contain     ${out}    etcdv3
-     Should Contain     ${out}    govppGoVpp
      Should Contain     ${out}    govpp
-     Should Contain     ${out}    default-plugins
      Should Contain     ${out}    http
      Should Contain     ${out}    health-rpc
-     Should Contain     ${out}    etcdv3-datasync
      Should Contain     ${out}    status-check
-     Should Contain     ${out}    log-mng-rpc
      Should Contain     ${out}    kafka
-     Should Contain     ${out}    redis-datasync
      Should Contain     ${out}    redis
      Should Contain     ${out}    cassandra
 
