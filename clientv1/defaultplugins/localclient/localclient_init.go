@@ -14,11 +14,12 @@
 
 package localclient
 
-// Plugin implements the core.Plugin interface.
+// Plugin allows to load VPP localclient as a plugin
+// (even though the Init() method does not really do anything).
 type Plugin struct {
 }
 
-// Init tries to sets the default transport (can be set only if it is nil)
+// Init does nothing.
 func (plugin *Plugin) Init() error {
 	return nil
 }

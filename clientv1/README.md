@@ -7,10 +7,10 @@ is fully abstracted from the user.
 
 The API calls can be split into two groups:
  - **resync** applies a given (full) configuration. An existing
-   configuration, if present, gets replaced. The name is an abbreviation
+   configuration, if present, is replaced. The name is an abbreviation
    of *resynchronization*. It is used initially and after any system
    event that may leave the configuration out-of-sync while the set
-   of outdated configuration options is impossible to determine
+   of outdated configuration options is impossible to determine locally
    (e.g. temporarily lost connection to data store).
  - **data change** allows to deliver incremental changes
    of a configuration.
@@ -18,6 +18,6 @@ The API calls can be split into two groups:
 There are two implementations:
  - **local client** runs inside the same process as the agent
    and delivers configuration through go channels directly
-   to the plugins
+   to the plugins.
  - **remote client** stores the configuration using the given
-   `keyval.broker`
+   `keyval.broker`.
