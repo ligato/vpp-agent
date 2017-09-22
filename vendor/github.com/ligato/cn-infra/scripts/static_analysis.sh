@@ -16,6 +16,7 @@ function static_analysis() {
   local EXAMPLES=$(${TOOL} "${PWD}/examples${SELECTOR}")
   local FLAVORS=$(${TOOL} "${PWD}/flavors${SELECTOR}")
   local HTTPMUX=$(${TOOL} "${PWD}/rpc/rest${SELECTOR}")
+  local GRPCMUX=$(${TOOL} "${PWD}/rpc/grpc${SELECTOR}")
   local IDXMAP=$(${TOOL} "${PWD}/idxmap${SELECTOR}")
   local LOGGING=$(${TOOL} "${PWD}/logging${SELECTOR}")
   local MESSAGING=$(${TOOL} "${PWD}/messaging${SELECTOR}")
@@ -31,6 +32,7 @@ $DB
 $EXAMPLES
 $FLAVORS
 $HTTPMUX
+$GRPCMUX
 $IDXMAP
 $LOGGING
 $MESSAGING

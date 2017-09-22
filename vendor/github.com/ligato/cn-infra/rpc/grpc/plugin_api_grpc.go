@@ -12,18 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package probe implements Liveness/Readiness/Prometheus health/metrics HTTP handlers.
-package probe
+package grpc
 
-import (
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/rpc/rest"
-)
+import "google.golang.org/grpc"
 
-// Deps lists dependencies of all proble plugins.
-type Deps struct {
-	local.PluginInfraDeps                               // inject
-	HTTP                  rest.HTTPHandlers             // inject
-	StatusCheck           statuscheck.AgentStatusReader // inject
+// Server defines the API for getting grpc.Server instance that
+// is useful for registering new GRPC service
+type Server interface {
+	// Server is a getter for accessing grpc.Server (of a GRPC plugin)
+	//
+	// Example usage:
+	//
+	//   protocgenerated.RegisterServiceXY(plugin.Deps.GRPC.Server(), &ServiceXYImplP{})
+	//
+	//   type Deps struct {
+	//       GRPC grps.Server // inject plugin implementing RegisterHandler
+	//       // other dependencies ...
+	//   }
+	Server() *grpc.Server
+
+	// GetPort returns configured port number (for debugging purposes)
+	GetPort() int
 }

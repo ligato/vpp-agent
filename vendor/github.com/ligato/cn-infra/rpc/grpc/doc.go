@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package probe implements Liveness/Readiness/Prometheus health/metrics HTTP handlers.
-package probe
-
-import (
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/rpc/rest"
-)
-
-// Deps lists dependencies of all proble plugins.
-type Deps struct {
-	local.PluginInfraDeps                               // inject
-	HTTP                  rest.HTTPHandlers             // inject
-	StatusCheck           statuscheck.AgentStatusReader // inject
-}
+// Package grpc implements the GRPC netListener through which plugins can
+// expose their services/API to the outside world.
+package grpc

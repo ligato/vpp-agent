@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/probe"
+	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
@@ -32,6 +33,8 @@ type FlavorRPC struct {
 
 	HealthRPC probe.Plugin
 	//TODO PrometheusRPC probe.PrometheusPlugin
+
+	GRPC grpc.Plugin
 
 	injected bool
 }
@@ -49,12 +52,19 @@ func (f *FlavorRPC) Inject() bool {
 	f.FlavorLocal.Inject()
 
 	rest.DeclareHTTPPortFlag("http")
-	httpPlugDeps := *f.InfraDeps("http")
+	httpPlugDeps := *f.InfraDeps("http", local.WithConf())
 	f.HTTP.Deps.Log = httpPlugDeps.Log
 	f.HTTP.Deps.PluginConfig = httpPlugDeps.PluginConfig
 	f.HTTP.Deps.PluginName = httpPlugDeps.PluginName
 
 	f.Logs.HTTP = &f.HTTP
+
+	grpc.DeclareGRPCPortFlag("grpc")
+	grpcPlugDeps := *f.InfraDeps("grpc", local.WithConf())
+	f.GRPC.Deps.Log = grpcPlugDeps.Log
+	f.GRPC.Deps.PluginConfig = grpcPlugDeps.PluginConfig
+	f.GRPC.Deps.PluginName = grpcPlugDeps.PluginName
+	//TODO f.GRPC.Deps.HTTP = &f.HTTP
 
 	rest.DeclareHTTPPortFlag("http-probe")
 	httpProbeDeps := *f.InfraDeps("http-probe", local.WithConf())

@@ -12,18 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package probe implements Liveness/Readiness/Prometheus health/metrics HTTP handlers.
-package probe
+package main
 
 import (
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/rpc/rest"
+	"os"
+	"time"
+
+	"github.com/ligato/cn-infra/datasync/grpcsync/examplesple/benchmark"
+
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/examples/simple-agent/generic"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// Deps lists dependencies of all proble plugins.
-type Deps struct {
-	local.PluginInfraDeps                               // inject
-	HTTP                  rest.HTTPHandlers             // inject
-	StatusCheck           statuscheck.AgentStatusReader // inject
+func main() {
+	logroot.StandardLogger().SetLevel(logging.DebugLevel)
+
+	err := benchmark.Run()
+
+	f := generic.Flavour{}
+	agent := core.NewAgent(logroot.StandardLogger(), 15*time.Second, f.Plugins()...)
+
+	err := core.EventLoopWithInterrupt(agent, nil)
+	if err != nil {
+		os.Exit(1)
+	}
 }

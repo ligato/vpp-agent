@@ -7,12 +7,23 @@ import (
 	"github.com/ligato/cn-infra/examples/model"
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"os"
+	"github.com/namsral/flag"
+	"github.com/ligato/cn-infra/messaging/kafka/mux"
+	"strconv"
+	"fmt"
 )
 
 //********************************************************************
 // This example shows how to use the Agent's Kafka APIs to perform
 // synchronous/asynchronous calls and how to watch on these events.
 //********************************************************************
+
+var (
+	// Flags used to read the input arguments.
+	offsetSyncMsg  = flag.String("offsetSyncMsg", os.Getenv("KAFKA_SYNC_OFFSET"), "Use 'latest', 'oldest' or number of sync message offset")
+	offsetAsyncMsg  = flag.String("offsetAsyncMsg", os.Getenv("KAFKA_ASYNC_OFFSET"), "Use 'latest', 'oldest' or number of async message offset")
+)
 
 func main() {
 	// Init close channel used to stop the example
@@ -35,7 +46,7 @@ type ExamplePlugin struct {
 	subscription        chan (messaging.ProtoMessage)
 	kafkaSyncPublisher  messaging.ProtoPublisher
 	kafkaAsyncPublisher messaging.ProtoPublisher
-	kafkaWatcher        messaging.ProtoWatcher
+	kafkaWatcher        messaging.ProtoPartitionWatcher
 	// Successfully published kafka message is sent through the message channel.
 	// In case of a failure it sent through the error channel.
 	asyncSubscription   chan (messaging.ProtoMessage)
@@ -52,12 +63,15 @@ const (
 	syncMessageCount = 10
 	// Partition sync messages are sent and watched on
 	syncMessagePartition = 1
-	// Offset for sync messages watcher
-	syncMessageOffset = 5
 	// Partiton async messages are sent and watched on
 	asyncMessagePartition = 2
+)
+
+var (
+	// Offset for sync messages watcher
+	syncMessageOffset int64 = 5
 	// Offset for async messages watcher
-	asyncMessageOffset = 0
+	asyncMessageOffset int64
 )
 
 // Topics
@@ -69,6 +83,24 @@ const (
 
 // Init initializes and starts producers and consumers.
 func (plugin *ExamplePlugin) Init() (err error) {
+	// handle flags
+	flag.Parse()
+	// sync  offset flag
+	if *offsetSyncMsg != "" {
+		syncMessageOffset, err = resolveOffset(*offsetSyncMsg)
+		if err != nil {
+			return fmt.Errorf("incorrect sync offset value %v", *offsetSyncMsg)
+		}
+	}
+	// async  offset flag
+	if *offsetAsyncMsg != "" {
+		asyncMessageOffset, err = resolveOffset(*offsetAsyncMsg)
+		if err != nil {
+			return fmt.Errorf("incorrect async offset value %v", *offsetAsyncMsg)
+		}
+	}
+	plugin.Log.Infof("Sync offset: %v, async offset: %v", syncMessageOffset, asyncMessageOffset)
+
 	// Create a synchronous and asynchronous publisher.
 	// In the manual mode, every publisher has selected its target partition.
 	plugin.kafkaSyncPublisher, err = plugin.Kafka.NewSyncPublisherToPartition(connection, topic1, syncMessagePartition)
@@ -85,7 +117,8 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// Initialize sync watcher.
-	plugin.kafkaWatcher = plugin.Kafka.NewWatcher("example-watcher")
+
+	plugin.kafkaWatcher = plugin.Kafka.NewPartitionWatcher("example-part-watcher")
 
 	// Prepare subscription channel. Relevant kafka messages are send to this
 	// channel so that the watcher can read it.
@@ -108,7 +141,8 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	err = plugin.kafkaWatcher.WatchPartition(messaging.ToProtoMsgChan(plugin.asyncSubscription), topic2,
 		asyncMessagePartition, asyncMessageOffset)
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.Log.Error(err)// Offset for async messages watcher
+	asyncMessageOffset = 0
 	}
 
 	plugin.Log.Info("Initialization of the custom plugin for the Kafka example is completed")
@@ -203,12 +237,14 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 		if message.GetPartition() != syncMessagePartition {
 			plugin.Log.Errorf("Received sync message with unexpected partition: %v", message.GetOffset())
 		}
-		if message.GetOffset() < syncMessageOffset {
-			plugin.Log.Errorf("Received sync message with unexpected offset: %v", message.GetOffset())
-		}
-		// For example purpose: let it know that this part of the example is done
-		if messageCounter == (syncMessageCount - syncMessageOffset) {
-			plugin.syncCaseDone = true
+		if syncMessageOffset != mux.OffsetOldest && syncMessageOffset != mux.OffsetNewest {
+			if message.GetOffset() < syncMessageOffset {
+				plugin.Log.Errorf("Received sync message with unexpected offset: %v", message.GetOffset())
+			}
+			// For example purpose: let it know that this part of the example is done
+			if messageCounter == int(syncMessageCount - syncMessageOffset) {
+				plugin.syncCaseDone = true
+			}
 		}
 	}
 
@@ -229,11 +265,13 @@ func (plugin *ExamplePlugin) asyncEventHandler() {
 			if message.GetPartition() != asyncMessagePartition {
 				plugin.Log.Errorf("Received async message with unexpected partition: %v", message.GetOffset())
 			}
-			if message.GetOffset() < asyncMessageOffset {
-				plugin.Log.Errorf("Received async message with unexpected offset: %v", message.GetOffset())
+			if syncMessageOffset != mux.OffsetOldest && syncMessageOffset != mux.OffsetNewest {
+				if message.GetOffset() < asyncMessageOffset {
+					plugin.Log.Errorf("Received async message with unexpected offset: %v", message.GetOffset())
+				}
+				// For example purpose: let it know that this part of the example is done
+				plugin.asyncCaseDone = true
 			}
-			// For example purpose: let it know that this part of the example is done
-			plugin.asyncCaseDone = true
 		// Success callback channel
 		case message := <-plugin.asyncSuccessChannel:
 			plugin.Log.Infof("Async message successfully delivered, topic '%s', partition '%v', offset '%v', key: '%s', ",
@@ -242,5 +280,16 @@ func (plugin *ExamplePlugin) asyncEventHandler() {
 		case err := <-plugin.asyncErrorChannel:
 			plugin.Log.Errorf("Failed to publish async message, %v", err)
 		}
+	}
+}
+
+func resolveOffset(offset string) (int64, error) {
+	if offset == "latest" {
+		return mux.OffsetNewest, nil
+	} else if offset == "oldest" {
+		return mux.OffsetOldest, nil
+	} else {
+		result, err := strconv.Atoi(offset)
+		return int64(result), err
 	}
 }

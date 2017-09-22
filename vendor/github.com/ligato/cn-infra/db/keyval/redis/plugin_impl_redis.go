@@ -31,7 +31,8 @@ const (
 type Plugin struct {
 	Deps
 	*plugin.Skeleton
-	disabled bool
+	disabled   bool
+	connection *BytesConnectionRedis
 }
 
 // Deps lists dependencies of the redis plugin.
@@ -58,12 +59,11 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	connection, err := NewBytesConnection(client, p.Log)
+	p.connection, err = NewBytesConnection(client, p.Log)
 	if err != nil {
 		return err
 	}
-
-	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, connection)
+	p.Skeleton = plugin.NewSkeleton(p.String(), p.ServiceLabel, p.connection)
 	return p.Skeleton.Init()
 }
 
@@ -76,7 +76,7 @@ func (p *Plugin) AfterInit() error {
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
@@ -91,7 +91,7 @@ func (p *Plugin) AfterInit() error {
 
 // Close shutdowns the connection to redis.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton)
+	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
 	return err
 }
 

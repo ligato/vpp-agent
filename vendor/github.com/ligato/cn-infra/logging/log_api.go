@@ -110,6 +110,7 @@ type LogWithLevel interface {
 	Fatal(args ...interface{})
 	// Fatalf prints formatted log using Fatal level and calls os.Exit(1)
 	Fatalf(format string, args ...interface{})
+	Fatalln(args ...interface{})
 	Print(v ...interface{})
 	Printf(format string, v ...interface{})
 	Println(v ...interface{})
