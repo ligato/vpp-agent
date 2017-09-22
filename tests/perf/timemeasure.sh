@@ -1,32 +1,34 @@
+#!/bin/bash
+
 export LC_NUMERIC="en_US.UTF-8"
 
 calcTimeFormat(){
-dt=$(echo "$1 - $2" | bc)
-dd=$(echo "$dt/86400" | bc)
-dt2=$(echo "$dt-86400*$dd" | bc)
-dh=$(echo "$dt2/3600" | bc)
-dt3=$(echo "$dt2-3600*$dh" | bc)
-dm=$(echo "$dt3/60" | bc)
-ds=$(echo "$dt3-60*$dm" | bc)
-retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
-echo $retstr
+    dt=$(echo "$1 - $2" | bc)
+    dd=$(echo "$dt/86400" | bc)
+    dt2=$(echo "$dt-86400*$dd" | bc)
+    dh=$(echo "$dt2/3600" | bc)
+    dt3=$(echo "$dt2-3600*$dh" | bc)
+    dm=$(echo "$dt3/60" | bc)
+    ds=$(echo "$dt3-60*$dm" | bc)
+    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
+    echo $retstr
 }
 
 calcNanoTime(){
-a=(`echo $1 | sed -e 's/[:]/ /g'`)
-seconds= echo "${a[2]}+60*${a[1]}+3600*${a[0]}" | bc
-echo $seconds
+    a=(`echo $1 | sed -e 's/[:]/ /g'`)
+    seconds= echo "${a[2]}+60*${a[1]}+3600*${a[0]}" | bc
+    echo $seconds
 }
 
 showTime(){
-dd=$(echo "$1/86400" | bc)
-dt2=$(echo "$1-86400*$dd" | bc)
-dh=$(echo "$dt2/3600" | bc)
-dt3=$(echo "$dt2-3600*$dh" | bc)
-dm=$(echo "$dt3/60" | bc)
-ds=$(echo "$dt3-60*$dm" | bc)
-retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
-echo $retstr
+    dd=$(echo "$1/86400" | bc)
+    dt2=$(echo "$1-86400*$dd" | bc)
+    dh=$(echo "$dt2/3600" | bc)
+    dt3=$(echo "$dt2-3600*$dh" | bc)
+    dm=$(echo "$dt3/60" | bc)
+    ds=$(echo "$dt3-60*$dm" | bc)
+    retstr=LC_NUMERIC="en_US.UTF-8" printf "%02d:%02d:%02.5f\n" $dh $dm $ds
+    echo $retstr
 }
 
 processResult(){
@@ -189,49 +191,49 @@ while IFS="," read -r val1 val2 val3;do
     then
       diff=$(echo "$etcdTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime"
+      echo "$line_id,$run,  ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  ETCD connected,$etcdStamp,$time,$rel_item,$etcdTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$kafkaTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime"
+      echo "$line_id,$run,  Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  Kafka connected,$kafkaStamp,$time,$rel_item,$kafkaTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$vppTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,VPP connected,$vppStamp,$time,$rel_item,$vppTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,VPP connected,$vppStamp,$time,$rel_item,$vppTookTime"
+      echo "$line_id,$run,  VPP connected,$vppStamp,$time,$rel_item,$vppTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  VPP connected,$vppStamp,$time,$rel_item,$vppTookTime"
       line_id=$((line_id+1))
       diff=$(echo "$GoVPPInitTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime"
+      echo "$line_id,$run,  GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  GoVPP Init,$GoVPPInitStamp,$time,$rel_item,$GoVPPInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$LinuxInitTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime"
+      echo "$line_id,$run,  Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  Linux plugin Init,$LinuxInitStamp,$time,$rel_item,$LinuxInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$PluginVPPInitTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime"
+      echo "$line_id,$run,  VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  VPP plugin Init,$PluginVPPInitStamp,$time,$rel_item,$PluginVPPInitTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$PluginVPPResyncTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime"
+      echo "$line_id,$run,  Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime"
 
 
 
       line_id=$((line_id+1))
       diff=$(echo "$resyncTime-$startAgent" | bc)
       time=$(showTime $diff)
-      echo "$line_id,$run,Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime" >> log/measuring_exp.csv
-      echo "$line_id,$run,Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime"
+      echo "$line_id,$run,  Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime" >> log/measuring_exp.csv
+      echo "$line_id,$run,  Resync done,$resyncStamp,$time,$rel_item,$resyncTookTime"
 
       line_id=$((line_id+1))
       diff=$(echo "$AgentInitTime-$startAgent" | bc)
@@ -262,100 +264,152 @@ while IFS="," read -r val1 val2 val3;do
 done <$1
 }
 
-[ -z $BASH ] || shopt -s expand_aliases
-alias BEGINCOMMENT="if [ ]; then"
-alias ENDCOMMENT="fi"
 
-#BEGINCOMMENT
-rm -rf log 2>&1
-mkdir log
-sudo docker run -p 22379:2379 --name etcd -e ETCDCTL_API=3 -d \
-    quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
-    -advertise-client-urls http://0.0.0.0:2379 \
-    -listen-client-urls http://0.0.0.0:2379 > log/etcd.log 2>&1
+setup() {
+    #cleanup prev results
+    rm -f logresult.zip
+    rm -rf log 2>&1
+    mkdir log
 
-#sudo docker run -p 22379:2379 --name etcd -d -e ETCDCTL_API=3 \
-#        quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
-#        -advertise-client-urls http://0.0.0.0:2379 \
-#        -listen-client-urls http://0.0.0.0:2379 > /dev/null
-#   # dump etcd content to make sure that etcd is ready
-#sleep 8s
-sudo docker exec -it etcd etcdctl get --prefix ""
-echo "Etcd started..."
+    #start kafka + etcd and wait until they are ready
+    sudo docker run -p 22379:2379 --name etcd -e ETCDCTL_API=3 -d \
+        quay.io/coreos/etcd:v3.1.0 /usr/local/bin/etcd \
+        -advertise-client-urls http://0.0.0.0:2379 \
+        -listen-client-urls http://0.0.0.0:2379 > log/etcd.log 2>&1
 
+    sudo docker exec -it etcd etcdctl get --prefix ""
+    echo "Etcd started..."
 
-sudo docker run -p 2181:2181 -p 9092:9092 --name kafka  -d\
- --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka > log/kafka.log 2>&1
+    sudo docker run -p 2181:2181 -p 9092:9092 --name kafka  -d\
+     --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka > log/kafka.log 2>&1
 
-#sudo docker run -p 2181:2181 -p 9092:9092 --name kafka -d \
-# --env ADVERTISED_HOST=0.0.0.0 --env ADVERTISED_PORT=9092 spotify/kafka > /dev/null
-#    # list kafka topics to ensure that kafka is ready
-sudo docker exec -it kafka /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --list --zookeeper localhost:2181 > /dev/null 2> /dev/null
-echo "Kafka started..."
+    #    # list kafka topics to ensure that kafka is ready
+    sudo docker exec -it kafka /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --list --zookeeper localhost:2181 > /dev/null 2> /dev/null
+    echo "Kafka started..."
 
 
-echo "Loading topology to ETCD..."
-./topology.sh
+    echo "Loading topology to ETCD..."
+    ./topology.sh
+    #./topology-generate-routes.sh 0
+    #./topology-generate-routes.sh 1000
+    #./topology-generate-fib.sh 1000
+}
 
-#BEGINCOMMENT
+enableCoreDumpInPod() {
+cat <<EOF > /tmp/change_core_dump_path.sh
+echo /tmp/cores/core.dump > /proc/sys/kernel/core_pattern
+EOF
+    mkdir /tmp/cores
+    kubectl exec vswitch-vpp  -- chmod +x /tmp/change_core_dump_path.sh
+    kubectl exec vswitch-vpp  -- bash -c /tmp/change_core_dump_path.sh
+
+    kubectl exec vswitch-vpp  -- bash -c ulimit -c 100000
+}
+coreDumpVpp() {
+    vpp_id_line=$(kubectl exec vswitch-vpp -- ps aux | grep /usr/bin/vpp)
+    echo $vpp_id_line
+    vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+    echo $vpp_id
+
+    restime0=$(showTime $(date +%s.%N))
+    echo "$restime0, VPP Killed" >> log/out.csv
+    echo "Killing the vpp - run ${i}"
+    kubectl exec vswitch-vpp -- kill -s ABRT $vpp_id
+    last_vpp_core_time='00:00:00.00'
+    for (( ig = 1; ig <= 280; ig++ ))
+    do
+      if [ -f  /tmp/cores/core.dump ]
+      then
+	vpp_core_final=$(stat -c %y /tmp/cores/core.dump)
+	vpp_core_final_time=$(echo $vpp_core_final | awk '{print $2}')
+	vpp_core_final_time_zone=$(echo $vpp_core_final | awk '{print $3}')
+	tz_sign=${vpp_core_final_time_zone:0:1}
+	tz_value=${vpp_core_final_time_zone:1:4}
+	tz=$(echo "$tz_value/100" | bc)
+	vpp_calc=$(calcNanoTime $vpp_core_final_time)
+	tzsec=$(echo "$tz*3600" | bc)
+	echo "Core_final:$vpp_core_final"
+	echo "Core_final_time:$vpp_core_final_time"
+	echo "Core_final_time_zone:$vpp_core_final_time_zone"
+	echo "TZsign:$tz_sign"
+	echo "TZValue:$tz_value"
+	echo "TZ:$tz"
+	echo "valc:$vpp_calc"
+	echo "tzsec:$tzsec"
+	if [ "$vpp_core_final_time" ==  "$last_vpp_core_time" ]
+	then
+          if [ "$tz_sign" ==  "+" ]
+	  then
+	    echo "substract"
+	    timecalc=$(echo "$vpp_calc-$tzsec" | bc)
+	    showtime=$(showTime $timecalc)
+	  else
+	    echo "adding"
+	    timecalc=$(echo "$vpp_calc+$tzsec" | bc)
+	    showtime=$(showTime $timecalc)
+	  fi
+	  echo "$showtime, Core dump done" >> log/out.csv
+	  break
+	else
+	  last_vpp_core_time=$vpp_core_final_time
+	fi
+      else
+	echo "Waiting for core dump file: $ig"
+      fi
+      sleep 0.1
+    done
+
+}
+
+
+handleLogsFromOneRun() {
+    kubectl logs vswitch-vpp > log/vswitch-vpp$1.log
+    grep -E 'Starting the agent...|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vswitch-vpp$1.log > log/log$1.log
+    cat log/log$1.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
+    echo "--,--,--,--------" >> log/out.csv
+}
+
+
+#########################################
+waitTime="30s"
+
+if [ -z "$1" ]
+then
+  cycle=1
+else
+  cycle=$1
+fi
+
+setup
+
 restime0=$(showTime $(date +%s.%N))
 kubectl apply -f vnf-vpp.yaml
 echo "$restime0, Started measuring" > log/out.csv
 kubectl apply -f vswitch-vpp.yaml
 echo "Collecting logs"
-sleep 30s
+sleep ${waitTime}
 
-#kubectl logs vswitch-vpp > vswitch-vpp.log
-#grep -E 'Starting the agent...|Connecting to etcd took|error|Resync took|All plugins initialized successfully'  vswitch-vpp.log > res1.log
-if [ -z "$1" ]
-then
-  cycle=1
-elif [ $1 -gt 50 ]
-then
-  echo "Max cycle > 50, cycle set tp 50!"
-  cycle=50
-elif [ $1 -lt 1 ]
-then
-  cycle=50
-else
-  cycle=$1
-fi
+enableCoreDumpInPod
 
-#for i in {1..3}
 for (( i = 1; i <= $cycle; i++ ))
 do
-    kubectl logs vswitch-vpp > log/vswitch-vpp${i}.log
-    grep -E 'Starting the agent...|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vswitch-vpp${i}.log > log/log${i}.log
-    #cat log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*$/\1, \2/' >> out.csv
-    #cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*?(durationInNs=([0-9]+)\s$|\s$)/\1, \2, \4/' >> log/out.csv
-    #cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"[^=]+?(durationInNs=([0-9]+)[^=]*[ ]*$|\[ ]*$)/\1, \2, \4/' >> log/out.csv
-    cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
-    echo "--,--,--,--------" >> log/out.csv
-    #cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*?(timeInNs=([0-9]+)\s$|\s$)/\1, \2, \4/' >> log/out.csv
+    handleLogsFromOneRun ${i}
     sleep 1s
+
+    coreDumpVpp
+
     echo "Killing the vswitch-vpp pod - run ${i}"
     restime0=$(showTime $(date +%s.%N))
-    #echo "$restime0, Killed ${i}" >> out.csv
     echo "$restime0, Killed" >> log/out.csv
     kubectl exec vswitch-vpp kill 1
-    #kubectl exec vswitch-vpp kill 1
-    sleep 60s
+
+    sleep ${waitTime}
 done
 
-cycle=$((cycle+1))
-kubectl logs vswitch-vpp > log/vswitch-vpp${cycle}.log
-grep -E 'Starting the agent...|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vswitch-vpp${cycle}.log > log/log${cycle}.log
-#cat log${cycle}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*$/\1, \2/' >> out.csv
-#cat log/log${cycle}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*?(durationInNs=([0-9]+)\s$|\s$)/\1, \2, \4/' >> log/out.csv
-#cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"[^=]+?(durationInNs=([0-9]+)[^=]*[ ]*$|\[ ]*$)/\1, \2, \4/' >> log/out.csv
-cat log/log${i}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
-echo "--,--,--,---------" >> log/out.csv
-
-#cat log/log${cycle}.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)".*?(timeInNs=([0-9]+)\s$|\s$)/\1, \2, \4/' >> log/out.csv
-#ENDCOMMENT
+handleLogsFromOneRun $((cycle+1))
 
 processResult log/out.csv
-#kubectl describe pods | grep 'Container ID:'
-#ENDCOMMENT
-./remove-pods.sh
+
 zip -r logresult.zip log
+
+./remove-pods.sh
