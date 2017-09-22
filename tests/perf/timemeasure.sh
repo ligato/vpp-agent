@@ -295,7 +295,7 @@ echo "Kafka started..."
 
 
 echo "Loading topology to ETCD..."
-./topology-generate-routes.sh 1000
+./topology.sh
 
 #BEGINCOMMENT
 restime0=$(showTime $(date +%s.%N))
@@ -303,7 +303,7 @@ kubectl apply -f vnf-vpp.yaml
 echo "$restime0, Started measuring" > log/out.csv
 kubectl apply -f vswitch-vpp.yaml
 echo "Collecting logs"
-sleep 60s
+sleep 30s
 
 #kubectl logs vswitch-vpp > vswitch-vpp.log
 #grep -E 'Starting the agent...|Connecting to etcd took|error|Resync took|All plugins initialized successfully'  vswitch-vpp.log > res1.log

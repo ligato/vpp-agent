@@ -36,7 +36,7 @@ metadata:
 spec:
   containers:
     - name: "vnf-vpp"
-      image: ligato/vpp-agent
+      image: ligato/vpp-agent:pantheon-dev
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true
