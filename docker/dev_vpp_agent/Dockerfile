@@ -20,6 +20,7 @@ RUN /bin/bash -c "if [ '${VPP_URL}' == 'xxx' ]; then \
         git clone https://gerrit.fd.io/r/vpp && \
         cd vpp && \
         git checkout ${VPP_COMMIT} && \
+        echo 'vpp_configure_args += --disable-japi' >> ./build-data/packages/vpp.mk && \
         yes | make install-dep && \
         make bootstrap && \
         make pkg-deb && \
