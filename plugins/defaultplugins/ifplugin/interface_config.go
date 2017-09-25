@@ -22,8 +22,10 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=bin_api
 
-// Package ifplugin is the implementation of the Interface plugin.deps.
+// Package ifplugin implements the Interface plugin that handles management
+// of VPP interfaces.
 package ifplugin
 
 import (
@@ -182,15 +184,17 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// configure mtu
-	var mtu uint32
-	if iface.Mtu != 0 {
-		mtu = iface.Mtu
-	} else {
-		mtu = plugin.mtu
-	}
-	err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
-	if err != nil {
-		wasError = err
+	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
+		var mtu uint32
+		if iface.Mtu != 0 {
+			mtu = iface.Mtu
+		} else {
+			mtu = plugin.mtu
+		}
+		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
+		if err != nil {
+			wasError = err
+		}
 	}
 
 	// register name to idx mapping

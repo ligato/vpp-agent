@@ -16,10 +16,11 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"net"
 )
 
 // AddDelVxlanTunnelReq prepare the request for bin API calls

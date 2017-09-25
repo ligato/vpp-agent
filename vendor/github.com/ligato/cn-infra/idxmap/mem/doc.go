@@ -12,38 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mem provides in-memory implementation of the mapping with multiple indexes.
+// Package mem provides in-memory implementation of the mapping with multiple
+// indexes.
 //
 // To create new mapping run:
 //	   import "github.com/ligato/cn-infra/idxmap/mem"
 //
 //     mapping := mem.NewNamedMapping(logger, "owner", "title", indexFunc)
 //
-// Owner and title are used for identification of the mapping. IndexFunc extracts secondary
-// indexes from the stored item.
+// Owner and title are used for identification of the mapping.
+// IndexFunc extracts secondary indexes from the stored item.
 //
 // To insert a new item into the mapping, execute:
 //
 //     mapping.Put(name, value)
 //
-// Put can also be used to overwrite an existing item associated with the name.
+// Put can also be used to overwrite an existing item associated with the name
+// and to rebuild secondary indexes for that item.
 //
 // To retrieve a particular item identified by name run:
 //
-//    meta, found := mapping.Lookup(name)
+//    value, found := mapping.GetValue(name)
 //
 // To lookup items by secondary indexes, execute:
 //
-//    names := mapping.LookupByMetadata(indexName, indexValue)
+//    names := mapping.ListNames(indexName, indexValue)
 //
 // names of all matching items are returned.
 //
 // To retrieve all currently registered names, run:
 //
-//   names := mapping.ListNames()
+//   names := mapping.ListAllNames()
 //
-//
-// If you want to remove an item from the mapping:
+// If you want to remove an item from the mapping, call:
 //
 //    mapping.Delete(name)
 //
@@ -56,7 +57,7 @@
 //
 // If you prefer processing changes through channels:
 //
-//    ch := make(chan idxmap.NamedMappingDto)
+//    ch := make(chan idxmap.NamedMappingGenericEvent)
 //    mapping.Watch("NameOfWatcher", ToChan(ch))
 //
 package mem

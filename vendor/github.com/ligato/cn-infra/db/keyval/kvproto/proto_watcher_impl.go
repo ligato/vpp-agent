@@ -24,13 +24,15 @@ type protoWatcher struct {
 	serializer keyval.Serializer
 }
 
-// protoWatchResp represents watch notification. Data is unmarshaled data to proto.Message structure
+// protoWatchResp represents a notification about data change.
+// It is sent through the <resp> callback as proto-modelled data.
 type protoWatchResp struct {
 	serializer keyval.Serializer
 	keyval.BytesWatchResp
 }
 
-// Watch for changes in datastore respChannel is used for receiving watch events
+// Watch for changes in datastore.
+// <resp> callback is used for delivery of watch events.
 func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), keys ...string) error {
 	err := pdb.watcher.Watch(func(msg keyval.BytesWatchResp) {
 		resp(NewWatchResp(pdb.serializer, msg))
@@ -41,12 +43,12 @@ func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), keys ...string)
 	return nil
 }
 
-// NewWatchResp initialize proto watch response from byte WatchResponse
+// NewWatchResp initialize proto watch response from raw WatchResponse <resp>.
 func NewWatchResp(serializer keyval.Serializer, resp keyval.BytesWatchResp) keyval.ProtoWatchResp {
 	return &protoWatchResp{serializer, resp}
 }
 
-// GetValue returns the value after the change
+// GetValue returns the value after the change.
 func (wr *protoWatchResp) GetValue(msg proto.Message) error {
 	err := wr.serializer.Unmarshal(wr.BytesWatchResp.GetValue(), msg)
 	if err != nil {

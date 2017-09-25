@@ -79,14 +79,14 @@ func (p *Plugin) Init() (err error) {
 
 	// Initialize both multiplexers to allow both, dynamic and manual mode
 	if p.muxHash == nil {
-		p.muxHash, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), client.Hash, p.Log)
+		p.muxHash, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel() + "-hash", client.Hash, p.Log)
 		if err != nil {
 			return err
 		}
 		p.Log.Debug("Default multiplexer initialized")
 	}
 	if p.muxManual == nil {
-		p.muxManual, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel(), client.Manual, p.Log)
+		p.muxManual, err = mux.InitMultiplexerWithConfig(config, p.ServiceLabel.GetAgentLabel() + "-manual", client.Manual, p.Log)
 		if err != nil {
 			return err
 		}
@@ -99,8 +99,17 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called in the second phase of the initialization. The kafka multiplexerNewWatcher
 // is started, all consumers have to be subscribed until this phase.
 func (p *Plugin) AfterInit() error {
-	if p.muxHash == nil {
-		return nil
+	if p.muxHash != nil {
+		err := p.muxHash.Start()
+		if err != nil {
+			return  err
+		}
+	}
+	if p.muxManual != nil {
+		err := p.muxManual.Start()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Register for providing status reports (polling mode)
@@ -118,12 +127,12 @@ func (p *Plugin) AfterInit() error {
 		p.Log.Warnf("Unable to start status check for kafka")
 	}
 
-	return p.muxHash.Start()
+	return nil
 }
 
 // Close is called at plugin cleanup phase.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.consumer.Close(), p.muxHash)
+	_, err := safeclose.CloseAll(p.consumer, p.muxHash, p.muxManual)
 	return err
 }
 
@@ -173,13 +182,18 @@ func (p *Plugin) NewAsyncPublisher(connectionName string, topic string, successC
 
 // NewAsyncPublisherToPartition creates a publisher that allows to publish messages to custom partition using asynchronous API.
 // The publisher creates new proto connection on multiplexer with manual partitioner.
-func (p *Plugin) NewAsyncPublisherToPartition(connectionName string,topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
+func (p *Plugin) NewAsyncPublisherToPartition(connectionName string, topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
 	return p.NewProtoManualConnection(connectionName).NewAsyncPublisherToPartition(topic, partition, successClb, errorClb)
 }
 
 // NewWatcher creates a watcher that allows to start/stop consuming of messaging published to given topics.
 func (p *Plugin) NewWatcher(name string) messaging.ProtoWatcher {
 	return p.NewProtoConnection(name)
+}
+
+// NewPartitionWatcher creates a watcher that allows to start/stop consuming of messaging published to given topics, offset and partition
+func (p *Plugin) NewPartitionWatcher(name string) messaging.ProtoPartitionWatcher {
+	return p.NewProtoManualConnection(name)
 }
 
 // Disabled if the plugin config was not found

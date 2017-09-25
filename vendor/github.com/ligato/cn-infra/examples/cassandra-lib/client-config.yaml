@@ -1,0 +1,6 @@
+endpoints:
+- localhost:9042
+op_timeout: 5000000000 # 5 seconds (creating a new keyspace is very slow on travis)
+dial_timeout: 3000000000 # 3 seconds
+redial_interval: 60000000000 # 60 seconds
+protocol_version: 4

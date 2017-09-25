@@ -15,9 +15,19 @@
 package cassandra
 
 import (
+	"errors"
+
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/willfaught/gockle"
+	"github.com/ligato/cn-infra/utils/safeclose"
+)
+
+//
+const (
+	probeCassandraConnection = "SELECT keyspace_name FROM system_schema.keyspaces"
 )
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
@@ -34,7 +44,21 @@ type Deps struct {
 	local.PluginInfraDeps // inject
 }
 
-// Init is called at plugin startup. The session to etcd is established.
+var (
+	// ErrMissingVisitorEntity is error returned when visitor is missing entity.
+	ErrMissingVisitorEntity = errors.New("cassandra: visitor is missing entity")
+
+	// ErrMissingEntityField is error returned when visitor entity is missing field.
+	ErrMissingEntityField = errors.New("cassandra: visitor entity is missing field")
+
+	// ErrUnexportedEntityField is error returned when visitor entity has unexported field.
+	ErrUnexportedEntityField = errors.New("cassandra: visitor entity with unexported field")
+
+	// ErrInvalidEndpointConfig is error returned when endpoint and port are not in valid format.
+	ErrInvalidEndpointConfig = errors.New("cassandra: invalid configuration, endpoint and port not in valid format")
+)
+
+// Init is called at plugin startup. The session to Cassandra is established.
 func (p *Plugin) Init() (err error) {
 	if p.session != nil {
 		return nil // skip initialization
@@ -73,18 +97,18 @@ func (p *Plugin) AfterInit() error {
 		p.session = gockle.NewSession(session)
 	}
 
-	/* TODO Register for providing status reports (polling mode)
+	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil && p.session != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+			err := p.session.Exec(probeCassandraConnection)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
 			return statuscheck.Error, err
 		})
 	} else {
-		p.Log.Warnf("Unable to start status check for etcd")
-	}*/
+		p.Log.Warnf("Unable to start status check for Cassandra")
+	}
 
 	return nil
 }
@@ -101,7 +125,7 @@ func (p *Plugin) NewBroker() sql.Broker {
 
 // Close resources
 func (p *Plugin) Close() error {
-	p.session.Close()
+	safeclose.Close(p.session)
 	return nil
 }
 

@@ -22,7 +22,7 @@ type Connection interface {
 
 // ManualConnection is interface for multiplexer with manual partitioner.
 type ManualConnection interface {
-	messaging.ProtoWatcher
+	messaging.ProtoPartitionWatcher
 	// Creates new synchronous publisher allowing to publish kafka messages to chosen partition
 	NewSyncPublisherToPartition(topic string, partition int32) (messaging.ProtoPublisher, error)
 	// Creates new asynchronous publisher allowing to publish kafka messages to chosen partition
@@ -112,14 +112,14 @@ func (conn *ProtoManualConnection) NewAsyncPublisherToPartition(topic string, pa
 }
 
 // Watch is an alias for ConsumeTopic method. The alias was added in order to conform to messaging.Mux interface.
-func (conn *ProtoConnectionFields) Watch(msgClb func(messaging.ProtoMessage), topics ...string) error {
+func (conn *ProtoConnection) Watch(msgClb func(messaging.ProtoMessage), topics ...string) error {
 	return conn.ConsumeTopic(msgClb, topics...)
 }
 
 // ConsumeTopic is called to start consuming given topics.
 // Function can be called until the multiplexer is started, it returns an error otherwise.
 // The provided channel should be buffered, otherwise messages might be lost.
-func (conn *ProtoConnectionFields) ConsumeTopic(msgClb func(messaging.ProtoMessage), topics ...string) error {
+func (conn *ProtoConnection) ConsumeTopic(msgClb func(messaging.ProtoMessage), topics ...string) error {
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
 
@@ -169,14 +169,14 @@ func (conn *ProtoConnectionFields) ConsumeTopic(msgClb func(messaging.ProtoMessa
 
 // WatchPartition is an alias for ConsumePartition method. The alias was added in order to conform to
 // messaging.Mux interface.
-func (conn *ProtoConnectionFields) WatchPartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
+func (conn *ProtoManualConnection) WatchPartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
 	return conn.ConsumePartition(msgClb, topic, partition, offset)
 }
 
-// ConsumeTopicOnPartition is called to start consuming given topic on partition with offset
+// ConsumePartition is called to start consuming given topic on partition with offset
 // Function can be called until the multiplexer is started, it returns an error otherwise.
 // The provided channel should be buffered, otherwise messages might be lost.
-func (conn *ProtoConnectionFields) ConsumeTopicOnPartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
+func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
 
@@ -222,13 +222,6 @@ func (conn *ProtoConnectionFields) ConsumeTopicOnPartition(msgClb func(messaging
 	subs.byteConsMsg = byteClb
 
 	return nil
-}
-
-// ConsumePartition is called to start consuming given topic on given partition and offset.
-// Function can be called until the multiplexer is started, it returns an error otherwise.
-// The provided channel should be buffered, otherwise messages might be lost.
-func (conn *ProtoConnectionFields) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
-	return conn.ConsumeTopicOnPartition(msgClb, topic, partition, offset)
 }
 
 // StopWatch is an alias for StopConsuming method. The alias was added in order to conform to messaging.Mux interface.

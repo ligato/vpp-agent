@@ -16,20 +16,24 @@ package sql
 
 import "github.com/ligato/cn-infra/datasync"
 
-// Watcher define API for monitoring changes in a datastore
+// Watcher defines API for monitoring changes in a datastore.
 type Watcher interface {
-	// Watch starts to monitor changes in data store. Watch events will be delivered to the callback.
+	// Watch starts to monitor changes in a data store.
+	// Watch events will be delivered to the <callback>.
 	Watch(callback func(WatchResp), statement ...string) error
 }
 
-// WatchResp represents a notification about change. It is sent through the watch resp channel.
+// WatchResp represents a notification about change.
+// It is passed to the Watch callback.
 type WatchResp interface {
+	// GetChangeType return the type of the change.
 	GetChangeType() datasync.PutDel
-	// GetValue returns the value in the event
+
+	// GetValue returns the changed value.
 	GetValue(outBinding interface{}) error
 }
 
-// ToChan TODO
+// ToChan TODO (not implemented yet)
 func ToChan(respChan chan WatchResp, options ...interface{}) func(event WatchResp) {
 	return func(WatchResp) {
 		/*select {

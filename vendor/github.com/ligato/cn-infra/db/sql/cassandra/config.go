@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"errors"
-	"github.com/gocql/gocql"
 	"strconv"
+
+	"github.com/gocql/gocql"
 )
 
 // Config Configuration for Cassandra clients loaded from a configuration file
@@ -61,6 +61,8 @@ const defaultRedialInterval = 60 * time.Second
 const defaultProtocolVersion = 4
 
 // ConfigToClientConfig transforms the yaml configuration into ClientConfig.
+// If the configuration of endpoints is invalid, error ErrInvalidEndpointConfig
+// is returned.
 func ConfigToClientConfig(ymlConfig *Config) (*ClientConfig, error) {
 
 	timeout := defaultOpTimeout
@@ -102,10 +104,17 @@ func ConfigToClientConfig(ymlConfig *Config) (*ClientConfig, error) {
 	return cfg, nil
 }
 
-// CreateSessionFromConfig Creates session from given configuration and keyspace
+// CreateSessionFromConfig creates and initializes the cluster based on the supplied config
+// and returns a new session object that can be used to interact with the database.
+// The function propagates errors returned from gocql.CreateSession().
 func CreateSessionFromConfig(config *ClientConfig) (*gocql.Session, error) {
 
 	gocqlClusterConfig := gocql.NewCluster(HostsAsString(config.Hosts))
+	gocqlClusterConfig.Port = config.Port
+	gocqlClusterConfig.ConnectTimeout = config.ConnectTimeout
+	gocqlClusterConfig.ReconnectInterval = config.ReconnectInterval
+	gocqlClusterConfig.Timeout = config.Timeout
+	gocqlClusterConfig.ProtoVersion = config.ProtoVersion
 
 	session, err := gocqlClusterConfig.CreateSession()
 
@@ -127,14 +136,14 @@ func getEndpointsAndPort(endpoints []string) (endpointsR []string, portR int, er
 	var resultPort int
 
 	if len(endpoints) > 1 {
-		return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+		return nil, 0, ErrInvalidEndpointConfig
 	}
 
 	if len(endpoints[0]) > 0 {
 		v := endpoints[0]
 
 		if !strings.Contains(v, ":") {
-			return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+			return nil, 0, ErrInvalidEndpointConfig
 		}
 
 		if strings.Contains(v, ",") {
@@ -157,7 +166,7 @@ func getEndpointsAndPort(endpoints []string) (endpointsR []string, portR int, er
 			}
 		}
 	} else {
-		return nil, 0, errors.New("Invalid configuration, endpoint and port not in valid format")
+		return nil, 0, ErrInvalidEndpointConfig
 	}
 
 	return resultEndpoints, resultPort, nil

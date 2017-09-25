@@ -21,60 +21,93 @@ import (
 
 // Mux defines API for the plugins that use access to kafka brokers.
 type Mux interface {
-	// Creates new Kafka synchronous publisher sending messages to given topic. Partitioner has to be set to 'hash' (default)
-	// or 'random' scheme, otherwise an error is thrown
-	NewSyncPublisher(topic string) (ProtoPublisher, error)
+	// Creates new Kafka synchronous publisher sending messages to given topic.
+	// Partitioner has to be set to 'hash' (default) or 'random' scheme,
+	// otherwise an error is thrown.
+	NewSyncPublisher(connName string, topic string) (ProtoPublisher, error)
 
-	// Creates new Kafka synchronous publisher sending messages to given topic and partition. Partitioner has to be
-	// set to 'manual' scheme, otherwise an error is thrown
-	NewSyncPublisherToPartition(topic string, partition int32) (ProtoPublisher, error)
+	// Creates new Kafka synchronous publisher sending messages to given topic
+	// and partition. Partitioner has to be set to 'manual' scheme,
+	// otherwise an error is thrown.
+	NewSyncPublisherToPartition(connName string, topic string, partition int32) (ProtoPublisher, error)
 
-	// Creates new Kafka asynchronous publisher sending messages to given topic. Partitioner has to be set to 'hash' (default)
-	// or 'random' scheme, otherwise an error is thrown
-	NewAsyncPublisher(topic string, successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
+	// Creates new Kafka asynchronous publisher sending messages to given topic.
+	// Partitioner has to be set to 'hash' (default) or 'random' scheme,
+	// otherwise an error is thrown.
+	NewAsyncPublisher(connName string, topic string, successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
 
-	// Creates new Kafka asynchronous publisher sending messages to given topic and partition. Partitioner has to be
-	// set to 'manual' scheme, otherwise an error is thrown
-	NewAsyncPublisherToPartition(topic string, partition int32,
+	// Creates new Kafka asynchronous publisher sending messages to given topic
+	// and partition. Partitioner has to be set to 'manual' scheme,
+	// otherwise an error is thrown.
+	NewAsyncPublisherToPartition(connName string, topic string, partition int32,
 		successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
 
-	// Initializes new watcher which can start/stop watching on topic, eventually partition and offset
+	// Initializes new watcher which can start/stop watching on topic,
 	NewWatcher(subscriberName string) ProtoWatcher
-	// Disabled if the plugin config was not found
+
+	// Initializes new watcher which can start/stop watching on topic,
+	// eventually partition and offset.
+	NewPartitionWatcher(subscriberName string) ProtoPartitionWatcher
+
+	// Disabled if the plugin config was not found.
 	Disabled() (disabled bool)
 }
 
-// ProtoPublisher allows to publish a message of type proto.Message into messaging system.
+// ProtoPublisher allows to publish a message of type proto.Message into
+// messaging system.
 type ProtoPublisher interface {
 	datasync.KeyProtoValWriter
 }
 
-// ProtoWatcher allows to subscribe for receiving of messages published to given topics.
+// ProtoWatcher allows to subscribe for receiving of messages published
+// to selected topics.
 type ProtoWatcher interface {
-	// Watch given topic. Returns error if 'manual' partitioner scheme is chosen
+	// Watch starts consuming all selected <topics>.
+	// Returns error if 'manual' partitioner scheme is chosen
+	// Callback <msgCallback> is called for each delivered message.
 	Watch(msgCallback func(ProtoMessage), topics ...string) error
 
-	// Stop watching on topic. Return error if topic is not subscribed
+	// StopWatch cancels the previously created subscription for consuming
+	// a given <topic>.
 	StopWatch(topic string) error
+}
 
-	// Watch given topic, partition and offset. Offset is the oldest message index consumed, all previously written
-	// messages are ignored. Manual partitioner must be set, otherwise error is thrown
+// ProtoPartitionWatcher allows to subscribe for receiving of messages published
+// to selected topics, partitions and offsets
+type ProtoPartitionWatcher interface {
+	// WatchPartition starts consuming specific <partition> of a selected <topic>
+	// from a given <offset>. Offset is the oldest message index consumed,
+	// all previously published messages are ignored.
+	// Callback <msgCallback> is called for each delivered message.
 	WatchPartition(msgCallback func(ProtoMessage), topic string, partition int32, offset int64) error
 
-	// Stop watching on topic/partition/offset. Return error if such a combination is not subscribed
+	// StopWatchPartition cancels the previously created subscription
+	// for consuming a given <topic>/<partition>/<offset>.
+	// Return error if such a combination is not subscribed
 	StopWatchPartition(topic string, partition int32, offset int64) error
 }
 
-// ProtoMessage defines functions for inspection of a message receive from messaging system.
+// ProtoMessage exposes parameters of a single message received from messaging
+// system.
 type ProtoMessage interface {
 	keyval.ProtoKvPair
+
+	// GetTopic returns the name of the topic from which the message
+	// was consumed.
 	GetTopic() string
+
+	// GetTopic returns the index of the partition from which the message
+	// was consumed.
 	GetPartition() int32
 	GetOffset() int64
 }
 
-// ProtoMessageErr represents a message that was not published successfully to a messaging system.
+// ProtoMessageErr represents a message that was not published successfully
+// to a messaging system.
 type ProtoMessageErr interface {
 	ProtoMessage
+
+	// Error returns an error instance describing the cause of the failed
+	// delivery.
 	Error() error
 }
