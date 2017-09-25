@@ -37,8 +37,10 @@ type SyncProducer struct {
 	sync.Mutex
 }
 
-// NewSyncProducer returns a new SyncProducer
-func NewSyncProducer(config *Config, wg *sync.WaitGroup) (*SyncProducer, error) {
+// NewSyncProducer returns a new SyncProducer instance. Producer is created from provided sarama client which can be nil;
+// in that case, a new client is created. Also the partitioner is set here. Note: provided sarama client partitioner
+// should match the one used in config.
+func NewSyncProducer(config *Config, sClient sarama.Client, partitioner string, wg *sync.WaitGroup) (*SyncProducer, error) {
 	if config.Debug {
 		config.Logger.SetLevel(logging.DebugLevel)
 	}
@@ -57,33 +59,36 @@ func NewSyncProducer(config *Config, wg *sync.WaitGroup) (*SyncProducer, error) 
 		return nil, errors.New("invalid RequiredAcks field in config")
 	}
 
-	// set other Producer config params
-	config.ProducerConfig().Producer.Partitioner = config.Partitioner
-	config.ProducerConfig().Producer.Return.Successes = true
+	// set partitioner
+	config.SetPartitioner(partitioner)
 
 	config.Logger.Debugf("SyncProducer config: %#v", config)
-
-	// init a new client
-	client, err := sarama.NewClient(config.Brokers, &config.Config.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	producer, err := sarama.NewSyncProducerFromClient(client)
-	if err != nil {
-		return nil, err
-	}
 
 	// initProducer object
 	sp := &SyncProducer{
 		Logger:       config.Logger,
 		Config:       config,
-		Client:       client,
-		Producer:     producer,
 		Partition:    config.Partition,
 		closed:       false,
 		closeChannel: make(chan struct{}),
 	}
+
+	// If client is nil, create a new one
+	if sClient == nil {
+		localClient, err := NewClient(config, partitioner)
+		if err != nil {
+			return nil, err
+		}
+		// store local client in syncProducer if it was created here
+		sp.Client = localClient
+		sClient = localClient
+	}
+
+	producer, err := sarama.NewSyncProducerFromClient(sClient)
+	if err != nil {
+		return nil, err
+	}
+	sp.Producer = producer
 
 	// if there is a "waitgroup" arg then use it
 	if wg != nil {
@@ -124,10 +129,12 @@ func (ref *SyncProducer) Close() error {
 	}
 	ref.Debug("SyncProducer closed")
 
-	err = ref.Client.Close()
-	if err != nil {
-		ref.Errorf("client close error: %v", err)
-		return err
+	if ref.Client != nil && !ref.Client.Closed() {
+		err = ref.Client.Close()
+		if err != nil {
+			ref.Errorf("client close error: %v", err)
+			return err
+		}
 	}
 
 	return nil
@@ -140,23 +147,28 @@ func (ref *SyncProducer) SendMsgByte(topic string, key []byte, msg []byte) (*Pro
 
 	if key == nil || len(key) == 0 {
 		md5Sum := fmt.Sprintf("%x", md5.Sum(msg))
-		return ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder(md5Sum), sarama.ByteEncoder(msg))
+		return ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder(md5Sum), sarama.ByteEncoder(msg))
 	}
-	return ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg))
+	return ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg))
 }
 
-// SendMsg sends a message to Kafka
-func (ref *SyncProducer) SendMsg(topic string, partition int32, key sarama.Encoder, msg sarama.Encoder) (*ProducerMessage, error) {
+// SendMsg sends a message to Kafka using default partition
+func (ref *SyncProducer) SendMsg(topic string, key sarama.Encoder, msg sarama.Encoder) (*ProducerMessage, error) {
+	return ref.SendMsgToPartition(topic, ref.Partition, key, msg)
+}
+
+// SendMsgToPartition sends a message to Kafka
+func (ref *SyncProducer) SendMsgToPartition(topic string, partition int32, key sarama.Encoder, msg sarama.Encoder) (*ProducerMessage, error) {
 	if msg == nil {
 		err := errors.New("nil message can not be sent")
 		ref.Error(err)
 		return nil, err
 	}
 	message := &sarama.ProducerMessage{
-		Topic: topic,
+		Topic:     topic,
 		Partition: partition,
-		Value: msg,
-		Key:   key,
+		Value:     msg,
+		Key:       key,
 	}
 
 	partition, offset, err := ref.Producer.SendMessage(message)

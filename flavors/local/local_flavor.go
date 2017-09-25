@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package local defines flavor used for VPP agents managed only locally.
 package local
 
 import (
@@ -26,7 +27,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
-// FlavorVppLocal glues together multiple plugins to mange VPP and linux interfaces configuration using local client.
+// FlavorVppLocal glues together multiple plugins to manage VPP and Linux
+// configuration using the local client.
 type FlavorVppLocal struct {
 	*local.FlavorLocal
 	LinuxLocalClient localclient.Plugin
@@ -37,10 +39,10 @@ type FlavorVppLocal struct {
 	injected bool
 }
 
-// Inject sets object references
-func (f *FlavorVppLocal) Inject() error {
+// Inject sets inter-plugin references.
+func (f *FlavorVppLocal) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -56,10 +58,10 @@ func (f *FlavorVppLocal) Inject() error {
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
-	return nil
+	return true
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins
+// Plugins combines all Plugins in the flavor to a list.
 func (f *FlavorVppLocal) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)

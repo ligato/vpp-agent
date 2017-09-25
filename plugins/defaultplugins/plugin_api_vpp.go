@@ -35,6 +35,19 @@ func GetSwIfIndexes() ifaceidx.SwIfIndex {
 	return plugin().swIfIndexes
 }
 
+// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
+// This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
+//
+// Example of is_sw_index lookup by logical name of the port "vswitch_ingres" of the network interface
+//
+//   func Init() error {
+//      swIfIndexes := defaultplugins.GetSwIfIndexes()
+//      swIfIndexes.LookupByName("vswitch_ingres")
+//
+func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
+	return plugin.swIfIndexes
+}
+
 // TODO dump interface
 
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.

@@ -31,6 +31,7 @@ RUN rm -rf vpp/ && rm -rf agent/
 COPY supervisord.conf /etc/supervisord.conf
 COPY etcd.conf .
 COPY kafka.conf .
+COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 
 WORKDIR /root/

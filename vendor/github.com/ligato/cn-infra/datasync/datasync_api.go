@@ -21,22 +21,29 @@ import (
 	"time"
 )
 
-// DefaultNotifTimeout for delivery of notification
+// DefaultNotifTimeout defines the default timeout for delivery of a datasync
+// notification.
 const DefaultNotifTimeout = 2 * time.Second
 
-// KeyValProtoWatcher is used by plugin to subscribe to both data change events and
-// data resync events. Multiple keys can be specified, the caller will
+// KeyValProtoWatcher is used by plugin to subscribe to both data change events
+// and data resync events. Multiple keys can be specified and the caller will
 // be subscribed to events on each key.
 // See README.md for description of the Events.
 type KeyValProtoWatcher interface {
-	// Watch using ETCD or any other data transport
+	// Watch using ETCD or any other data transport.
+	// <resyncName> is used as the name for the RESYNC subcription.
+	// <changeChan> channel is used for delivery of data CHANGE events.
+	// <resyncChan> channel is used for delivery of data RESYNC events.
+	// <keyPrefix> is a variable list of keys to watch on.
 	Watch(resyncName string, changeChan chan ChangeEvent, resyncChan chan ResyncEvent,
 		keyPrefixes ...string) (WatchRegistration, error)
 }
 
 // KeyProtoValWriter allows plugins to push their data changes to a data store.
 type KeyProtoValWriter interface {
-	// Put to ETCD or any other data transport (from other Agent Plugins)
+	// Put <data> to ETCD or to any other key-value based data transport
+	// (from other Agent Plugins) under the key <key>.
+	// See options.go for a list of available options.
 	Put(key string, data proto.Message, opts ...PutOption) error
 }
 

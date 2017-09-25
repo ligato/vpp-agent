@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
-// AllConnectorsFlavor is combination of all plugins that allow
+// AllConnectorsFlavor is a combination of all plugins that allow
 // connectivity to external database/messaging...
 // Effectively it is combination of ETCD, Kafka, Redis, Cassandra
 // plugins.
@@ -50,29 +50,29 @@ type AllConnectorsFlavor struct {
 	injected bool
 }
 
-// Inject sets object references
+// Inject initializes flavor references/dependencies.
 func (f *AllConnectorsFlavor) Inject() bool {
 	if f.injected {
 		return false
 	}
 	f.injected = true
 
-	declareFlags()
-
 	if f.FlavorLocal == nil {
 		f.FlavorLocal = &local.FlavorLocal{}
 	}
 	f.FlavorLocal.Inject()
 
-	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3")
+	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3", local.WithConf())
 	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal, &f.ResyncOrch)
 
-	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis")
+	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis", local.WithConf())
 	InjectKVDBSync(&f.RedisDataSync, &f.Redis, f.Redis.PluginName, f.FlavorLocal, &f.ResyncOrch)
 
-	f.Kafka.Deps.PluginInfraDeps = *f.InfraDeps("kafka")
+	f.Kafka.Deps.PluginInfraDeps = *f.InfraDeps("kafka", local.WithConf())
 
-	f.Cassandra.Deps.PluginInfraDeps = *f.InfraDeps("cassandra")
+	f.Cassandra.Deps.PluginInfraDeps = *f.InfraDeps("cassandra", local.WithConf())
+
+	f.ResyncOrch.PluginLogDeps = *f.LogDeps("resync-orch")
 
 	return true
 }

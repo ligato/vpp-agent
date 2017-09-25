@@ -25,7 +25,7 @@ import (
 )
 
 // AsyncProducer allows to publish message to kafka using asynchronous API.
-// The message using SendMsg and SendMsgByte function returns do not block.
+// The message using SendMsgToPartition and SendMsgByte function returns do not block.
 // The status whether message was sent successfully or not is delivered using channels
 // specified in config structure.
 type AsyncProducer struct {
@@ -40,10 +40,15 @@ type AsyncProducer struct {
 	sync.Mutex
 }
 
-// NewAsyncProducer returns an AsyncProducer instance
-func NewAsyncProducer(config *Config, wg *sync.WaitGroup) (*AsyncProducer, error) {
+// NewAsyncProducer returns a new AsyncProducer instance. Producer is created from provided sarama client which can be nil;
+// in that case a new client will be created. Also the partitioner is set here. Note: provided sarama client partitioner
+// should match the one used in config.
+func NewAsyncProducer(config *Config, sClient sarama.Client, partitioner string, wg *sync.WaitGroup) (*AsyncProducer, error) {
+	if config.Debug {
+		config.Logger.SetLevel(logging.DebugLevel)
+	}
 
-	config.Logger.Debug("NewAsyncProducer created")
+	config.Logger.Debug("Entering NewAsyncProducer ...")
 	if err := config.ValidateAsyncProducerConfig(); err != nil {
 		return nil, err
 	}
@@ -57,35 +62,37 @@ func NewAsyncProducer(config *Config, wg *sync.WaitGroup) (*AsyncProducer, error
 		return nil, errors.New("invalid RequiredAcks field in config")
 	}
 
-	// set other Producer config params
-	config.ProducerConfig().Producer.Return.Successes = config.SendSuccess
-	config.ProducerConfig().Producer.Return.Errors = config.SendError
-	config.ProducerConfig().Producer.Partitioner = config.Partitioner
+	// set partitioner
+	config.SetPartitioner(partitioner)
 
 	config.Logger.Debugf("AsyncProducer config: %#v", config)
-
-	// init a new client
-	client, err := sarama.NewClient(config.Brokers, &config.Config.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	// init a new asyncproducer using this client
-	producer, err := sarama.NewAsyncProducerFromClient(client)
-	if err != nil {
-		return nil, err
-	}
 
 	// initAsyncProducer object
 	ap := &AsyncProducer{
 		Logger:       config.Logger,
 		Config:       config,
-		Client:       client,
-		Producer:     producer,
 		Partition:    config.Partition,
 		closed:       false,
 		closeChannel: make(chan struct{}),
 	}
+
+	// If client is nil, create a new one
+	if sClient == nil {
+		localClient, err := NewClient(config, partitioner)
+		if err != nil {
+			return nil, err
+		}
+		// store local client in syncProducer if it was created here
+		ap.Client = localClient
+		sClient = localClient
+	}
+
+	// init a new asyncproducer using this client
+	producer, err := sarama.NewAsyncProducerFromClient(sClient)
+	if err != nil {
+		return nil, err
+	}
+	ap.Producer = producer
 
 	// if there is a "waitgroup" arg then use it
 	if wg != nil {
@@ -111,24 +118,29 @@ func (ref *AsyncProducer) SendMsgByte(topic string, key []byte, msg []byte, meta
 	// generate key if none supplied - used by Hash partitioner
 	if key == nil || len(key) == 0 {
 		md5Sum := fmt.Sprintf("%x", md5.Sum(msg))
-		ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder([]byte(md5Sum)), sarama.ByteEncoder(msg), metadata)
+		ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder([]byte(md5Sum)), sarama.ByteEncoder(msg), metadata)
 		return
 	}
-	ref.SendMsg(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg), metadata)
+	ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg), metadata)
 }
 
-// SendMsg sends an async message to Kafka
-func (ref *AsyncProducer) SendMsg(topic string, partition int32, key Encoder, msg Encoder, metadata interface{}) {
+// SendMsg sends a message to Kafka using default partition
+func (ref *AsyncProducer) SendMsg(topic string, key sarama.Encoder, msg sarama.Encoder, metadata interface{}) {
+	ref.SendMsgToPartition(topic, ref.Partition, key, msg, metadata)
+}
+
+// SendMsgToPartition sends an async message to Kafka
+func (ref *AsyncProducer) SendMsgToPartition(topic string, partition int32, key Encoder, msg Encoder, metadata interface{}) {
 	if msg == nil {
 		return
 	}
 
 	message := &sarama.ProducerMessage{
-		Topic:    topic,
+		Topic:     topic,
 		Partition: partition,
-		Key:      key,
-		Value:    msg,
-		Metadata: metadata,
+		Key:       key,
+		Value:     msg,
+		Metadata:  metadata,
 	}
 
 	ref.Producer.Input() <- message
@@ -172,10 +184,12 @@ func (ref *AsyncProducer) Close(async ...bool) error {
 		ref.Errorf("asyncProducer close error: %v", err)
 		return err
 	}
-	err = ref.Client.Close()
-	if err != nil {
-		ref.Errorf("client close error: %v", err)
-		return err
+	if ref.Client != nil && !ref.Client.Closed() {
+		err = ref.Client.Close()
+		if err != nil {
+			ref.Errorf("client close error: %v", err)
+			return err
+		}
 	}
 
 	return nil

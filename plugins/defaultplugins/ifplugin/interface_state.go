@@ -29,7 +29,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stats"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -158,9 +158,9 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		return fmt.Errorf(fmt.Sprintf("wantStatsReply=%d", wantInterfaceEventsReply.Retval))
 	}
 
-	wantStatsReply := &vpe.WantStatsReply{}
+	wantStatsReply := &stats.WantStatsReply{}
 	// enable interface counters notifications from VPP
-	err = plugin.vppCh.SendRequest(&vpe.WantStats{
+	err = plugin.vppCh.SendRequest(&stats.WantStats{
 		Pid:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantStatsReply)

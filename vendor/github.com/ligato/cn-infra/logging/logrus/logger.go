@@ -82,6 +82,10 @@ func NewLogger(name string) *Logger {
 		name:   name,
 	}
 
+	tf := NewTextFormatter()
+	tf.TimestampFormat = "2006-01-02 15:04:05.00000"
+	logger.SetFormatter(tf)
+
 	logger.InitTag("00000000")
 
 	logger.littleBuf.New = func() interface{} {
@@ -322,6 +326,7 @@ func (logger *Logger) withFields(fields Fields, depth ...int) *LogMsg {
 	if _, ok := f[locKey]; !ok {
 		f[locKey] = logger.GetLineInfo(d)
 	}
+	f[loggerKey] = logger.name
 
 	entry := logger.std.WithFields(f)
 	return &LogMsg{

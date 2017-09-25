@@ -109,13 +109,17 @@ Make Datastore Snapshots
     ${prefix}=             Create Next Snapshot Prefix
     Take ETCD Snapshots    ${prefix}_${tag}
 
+Get ETCD Dump
+    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ""
+    ${out}=             Execute On Machine    docker    ${command}    log=false
+    [Return]            ${out}
+
 Take ETCD Snapshots
     [Arguments]         ${tag}
     Log                 ${tag}
-    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ""
-    ${out}=             Execute On Machine    docker    ${command}    log=false
-    Append To File      ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${out}
-    ${errors}=          Get Lines Containing String    ${out}    /error/
+    ${dump}=            Get ETCD Dump
+    Append To File      ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${dump}
+    ${errors}=          Get Lines Containing String    ${dump}    /error/
     ${status}=          Run Keyword And Return Status    Should Be Empty    ${errors}
     Run Keyword If      ${status}==False         Log     Errors detected in keys: ${errors}    level=WARN
     

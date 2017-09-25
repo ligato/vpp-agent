@@ -4,8 +4,8 @@ The Etcd plugin provides access to an etcd key-value data store.
 
 **API**
 
-Provides API described in the [skeleton](../plugin), the plugin is 
-documented at the bottom of the [doc.go](doc.go) file.
+Implements API described in the [skeleton](../plugin):
+The plugin is documented in more detail in the [doc.go](doc.go) file.
 
 **Configuration**
 
@@ -15,5 +15,11 @@ documented at the bottom of the [doc.go](doc.go) file.
 
 **Status Check**
 
-- Etcd plugin has a mechanism to periodically check the status of an 
-  Etcd connection.  
+- If injected, Etcd plugin will use StatusCheck plugin to periodically
+  issue a minimalistic GET request to check for the status
+  of the connection.
+  The etcd connection state affects the global status of the agent.
+  If agent cannot establish connection with etcd, both the readiness
+  and the liveness probe from the [probe plugin](../../../health/probe)
+  will return a negative result (accessible only via REST API in such
+  case).

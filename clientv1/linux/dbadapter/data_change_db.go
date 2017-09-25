@@ -24,151 +24,200 @@ import (
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"net"
 )
 
-// NewDataChangeDSL is a constructor
+// NewDataChangeDSL returns a new instance of DataChangeDSL which implements
+// the data change DSL for both Linux and VPP config (inherits dbadapter
+// from defaultplugins)
+// Transaction <txn> is used to propagate changes to plugins.
 func NewDataChangeDSL(txn keyval.ProtoTxn) *DataChangeDSL {
 	vppDbAdapter := vpp_dbadapter.NewDataChangeDSL(txn)
 	return &DataChangeDSL{txn: txn, vppDataChange: vppDbAdapter}
 }
 
-// DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
-// This is implementation of Domain Specific Language (DSL) for change of both Linux and VPP configuration.
+// DataChangeDSL is an implementation of Domain Specific Language (DSL)
+// for changes of both Linux and VPP configuration.
 type DataChangeDSL struct {
 	txn           keyval.ProtoTxn
 	vppDataChange vpp_clientv1.DataChangeDSL
 }
 
-// PutDSL is here to put here most recent and previous value with revisions
+// PutDSL implements put operations of data change DSL.
 type PutDSL struct {
 	parent *DataChangeDSL
 	vppPut vpp_clientv1.PutDSL
 }
 
-// DeleteDSL is here to put here most recent and previous value with revisions
+// DeleteDSL implements delete operations of data change DSL.
 type DeleteDSL struct {
 	parent    *DataChangeDSL
 	vppDelete vpp_clientv1.DeleteDSL
 }
 
-// Put gives you the ability to create configurable object
+// Put initiates a chained sequence of data change DSL statements declaring
+// new or changing existing configurable objects.
 func (dsl *DataChangeDSL) Put() linux.PutDSL {
 	return &PutDSL{dsl, dsl.vppDataChange.Put()}
 }
 
-// Delete gives you the ability to delete configurable object
+// Delete initiates a chained sequence of data change DSL statements
+// removing existing configurable objects.
 func (dsl *DataChangeDSL) Delete() linux.DeleteDSL {
 	return &DeleteDSL{dsl, dsl.vppDataChange.Delete()}
 }
 
-// Send will propagate changes to the channels
+// Send propagates requested changes to the plugins.
 func (dsl *DataChangeDSL) Send() vpp_clientv1.Reply {
 	return dsl.vppDataChange.Send()
 }
 
-// LinuxInterface create or update a Linux network interface
+// LinuxInterface adds a request to create or update Linux network interface.
 func (dsl *PutDSL) LinuxInterface(val *interfaces.LinuxInterfaces_Interface) linux.PutDSL {
 	dsl.parent.txn.Put(interfaces.InterfaceKey(val.Name), val)
 	return dsl
 }
 
-// VppInterface adds a request to create or update VPP network interface
+// VppInterface adds a request to create or update VPP network interface.
 func (dsl *PutDSL) VppInterface(val *vpp_intf.Interfaces_Interface) linux.PutDSL {
 	dsl.vppPut.Interface(val)
 	return dsl
 }
 
-// BD adds a request to create or update VPP Bridge Domain
+// BfdSession adds a request to create or update VPP bidirectional forwarding
+// detection session.
+func (dsl *PutDSL) BfdSession(val *vpp_bfd.SingleHopBFD_Session) linux.PutDSL {
+	dsl.vppPut.BfdSession(val)
+	return dsl
+}
+
+// BfdAuthKeys adds a request to create or update VPP bidirectional forwarding
+// detection key.
+func (dsl *PutDSL) BfdAuthKeys(val *vpp_bfd.SingleHopBFD_Key) linux.PutDSL {
+	dsl.vppPut.BfdAuthKeys(val)
+	return dsl
+}
+
+// BfdEchoFunction adds a request to create or update VPP bidirectional forwarding
+// detection echo function.
+func (dsl *PutDSL) BfdEchoFunction(val *vpp_bfd.SingleHopBFD_EchoFunction) linux.PutDSL {
+	dsl.vppPut.BfdEchoFunction(val)
+	return dsl
+}
+
+// BD adds a request to create or update VPP Bridge Domain.
 func (dsl *PutDSL) BD(val *vpp_l2.BridgeDomains_BridgeDomain) linux.PutDSL {
 	dsl.vppPut.BD(val)
 	return dsl
 }
 
-// BDFIB adds a request to create or update VPP L2 Forwarding Information Base
+// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
 func (dsl *PutDSL) BDFIB(fib *vpp_l2.FibTableEntries_FibTableEntry) linux.PutDSL {
 	dsl.vppPut.BDFIB(fib)
 	return dsl
 }
 
-// XConnect adds a request to create or update VPP Cross Connect
+// XConnect adds a request to create or update VPP Cross Connect.
 func (dsl *PutDSL) XConnect(val *vpp_l2.XConnectPairs_XConnectPair) linux.PutDSL {
 	dsl.vppPut.XConnect(val)
 	return dsl
 }
 
-// StaticRoute adds a request to create or update VPP L3 Static Route
+// StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes_Route) linux.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
 
-// ACL adds a request to create or update VPP Access Control List
+// ACL adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) ACL(acl *vpp_acl.AccessLists_Acl) linux.PutDSL {
 	dsl.vppPut.ACL(acl)
 	return dsl
 }
 
-// Delete gives you the ability to delete configurable object
+// Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linux.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
 }
 
-// Send will propagate changes to the channels
+// Send propagates requested changes to the plugins.
 func (dsl *PutDSL) Send() vpp_clientv1.Reply {
 	return dsl.parent.Send()
 }
 
-// LinuxInterface create or update the network interface
+// LinuxInterface adds a request to delete an existing Linux network
+// interface.
 func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linux.DeleteDSL {
 	dsl.parent.txn.Delete(interfaces.InterfaceKey(interfaceName))
 	return dsl
 }
 
-// VppInterface adds a request to delete an existing VPP network interface
+// VppInterface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) VppInterface(ifaceName string) linux.DeleteDSL {
 	dsl.vppDelete.Interface(ifaceName)
 	return dsl
 }
 
-// BD adds a request to delete an existing VPP Bridge Domain
+// BfdSession adds a request to delete an existing VPP bidirectional forwarding
+// detection session.
+func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linux.DeleteDSL {
+	dsl.vppDelete.BfdSession(bfdSessionIfaceName)
+	return dsl
+}
+
+// BfdAuthKeys adds a request to delete an existing VPP bidirectional forwarding
+// detection key.
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyName string) linux.DeleteDSL {
+	dsl.vppDelete.BfdAuthKeys(bfdKeyName)
+	return dsl
+}
+
+// BfdEchoFunction adds a request to delete an existing VPP bidirectional
+// forwarding detection echo function.
+func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) linux.DeleteDSL {
+	dsl.vppDelete.BfdEchoFunction(bfdEchoName)
+	return dsl
+}
+
+// BD adds a request to delete an existing VPP Bridge Domain.
 func (dsl *DeleteDSL) BD(bdName string) linux.DeleteDSL {
 	dsl.vppDelete.BD(bdName)
 	return dsl
 }
 
-// BDFIB adds a request to delete an existing VPP L2 Forwarding Information Base
+// BDFIB adds a request to delete an existing VPP L2 Forwarding Information Base.
 func (dsl *DeleteDSL) BDFIB(bdName string, mac string) linux.DeleteDSL {
 	dsl.vppDelete.BDFIB(bdName, mac)
 	return dsl
 }
 
-// XConnect adds a request to delete an existing VPP Cross Connect
+// XConnect adds a request to delete an existing VPP Cross Connect.
 func (dsl *DeleteDSL) XConnect(rxIfaceName string) linux.DeleteDSL {
 	dsl.vppDelete.XConnect(rxIfaceName)
 	return dsl
 }
 
-// StaticRoute adds a request to delete an existing VPP L3 Static Route
+// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddrInput net.IP) linux.DeleteDSL {
 	dsl.vppDelete.StaticRoute(vrf, dstAddrInput, nextHopAddrInput)
 	return dsl
 }
 
-// ACL adds a request to delete an existing VPP Access Control List
+// ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) linux.DeleteDSL {
 	dsl.vppDelete.ACL(aclName)
 	return dsl
 }
 
-// Put gives you the ability to create configurable object
+// Put changes the DSL mode to allow configuration editing.
 func (dsl *DeleteDSL) Put() linux.PutDSL {
 	return &PutDSL{dsl.parent, dsl.vppDelete.Put()}
 }
 
-// Send will propagate changes to the channels
+// Send propagates requested changes to the plugins.
 func (dsl *DeleteDSL) Send() vpp_clientv1.Reply {
 	return dsl.parent.Send()
 }

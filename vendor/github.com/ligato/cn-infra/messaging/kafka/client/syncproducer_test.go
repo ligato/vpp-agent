@@ -28,8 +28,14 @@ func ExampleSyncProducer() {
 	config.ProducerConfig().Producer.RequiredAcks = sarama.WaitForAll
 	config.SetBrokers("localhost:9091", "localhost:9092")
 
+	// init client
+	sClient, err := NewClient(config, Hash)
+	if err != nil {
+		return
+	}
+
 	// init producer
-	producer, err := NewSyncProducer(config, nil)
+	producer, err := NewSyncProducer(config, sClient, Hash, nil)
 	if err != nil {
 		log.Errorf("NewSyncProducer errored: %v\n", err)
 		return

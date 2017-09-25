@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package kvdbsync implements the key-value data store client and server
-// that satisfythe datasync API. The datasync API contains the Data Broker
-// & KeyValProtoWatcher APIs, which are basically facades in front of
+// Package kvdbsync implements a key-value data store client and server
+// satisfying the datasync API. The datasync API contains the Data Broker
+// & KeyValProtoWatcher APIs, which are basically just facades in front of
 // different key-value or SQL stores.
 //
 // A key-value store is used as a transport channel between a remote client

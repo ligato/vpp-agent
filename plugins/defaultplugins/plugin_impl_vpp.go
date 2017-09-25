@@ -37,9 +37,24 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
 )
+
+// no operation writer that helps avoiding NIL pointer based segmentation fault
+// used as default if some dependency was not injected
+var (
+	// no operation writer that helps avoiding NIL pointer based segmentation fault
+	// used as default if some dependency was not injected
+	noopWriter = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{}}
+
+	// no operation watcher that helps avoiding NIL pointer based segmentation fault
+	// used as default if some dependency was not injected
+	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
+)
+
+// Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
+// is set, use default
+const defaultMtu = 9000
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins
 type Plugin struct {
@@ -83,6 +98,7 @@ type Plugin struct {
 	resyncStatusChan     chan datasync.ResyncEvent
 	changeChan           chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	ifStateNotifications messaging.ProtoPublisher
+	ifMtu                uint32
 
 	watchConfigReg datasync.WatchRegistration
 	watchStatusReg datasync.WatchRegistration
@@ -102,9 +118,21 @@ type Deps struct {
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
 	Watch             datasync.KeyValProtoWatcher
-	Messaging         messaging.Mux
+	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
-	Linux             linuxplugin.API
+	Linux             linuxpluginAPI
+}
+
+type linuxpluginAPI interface {
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+	// Linux interfaces.
+	GetLinuxIfIndexes() ifaceidx2.LinuxIfIndex
+}
+
+// DPConfig holds the value of maximum transmission unit in bytes.
+type DPConfig struct {
+	Mtu uint32 `json:"mtu"`
 }
 
 var (
@@ -124,12 +152,19 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
-	if plugin.Messaging != nil {
-		var err error
-		plugin.ifStateNotifications, err = plugin.Messaging.NewSyncPublisher(kafkaIfStateTopic)
-		if err != nil {
-			return err
-		}
+	plugin.fixNilPointers()
+
+	plugin.ifStateNotifications = plugin.Deps.IfStatePub
+	config, err := plugin.retrieveMtuConfig()
+	if err != nil {
+		return err
+	}
+	if config != nil {
+		plugin.ifMtu = config.Mtu
+		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
+	} else {
+		plugin.ifMtu = defaultMtu
+		plugin.Log.Infof("Mtu config not found, set to default value %v", plugin.ifMtu)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -147,6 +182,8 @@ func (plugin *Plugin) Init() error {
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 
+	//FIXME run following go routines later than following init*() calls - just before Watch()
+
 	// run event handler go routines
 	go plugin.publishIfStateEvents(ctx)
 	go plugin.publishBdStateEvents(ctx)
@@ -155,7 +192,7 @@ func (plugin *Plugin) Init() error {
 	// run error handler
 	go plugin.changePropagateError()
 
-	err := plugin.initIF(ctx)
+	err = plugin.initIF(ctx)
 	if err != nil {
 		return err
 	}
@@ -185,6 +222,26 @@ func (plugin *Plugin) Init() error {
 	gPlugin = plugin
 
 	return nil
+}
+
+// fixNilPointers sets noopWriter & nooWatcher for nil dependencies
+func (plugin *Plugin) fixNilPointers() {
+	if plugin.Deps.Publish == nil {
+		plugin.Deps.Publish = noopWriter
+		plugin.Log.Debug("setting default noop writer for Publish dependency")
+	}
+	if plugin.Deps.PublishStatistics == nil {
+		plugin.Deps.PublishStatistics = noopWriter
+		plugin.Log.Debug("setting default noop writer for PublishStatistics dependency")
+	}
+	if plugin.Deps.IfStatePub == nil {
+		plugin.Deps.IfStatePub = noopWriter
+		plugin.Log.Debug("setting default noop writer for IfStatePub dependency")
+	}
+	if plugin.Deps.Watch == nil {
+		plugin.Deps.Watch = noopWatcher
+		plugin.Log.Debug("setting default noop watcher for Watch dependency")
+	}
 }
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
@@ -224,8 +281,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{GoVppmux: plugin.GoVppmux, ServiceLabel: plugin.ServiceLabel, Linux: plugin.Linux}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifVppNotifChan)
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
+		GoVppmux:     plugin.GoVppmux,
+		ServiceLabel: plugin.ServiceLabel,
+		Linux:        plugin.Linux,
+	}
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -364,6 +425,20 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	return nil
+}
+
+func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
+	config := &DPConfig{}
+	found, err := plugin.PluginConfig.GetValue(config)
+	if !found {
+		plugin.Log.Debug("Mtu config not found")
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	plugin.Log.Debug("config found, Mtu value %v", config.Mtu)
+	return config, err
 }
 
 func (plugin *Plugin) initErrorHandler() error {

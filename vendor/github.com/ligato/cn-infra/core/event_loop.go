@@ -19,12 +19,13 @@ import (
 	"os/signal"
 )
 
-// EventLoopWithInterrupt starts the agent and waits for the channel event event.
-// Agent is stopped when CloseChannel is closed or user interrupt (SIGINT) is received.
+// EventLoopWithInterrupt starts an instance of the agent created with NewAgent().
+// Agent is stopped when <closeChan> is closed or user interrupt (SIGINT)
+// is received.
 func EventLoopWithInterrupt(agent *Agent, closeChan chan struct{}) error {
 	err := agent.Start()
 	if err != nil {
-		agent.Error("Error loading core", err)
+		agent.Error("Error loading core: ", err)
 		return err
 	}
 

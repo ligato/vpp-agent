@@ -113,7 +113,7 @@ type ExamplePlugin struct {
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	GoVppmux                  *govppmux.GOVPPPlugin
+	GoVppmux                  govppmux.API
 	local.PluginInfraDeps // injected
 }
 

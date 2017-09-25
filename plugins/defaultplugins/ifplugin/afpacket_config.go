@@ -21,13 +21,12 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
-	Linux linuxplugin.API
+	Linux interface{} //just flag if nil
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration

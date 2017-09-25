@@ -127,7 +127,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	if err != nil {
 		return
 	}
-	nextHopAddr := net.ParseIP("10.1.1.3")
+	nextHopAddr := net.ParseIP("192.168.1.1")
 
 	select {
 	case <-time.After(15 * time.Second):

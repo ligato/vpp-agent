@@ -22,9 +22,12 @@ import (
 )
 
 // ParseConfigFromYamlFile parses a configuration from a file in yaml
-// format. The file's location is specified by the path parameter, and the
-// resulting config is stored  nto a structure specified by the cfg
-// parameter..
+// format. The file's location is specified by the <path> parameter, and the
+// resulting config is stored into the structure referenced by the <cfg>
+// parameter.
+// If the file doesn't exist or cannot be read, the returned error will
+// be of type os.PathError. An untyped error is returned in case the file
+// doesn't contain a valid YAML configuration.
 func ParseConfigFromYamlFile(path string, cfg interface{}) error {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -38,8 +41,14 @@ func ParseConfigFromYamlFile(path string, cfg interface{}) error {
 	return nil
 }
 
-// SaveConfigToYamlFile saves the given configuration to a yaml-formatted file.
-// If not empty, each line in the 'comment' parameter must be proceeded by '#'.
+// SaveConfigToYamlFile saves the configuration <cfg> into a yaml-formatted file
+// at the location <path> with permissions defined by <perm>.
+// <comment>, if non-empty, is printed at the beginning of the file before
+// the configuration (with a line break in between). Each line in <comment>
+// should thus begin with the number sign ( # ).
+// If the file cannot be created af the location, os.PathError is returned.
+// An untyped error is returned if the configuration couldn't be marshaled
+// into the YAML format.
 func SaveConfigToYamlFile(cfg interface{}, path string, perm os.FileMode, comment string) error {
 	bytes, err := yaml.Marshal(cfg)
 	if err != nil {

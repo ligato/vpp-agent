@@ -18,61 +18,51 @@ import (
 	"io"
 	"net/http"
 
-	"fmt"
-
 	"github.com/gorilla/mux"
-	"github.com/ligato/cn-infra/datasync/grpcsync"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/config"
+	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/namsral/flag"
 	"github.com/unrolled/render"
 )
 
 const (
 	// DefaultHTTPPort is used during HTTP server startup unless different port was configured
 	DefaultHTTPPort = "9191"
+	// DefaultIP 0.0.0.0
+	DefaultIP = "0.0.0.0"
+	// DefaultEndpoint 0.0.0.0:9191
+	DefaultEndpoint = DefaultIP + ":" + DefaultHTTPPort
 )
 
-var (
-	httpPort string
-)
-
-// init is here only for parsing program arguments
-func init() {
-	flag.StringVar(&httpPort, "http-port", DefaultHTTPPort,
-		"Listen port for the Agent's HTTP server.")
-}
-
-// Plugin implements the Plugin interface.
+// Plugin struct holds all plugin-related data.
 type Plugin struct {
 	Deps
+	*Config
 
 	// Used mainly for testing purposes
 	listenAndServe ListenAndServe
 
-	server     io.Closer
-	mx         *mux.Router
-	formatter  *render.Render
-	grpcServer *grpcsync.Adapter
+	server    io.Closer
+	mx        *mux.Router
+	formatter *render.Render
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps lists the dependencies of the Rest plugin.
 type Deps struct {
-	local.PluginLogDeps // inject
-
-	// Used to simplify if not whole config needs to be configured
-	HTTPport string //inject optionally
-	// Config is a rich alternative comparing to HTTPport
-	// TODO Config *Config
+	Log        logging.PluginLogger //inject
+	PluginName core.PluginName      //inject
+	config.PluginConfig             //inject
 }
 
-// Init is entry point called by Agent Core
+// Init is the plugin entry point called by Agent Core
 // - It prepares Gorilla MUX HTTP Router
-// - registers grpc transport
 func (plugin *Plugin) Init() (err error) {
-	if plugin.HTTPport == "" /*TODO && plugin.Config == nil*/ {
-		plugin.HTTPport = httpPort
+	if plugin.Config == nil {
+		plugin.Config = DefaultConfig()
+	}
+	if err := PluginConfig(plugin.Deps.PluginConfig, plugin.Config, plugin.Deps.PluginName); err != nil {
+		return err
 	}
 
 	plugin.mx = mux.NewRouter()
@@ -80,31 +70,29 @@ func (plugin *Plugin) Init() (err error) {
 		IndentJSON: true,
 	})
 
-	//TODO separate plugin:
-	//plugin.grpcServer = grpcsync.NewAdapter()
-	//plugin.Debug("grpctransp: ", plugin.grpcServer)
-	//err = datasync.RegisterTransport(&syncbase.Adapter{Watcher: plugin.grpcServer})
-
 	return err
 }
 
-// RegisterHTTPHandler propagates to Gorilla mux
+// RegisterHTTPHandler registers HTTP <handler> at the given <path>.
 func (plugin *Plugin) RegisterHTTPHandler(path string,
 	handler func(formatter *render.Render) http.HandlerFunc,
 	methods ...string) *mux.Route {
+	plugin.Log.Debug("Register handler ", path)
+
 	return plugin.mx.HandleFunc(path, handler(plugin.formatter)).Methods(methods...)
 }
 
-// AfterInit starts the HTTP server
-func (plugin *Plugin) AfterInit() (err error) {
-	var cfgCopy Config
-	/*TODO if plugin.Config != nil {
-		cfgCopy = *plugin.Config
-	}*/
-
-	if cfgCopy.Endpoint == "" {
-		cfgCopy.Endpoint = fmt.Sprintf("0.0.0.0:%s", plugin.HTTPport)
+// GetPort returns plugin configuration port
+func (plugin *Plugin) GetPort() int {
+	if plugin.Config != nil {
+		return plugin.Config.GetPort()
 	}
+	return 0
+}
+
+// AfterInit starts the HTTP server.
+func (plugin *Plugin) AfterInit() (err error) {
+	cfgCopy := *plugin.Config
 
 	if plugin.listenAndServe != nil {
 		plugin.server, err = plugin.listenAndServe(cfgCopy, plugin.mx)
@@ -116,8 +104,16 @@ func (plugin *Plugin) AfterInit() (err error) {
 	return err
 }
 
-// Close cleans up the resources
+// Close stops the HTTP server.
 func (plugin *Plugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.grpcServer, plugin.server)
+	_, err := safeclose.CloseAll(plugin.server)
 	return err
+}
+
+// String returns plugin name (if not set defaults to "HTTP")
+func (plugin *Plugin) String() string {
+	if plugin.Deps.PluginName != "" {
+		return string(plugin.Deps.PluginName)
+	}
+	return "HTTP"
 }

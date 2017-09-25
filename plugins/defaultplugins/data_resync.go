@@ -26,6 +26,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"time"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -76,7 +77,7 @@ func NewDataResyncReq() *DataResyncReq {
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
 func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 	log.DefaultLogger().Info("resync the VPP Configuration begin")
-
+	startTime := time.Now()
 	plugin.ifConfigurator.Resync(req.Interfaces)
 	plugin.aclConfigurator.Resync(req.ACLs)
 	plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey)
@@ -87,7 +88,8 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 	plugin.xcConfigurator.Resync(req.XConnects)
 	plugin.routeConfigurator.Resync(req.StaticRoutes)
 
-	log.DefaultLogger().Debug("resync the VPP Configuration end")
+	vppResync := time.Since(startTime)
+	log.DefaultLogger().WithField("durationInNs", vppResync.Nanoseconds()).Info("resync the VPP Configuration end")
 
 	return nil
 }

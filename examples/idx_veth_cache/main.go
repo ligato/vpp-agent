@@ -161,6 +161,13 @@ func (plugin *ExamplePlugin) Init() error {
 		return fmt.Errorf("linux plugin not initialized")
 	}
 
+	// Run consumer
+	go plugin.consume()
+
+	// Cache the agent1/agent2 name-to-idx mapping to separate mapping within plugin example
+	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1, plugin.PluginName)
+	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2, plugin.PluginName)
+
 	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 
 	return err
@@ -177,13 +184,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	if err != nil {
 		return err
 	}
-
-	// Cache the agent1/agent2 name-to-idx mapping to separate mapping within plugin example
-	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1, plugin.PluginName)
-	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2, plugin.PluginName)
-
-	// Run consumer
-	go plugin.consume()
 
 	// Publish test data
 	plugin.publish()
@@ -247,7 +247,8 @@ func (plugin *ExamplePlugin) consume() (err error) {
 	for watching {
 		select {
 		case ifaceIdxEvent := <-linuxIfIdxChan:
-			plugin.Log.Infof("Event received: VETH interface %v", ifaceIdxEvent.Name)
+			plugin.Log.Info("Event received: VETH interface ", ifaceIdxEvent.Name,
+				" of ", ifaceIdxEvent.RegistryTitle)
 			counter++
 		}
 		// Example is expecting 3 events

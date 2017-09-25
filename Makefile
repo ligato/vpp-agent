@@ -100,6 +100,7 @@ endef
 # run test examples
 define test_examples
     @echo "# Testing examples"
+    ./scripts/test_examples.sh
     @echo "# done"
 endef
 

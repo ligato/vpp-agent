@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -171,7 +172,10 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.StandardLogger())
+	// Log warnings and errors only
+	log := logroot.StandardLogger()
+	log.SetLevel(logging.WarnLevel)
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +195,10 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, logroot.StandardLogger())
+	// Log warnings and errors only
+	log := logroot.StandardLogger()
+	log.SetLevel(logging.WarnLevel)
+	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err
 	}

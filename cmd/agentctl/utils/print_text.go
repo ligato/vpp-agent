@@ -238,7 +238,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"\n{{pfx 5}}{{setBold $iface.Name}} shg: {{$iface.SplitHorizonGroup}}" +
 			// Iterate over BD status interfaces - end of loop
 			"{{end}}{{end}}" +
-			"\n{{pfx 4}}BVI: {{.BviInterface}}" +
+			"\n{{pfx 4}}BVI: <{{.BviInterface}}>" +
 			// Out of '.Status"
 			"{{end}}{{end}}" +
 
