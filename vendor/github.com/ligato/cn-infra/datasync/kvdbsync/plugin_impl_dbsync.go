@@ -38,7 +38,7 @@ type Plugin struct {
 
 type infraDeps interface {
 	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck)
-	InfraDeps(pluginName string) *local.PluginInfraDeps
+	InfraDeps(pluginName string, opts ...local.InfraDepsOpts) *local.PluginInfraDeps
 }
 
 // OfDifferentAgent allows access DB of different agent (with a particular microservice label).
@@ -61,9 +61,9 @@ func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps                      // inject
-	ResyncOrch            resync.Subscriber    // inject
-	KvPlugin              keyval.KvProtoPlugin // inject
+	local.PluginInfraDeps           // inject
+	ResyncOrch resync.Subscriber    // inject
+	KvPlugin   keyval.KvProtoPlugin // inject
 }
 
 // Init just initializes plugin.registry.
