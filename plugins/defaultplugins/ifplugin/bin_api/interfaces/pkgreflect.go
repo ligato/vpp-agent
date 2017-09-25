@@ -27,8 +27,12 @@ var Types = map[string]reflect.Type{
 	"SwInterfaceTagAddDel": reflect.TypeOf((*SwInterfaceTagAddDel)(nil)).Elem(),
 	"SwInterfaceTagAddDelReply": reflect.TypeOf((*SwInterfaceTagAddDelReply)(nil)).Elem(),
 	"VlibCounter": reflect.TypeOf((*VlibCounter)(nil)).Elem(),
+	"VnetCombinedCounter": reflect.TypeOf((*VnetCombinedCounter)(nil)).Elem(),
 	"VnetInterfaceCombinedCounters": reflect.TypeOf((*VnetInterfaceCombinedCounters)(nil)).Elem(),
 	"VnetInterfaceSimpleCounters": reflect.TypeOf((*VnetInterfaceSimpleCounters)(nil)).Elem(),
+	"VnetPerInterfaceCombinedCounters": reflect.TypeOf((*VnetPerInterfaceCombinedCounters)(nil)).Elem(),
+	"VnetPerInterfaceSimpleCounters": reflect.TypeOf((*VnetPerInterfaceSimpleCounters)(nil)).Elem(),
+	"VnetSimpleCounter": reflect.TypeOf((*VnetSimpleCounter)(nil)).Elem(),
 	"WantInterfaceEvents": reflect.TypeOf((*WantInterfaceEvents)(nil)).Elem(),
 	"WantInterfaceEventsReply": reflect.TypeOf((*WantInterfaceEventsReply)(nil)).Elem(),
 }
@@ -57,6 +61,8 @@ var Functions = map[string]reflect.Value{
 	"NewSwInterfaceTagAddDelReply": reflect.ValueOf(NewSwInterfaceTagAddDelReply),
 	"NewVnetInterfaceCombinedCounters": reflect.ValueOf(NewVnetInterfaceCombinedCounters),
 	"NewVnetInterfaceSimpleCounters": reflect.ValueOf(NewVnetInterfaceSimpleCounters),
+	"NewVnetPerInterfaceCombinedCounters": reflect.ValueOf(NewVnetPerInterfaceCombinedCounters),
+	"NewVnetPerInterfaceSimpleCounters": reflect.ValueOf(NewVnetPerInterfaceSimpleCounters),
 	"NewWantInterfaceEvents": reflect.ValueOf(NewWantInterfaceEvents),
 	"NewWantInterfaceEventsReply": reflect.ValueOf(NewWantInterfaceEventsReply),
 }

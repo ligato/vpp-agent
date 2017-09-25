@@ -1,5 +1,8 @@
 # Release v1.0.5 (not released yet)
 
+## Compatibility
+VPP version v17.10-rc0~370-g9969a32
+
 ## Major Themes
 
 - [GoVppMux](plugins/govppmux)
