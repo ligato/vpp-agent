@@ -17,6 +17,7 @@ package core
 import (
 	"testing"
 
+	"github.com/ligato/cn-infra/logging"
 	"github.com/onsi/gomega"
 )
 
@@ -113,6 +114,16 @@ func (*DummyPluginDep1) Close() error {
 	return nil
 }
 
+// Inject does nothing
+func (f *FlavorNoPlugin) Inject() bool {
+	return false
+}
+
+// LogRegistry is mock implementation - returns nil
+func (f *FlavorNoPlugin) LogRegistry() logging.Registry {
+	return nil
+}
+
 // Plugins list plugins in this flavor
 func (f *FlavorNoPlugin) Plugins() []*NamedPlugin {
 	return ListPluginsInFlavor(f)
@@ -121,4 +132,14 @@ func (f *FlavorNoPlugin) Plugins() []*NamedPlugin {
 // Plugins list plugins in this flavor
 func (f *FlavorOnePlugin) Plugins() []*NamedPlugin {
 	return ListPluginsInFlavor(f)
+}
+
+// Inject does nothing
+func (f *FlavorOnePlugin) Inject() bool {
+	return false
+}
+
+// LogRegistry is mock implementation - returns nil
+func (f *FlavorOnePlugin) LogRegistry() logging.Registry {
+	return nil
 }

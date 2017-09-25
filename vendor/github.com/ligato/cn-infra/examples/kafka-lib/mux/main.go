@@ -39,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	// Initialize multiplexer named "default".
-	mx, err := mux.InitMultiplexer(configFile, "default", client.Hash, logroot.StandardLogger())
+	mx, err := mux.InitMultiplexer(configFile, "default", logroot.StandardLogger())
 	if err != nil {
 		os.Exit(1)
 	}

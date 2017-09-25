@@ -50,15 +50,19 @@ func main() {
 	config := client.NewConfig(logroot.StandardLogger())
 	config.SetDebug(*debug)
 	config.SetPartition(int32(*partition))
-	config.SetPartitioner(*partitioner)
 	config.SetSendSuccess(true)
 	config.SetSuccessChan(succCh)
 	config.SetSendError(true)
 	config.SetErrorChan(errCh)
 	config.SetBrokers(strings.Split(*brokerList, ",")...)
 
+	sClient, err := client.NewClient(config, *partitioner)
+	if err != nil {
+		os.Exit(1)
+	}
+
 	// Create new Async-producer using NewAsyncProducer() API.
-	producer, err := client.NewAsyncProducer(config, nil)
+	producer, err := client.NewAsyncProducer(config, sClient, *partitioner, nil)
 	if err != nil {
 		os.Exit(1)
 	}

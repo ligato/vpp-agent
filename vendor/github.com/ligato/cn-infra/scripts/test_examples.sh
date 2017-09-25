@@ -8,11 +8,19 @@ PREV_IFS="$IFS"
 # arguments
 # 1-st command to run
 # 2-nd array of expected strings in the command output
+# 3-rd argument is an optional command runtime limit
 function testOutput {
 IFS="${PREV_IFS}"
 
     #run the command
-    $1 > ${TMP_FILE} 2>&1
+    if [ $# -ge 3 ]; then
+        $1 > ${TMP_FILE} 2>&1 &
+        CMD_PID=$!
+        sleep $3
+        kill $CMD_PID
+    else
+        $1 > ${TMP_FILE} 2>&1
+    fi
 
 IFS="
 "
@@ -190,12 +198,19 @@ stopKafka
 
 startCustomizedKafka examples/kafka-plugin/manual-partitioner/server.properties
 
-expected=("Received async Kafka Message, topic 'example-async-topic', partition '2', offset '0', key: 'async-proto-key'
-Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '5', key: 'proto-key'
-Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '6', key: 'proto-key'
-Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '7', key: 'proto-key'
-Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '8', key: 'proto-key'
-Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '9', key: 'proto-key'
+expected=("Sending 10 sync Kafka notifications
+Sending 10 async Kafka notifications
+Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '5', key: 'proto-key',
+Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '6', key: 'proto-key',
+Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '7', key: 'proto-key',
+Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '8', key: 'proto-key',
+Received sync Kafka Message, topic 'example-sync-topic', partition '1', offset '9', key: 'proto-key',
+Received async Kafka Message, topic 'example-async-topic', partition '2', offset '5', key: 'async-proto-key',
+Received async Kafka Message, topic 'example-async-topic', partition '2', offset '6', key: 'async-proto-key',
+Received async Kafka Message, topic 'example-async-topic', partition '2', offset '7', key: 'async-proto-key',
+Received async Kafka Message, topic 'example-async-topic', partition '2', offset '8', key: 'async-proto-key',
+Received async Kafka Message, topic 'example-async-topic', partition '2', offset '9', key: 'async-proto-key',
+Async message successfully delivered, topic 'example-async-topic'
 ")
 
 cmd="examples/kafka-plugin/manual-partitioner/manual-partitioner --kafka-config examples/kafka-plugin/manual-partitioner/kafka.conf"
@@ -207,11 +222,11 @@ stopKafka
 
 startKafka
 
-expected=("Sync proto message sent
-Async proto message sent
-Received async Kafka Message, topic 'example-topic', partition '0', offset '1', key: 'async-proto-key'
-Received Kafka Message, topic 'example-topic', partition '0', offset '0', key: 'proto-key'
-Received Kafka Message, topic 'example-topic', partition '0', offset '1', key: 'async-proto-key'
+expected=("Sending 10 sync Kafka notifications
+Sending 10 async Kafka notifications
+Received Kafka Message, topic 'example-sync-topic'
+Async message successfully delivered, topic 'example-async-topic'
+Received async Kafka Message, topic 'example-async-topic'
 ")
 
 cmd="examples/kafka-plugin/hash-partitioner/hash-partitioner --kafka-config examples/kafka-plugin/hash-partitioner/kafka.conf"
@@ -246,6 +261,35 @@ Stopping agent...
 ")
 
 testOutput examples/logs-plugin/logs-plugin "${expected}"
+
+#### Simple-agent ########################################################
+
+expected=("etcd config not found  - skip loading this plugin
+kafka config not found  - skip loading this plugin
+redis config not found  - skip loading this plugin
+cassandra client config not found  - skip loading this plugin
+All plugins initialized successfully
+")
+
+testOutput examples/simple-agent/simple-agent "${expected}" 5
+
+#### Simple-agent with Kafka and ETCD ####################################
+
+startEtcd
+startKafka
+
+expected=("Plugin etcdv3: status check probe registered
+Plugin kafka: status check probe registered
+redis config not found  - skip loading this plugin
+cassandra client config not found  - skip loading this plugin
+All plugins initialized successfully
+")
+
+cmd="examples/simple-agent/simple-agent --etcdv3-config=examples/datasync-plugin/etcd.conf --kafka-config examples/kafka-plugin/hash-partitioner/kafka.conf"
+testOutput "${cmd}" "${expected}" 5
+
+stopEtcd
+stopKafka
 
 ##########################################################################
 

@@ -65,13 +65,13 @@ const (
 )
 
 // NewAgent returns a new instance of the Agent with plugins.
-// <plugins> that are going to be started (internally it calls Flavor.Plugins())
-// <opts> allows optionally set:
-// - logger (default logger name=core) will be used to log messages related to the agent life-cycle,
-//   but not for the plugins themselves.
-// - maxStartup (default 15 sec) puts a time limit on initialization of all provided plugins.
-//   Agent.Start() returns ErrPluginsInitTimeout error if one or more plugins fail
-//   to initialize inside the specified time limit.
+// <logger> will be used to log messages related to the agent life-cycle,
+// but not for the plugins themselves.
+// <maxStartup> puts a time limit on initialization of all provided plugins.
+// Agent.Start() returns ErrPluginsInitTimeout error if one or more plugins fail
+// to initialize inside the specified time limit.
+// <plugins> is a variable list of plugins to load. ListPluginsInFlavor() helper
+// method can be used to obtain the list from a given flavor.
 func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*NamedPlugin) *Agent {
 	a := Agent{
 		plugins,
@@ -80,37 +80,6 @@ func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*Named
 	}
 	return &a
 }
-
-/*func NewAgent(plugins Flavor, opts ...Option) *Agent {
-	var logger logging.Logger
-	var maxStartup time.Duration = 15 * time.Second
-
-	for _, opt := range opts {
-		switch opt.(type) {
-		case *WithTimeoutOpt:
-			maxStartup = opt.(*WithTimeoutOpt).Timeout
-		case *WithLoggerOpt:
-			logger = opt.(*WithLoggerOpt).Logger
-		}
-	}
-
-	if logger == nil {
-		existing, found := plugins.LogRegistry().Lookup("core")
-		if found {
-			logger = existing
-		} else {
-			logger = plugins.LogRegistry().NewLogger("core")
-		}
-	}
-
-	a := Agent{
-		plugins.Plugins(),
-		logger,
-		startup{MaxStartupTime: maxStartup},
-	}
-	return &a
-}
-*/
 
 // Start starts/initializes all selected plugins.
 // The first iteration tries to run Init() method on every plugin from the list.

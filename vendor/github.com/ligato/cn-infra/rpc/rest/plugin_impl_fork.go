@@ -21,7 +21,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync/grpcsync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/unrolled/render"
 )
@@ -38,10 +37,9 @@ type ForkPlugin struct {
 	// Used mainly for testing purposes
 	listenAndServe ListenAndServe
 
-	server     io.Closer
-	mx         *mux.Router
-	formatter  *render.Render
-	grpcServer *grpcsync.Adapter
+	server    io.Closer
+	mx        *mux.Router
+	formatter *render.Render
 }
 
 // ForkDeps lists the dependencies of the Fork on top of Rest plugin.
@@ -77,7 +75,6 @@ func (plugin *ForkPlugin) Init() (err error) {
 	} else {
 		plugin.delegate = plugin.Deps.DefaultHTTP
 	}
-
 
 	if plugin.newPlugin != nil {
 		return plugin.newPlugin.Init()

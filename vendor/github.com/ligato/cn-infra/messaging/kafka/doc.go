@@ -55,7 +55,7 @@ Usage of synchronous producer:
 	producer.SendMsgByte(topic, key, value, meta)
 
 	// key and value are of type Encoder
-	producer.SendMsg(topic, key, value, meta)
+	producer.SendMsgToPartition(topic, key, value, meta)
 
 Usage of asynchronous producer:
 	succCh := make(chan *client.ProducerMessage)

@@ -40,13 +40,14 @@ level of verification from the compiler.
 Skeleton of the flavor methods:
 
 ```go
-func (f *Flavor) Inject() error {
+func (f *Flavor) Inject() bool {
        if f.injected { // inject at most once
-             return nil
+             return false
        }
        f.injected = true
 
        // perform the dependency injection here
+       return true
 }
 
 func (f *Flavor) Plugins() []*core.NamedPlugin {

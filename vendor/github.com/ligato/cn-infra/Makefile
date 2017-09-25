@@ -79,6 +79,7 @@ define build_plugin_examples_only
     @cd examples/flags-lib && go build -v ${LDFLAGS}
     @cd examples/kafka-plugin/manual-partitioner && go build -v ${LDFLAGS}
     @cd examples/kafka-plugin/hash-partitioner && go build -v ${LDFLAGS}
+    @cd examples/kafka-plugin/post-init-consumer && go build -v ${LDFLAGS}
     @cd examples/logs-plugin && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
     @cd examples/redis-plugin && go build -v ${LDFLAGS}

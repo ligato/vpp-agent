@@ -83,7 +83,7 @@ func main() {
 	config.SetGroup(*groupID)
 
 	// Demonstrate NewConsumer() API to create a new message consumer.
-	consumer, err := client.NewConsumer(config, nil)
+	consumer, err := client.NewConsumer(config, true, nil)
 	if err != nil {
 		fmt.Printf("Failed to create a new Kafka consumer: %v", err)
 		os.Exit(1)

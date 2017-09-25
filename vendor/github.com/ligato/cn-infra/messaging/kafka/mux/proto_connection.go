@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
@@ -80,34 +81,22 @@ type protoManualAsyncPublisherKafka struct {
 
 // NewSyncPublisher creates a new instance of protoSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewSyncPublisher(topic string) (messaging.ProtoPublisher, error) {
-	if conn.multiplexer.partitioner == client.Manual {
-		return nil, fmt.Errorf("unable to use default sync publisher with 'manual' partitioner")
-	}
 	return &protoSyncPublisherKafka{conn, topic, DefPartition}, nil
 }
 
 // NewAsyncPublisher creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
-	if conn.multiplexer.partitioner == client.Manual {
-		return nil, fmt.Errorf("unable to use default async publisher with 'manual' partitioner")
-	}
 	return &protoAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}, nil
 }
 
-// NewSyncPublisherToPartition creates a new instance of protoSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
+// NewSyncPublisherToPartition creates a new instance of protoManualSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoManualConnection) NewSyncPublisherToPartition(topic string, partition int32) (messaging.ProtoPublisher, error) {
-	if conn.multiplexer.partitioner != client.Manual {
-		return nil, fmt.Errorf("sync publisher to partition can be used only with 'manual' partitioner")
-	}
 	return &protoManualSyncPublisherKafka{conn, topic, partition}, nil
 }
 
-// NewAsyncPublisherToPartition creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka
+// NewAsyncPublisherToPartition creates a new instance of protoManualAsyncPublisherKafka that allows to publish sync kafka
 // messages using common messaging API.
 func (conn *ProtoManualConnection) NewAsyncPublisherToPartition(topic string, partition int32, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
-	if conn.multiplexer.partitioner != client.Manual {
-		return nil, fmt.Errorf("async publisher to partition can be used only with 'manual' partitioner")
-	}
 	return &protoManualAsyncPublisherKafka{conn, topic, partition, successClb, errorClb}, nil
 }
 
@@ -180,10 +169,6 @@ func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoM
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
 
-	if conn.multiplexer.started {
-		return fmt.Errorf("ConsumeTopicOnPartition can be called only if the multiplexer has not been started yet")
-	}
-
 	byteClb := func(bm *client.ConsumerMessage) {
 		pm := client.NewProtoConsumerMessage(bm, conn.serializer)
 		msgClb(pm)
@@ -221,6 +206,45 @@ func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoM
 	// add subscription to consumerList
 	subs.byteConsMsg = byteClb
 
+	if conn.multiplexer.started {
+		conn.multiplexer.Infof("Starting 'post-init' manual Consumer")
+		return conn.StartPostInitConsumer(msgClb, topic, partition, offset)
+	}
+
+	return nil
+}
+
+// StartPostInitConsumer allows to start a new partition consumer after mux is initialized
+func (conn *ProtoConnectionFields) StartPostInitConsumer(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
+	multiplexer := conn.multiplexer
+	multiplexer.WithFields(logging.Fields{"topic": topic}).Debugf("Post-init consuming started")
+
+	if multiplexer.sConsumer == nil {
+		multiplexer.Warn("Unable to start post-init Consumer, client not available on the mux")
+		return nil
+	}
+
+	// Consumer that reads topic/partition/offset. Throws error if offset is 'in the future' (message with offset does not exist yet)
+	partitionConsumer, err := multiplexer.sConsumer.ConsumePartition(topic, partition, offset)
+	if err != nil {
+		return err
+	}
+	// Create client consumer but do not allow to start message handlers
+	consumer, err := client.NewConsumer(multiplexer.config, false, nil)
+	if err != nil {
+		return err
+	}
+
+	// store newly created consumer in mux, so it can be closed properly
+	multiplexer.postInitConsumers = append(multiplexer.postInitConsumers, consumer)
+
+	// Start message handler
+	go consumer.MessageHandler(partitionConsumer.Messages())
+	// Start error handler
+	go consumer.ConsumerErrorHandler(partitionConsumer.Errors())
+	// Start consumer
+	go conn.multiplexer.laterStageConsumer(consumer)
+
 	return nil
 }
 
@@ -246,41 +270,50 @@ func (conn *ProtoConnectionFields) StopConsumingPartition(topic string, partitio
 
 // Put publishes a message into kafka
 func (p *protoSyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	_, err := p.conn.sendSyncMessage(p.topic, p.partition, key, message)
+	_, err := p.conn.sendSyncMessage(p.topic, p.partition, key, message, false)
 	return err
 }
 
 // Put publishes a message into kafka
 func (p *protoAsyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, nil, p.succCallback, p.errCallback)
+	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, false, nil, p.succCallback, p.errCallback)
 }
 
 // Put publishes a message into kafka
 func (p *protoManualSyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	_, err := p.conn.sendSyncMessage(p.topic, p.partition, key, message)
+	_, err := p.conn.sendSyncMessage(p.topic, p.partition, key, message, true)
 	return err
 }
 
 // Put publishes a message into kafka
 func (p *protoManualAsyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, nil, p.succCallback, p.errCallback)
+	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, true, nil, p.succCallback, p.errCallback)
 }
 
-// sendSyncMessage sends a message using the sync API
-func (conn *ProtoConnectionFields) sendSyncMessage(topic string, partition int32, key string, value proto.Message) (offset int64, err error) {
+// sendSyncMessage sends a message using the sync API. If manual mode is chosen, the appropriate producer will be used.
+func (conn *ProtoConnectionFields) sendSyncMessage(topic string, partition int32, key string, value proto.Message, manualMode bool) (offset int64, err error) {
 	data, err := conn.serializer.Marshal(value)
 	if err != nil {
 		return 0, err
 	}
-	msg, err := conn.multiplexer.syncProducer.SendMsg(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data))
+
+	if manualMode {
+		msg, err := conn.multiplexer.manSyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data))
+		if err != nil {
+			return 0, err
+		}
+		return msg.Offset, err
+	}
+	msg, err := conn.multiplexer.hashSyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data))
 	if err != nil {
 		return 0, err
 	}
 	return msg.Offset, err
 }
 
-// sendAsyncMessage sends a message using the async API
-func (conn *ProtoConnectionFields) sendAsyncMessage(topic string, partition int32, key string, value proto.Message, meta interface{}, successClb func(messaging.ProtoMessage), errClb func(messaging.ProtoMessageErr)) error {
+// sendAsyncMessage sends a message using the async API. If manual mode is chosen, the appropriate producer will be used.
+func (conn *ProtoConnectionFields) sendAsyncMessage(topic string, partition int32, key string, value proto.Message, manualMode bool,
+	meta interface{}, successClb func(messaging.ProtoMessage), errClb func(messaging.ProtoMessageErr)) error {
 	data, err := conn.serializer.Marshal(value)
 	if err != nil {
 		return err
@@ -304,7 +337,12 @@ func (conn *ProtoConnectionFields) sendAsyncMessage(topic string, partition int3
 		errClb(protoMsg)
 	}
 
+	if manualMode {
+		auxMeta := &asyncMeta{successClb: succByteClb, errorClb: errByteClb, usersMeta: meta}
+		conn.multiplexer.hashAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
+		return nil
+	}
 	auxMeta := &asyncMeta{successClb: succByteClb, errorClb: errByteClb, usersMeta: meta}
-	conn.multiplexer.asyncProducer.SendMsg(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
+	conn.multiplexer.manAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
 	return nil
 }

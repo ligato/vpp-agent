@@ -34,8 +34,14 @@ func ExampleAsyncProducer() {
 	config.SetSendError(true)
 	config.SetErrorChan(make(chan *ProducerError))
 
+	// init client
+	sClient, err := NewClient(config, Hash)
+	if err != nil {
+		return
+	}
+
 	// init producer
-	producer, err := NewAsyncProducer(config, nil)
+	producer, err := NewAsyncProducer(config, sClient, Hash, nil)
 	if err != nil {
 		log.Errorf("NewAsyncProducer errored: %v\n", err)
 		return

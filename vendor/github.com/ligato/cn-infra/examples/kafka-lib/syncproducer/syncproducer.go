@@ -49,11 +49,15 @@ func main() {
 	config := client.NewConfig(logroot.StandardLogger())
 	config.SetDebug(*debug)
 	config.SetPartition(int32(*partition))
-	config.SetPartitioner(*partitioner)
 	config.SetBrokers(strings.Split(*brokerList, ",")...)
 
+	sClient, err := client.NewClient(config, *partitioner)
+	if err != nil {
+		os.Exit(1)
+	}
+
 	// Create new Sync-producer using NewSyncProducer() API.
-	producer, err := client.NewSyncProducer(config, nil)
+	producer, err := client.NewSyncProducer(config, sClient, *partitioner, nil)
 	if err != nil {
 		fmt.Printf("NewSyncProducer errored: %v\n", err)
 		os.Exit(1)

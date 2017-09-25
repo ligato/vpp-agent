@@ -1,4 +1,4 @@
-# Release v1.0.5 (not released yet)
+# Release v1.0.5 (2017-9-25)
 
 ## Compatibility
 VPP version v17.10-rc0~370-g9969a32
@@ -7,6 +7,13 @@ VPP version v17.10-rc0~370-g9969a32
 
 - [GoVppMux](plugins/govppmux)
     - configuration file for govpp added
+- [Kafka Partitions](messaging/kafka)
+    - Changes in offset handling, only automatically partitioned messages (hash, random)
+      have their offset marked. Manually partitioned messages are not marked.
+    - Implemented post-init consumer (for manual partitioner only) which allows to start
+      consuming after kafka-plugin Init()   
+    - Minimalistic examples & documentation for Kafka API will be improved in a later release.
+    
 # Release v1.0.4 (2017-09-08)
 
 ## Major Themes

@@ -5,7 +5,7 @@ automatic (hash-based) partitioning.
 
 ### Requirements
 
-To start the examples you have to have Kafka broker running first.
+To start the example you have to have Kafka broker running first.
 if you don't have it installed locally you can use the following docker
 image.
 ```
