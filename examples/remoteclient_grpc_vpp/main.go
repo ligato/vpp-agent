@@ -27,7 +27,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/remoteclient"
-	"github.com/ligato/vpp-agent/flavors/rpc"
 	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
@@ -37,6 +36,7 @@ import (
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 	"github.com/ligato/cn-infra.bak20170821c/utils/safeclose"
+	"github.com/ligato/cn-infra/flavors/local"
 )
 
 const defaultAddress = "localhost:9111"
@@ -58,7 +58,7 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := rpc.FlavorVppRPC{}
+	flavor := local.FlavorLocal{}
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
 
