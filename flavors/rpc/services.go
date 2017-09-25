@@ -59,7 +59,6 @@ type ResyncVppSvc struct {
 	Log logging.Logger
 }
 
-// PutInterfaces 
 // PutInterfaces creates or updates one or multiple interfaces (forwards the input to localclient)
 func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.Interfaces) (
 	*vppsvc.PutResponse, error) {
