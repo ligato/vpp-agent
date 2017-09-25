@@ -6,7 +6,8 @@ ARG VPP_COMMIT="xxx"
 
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
-    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor
+    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
+    default-jre default-jdk
 
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
@@ -20,7 +21,6 @@ RUN /bin/bash -c "if [ '${VPP_URL}' == 'xxx' ]; then \
         git clone https://gerrit.fd.io/r/vpp && \
         cd vpp && \
         git checkout ${VPP_COMMIT} && \
-        echo 'vpp_configure_args += --disable-japi' >> ./build-data/packages/vpp.mk && \
         yes | make install-dep && \
         make bootstrap && \
         make pkg-deb && \
