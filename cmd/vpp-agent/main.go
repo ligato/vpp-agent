@@ -28,10 +28,10 @@ import (
 
 // main is the main entry point into the VPP Agent. First, a new CN-Infra
 // Agent (app) is created using the set of plugins defined in vpp_flavor
-// (github.com/ligato/vpp-agent/flavors/vpp). Second, function call to
-// EventLoopWithInterrupt()) initializes and starts all plugins and then
-// waits for the user to terminate the VPP Agent process. All VPP Agent's
-// work from now on is performed by the plugins.
+// (../../flavors/vpp). Second, the function calls EventLoopWithInterrupt()
+// which initializes and starts all plugins and then waits for the user
+// to terminate the VPP Agent process with SIGINT. All VPP Agent's work between
+// the initialization and termination is performed by the plugins.
 func main() {
 
 	f := vpp_flavor.Flavor{}

@@ -19,67 +19,107 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"net"
 )
 
-// DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange
-// Use this interface to make you implementation independent of local or particular remote client.
-// This interface defines the Domain Specific Language (DSL) for change of the VPP configuration.
+// DataChangeDSL defines the Domain Specific Language (DSL) for data change
+// of the VPP configuration.
+// Use this interface to make your implementation independent of the local
+// and any remote client.
+// Every DSL statement (apart from Send) returns the receiver (possibly wrapped
+// to change the scope of DSL), allowing the calls to be chained together
+// conveniently in a single statement.
 type DataChangeDSL interface {
-	// Put gives you the ability to create Interface/BD...
+	// Put initiates a chained sequence of data change DSL statements declaring
+	// new or changing existing configurable objects, e.g:
+	//     Put().Interface(&memif).XConnect(&xconnect).BD(&BD) ... Send()
+	// The set of available objects to create or change is defined by PutDSL
+	// interface which the returned object implements.
 	Put() PutDSL
 
-	// Delete gives you the ability to delete Interface/BD...
+	// Delete initiates a chained sequence of data change DSL statements
+	// removing existing configurable objects (by name), e.g:
+	//     Delete().Interface(memifName).XConnect(xconnectName).BD(BDName) ... Send()
+	// The set of available objects to remove is defined by DeleteDSL
+	// interface which the returned object implements.
 	Delete() DeleteDSL
 
-	// Send will propagate changes to the channels
+	// Send propagates requested changes to the plugins.
 	Send() Reply
 }
 
-// PutDSL is here to put here most recent and previous value with revisions
+// PutDSL is a subset of data change DSL statements used to declare new
+// or change existing VPP configuration.
 type PutDSL interface {
-	// Interface create or update request for the network interface
+	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interfaces_Interface) PutDSL
-	// BD create or update request for the Bridge Domain
+	// BfdSession adds a request to create or update bidirectional forwarding
+	// detection session.
+	BfdSession(val *bfd.SingleHopBFD_Session) PutDSL
+	// BfdAuthKeys adds a request to create or update bidirectional forwarding
+	// detection key.
+	BfdAuthKeys(val *bfd.SingleHopBFD_Key) PutDSL
+	// BfdEchoFunction adds a request to create or update bidirectional
+	// forwarding detection echo function.
+	BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) PutDSL
+	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomains_BridgeDomain) PutDSL
-	// FIB create or update request for the L2 Forwarding Information Base
+	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
 	BDFIB(fib *l2.FibTableEntries_FibTableEntry) PutDSL
-	// XConnect create or update request for the Cross Connect
+	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPairs_XConnectPair) PutDSL
-	// StaticRoute create or update request for the L3 Static Route
+	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
-	// ACL create or update request for the Access Control List
+	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
 
-	// Delete gives you the ability to delete Interface/BD...
+	// Delete changes the DSL mode to allow removal of an existing configuration.
+	// See documentation for DataChangeDSL.Delete().
 	Delete() DeleteDSL
-	// Send will propagate changes to the channels
+
+	// Send propagates requested changes to the plugins.
 	Send() Reply
 }
 
-// DeleteDSL is here to put here most recent and previous value with revisions
+// DeleteDSL is a subset of data change DSL statements used to remove
+// existing VPP configuration.
 type DeleteDSL interface {
-	// Interface delete request for the network interface
+	// Interface adds a request to delete an existing VPP network interface.
 	Interface(ifaceName string) DeleteDSL
-	// BD delete request for the Bridge Domain
+	// BfdSession adds a request to delete an existing bidirectional forwarding
+	// detection session.
+	BfdSession(bfdSessionIfaceName string) DeleteDSL
+	// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
+	// detection key.
+	BfdAuthKeys(bfdKeyName string) DeleteDSL
+	// BfdEchoFunction adds a request to delete an existing bidirectional
+	// forwarding detection echo function.
+	BfdEchoFunction(bfdEchoName string) DeleteDSL
+	// BD adds a request to delete an existing VPP Bridge Domain.
 	BD(bdName string) DeleteDSL
-	// FIB delete request for the L2 Forwarding Information Base
+	// BDFIB adds a request to delete an existing VPP L2 Forwarding Information
+	// Base.
 	BDFIB(bdName string, mac string) DeleteDSL
-	// XConnect delete request for the Cross Connect
+	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
-	// StaticRoute delete request for the L3 Static Route
+	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
-	// ACL delete request for Access Control List
+	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 
-	// Put gives you the ability to create Interface/BD...
+	// Put changes the DSL mode to allow configuration editing.
+	// See documentation for DataChangeDSL.Put().
 	Put() PutDSL
-	// Send will propagate changes to the channels
+
+	// Send propagates requested changes to the plugins.
 	Send() Reply
 }
 
-// Reply is here to gives you the ability to wait for the reply and get result (success/error)
+// Reply interface allows to wait for a reply to previously called Send() and
+// extract the result from it (success/error).
 type Reply interface {
-	// ReceiveReply TODO
+	// ReceiveReply waits for a reply to previously called Send() and returns
+	// the result (error or nil).
 	ReceiveReply() error
 }
