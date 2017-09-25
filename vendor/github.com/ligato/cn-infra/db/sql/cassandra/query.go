@@ -32,7 +32,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 	whereCondition.Accept(whereCondtionStr)
 
 	statement, _, err := updateSetExpToString(sql.EntityTableName(entity), /*TODO extract method / make customizable*/
-		entity /*, TODO TTL*/)
+		entity                                                             /*, TODO TTL*/)
 	if err != nil {
 		return "", nil, err
 	}
@@ -43,7 +43,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 		bindings = append(bindings, whereBinding...)
 	}
 
-	return strings.Trim(statement+" WHERE"+whereCondtionStr.String(), " "), bindings, nil
+	return strings.Trim(statement+" WHERE "+whereCondtionStr.String(), " "), bindings, nil
 }
 
 // SelectExpToString converts expression to string & slice of bindings
@@ -95,14 +95,16 @@ func (visitor *toStringVisitor) Binding() []interface{} {
 
 // VisitPrefixedExp generates part of SQL expression
 func (visitor *toStringVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
-	visitor.generated.WriteString(" ")
-	visitor.generated.WriteString(exp.Prefix)
 	if exp.Prefix == "FROM" {
-		visitor.generated.WriteString(" ")
+		visitor.generated.WriteString(" FROM ")
 		visitor.generated.WriteString(sql.EntityTableName(visitor.entity))
+	} else {
+		visitor.generated.WriteString(exp.Prefix)
 	}
 	if exp.AfterPrefix != nil {
-		exp.AfterPrefix.Accept(visitor)
+		for _, exp := range exp.AfterPrefix {
+			exp.Accept(visitor)
+		}
 	}
 	visitor.generated.WriteString(exp.Suffix)
 
@@ -130,7 +132,7 @@ func (visitor *toStringVisitor) VisitFieldExpression(exp *sql.FieldExpression) {
 			visitor.lastError = ErrUnexportedEntityField
 			return
 		}
-		visitor.generated.WriteString(" ")
+		//visitor.generated.WriteString(" ")
 		visitor.generated.WriteString(fieldName)
 
 		if exp.AfterField != nil {
@@ -289,7 +291,9 @@ func (visitor *findEntityVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
 			visitor.entity = exp.Binding[0]
 		}
 	} else if exp.AfterPrefix != nil {
-		exp.AfterPrefix.Accept(visitor)
+		for _, exp := range exp.AfterPrefix {
+			exp.Accept(visitor)
+		}
 	}
 }
 

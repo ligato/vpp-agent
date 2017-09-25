@@ -34,6 +34,7 @@ type Plugin struct {
 	Deps // inject
 	*plugin.Skeleton
 	disabled bool
+	connection *BytesConnectionEtcd
 }
 
 // Deps lists dependencies of the etcdv3 plugin.
@@ -70,14 +71,14 @@ func (p *Plugin) Init() (err error) {
 
 	// Init connection
 	if p.Skeleton == nil {
-		con, err := NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
+		p.connection, err = NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
 		if err != nil {
 			return err
 		}
 
 		p.Skeleton = plugin.NewSkeleton(p.String(),
 			p.ServiceLabel,
-			con,
+			p.connection,
 		)
 	}
 	err = p.Skeleton.Init()
@@ -98,7 +99,7 @@ func (p *Plugin) AfterInit() error {
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
@@ -120,7 +121,7 @@ func FromExistingConnection(connection keyval.CoreBrokerWatcher, sl servicelabel
 
 // Close shutdowns the connection.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton)
+	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
 	return err
 }
 

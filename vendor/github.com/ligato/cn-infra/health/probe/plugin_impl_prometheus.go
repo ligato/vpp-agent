@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	defaultPluginName string = "HEALTH-METRICS"
-	agentName         string = "agent"
+	defaultPluginName string = "PROMETHEUS"
 
 	// DefaultMetricsPath default Prometheus metrics URL
 	DefaultMetricsPath string = "/metrics"
@@ -74,12 +73,17 @@ type PrometheusPlugin struct {
 // Init may create a new (custom) instance of HTTP if the injected instance uses
 // different HTTP port than requested.
 func (p *PrometheusPlugin) Init() (err error) {
+	serviceLabel := p.String()
+	if p.Deps.ServiceLabel != nil {
+		serviceLabel = p.Deps.ServiceLabel.GetAgentLabel()
+	}
+
 	p.registerGauge(
 		Namespace,
 		Subsystem,
 		ServiceHealthName,
 		ServiceHealthHelp,
-		prometheus.Labels{ServiceLabel: agentName},
+		prometheus.Labels{ServiceLabel: serviceLabel},
 		p.getServiceHealth,
 	)
 
@@ -90,7 +94,7 @@ func (p *PrometheusPlugin) Init() (err error) {
 		ServiceInfoName,
 		ServiceInfoHelp,
 		prometheus.Labels{
-			ServiceLabel:      agentName,
+			ServiceLabel:      serviceLabel,
 			BuildVersionLabel: agentStatus.BuildVersion,
 			BuildDateLabel:    agentStatus.BuildDate},
 		func() float64 { return 1 },

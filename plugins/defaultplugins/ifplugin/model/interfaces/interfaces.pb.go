@@ -15,7 +15,7 @@ It has these top-level messages:
 */
 package interfaces
 
-import "github.com/gogo/protobuf/proto"
+import proto "github.com/gogo/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

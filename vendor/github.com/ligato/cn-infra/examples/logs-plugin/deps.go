@@ -5,6 +5,11 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 )
 
+// Deps - dependencies for ExamplePlugin
+type Deps struct {
+	local.PluginLogDeps
+}
+
 // ExampleFlavor is a composition of ExamplePlugin with Local flavor.
 type ExampleFlavor struct {
 	local.FlavorLocal

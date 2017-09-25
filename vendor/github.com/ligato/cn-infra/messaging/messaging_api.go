@@ -43,8 +43,11 @@ type Mux interface {
 		successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
 
 	// Initializes new watcher which can start/stop watching on topic,
-	// eventually partition and offset.
 	NewWatcher(subscriberName string) ProtoWatcher
+
+	// Initializes new watcher which can start/stop watching on topic,
+	// eventually partition and offset.
+	NewPartitionWatcher(subscriberName string) ProtoPartitionWatcher
 
 	// Disabled if the plugin config was not found.
 	Disabled() (disabled bool)
@@ -67,7 +70,11 @@ type ProtoWatcher interface {
 	// StopWatch cancels the previously created subscription for consuming
 	// a given <topic>.
 	StopWatch(topic string) error
+}
 
+// ProtoPartitionWatcher allows to subscribe for receiving of messages published
+// to selected topics, partitions and offsets
+type ProtoPartitionWatcher interface {
 	// WatchPartition starts consuming specific <partition> of a selected <topic>
 	// from a given <offset>. Offset is the oldest message index consumed,
 	// all previously published messages are ignored.

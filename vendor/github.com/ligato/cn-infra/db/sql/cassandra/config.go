@@ -110,6 +110,11 @@ func ConfigToClientConfig(ymlConfig *Config) (*ClientConfig, error) {
 func CreateSessionFromConfig(config *ClientConfig) (*gocql.Session, error) {
 
 	gocqlClusterConfig := gocql.NewCluster(HostsAsString(config.Hosts))
+	gocqlClusterConfig.Port = config.Port
+	gocqlClusterConfig.ConnectTimeout = config.ConnectTimeout
+	gocqlClusterConfig.ReconnectInterval = config.ReconnectInterval
+	gocqlClusterConfig.Timeout = config.Timeout
+	gocqlClusterConfig.ProtoVersion = config.ProtoVersion
 
 	session, err := gocqlClusterConfig.CreateSession()
 

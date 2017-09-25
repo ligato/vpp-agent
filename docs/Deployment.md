@@ -35,21 +35,20 @@ of the interface:
  - remote client using Data Broker
  - remote client using GRPC
 
-### Key Value Data Store for NB
-The Control Plane writes configuration to the Data Store using a remote
-client (tested with ETCD, Redis). VPP Agent watches dedicated key
-prefixes in Data Store using dbsync package.
+### Key Value Data Store for NB (north-bound)
+The Control Plane using remote client writes (north-bound) configuration
+to the Data Store (tested with ETCD, Redis). VPP Agent watches dedicated
+key prefixes in Data Store using dbsync package.
 
 ![deployment with data store](imgs/deployment_with_data_store.png)
 TBD links to the code
 
-### GRPC
-The Control Plane using remote client sends configuration to the Data
-Store (tested with ETCD, Redis). VPP Agent watches particular key prefixes in Data
-Store using grpcsync package.
+### GRPC for NB (north-bound)
+The Control Plane using remote client sends configuration (north-bound)
+via Remote Procedure Call (in this case GRPC). VPP Agent exposes GRPC
+service.
 
 ![grpc northbound](imgs/deployment_nb_grpc.png)
-TBD links to the code
 
 ### Embedded deployment
 VPP Agent can be directly embedded into a different project.

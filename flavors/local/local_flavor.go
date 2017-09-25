@@ -40,9 +40,9 @@ type FlavorVppLocal struct {
 }
 
 // Inject sets inter-plugin references.
-func (f *FlavorVppLocal) Inject() error {
+func (f *FlavorVppLocal) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -58,7 +58,7 @@ func (f *FlavorVppLocal) Inject() error {
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
-	return nil
+	return true
 }
 
 // Plugins combines all Plugins in the flavor to a list.

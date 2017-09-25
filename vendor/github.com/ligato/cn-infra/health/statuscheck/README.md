@@ -68,10 +68,10 @@ $ etcdctl get /vnf-agent/<agent-label>/check/status/v1/plugin/GOVPP
 ```
 
 ### PUSH Plugin Status:
-![status check pull](../../docs/imgs/status_check_pull.png)
+![status check pull](../../docs/imgs/status_check_push.png)
 
 ### PULL Plugins Status - PROBING:
-![status check push](../../docs/imgs/status_check_push.png)
+![status check push](../../docs/imgs/status_check_pull.png)
 
 
 [1]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/

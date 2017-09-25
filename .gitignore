@@ -11,3 +11,5 @@ examples/idx_mapping_watcher/idx_mapping_watcher
 examples/idx_veth_cache/idx_veth_cache
 examples/localclient_linux/localclient_linux
 examples/localclient_vpp/localclient_vpp
+tests/perf/log
+tests/perf/logresult.zip

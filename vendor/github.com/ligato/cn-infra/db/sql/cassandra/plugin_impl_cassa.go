@@ -25,6 +25,11 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
+//
+const (
+	probeCassandraConnection = "SELECT keyspace_name FROM system_schema.keyspaces"
+)
+
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
 	Deps // inject
@@ -41,10 +46,10 @@ type Deps struct {
 
 var (
 	// ErrMissingVisitorEntity is error returned when visitor is missing entity.
-	ErrMissingVisitorEntity  = errors.New("cassandra: visitor is missing entity")
+	ErrMissingVisitorEntity = errors.New("cassandra: visitor is missing entity")
 
 	// ErrMissingEntityField is error returned when visitor entity is missing field.
-	ErrMissingEntityField    = errors.New("cassandra: visitor entity is missing field")
+	ErrMissingEntityField = errors.New("cassandra: visitor entity is missing field")
 
 	// ErrUnexportedEntityField is error returned when visitor entity has unexported field.
 	ErrUnexportedEntityField = errors.New("cassandra: visitor entity with unexported field")
@@ -53,7 +58,7 @@ var (
 	ErrInvalidEndpointConfig = errors.New("cassandra: invalid configuration, endpoint and port not in valid format")
 )
 
-// Init is called at plugin startup. The session to etcd is established.
+// Init is called at plugin startup. The session to Cassandra is established.
 func (p *Plugin) Init() (err error) {
 	if p.session != nil {
 		return nil // skip initialization
@@ -95,8 +100,7 @@ func (p *Plugin) AfterInit() error {
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil && p.session != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			broker := p.NewBroker()
-			err := broker.Exec(`select keyspace_name from system_schema.keyspaces`)
+			err := p.session.Exec(probeCassandraConnection)
 			if err == nil {
 				return statuscheck.OK, nil
 			}

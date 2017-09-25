@@ -23,7 +23,7 @@ import (
 
 // Deps lists dependencies of all proble plugins.
 type Deps struct {
-	local.PluginLogDeps                       // inject
-	HTTP        rest.HTTPHandlers             // inject
-	StatusCheck statuscheck.AgentStatusReader // inject
+	local.PluginInfraDeps                               // inject
+	HTTP                  rest.HTTPHandlers             // inject
+	StatusCheck           statuscheck.AgentStatusReader // inject
 }

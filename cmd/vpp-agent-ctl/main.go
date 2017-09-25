@@ -115,7 +115,7 @@ func main() {
 		case "-dms":
 			delete(db, interfaces.InterfaceKey(memif))
 		case "-cvx":
-			createVxlan(db, vxlan, 13, "192.168.42.1/24", "192.168.42.2/24")
+			createVxlan(db, vxlan, 13, "192.168.42.1", "192.168.42.2")
 		case "-dvx":
 			delete(db, interfaces.InterfaceKey(vxlan))
 		case "-acl":
@@ -507,22 +507,22 @@ func listAllAgentKeys(db *etcdv3.BytesConnectionEtcd) {
 	}
 }
 
-func create(db keyval.ProtoBroker, ifname1 string, ipAddr string) {
+func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	// fill in data - option 1
 	ifs := interfaces.Interfaces{}
 	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
+	ifs.Interface[0].Name = ifname
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
 	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
 	ifs.Interface[0].Enabled = true
 	//ifs.Interface[0].Mtu = 555
 	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "10.1.1.2"
+	ifs.Interface[0].IpAddresses[0] = ipAddr
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
 	log.Println(ifs)
 
@@ -569,13 +569,9 @@ func createLoopback(db keyval.ProtoBroker, ifname string, physAddr string, ipv4A
 
 	ifs.Interface[0].Enabled = true
 	ifs.Interface[0].Mtu = 1478
-	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].IpAddresses = make([]string, 2)
 	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1478
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv6Addr
+	ifs.Interface[0].IpAddresses[1] = ipv6Addr
 
 	log.Println(ifs)
 

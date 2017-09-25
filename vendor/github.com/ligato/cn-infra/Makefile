@@ -81,6 +81,7 @@ define build_plugin_examples_only
     @cd examples/kafka-plugin/hash-partitioner && go build -v ${LDFLAGS}
     @cd examples/logs-plugin && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
+    @cd examples/redis-plugin && go build -v ${LDFLAGS}
     @echo "# done"
 endef
 
@@ -117,6 +118,7 @@ define clean_plugin_examples_only
     @rm -f examples/kafka-plugin/manual-partitioner/manual-partitioner
     @rm -f examples/kafka-plugin/hash-partitioner/hash-partitioner
     @rm -f examples/logs-plugin/logs-plugin
+    @rm -f examples/redis-plugin/redis-plugin
     @echo "# done"
 endef
 
