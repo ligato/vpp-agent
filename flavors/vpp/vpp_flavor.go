@@ -14,48 +14,48 @@ import (
 	"github.com/namsral/flag"
 )
 
-const kafkaIfStateTopic = "if_state" // IfStatePub topic where interface state changes are published.
+// kafkaIfStateTopic is the topic where interface state changes are published.
+const kafkaIfStateTopic = "if_state"
 
-// DefaultPluginsConfFlag used as flag name (see implementation in declareFlags())
+// DefaultPluginsConfFlag used as a flag name.
 // It is used to load configuration of MTU for defaultplugins.
 const DefaultPluginsConfFlag = "default-plugins-config"
 
-// DefaultPluginsConf is default (flag value) - filename for the configuration.
+// DefaultPluginsConf is default (flag value) - filename for the configuration
+// of defaultplugins.
 const DefaultPluginsConf = "defaultplugins.conf"
 
-// DefaultPluginsConfUsage used as flag usage (see implementation in declareFlags())
+// DefaultPluginsConfUsage used as flag usage for DefaultPluginsConfFlag.
 const DefaultPluginsConfUsage = "Location of the MTU configuration file; also set via 'MTU_CONFIG' env variable."
 
-// IfStatePubConfFlag used as flag name (see implementation in declareFlags())
-// It is used to load configuration of Cassandra client plugin.
-// This flag name is calculated from the name of the plugin.
+// IfStatePubConfFlag used as a flag name.
+// It is used to load configuration related to the state data publishing.
 const IfStatePubConfFlag = "ifstate_pub-config"
 
-// IfStatePubConf  is default (flag value) - filename for the configuration.
+// IfStatePubConf is default (flag value) - filename for the configuration.
 const IfStatePubConf = "ifstate-pub.conf"
 
-// IfStatePubConfUsage used as flag usage (see implementation in declareFlags())
+// IfStatePubConfUsage used as flag usage.
 const IfStatePubConfUsage = "Location of the interface state publish configuration file; also set via 'IFSTATE_PUB_CONFIG' env variable."
 
 // GoVPPConfFlag used as flag name (see implementation in declareFlags())
 // It is used to load configuration of GoVPP client plugin.
-// This flag name is calculated from the name of the plugin.
 const GoVPPConfFlag = "govpp-config"
 
-// GoVPPConf  is default (flag value) - filename for the configuration.
+// GoVPPConf is default (flag value) - filename for the GoVPP configuration.
 const GoVPPConf = "govpp.conf"
 
-// GoVPPConfUsage used as flag usage (see implementation in declareFlags())
+// GoVPPConfUsage used as flag usage for GoVPPConfFlag.
 const GoVPPConfUsage = "Location of the GoVPP configuration file; also set via 'GOVPP_CONFIG' env variable."
 
-// Flavor glues together multiple plugins to translate ETCD configuration into VPP.
+// Flavor glues together multiple plugins to build a full-featured VPP agent.
 type Flavor struct {
 	*local.FlavorLocal
 	*connectors.AllConnectorsFlavor // connectors have to be started before vpp flavor
 	*rpc.FlavorRPC
 
-	//this can be reused later even for Linux plugin
-	//it has its own configuration
+	// This can be reused later even for the Linux plugin,
+	// it has its own configuration.
 	IfStatePub msgsync.PubPlugin
 
 	GoVPP govppmux.GOVPPPlugin
@@ -65,7 +65,7 @@ type Flavor struct {
 	injected bool
 }
 
-// Inject sets object references
+// Inject sets inter-plugin references
 func (f *Flavor) Inject() bool {
 	if f.injected {
 		return false
@@ -87,10 +87,10 @@ func (f *Flavor) Inject() bool {
 
 	f.IfStatePub.Messaging = &f.Kafka
 	f.IfStatePub.PluginInfraDeps = *f.InfraDeps("ifstate-pub")
-	// If needed provide configuration using ifstate-pub-config.
-	// Set default configuration, it is overridable using ifstate-pub-config
-	// Intent not putting this configuration to vpp plugin is that
-	// this way it is reusable even for Linux plugin.
+	// If needed, provide configuration using ifstate-pub-config.
+	// Set default configuration, it is overridable using ifstate-pub-config.
+	// Intent of not putting this configuration into the vpp plugin is that
+	// this way it is reusable even for the Linux plugin.
 	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
 
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
@@ -116,7 +116,7 @@ func (f *Flavor) injectEmbedded() {
 	f.AllConnectorsFlavor.Inject()
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins + (their ETCD Connector/Adapter with RESYNC)
+// Plugins combines all Plugins in the flavor to a list.
 func (f *Flavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
