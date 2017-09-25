@@ -44,9 +44,9 @@ type FlavorVppRPC struct {
 }
 
 // Inject sets object references
-func (f *FlavorVppRPC) Inject() error {
+func (f *FlavorVppRPC) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -69,7 +69,7 @@ func (f *FlavorVppRPC) Inject() error {
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
 
-	return nil
+	return true
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins

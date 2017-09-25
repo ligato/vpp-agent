@@ -39,9 +39,9 @@ type FlavorVppLocal struct {
 }
 
 // Inject sets object references
-func (f *FlavorVppLocal) Inject() error {
+func (f *FlavorVppLocal) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -57,7 +57,7 @@ func (f *FlavorVppLocal) Inject() error {
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
-	return nil
+	return true
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins
