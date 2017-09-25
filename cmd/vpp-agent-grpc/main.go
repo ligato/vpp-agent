@@ -23,8 +23,9 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/flavors/rpc"
-	"github.com/ligato/cn-infra.clone20170920/rpc/rest"
 )
 
 // main is the main entry point into the VPP Agent. First, a new CN-Infra
@@ -36,7 +37,8 @@ import (
 func main() {
 
 	f := rpc.FlavorVppRPC{}
-	f.GRPC.Config.Endpoint = rest.DefaultIP + ":9111" //set default port
+	f.Inject()
+	f.GRPC.Config = &grpc.Config{Endpoint: rest.DefaultIP + ":9111"} //set default port (overridable using grpc.conf)
 	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, f.Plugins()...)
 
 	err := core.EventLoopWithInterrupt(agent, nil)

@@ -41,12 +41,27 @@ type GRPCSvcPluginDeps struct {
 	GRPC grpc.Server
 }
 
-// Init registers all GRPC servics in vppscv package
-func (plugin *GRPCSvcPlugin) Init(ctx context.Context, in *interfaces.Interfaces) {
+// Init sets plugin child loggers for changeVppSvc & resyncVppSvc
+func (plugin *GRPCSvcPlugin) Init() error {
 	plugin.changeVppSvc.Log = plugin.Deps.Log.NewLogger("changeVppSvc")
+	plugin.resyncVppSvc.Log = plugin.Deps.Log.NewLogger("resyncVppSvc")
+
+	return nil
+}
+
+// AfterInit registers all GRPC servics in vppscv package
+// (be sure that defaultvppplugins are totally initialized)
+func (plugin *GRPCSvcPlugin) AfterInit() error {
 	grpcServer := plugin.Deps.GRPC.Server()
 	vppsvc.RegisterChangeConfigServiceServer(grpcServer, &plugin.changeVppSvc)
 	vppsvc.RegisterResyncConfigServiceServer(grpcServer, &plugin.resyncVppSvc)
+
+	return nil
+}
+
+// Close does nothing
+func (plugin *GRPCSvcPlugin) Close() error {
+	return nil
 }
 
 // ChangeVppSvc forward GRPC request to localclient

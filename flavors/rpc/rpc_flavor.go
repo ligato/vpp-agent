@@ -28,6 +28,13 @@ import (
 	"github.com/ligato/cn-infra/flavors/rpc"
 )
 
+// checkImplemensPlugin is used to let compiler check if
+// a particular plugin implements go interface core.Plugin
+// (see following Inject() method).
+// It technique is done because following method Plugins()
+// uses reflection rather than enumerating all field again.
+var checkImplemensPlugin core.Plugin
+
 // FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using 
 // GRPC service
 type FlavorVppRPC struct {
@@ -68,6 +75,7 @@ func (f *FlavorVppRPC) Inject() bool {
 
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
+	checkImplemensPlugin = &f.GRPCSvcPlugin
 
 	return true
 }
