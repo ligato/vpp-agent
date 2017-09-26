@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/cn-infra/health/statuscheck/pluginstatusmap"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -53,6 +54,8 @@ type Plugin struct {
 	ctx    context.Context
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+
+	pluginStatusIdx pluginstatusmap.PluginStatusIdxMapRW
 }
 
 // Deps lists the dependencies of statuscheck plugin.
@@ -75,6 +78,8 @@ func (p *Plugin) Init() error {
 
 	// init pluginStat map
 	p.pluginStat = make(map[string]*status.PluginStatus)
+
+	p.pluginStatusIdx = pluginstatusmap.NewPluginStatusMap(p.PluginName)
 
 	// init map with plugin state probes
 	p.pluginProbe = make(map[string]PluginStateProbe)
@@ -127,6 +132,7 @@ func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 		LastChange: time.Now().Unix(),
 	}
 	p.pluginStat[string(pluginName)] = stat
+	p.pluginStatusIdx.Put(string(pluginName), stat)
 
 	if probe != nil {
 		p.pluginProbe[string(pluginName)] = probe
@@ -293,10 +299,17 @@ func stateToProto(state PluginState) status.OperationalState {
 	}
 }
 
-// GetPluginStatus return current operational state of the plugin.
-func (p *Plugin) GetPluginStatus(pluginName string) status.PluginStatus {
+// GetAllPluginStatus returns a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetAllPluginStatus() map[string]*status.PluginStatus {
+	//TODO - used currently, will be removed after incoporating improvements for exposing map
 	p.access.Lock()
 	defer p.access.Unlock()
 
-	return *(p.pluginStat[string(pluginName)])
+	return p.pluginStat
+}
+
+// GetPluginStatusMap returns a read-only copy of a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetPluginStatusMap() pluginstatusmap.PluginStatusIdxMap {
+	//TODO - will be used for exposing the map
+	return p.pluginStatusIdx
 }

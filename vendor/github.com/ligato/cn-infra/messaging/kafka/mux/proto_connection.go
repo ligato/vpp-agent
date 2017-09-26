@@ -339,10 +339,10 @@ func (conn *ProtoConnectionFields) sendAsyncMessage(topic string, partition int3
 
 	if manualMode {
 		auxMeta := &asyncMeta{successClb: succByteClb, errorClb: errByteClb, usersMeta: meta}
-		conn.multiplexer.hashAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
+		conn.multiplexer.manAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
 		return nil
 	}
 	auxMeta := &asyncMeta{successClb: succByteClb, errorClb: errByteClb, usersMeta: meta}
-	conn.multiplexer.manAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
+	conn.multiplexer.hashAsyncProducer.SendMsgToPartition(topic, partition, sarama.StringEncoder(key), sarama.ByteEncoder(data), auxMeta)
 	return nil
 }

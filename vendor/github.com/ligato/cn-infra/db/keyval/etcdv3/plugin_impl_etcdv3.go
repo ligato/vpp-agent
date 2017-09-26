@@ -33,7 +33,7 @@ const (
 type Plugin struct {
 	Deps // inject
 	*plugin.Skeleton
-	disabled bool
+	disabled   bool
 	connection *BytesConnectionEtcd
 }
 
@@ -86,16 +86,6 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// AfterInit registers status polling function with StatusCheck plugin
-// (if injected).
-func (p *Plugin) AfterInit() error {
-	if p.disabled {
-		return nil
-	}
-
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
@@ -107,6 +97,16 @@ func (p *Plugin) AfterInit() error {
 		})
 	} else {
 		p.Log.Warnf("Unable to start status check for etcd")
+	}
+
+	return nil
+}
+
+// AfterInit registers status polling function with StatusCheck plugin
+// (if injected).
+func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
 	}
 
 	return nil

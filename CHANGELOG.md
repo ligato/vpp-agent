@@ -1,4 +1,4 @@
-# Release v1.0.5 (2017-9-25)
+# Release v1.0.5 (2017-9-26)
 
 ## Compatibility
 VPP version v17.10-rc0~334-gce41a5c

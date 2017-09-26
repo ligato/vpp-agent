@@ -26,4 +26,5 @@ type Deps struct {
 	local.PluginInfraDeps                               // inject
 	HTTP                  rest.HTTPHandlers             // inject
 	StatusCheck           statuscheck.AgentStatusReader // inject
+	PluginStatusCheck     statuscheck.PluginStatusReader //inject
 }
