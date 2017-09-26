@@ -34,7 +34,7 @@ func TestListValues1_convenient(t *testing.T) {
 
 	query := sql.FROM(UserTable, sql.WHERE(sql.Field(&UserTable.LastName, sql.EQ("Bond"))))
 
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
 	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
 		"SELECT id, first_name, last_name FROM User WHERE last_name = ?"))
 
@@ -58,59 +58,15 @@ func TestListValues_AND(t *testing.T) {
 		sql.Field(&UserTable.FirstName), sql.EQ("James"),
 		sql.AND(),
 		sql.Field(&UserTable.LastName), sql.EQ("Bond")))
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
 	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
-		"SELECT id, first_name, last_name FROM User WHERE first_name = ? AND last_name = ?"))
+		"SELECT id, first_name, last_name FROM User WHERE first_name = ? AND last_name = ? ALLOW FILTERING"))
 	mockQuery(session, query, cells(JamesBond))
 	users := &[]User{}
 	err = sql.SliceIt(users, db.ListValues(query))
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	gomega.Expect(users).ToNot(gomega.BeNil())
 	gomega.Expect(users).To(gomega.BeEquivalentTo(&[]User{*JamesBond}))
-}
-
-// TestListValues_OR used to test where clause containing OR condition
-func TestListValues_OR(t *testing.T) {
-	gomega.RegisterTestingT(t)
-	session := mockSession()
-	defer session.Close()
-	db := cassandra.NewBrokerUsingSession(session)
-	query := sql.FROM(UserTable, sql.WHERE(
-		sql.Field(&UserTable.FirstName), sql.EQ("James"),
-		sql.OR(),
-		sql.Field(&UserTable.FirstName), sql.EQ("Peter")))
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
-	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
-		"SELECT id, first_name, last_name FROM User WHERE first_name = ? OR first_name = ?"))
-	mockQuery(session, query, cells(JamesBond), cells(PeterBond))
-	users := &[]User{}
-	err = sql.SliceIt(users, db.ListValues(query))
-	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
-	gomega.Expect(users).ToNot(gomega.BeNil())
-	gomega.Expect(users).To(gomega.BeEquivalentTo(&[]User{*JamesBond, *PeterBond}))
-}
-
-// TestListValues_AND_OR used to test where clause containing both AND and OR conditions
-func TestListValues_AND_OR(t *testing.T) {
-	gomega.RegisterTestingT(t)
-	session := mockSession()
-	defer session.Close()
-	db := cassandra.NewBrokerUsingSession(session)
-	query := sql.FROM(UserTable, sql.WHERE(
-		sql.Field(&UserTable.LastName), sql.EQ("Bond"),
-		sql.AND(),
-		sql.OR(
-			sql.Field(&UserTable.FirstName, sql.EQ("James")),
-			sql.Field(&UserTable.FirstName, sql.EQ("Peter")))))
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
-	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
-		"SELECT id, first_name, last_name FROM User WHERE last_name = ? AND (first_name = ? OR first_name = ?)"))
-	mockQuery(session, query, cells(JamesBond), cells(PeterBond))
-	users := &[]User{}
-	err = sql.SliceIt(users, db.ListValues(query))
-	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
-	gomega.Expect(users).ToNot(gomega.BeNil())
-	gomega.Expect(users).To(gomega.BeEquivalentTo(&[]User{*JamesBond, *PeterBond}))
 }
 
 // TestListValues_IN used to test where clause containing IN condition
@@ -123,9 +79,9 @@ func TestListValues_IN(t *testing.T) {
 		sql.Field(&UserTable.LastName), sql.EQ("Bond"),
 		sql.AND(),
 		sql.Field(&UserTable.FirstName), sql.IN("James", "Peter")))
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
 	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
-		"SELECT id, first_name, last_name FROM User WHERE last_name = ? AND first_name IN(?,?)"))
+		"SELECT id, first_name, last_name FROM User WHERE last_name = ? AND first_name IN(?,?) ALLOW FILTERING"))
 	mockQuery(session, query, cells(JamesBond), cells(PeterBond))
 	users := &[]User{}
 	err = sql.SliceIt(users, db.ListValues(query))
@@ -264,7 +220,7 @@ func TestListValues5_customTableSchema(t *testing.T) {
 	query := sql.FROM(entity, sql.WHERE(sql.Field(&entity.LastName, sql.EQ("Bond"))))
 	mockQuery(session, query, cells(entity))
 
-	sqlStr, _ /*binding*/ , err := cassandra.SelectExpToString(query)
+	sqlStr, _ /*binding*/, err := cassandra.SelectExpToString(query)
 	gomega.Expect(sqlStr).Should(gomega.BeEquivalentTo(
 		"SELECT id, last_name FROM my_custom_schema.my_custom_name WHERE last_name = ?"))
 

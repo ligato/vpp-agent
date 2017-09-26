@@ -120,6 +120,9 @@ startCassandra
 
 expected=("Successfully written
 Successfully queried
+Successfully queried with AND
+Successfully queried with Multiple AND
+Successfully queried with IN
 ")
 
 cmd="examples/cassandra-lib/cassandra-lib examples/cassandra-lib/client-config.yaml"

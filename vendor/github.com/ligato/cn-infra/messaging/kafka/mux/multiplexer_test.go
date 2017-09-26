@@ -396,7 +396,6 @@ func TestSendProtoAsync(t *testing.T) {
 
 	c1 := mock.Mux.NewProtoConnection("c1", &keyval.SerializerJSON{})
 	gomega.Expect(c1).NotTo(gomega.BeNil())
-
 	mock.Mux.Start()
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
@@ -404,10 +403,16 @@ func TestSendProtoAsync(t *testing.T) {
 		StringVal: "sync-message",
 	}
 
-	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.sendAsyncMessage("topic", DefPartition, "key", enc, false, nil, nil, nil)
+	asyncSuccessChannel := make(chan messaging.ProtoMessage, 0)
+	asyncErrorChannel := make(chan messaging.ProtoMessageErr, 0)
 
-	publisher, err := c1.NewAsyncPublisher("test", nil, nil)
+	mock.AsyncPub.ExpectInputAndSucceed()
+	err := c1.sendAsyncMessage("topic", DefPartition, "key", enc, false, nil, messaging.ToProtoMsgChan(asyncSuccessChannel),
+		messaging.ToProtoMsgErrChan(asyncErrorChannel))
+	gomega.Expect(err).To(gomega.BeNil())
+
+	publisher, err := c1.NewAsyncPublisher("test",  messaging.ToProtoMsgChan(asyncSuccessChannel),
+		messaging.ToProtoMsgErrChan(asyncErrorChannel))
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.AsyncPub.ExpectInputAndSucceed()
 	publisher.Put("key", enc)
@@ -436,6 +441,40 @@ func TestSendAsyncToCustomPartition(t *testing.T) {
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.AsyncPub.ExpectInputAndSucceed()
 	publisher.Publish("key", []byte("val"))
+
+	mock.Mux.Close()
+}
+
+func TestSendProtoAsyncToCustomPartition(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	mock := Mock(t)
+	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
+
+	c1 := mock.Mux.NewProtoManualConnection("c1", &keyval.SerializerJSON{})
+	gomega.Expect(c1).NotTo(gomega.BeNil())
+
+	mock.Mux.Start()
+	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
+
+	enc := &etcdexample.EtcdExample{
+		StringVal: "sync-message",
+	}
+
+	asyncSuccessChannel := make(chan messaging.ProtoMessage, 0)
+	asyncErrorChannel := make(chan messaging.ProtoMessageErr, 0)
+
+	mock.AsyncPub.ExpectInputAndSucceed()
+	c1.sendAsyncMessage("topic", 1, "key", enc, true, nil, messaging.ToProtoMsgChan(asyncSuccessChannel),
+		messaging.ToProtoMsgErrChan(asyncErrorChannel))
+
+	mock.AsyncPub.ExpectInputAndSucceed()
+	c1.sendAsyncMessage("topic", 2, "key", enc, true, nil, messaging.ToProtoMsgChan(asyncSuccessChannel),
+		messaging.ToProtoMsgErrChan(asyncErrorChannel))
+
+	publisher, err := c1.NewAsyncPublisherToPartition("test", 1, nil, nil)
+	gomega.Expect(err).To(gomega.BeNil())
+	mock.AsyncPub.ExpectInputAndSucceed()
+	publisher.Put("key", enc, nil)
 
 	mock.Mux.Close()
 }

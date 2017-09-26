@@ -17,6 +17,7 @@ package probe
 import (
 	"net/http"
 
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/unrolled/render"
@@ -27,10 +28,12 @@ const (
 
 	// DefaultMetricsPath default Prometheus metrics URL
 	DefaultMetricsPath string = "/metrics"
+	// DefaultHealthPath default Prometheus health metrics URL
+	DefaultHealthPath string = "/health"
 
-	// Namespace namespace to use for Prometheus metrics
+	// Namespace namespace to use for Prometheus health metrics
 	Namespace string = ""
-	// Subsystem subsystem to use for Prometheus metrics
+	// Subsystem subsystem to use for Prometheus health metrics
 	Subsystem string = ""
 	// ServiceLabel label for service field
 	ServiceLabel string = "service"
@@ -68,22 +71,21 @@ const (
 // PrometheusPlugin struct holds all plugin-related data.
 type PrometheusPlugin struct {
 	Deps
+	healthRegistry *prometheus.Registry
 }
 
 // Init may create a new (custom) instance of HTTP if the injected instance uses
 // different HTTP port than requested.
 func (p *PrometheusPlugin) Init() (err error) {
-	serviceLabel := p.String()
-	if p.Deps.ServiceLabel != nil {
-		serviceLabel = p.Deps.ServiceLabel.GetAgentLabel()
-	}
+
+	p.healthRegistry = prometheus.NewRegistry()
 
 	p.registerGauge(
 		Namespace,
 		Subsystem,
 		ServiceHealthName,
 		ServiceHealthHelp,
-		prometheus.Labels{ServiceLabel: serviceLabel},
+		prometheus.Labels{ServiceLabel: p.getServiceLabel()},
 		p.getServiceHealth,
 	)
 
@@ -94,7 +96,7 @@ func (p *PrometheusPlugin) Init() (err error) {
 		ServiceInfoName,
 		ServiceInfoHelp,
 		prometheus.Labels{
-			ServiceLabel:      serviceLabel,
+			ServiceLabel:      p.getServiceLabel(),
 			BuildVersionLabel: agentStatus.BuildVersion,
 			BuildDateLabel:    agentStatus.BuildDate},
 		func() float64 { return 1 },
@@ -109,12 +111,70 @@ func (p *PrometheusPlugin) AfterInit() error {
 		if p.StatusCheck != nil {
 			p.Log.Info("Starting Prometheus metrics handlers")
 			p.HTTP.RegisterHTTPHandler(DefaultMetricsPath, p.metricsHandler, "GET")
+			p.HTTP.RegisterHTTPHandler(DefaultHealthPath, p.healthMetricsHandler, "GET")
+			p.Log.Infof("Serving %s on port %d", DefaultMetricsPath, p.HTTP.GetPort())
+			p.Log.Infof("Serving %s on port %d", DefaultHealthPath, p.HTTP.GetPort())
 		} else {
 			p.Log.Info("Unable to register Prometheus metrics handlers, StatusCheck is nil")
 		}
 	} else {
 		p.Log.Info("Unable to register Prometheus metrics handlers, HTTP is nil")
 	}
+
+	//TODO: Need improvement - instead of the exposing the map directly need to use in-memory mapping
+	if p.PluginStatusCheck != nil {
+		allPluginStatusMap := p.PluginStatusCheck.GetAllPluginStatus()
+		for k, v := range allPluginStatusMap {
+			p.Log.Infof("k=%v, v=%v, state=%v", k, v, v.State)
+			p.registerGauge(
+				Namespace,
+				Subsystem,
+				DependencyHealthName,
+				DependencyHealthHelp,
+				prometheus.Labels{
+					ServiceLabel:    p.getServiceLabel(),
+					DependencyLabel: k,
+				},
+				p.getDependencyHealth(k, v),
+			)
+		}
+	} else {
+		p.Log.Error("PluginStatusCheck is nil")
+	}
+
+	/*if p.PluginStatusCheck != nil {
+		if p.PluginStatusCheck.GetPluginStatusMap() != nil {
+			pluginStatusIdx := p.PluginStatusCheck.GetPluginStatusMap()
+			allPluginNames := pluginStatusIdx.GetMapping().ListAllNames()
+			for _, v := range allPluginNames {
+				p.registerGauge(
+					Namespace,
+					Subsystem,
+					DependencyHealthName,
+					DependencyHealthHelp,
+					prometheus.Labels{
+						ServiceLabel:    agentName,
+						DependencyLabel: v,
+					},
+					func() float64 {
+						p.Log.Infof("DependencyHealth for Plugin %v", v)
+						pluginStatus, ok := pluginStatusIdx.GetValue(v)
+						if ok {
+							p.Log.Infof("DependencyHealth: %v", float64(pluginStatus.State))
+							return float64(pluginStatus.State)
+						} else {
+							p.Log.Info("DependencyHealth not found")
+							return float64(-1)
+						}
+					},
+				)
+			}
+		} else {
+			p.Log.Error("Plugin map is nil")
+		}
+	} else {
+		p.Log.Error("PluginStatusCheck is nil")
+	}*/
 
 	return nil
 }
@@ -129,16 +189,34 @@ func (p *PrometheusPlugin) metricsHandler(formatter *render.Render) http.Handler
 	return promhttp.Handler().ServeHTTP
 }
 
+// healthMetricsHandler handles custom health metrics for Prometheus.
+func (p *PrometheusPlugin) healthMetricsHandler(formatter *render.Render) http.HandlerFunc {
+	return promhttp.HandlerFor(p.healthRegistry, promhttp.HandlerOpts{}).ServeHTTP
+}
+
+// getServiceHealth returns agent health status
 func (p *PrometheusPlugin) getServiceHealth() float64 {
 	agentStatus := p.StatusCheck.GetAgentStatus()
 	// Adapt Ligato status code for now.
 	// TODO: Consolidate with that from the "Common Container Telemetry" proposal.
 	health := float64(agentStatus.State)
-	p.Log.Infof("getServiceHealth(): %f", health)
+	p.Log.Infof("ServiceHealth: %v", health)
 	return health
 }
 
-// RegisterGauge registers custom gauge with specific valueFunc to report status when invoked.
+// getDependencyHealth returns plugin health status
+func (p *PrometheusPlugin) getDependencyHealth(pluginName string, pluginStatus *status.PluginStatus) func() float64 {
+	p.Log.Infof("DependencyHealth for plugin %v: %v", pluginName, float64(pluginStatus.State))
+
+	return func() float64 {
+		health := float64(pluginStatus.State)
+		depName := pluginName
+		p.Log.Infof("Dependency Health %v: %v", depName, health)
+		return health
+	}
+}
+
+// registerGauge registers custom gauge with specific valueFunc to report status when invoked.
 func (p *PrometheusPlugin) registerGauge(namespace string, subsystem string, name string, help string,
 	labels prometheus.Labels, valueFunc func() float64) {
 	gaugeName := name
@@ -148,7 +226,7 @@ func (p *PrometheusPlugin) registerGauge(namespace string, subsystem string, nam
 	if namespace != "" {
 		gaugeName = namespace + "_" + gaugeName
 	}
-	if err := prometheus.DefaultRegisterer.Register(prometheus.NewGaugeFunc(
+	if err := p.healthRegistry.Register(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
 			// Namespace, Subsystem, and Name are components of the fully-qualified
 			// name of the Metric (created by joining these components with
@@ -199,4 +277,12 @@ func (p *PrometheusPlugin) String() string {
 		return string(p.PluginName)
 	}
 	return defaultPluginName
+}
+
+func (p *PrometheusPlugin) getServiceLabel() string {
+	serviceLabel := p.String()
+	if p.Deps.ServiceLabel != nil {
+		serviceLabel = p.Deps.ServiceLabel.GetAgentLabel()
+	}
+	return serviceLabel
 }

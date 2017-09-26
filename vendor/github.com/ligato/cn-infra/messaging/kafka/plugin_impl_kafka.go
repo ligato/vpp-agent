@@ -111,7 +111,7 @@ func (plugin *Plugin) AfterInit() error {
 	// Register for providing status reports (polling mode)
 	if plugin.StatusCheck != nil && !plugin.disabled {
 		plugin.StatusCheck.Register(plugin.PluginName, func() (statuscheck.PluginState, error) {
-			if plugin.mux.Consumer == nil || plugin.mux.Consumer.Client == nil {
+			if plugin.hsClient == nil || plugin.hsClient.Closed() {
 				return statuscheck.Error, fmt.Errorf("kafka client/consumer not initialized")
 			}
 			// Method 'RefreshMetadata()' returns error if kafka server is unavailable
