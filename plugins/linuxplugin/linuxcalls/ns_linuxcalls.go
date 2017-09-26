@@ -75,6 +75,8 @@ func CompareNamespaces(ns1 *intf.LinuxInterfaces_Interface_Namespace, ns2 *intf.
 		return strings.Compare(ns1.Microservice, ns2.Microservice)
 	case intf.LinuxInterfaces_Interface_Namespace_NAMED_NS:
 		return strings.Compare(ns1.Name, ns2.Name)
+	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
+		return strings.Compare(ns1.Filepath, ns2.Filepath)
 	}
 	return 0
 }
@@ -89,6 +91,8 @@ func NamespaceToStr(namespace *intf.LinuxInterfaces_Interface_Namespace) string 
 			return "MICROSERVICE:" + namespace.Microservice
 		case intf.LinuxInterfaces_Interface_Namespace_NAMED_NS:
 			return namespace.Name
+		case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
+			return "FILE:" + namespace.Filepath
 		}
 	}
 	return "<nil>"
@@ -266,6 +270,14 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 			if err != nil {
 				return netns.None(), errors.New("Failed to get namespace by name")
 			}
+		}
+	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
+		if namespace.Filepath == "" {
+			return dupNsHandle(defaultNs)
+		}
+		ns, err = netns.GetFromPath(namespace.Filepath)
+		if err != nil {
+			return netns.None(), err
 		}
 	case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
 		return netns.None(), errors.New("Don't know how to convert microservice label to PID at this level")
