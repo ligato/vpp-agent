@@ -19,17 +19,18 @@ message LinuxInterfaces {
         repeated string ip_addresses = 10;
 
         // Linux network namespace to attach the interface into.
-        // Configure only for Linux interfaces (VETH).
         message Namespace {
             enum NamespaceType {
                 PID_REF_NS = 0; // Attach to namespace of a given process.
                 MICROSERVICE_REF_NS = 1; // Attach to namespace of a docker container running given microservice.
                 NAMED_NS = 2;   // Attach to named namespace.
+                FILE_REF_NS = 3;   // Attach to namespace referenced by a file handle.
             }
             NamespaceType type = 1;
-            uint32 pid = 3;
-            string microservice = 4;
-            string name = 5;
+            uint32 pid = 2;
+            string microservice = 3;
+            string name = 4;
+            string filepath = 5;
         }
         Namespace namespace = 50;
 
