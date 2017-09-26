@@ -4,7 +4,8 @@
 VPP version v17.10-rc0~334-gce41a5c
 
 ## Major Themes
-
+- [cn-infra]
+    - updated to version 1.0.4
 - [GoVppMux](plugins/govppmux)
     - configuration file for govpp added
 - [Kafka Partitions](messaging/kafka)
