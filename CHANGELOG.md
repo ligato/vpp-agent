@@ -1,7 +1,7 @@
 # Release v1.0.5 (2017-9-25)
 
 ## Compatibility
-VPP version v17.10-rc0~370-g9969a32
+VPP version v17.10-rc0~334-gce41a5c
 
 ## Major Themes
 
