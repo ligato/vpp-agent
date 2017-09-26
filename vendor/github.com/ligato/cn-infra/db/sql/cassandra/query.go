@@ -32,7 +32,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 	whereCondition.Accept(whereCondtionStr)
 
 	statement, _, err := updateSetExpToString(sql.EntityTableName(entity), /*TODO extract method / make customizable*/
-		entity                                                             /*, TODO TTL*/)
+		entity /*, TODO TTL*/)
 	if err != nil {
 		return "", nil, err
 	}
@@ -62,7 +62,11 @@ func SelectExpToString(fromWhere sql.Expression) (sqlStr string, bindings []inte
 	}
 	fromWhereBindings := fromWhereStr.Binding()
 
-	return "SELECT " + fieldsStr + fromWhereStr.String(), fromWhereBindings, nil
+	whereStr := fromWhereStr.String()
+	if strings.Contains(whereStr, "AND") {
+		whereStr = whereStr +  " ALLOW FILTERING"
+	}
+	return "SELECT " + fieldsStr + whereStr, fromWhereBindings, nil
 }
 
 // ExpToString converts expression to string & slice of bindings
@@ -110,7 +114,7 @@ func (visitor *toStringVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
 
 	if exp.Prefix != "FROM" && exp.Binding != nil && len(exp.Binding) > 0 {
 		if visitor.binding != nil {
-			visitor.binding = append(visitor.binding, exp.Binding)
+			visitor.binding = append(visitor.binding, exp.Binding...)
 		} else {
 			visitor.binding = exp.Binding
 		}

@@ -63,20 +63,17 @@ func (p *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
-	p.Skeleton = plugin.NewSkeleton(p.String(), p.ServiceLabel, p.connection)
-	return p.Skeleton.Init()
-}
 
-// AfterInit is called by the Agent Core after all plugins have been initialized.
-func (p *Plugin) AfterInit() error {
-	if p.disabled {
-		return nil
+	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, p.connection)
+	err = p.Skeleton.Init()
+	if err != nil {
+		return err
 	}
 
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
+			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
@@ -84,6 +81,15 @@ func (p *Plugin) AfterInit() error {
 		})
 	} else {
 		p.Log.Warnf("Unable to start status check for redis")
+	}
+
+	return nil
+}
+
+// AfterInit is called by the Agent Core after all plugins have been initialized.
+func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
 	}
 
 	return nil

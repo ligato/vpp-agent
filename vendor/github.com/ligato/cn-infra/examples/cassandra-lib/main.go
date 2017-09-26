@@ -32,9 +32,10 @@ var UserTable = &User{}
 
 // User is simple structure used in automated tests
 type User struct {
-	ID        gocql.UUID `cql:"userid" pk:"userid"`
-	FirstName string     `cql:"first_name"`
-	LastName  string     `cql:"last_name"`
+	ID         gocql.UUID `cql:"userid" pk:"userid"`
+	FirstName  string     `cql:"first_name"`
+	MiddleName string     `cql:"middle_name"`
+	LastName   string     `cql:"last_name"`
 	//NetIP      net.IP //mapped to native cassandra type
 	WrapIP *Wrapper01 //used for custom (un)marshalling
 	Udt03  *Udt03
@@ -127,6 +128,7 @@ func exampleDDL(session *gocql.Session) (err error) {
 	if err := session.Query(`CREATE TABLE IF NOT EXISTS demo.user (
 			userid uuid PRIMARY KEY,
 				first_name text,
+				middle_name text,
 				last_name text,
 				Udt03 frozen<Udt03>,
 				Udt04 frozen<Udt04>,
@@ -150,11 +152,13 @@ func exampleDML(session *gocql.Session) (err error) {
 		return err
 	}
 	db := cassandra.NewBrokerUsingSession(gockle.NewSession(session))
-	written := &User{FirstName: "Fero", LastName: "Mrkva", /*ip01, */
-		WrapIP: &Wrapper01{ipPrefix01},
-		Udt03:  &Udt03{Tx: "tx1", Tx2: "tx2" /*, Inet1: "201.202.203.204"*/},
-		Udt04:  Udt04{"kuk", &Udt03{Tx: "txxxxxxxxx1", Tx2: "txxxxxxxxx2" /*, Inet1: "201.202.203.204"*/}},
-		UdtCol: []Udt03{{Tx: "txt1Col", Tx2: "txt2Col"}},
+	written := &User{FirstName: "Fero",
+		MiddleName: "M",
+		LastName:   "Mrkva", /*ip01, */
+		WrapIP:     &Wrapper01{ipPrefix01},
+		Udt03:      &Udt03{Tx: "tx1", Tx2: "tx2" /*, Inet1: "201.202.203.204"*/},
+		Udt04:      Udt04{"kuk", &Udt03{Tx: "txxxxxxxxx1", Tx2: "txxxxxxxxx2" /*, Inet1: "201.202.203.204"*/}},
+		UdtCol:     []Udt03{{Tx: "txt1Col", Tx2: "txt2Col"}},
 	}
 	err = db.Put(sql.Exp("userid=c37d661d-7e61-49ea-96a5-68c34e83db3a"), written)
 	if err == nil {
@@ -168,6 +172,51 @@ func exampleDML(session *gocql.Session) (err error) {
 		sql.WHERE(sql.Field(&UserTable.LastName, sql.EQ("Mrkva"))))))
 	if err == nil {
 		fmt.Println("Successfully queried: ", users)
+	} else {
+		return err
+	}
+
+	//example for AND condition
+	usersForANDQuery := &[]User{}
+	andQuery := sql.FROM(UserTable, sql.WHERE(
+		sql.Field(&UserTable.FirstName), sql.EQ("Fero"),
+		sql.AND(),
+		sql.Field(&UserTable.LastName), sql.EQ("Mrkva")))
+
+	err = sql.SliceIt(usersForANDQuery, db.ListValues(andQuery))
+	if err == nil {
+		fmt.Println("Successfully queried with AND: ", usersForANDQuery)
+	} else {
+		return err
+	}
+
+	//example for Multiple AND conditions
+	usersForMultipleANDQuery := &[]User{}
+	multipleAndQuery := sql.FROM(UserTable, sql.WHERE(
+		sql.Field(&UserTable.FirstName), sql.EQ("Fero"),
+		sql.AND(),
+		sql.Field(&UserTable.LastName), sql.EQ("Mrkva"),
+		sql.AND(),
+		sql.Field(&UserTable.MiddleName), sql.EQ("M"),
+	))
+
+	err = sql.SliceIt(usersForMultipleANDQuery, db.ListValues(multipleAndQuery))
+	if err == nil {
+		fmt.Println("Successfully queried with Multiple AND: ", usersForMultipleANDQuery)
+	} else {
+		return err
+	}
+
+	//example for IN condition
+	usersForINQuery := &[]User{}
+	inQuery := sql.FROM(UserTable, sql.WHERE(
+		sql.Field(&UserTable.FirstName), sql.IN("Fero"),
+		sql.AND(),
+		sql.Field(&UserTable.LastName), sql.IN("Mrkva")))
+
+	err = sql.SliceIt(usersForINQuery, db.ListValues(inQuery))
+	if err == nil {
+		fmt.Println("Successfully queried with IN: ", usersForINQuery)
 	} else {
 		return err
 	}
