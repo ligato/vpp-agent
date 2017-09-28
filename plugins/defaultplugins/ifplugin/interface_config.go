@@ -84,7 +84,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Linux: plugin.Linux}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Logger, Linux: plugin.Linux}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil

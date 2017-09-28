@@ -267,7 +267,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(ifLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
-	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{GoVppmux: plugin.GoVppmux}
+	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Logger: ifLogger, GoVppmux: plugin.GoVppmux}
 	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
 		select {
 		case plugin.ifStateChan <- state:
@@ -353,7 +353,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{GoVppmux: plugin.GoVppmux}
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Logger: l2Logger, GoVppmux: plugin.GoVppmux}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
 		case plugin.bdStateChan <- state:

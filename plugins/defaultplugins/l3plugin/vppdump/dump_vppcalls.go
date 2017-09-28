@@ -19,7 +19,7 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	l3ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	l3nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
@@ -44,7 +44,7 @@ type NextHop struct {
 }
 
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, error) {
 
 	// map for the resulting l3 FIBs
 	routes := make(map[uint32]*StaticRoutes)
@@ -58,7 +58,7 @@ func DumpStaticRoutes(vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return nil, err
 		}
 		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
@@ -73,7 +73,7 @@ func DumpStaticRoutes(vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, erro
 			break // break out of the loop
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return nil, err
 		}
 		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
