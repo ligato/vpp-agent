@@ -342,6 +342,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "if_to_bd_real_indexes", nil)
 
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
+		Logger:             l2Logger,
 		GoVppmux:           plugin.GoVppmux,
 		SwIfIndexes:        plugin.swIfIndexes,
 		BdIndexes:          plugin.bdIndexes,
@@ -366,6 +367,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.fibIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "fib_indexes", nil)
 
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
+		Logger:        l2Logger,
 		GoVppmux:      plugin.GoVppmux,
 		SwIfIndexes:   plugin.swIfIndexes,
 		BdIndexes:     plugin.bdIndexes,
@@ -380,6 +382,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.xcIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "xc_indexes", nil)
 
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
+		Logger:      l2Logger,
 		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 		XcIndexes:   plugin.xcIndexes,

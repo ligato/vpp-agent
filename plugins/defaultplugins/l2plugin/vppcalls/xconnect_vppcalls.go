@@ -17,13 +17,13 @@ package vppcalls
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 )
 
 // VppSetL2XConnect creates xConnect between two existing interfaces
-func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppChan *govppapi.Channel) error {
-	log.DefaultLogger().Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
+func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel) error {
+	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 
 	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.TxSwIfIndex = transmitIfaceIndex
@@ -36,16 +36,16 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppCh
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Creating xConnect returned %d", reply.Retval)
+		return fmt.Errorf("creating xConnect returned %d", reply.Retval)
 	}
 
-	log.DefaultLogger().WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect created.")
+	log.WithFields(logging.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect created.")
 	return nil
 }
 
 // VppUnsetL2XConnect removes xConnect between two interfaces
-func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vppChan *govppapi.Channel) error {
-	log.DefaultLogger().Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
+func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel) error {
+	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 
 	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.RxSwIfIndex = receiveIfaceIndex
@@ -58,9 +58,9 @@ func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, vpp
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Removing xConnect returned %d", reply.Retval)
+		return fmt.Errorf("removing xConnect returned %d", reply.Retval)
 	}
 
-	log.DefaultLogger().WithFields(log.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect removed.")
+	log.WithFields(logging.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect removed.")
 	return nil
 }
