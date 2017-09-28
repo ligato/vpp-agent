@@ -83,6 +83,7 @@ type LinuxInterfaces_Interface struct {
 	Enabled     bool                          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	PhysAddress string                        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
 	Mtu         uint32                        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	HostIfName  string                        `protobuf:"bytes,7,opt,name=host_if_name,proto3" json:"host_if_name,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	Namespace   *LinuxInterfaces_Interface_Namespace `protobuf:"bytes,50,opt,name=namespace" json:"namespace,omitempty"`
