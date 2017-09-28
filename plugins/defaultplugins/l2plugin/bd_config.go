@@ -251,7 +251,7 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 	return nil
 }
 
-// LookupBridgeDomainDetails looks for existing bridge domain and propagates to the state
+// LookupBridgeDomainDetails looks for existing VPP bridge domain state and propagates it to the etcd bd state
 func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName string) error {
 	stateMsg := BridgeDomainStateMessage{}
 	var wasError error
@@ -280,7 +280,7 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 		stateMsg.Name = bdName
 	}
 
-	// Propagate bridge domain state information
+	// Propagate bridge domain state information to the bridge domain state updater.
 	plugin.notificationChan <- stateMsg
 
 	return wasError
@@ -319,10 +319,10 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	return nil
 }
 
-// ResolveDeletedInterface removes interface from bridge domain operational status
+// ResolveDeletedInterface is called by VPP if an interface is removed
 func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) error {
 	log.DefaultLogger().Print("Interface was removed. Unregister from real state ", interfaceName)
-	// Lookup IfToBdIndexes in order to find a bridge domain for this interface
+	// Lookup IfToBdIndexes in order to find a bridge domain for this interface (if exists)
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
 		log.DefaultLogger().Debugf("Removed interface %s does not belong to any bridge domain", interfaceName)
@@ -334,12 +334,13 @@ func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) erro
 	if !found {
 		return fmt.Errorf("unknown bridge domain ID %v", bdID)
 	}
-	// Dump bridge domain and update its state
+	// If interface belonging to a bridge domain is removed, VPP handles internal bridge domain update itself. However
+	// the etcd operational state still needs to be updated to reflect changed VPP state
 	err := plugin.LookupBridgeDomainDetails(bdID, bdName)
 	if err != nil {
 		return err
 	}
-	// Unregister removed interface
+	// Unregister removed interface from real state
 	plugin.IfToBdRealStateIdx.UnregisterName(interfaceName)
 
 	return nil
