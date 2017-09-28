@@ -419,6 +419,7 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
 
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
+		Logger:        l3Logger,
 		GoVppmux:      plugin.GoVppmux,
 		RouteIndexes:  plugin.routeIndexes,
 		RouteIndexSeq: 1,
