@@ -70,7 +70,7 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 		return 0, err
 	}
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add VXLAN tunnel returned %d", reply.Retval)
+		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
 	}
 	return reply.SwIfIndex, nil
 
@@ -89,7 +89,7 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of VXLAN tunnel returned %d", reply.Retval)
+		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
 	}
 	return nil
 }

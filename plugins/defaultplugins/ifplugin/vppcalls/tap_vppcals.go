@@ -44,7 +44,7 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 	}
 
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add tap interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("add tap interface returned %d", reply.Retval)
 	}
 	return reply.SwIfIndex, nil
 }
@@ -62,7 +62,7 @@ func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel) error {
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of interface returned %d", reply.Retval)
+		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
 	return nil
 }

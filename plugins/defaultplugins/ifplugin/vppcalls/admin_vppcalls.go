@@ -34,7 +34,7 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel) error {
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Setting of interface flags returned %d", reply.Retval)
+		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
 	}
 	return nil
 
@@ -53,7 +53,7 @@ func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel) error {
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Setting of interface flags returned %d", reply.Retval)
+		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
 	}
 	return nil
 

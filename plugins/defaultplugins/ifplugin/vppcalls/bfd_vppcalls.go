@@ -17,21 +17,21 @@ package vppcalls
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"net"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // AddBfdUDPSession adds new BFD session with authentication if available
-func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx, vppChannel *govppapi.Channel) error {
+func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger, vppChannel *govppapi.Channel) error {
 	// Verify interface presence
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
 	if !found {
-		return fmt.Errorf("Interface %v does not exist", bfdSession.Interface)
+		return fmt.Errorf("interface %v does not exist", bfdSession.Interface)
 	}
 
 	// Prepare the message
@@ -60,20 +60,20 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 		req.LocalAddr = net.ParseIP(bfdSession.SourceAddress).To4()
 		req.PeerAddr = net.ParseIP(bfdSession.DestinationAddress).To4()
 	} else {
-		return fmt.Errorf("Different IP versions or missing IP address. Local: %v, Peer: %v",
+		return fmt.Errorf("different IP versions or missing IP address. Local: %v, Peer: %v",
 			bfdSession.SourceAddress, bfdSession.DestinationAddress)
 	}
 	// Authentication
 	if bfdSession.Authentication != nil {
 		keyID := string(bfdSession.Authentication.KeyId)
-		log.DefaultLogger().Infof("Setting up authentication with index %v", keyID)
+		log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {
 			req.IsAuthenticated = 1
 			req.BfdKeyID = uint8(bfdSession.Authentication.KeyId)
 			req.ConfKeyID = bfdSession.Authentication.AdvertisedKeyId
 		} else {
-			log.DefaultLogger().Infof("Authentication key %v not found", bfdSession.Authentication.KeyId)
+			log.Infof("Authentication key %v not found", bfdSession.Authentication.KeyId)
 			req.IsAuthenticated = 0
 		}
 	} else {
@@ -87,13 +87,13 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Add BFD UDP session interface returned %d", reply.Retval)
+		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
 	return nil
 }
 
 // AddBfdUDPSessionFromDetails adds new BFD session with authentication if available
-func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, vppChannel *govppapi.Channel) error {
+func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger, vppChannel *govppapi.Channel) error {
 	// Prepare the message
 	req := &bfd_api.BfdUDPAdd{}
 
@@ -108,14 +108,14 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 	// Authentication
 	if bfdSession.IsAuthenticated != 0 {
 		keyID := string(bfdSession.BfdKeyID)
-		log.DefaultLogger().Infof("Setting up authentication with index %v", keyID)
+		log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {
 			req.IsAuthenticated = 1
 			req.BfdKeyID = bfdSession.BfdKeyID
 			req.ConfKeyID = bfdSession.ConfKeyID
 		} else {
-			log.DefaultLogger().Infof("Authentication key %v not found", bfdSession.BfdKeyID)
+			log.Infof("Authentication key %v not found", bfdSession.BfdKeyID)
 			req.IsAuthenticated = 0
 		}
 	} else {
@@ -129,7 +129,7 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Add BFD UDP session interface returned %d", reply.Retval)
+		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	// Find interface
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
 	if !found {
-		return fmt.Errorf("Interface %v does not exist", bfdSession.Interface)
+		return fmt.Errorf("interface %v does not exist", bfdSession.Interface)
 	}
 
 	// Prepare the message
@@ -168,7 +168,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 		req.LocalAddr = net.ParseIP(bfdSession.SourceAddress).To4()
 		req.PeerAddr = net.ParseIP(bfdSession.DestinationAddress).To4()
 	} else {
-		return fmt.Errorf("Different IP versions or missing IP address. Local: %v, Peer: %v",
+		return fmt.Errorf("different IP versions or missing IP address. Local: %v, Peer: %v",
 			bfdSession.SourceAddress, bfdSession.DestinationAddress)
 	}
 
@@ -179,7 +179,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Update BFD UDP session interface returned %d", reply.Retval)
+		return fmt.Errorf("update BFD UDP session interface returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -200,7 +200,7 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Delete BFD UDP session interface returned %d", reply.Retval)
+		return fmt.Errorf("delete BFD UDP session interface returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -218,7 +218,6 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 			break
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
 			return sessionIfacesWithID, err
 		}
 		// Not interested in sessions without auth key
@@ -244,7 +243,7 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 }
 
 // SetBfdUDPAuthenticationKey creates configures new authentication key
-func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel) (err error) {
+func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel) (err error) {
 	// Convert authentication according to RFC5880
 	var authentication uint8
 	if bfdKey.AuthenticationType == 0 {
@@ -252,7 +251,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppa
 	} else if bfdKey.AuthenticationType == 1 {
 		authentication = 5 // Meticulous keyed SHA1
 	} else {
-		log.DefaultLogger().Warnf("Provided authentication type not supported, setting up SHA1")
+		log.Warnf("Provided authentication type not supported, setting up SHA1")
 		authentication = 4
 	}
 
@@ -270,7 +269,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppa
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Set BFD authentication key returned %d", reply.Retval)
+		return fmt.Errorf("set BFD authentication key returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -288,7 +287,7 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Delete BFD authentication key returned %d", reply.Retval)
+		return fmt.Errorf("delete BFD authentication key returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -298,7 +297,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	// Verify interface presence
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdInput.EchoSourceInterface)
 	if !found {
-		return fmt.Errorf("Interface %v does not exist", bfdInput.EchoSourceInterface)
+		return fmt.Errorf("interface %v does not exist", bfdInput.EchoSourceInterface)
 	}
 
 	// Prepare the message
@@ -312,7 +311,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Set BFD echo source returned %d", reply.Retval)
+		return fmt.Errorf("set BFD echo source returned %d", reply.Retval)
 	}
 	return nil
 }
@@ -329,7 +328,7 @@ func DeleteBfdEchoFunction(vppChannel *govppapi.Channel) (err error) {
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Delete BFD echo source returned %d", reply.Retval)
+		return fmt.Errorf("delete BFD echo source returned %d", reply.Retval)
 	}
 	return nil
 }
