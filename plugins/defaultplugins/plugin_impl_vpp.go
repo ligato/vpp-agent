@@ -311,6 +311,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.aclL2Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil)
 
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
+		Logger:         aclLogger,
 		GoVppmux:       plugin.GoVppmux,
 		ACLL3L4Indexes: plugin.aclL3L4Indexes,
 		ACLL2Indexes:   plugin.aclL2Indexes,
