@@ -56,7 +56,7 @@ func (plugin *ACLConfigurator) Init() (err error) {
 		return err
 	}
 
-	err = vppcalls.CheckMsgCompatibilityForACL(plugin.vppChannel)
+	err = vppcalls.CheckMsgCompatibilityForACL(plugin.Logger, plugin.vppChannel)
 
 	// todo possibly check acl plugin version on vpp using bin api acl_plugin_get_version
 

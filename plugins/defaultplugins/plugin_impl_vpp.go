@@ -242,7 +242,9 @@ func (plugin *Plugin) fixNilPointers() {
 }
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
-	ifLogger := plugin.Log.NewLogger("-if-plugin")
+	// configurator loggers
+	ifLogger := plugin.Log.NewLogger("-if-conf")
+	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -255,16 +257,16 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 
 	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(ifLogger, plugin.PluginName, "bfd_session_indexes", nil)
+	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_session_indexes", nil)
 
 	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(ifLogger, plugin.PluginName, "bfd_auth_keys_indexes", nil)
+	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_auth_keys_indexes", nil)
 
 	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(ifLogger, plugin.PluginName, "bfd_echo_function_index", nil)
+	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_echo_function_index", nil)
 
 	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(ifLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
+	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Logger: ifLogger, GoVppmux: plugin.GoVppmux}
@@ -290,7 +292,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Debug("ifConfigurator Initialized")
 
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
-		Logger:       ifLogger,
+		Logger:       bfdLogger,
 		GoVppmux:     plugin.GoVppmux,
 		ServiceLabel: plugin.ServiceLabel,
 		SwIfIndexes:  plugin.swIfIndexes,
@@ -304,6 +306,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
+	// logger
 	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
 	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil)
@@ -329,20 +332,23 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
-	l2Logger := plugin.Log.NewLogger("-l2-plugin")
+	// loggers
+	bdLogger := plugin.Log.NewLogger("-l2-bd-plugin")
+	fibLogger := plugin.Log.NewLogger("-l2-fib-plugin")
+	xcLogger := plugin.Log.NewLogger("-l2-xc-plugin")
 	// Bridge domain indexes
-	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(l2Logger, plugin.PluginName,
+	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
 		"bd_indexes", bdidx.IndexMetadata))
 
 	// Interface to bridge domain indexes - desired state
-	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "if_to_bd_des_indexes", nil)
+	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_des_indexes", nil)
 
 	// Interface to bridge domain indexes - current state
 
-	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "if_to_bd_real_indexes", nil)
+	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_real_indexes", nil)
 
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
-		Logger:             l2Logger,
+		Logger:             bdLogger,
 		GoVppmux:           plugin.GoVppmux,
 		SwIfIndexes:        plugin.swIfIndexes,
 		BdIndexes:          plugin.bdIndexes,
@@ -353,7 +359,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Logger: l2Logger, GoVppmux: plugin.GoVppmux}
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Logger: bdLogger, GoVppmux: plugin.GoVppmux}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
 		case plugin.bdStateChan <- state:
@@ -364,10 +370,10 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "fib_indexes", nil)
+	plugin.fibIndexes = nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil)
 
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
-		Logger:        l2Logger,
+		Logger:        fibLogger,
 		GoVppmux:      plugin.GoVppmux,
 		SwIfIndexes:   plugin.swIfIndexes,
 		BdIndexes:     plugin.bdIndexes,
@@ -379,10 +385,10 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 xConnect indexes
 
-	plugin.xcIndexes = nametoidx.NewNameToIdx(l2Logger, plugin.PluginName, "xc_indexes", nil)
+	plugin.xcIndexes = nametoidx.NewNameToIdx(xcLogger, plugin.PluginName, "xc_indexes", nil)
 
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
-		Logger:      l2Logger,
+		Logger:      xcLogger,
 		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 		XcIndexes:   plugin.xcIndexes,

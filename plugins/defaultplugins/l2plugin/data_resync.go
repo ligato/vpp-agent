@@ -30,7 +30,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	plugin.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
 
 	// Step 0: Dump actual state of the VPP
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan)
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Logger, plugin.vppChan)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEntry) error {
 	plugin.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.syncVppChannel)
+	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Logger, plugin.syncVppChannel)
 	if err != nil {
 		return err
 	}
