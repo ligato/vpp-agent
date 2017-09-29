@@ -51,6 +51,7 @@ type ExampleFlavor struct {
 	*vpp.Flavor
 	// Example plugin
 	IdxBdCacheExample ExamplePlugin
+	BadPlugin         BadPlugin
 	// Mark flavor as injected after Inject()
 	injected bool
 }
@@ -88,6 +89,12 @@ func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
  * Example plugin *
  ******************/
 
+type BadPlugin struct {
+	bdIdxLocal  bdidx.BDIndex
+	bdIdxAgent1 bdidx.BDIndex
+	bdIdxAgent2 bdidx.BDIndex
+}
+
 // ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init()
 type ExamplePlugin struct {
 	Deps
@@ -102,9 +109,9 @@ type ExamplePlugin struct {
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	Publisher                 datasync.KeyProtoValWriter // injected
-	Agent1                    *kvdbsync.Plugin           // injected
-	Agent2                    *kvdbsync.Plugin           // injected
+	Publisher             datasync.KeyProtoValWriter // injected
+	Agent1                *kvdbsync.Plugin           // injected
+	Agent2                *kvdbsync.Plugin           // injected
 	local.PluginInfraDeps                            // injected
 }
 

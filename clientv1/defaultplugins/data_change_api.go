@@ -36,19 +36,21 @@ type DataChangeDSL interface {
 	Send() Reply
 }
 
-// PutDSL is here to put here most recent and previous value with revisions
+// PutDSL defines methods to create or update various VPP data objects (such
+// as interfaces, BDs, ...). A data object is created by invoking a Put
+// operation. These methods can be invoked from any local or remote client.
 type PutDSL interface {
-	// Interface create or update request for the network interface
+	// Interface defines the create/update request for the network interface
 	Interface(val *interfaces.Interfaces_Interface) PutDSL
-	// BD create or update request for the Bridge Domain
+	// BD defines the create/update request for the Bridge Domain
 	BD(val *l2.BridgeDomains_BridgeDomain) PutDSL
-	// FIB create or update request for the L2 Forwarding Information Base
+	// FIB defines the create/update request for the L2 Forwarding Information Base
 	BDFIB(fib *l2.FibTableEntries_FibTableEntry) PutDSL
-	// XConnect create or update request for the Cross Connect
+	// XConnect defines the create/update request for the Cross Connect
 	XConnect(val *l2.XConnectPairs_XConnectPair) PutDSL
-	// StaticRoute create or update request for the L3 Static Route
+	// StaticRoute defines the create/update request for the L3 Static Route
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
-	// ACL create or update request for the Access Control List
+	// ACL defines the create/update request for the Access Control List
 	ACL(acl *acl.AccessLists_Acl) PutDSL
 
 	// Delete gives you the ability to delete Interface/BD...

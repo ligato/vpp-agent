@@ -94,8 +94,8 @@ type Plugin struct {
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin to logically separate
+// them from other plugin fields.
 type Deps struct {
 	// inject all below
 	local.PluginInfraDeps
