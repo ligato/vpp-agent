@@ -277,6 +277,10 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
 		waitForVpp()
+		// Delay after watched file was crated
+		log.Info("Sleeping while VPP will be ready")
+		time.Sleep(50*time.Millisecond)
+		log.Info("VPP is ready to connect")
 		err := c.connectVPP()
 		if err == nil {
 			// signal connected event
