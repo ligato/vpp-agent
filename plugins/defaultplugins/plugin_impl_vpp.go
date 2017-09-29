@@ -244,6 +244,7 @@ func (plugin *Plugin) fixNilPointers() {
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	// configurator loggers
 	ifLogger := plugin.Log.NewLogger("-if-conf")
+	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
@@ -269,7 +270,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
-	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Logger: ifLogger, GoVppmux: plugin.GoVppmux}
+	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Logger: ifStateLogger, GoVppmux: plugin.GoVppmux}
 	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
 		select {
 		case plugin.ifStateChan <- state:
@@ -333,9 +334,10 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
 	// loggers
-	bdLogger := plugin.Log.NewLogger("-l2-bd-plugin")
-	fibLogger := plugin.Log.NewLogger("-l2-fib-plugin")
-	xcLogger := plugin.Log.NewLogger("-l2-xc-plugin")
+	bdLogger := plugin.Log.NewLogger("-l2-bd-conf")
+	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
+	fibLogger := plugin.Log.NewLogger("-l2-fib-conf")
+	xcLogger := plugin.Log.NewLogger("-l2-xc-conf")
 	// Bridge domain indexes
 	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
 		"bd_indexes", bdidx.IndexMetadata))
@@ -359,7 +361,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Logger: bdLogger, GoVppmux: plugin.GoVppmux}
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Logger: bdStateLogger, GoVppmux: plugin.GoVppmux}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
 		case plugin.bdStateChan <- state:
