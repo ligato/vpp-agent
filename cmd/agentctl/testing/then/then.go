@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package then contains methods for verification of agentctl unit test outcomes.
 package then
 
 import (

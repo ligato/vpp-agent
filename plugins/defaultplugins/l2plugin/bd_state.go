@@ -142,7 +142,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 		bdState.BviInterface = name
 		bdState.BviInterfaceIndex = msg.BviSwIfIndex
 	} else {
-		bdState.BviInterface = "<not_set>"
+		bdState.BviInterface = "not_set"
 	}
 	bdState.L2Params = getBridgeDomainStateParams(msg)
 	bdState.Interfaces = plugin.getBridgeDomainInterfaces(msg)

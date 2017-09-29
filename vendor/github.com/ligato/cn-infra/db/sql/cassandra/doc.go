@@ -24,11 +24,11 @@
 //
 // To create a Session use the following function
 //
-//   import "github.com/gocql/gocql"
+//    import "github.com/gocql/gocql"
 //
-//	 cluster := gocql.NewCluster("172.17.0.1")
-//   cluster.Keyspace = "demo"
-//   session, err := cluster.CreateSession()
+//    cluster := gocql.NewCluster("172.17.0.1")
+//    cluster.Keyspace = "demo"
+//    session, err := cluster.CreateSession()
 //
 // Then create broker instance:
 //

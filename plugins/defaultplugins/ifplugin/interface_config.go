@@ -22,8 +22,10 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=bin_api
 
-// Package ifplugin is the implementation of the Interface plugin.deps.
+// Package ifplugin implements the Interface plugin that handles management
+// of VPP interfaces.
 package ifplugin
 
 import (
@@ -40,7 +42,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -51,9 +52,11 @@ import (
 type InterfaceConfigurator struct {
 	GoVppmux     govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
-	Linux        linuxplugin.API
+	Linux        interface{} //just flag if nil
 
 	swIfIndexes ifaceidx.SwIfIndexRW
+	// MTU value is either read from config or set to default
+	mtu uint32
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -64,10 +67,11 @@ type InterfaceConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, notifChan chan govppapi.Message) (err error) {
+func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
 	log.DefaultLogger().Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
+	plugin.mtu = mtu
 
 	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -175,6 +179,20 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	for i := range newAddrs {
 		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.vppCh)
 		if nil != err {
+			wasError = err
+		}
+	}
+
+	// configure mtu
+	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
+		var mtu uint32
+		if iface.Mtu != 0 {
+			mtu = iface.Mtu
+		} else {
+			mtu = plugin.mtu
+		}
+		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.vppCh)
+		if err != nil {
 			wasError = err
 		}
 	}
@@ -315,6 +333,19 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.vppCh)
 		log.DefaultLogger().Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
 		if nil != err {
+			wasError = err
+		}
+	}
+
+	// mtu
+	if newConfig.Mtu == 0 {
+		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.vppCh)
+		if err != nil {
+			wasError = err
+		}
+	} else if newConfig.Mtu != oldConfig.Mtu {
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh)
+		if err != nil {
 			wasError = err
 		}
 	}

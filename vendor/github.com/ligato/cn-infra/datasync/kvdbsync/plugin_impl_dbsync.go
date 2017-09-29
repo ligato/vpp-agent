@@ -38,7 +38,7 @@ type Plugin struct {
 
 type infraDeps interface {
 	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck)
-	InfraDeps(pluginName string) *local.PluginInfraDeps
+	InfraDeps(pluginName string, opts ...local.InfraDepsOpts) *local.PluginInfraDeps
 }
 
 // OfDifferentAgent allows access DB of different agent (with a particular microservice label).

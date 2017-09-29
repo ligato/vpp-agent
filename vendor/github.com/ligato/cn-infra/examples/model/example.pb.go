@@ -3,7 +3,7 @@
 // DO NOT EDIT!
 
 /*
-Package etcd_example is a generated protocol buffer package.
+Package etcdexample is a generated protocol buffer package.
 
 It is generated from these files:
 	example.proto
@@ -11,7 +11,7 @@ It is generated from these files:
 It has these top-level messages:
 	EtcdExample
 */
-package etcd_example
+package etcdexample
 
 import "github.com/gogo/protobuf/proto"
 

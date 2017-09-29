@@ -22,7 +22,7 @@ type Plugin interface {
 	Close() error
 }
 
-// PostInit interface define optional method for plugins with complex initialization.
+// PostInit interface defines optional method for plugins with complex initialization.
 type PostInit interface {
 	// AfterInit is called once Init() of all plugins have returned without error.
 	AfterInit() error

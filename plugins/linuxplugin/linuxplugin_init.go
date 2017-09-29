@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package linuxplugin implements the Linux plugin.
+// Package linuxplugin implements the Linux plugin that handles management
+// of Linux VETH interfaces.
 package linuxplugin
 
 import (

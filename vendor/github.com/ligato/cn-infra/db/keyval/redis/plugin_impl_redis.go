@@ -15,25 +15,36 @@
 package redis
 
 import (
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
-// Plugin implements Plugin interface therefore can be loaded with other plugins
+const (
+	// healthCheckProbeKey is a key used to probe Redis state
+	healthCheckProbeKey string = "probe-redis-connection"
+)
+
+// Plugin implements redis plugin.
 type Plugin struct {
 	Deps
 	*plugin.Skeleton
-	disabled bool
+	disabled   bool
+	connection *BytesConnectionRedis
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps lists dependencies of the redis plugin.
 type Deps struct {
 	local.PluginInfraDeps //inject
 }
 
-// Init is called on plugin startup. It establishes the connection to redis.
+// Init retrieves redis configuration and establishes a new connection
+// with the redis data store.
+// If the configuration file doesn't exist or cannot be read, the returned error
+// will be of type os.PathError. An untyped error is returned in case the file
+// doesn't contain a valid YAML configuration.
 func (p *Plugin) Init() error {
 	cfg, err := p.retrieveConfig()
 	if err != nil {
@@ -48,18 +59,45 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	connection, err := NewBytesConnection(client, p.Log)
+	p.connection, err = NewBytesConnection(client, p.Log)
 	if err != nil {
 		return err
 	}
 
-	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, connection)
-	return p.Skeleton.Init()
+	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, p.connection)
+	err = p.Skeleton.Init()
+	if err != nil {
+		return err
+	}
+
+	// Register for providing status reports (polling mode)
+	if p.StatusCheck != nil {
+		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
+			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+			if err == nil {
+				return statuscheck.OK, nil
+			}
+			return statuscheck.Error, err
+		})
+	} else {
+		p.Log.Warnf("Unable to start status check for redis")
+	}
+
+	return nil
 }
 
-// Close resources
+// AfterInit is called by the Agent Core after all plugins have been initialized.
+func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
+	}
+
+	return nil
+}
+
+// Close shutdowns the connection to redis.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton)
+	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
 	return err
 }
 
@@ -80,7 +118,16 @@ func (p *Plugin) retrieveConfig() (cfg interface{}, err error) {
 	return cfg, nil
 }
 
-// Disabled if the plugin was not found
+// String returns if set Deps.PluginName or "redis-client" otherwise
+func (p *Plugin) String() string {
+	if len(p.Deps.PluginName) == 0 {
+		return "redis-client"
+	}
+	return string(p.Deps.PluginName)
+}
+
+// Disabled returns *true* if the plugin is not in use due to missing
+// redis configuration.
 func (p *Plugin) Disabled() (disabled bool) {
 	return p.disabled
 }

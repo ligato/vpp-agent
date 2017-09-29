@@ -18,24 +18,28 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/probe"
-	"github.com/ligato/cn-infra/logging/logmanager"
+	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
-// FlavorRPC glues together multiple plugins that are useful for almost every micro-service
+// FlavorRPC glues together multiple plugins that provide RPC-like access.
+// They are typically used to enable remote management for other plugins.
 type FlavorRPC struct {
 	*local.FlavorLocal
 
 	HTTP rest.Plugin
 	//TODO GRPC (& enable/disable using config)
+	HTTPProbe rest.ForkPlugin
 
 	HealthRPC probe.Plugin
-	LogMngRPC logmanager.Plugin
+	//TODO PrometheusRPC probe.PrometheusPlugin
+
+	GRPC grpc.Plugin
 
 	injected bool
 }
 
-// Inject sets object references
+// Inject initializes flavor references/dependencies.
 func (f *FlavorRPC) Inject() bool {
 	if f.injected {
 		return false
@@ -47,21 +51,43 @@ func (f *FlavorRPC) Inject() bool {
 	}
 	f.FlavorLocal.Inject()
 
-	f.HTTP.Deps.PluginLogDeps = *f.LogDeps("http")
+	rest.DeclareHTTPPortFlag("http")
+	httpPlugDeps := *f.InfraDeps("http", local.WithConf())
+	f.HTTP.Deps.Log = httpPlugDeps.Log
+	f.HTTP.Deps.PluginConfig = httpPlugDeps.PluginConfig
+	f.HTTP.Deps.PluginName = httpPlugDeps.PluginName
 
-	f.LogMngRPC.Deps.PluginLogDeps = *f.LogDeps("log-mng-rpc")
-	f.LogMngRPC.LogRegistry = f.FlavorLocal.LogRegistry()
-	f.LogMngRPC.HTTP = &f.HTTP
+	f.Logs.HTTP = &f.HTTP
+
+	grpc.DeclareGRPCPortFlag("grpc")
+	grpcPlugDeps := *f.InfraDeps("grpc", local.WithConf())
+	f.GRPC.Deps.Log = grpcPlugDeps.Log
+	f.GRPC.Deps.PluginConfig = grpcPlugDeps.PluginConfig
+	f.GRPC.Deps.PluginName = grpcPlugDeps.PluginName
+	//TODO f.GRPC.Deps.HTTP = &f.HTTP
+
+	rest.DeclareHTTPPortFlag("http-probe")
+	httpProbeDeps := *f.InfraDeps("http-probe", local.WithConf())
+	f.HTTPProbe.Deps.Log = httpProbeDeps.Log
+	f.HTTPProbe.Deps.PluginConfig = httpProbeDeps.PluginConfig
+	f.HTTPProbe.Deps.PluginName = httpProbeDeps.PluginName
+	f.HTTPProbe.Deps.DefaultHTTP = &f.HTTP
 
 	f.HealthRPC.Deps.PluginLogDeps = *f.LogDeps("health-rpc")
-	f.HealthRPC.Deps.HTTP = &f.HTTP
+	f.HealthRPC.Deps.HTTP = &f.HTTPProbe
 	f.HealthRPC.Deps.StatusCheck = &f.StatusCheck
+	//TODO combine with StatusCheck interface as part of improvements
+	f.HealthRPC.Deps.PluginStatusCheck = &f.StatusCheck
 	//TODO f.HealthRPC.Transport inject restsync
+
+	//TODO f.PrometheusRPC.Deps.PluginLogDeps = *f.LogDeps("health-prometheus-rpc")
+	//f.PrometheusRPC.Deps.HTTP = &f.HTTPProbe
+	//f.PrometheusRPC.Deps.StatusCheck = &f.StatusCheck
 
 	return true
 }
 
-// Plugins combines all Plugins in flavor to the list
+// Plugins combines all Plugins in flavor to the list.
 func (f *FlavorRPC) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)

@@ -34,18 +34,18 @@ type ChangeWatchResp struct {
 	*syncbase.DoneChannel
 }
 
-// GetChangeType - see the comment in implemented interface datasync.ChangeEvent
+// GetChangeType returns the type of the associated change.
 func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
 	return ev.delegate.GetChangeType()
 }
 
-// GetKey returns the key associated with the change
+// GetKey returns the key associated with the change.
 func (ev *ChangeWatchResp) GetKey() string {
 	return ev.delegate.GetKey()
 }
 
-// GetValue delegates to WatchResp. For description of parameter and output values see the comment
-// in implemented interface datasync.ChangeEvent
+// GetValue delegates to WatchResp. For description of parameter and output
+// values see the comment in implemented interface datasync.ChangeEvent
 func (ev *ChangeWatchResp) GetValue(val proto.Message) (err error) {
 	if ev.delegate.GetChangeType() != datasync.Delete {
 		return ev.delegate.GetValue(val)
@@ -54,8 +54,8 @@ func (ev *ChangeWatchResp) GetValue(val proto.Message) (err error) {
 	return nil
 }
 
-// GetPrevValue delegates to WatchResp. For description of parameter and output values see the comment
-// in implemented interface datasync.ChangeEvent
+// GetPrevValue delegates to WatchResp. For description of parameter and output
+// values see the comment in implemented interface datasync.ChangeEvent
 func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (exists bool, err error) {
 	if ev.prev != nil {
 		return true, ev.prev.GetValue(prevVal)

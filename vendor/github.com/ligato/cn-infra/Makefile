@@ -74,11 +74,15 @@ endef
 # build plugin example only
 define build_plugin_examples_only
     @echo "# building plugin examples"
-    @cd examples/datasync_plugin && go build -v ${LDFLAGS}
-    @cd examples/flags_plugin && go build -v ${LDFLAGS}
-    @cd examples/kafka_plugin/non_clustered && go build -v ${LDFLAGS}
-    @cd examples/logs_plugin && go build -v ${LDFLAGS}
+    @cd examples/configs-plugin && go build -v ${LDFLAGS}
+    @cd examples/datasync-plugin && go build -v ${LDFLAGS}
+    @cd examples/flags-lib && go build -v ${LDFLAGS}
+    @cd examples/kafka-plugin/manual-partitioner && go build -v ${LDFLAGS}
+    @cd examples/kafka-plugin/hash-partitioner && go build -v ${LDFLAGS}
+    @cd examples/kafka-plugin/post-init-consumer && go build -v ${LDFLAGS}
+    @cd examples/logs-plugin && go build -v ${LDFLAGS}
     @cd examples/simple-agent && go build -v ${LDFLAGS}
+    @cd examples/redis-plugin && go build -v ${LDFLAGS}
     @echo "# done"
 endef
 
@@ -86,22 +90,22 @@ endef
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/cassandra_lib && go build
-    @cd examples/etcdv3_lib && make build
-    @cd examples/kafka_lib && make build
-    @cd examples/logs_lib && make build
-    @cd examples/redis_lib && make build
+    @cd examples/cassandra-lib && go build
+    @cd examples/etcdv3-lib && make build
+    @cd examples/kafka-lib && make build
+    @cd examples/logs-lib && make build
+    @cd examples/redis-lib && make build
     @echo "# done"
 endef
 
 # clean examples only
 define clean_examples_only
     @echo "# cleaning examples"
-    @cd examples/cassandra_lib && rm -f simple
-    @cd examples/etcdv3_lib && make clean
-    @cd examples/kafka_lib && make clean
-    @cd examples/logs_lib && make clean
-    @cd examples/redis_lib && make clean
+    @cd examples/cassandra-lib && rm -f simple
+    @cd examples/etcdv3-lib && make clean
+    @cd examples/kafka-lib && make clean
+    @cd examples/logs-lib && make clean
+    @cd examples/redis-lib && make clean
     @echo "# done"
 endef
 
@@ -109,10 +113,13 @@ endef
 define clean_plugin_examples_only
     @echo "# cleaning plugin examples"
     @rm -f examples/simple-agent/simple-agent
-    @rm -f examples/datasync_plugin/datasync_plugin
-    @rm -f examples/flags_plugin/flags_plugin
-    @rm -f examples/kafka_plugin/non_clustered/non_clustered
-    @rm -f examples/logs_plugin/logs_plugin
+    @rm -f examples/configs-plugin/configs-plugin
+    @rm -f examples/datasync-plugin/datasync-plugin
+    @rm -f examples/flags-lib/flags-lib
+    @rm -f examples/kafka-plugin/manual-partitioner/manual-partitioner
+    @rm -f examples/kafka-plugin/hash-partitioner/hash-partitioner
+    @rm -f examples/logs-plugin/logs-plugin
+    @rm -f examples/redis-plugin/redis-plugin
     @echo "# done"
 endef
 

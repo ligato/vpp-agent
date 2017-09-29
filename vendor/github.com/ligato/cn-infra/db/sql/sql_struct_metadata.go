@@ -16,7 +16,7 @@ package sql
 
 import "reflect"
 
-// TableName interface is used to specify custom table name for SQL statements
+// TableName interface is used to specify custom table name for SQL statements.
 type TableName interface {
 	// TableName returns sql table name.
 	TableName() string
@@ -28,8 +28,12 @@ type SchemaName interface {
 	SchemaName() string
 }
 
-// EntityTableName tries to cast to SchemaName & TableName interfaces.
-// If not possible it uses just name of struct as table name.
+// EntityTableName returns the table name, possibly prefixed with the schema
+// name, associated with the <entity>.
+// The function tries to cast <entity> to TableName and SchemaName in order to
+// obtain the table name and the schema name, respectively.
+// If table name cannot be obtained, the struct name is used instead.
+// If schema name cannot be obtained, it is simply omitted from the result.
 func EntityTableName(entity interface{}) string {
 	var tableName, schemaName string
 	if nameProvider, ok := entity.(TableName); ok {

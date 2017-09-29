@@ -21,16 +21,19 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/linux/dbadapter"
 )
 
-// PluginID used in the Agent Core flavors
+// PluginID defines the name of Linux localclient plugin.
 const PluginID core.PluginName = "LinuxPlugin_LOCAL_CLIENT"
 
-// DataResyncRequest allows to send RESYNC requests conveniently (even without using Data Store)
+// DataResyncRequest allows to create a RESYNC request using convenient RESYNC
+// DSL and send it locally through go channels (i.e. without using Data Store).
 func DataResyncRequest(caller core.PluginName) linux.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync),
 		nil /*no need to list anything*/)
 }
 
-// DataChangeRequest allows to send Data Change requests conveniently (even without using Data Store)
+// DataChangeRequest allows to create Data Change request(s) using convenient
+// Data Change DSL and send it locally through go channels (i.e. without using
+// Data Store).
 func DataChangeRequest(caller core.PluginName) linux.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(local.NewProtoTxn(local.Get().PropagateChanges))
 }

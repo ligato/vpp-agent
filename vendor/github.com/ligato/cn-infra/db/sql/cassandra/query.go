@@ -16,7 +16,6 @@ package cassandra
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	r "reflect"
 	"strings"
@@ -44,7 +43,7 @@ func PutExpToString(whereCondition sql.Expression, entity interface{}) (sqlStr s
 		bindings = append(bindings, whereBinding...)
 	}
 
-	return strings.Trim(statement+" WHERE"+whereCondtionStr.String(), " "), bindings, nil
+	return strings.Trim(statement+" WHERE "+whereCondtionStr.String(), " "), bindings, nil
 }
 
 // SelectExpToString converts expression to string & slice of bindings
@@ -63,7 +62,11 @@ func SelectExpToString(fromWhere sql.Expression) (sqlStr string, bindings []inte
 	}
 	fromWhereBindings := fromWhereStr.Binding()
 
-	return "SELECT " + fieldsStr + fromWhereStr.String(), fromWhereBindings, nil
+	whereStr := fromWhereStr.String()
+	if strings.Contains(whereStr, "AND") {
+		whereStr = whereStr +  " ALLOW FILTERING"
+	}
+	return "SELECT " + fieldsStr + whereStr, fromWhereBindings, nil
 }
 
 // ExpToString converts expression to string & slice of bindings
@@ -96,20 +99,22 @@ func (visitor *toStringVisitor) Binding() []interface{} {
 
 // VisitPrefixedExp generates part of SQL expression
 func (visitor *toStringVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
-	visitor.generated.WriteString(" ")
-	visitor.generated.WriteString(exp.Prefix)
 	if exp.Prefix == "FROM" {
-		visitor.generated.WriteString(" ")
+		visitor.generated.WriteString(" FROM ")
 		visitor.generated.WriteString(sql.EntityTableName(visitor.entity))
+	} else {
+		visitor.generated.WriteString(exp.Prefix)
 	}
 	if exp.AfterPrefix != nil {
-		exp.AfterPrefix.Accept(visitor)
+		for _, exp := range exp.AfterPrefix {
+			exp.Accept(visitor)
+		}
 	}
 	visitor.generated.WriteString(exp.Suffix)
 
 	if exp.Prefix != "FROM" && exp.Binding != nil && len(exp.Binding) > 0 {
 		if visitor.binding != nil {
-			visitor.binding = append(visitor.binding, exp.Binding)
+			visitor.binding = append(visitor.binding, exp.Binding...)
 		} else {
 			visitor.binding = exp.Binding
 		}
@@ -119,19 +124,19 @@ func (visitor *toStringVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
 // VisitPrefixedExp generates part of SQL expression
 func (visitor *toStringVisitor) VisitFieldExpression(exp *sql.FieldExpression) {
 	if visitor.entity == nil {
-		visitor.lastError = errors.New("not found entity")
+		visitor.lastError = ErrMissingVisitorEntity
 	} else {
 		field, found := structs.FindField(exp.PointerToAField, visitor.entity)
 		if !found {
-			visitor.lastError = errors.New("not found field in entity")
+			visitor.lastError = ErrMissingEntityField
 			return
 		}
 		fieldName, found := fieldName(field)
 		if !found {
-			visitor.lastError = errors.New("not exported field in entity")
+			visitor.lastError = ErrUnexportedEntityField
 			return
 		}
-		visitor.generated.WriteString(" ")
+		//visitor.generated.WriteString(" ")
 		visitor.generated.WriteString(fieldName)
 
 		if exp.AfterField != nil {
@@ -290,7 +295,9 @@ func (visitor *findEntityVisitor) VisitPrefixedExp(exp *sql.PrefixedExp) {
 			visitor.entity = exp.Binding[0]
 		}
 	} else if exp.AfterPrefix != nil {
-		exp.AfterPrefix.Accept(visitor)
+		for _, exp := range exp.AfterPrefix {
+			exp.Accept(visitor)
+		}
 	}
 }
 

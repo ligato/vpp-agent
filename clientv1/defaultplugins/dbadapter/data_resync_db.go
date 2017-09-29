@@ -27,20 +27,23 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
-// NewDataResyncDSL is a constructor
+// NewDataResyncDSL returns a new instance of DataResyncDSL which implements
+// the data RESYNC DSL for VPP configuration.
+// Transaction <txn> is used to propagate changes to plugins.
+// Function <listKeys> is used to list keys with already existing configuration.
 func NewDataResyncDSL(txn keyval.ProtoTxn, listKeys func(prefix string) (keyval.ProtoKeyIterator, error)) *DataResyncDSL {
 	return &DataResyncDSL{txn, []string{}, listKeys}
 }
 
-// DataResyncDSL is used to conveniently assign all the data that are needed for the RESYNC
-// This is implementation of Domain Specific Language (DSL) for data RESYNC of the VPP configuration.
+// DataResyncDSL is an implementation of Domain Specific Language (DSL) for data
+// RESYNC of VPP configuration.
 type DataResyncDSL struct {
 	txn      keyval.ProtoTxn
 	txnKeys  []string
 	listKeys func(prefix string) (keyval.ProtoKeyIterator, error)
 }
 
-// Interface add Bridge Domain to the RESYNC request
+// Interface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) defaultplugins.DataResyncDSL {
 	key := intf.InterfaceKey(val.Name)
 	dsl.txn.Put(key, val)
@@ -49,7 +52,8 @@ func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) defaul
 	return dsl
 }
 
-// BfdSession BFD session to the RESYNC request
+// BfdSession adds bidirectional forwarding detection session to the RESYNC
+// request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugins.DataResyncDSL {
 	key := bfd.SessionKey(val.Interface)
 	dsl.txn.Put(key, val)
@@ -58,8 +62,9 @@ func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugi
 	return dsl
 }
 
-// BfdKeys BFD key to the RESYNC request
-func (dsl *DataResyncDSL) BfdKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
+// BfdAuthKeys adds bidirectional forwarding detection key to the RESYNC
+// request.
+func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
 	key := bfd.AuthKeysKey(string(val.Id))
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -67,7 +72,8 @@ func (dsl *DataResyncDSL) BfdKeys(val *bfd.SingleHopBFD_Key) defaultplugins.Data
 	return dsl
 }
 
-// BfdEchoFunction BFD echo function to the RESYNC request
+// BfdEchoFunction adds bidirectional forwarding detection echo function
+// to the RESYNC request.
 func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) defaultplugins.DataResyncDSL {
 	key := bfd.EchoFunctionKey(val.EchoSourceInterface)
 	dsl.txn.Put(key, val)
@@ -76,7 +82,7 @@ func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) de
 	return dsl
 }
 
-// BD add Bridge Domain to the RESYNC request
+// BD adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.DataResyncDSL {
 	key := l2.BridgeDomainKey(val.Name)
 	dsl.txn.Put(key, val)
@@ -85,7 +91,7 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.
 	return dsl
 }
 
-// BDFIB add Bridge Domain to the RESYNC request
+// BDFIB adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
 	key := l2.FibKey(val.BridgeDomain, val.PhysAddress)
 	dsl.txn.Put(key, val)
@@ -94,7 +100,7 @@ func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultpl
 	return dsl
 }
 
-// XConnect adds Cross Connect to the RESYNC request
+// XConnect adds Cross Connect to the RESYNC request.
 func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.DataResyncDSL {
 	key := l2.XConnectKey(val.ReceiveInterface)
 	dsl.txn.Put(key, val)
@@ -103,7 +109,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 	return dsl
 }
 
-// StaticRoute adss L3 Static Route to the RESYNC request
+// StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
 	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
 	key := l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)
@@ -113,7 +119,7 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins
 	return dsl
 }
 
-// ACL adds Access Control List to the RESYNC request
+// ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyncDSL {
 	key := acl.Key(val.AclName)
 	dsl.txn.Put(key, val)
@@ -122,7 +128,8 @@ func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyn
 	return dsl
 }
 
-// AppendKeys is a helper function that fils the keySet with iterator values
+// AppendKeys is a helper function that fills the keySet <keys> with values
+// pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	for {
 		k, _, stop := it.GetNext()
@@ -134,11 +141,12 @@ func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	}
 }
 
-// KeySet is a helper type that reuse the map keys to store the set vales. The values of the map are nil.
+// KeySet is a helper type that reuses map keys to store vales as a set.
+// The values of the map are nil.
 type keySet map[string] /*key*/ interface{} /*nil*/
 
-// Send propagates the request to the plugins. It deletes obsolete keys if listKeys function is not null.
-// The listkeys() function is used to list all current keys.
+// Send propagates the request to the plugins.
+// It deletes obsolete keys if listKeys() (from constructor) function is not nil.
 func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 
 	for dsl.listKeys != nil {

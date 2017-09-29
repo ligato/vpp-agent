@@ -13,13 +13,13 @@ the following line at the top of the file:
 similar line for each file.
 3. The above line will instruct the go tool to use the `protoc` code 
 generator to generate go structures from protobuf messages defined in
-the [`example.proto`](example.proto)
-file. The line also specifies the path to the file and the location 
-where to put the generated structures (in our example, all are the 
-same, `examples/model`).
+the [`example.proto`](example.proto) file. The line also specifies
+the path to the file and the location where to put the generated
+structures (in our example, all are the same, `examples/model`).
 1. Do `make generate` to generate go structures from protobuf message 
-definitions. The structures will be put into [`example.pb.go`](example.pb.go)
-in the same folder. The structures will be annotated with protobuf 
-annotations to support marshalling/un-marshalling at run-time.
+definitions. The structures will be put into
+[`example.pb.go`](example.pb.go) in the same folder.
+The structures will be annotated with protobuf annotations to support
+marshalling/un-marshalling at run-time.
 
 You can now use the generated go structures in your code.

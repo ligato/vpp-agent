@@ -22,7 +22,7 @@ script:
   - make lint
   - make
   - make test-cover
-  - make test-examples || true
+  - sudo make test-examples
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

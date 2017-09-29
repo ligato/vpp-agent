@@ -17,7 +17,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/l2.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
 
-// Package l2plugin implements the L2 plugin that handles Bridge Domains and the L2 FIB.
+// Package l2plugin implements the L2 plugin that handles Bridge Domains and L2 FIBs.
 package l2plugin
 
 import (

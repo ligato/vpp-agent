@@ -29,20 +29,29 @@ const (
 	healthCheckProbeKey string = "/probe-etcd-connection"
 )
 
-// Plugin implements Plugin interface therefore can be loaded with other plugins
+// Plugin implements etcdv3 plugin.
 type Plugin struct {
 	Deps // inject
 	*plugin.Skeleton
-	disabled bool
+	disabled   bool
+	connection *BytesConnectionEtcd
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps lists dependencies of the etcdv3 plugin.
+// If injected, etcd plugin will use StatusCheck to signal the connection status.
 type Deps struct {
 	local.PluginInfraDeps // inject
 }
 
-// Init is called at plugin startup. The connection to etcd is established.
+// Init retrieves etcd configuration and establishes a new connection
+// with the etcd data store.
+// If the configuration file doesn't exist or cannot be read, the returned error
+// will be of type os.PathError. An untyped error is returned in case the file
+// doesn't contain a valid YAML configuration.
+// The function may also return error if TLS connection is selected and the
+// CA or client certificate is not accessible(os.PathError)/valid(untyped).
+// Check clientv3.New from coreos/etcd for possible errors returned when
+// the connection cannot be established.
 func (p *Plugin) Init() (err error) {
 	// Retrieve config
 	var cfg Config
@@ -55,22 +64,21 @@ func (p *Plugin) Init() (err error) {
 	if err != nil {
 		return err
 	}
-
-	// Init connection
 	etcdConfig, err := ConfigToClientv3(&cfg)
 	if err != nil {
 		return err
 	}
 
+	// Init connection
 	if p.Skeleton == nil {
-		con, err := NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
+		p.connection, err = NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
 		if err != nil {
 			return err
 		}
 
 		p.Skeleton = plugin.NewSkeleton(p.String(),
 			p.ServiceLabel,
-			con,
+			p.connection,
 		)
 	}
 	err = p.Skeleton.Init()
@@ -78,19 +86,10 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// AfterInit is called by the Agent Core after all plugins have been initialized.
-func (p *Plugin) AfterInit() error {
-	if p.disabled {
-		return nil
-	}
-
 	// Register for providing status reports (polling mode)
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
@@ -103,19 +102,31 @@ func (p *Plugin) AfterInit() error {
 	return nil
 }
 
-// FromExistingConnection is used mainly for testing
+// AfterInit registers status polling function with StatusCheck plugin
+// (if injected).
+func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
+	}
+
+	return nil
+}
+
+// FromExistingConnection is used mainly for testing to inject existing
+// connection into the plugin.
 func FromExistingConnection(connection keyval.CoreBrokerWatcher, sl servicelabel.ReaderAPI) *Plugin {
 	skel := plugin.NewSkeleton("testing", sl, connection)
 	return &Plugin{Skeleton: skel}
 }
 
-// Close resources
+// Close shutdowns the connection.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton)
+	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
 	return err
 }
 
-// String returns if set Deps.PluginName or "kvdbsync" otherwise
+// String returns the plugin name from dependencies if injected,
+// "kvdbsync" otherwise.
 func (p *Plugin) String() string {
 	if len(p.Deps.PluginName) == 0 {
 		return "kvdbsync"
@@ -123,7 +134,8 @@ func (p *Plugin) String() string {
 	return string(p.Deps.PluginName)
 }
 
-// Disabled if the plugin was not found
+// Disabled returns *true* if the plugin is not in use due to missing
+// etcd configuration.
 func (p *Plugin) Disabled() (disabled bool) {
 	return p.disabled
 }

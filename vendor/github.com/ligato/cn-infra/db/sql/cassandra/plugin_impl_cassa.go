@@ -15,10 +15,19 @@
 package cassandra
 
 import (
+	"errors"
+
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/db/sql"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/willfaught/gockle"
+)
+
+//
+const (
+	probeCassandraConnection = "SELECT keyspace_name FROM system_schema.keyspaces"
 )
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
@@ -35,7 +44,21 @@ type Deps struct {
 	local.PluginInfraDeps // inject
 }
 
-// Init is called at plugin startup. The session to etcd is established.
+var (
+	// ErrMissingVisitorEntity is error returned when visitor is missing entity.
+	ErrMissingVisitorEntity = errors.New("cassandra: visitor is missing entity")
+
+	// ErrMissingEntityField is error returned when visitor entity is missing field.
+	ErrMissingEntityField = errors.New("cassandra: visitor entity is missing field")
+
+	// ErrUnexportedEntityField is error returned when visitor entity has unexported field.
+	ErrUnexportedEntityField = errors.New("cassandra: visitor entity with unexported field")
+
+	// ErrInvalidEndpointConfig is error returned when endpoint and port are not in valid format.
+	ErrInvalidEndpointConfig = errors.New("cassandra: invalid configuration, endpoint and port not in valid format")
+)
+
+// Init is called at plugin startup. The session to Cassandra is established.
 func (p *Plugin) Init() (err error) {
 	if p.session != nil {
 		return nil // skip initialization
@@ -60,11 +83,6 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// AfterInit is called by the Agent Core after all plugins have been initialized.
-func (p *Plugin) AfterInit() error {
 	if p.session == nil && p.clientConfig != nil {
 		session, err := CreateSessionFromConfig(p.clientConfig)
 		if err != nil {
@@ -74,19 +92,29 @@ func (p *Plugin) AfterInit() error {
 		p.session = gockle.NewSession(session)
 	}
 
-	/* TODO Register for providing status reports (polling mode)
-	if p.StatusCheck != nil && p.session != nil {
-		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
-			if err == nil {
-				return statuscheck.OK, nil
-			}
-			return statuscheck.Error, err
-		})
+	// Register for providing status reports (polling mode)
+	if p.StatusCheck != nil {
+		if p.session != nil {
+			p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
+				broker := p.NewBroker()
+				err := broker.Exec(`select keyspace_name from system_schema.keyspaces`)
+				if err == nil {
+					return statuscheck.OK, nil
+				}
+				return statuscheck.Error, err
+			})
+		} else {
+			p.Log.Warnf("Cassandra connection not available")
+		}
 	} else {
-		p.Log.Warnf("Unable to start status check for etcd")
-	}*/
+		p.Log.Warnf("Unable to start status check for Cassandra")
+	}
 
+	return nil
+}
+
+// AfterInit is called by the Agent Core after all plugins have been initialized.
+func (p *Plugin) AfterInit() error {
 	return nil
 }
 
@@ -102,8 +130,8 @@ func (p *Plugin) NewBroker() sql.Broker {
 
 // Close resources
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.session)
-	return err
+	safeclose.Close(p.session)
+	return nil
 }
 
 // String returns if set Deps.PluginName or "cassa-client" otherwise

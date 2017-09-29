@@ -22,22 +22,24 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// BytesWatcher define API for monitoring changes in datastore
+// BytesWatcher define API for monitoring changes in datastore.
 type BytesWatcher interface {
 	// Watch starts subscription for changes associated with the selected keys.
-	// Watch events will be delivered to respChan.
+	// Watch events will be delivered to callback (not channel) <respChan>.
 	Watch(respChan func(BytesWatchResp), keys ...string) error
 }
 
-// BytesWatchResp represents a notification about change. It is sent through the watch resp channel.
+// BytesWatchResp represents a notification about data change.
+// It is sent through the respChan callback.
 type BytesWatchResp interface {
 	BytesKvPair
 	datasync.WithChangeType
 	datasync.WithRevision
 }
 
-// ToChan creates a callback that can be passed to the Watch function in order to receive
-// notifications through a channel. If the notification can not be delivered until timeout it is dropped.
+// ToChan creates a callback that can be passed to the Watch function in order
+// to receive notifications through a channel. If the notification can not be
+// delivered until timeout, it is dropped.
 func ToChan(ch chan BytesWatchResp, opts ...interface{}) func(dto BytesWatchResp) {
 
 	timeout := datasync.DefaultNotifTimeout

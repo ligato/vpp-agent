@@ -1,13 +1,13 @@
 package: github.com/ligato/vpp-agent
 import:
 - package: github.com/ligato/cn-infra
-  version: 83eb6249d68174ca6088aeda705eda6e17a0e30d
+  version: d80416b19b308869c3395163e4783f63bbc96f2b
 - package: github.com/wadey/gocovmerge
   version: b5bfa59ec0adc420475f97f89b58045c721d761c
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: git.fd.io/govpp.git
-  version: f2cbe790a5c3c3e8cb59b592c252b2b84025bd91
+  version: 03bc1c23595e998e8fa75a65e23bedfbec115643
   repo: https://git.fd.io/govpp.git
   subpackages:
   - adapter

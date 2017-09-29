@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/cn-infra/health/statuscheck/pluginstatusmap"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -33,8 +34,11 @@ const (
 	// Error state means that some error has occurred in the plugin.
 	Error PluginState = "error"
 
-	periodicWriteTimeout   time.Duration = time.Second * 10 // frequency of periodic writes of state data into ETCD
-	periodicProbingTimeout time.Duration = time.Second * 5  // frequency of periodic plugin state probing
+	// frequency of periodic writes of state data into ETCD
+	periodicWriteTimeout time.Duration = time.Second * 10
+
+	// frequency of periodic plugin state probing
+	periodicProbingTimeout time.Duration = time.Second * 5
 )
 
 // Plugin struct holds all plugin-related data.
@@ -50,17 +54,18 @@ type Plugin struct {
 	ctx    context.Context
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+
+	pluginStatusIdx pluginstatusmap.PluginStatusIdxMapRW
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps lists the dependencies of statuscheck plugin.
 type Deps struct {
-	Log        logging.PluginLogger       //inject
-	PluginName core.PluginName            //inject
-	Transport  datasync.KeyProtoValWriter //inject optional
+	Log        logging.PluginLogger       // inject
+	PluginName core.PluginName            // inject
+	Transport  datasync.KeyProtoValWriter // inject (optional)
 }
 
-// Init is the plugin entry point called by the Agent Core.
+// Init prepares the initial status data.
 func (p *Plugin) Init() error {
 	// write initial status data into ETCD
 	p.agentStat = &status.AgentStatus{
@@ -74,6 +79,8 @@ func (p *Plugin) Init() error {
 	// init pluginStat map
 	p.pluginStat = make(map[string]*status.PluginStatus)
 
+	p.pluginStatusIdx = pluginstatusmap.NewPluginStatusMap(p.PluginName)
+
 	// init map with plugin state probes
 	p.pluginProbe = make(map[string]PluginStateProbe)
 
@@ -83,7 +90,8 @@ func (p *Plugin) Init() error {
 	return nil
 }
 
-// AfterInit is called by the Agent Core after all plugins have been initialized.
+// AfterInit starts go routines for periodic probing and periodic updates.
+// Initial state data are published via the injected transport.
 func (p *Plugin) AfterInit() error {
 	p.access.Lock()
 	defer p.access.Unlock()
@@ -106,7 +114,7 @@ func (p *Plugin) AfterInit() error {
 	return nil
 }
 
-// Close is called by the Agent Core when it's time to clean up the plugin.
+// Close stops go routines for periodic probing and periodic updates.
 func (p *Plugin) Close() error {
 	p.cancel()
 	p.wg.Wait()
@@ -124,6 +132,7 @@ func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 		LastChange: time.Now().Unix(),
 	}
 	p.pluginStat[string(pluginName)] = stat
+	p.pluginStatusIdx.Put(string(pluginName), stat)
 
 	if probe != nil {
 		p.pluginProbe[string(pluginName)] = probe
@@ -135,7 +144,8 @@ func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 	p.Log.Infof("Plugin %v: status check probe registered", pluginName)
 }
 
-// ReportStateChange can be used to report a change in the status of a previously registered plugin.
+// ReportStateChange can be used to report a change in the status
+// of a previously registered plugin.
 func (p *Plugin) ReportStateChange(pluginName core.PluginName, state PluginState, lastError error) {
 	p.access.Lock()
 	defer p.access.Unlock()
@@ -220,7 +230,8 @@ func (p *Plugin) publishAllData() {
 	}
 }
 
-// periodicProbing does periodic status probing for all plugins that have registered probe functions.
+// periodicProbing does periodic status probing for all plugins
+// that have registered probe functions.
 func (p *Plugin) periodicProbing(ctx context.Context) {
 	p.wg.Add(1)
 	defer p.wg.Done()
@@ -286,4 +297,19 @@ func stateToProto(state PluginState) status.OperationalState {
 	default:
 		return status.OperationalState_ERROR
 	}
+}
+
+// GetAllPluginStatus returns a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetAllPluginStatus() map[string]*status.PluginStatus {
+	//TODO - used currently, will be removed after incoporating improvements for exposing map
+	p.access.Lock()
+	defer p.access.Unlock()
+
+	return p.pluginStat
+}
+
+// GetPluginStatusMap returns a read-only copy of a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetPluginStatusMap() pluginstatusmap.PluginStatusIdxMap {
+	//TODO - will be used for exposing the map
+	return p.pluginStatusIdx
 }

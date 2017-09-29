@@ -18,14 +18,14 @@ type MyFlavor struct {
 	Cplugin      c.Plugin
 }
 
-func (f *MyFlavor) Inject() error {
+func (f *MyFlavor) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 	f.Bplugin.A = &f.Aplugin
 	f.Cplugin.B = &f.Bplugin
-	return nil
+	return true
 }
 
 func (f *MyFlavor) Plugins() []*core.NamedPlugin {

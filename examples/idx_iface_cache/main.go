@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/testing"
+	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
 // Start Agent plugins selected for this example
@@ -123,6 +123,16 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// get access to local interface indexes
 	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
 
+
+	// Run consumer
+	go plugin.consume()
+
+	// Cache other agent's interface index mapping using injected plugin and local plugin name
+	// /vnf-agent/agent1/vpp/config/v1/interface/
+	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
+	// /vnf-agent/agent2/vpp/config/v1/interface/
+	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
+
 	return nil
 }
 
@@ -137,15 +147,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	if err != nil {
 		return err
 	}
-
-	// Cache other agent's interface index mapping using injected plugin and local plugin name
-	// /vnf-agent/agent1/vpp/config/v1/interface/
-	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
-	// /vnf-agent/agent2/vpp/config/v1/interface/
-	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
-
-	// Run consumer
-	go plugin.consume()
 
 	// Publish test data
 	plugin.publish()
@@ -165,19 +166,19 @@ func (plugin *ExamplePlugin) Close() error {
 // Test data are published to different agents (including local)
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create interface in local agent
-	iface0 := testing.TapInterfaceBuilder("iface0", "192.168.1.1")
+	iface0 := iftst.TapInterfaceBuilder("iface0", "192.168.1.1")
 	err = plugin.Publisher.Put(interfaces.InterfaceKey(iface0.Name), &iface0)
 	if err != nil {
 		return err
 	}
 	// Create interface in agent1
-	iface1 := testing.TapInterfaceBuilder("iface1", "192.168.0.2")
+	iface1 := iftst.TapInterfaceBuilder("iface1", "192.168.0.2")
 	err = plugin.Agent1.Put(interfaces.InterfaceKey(iface1.Name), &iface1)
 	if err != nil {
 		return err
 	}
 	// Create interface in agent2
-	iface2 := testing.TapInterfaceBuilder("iface2", "192.168.0.3")
+	iface2 := iftst.TapInterfaceBuilder("iface2", "192.168.0.3")
 	err = plugin.Agent2.Put(interfaces.InterfaceKey(iface2.Name), &iface2)
 	return err
 }
@@ -197,7 +198,7 @@ func (plugin *ExamplePlugin) consume() {
 	for watching {
 		select {
 		case ifaceIdxEvent := <-swIfIdxChan:
-			plugin.Log.Infof("Event received: interface %v", ifaceIdxEvent.Name)
+			plugin.Log.Info("Event received: interface ", ifaceIdxEvent.Name, " of ", ifaceIdxEvent.RegistryTitle)
 			counter++
 		}
 		// Example is expecting 3 events
