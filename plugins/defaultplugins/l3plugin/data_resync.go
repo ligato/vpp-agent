@@ -20,7 +20,7 @@ import (
 
 // Resync confgures the empty VPP (overwrites the static route)
 func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
-	plugin.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// TODO lookup vpp Route Configs
 
 	var wasError error
@@ -30,6 +30,6 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 			wasError = plugin.ConfigureRoute(route, string(route.VrfId))
 		}
 	}
-	plugin.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
 	return wasError
 }

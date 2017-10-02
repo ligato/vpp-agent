@@ -31,16 +31,16 @@ import (
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
-	plugin.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.Logger, plugin.vppCh)
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh)
 	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
 		return err
 	}
 
-	plugin.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
+	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
 
 	// Step 1: Correlate vppIfaces with northbound interfaces
 	// it means to find out names for vpp swIndexes
@@ -64,7 +64,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		for _, nbIface := range nbIfaces {
 			if vppSwIfIdx, meta, found := tmpCorr.LookupIdx(nbIface.Name); found {
 				corr.RegisterName(nbIface.Name, vppSwIfIdx, meta)
-				plugin.WithField("swIfIndex", vppSwIfIdx).Debug("Correlation ", nbIface.Name)
+				plugin.Log.WithField("swIfIndex", vppSwIfIdx).Debug("Correlation ", nbIface.Name)
 			}
 		}
 	}
@@ -83,7 +83,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		} else if !found {
 			err := plugin.deleteVPPInterface(&vppIface.Interfaces_Interface, vppSwIfIdx)
 
-			plugin.WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
+			plugin.Log.WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
 				Info("Interface deletion ", err)
 
 			if err != nil {
@@ -120,14 +120,14 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		}
 	}
 
-	plugin.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
 	return wasError
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
-	plugin.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
 
 	// lookup BFD sessions
 	err := plugin.LookupBfdSessions()
@@ -145,14 +145,14 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 		}
 	}
 
-	plugin.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
 
 	return wasError
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
-	plugin.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
 
 	// lookup BFD auth keys
 	err := plugin.LookupBfdKeys()
@@ -170,7 +170,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 		}
 	}
 
-	plugin.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
 
 	return wasError
 }

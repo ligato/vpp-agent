@@ -66,7 +66,7 @@ const (
 
 // InterfaceStateUpdater holds state data of all VPP interfaces.
 type InterfaceStateUpdater struct {
-	logging.Logger
+	Log            logging.Logger
 	GoVppmux       govppmux.API
 	swIfIndexes    ifaceidx.SwIfIndex
 	publishIfState func(notification *intf.InterfaceStateNotification)
@@ -90,7 +90,7 @@ func (plugin *InterfaceStateUpdater) Init(ctx context.Context,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceStateNotification)) (err error) {
 
-	plugin.Info("Initializing InterfaceStateUpdater")
+	plugin.Log.Info("Initializing InterfaceStateUpdater")
 
 	plugin.swIfIndexes = swIfIndexes
 	plugin.publishIfState = publishIfState
@@ -151,7 +151,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		Pid:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantInterfaceEventsReply)
-	plugin.Debug("wantInterfaceEventsReply: ", wantInterfaceEventsReply, " ", err)
+	plugin.Log.Debug("wantInterfaceEventsReply: ", wantInterfaceEventsReply, " ", err)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		Pid:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantStatsReply)
-	plugin.Debug("wantStatsReply: ", wantStatsReply, " ", err)
+	plugin.Log.Debug("wantStatsReply: ", wantStatsReply, " ", err)
 	if err != nil {
 		return err
 	}
@@ -201,9 +201,9 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 	defer plugin.wg.Done()
 
 	if plugin.notifChan != nil {
-		plugin.Info("watchVPPNotifications starting")
+		plugin.Log.Info("watchVPPNotifications starting")
 	} else {
-		plugin.Error("watchVPPNotifications will not start")
+		plugin.Log.Error("watchVPPNotifications will not start")
 		return
 	}
 
@@ -220,7 +220,7 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 			case *interfaces.SwInterfaceDetails:
 				plugin.updateIfStateDetails(notif)
 			default:
-				plugin.WithFields(logging.Fields{"MessageName": msg.GetMessageName()}).Debug("Ignoring unknown VPP notification")
+				plugin.Log.WithFields(logging.Fields{"MessageName": msg.GetMessageName()}).Debug("Ignoring unknown VPP notification")
 			}
 
 		case swIdxDto := <-plugin.swIdxChan:
@@ -244,16 +244,16 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 	// update and return if state data
 	ifState, found, err := plugin.updateIfStateFlags(notif)
 	if !found {
-		plugin.WithField("swIfIndex", notif.SwIfIndex).
+		plugin.Log.WithField("swIfIndex", notif.SwIfIndex).
 			Debug("processIfStateNotification but the swIfIndex is not event registered")
 		return
 	}
 	if err != nil {
-		plugin.Warn(err)
+		plugin.Log.Warn(err)
 		return
 	}
 
-	plugin.WithFields(logging.Fields{"ifName": ifState.Name, "swIfIndex": notif.SwIfIndex, "AdminUpDown": notif.AdminUpDown,
+	plugin.Log.WithFields(logging.Fields{"ifName": ifState.Name, "swIfIndex": notif.SwIfIndex, "AdminUpDown": notif.AdminUpDown,
 		"LinkUpDown": notif.LinkUpDown, "Deleted": notif.Deleted}).Debug("Interface state change notification.")
 
 	// store data in ETCD
@@ -325,12 +325,12 @@ func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *inter
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
 		if !found {
-			plugin.WithField("swIfIndex", swIfIndex).
+			plugin.Log.WithField("swIfIndex", swIfIndex).
 				Debug("processIfCounterNotification but the swIfIndex is not event registered")
 			continue
 		}
 		if err != nil {
-			plugin.Warn(err)
+			plugin.Log.Warn(err)
 			continue
 		}
 		stats := ifState.Statistics
@@ -366,12 +366,12 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
 		if !found {
-			plugin.WithField("swIfIndex", swIfIndex).
+			plugin.Log.WithField("swIfIndex", swIfIndex).
 				Debug("processIfCombinedCounterNotification but the swIfIndex is not event registered")
 			continue
 		}
 		if err != nil {
-			plugin.Warn(err)
+			plugin.Log.Warn(err)
 			continue
 		}
 		stats := ifState.Statistics
@@ -403,12 +403,12 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 
 	ifState, found, err := plugin.getIfStateData(ifDetails.SwIfIndex)
 	if !found {
-		plugin.WithField("swIfIndex", ifDetails.SwIfIndex).
+		plugin.Log.WithField("swIfIndex", ifDetails.SwIfIndex).
 			Debug("updateIfStateDetails but the swIfIndex is not event registered")
 		return
 	}
 	if err != nil {
-		plugin.Warn(err)
+		plugin.Log.Warn(err)
 		return
 	}
 
@@ -468,12 +468,12 @@ func (plugin *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32) {
 
 	ifState, found, err := plugin.getIfStateData(swIfIndex)
 	if !found {
-		plugin.WithField("swIfIndex", swIfIndex).
+		plugin.Log.WithField("swIfIndex", swIfIndex).
 			Debug("notification delete but the swIfIndex is not event registered")
 		return
 	}
 	if err != nil {
-		plugin.Warn(err)
+		plugin.Log.Warn(err)
 		return
 	}
 	ifState.AdminStatus = intf.InterfacesState_Interface_DELETED

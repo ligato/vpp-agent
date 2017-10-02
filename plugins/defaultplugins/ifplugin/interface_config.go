@@ -50,7 +50,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
-	logging.Logger
+	Log			 logging.Logger
 
 	GoVppmux     govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
@@ -70,7 +70,7 @@ type InterfaceConfigurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
-	plugin.Debug("Initializing InterfaceConfigurator")
+	plugin.Log.Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
 	plugin.mtu = mtu
@@ -79,12 +79,12 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	if err != nil {
 		return err
 	}
-	err = vppcalls.CheckMsgCompatibilityForInterface(plugin.Logger, plugin.vppCh)
+	err = vppcalls.CheckMsgCompatibilityForInterface(plugin.Log, plugin.vppCh)
 	if err != nil {
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Logger, Linux: plugin.Linux}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil
@@ -97,7 +97,7 @@ func (plugin *InterfaceConfigurator) Close() error {
 
 // LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
 func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
-	plugin.Logger.Debug("Starting lookup of VPP interfaces")
+	plugin.Log.Debug("Starting lookup of VPP interfaces")
 	req := &interfaces.SwInterfaceDump{}
 	reqCtx := plugin.vppCh.SendMultiRequest(req)
 
@@ -108,7 +108,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 			break // break out of the loop
 		}
 		if err != nil {
-			plugin.Error(err)
+			plugin.Log.Error(err)
 			return err
 		}
 
@@ -116,7 +116,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			ifName := string(bytes.Trim(msg.InterfaceName, "\x00"))
-			plugin.WithFields(logging.Fields{"ifName": ifName, "swIfIndex": msg.SwIfIndex}).
+			plugin.Log.WithFields(logging.Fields{"ifName": ifName, "swIfIndex": msg.SwIfIndex}).
 				Debug("Register VPP interface name mapping.")
 
 			plugin.swIfIndexes.RegisterName(ifName, msg.SwIfIndex, nil)
@@ -132,7 +132,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 // ConfigureVPPInterface reacts to a new northbound VPP interface config by creating and configuring
 // the interface in the VPP network stack through the VPP binary API.
 func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Interface) error {
-	plugin.WithField("ifName", iface.Name).Debug("Configuring VPP interface")
+	plugin.Log.WithField("ifName", iface.Name).Debug("Configuring VPP interface")
 	var ifIdx uint32
 	var err error
 	var exists bool
@@ -168,7 +168,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
-		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Logger, plugin.vppCh)
+		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
@@ -180,7 +180,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		return err
 	}
 	for i := range newAddrs {
-		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Logger, plugin.vppCh)
+		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh)
 		if nil != err {
 			wasError = err
 		}
@@ -194,7 +194,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		} else {
 			mtu = plugin.mtu
 		}
-		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Logger, plugin.vppCh)
+		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
@@ -202,7 +202,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// register name to idx mapping
 	plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
-	plugin.WithFields(logging.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
+	plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
 
 	// set interface up if enabled
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
@@ -231,7 +231,7 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 		return errors.New("oldConfig is null")
 	}
 
-	plugin.Debug("'Modifying' VPP interface", newConfig.Name)
+	plugin.Log.Debug("'Modifying' VPP interface", newConfig.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
 		return plugin.recreateVPPInterface(newConfig, oldConfig, 0)
@@ -241,7 +241,7 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 	ifIdx, meta, found := plugin.swIfIndexes.LookupIdx(newConfig.Name)
 
 	if !found {
-		plugin.WithFields(logging.Fields{"ifName": newConfig.Name}).Debug("Mapping for interface name not found.")
+		plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name}).Debug("Mapping for interface name not found.")
 		return nil
 	}
 
@@ -253,7 +253,7 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfaces_Interface,
 	oldConfig *intf.Interfaces_Interface, ifIdx uint32, ifaceType intf.InterfaceType) (err error) {
 
-	plugin.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
+	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("modifyVPPInterface begin")
 
 	switch ifaceType {
@@ -261,14 +261,14 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if !plugin.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
 			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
-			plugin.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
+			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if !plugin.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) {
 			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
-			plugin.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
+			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
@@ -280,7 +280,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 			if err == nil {
 				err = plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 			}
-			plugin.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
+			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
@@ -302,7 +302,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	// configure new mac address if set (and only if it was changed)
 	if newConfig.PhysAddress != "" && newConfig.PhysAddress != oldConfig.PhysAddress {
-		err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.Logger, plugin.vppCh)
+		err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
@@ -321,20 +321,20 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	del, add := addrs.DiffAddr(newAddrs, oldAddrs)
 
-	plugin.Debug("del ip addrs: ", del)
-	plugin.Debug("add ip addrs: ", add)
+	plugin.Log.Debug("del ip addrs: ", del)
+	plugin.Log.Debug("add ip addrs: ", add)
 
 	for i := range del {
-		err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Logger, plugin.vppCh)
-		plugin.Debug("del ip addr ", ifIdx, " ", del[i], " ", err)
+		err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Log, plugin.vppCh)
+		plugin.Log.Debug("del ip addr ", ifIdx, " ", del[i], " ", err)
 		if nil != err {
 			wasError = err
 		}
 	}
 
 	for i := range add {
-		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Logger, plugin.vppCh)
-		plugin.Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
+		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Log, plugin.vppCh)
+		plugin.Log.Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
 		if nil != err {
 			wasError = err
 		}
@@ -342,18 +342,18 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	// mtu
 	if newConfig.Mtu == 0 {
-		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Logger, plugin.vppCh)
+		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
 	} else if newConfig.Mtu != oldConfig.Mtu {
-		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Logger, plugin.vppCh)
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
 	}
 
-	plugin.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).Debug("modifyVPPInterface end. ", err)
+	plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).Debug("modifyVPPInterface end. ", err)
 
 	return wasError
 }
@@ -377,7 +377,7 @@ func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interf
 // DeleteVPPInterface reacts to a removed NB configuration of a VPP interface.
 // It results in the interface being removed from VPP.
 func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_Interface) (wasError error) {
-	plugin.Debug("'Deleting' VPP interface", iface.Name)
+	plugin.Log.Debug("'Deleting' VPP interface", iface.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
 		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface)
@@ -386,7 +386,7 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	// unregister name to init mapping (following triggers notifications for all subscribers)
 	ifIdx, prev, found := plugin.swIfIndexes.UnregisterName(iface.Name)
 	if !found {
-		plugin.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
+		plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
 		return nil
 	}
 
@@ -395,7 +395,7 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 
 func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_Interface, ifIdx uint32) (
 	wasError error) {
-	plugin.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
+	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface begin")
 
 	// let's try to do following even if previously error occurred
@@ -407,20 +407,20 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	oldAddrs, err := addrs.StrAddrsToStruct(oldConfig.IpAddresses)
 	if err != nil {
-		plugin.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
+		plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 			Debug("deleteVPPInterface end ", err)
 		return err
 	}
 	for i := range oldAddrs {
-		plugin.WithField("addr", oldAddrs[i]).Info("Ip removed")
-		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Logger, plugin.vppCh)
+		plugin.Log.WithField("addr", oldAddrs[i]).Info("Ip removed")
+		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh)
 		if nil != err {
-			plugin.Error(err)
+			plugin.Log.Error(err)
 			wasError = err
 		}
 	}
 
-	plugin.Info("Ip addrs removed")
+	plugin.Log.Info("Ip addrs removed")
 
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
@@ -441,7 +441,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		wasError = err
 	}
 
-	plugin.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
+	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface end ", err)
 
 	return wasError
@@ -449,7 +449,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
 func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName string, interfaceIndex uint32) {
-	plugin.WithFields(logging.Fields{"ifName": interfaceName, "ifIdx": interfaceIndex}).Info("New Linux interface was created")
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "ifIdx": interfaceIndex}).Info("New Linux interface was created")
 
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, interfaceIndex)
 	if pendingAfpacket != nil {
@@ -460,7 +460,7 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName 
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
 func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName string) {
-	plugin.WithFields(logging.Fields{"ifName": interfaceName}).Info("Linux interface was deleted")
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName}).Info("Linux interface was deleted")
 
 	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName)
 }
@@ -474,7 +474,7 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 		newConfig.RingSize != oldConfig.RingSize || newConfig.Master != oldConfig.Master || newConfig.SocketFilename != oldConfig.SocketFilename ||
 		newConfig.RxQueues != oldConfig.RxQueues || newConfig.TxQueues != oldConfig.TxQueues {
 
-		plugin.Warn("Difference between new & old config causing recreation of memif ", oldConfig)
+		plugin.Log.Warn("Difference between new & old config causing recreation of memif ", oldConfig)
 
 		return false
 	}
