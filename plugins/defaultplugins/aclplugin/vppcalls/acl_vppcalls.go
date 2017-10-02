@@ -21,10 +21,10 @@ import (
 	"strings"
 
 	"git.fd.io/govpp.git/api"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
@@ -279,14 +279,14 @@ func ipACL(ipRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Ip, aclRule *acl_api.
 		aclRule.SrcIPPrefixLen = uint8(srcMask)
 		aclRule.DstIPAddr = dstIP.To4()
 		aclRule.DstIPPrefixLen = uint8(dstMask)
-	// Ipv6 case
+		// Ipv6 case
 	} else if srcIP.To16() != nil || dstIP.To16() != nil {
 		aclRule.IsIpv6 = 1
 		aclRule.SrcIPAddr = srcIP.To16()
 		aclRule.SrcIPPrefixLen = uint8(srcMask)
 		aclRule.DstIPAddr = dstIP.To16()
 		aclRule.DstIPPrefixLen = uint8(dstMask)
-	// Both empty
+		// Both empty
 	} else {
 		aclRule.IsIpv6 = 0
 	}
