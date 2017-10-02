@@ -22,7 +22,7 @@ import (
 	"strconv"
 
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -37,6 +37,7 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1routes". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type RouteConfigurator struct {
+	Log           logging.Logger
 	GoVppmux      govppmux.API
 	RouteIndexes  idxvpp.NameToIdxRW
 	RouteIndexSeq uint32
@@ -46,7 +47,7 @@ type RouteConfigurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *RouteConfigurator) Init() (err error) {
-	log.DefaultLogger().Debug("Initializing L3 plugin")
+	plugin.Log.Debug("Initializing L3 plugin")
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -64,11 +65,11 @@ func (plugin *RouteConfigurator) Init() (err error) {
 
 // ConfigureRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
-	log.DefaultLogger().Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	plugin.Log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Validate VRF index from key and it's value in data
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(config.VrfId) {
-		log.DefaultLogger().Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
+		plugin.Log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
 			intVrfFromKey, config.VrfId)
 		if err != nil {
 			return err
@@ -76,7 +77,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 		config.VrfId = uint32(intVrfFromKey)
 	}
 	// Transform route data
-	route, err := TransformRoute(config, plugin.SwIfIndexes)
+	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 		routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
 		plugin.RouteIndexes.RegisterName(routeIdentifier, plugin.RouteIndexSeq, nil)
 		plugin.RouteIndexSeq++
-		log.DefaultLogger().Infof("Route %v registered", routeIdentifier)
+		plugin.Log.Infof("Route %v registered", routeIdentifier)
 	}
 
 	return nil
@@ -97,24 +98,24 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 // ModifyRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	log.DefaultLogger().Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	plugin.Log.Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	// Validate new route data Vrf
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(newConfig.VrfId) {
 		// To update VRF in static route, the route has to be removed and a new one with appropriate key should be created
-		log.DefaultLogger().Warnf("VRF index was changed to (%v) while the VRF in the key is (%v), using value from the key",
+		plugin.Log.Warnf("VRF index was changed to (%v) while the VRF in the key is (%v), using value from the key",
 			newConfig.VrfId, intVrfFromKey)
 		if err != nil {
 			return err
 		}
 		newConfig.VrfId = uint32(intVrfFromKey)
 	}
-	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes)
+	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
 	// Transform old route data
-	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes)
+	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	}
 	oldRouteIdentifier := routeIdentifier(oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
 	plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
-	log.DefaultLogger().Infof("Old route %v unregistered", oldRouteIdentifier)
+	plugin.Log.Infof("Old route %v unregistered", oldRouteIdentifier)
 
 	// Create and register new route
 	err = vppcalls.VppAddDelRoute(newRoute, plugin.vppChan, true)
@@ -135,16 +136,16 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	newRouteIdentifier := routeIdentifier(newRoute.DstAddr.String(), newRoute.NextHopAddr.String())
 	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
 	plugin.RouteIndexSeq++
-	log.DefaultLogger().Infof("New route %v registered", newRouteIdentifier)
+	plugin.Log.Infof("New route %v registered", newRouteIdentifier)
 
 	return nil
 }
 
 // DeleteRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
-	log.DefaultLogger().Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Transform route data
-	route, err := TransformRoute(config, plugin.SwIfIndexes)
+	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -158,7 +159,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 	}
 	routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
 	plugin.RouteIndexes.UnregisterName(routeIdentifier)
-	log.DefaultLogger().Infof("Route %v unregistered", routeIdentifier)
+	plugin.Log.Infof("Route %v unregistered", routeIdentifier)
 
 	return nil
 }
@@ -174,7 +175,7 @@ func (plugin *RouteConfigurator) checkMsgCompatibility() error {
 	}
 	err := plugin.vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.DefaultLogger().Error(err)
+		plugin.Log.Error(err)
 	}
 	return err
 }

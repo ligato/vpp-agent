@@ -21,13 +21,14 @@ import (
 	"strings"
 
 	"git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *api.Channel) (uint32, error) {
+func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -44,19 +45,19 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *api
 
 		err = vppChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
-			return 0, fmt.Errorf("Failed to write ACL %v", aclName)
+			return 0, fmt.Errorf("failed to write ACL %v", aclName)
 		}
 		if 0 != reply.Retval {
-			return 0, fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
+			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.DefaultLogger().Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
+		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
 		return reply.ACLIndex, nil
 	}
-	return 0, fmt.Errorf("No rules found for ACL %v", aclName)
+	return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 }
 
 // AddMacIPAcl create new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *api.Channel) (uint32, error) {
+func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := transformACLMacIPRules(rules)
 	if err != nil {
@@ -72,20 +73,20 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *
 		reply := &acl_api.MacipACLAddReply{}
 		err = vppChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
-			return 0, fmt.Errorf("Failed to write ACL %v", aclName)
+			return 0, fmt.Errorf("failed to write ACL %v", aclName)
 		}
 		if 0 != reply.Retval {
-			return 0, fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
+			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.DefaultLogger().Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
+		log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
 		return reply.ACLIndex, nil
 	}
-	log.DefaultLogger().Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
-	return 0, fmt.Errorf("No rules found for ACL %v", aclName)
+	log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
+	return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 }
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified
-func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, vppChannel *api.Channel) error {
+func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) error {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -102,50 +103,50 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 
 		err = vppChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
-			return fmt.Errorf("Failed to write ACL %v", aclName)
+			return fmt.Errorf("failed to write ACL %v", aclName)
 		}
 		if 0 != reply.Retval {
-			return fmt.Errorf("Error %v while writing ACL %v to VPP", reply.Retval, aclName)
+			return fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
-		log.DefaultLogger().Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, aclIndex)
+		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, aclIndex)
 		return nil
 	}
-	log.DefaultLogger().Debugf("No Ip ACL rules written for ACL %v", aclName)
+	log.Debugf("No Ip ACL rules written for ACL %v", aclName)
 	return nil
 }
 
 // DeleteIPAcl removes L3/L4 ACL
-func DeleteIPAcl(aclIndex uint32, vppChannel *api.Channel) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel) error {
 	msg := &acl_api.ACLDel{}
 	msg.ACLIndex = aclIndex
 
 	reply := &acl_api.ACLDelReply{}
 	err := vppChannel.SendRequest(msg).ReceiveReply(reply)
 	if err != nil {
-		return fmt.Errorf("Failed to remove L3/L4 ACL %v", aclIndex)
+		return fmt.Errorf("failed to remove L3/L4 ACL %v", aclIndex)
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Error %v while removing L3/L4 ACL %v", reply.Retval, aclIndex)
+		return fmt.Errorf("error %v while removing L3/L4 ACL %v", reply.Retval, aclIndex)
 	}
-	log.DefaultLogger().Infof("L3/L4 ACL %v removed", aclIndex)
+	log.Infof("L3/L4 ACL %v removed", aclIndex)
 
 	return nil
 }
 
 // DeleteMacIPAcl removes L2 ACL
-func DeleteMacIPAcl(aclIndex uint32, vppChannel *api.Channel) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel) error {
 	msg := &acl_api.MacipACLDel{}
 	msg.ACLIndex = aclIndex
 
 	reply := &acl_api.MacipACLDelReply{}
 	err := vppChannel.SendRequest(msg).ReceiveReply(reply)
 	if err != nil {
-		return fmt.Errorf("Failed to remove L2 ACL %v", aclIndex)
+		return fmt.Errorf("failed to remove L2 ACL %v", aclIndex)
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Error %v while removing L2 ACL %v", reply.Retval, aclIndex)
+		return fmt.Errorf("error %v while removing L2 ACL %v", reply.Retval, aclIndex)
 	}
-	log.DefaultLogger().Infof("L2 ACL %v removed", aclIndex)
+	log.Infof("L2 ACL %v removed", aclIndex)
 
 	return nil
 }
@@ -240,17 +241,17 @@ func ipACL(ipRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Ip, aclRule *acl_api.
 	destinationNetwork := net.ParseIP(ipRule.DestinationNetwork)
 	if len(strings.TrimSpace(ipRule.SourceNetwork)) != 0 &&
 		(sourceNetwork.To4() == nil && sourceNetwork.To16() == nil) {
-		return aclRule, fmt.Errorf("Source address %v is invalid", ipRule.SourceNetwork)
+		return aclRule, fmt.Errorf("source address %v is invalid", ipRule.SourceNetwork)
 	}
 	if len(strings.TrimSpace(ipRule.DestinationNetwork)) != 0 &&
 		(destinationNetwork.To4() == nil && destinationNetwork.To16() == nil) {
-		return aclRule, fmt.Errorf("Destination address %v is invalid", ipRule.DestinationNetwork)
+		return aclRule, fmt.Errorf("destination address %v is invalid", ipRule.DestinationNetwork)
 	}
 
 	// beware: IPv4 address can be converted to IPv6
 	if (sourceNetwork.To4() != nil && destinationNetwork.To4() == nil && destinationNetwork.To16() != nil) ||
 		(sourceNetwork.To4() == nil && sourceNetwork.To16() != nil && destinationNetwork.To4() != nil) {
-		return aclRule, fmt.Errorf("Source address %v and destionation address %v have different IP versions",
+		return aclRule, fmt.Errorf("source address %v and destionation address %v have different IP versions",
 			ipRule.SourceNetwork, ipRule.DestinationNetwork)
 	}
 	if sourceNetwork.To4() != nil || destinationNetwork.To4() != nil {
@@ -316,6 +317,6 @@ func udpACL(udpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp, aclRule *acl_a
 }
 
 func otherACL(otherRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Other, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	log.DefaultLogger().Warnf("Unknown protocol: %v", otherRule.Protocol)
+	logrus.DefaultLogger().Warn("unknown protocol: %v", otherRule.Protocol)
 	return aclRule
 }
