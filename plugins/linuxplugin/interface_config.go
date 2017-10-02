@@ -167,17 +167,17 @@ func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
 	if err != nil {
 		return err
 	}
-	for _, intf := range intfs {
-		idx := GetLinuxInterfaceIndex(intf.Name)
+	for _, inter := range intfs {
+		idx := GetLinuxInterfaceIndex(inter.Name)
 		if idx < 0 {
 			continue
 		}
-		_, _, known := plugin.ifIndexes.LookupIdx(intf.Name)
-		if known {
+		res := plugin.ifIndexes.LookupNameByHostIfName(inter.Name)
+		if len(res) == 1 {
 			continue
 		}
-		log.DefaultLogger().WithFields(log.Fields{"name": intf.Name, "idx": idx}).Debug("Found new Linux interface")
-		plugin.ifIndexes.RegisterName(intf.Name, uint32(idx), nil)
+		log.DefaultLogger().WithFields(log.Fields{"name": inter.Name, "idx": idx}).Debug("Found new Linux interface")
+		plugin.ifIndexes.RegisterName(inter.Name, uint32(idx), &intf.LinuxInterfaces_Interface{Name: inter.Name, HostIfName: inter.Name})
 	}
 	return nil
 }
@@ -185,6 +185,7 @@ func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
 // ConfigureLinuxInterface reacts to a new northbound Linux interface config by creating and configuring
 // the interface in the host network stack through Netlink API.
 func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.LinuxInterfaces_Interface) error {
+	plugin.handleOptionalHostIfName(iface)
 	log.DefaultLogger().Println("Configuring Linux interface", iface.Name, "with host if-name", iface.HostIfName)
 	var err error
 
@@ -291,7 +292,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	mtu := iface.config.Mtu
 	if mtu > 0 {
 		log.DefaultLogger().WithFields(log.Fields{"MTU": mtu, "ifName": iface.config.Name}).Debug("MTU configured.")
-		err := linuxcalls.SetInterfaceMTU(iface.config.Name, int(mtu))
+		err := linuxcalls.SetInterfaceMTU(iface.config.HostIfName, int(mtu))
 		if nil != err {
 			wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 		}
@@ -307,10 +308,11 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 // through Netlink API.
 func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.LinuxInterfaces_Interface,
 	oldConfig *intf.LinuxInterfaces_Interface) error {
-
+	plugin.handleOptionalHostIfName(newConfig)
+	plugin.handleOptionalHostIfName(oldConfig)
 	log.DefaultLogger().Println("'Modifying' Linux interface", newConfig.Name)
 	var err error
-	var ifName = newConfig.Name
+	var ifName = newConfig.HostIfName
 
 	if newConfig == nil {
 		return errors.New("newConfig is null")
@@ -324,6 +326,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	}
 
 	if newConfig.Veth.PeerIfName != oldConfig.Veth.PeerIfName ||
+		newConfig.HostIfName != oldConfig.HostIfName ||
 		linuxcalls.CompareNamespaces(newConfig.Namespace, oldConfig.Namespace) != 0 {
 		// change of the peer interface or the namespace requires to create the interface from the scratch
 		err := plugin.DeleteLinuxInterface(oldConfig)
@@ -431,6 +434,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 
 // DeleteLinuxInterface reacts to a removed NB configuration of a Linux interface.
 func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.LinuxInterfaces_Interface) error {
+	plugin.handleOptionalHostIfName(iface)
 	log.DefaultLogger().Println("'Deleting' Linux interface", iface.Name, "with host if-name", iface.HostIfName)
 
 	if iface.Type != intf.LinuxInterfaces_VETH {
@@ -456,7 +460,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	}
 	defer revertNs()
 
-	err = linuxcalls.DelVethInterface(oldCfg.config.Name, peer.config.Name)
+	err = linuxcalls.DelVethInterface(oldCfg.config.HostIfName, peer.config.HostIfName)
 	if err != nil {
 		return fmt.Errorf("failed to delete VETH interface: %v", err)
 	}
@@ -468,7 +472,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 }
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
-func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, vethName string, ns *intf.LinuxInterfaces_Interface_Namespace) error {
+func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, vethName string, hostIfName string, ns *intf.LinuxInterfaces_Interface_Namespace) error {
 	log.DefaultLogger().WithFields(log.Fields{"vethName": vethName, "ns": linuxcalls.NamespaceToStr(ns)}).Debug("Attempting to remove obsolete VETH")
 
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ns)
@@ -478,7 +482,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	exists, err := linuxcalls.InterfaceExists(vethName)
+	exists, err := linuxcalls.InterfaceExists(hostIfName)
 	if err != nil {
 		log.DefaultLogger().Error(err)
 		return err
@@ -488,7 +492,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	ifType, err := linuxcalls.GetInterfaceType(vethName)
+	ifType, err := linuxcalls.GetInterfaceType(hostIfName)
 	if err != nil {
 		log.DefaultLogger().Error(err)
 		return err
@@ -496,38 +500,37 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	if ifType != "veth" {
 		return fmt.Errorf("interface '%s' already exists and is not VETH", vethName)
 	}
-	peerName, err := linuxcalls.GetVethPeerName(vethName)
+	peerName, err := linuxcalls.GetVethPeerName(hostIfName)
 	if err != nil {
 		log.DefaultLogger().Error(err)
 		return err
 	}
 	log.DefaultLogger().WithFields(log.Fields{"ifName": vethName, "peerName": peerName}).Debug("Removing obsolete VETH interface")
-	err = linuxcalls.DelVethInterface(vethName, peerName)
+	err = linuxcalls.DelVethInterface(hostIfName, peerName)
 	if err != nil {
 		log.DefaultLogger().Error(err)
 		return err
 	}
 	plugin.ifIndexes.UnregisterName(vethName)
-	plugin.ifIndexes.UnregisterName(peerName)
 	return nil
 }
 
 // addVethInterface creates a new VETH interface with a "clean" configuration.
 func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
-	err := plugin.removeObsoleteVeth(nsMgmtCtx, iface.HostIfName, iface.Namespace)
+	err := plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, iface.Namespace)
 	if err != nil {
 		return err
 	}
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.HostIfName, peer.Namespace)
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, peer.Namespace)
 	if err != nil {
 		return err
 	}
 	// VETH is first created in the default namespace so it has to be removed there as well.
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.HostIfName, nil)
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, nil)
 	if err != nil {
 		return err
 	}
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.HostIfName, nil)
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, nil)
 	if err != nil {
 		return err
 	}
@@ -803,8 +806,8 @@ func (plugin *LinuxInterfaceConfigurator) processTerminatedMicroservice(nsMgmtCt
 
 	if interfaces, ok := plugin.intfsByMicroservice[microservice.label]; ok {
 		for _, intf := range interfaces {
-			plugin.removeObsoleteVeth(nsMgmtCtx, intf.config.Name, intf.config.Namespace)
-			plugin.removeObsoleteVeth(nsMgmtCtx, intf.vethPeer.config.Name, intf.vethPeer.config.Namespace)
+			plugin.removeObsoleteVeth(nsMgmtCtx, intf.config.Name, intf.config.HostIfName, intf.config.Namespace)
+			plugin.removeObsoleteVeth(nsMgmtCtx, intf.vethPeer.config.Name, intf.vethPeer.config.HostIfName, intf.vethPeer.config.Namespace)
 		}
 	}
 }
@@ -856,4 +859,11 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	}
 
 	// TODO: process state data
+}
+
+// if hostIfName is not set, symbolic name will be used
+func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *intf.LinuxInterfaces_Interface) {
+	if config.HostIfName == "" {
+		config.HostIfName = config.Name
+	}
 }

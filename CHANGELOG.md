@@ -4,8 +4,9 @@
 
 - [LinuxPlugin](plugins/linuxplugin)
    - Configuration of vEth interfaces modified. Veth configuration defines
-   two names: symbolic used internally and the one used in host OS. Added
-   `HostIfName` field has to be filled in vEth config.
+   two names: symbolic used internally and the one used in host OS.
+   `HostIfName` field is optional. If it is not defined, the name in the host OS
+   will be the same as the symbolic one - defined by `Name` field.
 
 # Release v1.0.5 (2017-9-26)
 
