@@ -45,6 +45,7 @@ line_id=1
 rel_item=0
 echo "#record,#run,step,timeline,relative time,relative to #record,duration(ms)" > log/measuring_exp.csv
 while IFS="," read -r val1 val2 val3;do
+  #echo "Processed line $val1, $val2, $val3"
   if [ "$val2" == ' Started measuring' ]
   then
     start=$(calcNanoTime $val1)
@@ -85,6 +86,56 @@ while IFS="," read -r val1 val2 val3;do
     a=(`echo $val3 | sed -e 's/[:]/ /g'`)
     resyncTookTime=$(bc <<< "scale = 10; ${a[0]} / 1000000 ")
 
+  elif [[ "$val2" == ' VPP Killed' ]]
+  then
+    vppKilled=$(calcNanoTime $val1)
+    vppItem=$line_id
+    diff=$(echo "$vppKilled-$start" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,VPP Killed,$val1,$time,$rel_item" >> log/measuring_exp.csv
+    echo "$line_id,$run,VPP Killed,$val1,$time,$rel_item"
+    line_id=$((line_id+1)) 
+    
+  elif [[ "$val2" =~ ' Loading topology' ]]
+  then
+    diff=$(echo "$vppKilled-0" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,$val2,$val1,$time,0" >> log/measuring_exp.csv
+    echo "$line_id,$run,$val2,$val1,$time,0"
+    line_id=$((line_id+1)) 
+    
+  elif [[ "$val2" =~ ' Core dump of size' ]]
+  then
+    coreDone=$(calcNanoTime $val1)
+    diff=$(echo "$coreDone - $vppKilled" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,$val2,$val1,$time,$vppItem" >> log/measuring_exp.csv
+    echo "$line_id,$run,$val2,$val1,$time,$vppItem"    
+    line_id=$((line_id+1))
+  elif [[ "$val2" = ' Core dump not created' ]]
+  then
+    coreDone=$(calcNanoTime $val1)
+    diff=$(echo "$coreDone - $vppKilled" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,$val2,$val1,$time,$vppItem" >> log/measuring_exp.csv
+    echo "$line_id,$run,$val2,$val1,$time,$vppItem"    
+    line_id=$((line_id+1))
+  elif [[ "$val2" = ' Sleeping while VPP will be ready' ]]
+  then
+    coreDone=$(calcNanoTime $val1)
+    diff=$(echo "$coreDone - $startAgent" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
+    echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
+    line_id=$((line_id+1)) 
+  elif [[ "$val2" = ' VPP is ready to connect' ]]
+  then
+    coreDone=$(calcNanoTime $val1)
+    diff=$(echo "$coreDone - $startAgent" | bc)
+    time=$(showTime $diff)
+    echo "$line_id,$run,$val2,$val1,$time,$rel_item" >> log/measuring_exp.csv
+    echo "$line_id,$run,$val2,$val1,$time,$rel_item"    
+    line_id=$((line_id+1))       
   elif [[ "$val2" =~ ' Connecting to VPP took' ]]
   then
     vppTime=$(calcNanoTime $val1)
@@ -139,16 +190,17 @@ while IFS="," read -r val1 val2 val3;do
   then
     start1=$(calcNanoTime $val1)
     diff=$(echo "$start1-$start" | bc)
+    time=$(showTime $diff)
     if [ $(bc <<< "$diff < 0") -eq 1 ]
     then
-      echo "$line_id,$run,Kill failed,$val1,$diff,$rel_item" >> log/measuring_exp.csv
-      echo "$line_id,$run,Kill failed,$val1,$diff,$rel_item"
+      echo "$line_id,$run,Kill failed,$val1,$time,$rel_item" >> log/measuring_exp.csv
+      echo "$line_id,$run,Kill failed,$val1,$time,$rel_item"
       line_id=$((line_id+1))
     fi
     run=$((run + 1))
     start=$start1
-    echo "$line_id,$run,Container Killed,$val1,$diff,$rel_item" >> log/measuring_exp.csv
-    echo "$line_id,$run,Container Killed,$val1,$diff,$rel_item"
+    echo "$line_id,$run,Container Killed,$val1,$time,$rel_item" >> log/measuring_exp.csv
+    echo "$line_id,$run,Container Killed,$val1,$time,$rel_item"
     rel_item=$line_id
     line_id=$((line_id+1))
     startAgent=0
@@ -156,6 +208,7 @@ while IFS="," read -r val1 val2 val3;do
     etcdTime=0
     vppTime=0
     kafkaTime=0
+    vppKilled=0
     GoVPPInitTime=0
     LinuxInitTime=0
     PluginVPPInitTime=0
@@ -227,8 +280,6 @@ while IFS="," read -r val1 val2 val3;do
       echo "$line_id,$run,  Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime" >> log/measuring_exp.csv
       echo "$line_id,$run,  Resync of VPP config,$PluginVPPResyncStamp,$time,$rel_item,$PluginVPPResyncTookTime"
 
-
-
       line_id=$((line_id+1))
       diff=$(echo "$resyncTime-$startAgent" | bc)
       time=$(showTime $diff)
@@ -287,36 +338,77 @@ setup() {
     sudo docker exec -it kafka /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --list --zookeeper localhost:2181 > /dev/null 2> /dev/null
     echo "Kafka started..."
 
-
-    echo "Loading topology to ETCD..."
-    ./topology.sh
-    #./topology-generate-routes.sh 0
-    #./topology-generate-routes.sh 1000
-    #./topology-generate-fib.sh 1000
+    restime0=$(showTime $(date +%s.%N))
+    
+    # set one of the topology for testing
+    #topo=1
+    #topo=2
+    #topo=3
+    topo=4
+    if [ "$topo" == "1" ]
+    then
+      #### 1 - basic topology
+      ./topology.sh
+      echo "$restime0, Loading basic topology to ETCD..."
+      echo "$restime0, Loading basic topology to ETCD..." > log/out.csv
+    elif [ "$topo" == "2" ]
+    then
+       #### 2 -topology with 0 routes
+      ./topology-generate-routes.sh 0
+      echo "$restime0, Loading topology 0 routes to ETCD..."
+      echo "$restime0, Loading topology 0 routes to ETCD..." > log/out.csv
+    elif [ "$topo" == "3" ]
+    then
+      #### 3 topology with 1000 routes
+      ./topology-generate-routes.sh 1000
+      echo "$restime0, Loading topology 1k routes to ETCD..."
+      echo "$restime0, Loading topology 1k routes to ETCD..." > log/out.csv
+    elif [ "$topo" == "4" ]
+    then
+      #### 4 topology with 1000 l2fib entries
+      ./topology-generate-fib.sh 1000
+      echo "$restime0, Loading topology 1k l2fib to ETCD..."
+      echo "$restime0, Loading topology 1k l2fib to ETCD..." > log/out.csv
+    fi
 }
 
 enableCoreDumpInPod() {
-cat <<EOF > /tmp/change_core_dump_path.sh
-echo /tmp/cores/core.dump > /proc/sys/kernel/core_pattern
+    sudo rm -rf /tmp/cores/ 2>&1
+    cat <<EOF > /tmp/change_core_dump_path.sh
+    echo /tmp/cores/core.dump > /proc/sys/kernel/core_pattern
+    echo "0" > /proc/sys/kernel/core_uses_pid
+EOF
+    cat <<EOF > /tmp/set_core_dump_size.sh
+    #sed -i '/#*               soft    core            0/c\**      soft     core         $1' /etc/security/limits.conf
+    echo "*               soft    core            0" >> /etc/security/limits.conf
+
+    #ulimit -H -c unlimited
+    #ulimit -S -c $1
+    #ulimit -S -c
+    #ulimit -H -c
+    #reboot
 EOF
     mkdir /tmp/cores
-    kubectl exec vswitch-vpp  -- chmod +x /tmp/change_core_dump_path.sh
-    kubectl exec vswitch-vpp  -- bash -c /tmp/change_core_dump_path.sh
+    kubectl exec vpp  -- chmod +x /tmp/change_core_dump_path.sh
+    kubectl exec vpp  -- chmod +x /tmp/set_core_dump_size.sh
+    kubectl exec vpp  -- bash -c /tmp/change_core_dump_path.sh
+    kubectl exec vpp  -- bash -c /tmp/set_core_dump_size.sh
 
-    kubectl exec vswitch-vpp  -- bash -c ulimit -c 100000
 }
-coreDumpVpp() {
-    vpp_id_line=$(kubectl exec vswitch-vpp -- ps aux | grep /usr/bin/vpp)
-    echo $vpp_id_line
-    vpp_id=$(echo $vpp_id_line | awk '{print $2}')
-    echo $vpp_id
 
+coreDumpVpp() {
+    vpp_id_line=$(kubectl exec vpp -- ps aux | grep /usr/bin/vpp)
+    #echo $vpp_id_line
+    vpp_id=$(echo $vpp_id_line | awk '{print $2}')
+    #echo $vpp_id
+    sudo rm -f /tmp/cores/core.dump
     restime0=$(showTime $(date +%s.%N))
     echo "$restime0, VPP Killed" >> log/out.csv
     echo "Killing the vpp - run ${i}"
-    kubectl exec vswitch-vpp -- kill -s ABRT $vpp_id
+    kubectl exec vpp -- kill -s ABRT $vpp_id
     last_vpp_core_time='00:00:00.00'
-    for (( ig = 1; ig <= 280; ig++ ))
+    file_done=0
+    for (( ig = 1; ig <= 1200; ig++ ))
     do
       if [ -f  /tmp/cores/core.dump ]
       then
@@ -328,43 +420,59 @@ coreDumpVpp() {
 	tz=$(echo "$tz_value/100" | bc)
 	vpp_calc=$(calcNanoTime $vpp_core_final_time)
 	tzsec=$(echo "$tz*3600" | bc)
-	echo "Core_final:$vpp_core_final"
-	echo "Core_final_time:$vpp_core_final_time"
-	echo "Core_final_time_zone:$vpp_core_final_time_zone"
-	echo "TZsign:$tz_sign"
-	echo "TZValue:$tz_value"
-	echo "TZ:$tz"
-	echo "valc:$vpp_calc"
-	echo "tzsec:$tzsec"
+	#echo "Core_final:$vpp_core_final"
+	#echo "Core_final_time:$vpp_core_final_time"
+	#echo "Core_final_time_zone:$vpp_core_final_time_zone"
+	#echo "TZsign:$tz_sign"
+	#echo "TZValue:$tz_value"
+	#echo "TZ:$tz"
+	#echo "valc:$vpp_calc"
+	#echo "tzsec:$tzsec"
 	if [ "$vpp_core_final_time" ==  "$last_vpp_core_time" ]
 	then
           if [ "$tz_sign" ==  "+" ]
 	  then
-	    echo "substract"
+	    #echo "substract"
 	    timecalc=$(echo "$vpp_calc-$tzsec" | bc)
 	    showtime=$(showTime $timecalc)
 	  else
-	    echo "adding"
+	    #echo "adding"
 	    timecalc=$(echo "$vpp_calc+$tzsec" | bc)
 	    showtime=$(showTime $timecalc)
 	  fi
-	  echo "$showtime, Core dump done" >> log/out.csv
+	  corefilesize=$(stat --format=%s "/tmp/cores/core.dump")
+	  corefilesizekB=$(echo "$corefilesize/1024" | bc)
+	  corefilesizeMB=$(echo "$corefilesizekB/1024" | bc)
+          echo "Core dump file size is :$corefilesizeMB MBs"
+          echo "$showtime, Core dump of size: $corefilesizeMB MB done" >> log/out.csv
+	  echo "$showtime, Core dump of size: $corefilesizeMB MB done"
+	  file_done=1
 	  break
 	else
 	  last_vpp_core_time=$vpp_core_final_time
 	fi
       else
-	echo "Waiting for core dump file: $ig"
+	if [ $(bc <<< "$ig % 100") -eq 0 ]
+	then
+	  echo "Waiting for core dump file: $ig"
+	fi 
+	vpp_id_line=$(kubectl exec vpp -- ps aux | grep /usr/bin/vpp)
+	echo "VPP id: $vpp_id_line"
       fi
       sleep 0.1
     done
-
+    if [ "$file_done" == "0" ]
+    then
+      restime0=$(showTime $(date +%s.%N))
+      echo "$restime0, Core dump not created" >> log/out.csv
+      echo "$restime0, Core dump not created"
+    fi
 }
 
 
 handleLogsFromOneRun() {
-    kubectl logs vswitch-vpp > log/vswitch-vpp$1.log
-    grep -E 'Starting the agent...|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vswitch-vpp$1.log > log/log$1.log
+    kubectl logs vpp > log/vpp$1.log
+    grep -E 'Starting the agent...|Sleeping while VPP will be ready|VPP is ready to connect|Connecting to etcd took|Resync took|Connecting to VPP took|Connecting to kafka took|All plugins initialized successfully|plugin Linux: Init|plugin GoVPP: Init|plugin VPP: Init|resync the VPP Configuration end|Agent Init|Agent AfterInit'  log/vpp$1.log > log/log$1.log
     cat log/log$1.log | sed -r 's/^time="[0-9-]{10} ([^"]+)".+ msg="([^"]+)"(([^"]*(durationInNs[:]?[ ]?=([0-9]+)))|(\s*))/\1, \2, \6/' >> log/out.csv
     echo "--,--,--,--------" >> log/out.csv
 }
@@ -372,7 +480,10 @@ handleLogsFromOneRun() {
 
 #########################################
 waitTime="30s"
-
+recoveryTime="630s"
+#coredumpLimit="unlimited"
+coredumpLimit=40000
+#coredumpLimit=0
 if [ -z "$1" ]
 then
   cycle=1
@@ -384,25 +495,38 @@ setup
 
 restime0=$(showTime $(date +%s.%N))
 kubectl apply -f vnf-vpp.yaml
-echo "$restime0, Started measuring" > log/out.csv
-kubectl apply -f vswitch-vpp.yaml
+echo "$restime0, Started measuring" >> log/out.csv
+echo "$restime0, Started measuring"
+kubectl apply -f vpp.yaml
+echo "Setting Core dump limits"
+enableCoreDumpInPod $coredumpLimit
 echo "Collecting logs"
 sleep ${waitTime}
 
-enableCoreDumpInPod
-
+#echo "Core dump file hard limit is:" 
+#kubectl exec vswitch-vpp  -- bash -c ulimit -H -c
+#echo "Core dump file soft limit is:"
+#kubectl exec vswitch-vpp  -- bash -c ulimit -S -c
+    
 for (( i = 1; i <= $cycle; i++ ))
 do
     handleLogsFromOneRun ${i}
-    sleep 1s
-
+    #if [ $(bc <<< "$i % 2") -eq 0 ]
+    #then
+    #  echo "Cooling down container for $recoveryTime"
+    #  sleep ${recoveryTime}
+    #else
+    #  echo "Cooling down container for  $waitTime"
+    #  sleep ${waitTime}
+    #fi
+    echo "Cooling down container for $recoveryTime"
+    sleep ${recoveryTime}
     coreDumpVpp
-
-    echo "Killing the vswitch-vpp pod - run ${i}"
+    sleep 5s
+    echo "Killing the vpp pod - run ${i}"
     restime0=$(showTime $(date +%s.%N))
     echo "$restime0, Killed" >> log/out.csv
-    kubectl exec vswitch-vpp kill 1
-
+    kubectl exec vpp kill 1
     sleep ${waitTime}
 done
 
