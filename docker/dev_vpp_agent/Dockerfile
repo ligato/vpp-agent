@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
 RUN mkdir /opt/vpp-agent/plugin
+RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
 

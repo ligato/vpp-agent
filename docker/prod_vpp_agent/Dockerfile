@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # use /opt/vpp-agent/dev as the working directory
 RUN mkdir -p /opt/vpp-agent/dev
+RUN mkdir /etc/supervisord
 WORKDIR /opt/vpp-agent/dev
 
 # copy vpp deb packages and agent
