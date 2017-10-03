@@ -52,4 +52,4 @@ import:
 - package: github.com/sirupsen/logrus
   version: v1.0.0
 - package: google.golang.org/grpc
-  version: v1.6.0
+  version: v1.2.1
