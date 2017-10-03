@@ -57,7 +57,7 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 	}
 
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add memif interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("add memif interface returned %d", reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil
@@ -76,7 +76,7 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel) error {
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of interface returned %d", reply.Retval)
+		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
 	return nil
 

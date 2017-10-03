@@ -19,13 +19,13 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
-func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) error {
+func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel) error {
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -46,7 +46,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 		req.IsIpv6 = 0
 	}
 
-	log.DefaultLogger().Debug("add req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
+	log.Debug("add req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
@@ -55,15 +55,15 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Adding IP address returned %d", reply.Retval)
+		return fmt.Errorf("adding IP address returned %d", reply.Retval)
 	}
-	log.DefaultLogger().WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
+	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
 	return nil
 
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
-func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) error {
+func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel) error {
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -84,7 +84,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 		req.IsIpv6 = 0
 	}
 
-	log.DefaultLogger().Debug("del req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
+	log.Debug("del req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
 	// send the message
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
@@ -94,9 +94,9 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan *govppapi.Channel) er
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Removing IP address returned %d", reply.Retval)
+		return fmt.Errorf("removing IP address returned %d", reply.Retval)
 	}
-	log.DefaultLogger().WithFields(log.Fields{"IPaddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
+	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
 	return nil
 
 }

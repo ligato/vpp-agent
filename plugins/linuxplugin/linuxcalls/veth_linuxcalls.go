@@ -19,14 +19,14 @@ package linuxcalls
 import (
 	"fmt"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
-
+	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
 func AddVethInterface(ifName, peerIfName string) error {
-	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
+	logrus.DefaultLogger().WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
 
 	// Veth pair params
 	veth := &netlink.Veth{
@@ -44,7 +44,7 @@ func AddVethInterface(ifName, peerIfName string) error {
 
 // DelVethInterface calls LinkDel Netlink API for the Netlink.Veth interface type.
 func DelVethInterface(ifName, peerIfName string) error {
-	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
+	logrus.DefaultLogger().WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
 
 	// Veth pair params
 	veth := &netlink.Veth{
@@ -68,7 +68,7 @@ func GetVethPeerName(ifName string) (string, error) {
 	}
 	veth, isVeth := link.(*netlink.Veth)
 	if !isVeth {
-		return "", fmt.Errorf("Interface '%s' is not VETH", ifName)
+		return "", fmt.Errorf("interface '%s' is not VETH", ifName)
 	}
 	return veth.PeerName, nil
 }

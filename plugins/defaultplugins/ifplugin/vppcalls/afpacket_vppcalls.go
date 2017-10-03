@@ -37,7 +37,7 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	}
 
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add af_packet interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("add af_packet interface returned %d", reply.Retval)
 	}
 	return reply.SwIfIndex, nil
 }
@@ -55,7 +55,7 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of af_packet interface returned %d", reply.Retval)
+		return fmt.Errorf("deleting of af_packet interface returned %d", reply.Retval)
 	}
 	return nil
 }

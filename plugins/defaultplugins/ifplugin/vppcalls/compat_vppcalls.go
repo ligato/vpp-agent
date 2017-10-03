@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
@@ -24,10 +23,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime
-func CheckMsgCompatibilityForInterface(vppChan *govppapi.Channel) error {
+func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&memif.MemifCreate{},
 		&memif.MemifCreateReply{},
@@ -67,13 +67,13 @@ func CheckMsgCompatibilityForInterface(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.DefaultLogger().Error(err)
+		log.Error(err)
 	}
 	return err
 }
 
 // CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime
-func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
+func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
@@ -88,7 +88,7 @@ func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
-		log.DefaultLogger().Error(err)
+		log.Error(err)
 	}
 	return err
 }

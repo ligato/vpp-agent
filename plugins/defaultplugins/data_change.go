@@ -20,7 +20,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
 	"github.com/ligato/cn-infra/datasync"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 )
@@ -28,7 +27,7 @@ import (
 // dataChangeACL propagates to the particular aclConfigurator
 func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevValue *acl.AccessLists_Acl,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.aclConfigurator.DeleteACL(prevValue)
@@ -41,7 +40,7 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 // DataChangeIface propagates data change to the ifConfigurator
 func (plugin *Plugin) dataChangeIface(diff bool, value *intf.Interfaces_Interface, prevValue *intf.Interfaces_Interface,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.ifConfigurator.DeleteVPPInterface(prevValue)
@@ -54,7 +53,7 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *intf.Interfaces_Interfac
 // DataChangeBfdSession propagates data change  to the bfdConfigurator
 func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Session, prevValue *bfd.SingleHopBFD_Session,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeBfdSession ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeBfdSession ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.bfdConfigurator.DeleteBfdSession(prevValue)
@@ -67,7 +66,7 @@ func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Se
 // DataChangeBfdKey propagates data change  to the bfdConfigurator
 func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, prevValue *bfd.SingleHopBFD_Key,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeBfdKey ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeBfdKey ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
@@ -80,7 +79,7 @@ func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, p
 // DataChangeBfdEchoFunction propagates data change to the bfdConfigurator
 func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopBFD_EchoFunction, prevValue *bfd.SingleHopBFD_EchoFunction,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeBfdEchoFunction ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeBfdEchoFunction ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
@@ -93,7 +92,7 @@ func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopB
 // dataChangeBD propagates data change to the bdConfigurator
 func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDomain, prevValue *l2.BridgeDomains_BridgeDomain,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
@@ -106,7 +105,7 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 // dataChangeFIB propagates data change to the fibConfigurator
 func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTableEntry, prevValue *l2.FibTableEntries_FibTableEntry,
 	changeType datasync.PutDel, callback func(error)) error {
-	log.DefaultLogger().Debug("dataChangeFIB diff=", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeFIB diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.fibConfigurator.Delete(prevValue, callback)
@@ -119,7 +118,7 @@ func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTabl
 // DataChangeIface propagates data change to the xcConfugurator
 func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnectPair, prevValue *l2.XConnectPairs_XConnectPair,
 	changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.xcConfigurator.DeleteXConnectPair(prevValue)
@@ -133,7 +132,7 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 // DataChangeStaticRoute propagates data change to the routeConfigurator
 func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Route, prevValue *l3.StaticRoutes_Route,
 	vrfFromKey string, changeType datasync.PutDel) error {
-	log.DefaultLogger().Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.routeConfigurator.DeleteRoute(prevValue)

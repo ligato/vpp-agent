@@ -23,7 +23,7 @@ package l2plugin
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -39,6 +39,7 @@ import (
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1bd". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type BDConfigurator struct {
+	Log           logging.Logger
 	GoVppmux      govppmux.API
 	BdIndexes     bdidx.BDIndexRW    // bridge domains
 	IfToBdIndexes idxvpp.NameToIdxRW // interface to bridge domain mapping - desired state. Metadata is boolean flag whether interface is bvi or not
@@ -67,7 +68,7 @@ type BridgeDomainMeta struct {
 // Init members (channels...) and start go routines.
 func (plugin *BDConfigurator) Init(notificationChannel chan BridgeDomainStateMessage) (err error) {
 
-	log.DefaultLogger().Debug("Initializing L2 Bridge domains")
+	plugin.Log.Debug("Initializing L2 Bridge domains")
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -78,7 +79,7 @@ func (plugin *BDConfigurator) Init(notificationChannel chan BridgeDomainStateMes
 	// Init notification channel
 	plugin.notificationChan = notificationChannel
 
-	err = vppcalls.CheckMsgCompatibilityForBridgeDomains(plugin.vppChan)
+	err = vppcalls.CheckMsgCompatibilityForBridgeDomains(plugin.Log, plugin.vppChan)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (plugin *BDConfigurator) Close() error {
 
 // ConfigureBridgeDomain for newly created bridge domain
 func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.BridgeDomains_BridgeDomain) error {
-	log.DefaultLogger().Println("Configuring VPP Bridge Domain", bridgeDomainInput.Name)
+	plugin.Log.Println("Configuring VPP Bridge Domain", bridgeDomainInput.Name)
 
 	if !plugin.vppValidateBridgeDomainBVI(bridgeDomainInput) {
 		return nil
@@ -102,21 +103,21 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.Bridge
 	bridgeDomainIndex := plugin.BridgeDomainIDSeq
 
 	// Create bridge domain with respective index
-	err := vppcalls.VppAddBridgeDomain(bridgeDomainIndex, bridgeDomainInput, plugin.vppChan)
+	err := vppcalls.VppAddBridgeDomain(bridgeDomainIndex, bridgeDomainInput, plugin.Log, plugin.vppChan)
 	// Increment global index
 	plugin.BridgeDomainIDSeq++
 	if err != nil {
-		log.DefaultLogger().WithField("Bridge domain name", bridgeDomainInput.Name).Error(err)
+		plugin.Log.WithField("Bridge domain name", bridgeDomainInput.Name).Error(err)
 		return err
 	}
 
 	// Register created bridge domain
 	plugin.BdIndexes.RegisterName(bridgeDomainInput.Name, bridgeDomainIndex, nil)
-	log.DefaultLogger().WithFields(log.Fields{"Name": bridgeDomainInput.Name, "Index": bridgeDomainIndex}).Debug("Bridge domain registered.")
+	plugin.Log.WithFields(logging.Fields{"Name": bridgeDomainInput.Name, "Index": bridgeDomainIndex}).Debug("Bridge domain registered.")
 
 	// Find all interfaces belonging to this bridge domain and set them up
 	allInterfaces, configuredInterfaces, bviInterfaceName := vppcalls.VppSetAllInterfacesToBridgeDomain(bridgeDomainInput, bridgeDomainIndex,
-		plugin.SwIfIndexes, plugin.vppChan)
+		plugin.SwIfIndexes, plugin.Log, plugin.vppChan)
 	plugin.registerInterfaceToBridgeDomainPairs(allInterfaces, configuredInterfaces, bviInterfaceName, bridgeDomainIndex)
 
 	// Resolve ARP termination table entries
@@ -124,19 +125,20 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.Bridge
 	if arpTerminationTable != nil && len(arpTerminationTable) != 0 {
 		arpTable := bridgeDomainInput.ArpTerminationTable
 		for _, arpEntry := range arpTable {
-			err := vppcalls.VppAddArpTerminationTableEntry(bridgeDomainIndex, arpEntry.PhysAddress, arpEntry.IpAddress, plugin.vppChan)
+			err := vppcalls.VppAddArpTerminationTableEntry(bridgeDomainIndex, arpEntry.PhysAddress, arpEntry.IpAddress,
+				plugin.Log, plugin.vppChan)
 			if err != nil {
-				log.DefaultLogger().Error(err)
+				plugin.Log.Error(err)
 			}
 		}
 	} else {
-		log.DefaultLogger().WithField("Bridge domain name", bridgeDomainInput.Name).Debug("No ARP termination entries to set")
+		plugin.Log.WithField("Bridge domain name", bridgeDomainInput.Name).Debug("No ARP termination entries to set")
 	}
 
 	// Push to bridge domain state
 	errLookup := plugin.LookupBridgeDomainDetails(bridgeDomainIndex, bridgeDomainInput.Name)
 	if errLookup != nil {
-		log.DefaultLogger().WithField("bdName", bridgeDomainInput.Name).Error(errLookup)
+		plugin.Log.WithField("bdName", bridgeDomainInput.Name).Error(errLookup)
 		return errLookup
 	}
 
@@ -145,7 +147,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bridgeDomainInput *l2.Bridge
 
 // ModifyBridgeDomain process the NB config and propagates it to bin api calls
 func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_BridgeDomain, oldConfig *l2.BridgeDomains_BridgeDomain) error {
-	log.DefaultLogger().Println("Modifying VPP bridge domain", newConfig.Name)
+	plugin.Log.Infof("Modifying VPP bridge domain %v", newConfig.Name)
 
 	// Validate config
 	if !plugin.vppValidateBridgeDomainBVI(newConfig) {
@@ -156,7 +158,7 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 	// During update, old bridge domain will be removed (if exists), so unregister all interfaces at first
 	if found {
 		oldInterfaces := vppcalls.VppUnsetAllInterfacesFromBridgeDomain(oldConfig, oldConfigIndex,
-			plugin.SwIfIndexes, plugin.vppChan)
+			plugin.SwIfIndexes, plugin.Log, plugin.vppChan)
 		plugin.unregisterInterfaceToBridgeDomainPairs(oldInterfaces)
 	}
 
@@ -170,25 +172,25 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 	}
 
 	// Refresh bridge domain params. Old bridge domain will removed if exists
-	err := vppcalls.VppUpdateBridgeDomain(oldConfigIndex, newConfigIndex, newConfig, plugin.vppChan)
+	err := vppcalls.VppUpdateBridgeDomain(oldConfigIndex, newConfigIndex, newConfig, plugin.Log, plugin.vppChan)
 	if err != nil {
-		log.DefaultLogger().WithField("Bridge domain name", newConfig.Name).Error(err)
+		plugin.Log.WithField("Bridge domain name", newConfig.Name).Error(err)
 		return err
 	}
-	log.DefaultLogger().WithField("Bridge domain name", newConfig.Name).Debug("Bridge domain params updated.")
+	plugin.Log.WithField("Bridge domain name", newConfig.Name).Debug("Bridge domain params updated.")
 
 	// Reload interfaces for new modified bridge domain, remove any out-of-date interface to BD pairs and register new ones if necessary
 	allNewInterfaces, configuredNewInterfaces, bvi := vppcalls.VppSetAllInterfacesToBridgeDomain(newConfig,
-		newConfigIndex, plugin.SwIfIndexes, plugin.vppChan)
+		newConfigIndex, plugin.SwIfIndexes, plugin.Log, plugin.vppChan)
 	plugin.registerInterfaceToBridgeDomainPairs(allNewInterfaces, configuredNewInterfaces, bvi, newConfigIndex)
 
 	// Update ARP termination
 	if len(newConfig.ArpTerminationTable) == 0 {
-		log.DefaultLogger().Debug("No new entries to arp termination table")
+		plugin.Log.Debug("No new entries to arp termination table")
 	} else if len(oldConfig.ArpTerminationTable) == 0 && len(newConfig.ArpTerminationTable) != 0 {
 		arpTable := newConfig.GetArpTerminationTable()
 		for _, entry := range arpTable {
-			vppcalls.VppAddArpTerminationTableEntry(newConfigIndex, entry.PhysAddress, entry.IpAddress, plugin.vppChan)
+			vppcalls.VppAddArpTerminationTableEntry(newConfigIndex, entry.PhysAddress, entry.IpAddress, plugin.Log, plugin.vppChan)
 		}
 	} else if len(oldConfig.ArpTerminationTable) != 0 {
 		odlArpTable := oldConfig.GetArpTerminationTable()
@@ -197,18 +199,18 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 		oldBdIndex, _, found := plugin.BdIndexes.LookupIdx(oldConfig.Name)
 		if found {
 			for _, entry := range odlArpTable {
-				vppcalls.VppRemoveArpTerminationTableEntry(oldBdIndex, entry.PhysAddress, entry.IpAddress, plugin.vppChan)
+				vppcalls.VppRemoveArpTerminationTableEntry(oldBdIndex, entry.PhysAddress, entry.IpAddress, plugin.Log, plugin.vppChan)
 			}
 		}
 		for _, entry := range newArpTable {
-			vppcalls.VppAddArpTerminationTableEntry(newConfigIndex, entry.PhysAddress, entry.IpAddress, plugin.vppChan)
+			vppcalls.VppAddArpTerminationTableEntry(newConfigIndex, entry.PhysAddress, entry.IpAddress, plugin.Log, plugin.vppChan)
 		}
 	}
 
 	// Push change to bridge domain state
 	errLookup := plugin.LookupBridgeDomainDetails(newConfigIndex, newConfig.Name)
 	if errLookup != nil {
-		log.DefaultLogger().WithField("bdName", newConfig.Name).Error(errLookup)
+		plugin.Log.WithField("bdName", newConfig.Name).Error(errLookup)
 		return errLookup
 	}
 
@@ -217,11 +219,11 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newConfig *l2.BridgeDomains_Bri
 
 // DeleteBridgeDomain  process the NB config and propagates it to bin api calls
 func (plugin *BDConfigurator) DeleteBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain) error {
-	log.DefaultLogger().Println("'Deleting' bridge domain", bridgeDomain.Name)
+	plugin.Log.Infof("'Deleting' bridge domain %v", bridgeDomain.Name)
 
 	bdIdx, _, found := plugin.BdIndexes.LookupIdx(bridgeDomain.Name)
 	if !found {
-		log.DefaultLogger().WithField("bdName", bridgeDomain.Name).Debug("Unable to find index for bridge domain to be deleted.")
+		plugin.Log.WithField("bdName", bridgeDomain.Name).Debug("Unable to find index for bridge domain to be deleted.")
 		return nil
 	}
 
@@ -231,16 +233,16 @@ func (plugin *BDConfigurator) DeleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bdIdx uint32) error {
 	// Unmap all interfaces from removed bridge domain
 	interfaces := vppcalls.VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain, bdIdx,
-		plugin.SwIfIndexes, plugin.vppChan)
+		plugin.SwIfIndexes, plugin.Log, plugin.vppChan)
 	plugin.unregisterInterfaceToBridgeDomainPairs(interfaces)
 
-	err := vppcalls.VppDeleteBridgeDomain(bdIdx, plugin.vppChan)
+	err := vppcalls.VppDeleteBridgeDomain(bdIdx, plugin.Log, plugin.vppChan)
 	if err != nil {
 		return err
 	}
 
 	plugin.BdIndexes.UnregisterName(bridgeDomain.Name)
-	log.DefaultLogger().WithFields(log.Fields{"Name": bridgeDomain.Name, "bdIdx": bdIdx}).Debug("Bridge domain removed.")
+	plugin.Log.WithFields(logging.Fields{"Name": bridgeDomain.Name, "bdIdx": bdIdx}).Debug("Bridge domain removed.")
 
 	// Push to bridge domain state
 	err = plugin.LookupBridgeDomainDetails(bdIdx, bridgeDomain.Name)
@@ -251,7 +253,7 @@ func (plugin *BDConfigurator) deleteBridgeDomain(bridgeDomain *l2.BridgeDomains_
 	return nil
 }
 
-// LookupBridgeDomainDetails looks up all VPP BDs and saves their name-to-index mapping
+// LookupBridgeDomainDetails looks for existing VPP bridge domain state and propagates it to the etcd bd state
 func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName string) error {
 	stateMsg := BridgeDomainStateMessage{}
 	var wasError error
@@ -280,7 +282,7 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 		stateMsg.Name = bdName
 	}
 
-	// Propagate bridge domain state information
+	// Propagate bridge domain state information to the bridge domain state updater.
 	plugin.notificationChan <- stateMsg
 
 	return wasError
@@ -288,29 +290,29 @@ func (plugin *BDConfigurator) LookupBridgeDomainDetails(bdID uint32, bdName stri
 
 // ResolveCreatedInterface looks for bridge domain this interface is assigned to and sets it up
 func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
-	log.DefaultLogger().Println("Resolving new interface ", interfaceName)
+	plugin.Log.Infof("Resolving new interface %v", interfaceName)
 	// Look whether interface belongs to some bridge domain using interface-to-bd mapping
 	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
 	if !found {
-		log.DefaultLogger().Debugf("Interface %s does not belong to any bridge domain", interfaceName)
+		plugin.Log.Debugf("Interface %s does not belong to any bridge domain", interfaceName)
 		return nil
 	}
 	_, _, alreadyCreated := plugin.IfToBdRealStateIdx.LookupIdx(interfaceName)
 	if alreadyCreated {
-		log.DefaultLogger().Debugf("Interface %s has been already configured", interfaceName)
+		plugin.Log.Debugf("Interface %s has been already configured", interfaceName)
 		return nil
 	}
 	bridgeDomainIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
 	bvi := meta.(*BridgeDomainMeta).IsInterfaceBvi
 
-	vppcalls.VppSetInterfaceToBridgeDomain(bridgeDomainIndex, interfaceIndex, bvi, plugin.vppChan)
+	vppcalls.VppSetInterfaceToBridgeDomain(bridgeDomainIndex, interfaceIndex, bvi, plugin.Log, plugin.vppChan)
 	// Register interface to real state
 	plugin.IfToBdRealStateIdx.RegisterName(interfaceName, interfaceIndex, meta)
 
 	// Push to bridge domain state
 	bridgeDomainName, _, found := plugin.BdIndexes.LookupName(bridgeDomainIndex)
 	if !found {
-		return fmt.Errorf("Unable to update status for bridge domain, index %v not found in mapping", bridgeDomainIndex)
+		return fmt.Errorf("unable to update status for bridge domain, index %v not found in mapping", bridgeDomainIndex)
 	}
 	err := plugin.LookupBridgeDomainDetails(bridgeDomainIndex, bridgeDomainName)
 	if err != nil {
@@ -319,12 +321,31 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(interfaceName string, inte
 	return nil
 }
 
-// ResolveDeletedInterface does nothing
-func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) {
-	log.DefaultLogger().Print("Interface was removed. Unregister from real state ", interfaceName)
-	// Unregister removed interface
+// ResolveDeletedInterface is called by VPP if an interface is removed
+func (plugin *BDConfigurator) ResolveDeletedInterface(interfaceName string) error {
+	plugin.Log.Infof("Interface %v was removed. Unregister from real state ", interfaceName)
+	// Lookup IfToBdIndexes in order to find a bridge domain for this interface (if exists)
+	_, meta, found := plugin.IfToBdIndexes.LookupIdx(interfaceName)
+	if !found {
+		plugin.Log.Debugf("Removed interface %s does not belong to any bridge domain", interfaceName)
+		return nil
+	}
+	bdID := meta.(*BridgeDomainMeta).BridgeDomainIndex
+	// Find bridge domain name
+	bdName, meta, found := plugin.BdIndexes.LookupName(bdID)
+	if !found {
+		return fmt.Errorf("unknown bridge domain ID %v", bdID)
+	}
+	// If interface belonging to a bridge domain is removed, VPP handles internal bridge domain update itself. However
+	// the etcd operational state still needs to be updated to reflect changed VPP state
+	err := plugin.LookupBridgeDomainDetails(bdID, bdName)
+	if err != nil {
+		return err
+	}
+	// Unregister removed interface from real state
 	plugin.IfToBdRealStateIdx.UnregisterName(interfaceName)
-	// Nothing else to do here, vpp handles it itself
+
+	return nil
 }
 
 // Store all interface/bridge domain pairs
@@ -343,7 +364,7 @@ func (plugin *BDConfigurator) registerInterfaceToBridgeDomainPairs(allInterfaces
 			IsInterfaceBvi:    bvi,
 		}
 		plugin.IfToBdIndexes.RegisterName(iface, plugin.RegisteredIfaceCounter, &meta)
-		log.DefaultLogger().Debugf("Iface %v to BD %v pair registered", iface, domainID)
+		plugin.Log.Debugf("Iface %v to BD %v pair registered", iface, domainID)
 
 		// Find whether interface is configured
 		ok := false
@@ -354,7 +375,7 @@ func (plugin *BDConfigurator) registerInterfaceToBridgeDomainPairs(allInterfaces
 			}
 		}
 		if ok {
-			log.DefaultLogger().Debugf("Iface %v to BD %v pair configured", iface, domainID)
+			plugin.Log.Debugf("Iface %v to BD %v pair configured", iface, domainID)
 			plugin.IfToBdRealStateIdx.RegisterName(iface, plugin.RegisteredIfaceCounter, &meta)
 		}
 		plugin.RegisteredIfaceCounter++
@@ -370,13 +391,13 @@ func (plugin *BDConfigurator) unregisterInterfaceToBridgeDomainPairs(interfaces 
 	for _, iface := range interfaces {
 		plugin.IfToBdIndexes.UnregisterName(iface)
 		plugin.IfToBdRealStateIdx.UnregisterName(iface)
-		log.DefaultLogger().WithFields(log.Fields{"Iface": iface}).Debug("Interface to bridge domain unregistered.")
+		plugin.Log.WithFields(logging.Fields{"Iface": iface}).Debug("Interface to bridge domain unregistered.")
 	}
 }
 
 func (plugin *BDConfigurator) vppValidateBridgeDomainBVI(bridgeDomain *l2.BridgeDomains_BridgeDomain) bool {
 	if len(bridgeDomain.Interfaces) == 0 {
-		log.DefaultLogger().Warnf("Bridge domain %v does not contain any interface", bridgeDomain.Name)
+		plugin.Log.Warnf("Bridge domain %v does not contain any interface", bridgeDomain.Name)
 		return true
 	}
 	var bviCount int
@@ -386,12 +407,12 @@ func (plugin *BDConfigurator) vppValidateBridgeDomainBVI(bridgeDomain *l2.Bridge
 		}
 	}
 	if bviCount == 0 {
-		log.DefaultLogger().Debugf("Bridge domain %v does not contain any bvi interface", bridgeDomain.Name)
+		plugin.Log.Debugf("Bridge domain %v does not contain any bvi interface", bridgeDomain.Name)
 		return true
 	} else if bviCount == 1 {
 		return true
 	} else {
-		log.DefaultLogger().Warnf("Bridge domain %v contains more than one BVI interface. Correct it and create/modify bridge domain again", bridgeDomain.Name)
+		plugin.Log.Warnf("Bridge domain %v contains more than one BVI interface. Correct it and create/modify bridge domain again", bridgeDomain.Name)
 		return false
 	}
 }

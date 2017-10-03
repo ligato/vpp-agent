@@ -17,13 +17,13 @@ package l3plugin
 import (
 	"bytes"
 	"fmt"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
 	"sort"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route
@@ -82,13 +82,13 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 }
 
 // TransformRoute converts raw route data to Route object
-func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex) (*vppcalls.Route, error) {
+func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.Route, error) {
 	if routeInput == nil {
-		log.DefaultLogger().Infof("Route input is empty")
+		log.Infof("Route input is empty")
 		return nil, nil
 	}
 	if routeInput.DstIpAddr == "" {
-		log.DefaultLogger().Infof("Route does not contain destination address")
+		log.Infof("Route does not contain destination address")
 		return nil, nil
 	}
 	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)
@@ -104,7 +104,7 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex)
 		var exists bool
 		ifIndex, _, exists = index.LookupIdx(ifName)
 		if !exists {
-			return nil, fmt.Errorf("Route outgoing interface %v not found", ifName)
+			return nil, fmt.Errorf("route outgoing interface %v not found", ifName)
 		}
 	}
 

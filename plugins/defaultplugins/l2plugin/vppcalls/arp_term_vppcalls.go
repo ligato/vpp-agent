@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 	"net"
 	"strconv"
@@ -25,12 +25,12 @@ import (
 )
 
 // VppAddArpTerminationTableEntry adds ARP termination entry
-func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, vppChan *govppapi.Channel) error {
-	log.DefaultLogger().Println("Adding arp termination entry")
+func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, log logging.Logger, vppChan *govppapi.Channel) error {
+	log.Info("Adding arp termination entry")
 
 	parsedMac, errMac := net.ParseMAC(mac)
 	if errMac != nil {
-		return fmt.Errorf("Error while parsing MAC address %v", mac)
+		return fmt.Errorf("error while parsing MAC address %v", mac)
 	}
 
 	// Convert ipv4 string to []byte
@@ -39,7 +39,7 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 	for _, ipv4Octet := range ipv4Octets {
 		ipv4IntPart, err := strconv.ParseInt(ipv4Octet, 0, 32)
 		if err != nil {
-			return fmt.Errorf("Unable to parse ip address %s", ip)
+			return fmt.Errorf("unable to parse ip address %s", ip)
 		}
 		parsedIP = append(parsedIP, byte(ipv4IntPart))
 	}
@@ -57,20 +57,20 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Adding arp entry returned %d", reply.Retval)
+		return fmt.Errorf("adding arp entry returned %d", reply.Retval)
 	}
-	log.DefaultLogger().WithFields(log.Fields{"Bridge domain": bridgeDomainID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry added.")
+	log.WithFields(logging.Fields{"Bridge domain": bridgeDomainID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry added.")
 
 	return nil
 }
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry
-func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, vppChan *govppapi.Channel) error {
-	log.DefaultLogger().Println("'Deleting' arp entry")
+func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan *govppapi.Channel) error {
+	log.Info("'Deleting' arp entry")
 
 	parsedMac, errMac := net.ParseMAC(mac)
 	if errMac != nil {
-		return fmt.Errorf("Error while parsing MAC address %v", mac)
+		return fmt.Errorf("error while parsing MAC address %v", mac)
 	}
 
 	// Convert ipv4 string to []byte
@@ -79,7 +79,7 @@ func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, vppCh
 	for _, ipv4Octet := range ipv4Octets {
 		ipv4IntPart, err := strconv.ParseInt(ipv4Octet, 0, 32)
 		if err != nil {
-			return fmt.Errorf("Unable to parse ip address %s", ip)
+			return fmt.Errorf("unable to parse ip address %s", ip)
 		}
 		parsedIP = append(parsedIP, byte(ipv4IntPart))
 	}
@@ -96,9 +96,9 @@ func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, vppCh
 		return err
 	}
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting arp entry returned %d", reply.Retval)
+		return fmt.Errorf("deleting arp entry returned %d", reply.Retval)
 	}
-	log.DefaultLogger().WithFields(log.Fields{"bdID": bdID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry removed.")
+	log.WithFields(logging.Fields{"bdID": bdID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry removed.")
 
 	return nil
 }

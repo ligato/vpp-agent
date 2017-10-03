@@ -21,7 +21,7 @@ import (
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(name string, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddLoopbackInterface(vppChan *govppapi.Channel) (swIndex uint32, err error) {
 	req := &vpe.CreateLoopback{}
 	reply := &vpe.CreateLoopbackReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
@@ -31,7 +31,7 @@ func AddLoopbackInterface(name string, vppChan *govppapi.Channel) (swIndex uint3
 	}
 
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add loopback interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
 	}
 	return reply.SwIfIndex, nil
 }
@@ -49,7 +49,7 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel) error {
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of loopback interface returned %d", reply.Retval)
+		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
 	}
 	return nil
 }
