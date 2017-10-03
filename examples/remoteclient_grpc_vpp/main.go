@@ -33,10 +33,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
+	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
-	"github.com/ligato/cn-infra.bak20170821c/utils/safeclose"
-	"github.com/ligato/cn-infra/flavors/local"
 )
 
 const defaultAddress = "localhost:9111"
@@ -157,13 +157,13 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 		// simulate configuration change exactly 15seconds after resync
 		err := remoteclient.DataChangeRequestGRPC(vppsvc.NewChangeConfigServiceClient(plugin.conn)).
 			Put().
-			Interface(&memif1AsSlave). /* turn memif1 into slave, remove the IP address */
-			Interface(&memif2). /* newly added memif interface */
-			Interface(&tap1Enabled). /* enable tap1 interface */
+			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
+			Interface(&memif2).            /* newly added memif interface */
+			Interface(&tap1Enabled).       /* enable tap1 interface */
 			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
-			ACL(&acl1). /* declare ACL for the traffic leaving tap1 interface */
+			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
-			BD(&BDLoopback1ToTap1). /* put loopback and tap1 into the same bridge domain */
+			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
 			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
 			Send().ReceiveReply()
@@ -351,10 +351,10 @@ var (
 		MacAge:              0, /* means disable aging */
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "loopback1",
+				Name: "loopback1",
 				BridgedVirtualInterface: true,
 			}, {
-				Name:                    "tap1",
+				Name: "tap1",
 				BridgedVirtualInterface: false,
 			},
 		},
