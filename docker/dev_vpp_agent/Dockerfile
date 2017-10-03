@@ -62,7 +62,7 @@ COPY vpp.conf /etc/vpp/vpp.conf
 WORKDIR /root/
 
 # add supervisor conf file
-COPY supervisord.conf /etc/supervisord.conf
+COPY supervisord.conf /etc/supervisord/supervisord.conf
 
 # run supervisor as the default executable
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]

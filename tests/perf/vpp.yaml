@@ -9,9 +9,10 @@ data:
       nodaemon
       cli-listen 0.0.0.0:5002
     }
-    dpdk {
-      dev 0000:00:08.0
-      uio-driver igb_uio
+    plugins {
+      plugin dpdk_plugin.so {
+        disable
+      }
     }
 ---
 apiVersion: v1
@@ -29,13 +30,36 @@ data:
      - "172.17.0.1:9092"
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vswitch-supervisord-cfg
+data:
+  supervisord.conf: | 
+    [supervisord]
+    logfile=/var/log/supervisord.log
+    loglevel=debug
+    nodaemon=true
+
+    [program:vpp]
+    command=/usr/bin/vpp -c /etc/vpp/vpp.conf
+    autorestart=false
+    redirect_stderr=true
+    priority=1
+
+    [program:agent]
+    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --delay=200
+    autorestart=true
+    redirect_stderr=true
+    priority=2
+---   
+apiVersion: v1
 kind: Pod
 metadata:
-  name: vswitch-vpp
+  name: vpp
 spec:
   containers:
-    - name: "vswitch-vpp"
-      image: dev_vpp_agent
+    - name: "vpp"
+      image: ligato/vpp-agent:pantheon-dev
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true
@@ -45,6 +69,8 @@ spec:
         - name: MICROSERVICE_LABEL
           value: vpp1
       volumeMounts:
+        - name: supervisor-config
+          mountPath: /etc/supervisord
         - name: vpp-config
           mountPath: /etc/vpp
         - name: agent-config
@@ -58,6 +84,9 @@ spec:
   - name: agent-config
     configMap:
       name: vswitch-agent-cfg
+  - name: supervisor-config
+    configMap:  
+      name: vswitch-supervisord-cfg
   - name: memif-sockets
     hostPath:
       path: /tmp
