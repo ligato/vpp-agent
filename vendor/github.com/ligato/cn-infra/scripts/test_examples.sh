@@ -214,6 +214,8 @@ Received async Kafka Message, topic 'example-async-topic', partition '2', offset
 Received async Kafka Message, topic 'example-async-topic', partition '2', offset '8', key: 'async-proto-key',
 Received async Kafka Message, topic 'example-async-topic', partition '2', offset '9', key: 'async-proto-key',
 Async message successfully delivered, topic 'example-async-topic'
+Sync watcher closed
+Async watcher closed
 ")
 
 cmd="examples/kafka-plugin/manual-partitioner/manual-partitioner --kafka-config examples/kafka-plugin/manual-partitioner/kafka.conf"
@@ -230,6 +232,8 @@ Sending 10 async Kafka notifications
 Received Kafka Message, topic 'example-sync-topic'
 Async message successfully delivered, topic 'example-async-topic'
 Received async Kafka Message, topic 'example-async-topic'
+Sync watcher closed
+Async watcher closed
 ")
 
 cmd="examples/kafka-plugin/hash-partitioner/hash-partitioner --kafka-config examples/kafka-plugin/hash-partitioner/kafka.conf"

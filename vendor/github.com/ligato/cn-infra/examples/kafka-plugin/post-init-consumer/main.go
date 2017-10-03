@@ -57,7 +57,7 @@ const (
 	connection = "example-proto-connection"
 )
 
-// Init initializes and starts producers and consumers.
+// Init initializes and starts producers
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Create a synchronous publisher.
 	// In the manual mode, every publisher has selected its target partition.
@@ -72,24 +72,36 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	plugin.Log.Info("Initialization of the custom plugin for the Kafka example is completed")
 
-	// Run sync and async kafka consumers.
-	go plugin.syncEventHandler()
-
 	// Run the producer.
 	go plugin.producer()
 
 	// Verify results and close the example if successful.
 	go plugin.closeExample()
 
+	return err
+}
+
+// AfterInit starts consumer (event handler)
+func (plugin *ExamplePlugin) AfterInit() error {
+	// Run consumer
+	go plugin.syncEventHandler()
+
+	// Mark plugin as initialized
 	plugin.initialized = true
 
-	return err
+	return nil
 }
 
 func (plugin *ExamplePlugin) closeExample() {
 	for {
 		if plugin.syncCaseDone && plugin.messagesSent {
 			time.Sleep(2 * time.Second)
+			err := plugin.kafkaWatcher.StopWatchPartition(topic1, syncMessagePartition, syncMessageOffset)
+			if err != nil {
+				plugin.Log.Errorf("Error while stopping watcher: %v", err)
+			} else {
+				plugin.Log.Info("Post-init watcher closed")
+			}
 			plugin.Log.Info("kafka example finished, sending shutdown ...")
 			*plugin.closeChannel <- struct{}{}
 			break
@@ -142,6 +154,8 @@ func (plugin *ExamplePlugin) producer() {
 func (plugin *ExamplePlugin) syncEventHandler() {
 	plugin.Log.Info("Started Kafka sync event handler...")
 
+	// Handler waits until plugin is fully initialized (Init() and AfterInit() is done). After that, post-initialize new
+	// watcher
 	for !plugin.initialized {
 		continue
 	}
@@ -178,5 +192,4 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 			plugin.syncCaseDone = true
 		}
 	}
-
 }
