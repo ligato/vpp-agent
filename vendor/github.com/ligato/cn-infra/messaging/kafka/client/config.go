@@ -286,9 +286,6 @@ func (ref *Config) ValidateConsumerConfig() error {
 	if ref.GroupID == "" {
 		return errors.New("invalid GroupID - no GroupID specified")
 	}
-	if ref.Topics == nil {
-		return errors.New("invalid Topics - one or more topics must be specified")
-	}
 	if ref.RecvNotification && ref.RecvNotificationChan == nil {
 		return errors.New("notification channel not specified")
 	}
