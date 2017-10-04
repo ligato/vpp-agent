@@ -21,10 +21,10 @@ import (
 	"strings"
 
 	"git.fd.io/govpp.git/api"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
@@ -151,8 +151,7 @@ func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel
 	return nil
 }
 
-// todo auxiliary methods can be moved to some util.go
-
+// Method transforms provided set of IP proto ACL rules to binapi ACL rules.
 func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.ACLRule, error) {
 	var aclIPRules []acl_api.ACLRule
 	for _, rule := range rules {
@@ -160,12 +159,11 @@ func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.ACLRule, 
 		var err error
 		// Actions
 		if rule.Actions != nil {
-			ruleActions := rule.Actions
-			aclRule.IsPermit = uint8(ruleActions.AclAction)
+			aclRule.IsPermit = uint8(rule.Actions.AclAction)
 		}
 		// Matches
 		if rule.Matches != nil && rule.Matches.IpRule != nil {
-			// Concerned to ip rules only
+			// Concerned to IP rules only
 			ipRule := rule.Matches.IpRule
 			// L3
 			if ipRule.Ip != nil {
@@ -236,40 +234,67 @@ func transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.MacipA
 	return aclMacIPRules, nil
 }
 
+// Sets an IP ACL rule fields into provided ACL Rule object. Source and destination address has to be the same IP
+// version and contain a network mask.
 func ipACL(ipRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Ip, aclRule *acl_api.ACLRule) (*acl_api.ACLRule, error) {
-	sourceNetwork := net.ParseIP(ipRule.SourceNetwork)
-	destinationNetwork := net.ParseIP(ipRule.DestinationNetwork)
+	// Resolve source address
+	srcIP, srcNetwork, err := net.ParseCIDR(ipRule.SourceNetwork)
+	if err != nil {
+		return nil, err
+	}
+	if srcNetwork == nil || srcNetwork.Mask == nil {
+		return nil, fmt.Errorf("source address does not contain a mask")
+	}
+	maskSize, _ := srcNetwork.Mask.Size()
+	srcMask := uint8(maskSize)
 	if len(strings.TrimSpace(ipRule.SourceNetwork)) != 0 &&
-		(sourceNetwork.To4() == nil && sourceNetwork.To16() == nil) {
+		(srcIP.To4() == nil && srcIP.To16() == nil) {
 		return aclRule, fmt.Errorf("source address %v is invalid", ipRule.SourceNetwork)
 	}
+	// Resolve destination address
+	dstIP, dstNetwork, err := net.ParseCIDR(ipRule.DestinationNetwork)
+	if err != nil {
+		return nil, err
+	}
+	if dstNetwork == nil || srcNetwork.Mask == nil {
+		return nil, fmt.Errorf("dest address does not contain a mask")
+	}
+	maskSize, _ = dstNetwork.Mask.Size()
+	dstMask := uint8(maskSize)
 	if len(strings.TrimSpace(ipRule.DestinationNetwork)) != 0 &&
-		(destinationNetwork.To4() == nil && destinationNetwork.To16() == nil) {
+		(dstIP.To4() == nil && dstIP.To16() == nil) {
 		return aclRule, fmt.Errorf("destination address %v is invalid", ipRule.DestinationNetwork)
 	}
 
-	// beware: IPv4 address can be converted to IPv6
-	if (sourceNetwork.To4() != nil && destinationNetwork.To4() == nil && destinationNetwork.To16() != nil) ||
-		(sourceNetwork.To4() == nil && sourceNetwork.To16() != nil && destinationNetwork.To4() != nil) {
+	// Check IP version (they should be the same), beware: IPv4 address can be converted to IPv6
+	if (srcIP.To4() != nil && dstIP.To4() == nil && dstIP.To16() != nil) ||
+		(srcIP.To4() == nil && srcIP.To16() != nil && dstIP.To4() != nil) {
 		return aclRule, fmt.Errorf("source address %v and destionation address %v have different IP versions",
 			ipRule.SourceNetwork, ipRule.DestinationNetwork)
 	}
-	if sourceNetwork.To4() != nil || destinationNetwork.To4() != nil {
+	// Ipv4 case
+	if srcIP.To4() != nil && dstIP.To4() != nil {
 		aclRule.IsIpv6 = 0
-		aclRule.SrcIPAddr = sourceNetwork.To4()
-		aclRule.DstIPAddr = destinationNetwork.To4()
-	} else if sourceNetwork.To16() != nil || destinationNetwork.To16() != nil {
+		aclRule.SrcIPAddr = srcIP.To4()
+		aclRule.SrcIPPrefixLen = uint8(srcMask)
+		aclRule.DstIPAddr = dstIP.To4()
+		aclRule.DstIPPrefixLen = uint8(dstMask)
+		// Ipv6 case
+	} else if srcIP.To16() != nil || dstIP.To16() != nil {
 		aclRule.IsIpv6 = 1
-		aclRule.SrcIPAddr = sourceNetwork.To16()
-		aclRule.DstIPAddr = destinationNetwork.To16()
+		aclRule.SrcIPAddr = srcIP.To16()
+		aclRule.SrcIPPrefixLen = uint8(srcMask)
+		aclRule.DstIPAddr = dstIP.To16()
+		aclRule.DstIPPrefixLen = uint8(dstMask)
+		// Both empty
 	} else {
-		// both empty
 		aclRule.IsIpv6 = 0
 	}
 	return aclRule, nil
 }
 
-// Ranges are exclusive, use first = 0 and last = 255/65535 (icmpv4/icmpv6) to match "any"
+// Sets an ICMP ACL rule fields into provided ACL Rule object. Ranges are exclusive, use first = 0 and last = 255/65535
+// (icmpv4/icmpv6) to match "any".
 func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
 	if icmpRule == nil {
 		return aclRule
@@ -296,6 +321,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp, aclRule *ac
 	return aclRule
 }
 
+// Sets an TCP ACL rule fields into provided ACL Rule object.
 func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
 	aclRule.Proto = 6 // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
@@ -307,6 +333,7 @@ func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp, aclRule *acl_a
 	return aclRule
 }
 
+// Sets an UDP ACL rule fields into provided ACL Rule object.
 func udpACL(udpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
 	aclRule.Proto = 17 // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
