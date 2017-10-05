@@ -408,7 +408,7 @@ coreDumpVpp() {
     kubectl exec vpp -- kill -s ABRT $vpp_id
     last_vpp_core_time='00:00:00.00'
     file_done=0
-    for (( ig = 1; ig <= 1200; ig++ ))
+    for (( ig = 1; ig <= 400; ig++ ))
     do
       if [ -f  /tmp/cores/core.dump ]
       then
@@ -455,9 +455,9 @@ coreDumpVpp() {
 	if [ $(bc <<< "$ig % 100") -eq 0 ]
 	then
 	  echo "Waiting for core dump file: $ig"
+   	  vpp_id_line=$(kubectl exec vpp -- ps aux | grep /usr/bin/vpp)
+	  echo "VPP id: $vpp_id_line"
 	fi 
-	vpp_id_line=$(kubectl exec vpp -- ps aux | grep /usr/bin/vpp)
-	echo "VPP id: $vpp_id_line"
       fi
       sleep 0.1
     done
@@ -480,6 +480,7 @@ handleLogsFromOneRun() {
 
 #########################################
 waitTime="30s"
+#recoveryTime="30s"
 recoveryTime="630s"
 #coredumpLimit="unlimited"
 coredumpLimit=40000
