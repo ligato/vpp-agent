@@ -38,7 +38,8 @@ COPY vpp.conf /etc/vpp/vpp.conf
 WORKDIR /root/
 
 # run supervisor as the default executable
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+CMD rm /dev/shm/* && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
 
 
 
