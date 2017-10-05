@@ -304,7 +304,7 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, *intf.LinuxInterfaces_I
 	origns, err := netns.Get()
 	if err != nil {
 		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("Failed to get the original namespace")
-		return netns.None(), nsObj,  err
+		return netns.None(), nsObj, err
 	}
 	defer origns.Close()
 
@@ -370,7 +370,7 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, *intf.LinuxInterfaces_I
 		return netns.None(), nsObj, err
 	}
 
-	return newNsHandle, nsObj,  nil
+	return newNsHandle, nsObj, nil
 }
 
 // DeleteNamedNetNs deletes an existing named Linux network namespace.
@@ -392,4 +392,19 @@ func DeleteNamedNetNs(namespace string) error {
 	}
 
 	return err
+}
+
+// NamedNetNsExists checks whether namespace exists.
+func NamedNetNsExists(namespace string) (bool, error) {
+	netnsMountFile := path.Join(netnsMountDir, namespace)
+	if _, err := os.Stat(netnsMountFile); err != nil {
+		if os.IsNotExist(err) {
+			log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Debug("namespace not found")
+			return false, nil
+		}
+		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to read namespace")
+		return false, err
+	}
+	log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Debug("namespace found")
+	return true, nil
 }
