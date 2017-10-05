@@ -40,7 +40,10 @@ import (
 )
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
-const dockerRefreshPeriod = 3 * time.Second
+const (
+	dockerRefreshPeriod = 3 * time.Second
+	vethConfigNamespace = "veth-cfg-ns"
+)
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
 type LinuxInterfaceConfig struct {
@@ -91,6 +94,9 @@ type LinuxInterfaceConfigurator struct {
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 
+	/* veth pre-configure namespace */
+	vethCfgNamespace *intf.LinuxInterfaces_Interface_Namespace
+
 	/* state data (TBD: will be moved to LinuxInterfaceStateUpdater) */
 	ifWatcherRunning bool
 	ifWatcherNotifCh chan netlink.LinkUpdate
@@ -119,15 +125,21 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 
 	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
 	plugin.ifWatcherDoneCh = make(chan struct{})
-	return nil
+
+	// Create cfg namespace
+	err = plugin.prepareVethConfigNamespace()
+
+	return err
 }
 
 // Close stops all goroutines started by linuxplugin
 func (plugin *LinuxInterfaceConfigurator) Close() error {
+	// remove veth pre-configure namespace
+	wasErr := linuxcalls.DeleteNamedNetNs(plugin.vethCfgNamespace.Name)
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	return nil
+	return wasErr
 }
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
@@ -447,8 +459,13 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	oldCfg := plugin.removeFromCache(iface)
 	peer := oldCfg.vethPeer
 
-	if !plugin.isNamespaceAvailable(oldCfg.config.Namespace) || peer == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
-		log.DefaultLogger().WithField("ifName", oldCfg.config.Name).Debug("VETH interface already physically doesn't exist")
+	if oldCfg == nil || oldCfg.config == nil || !plugin.isNamespaceAvailable(oldCfg.config.Namespace) ||
+		peer == nil || peer.config == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
+		name := "<unknown>"
+		if oldCfg != nil && oldCfg.config != nil {
+			name = oldCfg.config.Name
+		}
+		log.DefaultLogger().WithField("ifName", name).Debug("VETH interface already physically doesn't exist")
 		return nil
 	}
 
@@ -517,7 +534,14 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 
 // addVethInterface creates a new VETH interface with a "clean" configuration.
 func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
-	err := plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, iface.Namespace)
+	// Switch to veth cfg namespace
+	revertNs, err := linuxcalls.SwitchNamespace(nsMgmtCtx, plugin.vethCfgNamespace)
+	if err != nil {
+		return err
+	}
+	defer revertNs()
+
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, iface.Namespace)
 	if err != nil {
 		return err
 	}
@@ -525,12 +549,12 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls
 	if err != nil {
 		return err
 	}
-	// VETH is first created in the default namespace so it has to be removed there as well.
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, nil)
+	// VETH is first created in its own cfg namespace so it has to be removed there as well.
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, plugin.vethCfgNamespace)
 	if err != nil {
 		return err
 	}
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, nil)
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, plugin.vethCfgNamespace)
 	if err != nil {
 		return err
 	}
@@ -866,4 +890,15 @@ func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *intf.
 	if config.HostIfName == "" {
 		config.HostIfName = config.Name
 	}
+}
+
+// Create named namespace used for veth interface creation instead of the default one
+func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
+	// Remove namespace if exists
+	err := linuxcalls.DeleteNamedNetNs(vethConfigNamespace)
+	if err != nil {
+		return err
+	}
+	_, plugin.vethCfgNamespace, err = linuxcalls.CreateNamedNetNs(vethConfigNamespace)
+	return err
 }

@@ -262,13 +262,13 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 		ns, err = netns.GetFromName(namespace.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, err = CreateNamedNetNs(namespace.Name)
+			_, _, err = CreateNamedNetNs(namespace.Name)
 			if err != nil {
 				return netns.None(), err
 			}
 			ns, err = netns.GetFromName(namespace.Name)
 			if err != nil {
-				return netns.None(), errors.New("Failed to get namespace by name")
+				return netns.None(), errors.New("failed to get namespace by name")
 			}
 		}
 	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
@@ -280,7 +280,7 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 			return netns.None(), err
 		}
 	case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
-		return netns.None(), errors.New("Don't know how to convert microservice label to PID at this level")
+		return netns.None(), errors.New("don't know how to convert microservice label to PID at this level")
 	}
 
 	return ns, nil
@@ -288,8 +288,13 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 
 // CreateNamedNetNs creates a new named Linux network namespace.
 // It does exactly the same thing as the command "ip netns add NAMESPACE" .
-func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
+func CreateNamedNetNs(namespace string) (netns.NsHandle, *intf.LinuxInterfaces_Interface_Namespace, error) {
 	log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Debug("Creating new named Linux namespace")
+	// Prepare namespace proto object
+	nsObj := &intf.LinuxInterfaces_Interface_Namespace{
+		Type: intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+		Name: namespace,
+	}
 
 	// Lock the OS Thread so we don't accidentally switch namespaces
 	runtime.LockOSThread()
@@ -298,16 +303,16 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 	// Save the current network namespace
 	origns, err := netns.Get()
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("Failed to get the original namespace")
-		return netns.None(), err
+		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("Failed to get the original namespace")
+		return netns.None(), nsObj,  err
 	}
 	defer origns.Close()
 
 	// Create directory for namespace mounts
 	err = os.MkdirAll(netnsMountDir, 0755)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("Failed to create directory for namespace mounts")
-		return netns.None(), err
+		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("Failed to create directory for namespace mounts")
+		return netns.None(), nsObj, err
 	}
 
 	/* Make it possible for network namespace mounts to propagate between
@@ -323,34 +328,34 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 			break
 		}
 		if e, ok := err.(syscall.Errno); !ok || e != syscall.EINVAL || mountedNetnsDir {
-			log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("mount --make-shared failed")
-			return netns.None(), err
+			log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("mount --make-shared failed")
+			return netns.None(), nsObj, err
 		}
 		/* Upgrade netnsMountDir to a mount point */
 		err = syscall.Mount(netnsMountDir, netnsMountDir, "none", syscall.MS_BIND, "")
 		if err != nil {
-			log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("mount --bind failed")
-			return netns.None(), err
+			log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("mount --bind failed")
+			return netns.None(), nsObj, err
 		}
 		mountedNetnsDir = true
 	}
 
 	// Create file path for the mount
-	netnsMountFile := path.Join(netnsMountDir, namespace)
+	netnsMountFile := path.Join(netnsMountDir, nsObj.Name)
 	file, err := os.OpenFile(netnsMountFile, os.O_RDONLY|os.O_CREATE|os.O_EXCL, 0444)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create destination path for the namespace mount")
-		return netns.None(), err
+		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("failed to create destination path for the namespace mount")
+		return netns.None(), nsObj, err
 	}
 	file.Close()
 
 	// Create and switch to a new namespace
-	newns, err := netns.New()
+	newNsHandle, err := netns.New()
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create namespace")
-		return netns.None(), err
+		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("failed to create namespace")
+		return netns.None(), nsObj, err
 	}
-	netns.Set(newns)
+	netns.Set(newNsHandle)
 
 	// Create a bind-mount for the namespace
 	tid := syscall.Gettid()
@@ -360,12 +365,12 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 	netns.Set(origns)
 
 	if err != nil {
-		newns.Close()
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create namespace bind-mount")
-		return netns.None(), err
+		newNsHandle.Close()
+		log.DefaultLogger().WithFields(log.Fields{"namespace": nsObj.Name}).Error("failed to create namespace bind-mount")
+		return netns.None(), nsObj, err
 	}
 
-	return newns, nil
+	return newNsHandle, nsObj,  nil
 }
 
 // DeleteNamedNetNs deletes an existing named Linux network namespace.
