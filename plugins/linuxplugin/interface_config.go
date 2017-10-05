@@ -459,8 +459,13 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	oldCfg := plugin.removeFromCache(iface)
 	peer := oldCfg.vethPeer
 
-	if !plugin.isNamespaceAvailable(oldCfg.config.Namespace) || peer == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
-		log.DefaultLogger().WithField("ifName", oldCfg.config.Name).Debug("VETH interface already physically doesn't exist")
+	if oldCfg == nil || oldCfg.config == nil || !plugin.isNamespaceAvailable(oldCfg.config.Namespace) ||
+		peer == nil || peer.config == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
+		name := "<unknown>"
+		if oldCfg != nil && oldCfg.config != nil {
+			name = oldCfg.config.Name
+		}
+		log.DefaultLogger().WithField("ifName", name).Debug("VETH interface already physically doesn't exist")
 		return nil
 	}
 
