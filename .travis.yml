@@ -5,7 +5,7 @@ language: go
 go_import_path: github.com/ligato/vpp-agent
 
 go:
-  - 1.8.x
+  - 1.9.x
 
 cache:
   directories:

@@ -64,7 +64,7 @@ import:
   version: 2.1.0
 - package: github.com/howeyc/crc16
 - package: github.com/onsi/gomega
-  version: v1.1.0
+  version: v1.2.0
 - package: github.com/prometheus/client_golang
   version: v0.8.0
   subpackages:

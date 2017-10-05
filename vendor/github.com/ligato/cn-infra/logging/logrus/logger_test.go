@@ -159,11 +159,11 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 	logger.SetFormatter(new(lg.JSONFormatter))
 	entry := NewEntry(logger)
 
-	entry2 := entry.withFields(Fields{
+	entry2 := entry.WithFields(lg.Fields{
 		"key1": "value1",
 	})
 
-	entry2.withField("key2", "value2").Info("test")
+	entry2.WithField("key2", "value2").Info("test")
 	err := json.Unmarshal(buffer.Bytes(), &fields)
 	gomega.Expect(err).To(gomega.BeNil())
 
