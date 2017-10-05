@@ -39,7 +39,7 @@ WORKDIR /root/
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
-CMD rm /dev/shm/* && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
+CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
 
 
 
