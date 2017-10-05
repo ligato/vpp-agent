@@ -227,10 +227,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 		return nil
 	}
 
-	// Switch to VEth pre-configure namespace
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
-
-
 	err = plugin.addVethInterface(nsMgmtCtx, iface, peer.config)
 	if err != nil {
 		return err
@@ -532,6 +529,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 
 // addVethInterface creates a new VETH interface with a "clean" configuration.
 func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
+	// Switch to veth cfg namespace
 	revertNs, err := linuxcalls.SwitchNamespace(nsMgmtCtx, plugin.vethCfgNamespace)
 	if err != nil {
 		return err
@@ -546,7 +544,7 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls
 	if err != nil {
 		return err
 	}
-	// VETH is first created in the default namespace so it has to be removed there as well.
+	// VETH is first created in its own cfg namespace so it has to be removed there as well.
 	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, plugin.vethCfgNamespace)
 	if err != nil {
 		return err
@@ -889,12 +887,13 @@ func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *intf.
 	}
 }
 
+// Create named namespace used for veth interface creation instead of the default one
 func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 	// Remove namespace if exists
 	err := linuxcalls.DeleteNamedNetNs(vethConfigNamespace)
 	if err != nil {
 		return err
 	}
-	_, plugin.vethCfgNamespace, err = linuxcalls.CreateNamedNetNs("veth-cfg-ns")
+	_, plugin.vethCfgNamespace, err = linuxcalls.CreateNamedNetNs(vethConfigNamespace)
 	return err
 }
