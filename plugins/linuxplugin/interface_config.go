@@ -457,7 +457,10 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	defer plugin.cfgLock.Unlock()
 
 	oldCfg := plugin.removeFromCache(iface)
-	peer := oldCfg.vethPeer
+	var peer *LinuxInterfaceConfig
+	if oldCfg != nil {
+		peer = oldCfg.vethPeer
+	}
 
 	if oldCfg == nil || oldCfg.config == nil || !plugin.isNamespaceAvailable(oldCfg.config.Namespace) ||
 		peer == nil || peer.config == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
