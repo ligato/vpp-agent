@@ -25,9 +25,7 @@ import (
 type Stopwatch struct {
 	// start of the resync
 	Overall time.Duration
-	// used to measure partial times // todo maybe not needed
-	partialStart time.Time
-	//
+	// map where measurements are stored
 	timeTable map[string]time.Duration
 }
 

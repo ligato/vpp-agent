@@ -65,6 +65,7 @@ type InterfaceConfigurator struct {
 	afPacketConfigurator *AFPacketConfigurator
 
 	vppCh     *govppapi.Channel
+	stopwatch *timer.Stopwatch      // timer used to measure and store time
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
 
 	resyncDoneOnce bool
@@ -76,6 +77,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
 	plugin.mtu = mtu
+	plugin.stopwatch = timer.NewStopwatch()
 
 	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -86,7 +88,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, Stopwatch: plugin.stopwatch}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil
@@ -98,7 +100,7 @@ func (plugin *InterfaceConfigurator) Close() error {
 }
 
 // LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
-func (plugin *InterfaceConfigurator) LookupVPPInterfaces(stopwatch *timer.Stopwatch) error {
+func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 	start := time.Now()
 	plugin.Log.Debug("Starting lookup of VPP interfaces")
 	req := &interfaces.SwInterfaceDump{}
@@ -130,8 +132,8 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces(stopwatch *timer.Stopwa
 	}
 
 	// SwInterfaceSetFlags time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+	if plugin.stopwatch != nil {
+		plugin.stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
 	}
 
 	return nil
@@ -139,7 +141,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces(stopwatch *timer.Stopwa
 
 // ConfigureVPPInterface reacts to a new northbound VPP interface config by creating and configuring
 // the interface in the VPP network stack through the VPP binary API.
-func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Interface, stopwatch *timer.Stopwatch) error {
+func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Interface) error {
 	plugin.Log.WithField("ifName", iface.Name).Debug("Configuring VPP interface")
 	var ifIdx uint32
 	var err error
@@ -148,20 +150,20 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	switch iface.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, stopwatch)
+		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh, stopwatch)
+		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, plugin.vppCh, stopwatch)
+		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, stopwatch)
+		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name)
 		if !exists {
 			return errors.New("it is not yet supported to add (whitelist) a new physical interface")
 		}
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
-		ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface, stopwatch)
+		ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface)
 	}
 
 	if nil != err {
@@ -176,7 +178,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
-		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh, stopwatch)
+		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh, plugin.stopwatch)
 		if err != nil {
 			wasError = err
 		}
@@ -188,7 +190,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		return err
 	}
 	for i := range newAddrs {
-		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh, stopwatch)
+		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh, plugin.stopwatch)
 		if nil != err {
 			wasError = err
 		}
@@ -202,7 +204,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		} else {
 			mtu = plugin.mtu
 		}
-		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh, stopwatch)
+		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh, plugin.stopwatch)
 		if err != nil {
 			wasError = err
 		}
@@ -215,14 +217,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// set interface up if enabled
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
 	if iface.Enabled {
-		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, stopwatch)
+		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.stopwatch)
 		if nil != err {
 			return err
 		}
 	}
 
 	// load interface state data for newly added interface (no way to filter by swIfIndex, need to dump all of them)
-	plugin.LookupVPPInterfaces(stopwatch)
+	plugin.LookupVPPInterfaces()
 
 	return wasError
 }
@@ -242,7 +244,7 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 	plugin.Log.Debug("'Modifying' VPP interface", newConfig.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
-		return plugin.recreateVPPInterface(newConfig, oldConfig, 0, nil)
+		return plugin.recreateVPPInterface(newConfig, oldConfig, 0)
 	}
 
 	// lookup index
@@ -253,13 +255,13 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 		return nil
 	}
 
-	return plugin.modifyVPPInterface(newConfig, oldConfig, ifIdx, meta.Type, nil)
+	return plugin.modifyVPPInterface(newConfig, oldConfig, ifIdx, meta.Type)
 }
 
 // ModifyVPPInterface applies changes in the NB configuration of a VPP interface into the running VPP
 // through the VPP binary API.
 func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfaces_Interface, oldConfig *intf.Interfaces_Interface,
-	ifIdx uint32, ifaceType intf.InterfaceType, stopwatch *timer.Stopwatch) (err error) {
+	ifIdx uint32, ifaceType intf.InterfaceType) (err error) {
 
 	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("modifyVPPInterface begin")
@@ -268,14 +270,14 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	case intf.InterfaceType_TAP_INTERFACE:
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if !plugin.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
-			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx, stopwatch)
+			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if !plugin.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) {
-			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx, nil)
+			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
 			return err
@@ -286,7 +288,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		recreate, err := plugin.afPacketConfigurator.ModifyAfPacketInterface(newConfig, oldConfig)
 		if err != nil || recreate {
 			if err == nil {
-				err = plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx, nil)
+				err = plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 			}
 			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
@@ -368,16 +370,16 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 // recreateVPPInterface removes and creates an interface from scratch.
 func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interfaces_Interface,
-	oldConfig *intf.Interfaces_Interface, ifIdx uint32, stopwatch *timer.Stopwatch) (wasError error) {
+	oldConfig *intf.Interfaces_Interface, ifIdx uint32) (wasError error) {
 	var err error
 
 	if oldConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, stopwatch)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
 	} else {
-		err = plugin.deleteVPPInterface(oldConfig, ifIdx, stopwatch)
+		err = plugin.deleteVPPInterface(oldConfig, ifIdx)
 	}
 	if err == nil {
-		err = plugin.ConfigureVPPInterface(newConfig, stopwatch)
+		err = plugin.ConfigureVPPInterface(newConfig)
 	}
 	return err
 }
@@ -388,7 +390,7 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	plugin.Log.Debug("'Deleting' VPP interface", iface.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
-		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface, nil)
+		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface)
 	}
 
 	// unregister name to init mapping (following triggers notifications for all subscribers)
@@ -398,16 +400,16 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 		return nil
 	}
 
-	return plugin.deleteVPPInterface(prev, ifIdx, nil)
+	return plugin.deleteVPPInterface(prev, ifIdx)
 }
 
-func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_Interface, ifIdx uint32, stopwatch *timer.Stopwatch) (
+func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_Interface, ifIdx uint32) (
 	wasError error) {
 	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface begin")
 
 	// let's try to do following even if previously error occurred
-	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, stopwatch)
+	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.stopwatch)
 	if nil != err {
 		wasError = err
 	}
@@ -421,7 +423,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	}
 	for i := range oldAddrs {
 		plugin.Log.WithField("addr", oldAddrs[i]).Info("Ip removed")
-		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh, stopwatch)
+		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh, plugin.stopwatch)
 		if nil != err {
 			plugin.Log.Error(err)
 			wasError = err
@@ -433,17 +435,17 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		err = vppcalls.DeleteTapInterface(ifIdx, plugin.vppCh, stopwatch)
+		err = vppcalls.DeleteTapInterface(ifIdx, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, stopwatch)
+		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, stopwatch)
+		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, stopwatch)
+		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		return errors.New("it is not yet supported to remove (blacklist) physical interface")
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, stopwatch)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
 	}
 	if nil != err {
 		wasError = err
@@ -462,7 +464,7 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName 
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
-		plugin.ConfigureVPPInterface(pendingAfpacket, nil)
+		plugin.ConfigureVPPInterface(pendingAfpacket)
 	}
 }
 

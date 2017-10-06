@@ -29,6 +29,7 @@ import (
 type AFPacketConfigurator struct {
 	logging.Logger
 	Linux interface{} //just flag if nil
+	Stopwatch *timer.Stopwatch // from InterfaceConfigurator
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
@@ -55,7 +56,7 @@ func (plugin *AFPacketConfigurator) Init(vppCh *govppapi.Channel) (err error) {
 }
 
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.
-func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface, stopwatch *timer.Stopwatch) (swIndex uint32, pending bool, err error) {
+func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface,) (swIndex uint32, pending bool, err error) {
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		return 0, false, errors.New("expecting AfPacket interface")
 	}
@@ -67,7 +68,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 			return 0, true, nil
 		}
 	}
-	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Afpacket, plugin.vppCh, stopwatch)
+	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Afpacket, plugin.vppCh, plugin.Stopwatch)
 	if err != nil {
 		plugin.addToCache(afpacket, true)
 		return 0, true, err
@@ -97,7 +98,7 @@ func (plugin *AFPacketConfigurator) ModifyAfPacketInterface(newConfig *intf.Inte
 }
 
 // DeleteAfPacketInterface removes Afpacket interface from VPP and from the cache.
-func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Interfaces_Interface, stopwatch *timer.Stopwatch) (err error) {
+func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Interfaces_Interface) (err error) {
 
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		return errors.New("expecting AfPacket interface")
@@ -105,7 +106,7 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 
 	config, found := plugin.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
-		err = vppcalls.DeleteAfPacketInterface(afpacket.GetAfpacket(), plugin.vppCh, stopwatch)
+		err = vppcalls.DeleteAfPacketInterface(afpacket.GetAfpacket(), plugin.vppCh, plugin.Stopwatch)
 	}
 	plugin.removeFromCache(afpacket)
 	return err
@@ -126,7 +127,7 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName s
 			plugin.WithFields(logging.Fields{"ifName": afpacket.config.Name, "hostIfName": interfaceName}).Warn(
 				"Re-creating already configured AFPacket interface")
 			// remove the existing afpacket and let the interface configurator to re-create it
-			plugin.DeleteAfPacketInterface(afpacket.config, nil)
+			plugin.DeleteAfPacketInterface(afpacket.config)
 		}
 		// afpacket is now free to get created
 		return afpacket.config
@@ -145,8 +146,8 @@ func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName s
 	afpacket, found := plugin.afPacketByHostIf[interfaceName]
 	if found {
 		// remove the interface and re-add as pending
-		plugin.DeleteAfPacketInterface(afpacket.config, nil)
-		plugin.ConfigureAfPacketInterface(afpacket.config, nil)
+		plugin.DeleteAfPacketInterface(afpacket.config)
+		plugin.ConfigureAfPacketInterface(afpacket.config)
 	}
 }
 

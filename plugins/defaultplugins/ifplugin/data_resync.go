@@ -37,12 +37,17 @@ import (
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
-	// Start stopwatch
-	stopwatch := timer.NewStopwatch()
+	// Check stopwatch
+	if plugin.stopwatch == nil {
+		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
+		plugin.stopwatch = timer.NewStopwatch()
+		// afPacketConfigurator uses the same stopwatch object
+		plugin.afPacketConfigurator.Stopwatch = plugin.stopwatch
+	}
 	start := time.Now()
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, stopwatch)
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.stopwatch)
 	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
 		return err
@@ -89,7 +94,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 			// physical interface (PCI device)
 			plugin.swIfIndexes.RegisterName(vppIface.VPPInternalName, vppSwIfIdx, &vppIface.Interfaces_Interface)
 		} else if !found {
-			err := plugin.deleteVPPInterface(&vppIface.Interfaces_Interface, vppSwIfIdx, stopwatch)
+			err := plugin.deleteVPPInterface(&vppIface.Interfaces_Interface, vppSwIfIdx)
 
 			plugin.Log.WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
 				Info("Interface deletion ", err)
@@ -107,7 +112,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		swIfIdx, _, found := corr.LookupIdx(nbIface.Name)
 		vppIface, foundDump := vppIfaces[swIfIdx]
 		if found && foundDump {
-			err := plugin.modifyVPPInterface(nbIface, &vppIface.Interfaces_Interface, swIfIdx, vppIface.Type, stopwatch)
+			err := plugin.modifyVPPInterface(nbIface, &vppIface.Interfaces_Interface, swIfIdx, vppIface.Type)
 			if err != nil {
 				wasError = err
 			}
@@ -122,7 +127,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	// Step 4: create missing vpp configuration
 	for _, nbIface := range toBeConfigured {
-		err := plugin.ConfigureVPPInterface(nbIface, stopwatch)
+		err := plugin.ConfigureVPPInterface(nbIface)
 		if err != nil {
 			wasError = err
 		}
@@ -130,8 +135,10 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
-	stopwatch.Overall = time.Since(start)
-	stopwatch.Print("interfaceConfigurator", plugin.Log)
+	if plugin.stopwatch != nil {
+		plugin.stopwatch.Overall = time.Since(start)
+		plugin.stopwatch.Print("interfaceConfigurator", plugin.Log)
+	}
 
 	return wasError
 }

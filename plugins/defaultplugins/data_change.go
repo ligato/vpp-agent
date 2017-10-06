@@ -47,7 +47,7 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *intf.Interfaces_Interfac
 	} else if diff {
 		return plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
 	}
-	return plugin.ifConfigurator.ConfigureVPPInterface(value, nil)
+	return plugin.ifConfigurator.ConfigureVPPInterface(value)
 }
 
 // DataChangeBfdSession propagates data change  to the bfdConfigurator
