@@ -22,11 +22,15 @@ import (
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // SetACLToInterfacesAsIngress sets ACL to all provided interfaces as ingress
-func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChannel *api.Channel) error {
+func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
+	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
+		start := time.Now()
 		// Create acl list with new entry
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(ingressInterface)
@@ -65,14 +69,21 @@ func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndex
 			return fmt.Errorf("set interface %v to ACL %v returned %v", ingressInterface, aclIndex, reply.Retval)
 		}
 		log.Debugf("Interface %v set to ACL %v as ingress", ingressInterface, aclIndex)
+
+		// MacipACLAdd time
+		if stopwatch != nil {
+			stopwatch.LogTime(acl_api.MacipACLAdd{}, time.Since(start))
+		}
 	}
 
 	return nil
 }
 
 // SetACLToInterfacesAsEgress sets ACL to all provided interfaces as egress
-func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChannel *api.Channel) error {
+func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
+	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
 	for _, egressInterfaces := range interfaces {
+		start := time.Now()
 		// Create empty ACL list
 		var ACLs []uint32
 		index, _, found := swIfIndexes.LookupIdx(egressInterfaces)
@@ -109,14 +120,21 @@ func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexe
 			return fmt.Errorf("set interface %v to ACL %v returned %v", egressInterfaces, aclIndex, reply.Retval)
 		}
 		log.Debugf("Interface %v set to ACL %v as egress", egressInterfaces, aclIndex)
+
+		// ACLInterfaceSetACLList time
+		if stopwatch != nil {
+			stopwatch.LogTime(acl_api.ACLInterfaceSetACLList{}, time.Since(start))
+		}
 	}
 
 	return nil
 }
 
 // SetMacIPAclToInterface adds L2 ACL to interface
-func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChannel *api.Channel) error {
+func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
+	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
+		start := time.Now()
 		ifIndex, _, found := swIfIndexes.LookupIdx(ingressInterface)
 		if !found {
 			log.Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
@@ -137,6 +155,11 @@ func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes if
 			return fmt.Errorf("set interface %v to L2 ACL %v returned %v", ingressInterface, aclIndex, reply.Retval)
 		}
 		log.Debugf("Interface %v set to L2 ACL %v as ingress", ingressInterface, aclIndex)
+
+		// MacipACLInterfaceAddDel time
+		if stopwatch != nil {
+			stopwatch.LogTime(acl_api.MacipACLInterfaceAddDel{}, time.Since(start))
+		}
 	}
 
 	return nil

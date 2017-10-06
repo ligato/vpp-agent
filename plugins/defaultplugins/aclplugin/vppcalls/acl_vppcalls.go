@@ -25,10 +25,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
+func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) (uint32, error) {
+	start := time.Now()
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -51,13 +54,21 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
 		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
+
+		// ACLAddReplace time
+		if stopwatch != nil {
+			stopwatch.LogTime(acl_api.ACLAddReplace{}, time.Since(start))
+		}
+
 		return reply.ACLIndex, nil
 	}
+
 	return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 }
 
 // AddMacIPAcl create new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
+func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) (uint32, error) {
+	start := time.Now()
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := transformACLMacIPRules(rules)
 	if err != nil {
@@ -79,6 +90,12 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
 		log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
+
+		// MacipACLAdd time
+		if stopwatch != nil {
+			stopwatch.LogTime(acl_api.MacipACLAdd{}, time.Since(start))
+		}
+
 		return reply.ACLIndex, nil
 	}
 	log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)

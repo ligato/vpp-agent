@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/cn-infra/logging/timer"
 )
 
 // ACLConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -43,12 +44,14 @@ type ACLConfigurator struct {
 	ACLL3L4Indexes idxvpp.NameToIdxRW
 	ACLL2Indexes   idxvpp.NameToIdxRW // mapping for L2 ACLs
 	SwIfIndexes    ifaceidx.SwIfIndex
+	stopwatch 	   *timer.Stopwatch      // timer used to measure and store time
 	vppChannel     *api.Channel
 }
 
 // Init goroutines, channels and mappings
 func (plugin *ACLConfigurator) Init() (err error) {
 	plugin.Log.Infof("Initializing plugin ACL plugin")
+	plugin.stopwatch = timer.NewStopwatch()
 
 	// Init VPP API channel
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
@@ -79,7 +82,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 		var vppACLIndex uint32
 		var err error
 		if isL2MacIP {
-			vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel)
+			vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
@@ -88,7 +91,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, nil)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 		} else {
-			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel)
+			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
@@ -101,16 +104,16 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 		// Set ACL to interfaces
 		if acl.Interfaces != nil {
 			if isL2MacIP {
-				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
 			} else {
-				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
-				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
@@ -155,7 +158,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 				return err
 			}
 			plugin.ACLL2Indexes.UnregisterName(newACL.AclName)
-			newVppACLIndex, err := vppcalls.AddMacIPAcl(rules, newACL.AclName, plugin.Log, plugin.vppChannel)
+			newVppACLIndex, err := vppcalls.AddMacIPAcl(rules, newACL.AclName, plugin.Log, plugin.vppChannel, nil)
 			if err != nil {
 				return err
 			}
@@ -182,7 +185,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			}
 			// Put L2 ACL to new interfaces
 			if newACL.Interfaces != nil {
-				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
 				if err != nil {
 					return err
 				}
@@ -202,11 +205,11 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			}
 			// Put L3/L4 ACL to new interfaces
 			if newACL.Interfaces != nil {
-				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
 				if err != nil {
 					return err
 				}
-				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
 				if err != nil {
 					return err
 				}
