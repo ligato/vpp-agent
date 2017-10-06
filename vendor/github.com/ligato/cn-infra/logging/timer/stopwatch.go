@@ -37,7 +37,7 @@ func NewStopwatch() *Stopwatch {
 	}
 }
 
-func (st Stopwatch) LogTime(n interface{}, d time.Duration) {
+func (st *Stopwatch) LogTime(n interface{}, d time.Duration) {
 	name := reflect.TypeOf(n).String()
 	_, found := st.timeTable[name]
 	if found {
@@ -56,7 +56,7 @@ func (st Stopwatch) LogTime(n interface{}, d time.Duration) {
 	st.timeTable[name] = d
 }
 
-func (st Stopwatch) Print(pluginName string, log logging.Logger) {
+func (st *Stopwatch) Print(pluginName string, log logging.Logger) {
 	if len(st.timeTable) == 0 {
 		log.WithField("plugin", pluginName).Infof("no time entries")
 	}
@@ -66,4 +66,6 @@ func (st Stopwatch) Print(pluginName string, log logging.Logger) {
 	if st.Overall != -1 {
 		log.WithField("plugin", pluginName).Infof("Resync took %v", st.Overall)
 	}
+	// purge map
+	st.timeTable = make(map[string]time.Duration)
 }

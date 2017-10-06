@@ -146,6 +146,12 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
+	// Check stopwatch
+	if plugin.stopwatch == nil {
+		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
+		plugin.stopwatch = timer.NewStopwatch()
+	}
+	start := time.Now()
 
 	// lookup BFD sessions
 	err := plugin.LookupBfdSessions()
@@ -165,12 +171,23 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
 
+	if plugin.stopwatch != nil {
+		plugin.stopwatch.Overall = time.Since(start)
+		plugin.stopwatch.Print("BFDConfigurator-session", plugin.Log)
+	}
+
 	return wasError
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
+	// Check stopwatch
+	if plugin.stopwatch == nil {
+		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
+		plugin.stopwatch = timer.NewStopwatch()
+	}
+	start := time.Now()
 
 	// lookup BFD auth keys
 	err := plugin.LookupBfdKeys()
@@ -189,6 +206,11 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
+
+	if plugin.stopwatch != nil {
+		plugin.stopwatch.Overall = time.Since(start)
+		plugin.stopwatch.Print("BFDConfigurator-authKey", plugin.Log)
+	}
 
 	return wasError
 }

@@ -24,10 +24,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"net"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddBfdUDPSession adds new BFD session with authentication if available
-func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger, vppChannel *govppapi.Channel) error {
+func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx,
+	log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+		start := time.Now()
 	// Verify interface presence
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
 	if !found {
@@ -89,11 +93,19 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	if 0 != reply.Retval {
 		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
+
+	// BfdUDPAdd time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdUDPAdd{}, time.Since(start))
+	}
+
 	return nil
 }
 
 // AddBfdUDPSessionFromDetails adds new BFD session with authentication if available
-func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger, vppChannel *govppapi.Channel) error {
+func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
+	vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+		start := time.Now()
 	// Prepare the message
 	req := &bfd_api.BfdUDPAdd{}
 
@@ -131,6 +143,12 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 	if 0 != reply.Retval {
 		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
+
+	// BfdUDPDel time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdUDPDel{}, time.Since(start))
+	}
+
 	return nil
 }
 
@@ -185,7 +203,8 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 }
 
 // DeleteBfdUDPSession removes existing BFD session
-func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChannel *govppapi.Channel) (err error) {
+func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) (err error) {
+	start := time.Now()
 	// Prepare the message
 	req := &bfd_api.BfdUDPDel{}
 	req.SwIfIndex = ifIndex
@@ -202,11 +221,19 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 	if 0 != reply.Retval {
 		return fmt.Errorf("delete BFD UDP session interface returned %d", reply.Retval)
 	}
+
+	// BfdUDPDel time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdUDPDel{}, time.Since(start))
+	}
+
 	return nil
 }
 
 // DumpBfdUDPSessionsWithID returns a list of BFD session's metadata
-func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfIndex, bfdSessionIndexes idxvpp.NameToIdx, vppChannel *govppapi.Channel) ([]*bfd_api.BfdUDPSessionDetails, error) {
+func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfIndex, bfdSessionIndexes idxvpp.NameToIdx,
+	vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) ([]*bfd_api.BfdUDPSessionDetails, error) {
+	start := time.Now()
 	// Prepare the message
 	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := vppChannel.SendMultiRequest(req)
@@ -239,11 +266,17 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 		}
 	}
 
+	// BfdUDPSessionDetails time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdUDPSessionDetails{}, time.Since(start))
+	}
+
 	return sessionIfacesWithID, nil
 }
 
 // SetBfdUDPAuthenticationKey creates configures new authentication key
-func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel) (err error) {
+func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) (err error) {
+	start := time.Now()
 	// Convert authentication according to RFC5880
 	var authentication uint8
 	if bfdKey.AuthenticationType == 0 {
@@ -271,11 +304,18 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	if 0 != reply.Retval {
 		return fmt.Errorf("set BFD authentication key returned %d", reply.Retval)
 	}
+
+	// BfdAuthSetKey time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdAuthSetKey{}, time.Since(start))
+	}
+
 	return nil
 }
 
 // DeleteBfdUDPAuthenticationKey removes authentication key
-func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel) (err error) {
+func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) (err error) {
+	start := time.Now()
 	// Prepare the message
 	req := &bfd_api.BfdAuthDelKey{}
 	req.ConfKeyID = bfdKey.Id
@@ -289,6 +329,12 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	if 0 != reply.Retval {
 		return fmt.Errorf("delete BFD authentication key returned %d", reply.Retval)
 	}
+
+	// BfdAuthDelKey time
+	if stopwatch != nil {
+		stopwatch.LogTime(bfd_api.BfdAuthDelKey{}, time.Since(start))
+	}
+
 	return nil
 }
 
