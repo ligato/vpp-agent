@@ -21,6 +21,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddDelVxlanTunnelReq prepare the request for bin API calls
@@ -58,7 +60,8 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1
-func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	start := time.Now()
 	req, err := AddDelVxlanTunnelReq(vxlanIntf, 1)
 	if err != nil {
 		return 0, err
@@ -72,12 +75,18 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 	if 0 != reply.Retval {
 		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
 	}
-	return reply.SwIfIndex, nil
 
+	// VxlanAddDelTunnel time
+	if stopwatch != nil {
+		stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+	}
+
+	return reply.SwIfIndex, nil
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0
-func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel) error {
+func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	req, err := AddDelVxlanTunnelReq(vxlanIntf, 0)
 	if err != nil {
 		return err
@@ -91,5 +100,11 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
 	}
+
+	// VxlanAddDelTunnel time
+	if stopwatch != nil {
+		stopwatch.LogTime(vxlan.VxlanAddDelTunnel{}, time.Since(start))
+	}
+
 	return nil
 }

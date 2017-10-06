@@ -19,10 +19,13 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0
-func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel) error {
+func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &interfaces.SwInterfaceSetFlags{}
 	req.SwIfIndex = ifIdx
@@ -36,12 +39,18 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
 	}
-	return nil
 
+	// SwInterfaceSetFlags time
+	if stopwatch != nil {
+		stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+	}
+
+	return nil
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1
-func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel) error {
+func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &interfaces.SwInterfaceSetFlags{}
 	req.SwIfIndex = ifIdx
@@ -55,6 +64,12 @@ func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
 	}
+
+	// SwInterfaceSetFlags time
+	if stopwatch != nil {
+		stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+	}
+
 	return nil
 
 }

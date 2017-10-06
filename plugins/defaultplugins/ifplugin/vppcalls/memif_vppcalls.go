@@ -20,10 +20,13 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddMemifInterface calls MemifCreate bin API
-func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	start := time.Now()
 	// prepare the message
 	req := &memif.MemifCreate{}
 
@@ -60,12 +63,17 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 		return 0, fmt.Errorf("add memif interface returned %d", reply.Retval)
 	}
 
-	return reply.SwIfIndex, nil
+	// MemifCreate time
+	if stopwatch != nil {
+		stopwatch.LogTime(memif.MemifCreate{}, time.Since(start))
+	}
 
+	return reply.SwIfIndex, nil
 }
 
 // DeleteMemifInterface calls MemifDelete bin API
-func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel) error {
+func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &memif.MemifDelete{}
 	req.SwIfIndex = idx
@@ -78,6 +86,12 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
+
+	// SwInterfaceAddDelAddress time
+	if stopwatch != nil {
+		stopwatch.LogTime(memif.MemifDelete{}, time.Since(start))
+	}
+
 	return nil
 
 }

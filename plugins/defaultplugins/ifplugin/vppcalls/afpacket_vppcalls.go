@@ -20,10 +20,13 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	start := time.Now()
 	// prepare the message
 	req := &af_packet.AfPacketCreate{}
 
@@ -39,11 +42,18 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	if 0 != reply.Retval {
 		return 0, fmt.Errorf("add af_packet interface returned %d", reply.Retval)
 	}
+
+	// AfPacketCreate time
+	if stopwatch != nil {
+		stopwatch.LogTime(af_packet.AfPacketCreate{}, time.Since(start))
+	}
+
 	return reply.SwIfIndex, nil
 }
 
 // DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel) error {
+func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &af_packet.AfPacketDelete{}
 	req.HostIfName = []byte(afPacketIntf.HostIfName)
@@ -57,5 +67,11 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of af_packet interface returned %d", reply.Retval)
 	}
+
+	// AfPacketDelete time
+	if stopwatch != nil {
+		stopwatch.LogTime(af_packet.AfPacketDelete{}, time.Since(start))
+	}
+
 	return nil
 }

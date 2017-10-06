@@ -18,10 +18,13 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	start := time.Now()
 	req := &vpe.CreateLoopback{}
 	reply := &vpe.CreateLoopbackReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
@@ -33,11 +36,18 @@ func AddLoopbackInterface(vppChan *govppapi.Channel) (swIndex uint32, err error)
 	if 0 != reply.Retval {
 		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
 	}
+
+	// TapConnect time
+	if stopwatch != nil {
+		stopwatch.LogTime(vpe.CreateLoopback{}, time.Since(start))
+	}
+
 	return reply.SwIfIndex, nil
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel) error {
+func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &vpe.DeleteLoopback{}
 	req.SwIfIndex = idx
@@ -51,5 +61,11 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
 	}
+
+	// DeleteLoopback time
+	if stopwatch != nil {
+		stopwatch.LogTime(vpe.DeleteLoopback{}, time.Since(start))
+	}
+
 	return nil
 }

@@ -22,10 +22,13 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // AddTapInterface calls TapConnect bin API
-func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	start := time.Now()
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
@@ -46,11 +49,18 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 	if 0 != reply.Retval {
 		return 0, fmt.Errorf("add tap interface returned %d", reply.Retval)
 	}
+
+	// TapConnect time
+	if stopwatch != nil {
+		stopwatch.LogTime(tap.TapConnect{}, time.Since(start))
+	}
+
 	return reply.SwIfIndex, nil
 }
 
 // DeleteTapInterface calls TapDelete bin API
-func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel) error {
+func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	start := time.Now()
 	// prepare the message
 	req := &tap.TapDelete{}
 	req.SwIfIndex = idx
@@ -64,5 +74,11 @@ func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
+
+	// TapDelete time
+	if stopwatch != nil {
+		stopwatch.LogTime(tap.TapDelete{}, time.Since(start))
+	}
+
 	return nil
 }
