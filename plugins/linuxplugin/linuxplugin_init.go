@@ -21,10 +21,10 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/core"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
@@ -52,7 +52,8 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	Watcher datasync.KeyValProtoWatcher // injected
+	local.PluginLogDeps                             // injected
+	Watcher             datasync.KeyValProtoWatcher // injected
 }
 
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
@@ -64,7 +65,7 @@ func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
 func (plugin *Plugin) Init() error {
-	log.DefaultLogger().Debug("Initializing Linux interface plugin")
+	plugin.Log.Debug("Initializing Linux interface plugin")
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
@@ -81,7 +82,8 @@ func (plugin *Plugin) Init() error {
 		"linux_if_indexes", nil))
 
 	// Linux interface configurator
-	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}
+	linuxLogger := plugin.Log.NewLogger("-iface-cfg")
+	plugin.ifConfigurator = &LinuxInterfaceConfigurator{Log: linuxLogger}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
 	return plugin.subscribeWatcher()

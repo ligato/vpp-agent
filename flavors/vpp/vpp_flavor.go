@@ -96,6 +96,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
+	f.Linux.Deps.PluginLogDeps = *f.FlavorLocal.LogDeps("linux-plugin")
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	return true
