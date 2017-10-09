@@ -17,15 +17,24 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"time"
 )
 
 // VppSetAllInterfacesToBridgeDomain does lookup all interfaces which belongs to bridge domain, and bvi interface
 func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel) ([]string, []string, string) {
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) ([]string, []string, string) {
 	log.Debug("Interface lookup started for ", bridgeDomain.Name)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+		}
+	}()
 
 	var allBdInterfaces []string
 	var configuredBdInterfaces []string
@@ -79,8 +88,15 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 
 // VppUnsetAllInterfacesFromBridgeDomain removes all interfaces from bridge domain (set them as L3)
 func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel) []string {
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) []string {
 	log.Debug("Interface lookup started for ", bridgeDomain.Name)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+		}
+	}()
 
 	// Store all interface names, will be used to unregister potential bridge domain to interface pairs
 	var interfaces []string
@@ -122,8 +138,16 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 }
 
 // VppSetInterfaceToBridgeDomain sets provided interface to bridge domain
-func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger, vppChan *govppapi.Channel) {
+func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger,
+	vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) {
 	log.Debugf("Setting up interface %v to bridge domain %v ", interfaceIndex, bridgeDomainIndex)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+		}
+	}()
 
 	req := &vpe.SwInterfaceSetL2Bridge{}
 	req.BdID = bridgeDomainIndex
