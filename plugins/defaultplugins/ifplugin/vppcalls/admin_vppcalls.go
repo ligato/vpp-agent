@@ -25,7 +25,14 @@ import (
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0
 func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceSetFlags time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceSetFlags{}
 	req.SwIfIndex = ifIdx
@@ -40,17 +47,19 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *time
 		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
 	}
 
-	// SwInterfaceSetFlags time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
-	}
-
 	return nil
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1
 func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceSetFlags time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceSetFlags{}
 	req.SwIfIndex = ifIdx
@@ -63,11 +72,6 @@ func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.
 	}
 	if 0 != reply.Retval {
 		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
-	}
-
-	// SwInterfaceSetFlags time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
 	}
 
 	return nil

@@ -19,9 +19,9 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 
@@ -61,7 +61,14 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1
 func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+		}
+	}()
+
 	req, err := AddDelVxlanTunnelReq(vxlanIntf, 1)
 	if err != nil {
 		return 0, err
@@ -76,17 +83,19 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
 	}
 
-	// VxlanAddDelTunnel time
-	if stopwatch != nil {
-		stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
-	}
-
 	return reply.SwIfIndex, nil
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0
 func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+		}
+	}()
+
 	req, err := AddDelVxlanTunnelReq(vxlanIntf, 0)
 	if err != nil {
 		return err
@@ -99,11 +108,6 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 	}
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
-	}
-
-	// VxlanAddDelTunnel time
-	if stopwatch != nil {
-		stopwatch.LogTime(vxlan.VxlanAddDelTunnel{}, time.Since(start))
 	}
 
 	return nil

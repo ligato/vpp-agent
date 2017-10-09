@@ -22,16 +22,16 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
+	bfdApi "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"strconv"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 
@@ -41,7 +41,7 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type BFDConfigurator struct {
-	Log			 logging.Logger
+	Log logging.Logger
 
 	GoVppmux     govppmux.API
 	SwIfIndexes  ifaceidx.SwIfIndex
@@ -54,7 +54,7 @@ type BFDConfigurator struct {
 	// Auxiliary mappings
 	bfdRemovedAuthIndex idxvpp.NameToIdxRW
 	vppChannel          *govppapi.Channel
-	stopwatch 			*timer.Stopwatch      // timer used to measure and store time
+	stopwatch           *timer.Stopwatch // timer used to measure and store time
 }
 
 // Init members and channels
@@ -144,7 +144,7 @@ func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdSession *bfd.SingleHopBFD_
 			return fmt.Errorf("BFD adresses does not match. Odl session source: %v, dest: %v, new session source: %v, dest: %v",
 				oldBfdSession.SourceAddress, oldBfdSession.DestinationAddress, newBfdSession.SourceAddress, newBfdSession.DestinationAddress)
 		}
-		err := vppcalls.ModifyBfdUDPSession(newBfdSession, plugin.SwIfIndexes, plugin.vppChannel)
+		err := vppcalls.ModifyBfdUDPSession(newBfdSession, plugin.SwIfIndexes, plugin.vppChannel, plugin.stopwatch)
 		if err != nil {
 			return fmt.Errorf("error while updating BFD for interface %v", newBfdSession.Interface)
 		}
@@ -305,7 +305,7 @@ func (plugin *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopB
 		return fmt.Errorf("interface %v does not exist", bfdInput.EchoSourceInterface)
 	}
 
-	err := vppcalls.AddBfdEchoFunction(bfdInput, plugin.SwIfIndexes, plugin.vppChannel)
+	err := vppcalls.AddBfdEchoFunction(bfdInput, plugin.SwIfIndexes, plugin.vppChannel, plugin.stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while setting up BFD echo source with interface %v", bfdInput.EchoSourceInterface)
 	}
@@ -328,7 +328,7 @@ func (plugin *BFDConfigurator) ModifyBfdEchoFunction(oldInput *bfd.SingleHopBFD_
 func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
 	plugin.Log.Info("Deleting BFD echo function")
 
-	err := vppcalls.DeleteBfdEchoFunction(plugin.vppChannel)
+	err := vppcalls.DeleteBfdEchoFunction(plugin.vppChannel, plugin.stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while removing BFD echo source with interface %v", bfdInput.EchoSourceInterface)
 	}
@@ -342,11 +342,11 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 // LookupBfdSessions looks up all BFD sessions and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdSessions() error {
 	start := time.Now()
-	req := &bfd_api.BfdUDPSessionDump{}
+	req := &bfdApi.BfdUDPSessionDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
 	for {
-		msg := &bfd_api.BfdUDPSessionDetails{}
+		msg := &bfdApi.BfdUDPSessionDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -370,7 +370,7 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 
 	// BfdUDPSessionDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTime(bfd_api.BfdUDPSessionDump{}, time.Since(start))
+		plugin.stopwatch.LogTime(bfdApi.BfdUDPSessionDump{}, time.Since(start))
 	}
 
 	return nil
@@ -379,11 +379,11 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 // LookupBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdKeys() error {
 	start := time.Now()
-	req := &bfd_api.BfdAuthKeysDump{}
+	req := &bfdApi.BfdAuthKeysDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
 	for {
-		msg := &bfd_api.BfdAuthKeysDetails{}
+		msg := &bfdApi.BfdAuthKeysDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -404,7 +404,7 @@ func (plugin *BFDConfigurator) LookupBfdKeys() error {
 
 	// BfdAuthKeysDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTime(bfd_api.BfdAuthKeysDump{}, time.Since(start))
+		plugin.stopwatch.LogTime(bfdApi.BfdAuthKeysDump{}, time.Since(start))
 	}
 
 	return nil

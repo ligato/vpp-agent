@@ -21,15 +21,15 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	ifnb "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/cn-infra/logging"
 	"time"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 // Interface is the wrapper structure for the interface northbound API structure.
@@ -117,13 +117,15 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *ti
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
 func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, stopwatch *timer.Stopwatch) error {
-	start := time.Now()
 	// TODO: workaround for incorrect ip.IPAddressDetails message
 	notifChan := make(chan govppapi.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
 
 	// dump IP addresses of each interface
 	for idx := range ifs {
+		// IPAddressDetails time measurement
+		start := time.Now()
+
 		reqCtx := vppChan.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIpv6: isIPv6})
 		for {
 			ipDetails := &ip.IPAddressDetails{}
@@ -143,15 +145,15 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 			notifMsg := <-notifChan
 			processIPDetails(ifs, notifMsg.(*ip.IPAddressDetails))
 		}
+
+		// IPAddressDump time
+		if stopwatch != nil {
+			stopwatch.LogTime(ip.IPAddressDump{}, time.Since(start))
+		}
 	}
 
 	// TODO: workaround for incorrect ip.IPAddressDetails message
 	vppChan.UnsubscribeNotification(subs)
-
-	// IPAddressDump time
-	if stopwatch != nil {
-		stopwatch.LogTime(ip.IPAddressDump{}, time.Since(start))
-	}
 
 	return nil
 }
@@ -161,13 +163,13 @@ func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails)
 	if ifs[ipDetails.SwIfIndex].IpAddresses == nil {
 		ifs[ipDetails.SwIfIndex].IpAddresses = make([]string, 0)
 	}
-	var ip string
+	var ipAddr string
 	if ipDetails.IsIpv6 == 1 {
-		ip = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
+		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
 	} else {
-		ip = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
+		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
 	}
-	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ip)
+	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ipAddr)
 }
 
 // dumpAFPacketDetails fills af_packet interface details into the provided interface map.
@@ -181,7 +183,14 @@ func dumpAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName str
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
 func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *timer.Stopwatch) error {
+	// MemifDetails time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(memif.MemifDetails{}, time.Since(start))
+		}
+	}()
+
 	reqCtx := vppChan.SendMultiRequest(&memif.MemifDump{})
 	for {
 		memifDetails := &memif.MemifDetails{}
@@ -205,17 +214,20 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		}
 		ifs[memifDetails.SwIfIndex].Type = ifnb.InterfaceType_MEMORY_INTERFACE
 	}
-	// MemifDump time
-	if stopwatch != nil {
-		stopwatch.LogTime(memif.MemifDump{}, time.Since(start))
-	}
 
 	return nil
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
 func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceTapDump time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(tap.SwInterfaceTapDump{}, time.Since(start))
+		}
+	}()
+
 	reqCtx := vppChan.SendMultiRequest(&tap.SwInterfaceTapDump{})
 	for {
 		tapDetails := &tap.SwInterfaceTapDetails{}
@@ -233,17 +245,19 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		ifs[tapDetails.SwIfIndex].Type = ifnb.InterfaceType_TAP_INTERFACE
 	}
 
-	// SwInterfaceTapDump time
-	if stopwatch != nil {
-		stopwatch.LogTime(tap.SwInterfaceTapDump{}, time.Since(start))
-	}
-
 	return nil
 }
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
 func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *timer.Stopwatch) error {
+	// VxlanTunnelDump time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(vxlan.VxlanTunnelDump{}, time.Since(start))
+		}
+	}()
+
 	reqCtx := vppChan.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
 	for {
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
@@ -269,11 +283,6 @@ func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 			}
 		}
 		ifs[vxlanDetails.SwIfIndex].Type = ifnb.InterfaceType_VXLAN_TUNNEL
-	}
-
-	// VxlanTunnelDump time
-	if stopwatch != nil {
-		stopwatch.LogTime(vxlan.VxlanTunnelDump{}, time.Since(start))
 	}
 
 	return nil

@@ -19,16 +19,23 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"time"
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
 func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -62,18 +69,20 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	}
 	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
 
-	// SwInterfaceAddDelAddress time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
-	}
-
 	return nil
 
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
 func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceAddDelAddressReply time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(interfaces.SwInterfaceAddDelAddressReply{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -108,11 +117,5 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	}
 	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
 
-	// SwInterfaceAddDelAddress time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
-	}
-
 	return nil
-
 }

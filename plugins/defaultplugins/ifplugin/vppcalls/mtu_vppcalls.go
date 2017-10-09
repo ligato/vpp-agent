@@ -18,15 +18,22 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"time"
 )
 
 // SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value
 func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	// SwInterfaceSetMtu time measurement
 	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(interfaces.SwInterfaceSetMtu{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceSetMtu{}
 	req.SwIfIndex = ifIdx
@@ -42,11 +49,6 @@ func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govp
 		return fmt.Errorf("setting up interface MTU returned %d", reply.Retval)
 	}
 	log.Debugf("MTU %v set to interface %v.", mtu, ifIdx)
-
-	// SwInterfaceSetMtu time
-	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceSetMtu{}, time.Since(start))
-	}
 
 	return nil
 }

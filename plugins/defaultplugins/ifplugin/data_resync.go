@@ -18,17 +18,14 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"time"
-	"github.com/ligato/cn-infra/logging/timer"
 )
-
-
-
 
 // Resync writes interfaces to the empty VPP
 //
@@ -44,7 +41,15 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		// afPacketConfigurator uses the same stopwatch object
 		plugin.afPacketConfigurator.Stopwatch = plugin.stopwatch
 	}
+	// Start time measuring
 	start := time.Now()
+	// Calculate and log interface resync
+	defer func() {
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.Overall = time.Since(start)
+			plugin.stopwatch.Print("interfaceConfigurator", plugin.Log)
+		}
+	}()
 
 	// Step 0: Dump actual state of the VPP
 	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.stopwatch)
@@ -135,11 +140,6 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
-	if plugin.stopwatch != nil {
-		plugin.stopwatch.Overall = time.Since(start)
-		plugin.stopwatch.Print("interfaceConfigurator", plugin.Log)
-	}
-
 	return wasError
 }
 
@@ -151,7 +151,15 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
 		plugin.stopwatch = timer.NewStopwatch()
 	}
+	// Start time measuring
 	start := time.Now()
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.Overall = time.Since(start)
+			plugin.stopwatch.Print("BFDConfigurator-session", plugin.Log)
+		}
+	}()
 
 	// lookup BFD sessions
 	err := plugin.LookupBfdSessions()
@@ -171,11 +179,6 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
 
-	if plugin.stopwatch != nil {
-		plugin.stopwatch.Overall = time.Since(start)
-		plugin.stopwatch.Print("BFDConfigurator-session", plugin.Log)
-	}
-
 	return wasError
 }
 
@@ -187,7 +190,15 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
 		plugin.stopwatch = timer.NewStopwatch()
 	}
+	// Start time measuring
 	start := time.Now()
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.Overall = time.Since(start)
+			plugin.stopwatch.Print("BFDConfigurator-authKey", plugin.Log)
+		}
+	}()
 
 	// lookup BFD auth keys
 	err := plugin.LookupBfdKeys()
@@ -206,11 +217,6 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
-
-	if plugin.stopwatch != nil {
-		plugin.stopwatch.Overall = time.Since(start)
-		plugin.stopwatch.Print("BFDConfigurator-authKey", plugin.Log)
-	}
 
 	return wasError
 }

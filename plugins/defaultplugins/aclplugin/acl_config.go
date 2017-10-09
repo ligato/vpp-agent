@@ -153,7 +153,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		}
 		if isL2MacIP {
 			// L2 ACL
-			err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel)
+			err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
@@ -167,7 +167,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			plugin.ACLL2Indexes.RegisterName(newACL.AclName, newAgentACLIndex, nil)
 		} else {
 			// L3/L4 ACL can be modified directly
-			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.Log, plugin.vppChannel)
+			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
@@ -178,14 +178,16 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		if isL2MacIP {
 			// Remove L2 ACL from old interfaces
 			if oldACL.Interfaces != nil {
-				err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes,
+					plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
 			}
 			// Put L2 ACL to new interfaces
 			if newACL.Interfaces != nil {
-				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
+				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
+					plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
@@ -194,22 +196,26 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		} else {
 			// Remove L3/L4 ACL from old interfaces
 			if oldACL.Interfaces != nil {
-				err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes,
+					plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
-				err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+				err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log,
+					plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
 			}
 			// Put L3/L4 ACL to new interfaces
 			if newACL.Interfaces != nil {
-				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
+				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
+					plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
-				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, nil)
+				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.SwIfIndexes,
+					plugin.Log, plugin.vppChannel, plugin.stopwatch)
 				if err != nil {
 					return err
 				}
@@ -233,13 +239,14 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		// Remove interfaces from L2 ACL
 		vppACLIndex := agentL2AclIndex - 1
 		if acl.Interfaces != nil {
-			err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+			err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
+				plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
 		}
 		// Remove ACL L2
-		err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel)
+		err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 		if err != nil {
 			return err
 		}
@@ -250,17 +257,19 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		// Remove interfaces
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
-			err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+			err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
+				plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
-			err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel)
+			err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log,
+				plugin.vppChannel, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
 		}
 		// Remove ACL L3/L4
-		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel)
+		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.stopwatch)
 		if err != nil {
 			return err
 		}

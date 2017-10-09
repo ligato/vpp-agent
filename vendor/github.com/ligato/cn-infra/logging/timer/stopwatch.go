@@ -58,7 +58,7 @@ func (st *Stopwatch) LogTime(n interface{}, d time.Duration) {
 
 func (st *Stopwatch) Print(pluginName string, log logging.Logger) {
 	if len(st.timeTable) == 0 {
-		log.WithField("plugin", pluginName).Infof("no time entries")
+		log.WithField("plugin", pluginName).Infof("Timer: no entries")
 	}
 	for k, v := range st.timeTable {
 		log.WithField("plugin", pluginName).Infof("Calling %v took %v", k, v)
