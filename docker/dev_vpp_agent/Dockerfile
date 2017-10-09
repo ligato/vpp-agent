@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
 RUN mkdir /opt/vpp-agent/plugin
+RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
 
@@ -65,4 +66,5 @@ WORKDIR /root/
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 
 # run supervisor as the default executable
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf

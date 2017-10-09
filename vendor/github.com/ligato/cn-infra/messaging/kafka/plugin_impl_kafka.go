@@ -43,8 +43,8 @@ type Plugin struct {
 	disabled bool
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps //inject
 }

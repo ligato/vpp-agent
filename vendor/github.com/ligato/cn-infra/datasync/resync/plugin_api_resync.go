@@ -18,8 +18,8 @@ import (
 	"github.com/ligato/cn-infra/core"
 )
 
-// Subscriber is an API for other plugins that needs to receive notifications
-// from RESYNC Orcherstrator
+// Subscriber is an API used by plugins to register for notifications from the
+// RESYNC Orcherstrator.
 type Subscriber interface {
 	// Register function is supposed to be called in Init() by all VPP Agent plugins.
 	// Those plugins will use Registration.StatusChan() to listen
@@ -27,7 +27,7 @@ type Subscriber interface {
 	Register(resyncName string) Registration
 }
 
-// Reporter is an API for other plugins that needs to report to RESYNC Orchestrator.
+// Reporter is an API for other plugins that need to report to RESYNC Orchestrator.
 // Intent of this API is to have a chance to react on error by triggering
 // RESYNC among registered plugins.
 type Reporter interface {

@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # use /opt/vpp-agent/dev as the working directory
 RUN mkdir -p /opt/vpp-agent/dev
+RUN mkdir /etc/supervisord
 WORKDIR /opt/vpp-agent/dev
 
 # copy vpp deb packages and agent
@@ -33,11 +34,13 @@ COPY etcd.conf .
 COPY kafka.conf .
 COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
+COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
 
 # run supervisor as the default executable
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
 
 
 
