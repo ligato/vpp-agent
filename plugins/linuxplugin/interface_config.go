@@ -243,6 +243,14 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *LinuxInterfaceConfig) error {
 	var err error
 
+	// Switch to veth cfg namespace
+	revertCfgNs, err := linuxcalls.SwitchNamespace(nsMgmtCtx, plugin.vethCfgNamespace)
+	if err != nil {
+		return err
+	}
+	// Push defer to a stack as the first one, so it will be called last
+	defer revertCfgNs()
+
 	idx := GetLinuxInterfaceIndex(iface.config.HostIfName)
 	if idx < 0 {
 		return fmt.Errorf("failed to get index of the VETH interface %s", iface.config.HostIfName)
@@ -897,11 +905,19 @@ func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *intf.
 
 // Create named namespace used for veth interface creation instead of the default one
 func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
-	// Remove namespace if exists
-	err := linuxcalls.DeleteNamedNetNs(vethConfigNamespace)
+	// Check if namespace exists
+	found, err := linuxcalls.NamedNetNsExists(vethConfigNamespace)
 	if err != nil {
 		return err
 	}
+	// Remove namespace if exists
+	if found {
+		err := linuxcalls.DeleteNamedNetNs(vethConfigNamespace)
+		if err != nil {
+			return err
+		}
+	}
+
 	_, plugin.vethCfgNamespace, err = linuxcalls.CreateNamedNetNs(vethConfigNamespace)
 	return err
 }
