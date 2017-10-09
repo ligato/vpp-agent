@@ -44,12 +44,13 @@ func (st *Stopwatch) LogTime(n interface{}, d time.Duration) {
 		// index more occurences of the same binapi
 		index := 1
 		for {
-			name = name + "#" + strconv.Itoa(index)
-			_, found = st.timeTable[name]
+			indexed := name + "#" + strconv.Itoa(index)
+			_, found = st.timeTable[indexed]
 			if found {
 				index++
 				continue
 			}
+			name = indexed
 			break
 		}
 	}

@@ -134,8 +134,6 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 // Resync writes XCons to the empty VPP
 func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
-	plugin.stopwatch = timer.NewStopwatch()
-
 	// Check stopwatch
 	if plugin.stopwatch == nil {
 		plugin.Log.Warn("Stopwatch is not initialized, creating ...")

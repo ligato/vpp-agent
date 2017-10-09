@@ -22,6 +22,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	l3ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	l3nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // StaticRoutes is the wrapper structure for the static routes API structure.
@@ -44,7 +46,14 @@ type NextHop struct {
 }
 
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel) (map[uint32]*StaticRoutes, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (map[uint32]*StaticRoutes, error) {
+	// IPFibDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(l3ba.IPFibDump{}, time.Since(start))
+		}
+	}()
 
 	// map for the resulting l3 FIBs
 	routes := make(map[uint32]*StaticRoutes)
