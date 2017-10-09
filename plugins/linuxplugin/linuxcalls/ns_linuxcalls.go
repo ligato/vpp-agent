@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"github.com/ligato/cn-infra/logging/timer"
 )
 
 const (
@@ -104,7 +105,8 @@ func GetDefaultNamespace() *intf.LinuxInterfaces_Interface_Namespace {
 }
 
 // SetInterfaceNamespace moves a given Linux interface into a specified namespace.
-func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace, log logging.Logger) error {
+func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace,
+	log logging.Logger, stopwatch *timer.Stopwatch) error {
 	// Get network namespace file descriptor
 	ns, err := GetOrCreateNs(namespace, log)
 	if err != nil {
@@ -149,7 +151,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 
 	if netIntf.Flags&net.FlagUp == 1 {
 		// re-enable interface
-		err = InterfaceAdminUp(ifName)
+		err = InterfaceAdminUp(ifName, stopwatch)
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
@@ -163,7 +165,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 		if err != nil {
 			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
 		}
-		err = AddInterfaceIP(ifName, network)
+		err = AddInterfaceIP(ifName, network, stopwatch)
 		if err != nil {
 			if err.Error() == "file exists" {
 				continue
@@ -174,7 +176,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 	}
 
 	// revert back the MTU config
-	err = SetInterfaceMTU(ifName, netIntf.MTU)
+	err = SetInterfaceMTU(ifName, netIntf.MTU, stopwatch)
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}

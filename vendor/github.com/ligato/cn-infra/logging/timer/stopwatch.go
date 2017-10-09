@@ -36,6 +36,7 @@ type Stopwatch struct {
 	mx sync.Mutex
 }
 
+// NewStopwatch creates a new stopwatch object with empty time map
 func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	return &Stopwatch{
 		// Default value
@@ -51,10 +52,16 @@ func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 	st.mx.Lock()
 	defer st.mx.Unlock()
 
-	name := reflect.TypeOf(n).String()
+	var name string
+	switch nType := n.(type) {
+	case string:
+		name = nType
+	default:
+		name = reflect.TypeOf(n).String()
+	}
+	// index multiple occurrences of the same name (bin_api, link)
 	_, found := st.timeTable[name]
 	if found {
-		// index more occurences of the same binapi
 		index := 1
 		for {
 			indexed := name + "#" + strconv.Itoa(index)
@@ -67,13 +74,14 @@ func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 			break
 		}
 	}
+	// Store time value
 	st.timeTable[name] = d
 }
 
 // Print logs all entries from the map (partial times) + overall time if set
 func (st *Stopwatch) Print() {
 	if len(st.timeTable) == 0 {
-		st.logger.WithField("plugin", st.name).Infof("Timer: no entries")
+		st.logger.WithField("plugin", st.name).Infof("Stopwatch: no entries")
 	}
 	for k, v := range st.timeTable {
 		st.logger.WithField("plugin", st.name).Infof("Calling %v took %v", k, v)

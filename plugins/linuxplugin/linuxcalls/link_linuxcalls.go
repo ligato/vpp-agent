@@ -18,10 +18,19 @@ package linuxcalls
 
 import (
 	"github.com/vishvananda/netlink"
+	"github.com/ligato/cn-infra/logging/timer"
+	"time"
 )
 
 // GetInterfaceType returns the type (string representation) of a given interface.
-func GetInterfaceType(ifName string) (string, error) {
+func GetInterfaceType(ifName string, stopwatch *timer.Stopwatch) (string, error) {
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry("get_iface_type", time.Since(start))
+		}
+	}()
+
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
 		return "", err
@@ -30,7 +39,14 @@ func GetInterfaceType(ifName string) (string, error) {
 }
 
 // InterfaceExists checks if interface with a given name exists.
-func InterfaceExists(ifName string) (bool, error) {
+func InterfaceExists(ifName string, stopwatch *timer.Stopwatch) (bool, error) {
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry("iface_exists", time.Since(start))
+		}
+	}()
+
 	_, err := netlink.LinkByName(ifName)
 	if err == nil {
 		return true, nil
