@@ -46,7 +46,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan)
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 		}
 	}()
 
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel)
+	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel, plugin.stopwatch)
 	if err != nil {
 		return err
 	}

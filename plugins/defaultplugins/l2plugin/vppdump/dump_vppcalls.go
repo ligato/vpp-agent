@@ -20,12 +20,22 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"time"
 )
 
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries
-func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel) ([]uint32, error) {
+func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) ([]uint32, error) {
+	// BridgeDomainDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(l2ba.BridgeDomainDump{}, time.Since(start))
+		}
+	}()
+
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -64,7 +74,15 @@ type BridgeDomainInterface struct {
 // LIMITATIONS:
 // - not able to dump ArpTerminationTable - missing binary API
 //
-func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel) (map[uint32]*BridgeDomain, error) {
+func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (map[uint32]*BridgeDomain, error) {
+	// BridgeDomainDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(l2ba.BridgeDomainDump{}, time.Since(start))
+		}
+	}()
+
 	// map for the resulting BDs
 	bds := make(map[uint32]*BridgeDomain)
 
@@ -116,7 +134,14 @@ type FIBTableEntry struct {
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 // map indexed by destination MAC address.
-func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel) (map[string]*FIBTableEntry, error) {
+func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (map[string]*FIBTableEntry, error) {
+	// L2FibTableDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(l2ba.L2FibTableDump{}, time.Since(start))
+		}
+	}()
 
 	// map for the resulting FIBs
 	fibs := make(map[string]*FIBTableEntry)
@@ -164,7 +189,14 @@ type XConnectPairs struct {
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 // map indexed by rx interface index.
-func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel) (map[uint32]*XConnectPairs, error) {
+func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (map[uint32]*XConnectPairs, error) {
+	// L2XconnectDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTime(l2ba.L2XconnectDump{}, time.Since(start))
+		}
+	}()
 
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectPairs)
