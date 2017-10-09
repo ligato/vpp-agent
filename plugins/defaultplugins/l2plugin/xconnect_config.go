@@ -49,7 +49,7 @@ type XConnectMeta struct {
 // Init members (channels...) and start go routines
 func (plugin *XConnectConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 xConnect")
-	plugin.stopwatch = timer.NewStopwatch()
+	plugin.stopwatch = timer.NewStopwatch("XConnectConfigurator", plugin.Log)
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()

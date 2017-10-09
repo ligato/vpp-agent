@@ -30,7 +30,7 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
 		}
 	}()
 
@@ -59,7 +59,7 @@ func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
 		}
 	}()
 

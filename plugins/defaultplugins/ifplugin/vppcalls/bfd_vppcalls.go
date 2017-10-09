@@ -35,7 +35,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPAdd{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPAdd{}, time.Since(start))
 		}
 	}()
 
@@ -111,7 +111,7 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfdApi.BfdUDPSessionDetails, bfdKey
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPAdd{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPAdd{}, time.Since(start))
 		}
 	}()
 
@@ -162,7 +162,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPMod{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPMod{}, time.Since(start))
 		}
 	}()
 
@@ -220,7 +220,7 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPDel{}, time.Since(start))
 		}
 	}()
 
@@ -251,7 +251,7 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPSessionDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPSessionDump{}, time.Since(start))
 		}
 	}()
 
@@ -296,7 +296,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdAuthSetKey{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdAuthSetKey{}, time.Since(start))
 		}
 	}()
 
@@ -337,7 +337,7 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdAuthDelKey{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdAuthDelKey{}, time.Since(start))
 		}
 	}()
 
@@ -364,7 +364,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPSetEchoSource{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPSetEchoSource{}, time.Since(start))
 		}
 	}()
 
@@ -396,7 +396,7 @@ func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, stopwatch *timer.Stopwa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(bfdApi.BfdUDPDelEchoSource{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfdApi.BfdUDPDelEchoSource{}, time.Since(start))
 		}
 	}()
 

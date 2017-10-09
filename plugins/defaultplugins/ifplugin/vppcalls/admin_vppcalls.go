@@ -29,7 +29,7 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *time
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
 		}
 	}()
 
@@ -56,7 +56,7 @@ func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
 		}
 	}()
 

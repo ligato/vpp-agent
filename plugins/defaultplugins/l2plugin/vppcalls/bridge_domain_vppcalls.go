@@ -32,7 +32,7 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.BridgeDomainAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
 		}
 	}()
 
@@ -76,7 +76,7 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.BridgeDomainAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
 		}
 	}()
 
@@ -111,7 +111,7 @@ func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan *govppapi.C
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.BridgeDomainAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
 		}
 	}()
 

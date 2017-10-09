@@ -30,7 +30,7 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(af_packet.AfPacketCreate{}, time.Since(start))
+			stopwatch.LogTimeEntry(af_packet.AfPacketCreate{}, time.Since(start))
 		}
 	}()
 
@@ -59,7 +59,7 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(af_packet.AfPacketDelete{}, time.Since(start))
+			stopwatch.LogTimeEntry(af_packet.AfPacketDelete{}, time.Since(start))
 		}
 	}()
 

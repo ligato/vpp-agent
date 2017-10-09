@@ -65,7 +65,7 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+			stopwatch.LogTimeEntry(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
 		}
 	}()
 
@@ -92,7 +92,7 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+			stopwatch.LogTimeEntry(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
 		}
 	}()
 

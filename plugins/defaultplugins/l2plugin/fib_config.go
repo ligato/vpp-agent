@@ -64,7 +64,7 @@ type FIBMeta struct {
 // Init goroutines, mappings, channels, ...
 func (plugin *FIBConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 Bridge domains")
-	plugin.stopwatch = timer.NewStopwatch()
+	plugin.stopwatch = timer.NewStopwatch("FIBConfigurator", plugin.Log)
 
 	// Init local mapping
 	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "fib_des_indexes", nil)

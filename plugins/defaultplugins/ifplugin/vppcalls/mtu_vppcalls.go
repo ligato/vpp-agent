@@ -30,7 +30,7 @@ func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govp
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceSetMtu{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetMtu{}, time.Since(start))
 		}
 	}()
 

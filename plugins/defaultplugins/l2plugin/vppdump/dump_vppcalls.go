@@ -32,7 +32,7 @@ func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, stopw
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.BridgeDomainDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.BridgeDomainDump{}, time.Since(start))
 		}
 	}()
 
@@ -79,7 +79,7 @@ func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, stopwatch 
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.BridgeDomainDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.BridgeDomainDump{}, time.Since(start))
 		}
 	}()
 
@@ -139,7 +139,7 @@ func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, stopwatc
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.L2FibTableDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.L2FibTableDump{}, time.Since(start))
 		}
 	}()
 
@@ -194,7 +194,7 @@ func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, stopwatch 
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l2ba.L2XconnectDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(l2ba.L2XconnectDump{}, time.Since(start))
 		}
 	}()
 

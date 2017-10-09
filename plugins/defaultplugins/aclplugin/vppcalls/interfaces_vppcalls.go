@@ -74,7 +74,7 @@ func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndex
 
 		// Log ACLInterfaceSetACLList time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
 		}
 	}
 
@@ -128,7 +128,7 @@ func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexe
 
 		// Log ACLInterfaceSetACLList time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
 		}
 	}
 
@@ -165,7 +165,7 @@ func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes if
 
 		// Log MacipACLInterfaceAddDel time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.MacipACLInterfaceAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.MacipACLInterfaceAddDel{}, time.Since(start))
 		}
 	}
 
@@ -221,7 +221,7 @@ func RemoveIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []strin
 
 		// Log ACLInterfaceSetACLList time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
 		}
 	}
 	return nil
@@ -275,7 +275,7 @@ func RemoveIPEgressACLFromInterfaces(removedACLIndex uint32, interfaces []string
 
 		// Log ACLInterfaceSetACLList time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLInterfaceSetACLList{}, time.Since(start))
 		}
 	}
 	return nil
@@ -311,7 +311,7 @@ func RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []st
 
 		// Log MacipACLInterfaceAddDel time measurement results
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.MacipACLInterfaceAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.MacipACLInterfaceAddDel{}, time.Since(start))
 		}
 	}
 	return nil

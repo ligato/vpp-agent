@@ -61,11 +61,11 @@ type BFDConfigurator struct {
 func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKeyIndexes idxvpp.NameToIdxRW, bfdEchoFunctionIndex idxvpp.NameToIdxRW,
 	bfdRemovedAuthIndex idxvpp.NameToIdxRW) (err error) {
 	plugin.Log.WithField("vppLabel", plugin.ServiceLabel).Debug("Initializing BFD configurator")
-	plugin.stopwatch = timer.NewStopwatch()
 	plugin.bfdSessionsIndexes = bfdSessionIndexes
 	plugin.bfdKeysIndexes = bfdKeyIndexes
 	plugin.bfdEchoFunctionIndex = bfdEchoFunctionIndex
 	plugin.bfdRemovedAuthIndex = bfdRemovedAuthIndex
+	plugin.stopwatch = timer.NewStopwatch("BFDConfigurator", plugin.Log)
 
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -370,7 +370,7 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 
 	// BfdUDPSessionDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTime(bfdApi.BfdUDPSessionDump{}, time.Since(start))
+		plugin.stopwatch.LogTimeEntry(bfdApi.BfdUDPSessionDump{}, time.Since(start))
 	}
 
 	return nil
@@ -404,7 +404,7 @@ func (plugin *BFDConfigurator) LookupBfdKeys() error {
 
 	// BfdAuthKeysDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTime(bfdApi.BfdAuthKeysDump{}, time.Since(start))
+		plugin.stopwatch.LogTimeEntry(bfdApi.BfdAuthKeysDump{}, time.Since(start))
 	}
 
 	return nil

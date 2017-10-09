@@ -32,7 +32,7 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(tap.TapConnect{}, time.Since(start))
+			stopwatch.LogTimeEntry(tap.TapConnect{}, time.Since(start))
 		}
 	}()
 
@@ -66,7 +66,7 @@ func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(tap.TapDelete{}, time.Since(start))
+			stopwatch.LogTimeEntry(tap.TapDelete{}, time.Since(start))
 		}
 	}()
 

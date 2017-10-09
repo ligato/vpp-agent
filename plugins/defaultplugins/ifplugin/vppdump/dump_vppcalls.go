@@ -84,7 +84,7 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *ti
 
 	// SwInterfaceDump time
 	if stopwatch != nil {
-		stopwatch.LogTime(interfaces.SwInterfaceDump{}, time.Since(start))
+		stopwatch.LogTimeEntry(interfaces.SwInterfaceDump{}, time.Since(start))
 	}
 
 	err := dumpIPAddressDetails(log, vppChan, ifs, 0, stopwatch)
@@ -148,7 +148,7 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 
 		// IPAddressDump time
 		if stopwatch != nil {
-			stopwatch.LogTime(ip.IPAddressDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(ip.IPAddressDump{}, time.Since(start))
 		}
 	}
 
@@ -187,7 +187,7 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(memif.MemifDetails{}, time.Since(start))
+			stopwatch.LogTimeEntry(memif.MemifDetails{}, time.Since(start))
 		}
 	}()
 
@@ -224,7 +224,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(tap.SwInterfaceTapDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(tap.SwInterfaceTapDump{}, time.Since(start))
 		}
 	}()
 
@@ -254,7 +254,7 @@ func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vxlan.VxlanTunnelDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(vxlan.VxlanTunnelDump{}, time.Since(start))
 		}
 	}()
 

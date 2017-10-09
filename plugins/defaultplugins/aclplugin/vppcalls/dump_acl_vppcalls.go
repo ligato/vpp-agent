@@ -29,7 +29,7 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *time
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(acl.ACLInterfaceListDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
 		}
 	}()
 
@@ -51,7 +51,7 @@ func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *time
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(acl.ACLDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(acl.ACLDump{}, time.Since(start))
 		}
 	}()
 
@@ -79,7 +79,7 @@ func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *t
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(acl.MacipACLDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(acl.MacipACLDump{}, time.Since(start))
 		}
 	}()
 
@@ -106,7 +106,7 @@ func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(acl.ACLInterfaceListDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
 		}
 	}()
 

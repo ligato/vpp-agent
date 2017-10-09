@@ -51,7 +51,7 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(l3ba.IPFibDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(l3ba.IPFibDump{}, time.Since(start))
 		}
 	}()
 

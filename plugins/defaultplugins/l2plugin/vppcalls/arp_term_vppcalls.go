@@ -34,7 +34,7 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.BdIPMacAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.BdIPMacAddDel{}, time.Since(start))
 		}
 	}()
 
@@ -82,7 +82,7 @@ func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log l
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.BdIPMacAddDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.BdIPMacAddDel{}, time.Since(start))
 		}
 	}()
 

@@ -51,7 +51,7 @@ type RouteConfigurator struct {
 // Init members (channels...) and start go routines
 func (plugin *RouteConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L3 plugin")
-	plugin.stopwatch = timer.NewStopwatch()
+	plugin.stopwatch = timer.NewStopwatch("RouteConfigurator", plugin.Log)
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()

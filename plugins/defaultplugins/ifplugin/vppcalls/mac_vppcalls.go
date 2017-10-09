@@ -31,7 +31,7 @@ func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppCha
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceSetMacAddress{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetMacAddress{}, time.Since(start))
 		}
 	}()
 

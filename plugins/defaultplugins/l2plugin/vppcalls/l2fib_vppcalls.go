@@ -59,7 +59,7 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 	start := time.Now()
 	defer func() {
 		if fib.stopwatch != nil {
-			fib.stopwatch.LogTime(l2ba.L2fibAddDel{}, time.Since(start))
+			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
 		}
 	}()
 
@@ -81,7 +81,7 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 	start := time.Now()
 	defer func() {
 		if fib.stopwatch != nil {
-			fib.stopwatch.LogTime(l2ba.L2fibAddDel{}, time.Since(start))
+			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
 		}
 	}()
 

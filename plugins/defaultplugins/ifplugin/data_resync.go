@@ -18,7 +18,6 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
@@ -34,20 +33,13 @@ import (
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
-	// Check stopwatch
-	if plugin.stopwatch == nil {
-		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
-		plugin.stopwatch = timer.NewStopwatch()
-		// afPacketConfigurator uses the same stopwatch object
-		plugin.afPacketConfigurator.Stopwatch = plugin.stopwatch
-	}
 	// Start time measuring
 	start := time.Now()
 	// Calculate and log interface resync
 	defer func() {
 		if plugin.stopwatch != nil {
 			plugin.stopwatch.Overall = time.Since(start)
-			plugin.stopwatch.Print("interfaceConfigurator", plugin.Log)
+			plugin.stopwatch.Print()
 		}
 	}()
 
@@ -146,18 +138,13 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
-	// Check stopwatch
-	if plugin.stopwatch == nil {
-		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
-		plugin.stopwatch = timer.NewStopwatch()
-	}
 	// Start time measuring
 	start := time.Now()
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.stopwatch != nil {
 			plugin.stopwatch.Overall = time.Since(start)
-			plugin.stopwatch.Print("BFDConfigurator-session", plugin.Log)
+			plugin.stopwatch.Print()
 		}
 	}()
 
@@ -185,18 +172,13 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
-	// Check stopwatch
-	if plugin.stopwatch == nil {
-		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
-		plugin.stopwatch = timer.NewStopwatch()
-	}
 	// Start time measuring
 	start := time.Now()
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.stopwatch != nil {
 			plugin.stopwatch.Overall = time.Since(start)
-			plugin.stopwatch.Print("BFDConfigurator-authKey", plugin.Log)
+			plugin.stopwatch.Print()
 		}
 	}()
 

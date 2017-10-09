@@ -17,19 +17,21 @@ package aclplugin
 import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 
 // Resync writes ACLs to the empty VPP
 func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.Logger) error {
 	log.Debug("Resync ACLs started")
-	// Check stopwatch
-	if plugin.stopwatch == nil {
-		plugin.Log.Warn("Stopwatch is not initialized, creating ...")
-		plugin.stopwatch = timer.NewStopwatch()
-	}
+	// Start time measuring
 	start := time.Now()
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.Overall = time.Since(start)
+			plugin.stopwatch.Print()
+		}
+	}()
 
 	var wasError error
 
@@ -43,11 +45,6 @@ func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.L
 	}
 
 	log.WithField("cfg", plugin).Debug("RESYNC ACLs end. ", wasError)
-
-	if plugin.stopwatch != nil {
-		plugin.stopwatch.Overall = time.Since(start)
-		plugin.stopwatch.Print("ACLConfigurator", plugin.Log)
-	}
 
 	return wasError
 }

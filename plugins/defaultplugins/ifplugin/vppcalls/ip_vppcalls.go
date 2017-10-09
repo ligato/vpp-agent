@@ -32,7 +32,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
 		}
 	}()
 
@@ -79,7 +79,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(interfaces.SwInterfaceAddDelAddressReply{}, time.Since(start))
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddressReply{}, time.Since(start))
 		}
 	}()
 

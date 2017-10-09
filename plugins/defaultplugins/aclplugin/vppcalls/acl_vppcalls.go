@@ -35,7 +35,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLAddReplace{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLAddReplace{}, time.Since(start))
 		}
 	}()
 
@@ -74,7 +74,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.MacipACLAdd{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.MacipACLAdd{}, time.Since(start))
 		}
 	}()
 
@@ -113,7 +113,7 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLAddReplace{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLAddReplace{}, time.Since(start))
 		}
 	}()
 
@@ -151,7 +151,7 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, s
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.ACLDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.ACLDel{}, time.Since(start))
 		}
 	}()
 
@@ -177,7 +177,7 @@ func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(aclApi.MacipACLDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(aclApi.MacipACLDel{}, time.Since(start))
 		}
 	}()
 

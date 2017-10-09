@@ -28,7 +28,7 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *timer.Stopwatch)
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.CreateLoopback{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.CreateLoopback{}, time.Since(start))
 		}
 	}()
 
@@ -53,7 +53,7 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *t
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.DeleteLoopback{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.DeleteLoopback{}, time.Since(start))
 		}
 	}()
 

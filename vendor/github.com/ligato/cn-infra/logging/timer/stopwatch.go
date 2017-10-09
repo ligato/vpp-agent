@@ -19,25 +19,38 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"time"
 	"strconv"
+	"sync"
 )
 
 // Stopwatch keeps all time measurement results
 type Stopwatch struct {
-	// start of the resync
+	// start time can be set as the beginning of the measurement to calculate overall time
 	Overall time.Duration
+	// name of the entity/plugin
+	name string
+	// logger used while printing
+	logger logging.Logger
 	// map where measurements are stored
 	timeTable map[string]time.Duration
+	// used to lock map
+	mx sync.Mutex
 }
 
-func NewStopwatch() *Stopwatch {
+func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	return &Stopwatch{
 		// Default value
 		Overall:  -1,
+		name: name,
+		logger: log,
 		timeTable: make(map[string]time.Duration),
 	}
 }
 
-func (st *Stopwatch) LogTime(n interface{}, d time.Duration) {
+// LogTimeEntry stores name of the binapi call and measured duration
+func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
+	st.mx.Lock()
+	defer st.mx.Unlock()
+
 	name := reflect.TypeOf(n).String()
 	_, found := st.timeTable[name]
 	if found {
@@ -57,16 +70,17 @@ func (st *Stopwatch) LogTime(n interface{}, d time.Duration) {
 	st.timeTable[name] = d
 }
 
-func (st *Stopwatch) Print(pluginName string, log logging.Logger) {
+// Print logs all entries from the map (partial times) + overall time if set
+func (st *Stopwatch) Print() {
 	if len(st.timeTable) == 0 {
-		log.WithField("plugin", pluginName).Infof("Timer: no entries")
+		st.logger.WithField("plugin", st.name).Infof("Timer: no entries")
 	}
 	for k, v := range st.timeTable {
-		log.WithField("plugin", pluginName).Infof("Calling %v took %v", k, v)
+		st.logger.WithField("plugin", st.name).Infof("Calling %v took %v", k, v)
 	}
 	if st.Overall != -1 {
-		log.WithField("plugin", pluginName).Infof("Resync took %v", st.Overall)
+		st.logger.WithField("plugin", st.name).Infof("Resync took %v", st.Overall)
 	}
-	// purge map
+	// clear map after use
 	st.timeTable = make(map[string]time.Duration)
 }

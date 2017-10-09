@@ -57,7 +57,7 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(ip.IPAddDelRoute{}, time.Since(start))
+			stopwatch.LogTimeEntry(ip.IPAddDelRoute{}, time.Since(start))
 		}
 	}()
 	req := &ip.IPAddDelRoute{}

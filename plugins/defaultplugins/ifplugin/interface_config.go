@@ -77,7 +77,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
 	plugin.mtu = mtu
-	plugin.stopwatch = timer.NewStopwatch()
+	plugin.stopwatch = timer.NewStopwatch("InterfaceConfigurator", plugin.Log)
 
 	plugin.vppCh, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -133,7 +133,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 
 	// SwInterfaceSetFlags time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTime(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+		plugin.stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
 	}
 
 	return nil

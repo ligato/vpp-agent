@@ -30,7 +30,7 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(memif.MemifCreate{}, time.Since(start))
+			stopwatch.LogTimeEntry(memif.MemifCreate{}, time.Since(start))
 		}
 	}()
 
@@ -79,7 +79,7 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *time
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(memif.MemifDelete{}, time.Since(start))
+			stopwatch.LogTimeEntry(memif.MemifDelete{}, time.Since(start))
 		}
 	}()
 

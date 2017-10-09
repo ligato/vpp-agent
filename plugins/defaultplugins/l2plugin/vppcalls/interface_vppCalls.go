@@ -32,7 +32,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
 		}
 	}()
 
@@ -94,7 +94,7 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
 		}
 	}()
 
@@ -145,7 +145,7 @@ func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTime(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
+			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Bridge{}, time.Since(start))
 		}
 	}()
 
