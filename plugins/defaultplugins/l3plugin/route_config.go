@@ -65,7 +65,7 @@ func (plugin *RouteConfigurator) Init() (err error) {
 
 // ConfigureRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	plugin.Log.Infof("Creating new route %v -> %v (VRF:%v)", config.DstIpAddr, config.NextHopAddr, config.VrfId)
 	// Validate VRF index from key and it's value in data
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(config.VrfId) {
@@ -98,7 +98,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 // ModifyRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	plugin.Log.Infof("Modifying route %v -> %v (VRF:%v)", oldConfig.DstIpAddr, oldConfig.NextHopAddr, config.VrfId)
 	// Validate new route data Vrf
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(newConfig.VrfId) {
@@ -143,7 +143,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 
 // DeleteRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
-	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	plugin.Log.Infof("Removing route %v -> %v (VRF:%v)", config.DstIpAddr, config.NextHopAddr, config.VrfId)
 	// Transform route data
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
