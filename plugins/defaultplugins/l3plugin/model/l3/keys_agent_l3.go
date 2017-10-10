@@ -25,7 +25,7 @@ const (
 	// VrfPrefix is the relative key prefix for VRFs.
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
-	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/fib/{net}/{mask}/{next-hop}"
+	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
@@ -33,11 +33,17 @@ func VrfKeyPrefix() string {
 	return VrfPrefix
 }
 
+// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
+func RouteKeyPrefix() string {
+	return RoutesPrefix
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
 	dstNetMask, _ := dstAddr.Mask.Size()
-	key := strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1)
+	key := RoutesPrefix
+	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
 	key = strings.Replace(key, "{net}", dstNetAddr, 1)
 	key = strings.Replace(key, "{mask}", strconv.Itoa(dstNetMask), 1)
 	key = strings.Replace(key, "{next-hop}", nextHopAddr, 1)
@@ -56,9 +62,4 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 		}
 	}
 	return false, "", "", 0, ""
-}
-
-// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
-func RouteKeyPrefix() string {
-	return RoutesPrefix
 }

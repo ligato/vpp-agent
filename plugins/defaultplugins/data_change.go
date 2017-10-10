@@ -135,7 +135,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 	plugin.Log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.routeConfigurator.DeleteRoute(prevValue)
+		return plugin.routeConfigurator.DeleteRoute(prevValue, vrfFromKey)
 	} else if diff {
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}

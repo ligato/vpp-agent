@@ -16,10 +16,11 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	"net"
 )
 
 // Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
@@ -47,8 +48,8 @@ const (
 	NextHopOutgoingIfUnset uint32 = ^uint32(0)
 )
 
-// VppAddDelRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error {
+// vppAddDelRoute adds or removes route according to provided input. Every route has to contain VRF ID (default is 0)
+func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error {
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -102,4 +103,14 @@ func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error 
 	}
 
 	return nil
+}
+
+// VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
+func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
+	return vppAddDelRoute(route, vppChan, false)
+}
+
+// VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel) error {
+	return vppAddDelRoute(route, vppChan, true)
 }
