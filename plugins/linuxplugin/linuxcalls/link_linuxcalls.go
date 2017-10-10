@@ -17,13 +17,13 @@
 package linuxcalls
 
 import (
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"time"
 )
 
 // GetInterfaceType returns the type (string representation) of a given interface.
-func GetInterfaceType(ifName string, stopwatch *timer.Stopwatch) (string, error) {
+func GetInterfaceType(ifName string, stopwatch *measure.Stopwatch) (string, error) {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
@@ -39,7 +39,7 @@ func GetInterfaceType(ifName string, stopwatch *timer.Stopwatch) (string, error)
 }
 
 // InterfaceExists checks if interface with a given name exists.
-func InterfaceExists(ifName string, stopwatch *timer.Stopwatch) (bool, error) {
+func InterfaceExists(ifName string, stopwatch *measure.Stopwatch) (bool, error) {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {

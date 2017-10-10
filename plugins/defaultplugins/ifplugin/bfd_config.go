@@ -22,7 +22,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -47,7 +47,7 @@ type BFDConfigurator struct {
 	SwIfIndexes  ifaceidx.SwIfIndex
 	ServiceLabel servicelabel.ReaderAPI
 	BfdIDSeq     uint32
-	Stopwatch    *timer.Stopwatch // timer used to measure and store time
+	Stopwatch    *measure.Stopwatch // timer used to measure and store time
 	// Base mappings
 	bfdSessionsIndexes   idxvpp.NameToIdxRW
 	bfdKeysIndexes       idxvpp.NameToIdxRW

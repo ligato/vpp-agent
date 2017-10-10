@@ -19,7 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
@@ -28,8 +28,8 @@ import (
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
 	logging.Logger
-	Linux     interface{}      //just flag if nil
-	Stopwatch *timer.Stopwatch // from InterfaceConfigurator
+	Linux     interface{}        //just flag if nil
+	Stopwatch *measure.Stopwatch // from InterfaceConfigurator
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration

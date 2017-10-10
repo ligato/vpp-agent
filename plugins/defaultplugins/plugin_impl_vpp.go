@@ -22,7 +22,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -289,9 +289,9 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	var stopwatch *timer.Stopwatch
+	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("InterfaceConfigurator", ifLogger)
+		stopwatch = measure.NewStopwatch("InterfaceConfigurator", ifLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
 		Log:          ifLogger,
@@ -305,7 +305,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Debug("ifConfigurator Initialized")
 
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("BFDConfigurator", bfdLogger)
+		stopwatch = measure.NewStopwatch("BFDConfigurator", bfdLogger)
 	}
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
 		Log:          bfdLogger,
@@ -330,9 +330,9 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 
 	plugin.aclL2Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil)
 
-	var stopwatch *timer.Stopwatch
+	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("ACLConfigurator", aclLogger)
+		stopwatch = measure.NewStopwatch("ACLConfigurator", aclLogger)
 	}
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
 		Log:            aclLogger,
@@ -370,9 +370,9 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_real_indexes", nil)
 
-	var stopwatch *timer.Stopwatch
+	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("BDConfigurator", bdLogger)
+		stopwatch = measure.NewStopwatch("BDConfigurator", bdLogger)
 	}
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
 		Log:                bdLogger,
@@ -401,7 +401,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.fibIndexes = nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil)
 
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("FIBConfigurator", fibLogger)
+		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
 	}
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
 		Log:           fibLogger,
@@ -420,7 +420,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.xcIndexes = nametoidx.NewNameToIdx(xcLogger, plugin.PluginName, "xc_indexes", nil)
 
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("XConnectConfigurator", xcLogger)
+		stopwatch = measure.NewStopwatch("XConnectConfigurator", xcLogger)
 	}
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
 		Log:         xcLogger,
@@ -460,9 +460,9 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	l3Logger := plugin.Log.NewLogger("-l3-plugin")
 	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
 
-	var stopwatch *timer.Stopwatch
+	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = timer.NewStopwatch("RouteConfigurator", l3Logger)
+		stopwatch = measure.NewStopwatch("RouteConfigurator", l3Logger)
 	}
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
 		Log:           l3Logger,

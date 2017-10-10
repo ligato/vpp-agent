@@ -20,13 +20,13 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"time"
 )
 
 // SetInterfaceMac calls SwInterfaceSetMacAddress bin API
-func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// SwInterfaceSetMacAddress time measurement
 	start := time.Now()
 	defer func() {

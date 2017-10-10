@@ -25,7 +25,7 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -44,7 +44,7 @@ type ACLConfigurator struct {
 	ACLL3L4Indexes idxvpp.NameToIdxRW
 	ACLL2Indexes   idxvpp.NameToIdxRW // mapping for L2 ACLs
 	SwIfIndexes    ifaceidx.SwIfIndex
-	Stopwatch      *timer.Stopwatch // timer used to measure and store time
+	Stopwatch      *measure.Stopwatch // timer used to measure and store time
 	vppChannel     *api.Channel
 }
 

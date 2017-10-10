@@ -34,7 +34,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -58,7 +58,7 @@ type InterfaceConfigurator struct {
 	ServiceLabel servicelabel.ReaderAPI
 	Linux        interface{} //just flag if nil
 
-	Stopwatch *timer.Stopwatch // timer used to measure and store time
+	Stopwatch *measure.Stopwatch // timer used to measure and store time
 
 	swIfIndexes ifaceidx.SwIfIndexRW
 	// MTU value is either read from config or set to default

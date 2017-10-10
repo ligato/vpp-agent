@@ -18,14 +18,14 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"time"
 )
 
 // AddMemifInterface calls MemifCreate bin API
-func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	// MemifCreate time measurement
 	start := time.Now()
 	defer func() {
@@ -74,7 +74,7 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 }
 
 // DeleteMemifInterface calls MemifDelete bin API
-func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// MemifDelete time measurement
 	start := time.Now()
 	defer func() {

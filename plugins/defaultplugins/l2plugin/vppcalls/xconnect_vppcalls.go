@@ -18,13 +18,13 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 	"time"
 )
 
 // VppSetL2XConnect creates xConnect between two existing interfaces
-func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
 	start := time.Now()
@@ -53,7 +53,7 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 }
 
 // VppUnsetL2XConnect removes xConnect between two interfaces
-func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
 	start := time.Now()

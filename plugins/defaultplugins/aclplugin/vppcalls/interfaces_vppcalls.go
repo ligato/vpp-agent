@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"time"
@@ -28,7 +28,7 @@ import (
 
 // SetACLToInterfacesAsIngress sets ACL to all provided interfaces as ingress
 func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
 		// Create acl list with new entry
 		var ACLs []uint32
@@ -83,7 +83,7 @@ func SetACLToInterfacesAsIngress(aclIndex uint32, interfaces []string, swIfIndex
 
 // SetACLToInterfacesAsEgress sets ACL to all provided interfaces as egress
 func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, egressInterfaces := range interfaces {
 		// Create empty ACL list
 		var ACLs []uint32
@@ -137,7 +137,7 @@ func SetACLToInterfacesAsEgress(aclIndex uint32, interfaces []string, swIfIndexe
 
 // SetMacIPAclToInterface adds L2 ACL to interface
 func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
 		// Measure MacipACLInterfaceAddDel time
 		start := time.Now()
@@ -174,7 +174,7 @@ func SetMacIPAclToInterface(aclIndex uint32, interfaces []string, swIfIndexes if
 
 // RemoveIPIngressACLFromInterfaces removes ACL from interfaces
 func RemoveIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
 		// Create empty ACL list
 		var ACLs []uint32
@@ -229,7 +229,7 @@ func RemoveIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []strin
 
 // RemoveIPEgressACLFromInterfaces removes ACL from interfaces
 func RemoveIPEgressACLFromInterfaces(removedACLIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, egressInterface := range interfaces {
 		// Create empty ACL list
 		var ACLs []uint32
@@ -283,7 +283,7 @@ func RemoveIPEgressACLFromInterfaces(removedACLIndex uint32, interfaces []string
 
 // RemoveMacIPIngressACLFromInterfaces removes L2 ACL from interfaces
 func RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, interfaces []string, swIfIndexes ifaceidx.SwIfIndex, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	for _, ingressInterface := range interfaces {
 		// Measure MacipACLInterfaceAddDel time
 		start := time.Now()

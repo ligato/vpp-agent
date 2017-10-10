@@ -23,14 +23,14 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"time"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) (uint32, error) {
+func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	// ACLAddReplace time measurement
 	start := time.Now()
 	defer func() {
@@ -69,7 +69,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 }
 
 // AddMacIPAcl create new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) (uint32, error) {
+func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	// MacipACLAdd time measurement
 	start := time.Now()
 	defer func() {
@@ -108,7 +108,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified
 func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	// ACLAddReplace time measurement
 	start := time.Now()
 	defer func() {
@@ -146,7 +146,7 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 }
 
 // DeleteIPAcl removes L3/L4 ACL
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	// ACLDel time measurement
 	start := time.Now()
 	defer func() {
@@ -172,7 +172,7 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, s
 }
 
 // DeleteMacIPAcl removes L2 ACL
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *timer.Stopwatch) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
 	// MacipACLDel time measurement
 	start := time.Now()
 	defer func() {

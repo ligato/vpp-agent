@@ -19,7 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -37,7 +37,7 @@ type XConnectConfigurator struct {
 	XcIndexes   idxvpp.NameToIdxRW
 	XcIndexSeq  uint32
 	vppChan     *govppapi.Channel
-	Stopwatch   *timer.Stopwatch // timer used to measure and store time
+	Stopwatch   *measure.Stopwatch // timer used to measure and store time
 }
 
 // XConnectMeta meta hold info about transmit interface

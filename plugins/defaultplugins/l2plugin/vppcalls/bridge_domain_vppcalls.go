@@ -18,7 +18,7 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"time"
@@ -26,7 +26,7 @@ import (
 
 // VppAddBridgeDomain adds new bridge domain
 func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Adding VPP bridge domain ", bridgeDomain.Name)
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
@@ -63,7 +63,7 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 
 // VppUpdateBridgeDomain updates bridge domain parameters
 func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
 	if oldBdIdx != 0 {
 		err := VppDeleteBridgeDomain(oldBdIdx, log, vppChan, stopwatch)
@@ -106,7 +106,7 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 }
 
 // VppDeleteBridgeDomain removes existing bridge domain
-func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
 	defer func() {

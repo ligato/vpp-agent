@@ -24,7 +24,7 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -51,7 +51,7 @@ type BDConfigurator struct {
 	vppChan                *govppapi.Channel
 	SwIfIndexes            ifaceidx.SwIfIndex
 	notificationChan       chan BridgeDomainStateMessage
-	Stopwatch              *timer.Stopwatch // timer used to measure and store time
+	Stopwatch              *measure.Stopwatch // timer used to measure and store time
 }
 
 // BridgeDomainStateMessage is message with bridge domain state + bridge domain name (because state message does not

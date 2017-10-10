@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
@@ -105,7 +106,7 @@ func GetDefaultNamespace() *intf.LinuxInterfaces_Interface_Namespace {
 
 // SetInterfaceNamespace moves a given Linux interface into a specified namespace.
 func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace,
-	log logging.Logger, stopwatch *timer.Stopwatch) error {
+	log logging.Logger, stopwatch *measure.Stopwatch) error {
 	// Get network namespace file descriptor
 	ns, err := GetOrCreateNs(namespace, log)
 	if err != nil {

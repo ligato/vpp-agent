@@ -17,13 +17,13 @@
 package linuxcalls
 
 import (
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"time"
 )
 
 // InterfaceAdminDown calls Netlink API LinkSetDown
-func InterfaceAdminDown(ifName string, stopwatch *timer.Stopwatch) error {
+func InterfaceAdminDown(ifName string, stopwatch *measure.Stopwatch) error {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
@@ -39,7 +39,7 @@ func InterfaceAdminDown(ifName string, stopwatch *timer.Stopwatch) error {
 }
 
 // InterfaceAdminUp calls Netlink API LinkSetUp
-func InterfaceAdminUp(ifName string, stopwatch *timer.Stopwatch) error {
+func InterfaceAdminUp(ifName string, stopwatch *measure.Stopwatch) error {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {

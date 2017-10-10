@@ -24,7 +24,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -45,7 +45,7 @@ type RouteConfigurator struct {
 	RouteIndexSeq uint32
 	SwIfIndexes   ifaceidx.SwIfIndex
 	vppChan       *govppapi.Channel
-	Stopwatch     *timer.Stopwatch // timer used to measure and store time
+	Stopwatch     *measure.Stopwatch // timer used to measure and store time
 }
 
 // Init members (channels...) and start go routines

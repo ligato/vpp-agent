@@ -18,14 +18,14 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"time"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	// AfPacketCreate time measurement
 	start := time.Now()
 	defer func() {
@@ -54,7 +54,7 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 }
 
 // DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// AfPacketDelete time measurement
 	start := time.Now()
 	defer func() {

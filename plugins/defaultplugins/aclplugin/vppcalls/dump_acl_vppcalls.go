@@ -17,14 +17,14 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"time"
 )
 
 // DumpInterface finds interface in VPP and returns its ACL configuration
-func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) (*acl.ACLInterfaceListDetails, error) {
+func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (*acl.ACLInterfaceListDetails, error) {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
 	defer func() {
@@ -46,7 +46,7 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *time
 }
 
 // DumpIPAcl test function
-func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// ACLDump time measurement
 	start := time.Now()
 	defer func() {
@@ -74,7 +74,7 @@ func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *time
 }
 
 // DumpMacIPAcl test function
-func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// MacipACLDump time measurement
 	start := time.Now()
 	defer func() {
@@ -101,7 +101,7 @@ func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *t
 }
 
 // DumpInterfaces test function
-func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
 	defer func() {

@@ -34,7 +34,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
@@ -106,13 +106,13 @@ type LinuxInterfaceConfigurator struct {
 	ifWatcherDoneCh  chan struct{}
 
 	/* time measurement */
-	stopwatch *timer.Stopwatch // timer used to measure and store time
+	stopwatch *measure.Stopwatch // timer used to measure and store time
 }
 
 // Init linuxplugin and start go routines
 func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	plugin.Log.Debug("Initializing LinuxInterfaceConfigurator")
-	plugin.stopwatch = timer.NewStopwatch("LinuxInterfaceConfigurator", log.DefaultLogger())
+	plugin.stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", log.DefaultLogger())
 	plugin.ifIndexes = ifIndexes
 
 	// allocate caches

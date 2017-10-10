@@ -18,7 +18,7 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 	"net"
 	"strconv"
@@ -28,7 +28,7 @@ import (
 
 // VppAddArpTerminationTableEntry adds ARP termination entry
 func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Info("Adding arp termination entry")
 	// BdIPMacAddDel time measurement
 	start := time.Now()
@@ -76,7 +76,7 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry
 func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Info("'Deleting' arp entry")
 	// BdIPMacAddDel time measurement
 	start := time.Now()

@@ -18,13 +18,13 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"time"
 )
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0
-func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {
@@ -51,7 +51,7 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *time
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1
-func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {

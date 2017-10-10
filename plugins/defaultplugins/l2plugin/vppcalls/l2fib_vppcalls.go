@@ -19,7 +19,7 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"strconv"
 	"strings"
@@ -38,14 +38,14 @@ type FibLogicalReq struct {
 }
 
 // NewL2FibVppCalls is a constructor
-func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) *L2FibVppCalls {
+func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
 	return &L2FibVppCalls{vppChan, stopwatch, list.New()}
 }
 
 // L2FibVppCalls aggregates vpp calls related to l2 fib
 type L2FibVppCalls struct {
 	vppChan         *govppapi.Channel
-	stopwatch       *timer.Stopwatch
+	stopwatch       *measure.Stopwatch
 	waitingForReply *list.List
 }
 

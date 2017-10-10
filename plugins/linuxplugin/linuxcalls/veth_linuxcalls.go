@@ -21,13 +21,13 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"time"
 )
 
 // AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
-func AddVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *timer.Stopwatch) error {
+func AddVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
 	start := time.Now()
 	defer func() {
@@ -51,7 +51,7 @@ func AddVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *
 }
 
 // DelVethInterface calls LinkDel Netlink API for the Netlink.Veth interface type.
-func DelVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *timer.Stopwatch) error {
+func DelVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
 	start := time.Now()
 	defer func() {
@@ -75,7 +75,7 @@ func DelVethInterface(ifName, peerIfName string, log logging.Logger, stopwatch *
 }
 
 // GetVethPeerName return the peer name for a given VETH interface.
-func GetVethPeerName(ifName string, stopwatch *timer.Stopwatch) (string, error) {
+func GetVethPeerName(ifName string, stopwatch *measure.Stopwatch) (string, error) {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {

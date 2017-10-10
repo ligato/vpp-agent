@@ -19,13 +19,13 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"time"
 )
 
 // AddInterfaceIP calls AddrAdd Netlink API
-func AddInterfaceIP(ifName string, addr *net.IPNet, stopwatch *timer.Stopwatch) error {
+func AddInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch) error {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
@@ -42,7 +42,7 @@ func AddInterfaceIP(ifName string, addr *net.IPNet, stopwatch *timer.Stopwatch) 
 }
 
 // DelInterfaceIP calls AddrDel Netlink API
-func DelInterfaceIP(ifName string, addr *net.IPNet, stopwatch *timer.Stopwatch) error {
+func DelInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch) error {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
@@ -59,7 +59,7 @@ func DelInterfaceIP(ifName string, addr *net.IPNet, stopwatch *timer.Stopwatch) 
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API
-func SetInterfaceMTU(ifName string, mtu int, stopwatch *timer.Stopwatch) error {
+func SetInterfaceMTU(ifName string, mtu int, stopwatch *measure.Stopwatch) error {
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {

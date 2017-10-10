@@ -20,14 +20,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"time"
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
-func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
 	defer func() {
@@ -74,7 +74,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
-func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// SwInterfaceAddDelAddressReply time measurement
 	start := time.Now()
 	defer func() {

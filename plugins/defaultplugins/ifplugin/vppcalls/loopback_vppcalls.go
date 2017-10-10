@@ -17,13 +17,13 @@ package vppcalls
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
 	"time"
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) (swIndex uint32, err error) {
+func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	// CreateLoopback time measurement
 	start := time.Now()
 	defer func() {
@@ -48,7 +48,7 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *timer.Stopwatch)
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// DeleteLoopback time measurement
 	start := time.Now()
 	defer func() {

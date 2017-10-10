@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package timer
+package measure
 
 import (
 	"reflect"
@@ -44,8 +44,8 @@ func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 }
 
 // LogTimeEntry stores name of the binapi call and measured duration
-// <n>
-// <d>
+// <n> is a name of the measured entity (bin_api call object name or any other string)
+// <d> is measured time
 func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 	st.mx.Lock()
 	defer st.mx.Unlock()
