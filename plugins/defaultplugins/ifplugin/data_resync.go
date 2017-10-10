@@ -34,13 +34,13 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 	// Calculate and log interface resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.stopwatch)
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
 	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
 		return err
@@ -136,8 +136,8 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
 	// Calculate and log bfd resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 
@@ -167,8 +167,8 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
 	// Calculate and log bfd resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 

@@ -34,10 +34,10 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
@@ -106,7 +106,7 @@ type LinuxInterfaceConfigurator struct {
 	ifWatcherDoneCh  chan struct{}
 
 	/* time measurement */
-	stopwatch              *timer.Stopwatch // timer used to measure and store time
+	stopwatch *timer.Stopwatch // timer used to measure and store time
 }
 
 // Init linuxplugin and start go routines
@@ -156,7 +156,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 	start := time.Now()
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.LogTimeEntry("linux-interface resync",time.Since(start))
+			plugin.stopwatch.LogTimeEntry("linux-interface resync", time.Since(start))
 			plugin.stopwatch.Print()
 		}
 	}()

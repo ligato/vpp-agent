@@ -19,9 +19,9 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 

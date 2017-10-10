@@ -17,13 +17,13 @@ package l3plugin
 import (
 	"bytes"
 	"fmt"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"net"
 	"sort"
-	"github.com/ligato/cn-infra/logging"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route

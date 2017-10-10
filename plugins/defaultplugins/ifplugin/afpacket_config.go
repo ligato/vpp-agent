@@ -19,16 +19,16 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
 	logging.Logger
-	Linux interface{} //just flag if nil
+	Linux     interface{}      //just flag if nil
 	Stopwatch *timer.Stopwatch // from InterfaceConfigurator
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
@@ -56,7 +56,7 @@ func (plugin *AFPacketConfigurator) Init(vppCh *govppapi.Channel) (err error) {
 }
 
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.
-func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface,) (swIndex uint32, pending bool, err error) {
+func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface) (swIndex uint32, pending bool, err error) {
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		return 0, false, errors.New("expecting AfPacket interface")
 	}

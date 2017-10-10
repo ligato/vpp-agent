@@ -23,8 +23,8 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// Calculate and log route resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 

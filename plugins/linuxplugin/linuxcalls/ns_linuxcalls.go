@@ -33,7 +33,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 const (

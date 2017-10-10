@@ -15,8 +15,8 @@
 package aclplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP
@@ -24,8 +24,8 @@ func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.L
 	log.Debug("Resync ACLs started")
 	// Calculate and log bfd resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 

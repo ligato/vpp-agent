@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 

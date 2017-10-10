@@ -20,6 +20,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -30,7 +31,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 // FIBConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -50,7 +50,7 @@ type FIBConfigurator struct {
 	syncVppChannel  *govppapi.Channel
 	asyncVppChannel *govppapi.Channel
 	vppcalls        *vppcalls.L2FibVppCalls
-	stopwatch 	    *timer.Stopwatch      // timer used to measure and store time
+	Stopwatch       *timer.Stopwatch // timer used to measure and store time
 }
 
 // FIBMeta metadata holder holds information about entry interface and bridge domain
@@ -64,7 +64,6 @@ type FIBMeta struct {
 // Init goroutines, mappings, channels, ...
 func (plugin *FIBConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 Bridge domains")
-	plugin.stopwatch = timer.NewStopwatch("FIBConfigurator", plugin.Log)
 
 	// Init local mapping
 	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "fib_des_indexes", nil)
@@ -84,7 +83,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 		return err
 	}
 
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel, plugin.stopwatch)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel, plugin.Stopwatch)
 	go plugin.vppcalls.WatchFIBReplies(plugin.Log)
 
 	return nil

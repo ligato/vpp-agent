@@ -20,9 +20,9 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/timer"
 	l3ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	l3nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
 

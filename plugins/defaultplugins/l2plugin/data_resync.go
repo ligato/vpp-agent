@@ -30,13 +30,13 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
 	// Calculate and log bd resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, plugin.stopwatch)
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 
 		vppcalls.VppUnsetAllInterfacesFromBridgeDomain(&hackBD, vppIdx,
-			hackIfIndexes, plugin.Log, plugin.vppChan, plugin.stopwatch)
+			hackIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 		err := plugin.deleteBridgeDomain(&hackBD, vppIdx)
 		// TODO check if it is ok to delete the initial BD
 		if err != nil {
@@ -87,12 +87,12 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 	// Calculate and log fib resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel, plugin.stopwatch)
+	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -118,8 +118,8 @@ func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnect
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
 	// Calculate and log xConnect resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.Print()
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
 		}
 	}()
 

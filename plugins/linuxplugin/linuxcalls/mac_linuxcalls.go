@@ -19,9 +19,9 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/vishvananda/netlink"
 	"time"
-	"github.com/ligato/cn-infra/logging/timer"
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API

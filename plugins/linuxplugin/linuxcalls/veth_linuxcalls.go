@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/vishvananda/netlink"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"time"
 	"github.com/ligato/cn-infra/logging/timer"
+	"github.com/vishvananda/netlink"
+	"time"
 )
 
 // AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
