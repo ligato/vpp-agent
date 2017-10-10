@@ -68,7 +68,7 @@ func (plugin *RouteConfigurator) Init() (err error) {
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.Log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Validate VRF index from key and it's value in data
-	if err := plugin.validateVrfIdFromKey(config, vrfFromKey); err != nil {
+	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
 	// Transform route data
@@ -96,7 +96,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	// Validate old route data Vrf
-	if err := plugin.validateVrfIdFromKey(oldConfig, vrfFromKey); err != nil {
+	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
 		return err
 	}
 	// Transform old route data
@@ -118,7 +118,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	}
 
 	// Validate new route data Vrf
-	if err := plugin.validateVrfIdFromKey(newConfig, vrfFromKey); err != nil {
+	if err := plugin.validateVrfFromKey(newConfig, vrfFromKey); err != nil {
 		return err
 	}
 	// Transform new route data
@@ -143,7 +143,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Validate VRF index from key and it's value in data
-	if err := plugin.validateVrfIdFromKey(config, vrfFromKey); err != nil {
+	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
 	// Transform route data
@@ -171,7 +171,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	return nil
 }
 
-func (plugin *RouteConfigurator) validateVrfIdFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
+func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(config.VrfId) {
 		if err != nil {
@@ -206,6 +206,6 @@ func (plugin *RouteConfigurator) Close() error {
 }
 
 // Creates unique identifier which serves as a name in name to index mapping
-func routeIdentifier(vrfId uint32, destination string, nextHop string) string {
-	return fmt.Sprintf("vrf%v-%v-%v", vrfId, destination, nextHop)
+func routeIdentifier(vrf uint32, destination string, nextHop string) string {
+	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
 }
