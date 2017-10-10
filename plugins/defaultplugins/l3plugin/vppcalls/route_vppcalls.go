@@ -21,7 +21,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	"net"
 	"github.com/ligato/cn-infra/logging/timer"
 	"time"
 )
@@ -116,11 +115,11 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwa
 }
 
 // VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
-	return vppAddDelRoute(route, vppChan, false)
+func VppAddRoute(route *Route, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	return vppAddDelRoute(route, vppChan, false, stopwatch)
 }
 
 // VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppDelRoute(route *Route, vppChan *govppapi.Channel) error {
-	return vppAddDelRoute(route, vppChan, true)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel, stopwatch *timer.Stopwatch) error {
+	return vppAddDelRoute(route, vppChan, true, stopwatch)
 }

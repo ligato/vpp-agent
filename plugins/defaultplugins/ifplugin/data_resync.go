@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
-	"time"
 )
 
 // Resync writes interfaces to the empty VPP
@@ -33,12 +32,9 @@ import (
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
-	// Start time measuring
-	start := time.Now()
 	// Calculate and log interface resync
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.Overall = time.Since(start)
 			plugin.stopwatch.Print()
 		}
 	}()
@@ -138,12 +134,9 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
-	// Start time measuring
-	start := time.Now()
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.Overall = time.Since(start)
 			plugin.stopwatch.Print()
 		}
 	}()
@@ -172,12 +165,9 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
-	// Start time measuring
-	start := time.Now()
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.Overall = time.Since(start)
 			plugin.stopwatch.Print()
 		}
 	}()

@@ -16,18 +16,14 @@ package l3plugin
 
 import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"time"
 )
 
 // Resync confgures the empty VPP (overwrites the static route)
 func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
-	// Start time measuring
-	start := time.Now()
 	// Calculate and log route resync
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.Overall = time.Since(start)
 			plugin.stopwatch.Print()
 		}
 	}()

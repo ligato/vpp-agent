@@ -159,7 +159,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	}
 	plugin.Log.Debugf("deleting route: %+v", route)
 	// Remove and unregister route
-	err = vppcalls.VppAddDelRoute(route, plugin.vppChan, plugin.stopwatch)
+	err = vppcalls.VppDelRoute(route, plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return err
 	}

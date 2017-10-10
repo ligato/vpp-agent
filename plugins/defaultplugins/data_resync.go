@@ -89,7 +89,7 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 	plugin.routeConfigurator.Resync(req.StaticRoutes)
 
 	vppResync := time.Since(startTime)
-	plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Info("resync the VPP Configuration end")
+	plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
 
 	return nil
 }

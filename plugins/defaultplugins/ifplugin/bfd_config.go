@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bfdApi "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
+	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
@@ -342,11 +342,11 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 // LookupBfdSessions looks up all BFD sessions and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdSessions() error {
 	start := time.Now()
-	req := &bfdApi.BfdUDPSessionDump{}
+	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
 	for {
-		msg := &bfdApi.BfdUDPSessionDetails{}
+		msg := &bfd_api.BfdUDPSessionDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -370,7 +370,7 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 
 	// BfdUDPSessionDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTimeEntry(bfdApi.BfdUDPSessionDump{}, time.Since(start))
+		plugin.stopwatch.LogTimeEntry(bfd_api.BfdUDPSessionDump{}, time.Since(start))
 	}
 
 	return nil
@@ -379,11 +379,11 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 // LookupBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdKeys() error {
 	start := time.Now()
-	req := &bfdApi.BfdAuthKeysDump{}
+	req := &bfd_api.BfdAuthKeysDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
 	for {
-		msg := &bfdApi.BfdAuthKeysDetails{}
+		msg := &bfd_api.BfdAuthKeysDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -404,7 +404,7 @@ func (plugin *BFDConfigurator) LookupBfdKeys() error {
 
 	// BfdAuthKeysDump time
 	if plugin.stopwatch != nil {
-		plugin.stopwatch.LogTimeEntry(bfdApi.BfdAuthKeysDump{}, time.Since(start))
+		plugin.stopwatch.LogTimeEntry(bfd_api.BfdAuthKeysDump{}, time.Since(start))
 	}
 
 	return nil

@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/logging/timer"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bfdApi "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
+	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"net"
@@ -35,7 +35,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPAdd{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPAdd{}, time.Since(start))
 		}
 	}()
 
@@ -46,7 +46,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	}
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPAdd{}
+	req := &bfd_api.BfdUDPAdd{}
 
 	// Base fields
 	req.SwIfIndex = ifIdx
@@ -91,7 +91,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 		req.IsAuthenticated = 0
 	}
 
-	reply := &bfdApi.BfdUDPAddReply{}
+	reply := &bfd_api.BfdUDPAddReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -105,18 +105,18 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 }
 
 // AddBfdUDPSessionFromDetails adds new BFD session with authentication if available
-func AddBfdUDPSessionFromDetails(bfdSession *bfdApi.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
+func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
 	vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPAdd{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPAdd{}, time.Since(start))
 		}
 	}()
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPAdd{}
+	req := &bfd_api.BfdUDPAdd{}
 
 	// Base fields
 	req.SwIfIndex = bfdSession.SwIfIndex
@@ -143,7 +143,7 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfdApi.BfdUDPSessionDetails, bfdKey
 		req.IsAuthenticated = 0
 	}
 
-	reply := &bfdApi.BfdUDPAddReply{}
+	reply := &bfd_api.BfdUDPAddReply{}
 	err := vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPMod{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPMod{}, time.Since(start))
 		}
 	}()
 
@@ -173,7 +173,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	}
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPMod{}
+	req := &bfd_api.BfdUDPMod{}
 
 	// Base fields
 	req.SwIfIndex = ifIdx
@@ -202,7 +202,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 			bfdSession.SourceAddress, bfdSession.DestinationAddress)
 	}
 
-	reply := &bfdApi.BfdUDPModReply{}
+	reply := &bfd_api.BfdUDPModReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -220,18 +220,18 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPDel{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPDel{}, time.Since(start))
 		}
 	}()
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPDel{}
+	req := &bfd_api.BfdUDPDel{}
 	req.SwIfIndex = ifIndex
 	req.LocalAddr = net.ParseIP(sourceAddres).To4()
 	req.PeerAddr = net.ParseIP(destAddres).To4()
 	req.IsIpv6 = 0
 
-	reply := &bfdApi.BfdUDPDelReply{}
+	reply := &bfd_api.BfdUDPDelReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -246,21 +246,21 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 
 // DumpBfdUDPSessionsWithID returns a list of BFD session's metadata
 func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfIndex, bfdSessionIndexes idxvpp.NameToIdx,
-	vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) ([]*bfdApi.BfdUDPSessionDetails, error) {
+	vppChannel *govppapi.Channel, stopwatch *timer.Stopwatch) ([]*bfd_api.BfdUDPSessionDetails, error) {
 	// BfdUDPSessionDump time measurement
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPSessionDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPSessionDump{}, time.Since(start))
 		}
 	}()
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPSessionDump{}
+	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := vppChannel.SendMultiRequest(req)
-	var sessionIfacesWithID []*bfdApi.BfdUDPSessionDetails
+	var sessionIfacesWithID []*bfd_api.BfdUDPSessionDetails
 	for {
-		msg := &bfdApi.BfdUDPSessionDetails{}
+		msg := &bfd_api.BfdUDPSessionDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -296,7 +296,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdAuthSetKey{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdAuthSetKey{}, time.Since(start))
 		}
 	}()
 
@@ -312,13 +312,13 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	}
 
 	// Prepare the message
-	req := &bfdApi.BfdAuthSetKey{}
+	req := &bfd_api.BfdAuthSetKey{}
 	req.ConfKeyID = bfdKey.Id
 	req.AuthType = authentication
 	req.Key = []byte(bfdKey.Secret)
 	req.KeyLen = uint8(len(bfdKey.Secret))
 
-	reply := &bfdApi.BfdAuthSetKeyReply{}
+	reply := &bfd_api.BfdAuthSetKeyReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -337,15 +337,15 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdAuthDelKey{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdAuthDelKey{}, time.Since(start))
 		}
 	}()
 
 	// Prepare the message
-	req := &bfdApi.BfdAuthDelKey{}
+	req := &bfd_api.BfdAuthDelKey{}
 	req.ConfKeyID = bfdKey.Id
 
-	reply := &bfdApi.BfdAuthDelKeyReply{}
+	reply := &bfd_api.BfdAuthDelKeyReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -364,7 +364,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPSetEchoSource{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPSetEchoSource{}, time.Since(start))
 		}
 	}()
 
@@ -375,10 +375,10 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	}
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPSetEchoSource{}
+	req := &bfd_api.BfdUDPSetEchoSource{}
 	req.SwIfIndex = ifIdx
 
-	reply := &bfdApi.BfdUDPSetEchoSourceReply{}
+	reply := &bfd_api.BfdUDPSetEchoSourceReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -396,14 +396,14 @@ func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, stopwatch *timer.Stopwa
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfdApi.BfdUDPDelEchoSource{}, time.Since(start))
+			stopwatch.LogTimeEntry(bfd_api.BfdUDPDelEchoSource{}, time.Since(start))
 		}
 	}()
 
 	// Prepare the message
-	req := &bfdApi.BfdUDPDelEchoSource{}
+	req := &bfd_api.BfdUDPDelEchoSource{}
 
-	reply := &bfdApi.BfdUDPDelEchoSourceReply{}
+	reply := &bfd_api.BfdUDPDelEchoSourceReply{}
 	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err

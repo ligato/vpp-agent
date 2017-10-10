@@ -156,7 +156,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 	start := time.Now()
 	defer func() {
 		if plugin.stopwatch != nil {
-			plugin.stopwatch.Overall = time.Since(start)
+			plugin.stopwatch.LogTimeEntry("linux-interface resync",time.Since(start))
 			plugin.stopwatch.Print()
 		}
 	}()

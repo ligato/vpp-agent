@@ -24,8 +24,6 @@ import (
 
 // Stopwatch keeps all time measurement results
 type Stopwatch struct {
-	// start time can be set as the beginning of the measurement to calculate overall time
-	Overall time.Duration
 	// name of the entity/plugin
 	name string
 	// logger used while printing
@@ -39,8 +37,6 @@ type Stopwatch struct {
 // NewStopwatch creates a new stopwatch object with empty time map
 func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	return &Stopwatch{
-		// Default value
-		Overall:  -1,
 		name: name,
 		logger: log,
 		timeTable: make(map[string]time.Duration),
@@ -48,6 +44,8 @@ func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 }
 
 // LogTimeEntry stores name of the binapi call and measured duration
+// <n>
+// <d>
 func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 	st.mx.Lock()
 	defer st.mx.Unlock()
@@ -81,14 +79,14 @@ func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 // Print logs all entries from the map (partial times) + overall time if set
 func (st *Stopwatch) Print() {
 	if len(st.timeTable) == 0 {
-		st.logger.WithField("plugin", st.name).Infof("Stopwatch: no entries")
+		st.logger.WithField("conf", st.name).Infof("stopwatch has no entries")
 	}
+	var overall time.Duration
 	for k, v := range st.timeTable {
-		st.logger.WithField("plugin", st.name).Infof("Calling %v took %v", k, v)
+		overall += v
+		st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": v.Nanoseconds()}).Infof("calling %v took %v", k, v)
 	}
-	if st.Overall != -1 {
-		st.logger.WithField("plugin", st.name).Infof("Resync took %v", st.Overall)
-	}
+	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": overall.Nanoseconds()}).Infof("partial resync time is %v", overall)
 	// clear map after use
 	st.timeTable = make(map[string]time.Duration)
 }
