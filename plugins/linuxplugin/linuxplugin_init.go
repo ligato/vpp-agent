@@ -82,7 +82,7 @@ func (plugin *Plugin) Init() error {
 		"linux_if_indexes", nil))
 
 	// Linux interface configurator
-	linuxLogger := plugin.Log.NewLogger("-iface-cfg")
+	linuxLogger := plugin.Log.NewLogger("-if-conf")
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{Log: linuxLogger}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
