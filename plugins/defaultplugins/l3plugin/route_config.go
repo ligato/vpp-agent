@@ -19,6 +19,7 @@
 package l3plugin
 
 import (
+	"fmt"
 	"strconv"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -67,27 +68,22 @@ func (plugin *RouteConfigurator) Init() (err error) {
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.Log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Validate VRF index from key and it's value in data
-	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
-	if intVrfFromKey != int(config.VrfId) {
-		plugin.Log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
-			intVrfFromKey, config.VrfId)
-		if err != nil {
-			return err
-		}
-		config.VrfId = uint32(intVrfFromKey)
+	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
+		return err
 	}
 	// Transform route data
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
+	plugin.Log.Debugf("adding route: %+v", route)
 	// Create and register new route
 	if route != nil {
-		err := vppcalls.VppAddDelRoute(route, plugin.vppChan, false)
+		err := vppcalls.VppAddRoute(route, plugin.vppChan)
 		if err != nil {
 			return err
 		}
-		routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
+		routeIdentifier := routeIdentifier(route.VrfID, route.DstAddr.String(), route.NextHopAddr.String())
 		plugin.RouteIndexes.RegisterName(routeIdentifier, plugin.RouteIndexSeq, nil)
 		plugin.RouteIndexSeq++
 		plugin.Log.Infof("Route %v registered", routeIdentifier)
@@ -98,20 +94,9 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 // ModifyRoute process the NB config and propagates it to bin api calls
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Modifying route %v -> %v ", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-	// Validate new route data Vrf
-	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
-	if intVrfFromKey != int(newConfig.VrfId) {
-		// To update VRF in static route, the route has to be removed and a new one with appropriate key should be created
-		plugin.Log.Warnf("VRF index was changed to (%v) while the VRF in the key is (%v), using value from the key",
-			newConfig.VrfId, intVrfFromKey)
-		if err != nil {
-			return err
-		}
-		newConfig.VrfId = uint32(intVrfFromKey)
-	}
-	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
+	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	// Validate old route data Vrf
+	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
 		return err
 	}
 	// Transform old route data
@@ -120,20 +105,33 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 	// Remove and unregister old route
-	err = vppcalls.VppAddDelRoute(oldRoute, plugin.vppChan, false)
+	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan)
 	if err != nil {
 		return err
 	}
-	oldRouteIdentifier := routeIdentifier(oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
-	plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
-	plugin.Log.Infof("Old route %v unregistered", oldRouteIdentifier)
+	oldRouteIdentifier := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
+	_, _, found := plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
+	if found {
+		plugin.Log.Infof("Old route %v unregistered", oldRouteIdentifier)
+	} else {
+		plugin.Log.Warnf("Unregister failed, old route %v not found", oldRouteIdentifier)
+	}
 
-	// Create and register new route
-	err = vppcalls.VppAddDelRoute(newRoute, plugin.vppChan, true)
+	// Validate new route data Vrf
+	if err := plugin.validateVrfFromKey(newConfig, vrfFromKey); err != nil {
+		return err
+	}
+	// Transform new route data
+	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
-	newRouteIdentifier := routeIdentifier(newRoute.DstAddr.String(), newRoute.NextHopAddr.String())
+	// Create and register new route
+	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan)
+	if err != nil {
+		return err
+	}
+	newRouteIdentifier := routeIdentifier(newRoute.VrfID, newRoute.DstAddr.String(), newRoute.NextHopAddr.String())
 	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
 	plugin.RouteIndexSeq++
 	plugin.Log.Infof("New route %v registered", newRouteIdentifier)
@@ -142,8 +140,12 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 }
 
 // DeleteRoute process the NB config and propagates it to bin api calls
-func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (wasError error) {
+func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+	// Validate VRF index from key and it's value in data
+	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
+		return err
+	}
 	// Transform route data
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
@@ -152,15 +154,33 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route) (was
 	if route == nil {
 		return nil
 	}
+	plugin.Log.Debugf("deleting route: %+v", route)
 	// Remove and unregister route
-	err = vppcalls.VppAddDelRoute(route, plugin.vppChan, true)
+	err = vppcalls.VppDelRoute(route, plugin.vppChan)
 	if err != nil {
 		return err
 	}
-	routeIdentifier := routeIdentifier(route.DstAddr.String(), route.NextHopAddr.String())
-	plugin.RouteIndexes.UnregisterName(routeIdentifier)
-	plugin.Log.Infof("Route %v unregistered", routeIdentifier)
+	routeIdentifier := routeIdentifier(route.VrfID, route.DstAddr.String(), route.NextHopAddr.String())
+	_, _, found := plugin.RouteIndexes.UnregisterName(routeIdentifier)
+	if found {
+		plugin.Log.Infof("Route %v unregistered", routeIdentifier)
+	} else {
+		plugin.Log.Warnf("Unregister failed, route %v not found", routeIdentifier)
+	}
 
+	return nil
+}
+
+func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
+	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
+	if intVrfFromKey != int(config.VrfId) {
+		if err != nil {
+			return err
+		}
+		plugin.Log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
+			intVrfFromKey, config.VrfId)
+		config.VrfId = uint32(intVrfFromKey)
+	}
 	return nil
 }
 
@@ -186,6 +206,6 @@ func (plugin *RouteConfigurator) Close() error {
 }
 
 // Creates unique identifier which serves as a name in name to index mapping
-func routeIdentifier(destination string, nextHop string) string {
-	return destination + "-" + nextHop
+func routeIdentifier(vrf uint32, destination string, nextHop string) string {
+	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
 }
