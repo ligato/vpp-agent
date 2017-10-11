@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"time"

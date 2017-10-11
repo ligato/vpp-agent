@@ -84,7 +84,7 @@ func (st *Stopwatch) Print() {
 	var overall time.Duration
 	for k, v := range st.timeTable {
 		overall += v
-		st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": v.Nanoseconds()}).Infof("calling %v took %v", k, v)
+		st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": v.Nanoseconds()}).Infof("%v call took %v", k, v)
 	}
 	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": overall.Nanoseconds()}).Infof("partial resync time is %v", overall)
 	// clear map after use

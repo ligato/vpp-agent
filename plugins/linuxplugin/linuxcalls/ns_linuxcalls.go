@@ -30,8 +30,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )

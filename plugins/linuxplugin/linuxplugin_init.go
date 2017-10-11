@@ -55,8 +55,8 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps				// injected
-	Watcher datasync.KeyValProtoWatcher // injected
+	local.PluginInfraDeps                             // injected
+	Watcher               datasync.KeyValProtoWatcher // injected
 }
 
 // LinuxConfig holds the linuxplugin configuration
@@ -81,9 +81,9 @@ func (plugin *Plugin) Init() error {
 	}
 	if config != nil {
 		plugin.enableStopwatch = config.Stopwatch
-		plugin.Log.Infof("Stopwatch enabled: %v for %v", plugin.enableStopwatch, plugin.PluginName)
+		plugin.Log.Infof("stopwatch enabled: %v for %v", plugin.enableStopwatch, plugin.PluginName)
 	} else {
-		plugin.Log.Infof("Stopwatch disabled for %v", plugin.PluginName)
+		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
