@@ -267,10 +267,9 @@ func (plugin *Plugin) Init() error {
 func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	if strategy == defaultResync || strategy == interfaceBased || strategy == skipResync {
 		return strategy
-	} else {
-		plugin.Log.Infof("Resync strategy %v is not known, setting up the default", strategy)
-		return defaultResync
 	}
+	plugin.Log.Infof("Resync strategy %v is not known, setting up the default", strategy)
+	return defaultResync
 }
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies

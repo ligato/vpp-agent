@@ -57,9 +57,8 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 			stop = true
 			plugin.Log.Infof("... resync interrupted assuming there is no configuration on the VPP")
 			return stop, err
-		} else {
-			plugin.Log.Infof("... VPP configuration found, continue with resync")
 		}
+		plugin.Log.Infof("... VPP configuration found, continue with resync")
 	}
 
 	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
