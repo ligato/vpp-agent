@@ -30,8 +30,10 @@ import (
 // - resyncs the VPP
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
-func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
+func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface, ifaceBasedStr bool) (bool, error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	// Used to notify that the resync should be stopped
+	var stop bool
 	// Calculate and log interface resync
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -41,14 +43,28 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	// Step 0: Dump actual state of the VPP
 	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
-	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
-		return err
+		return stop, err
+	}
+
+	// Step 1: Resolve resync strategy. If the strategy is interface-based, dump all interfaces on the VPP and look
+	// for the configured ones (leave out the local0). If there are any other interfaces, continue with resync. If not,
+	// stop and return a flag which cancels the VPP resync operation.
+	// In case there is different strategy chosen, continue normally
+	if ifaceBasedStr {
+		plugin.Log.Info("interface-based resync strategy chosen, resolving ...")
+		if len(vppIfaces) <= 1 {
+			stop = true
+			plugin.Log.Infof("... resync interrupted assuming there is no configuration on the VPP")
+			return stop, err
+		} else {
+			plugin.Log.Infof("... VPP configuration found, continue with resync")
+		}
 	}
 
 	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
 
-	// Step 1: Correlate vppIfaces with northbound interfaces
+	// Step 2: Correlate vppIfaces with northbound interfaces
 	// it means to find out names for vpp swIndexes
 	// (temporary: correlate using persisted sw_if_indexes)
 
@@ -62,7 +78,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 		err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), tmpCorr)
 		if err != nil {
-			return err
+			return stop, err
 		}
 		plugin.resyncDoneOnce = true
 
@@ -76,7 +92,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 	}
 	var wasError error
 
-	// Step 2: delete obsolete vpp configuration
+	// Step 3: delete obsolete vpp configuration
 	for vppSwIfIdx, vppIface := range vppIfaces {
 		_, _, found := corr.LookupName(vppSwIfIdx)
 
@@ -100,7 +116,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	toBeConfigured := []*intf.Interfaces_Interface{}
 
-	// Step 3: modify existing vpp configuration
+	// Step 4: modify existing vpp configuration
 	for _, nbIface := range nbIfaces {
 		swIfIdx, _, found := corr.LookupIdx(nbIface.Name)
 		vppIface, foundDump := vppIfaces[swIfIdx]
@@ -118,7 +134,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		}
 	}
 
-	// Step 4: create missing vpp configuration
+	// Step 5: create missing vpp configuration
 	for _, nbIface := range toBeConfigured {
 		err := plugin.ConfigureVPPInterface(nbIface)
 		if err != nil {
@@ -128,7 +144,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
-	return wasError
+	return stop, wasError
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
