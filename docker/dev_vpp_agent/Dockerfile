@@ -59,6 +59,7 @@ COPY etcd.conf .
 COPY kafka.conf .
 COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
+COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
 
