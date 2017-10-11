@@ -164,7 +164,11 @@ func (plugin *Plugin) Init() error {
 		plugin.ifMtu = config.Mtu
 		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
 		plugin.enableStopwatch = config.Stopwatch
-		plugin.Log.Infof("stopwatch enabled: %v for %v", plugin.enableStopwatch, plugin.PluginName)
+		if plugin.enableStopwatch {
+			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
+		} else {
+			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		}
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
