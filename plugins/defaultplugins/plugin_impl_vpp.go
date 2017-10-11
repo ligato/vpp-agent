@@ -130,7 +130,7 @@ type linuxpluginAPI interface {
 	GetLinuxIfIndexes() ifaceidx2.LinuxIfIndex
 }
 
-// DPConfig holds the value of maximum transmission unit in bytes.
+// DPConfig holds the defaultpluigns configuration
 type DPConfig struct {
 	Mtu       uint32 `json:"mtu"`
 	Stopwatch bool   `json:"stopwatch"`
@@ -164,11 +164,11 @@ func (plugin *Plugin) Init() error {
 		plugin.ifMtu = config.Mtu
 		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
 		plugin.enableStopwatch = config.Stopwatch
-		plugin.Log.Infof("stopwatch enabled: %v", config.Stopwatch)
+		plugin.Log.Infof("stopwatch enabled: %v for %v", plugin.enableStopwatch, plugin.PluginName)
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
-		plugin.Log.Info("stopwatch disabled")
+		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
