@@ -76,22 +76,55 @@ func NewDataResyncReq() *DataResyncReq {
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
 func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
+	var err error
+	// If the strategy is to skip the resync, do so
+	if plugin.resyncStrategy == skipResync {
+		plugin.Log.Info("skip resync strategy chosen, resync is omitted")
+		return err
+	}
 	plugin.Log.Info("resync the VPP Configuration begin")
 	startTime := time.Now()
-	plugin.ifConfigurator.Resync(req.Interfaces)
-	plugin.aclConfigurator.Resync(req.ACLs, plugin.Log)
-	plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey)
-	plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession)
-	plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho)
-	plugin.bdConfigurator.Resync(req.BridgeDomains)
-	plugin.fibConfigurator.Resync(req.FibTableEntries)
-	plugin.xcConfigurator.Resync(req.XConnects)
-	plugin.routeConfigurator.Resync(req.StaticRoutes)
+	defer func() {
+		vppResync := time.Since(startTime)
+		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Info("resync the VPP Configuration end in %v", vppResync)
+	}()
 
-	vppResync := time.Since(startTime)
-	plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
-
-	return nil
+	// If the strategy is interface-based, run interface configurator resync which provides the information
+	// whether resync should continue or be terminated
+	var stop bool
+	if plugin.resyncStrategy == interfaceBased {
+		stop, err = plugin.ifConfigurator.Resync(req.Interfaces, true)
+	}
+	// Terminate the resync process
+	if stop {
+		return err
+	}
+	// Continue with resync
+	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+		return err
+	}
+	if err = plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+		return err
+	}
+	if err = plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+		return err
+	}
+	if err = plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+		return err
+	}
+	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+		return err
+	}
+	return err
 }
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
