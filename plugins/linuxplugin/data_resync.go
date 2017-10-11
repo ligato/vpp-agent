@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 )
 
@@ -38,24 +38,24 @@ func NewDataResyncReq() *DataResyncReq {
 
 // DataResync delegates resync request only to interface configurator for now.
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
-	log.DefaultLogger().Info("resync the Linux Configuration")
+	plugin.Log.Info("resync the Linux Configuration")
 
 	plugin.ifConfigurator.Resync(req.Interfaces)
 
 	return nil
 }
 
-func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
+func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		log.DefaultLogger().Debug("Received RESYNC key ", key)
+		log.Debug("Received RESYNC key ", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 			numInterfaces := resyncAppendInterface(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC interface values ", numInterfaces)
+			log.Debug("Received RESYNC interface values ", numInterfaces)
 		} else {
-			log.DefaultLogger().Warn("ignoring ", resyncEv)
+			log.Warn("ignoring ", resyncEv)
 		}
 	}
 	return req
@@ -79,7 +79,7 @@ func resyncAppendInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 }
 
 func (plugin *Plugin) subscribeWatcher() (err error) {
-	log.DefaultLogger().Debug("subscribeWatcher begin")
+	plugin.Log.Debug("subscribeWatcher begin")
 
 	plugin.watchDataReg, err = plugin.Watcher.
 		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan, interfaces.InterfaceKeyPrefix())
@@ -87,7 +87,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	log.DefaultLogger().Debug("data watcher watch finished")
+	plugin.Log.Debug("data watcher watch finished")
 
 	return nil
 }
@@ -95,7 +95,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) error {
 	var err error
 	key := dataChng.GetKey()
-	log.DefaultLogger().Debug("Start processing change for key: ", key)
+	plugin.Log.Debug("Start processing change for key: ", key)
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
@@ -109,7 +109,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 			err = plugin.dataChangeIface(diff, &value, &prevValue, dataChng.GetChangeType())
 		}
 	} else {
-		log.DefaultLogger().Warn("ignoring change ", dataChng) //NOT ERROR!
+		plugin.Log.Warn("ignoring change ", dataChng) //NOT ERROR!
 	}
 	return err
 }
