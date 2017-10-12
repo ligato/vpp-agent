@@ -36,12 +36,12 @@ COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
-# add supervisor conf file
-COPY supervisord.conf /etc/supervisord/supervisord.conf
 
-# and default plugin conf
+# and default plugins conf
 COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
 
+# and linux plugin conf
+COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
 
 WORKDIR /root/
 
