@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"time"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -26,7 +28,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"time"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -49,6 +50,8 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// VrfTables is a list of all VRF tables
+	VrfTables []*l3.VrfTable
 }
 
 // NewDataResyncReq is a constructor
@@ -71,7 +74,9 @@ func NewDataResyncReq() *DataResyncReq {
 		// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
 		XConnects: []*l2.XConnectPairs_XConnectPair{},
 		// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-		StaticRoutes: []*l3.StaticRoutes_Route{}}
+		StaticRoutes: []*l3.StaticRoutes_Route{},
+		// VrfTables is a list of all VRF tables
+		VrfTables: []*l3.VrfTable{}}
 }
 
 // delegates full resync request
@@ -180,8 +185,7 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 
 func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
 	route := &l3.StaticRoutes_Route{}
-	err := fibData.GetValue(route)
-	if err != nil {
+	if err := fibData.GetValue(route); err != nil {
 		return err
 	}
 	// Ensure every route has the corresponding VRF index
@@ -207,8 +211,12 @@ func resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 			break
 		} else {
 			key := vrfData.GetKey()
-			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
-			if fib {
+			isRoute, vrfIndex, _, _, _, err := l3.ParseVrfKey(key)
+			if err != nil {
+				log.Warn("parsing VRF key failed:", err)
+				continue
+			}
+			if isRoute {
 				err := resyncAppendL3FIB(vrfData, vrfIndex, req, log)
 				if err == nil {
 					numL3FIBs++
@@ -502,9 +510,11 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
-		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
+		isRoute, vrfFromKey, _, _, _, err := l3.ParseVrfKey(key)
+		if err != nil {
+			return false, err
+		}
 		if isRoute {
-			// Route
 			var value, prevValue l3.StaticRoutes_Route
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
@@ -517,9 +527,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return false, err
 			}
 		} else {
-			// Vrf
-			// TODO vrf not implemented yet
-			plugin.Log.Warn("VRFs are not supported yet")
+			var value, prevValue l3.VrfTable
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			diff, err := dataChng.GetPrevValue(&prevValue)
+			if err != nil {
+				return false, err
+			}
+
+			if err := plugin.dataChangeVrfTable(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
 		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!

@@ -56,3 +56,8 @@ message STNTable {
     }
     repeated STNTableEntry stn_table_entries = 100;  /* list of STN entries */
 }
+
+message VrfTable {
+    uint32 vrf_id = 1;
+    string name = 2;
+}

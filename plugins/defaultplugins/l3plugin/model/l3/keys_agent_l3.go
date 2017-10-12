@@ -15,6 +15,7 @@
 package l3
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -24,6 +25,8 @@ import (
 const (
 	// VrfPrefix is the relative key prefix for VRFs.
 	VrfPrefix = "vpp/config/v1/vrf/"
+	// TablePrefix is the relative key prefix for tables
+	TablePrefix = VrfPrefix + "{vrf}"
 	// RoutesPrefix is the relative key prefix for routes.
 	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
 	// ARPPrefix is the relative key prefix for ARP table entries.
@@ -48,6 +51,13 @@ func RouteKeyPrefix() string {
 	return RoutesPrefix
 }
 
+// TableKey returns the key used in ETCD to store vpp table for vpp instance
+func TableKey(vrf uint32) string {
+	key := TablePrefix
+	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
+	return key
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
@@ -60,16 +70,35 @@ func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	return key
 }
 
-// ParseRouteKey parses VRF label and route address from a route key.
-func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string) {
-	if strings.HasPrefix(key, VrfKeyPrefix()) {
-		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())
-		routeComps := strings.Split(vrfSuffix, "/")
-		if len(routeComps) >= 5 && routeComps[1] == "fib" {
-			if mask, err := strconv.Atoi(routeComps[3]); err == nil {
-				return true, routeComps[0], routeComps[2], mask, routeComps[4]
-			}
-		}
+// ParseVrfKey parses VRF index and route address from given key
+func ParseVrfKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string, err error) {
+	if !strings.HasPrefix(key, VrfPrefix) {
+		err = fmt.Errorf("wrong prefix in key: %q", key)
+		return
 	}
-	return false, "", "", 0, ""
+
+	keySuffix := strings.TrimPrefix(key, VrfPrefix)
+	routeComps := strings.Split(keySuffix, "/")
+
+	vrfIndex = routeComps[0]
+	if vrfIndex == "" {
+		err = fmt.Errorf("invalid VRF index in key: %q", key)
+		return
+	}
+
+	if len(routeComps) == 1 {
+		isRouteKey = false
+		return
+	} else if len(routeComps) == 5 && routeComps[1] == "fib" {
+		isRouteKey = true
+		dstNetAddr = routeComps[2]
+		nextHopAddr = routeComps[4]
+		if dstNetMask, err = strconv.Atoi(routeComps[3]); err != nil {
+			return
+		}
+	} else {
+		err = fmt.Errorf("invalid format in key: %q", key)
+		return
+	}
+	return isRouteKey, vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, nil
 }

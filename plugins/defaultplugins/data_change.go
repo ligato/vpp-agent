@@ -15,6 +15,8 @@
 package defaultplugins
 
 import (
+	"fmt"
+
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -127,6 +129,19 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 	}
 	return plugin.xcConfigurator.ConfigureXConnectPair(value)
 
+}
+
+// dataChangeVrfTable propagates data change to the vrfConfigurator
+func (plugin *Plugin) dataChangeVrfTable(diff bool, value *l3.VrfTable, prevValue *l3.VrfTable,
+	vrfFromKey string, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeVrfTable ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return fmt.Errorf("DELETE VRF TABLE NOT IMPLEMENTED")
+	} else if diff {
+		return fmt.Errorf("MODIFY VRF TABLE NOT IMPLEMENTED")
+	}
+	return plugin.vrfConfigurator.AddTable(value, vrfFromKey)
 }
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator

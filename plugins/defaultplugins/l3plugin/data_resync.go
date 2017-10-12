@@ -40,3 +40,18 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
 	return wasError
 }
+
+func (plugin *VrfConfigurator) Resync(vrfTables []*l3.VrfTable) error {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC tables begin. ")
+	// TODO lookup vpp Route Configs
+
+	var wasError error
+	if len(vrfTables) > 0 {
+		for _, table := range vrfTables {
+			// VRF ID is already validated at this point
+			wasError = plugin.AddTable(table, string(table.VrfId))
+		}
+	}
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC tables end. ", wasError)
+	return wasError
+}

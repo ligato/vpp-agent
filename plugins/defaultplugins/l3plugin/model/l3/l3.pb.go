@@ -14,6 +14,7 @@ It has these top-level messages:
 	ProxyArpRanges
 	ProxyArpInterfaces
 	STNTable
+	VrfTable
 */
 package l3
 
@@ -152,3 +153,12 @@ type STNTable_STNTableEntry struct {
 func (m *STNTable_STNTableEntry) Reset()         { *m = STNTable_STNTableEntry{} }
 func (m *STNTable_STNTableEntry) String() string { return proto.CompactTextString(m) }
 func (*STNTable_STNTableEntry) ProtoMessage()    {}
+
+type VrfTable struct {
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
+	Name  string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (m *VrfTable) Reset()         { *m = VrfTable{} }
+func (m *VrfTable) String() string { return proto.CompactTextString(m) }
+func (*VrfTable) ProtoMessage()    {}

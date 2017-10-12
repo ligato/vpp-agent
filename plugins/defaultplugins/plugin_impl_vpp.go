@@ -95,12 +95,14 @@ type Plugin struct {
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
+	vrfConfigurator   *l3plugin.VrfConfigurator
 	bdIndexes         bdidx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
+	vrfIndexes        idxvpp.NameToIdxRW
 	bdIdxWatchCh      chan bdidx.ChangeDto
 
 	// Bidirectional forwarding detection fields
@@ -516,12 +518,12 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	l3Logger := plugin.Log.NewLogger("-l3-plugin")
-	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
-
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("RouteConfigurator", l3Logger)
 	}
+
+	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
 		Log:           l3Logger,
 		GoVppmux:      plugin.GoVppmux,
@@ -530,12 +532,23 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		SwIfIndexes:   plugin.swIfIndexes,
 		Stopwatch:     stopwatch,
 	}
-	err := plugin.routeConfigurator.Init()
-	if err != nil {
+	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("routeConfigurator Initialized")
+
+	plugin.vrfIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "vrf_indexes", nil)
+	plugin.vrfConfigurator = &l3plugin.VrfConfigurator{
+		Log:           l3Logger,
+		GoVppmux:      plugin.GoVppmux,
+		TableIndexes:  plugin.vrfIndexes,
+		TableIndexSeq: 1,
+		SwIfIndexes:   plugin.swIfIndexes,
+	}
+	if err := plugin.vrfConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("vrfConfigurator Initialized")
 
 	return nil
 }
@@ -586,7 +599,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.vrfConfigurator)
 
 	return err
 }
