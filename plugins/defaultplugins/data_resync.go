@@ -79,7 +79,7 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 	var err error
 	// If the strategy is to skip the resync, do so
 	if plugin.resyncStrategy == skipResync {
-		plugin.Log.Info("skip resync strategy chosen, resync is omitted")
+		plugin.Log.Info("skip VPP resync strategy chosen, VPP resync is omitted")
 		return err
 	}
 	plugin.Log.Info("resync the VPP Configuration begin")
@@ -91,15 +91,17 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 
 	// If the strategy is interface-based, run interface configurator resync which provides the information
 	// whether resync should continue or be terminated
-	var stop bool
 	if plugin.resyncStrategy == interfaceBased {
-		stop, err = plugin.ifConfigurator.Resync(req.Interfaces, true)
+		stop, err := plugin.ifConfigurator.Resync(req.Interfaces, true)
+		// Terminate the resync process if required
+		if stop {
+			return err
+		}
+	} else {
+		// otherwise continue normally
+		_, err = plugin.ifConfigurator.Resync(req.Interfaces, false)
 	}
-	// Terminate the resync process
-	if stop {
-		return err
-	}
-	// Continue with resync
+	// continue with resync of other plugins
 	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
 		return err
 	}

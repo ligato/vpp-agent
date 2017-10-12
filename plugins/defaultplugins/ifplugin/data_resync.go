@@ -28,11 +28,13 @@ import (
 // Resync writes interfaces to the empty VPP
 //
 // - resyncs the VPP
+// - resolves interface-based resync strategy if used and interrupt resync if needed
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
+// method returns boolean flag whether resync should continue (based on strategy resolution result)
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface, ifaceBasedStr bool) (bool, error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
-	// Used to notify that the resync should be stopped
+	// notify that the resync should be stopped
 	var stop bool
 	// Calculate and log interface resync
 	defer func() {
@@ -47,18 +49,27 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		return stop, err
 	}
 
-	// Step 1: Resolve resync strategy. If the strategy is interface-based, dump all interfaces on the VPP and look
+	// Step 1: Resolve resync strategy. If the strategy is interface-based, look over all dumped VPP interfaces and check
 	// for the configured ones (leave out the local0). If there are any other interfaces, continue with resync. If not,
 	// stop and return a flag which cancels the VPP resync operation.
 	// In case there is different strategy chosen, continue normally
 	if ifaceBasedStr {
-		plugin.Log.Info("interface-based resync strategy chosen, resolving ...")
-		if len(vppIfaces) <= 1 {
+		plugin.Log.Info("interface-based VPP resync strategy chosen, resolving...")
+		if len(vppIfaces) == 0 {
 			stop = true
-			plugin.Log.Infof("... resync interrupted assuming there is no configuration on the VPP")
+			plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
 			return stop, err
 		}
-		plugin.Log.Infof("... VPP configuration found, continue with resync")
+		// in interface exists, try to find local0 interface (index 0)
+		_, ok := vppIfaces[0]
+		// in case local0 is the only interface on the vpp, stop the resync
+		if len(vppIfaces) == 1 && ok {
+			stop = true
+			plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
+			return stop, err
+		}
+		// otherwise continue normally
+		plugin.Log.Infof("... VPP configuration found, continue with VPP resync")
 	}
 
 	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
