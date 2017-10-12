@@ -36,6 +36,13 @@ COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
+# add supervisor conf file
+COPY supervisord.conf /etc/supervisord/supervisord.conf
+
+# and default plugin conf
+COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
+
+
 WORKDIR /root/
 
 # run supervisor as the default executable
