@@ -19,13 +19,23 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"github.com/ligato/cn-infra/logging"
+	"time"
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
-func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel) error {
+func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// SwInterfaceAddDelAddress time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -58,12 +68,21 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 		return fmt.Errorf("adding IP address returned %d", reply.Retval)
 	}
 	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
+
 	return nil
 
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
-func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel) error {
+func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// SwInterfaceAddDelAddressReply time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddressReply{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
@@ -97,6 +116,6 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 		return fmt.Errorf("removing IP address returned %d", reply.Retval)
 	}
 	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address removed.")
-	return nil
 
+	return nil
 }

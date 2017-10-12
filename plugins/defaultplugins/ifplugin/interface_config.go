@@ -34,6 +34,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -42,6 +43,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"time"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -50,11 +52,13 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type InterfaceConfigurator struct {
-	Log			 logging.Logger
+	Log logging.Logger
 
 	GoVppmux     govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
 	Linux        interface{} //just flag if nil
+
+	Stopwatch *measure.Stopwatch // timer used to measure and store time
 
 	swIfIndexes ifaceidx.SwIfIndexRW
 	// MTU value is either read from config or set to default
@@ -62,7 +66,8 @@ type InterfaceConfigurator struct {
 
 	afPacketConfigurator *AFPacketConfigurator
 
-	vppCh     *govppapi.Channel
+	vppCh *govppapi.Channel
+
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
 
 	resyncDoneOnce bool
@@ -84,7 +89,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, Stopwatch: plugin.Stopwatch}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil
@@ -97,6 +102,7 @@ func (plugin *InterfaceConfigurator) Close() error {
 
 // LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
 func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
+	start := time.Now()
 	plugin.Log.Debug("Starting lookup of VPP interfaces")
 	req := &interfaces.SwInterfaceDump{}
 	reqCtx := plugin.vppCh.SendMultiRequest(req)
@@ -126,6 +132,11 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 		plugin.notifChan <- msg
 	}
 
+	// SwInterfaceSetFlags time
+	if plugin.Stopwatch != nil {
+		plugin.Stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+	}
+
 	return nil
 }
 
@@ -140,13 +151,13 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	switch iface.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh)
+		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh)
+		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, plugin.vppCh)
+		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh)
+		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name)
 		if !exists {
@@ -168,7 +179,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
-		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh)
+		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh, plugin.Stopwatch)
 		if err != nil {
 			wasError = err
 		}
@@ -180,7 +191,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		return err
 	}
 	for i := range newAddrs {
-		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh)
+		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh, plugin.Stopwatch)
 		if nil != err {
 			wasError = err
 		}
@@ -194,7 +205,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		} else {
 			mtu = plugin.mtu
 		}
-		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh)
+		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh, plugin.Stopwatch)
 		if err != nil {
 			wasError = err
 		}
@@ -207,7 +218,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// set interface up if enabled
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
 	if iface.Enabled {
-		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh)
+		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch)
 		if nil != err {
 			return err
 		}
@@ -250,8 +261,8 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 
 // ModifyVPPInterface applies changes in the NB configuration of a VPP interface into the running VPP
 // through the VPP binary API.
-func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfaces_Interface,
-	oldConfig *intf.Interfaces_Interface, ifIdx uint32, ifaceType intf.InterfaceType) (err error) {
+func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfaces_Interface, oldConfig *intf.Interfaces_Interface,
+	ifIdx uint32, ifaceType intf.InterfaceType) (err error) {
 
 	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("modifyVPPInterface begin")
@@ -291,9 +302,9 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	// admin status
 	if newConfig.Enabled != oldConfig.Enabled {
 		if newConfig.Enabled {
-			err = vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh)
+			err = vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, nil)
 		} else {
-			err = vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh)
+			err = vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, nil)
 		}
 		if nil != err {
 			wasError = err
@@ -302,7 +313,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	// configure new mac address if set (and only if it was changed)
 	if newConfig.PhysAddress != "" && newConfig.PhysAddress != oldConfig.PhysAddress {
-		err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.Log, plugin.vppCh)
+		err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.Log, plugin.vppCh, nil)
 		if err != nil {
 			wasError = err
 		}
@@ -325,7 +336,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	plugin.Log.Debug("add ip addrs: ", add)
 
 	for i := range del {
-		err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Log, plugin.vppCh)
+		err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Log, plugin.vppCh, nil)
 		plugin.Log.Debug("del ip addr ", ifIdx, " ", del[i], " ", err)
 		if nil != err {
 			wasError = err
@@ -333,7 +344,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	for i := range add {
-		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Log, plugin.vppCh)
+		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Log, plugin.vppCh, nil)
 		plugin.Log.Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
 		if nil != err {
 			wasError = err
@@ -342,12 +353,12 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	// mtu
 	if newConfig.Mtu == 0 {
-		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh)
+		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh, nil)
 		if err != nil {
 			wasError = err
 		}
 	} else if newConfig.Mtu != oldConfig.Mtu {
-		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh)
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh, nil)
 		if err != nil {
 			wasError = err
 		}
@@ -399,7 +410,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		Debug("deleteVPPInterface begin")
 
 	// let's try to do following even if previously error occurred
-	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh)
+	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.Stopwatch)
 	if nil != err {
 		wasError = err
 	}
@@ -413,7 +424,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	}
 	for i := range oldAddrs {
 		plugin.Log.WithField("addr", oldAddrs[i]).Info("Ip removed")
-		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh)
+		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh, plugin.Stopwatch)
 		if nil != err {
 			plugin.Log.Error(err)
 			wasError = err
@@ -425,13 +436,13 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		err = vppcalls.DeleteTapInterface(ifIdx, plugin.vppCh)
+		err = vppcalls.DeleteTapInterface(ifIdx, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh)
+		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh)
+		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh)
+		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		return errors.New("it is not yet supported to remove (blacklist) physical interface")
 	case intf.InterfaceType_AF_PACKET_INTERFACE:

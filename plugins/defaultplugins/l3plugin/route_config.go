@@ -24,6 +24,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -44,6 +45,7 @@ type RouteConfigurator struct {
 	RouteIndexSeq uint32
 	SwIfIndexes   ifaceidx.SwIfIndex
 	vppChan       *govppapi.Channel
+	Stopwatch     *measure.Stopwatch // timer used to measure and store time
 }
 
 // Init members (channels...) and start go routines
@@ -79,7 +81,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 	plugin.Log.Debugf("adding route: %+v", route)
 	// Create and register new route
 	if route != nil {
-		err := vppcalls.VppAddRoute(route, plugin.vppChan)
+		err := vppcalls.VppAddRoute(route, plugin.vppChan, plugin.Stopwatch)
 		if err != nil {
 			return err
 		}
@@ -105,7 +107,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 	// Remove and unregister old route
-	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan)
+	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -127,7 +129,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 	// Create and register new route
-	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan)
+	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -156,7 +158,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	}
 	plugin.Log.Debugf("deleting route: %+v", route)
 	// Remove and unregister route
-	err = vppcalls.VppDelRoute(route, plugin.vppChan)
+	err = vppcalls.VppDelRoute(route, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}

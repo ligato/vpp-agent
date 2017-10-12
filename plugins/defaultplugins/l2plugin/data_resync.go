@@ -28,9 +28,15 @@ import (
 // Resync writes BDs to the empty VPP
 func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
+	// Calculate and log bd resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan)
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -55,7 +61,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 
 		vppcalls.VppUnsetAllInterfacesFromBridgeDomain(&hackBD, vppIdx,
-			hackIfIndexes, plugin.Log, plugin.vppChan)
+			hackIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 		err := plugin.deleteBridgeDomain(&hackBD, vppIdx)
 		// TODO check if it is ok to delete the initial BD
 		if err != nil {
@@ -79,8 +85,14 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 // Resync writes FIBs to the empty VPP
 func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
+	// Calculate and log fib resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel)
+	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -104,6 +116,12 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 // Resync writes XCons to the empty VPP
 func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
+	// Calculate and log xConnect resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
 	err := plugin.LookupXConnectPairs()
 	if err != nil {

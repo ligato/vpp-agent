@@ -20,7 +20,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-
 // Resync deletes obsolete operation status of network interfaces in DB
 // Obsolete state is one that is not part of SwIfIndex
 func (plugin *Plugin) resyncIfStateEvents(keys []string) error {

@@ -20,6 +20,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -49,6 +50,7 @@ type FIBConfigurator struct {
 	syncVppChannel  *govppapi.Channel
 	asyncVppChannel *govppapi.Channel
 	vppcalls        *vppcalls.L2FibVppCalls
+	Stopwatch       *measure.Stopwatch // timer used to measure and store time
 }
 
 // FIBMeta metadata holder holds information about entry interface and bridge domain
@@ -81,7 +83,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 		return err
 	}
 
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel, plugin.Stopwatch)
 	go plugin.vppcalls.WatchFIBReplies(plugin.Log)
 
 	return nil

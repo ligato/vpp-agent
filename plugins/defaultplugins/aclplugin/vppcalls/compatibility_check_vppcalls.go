@@ -16,8 +16,8 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 )
 
 // CheckMsgCompatibilityForACL checks if CRSs are compatible with VPP in runtime

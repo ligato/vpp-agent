@@ -66,6 +66,13 @@ WORKDIR /root/
 # add supervisor conf file
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 
+# and default plugins conf
+COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
+
+# and linux plugin conf
+COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
+
+
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf

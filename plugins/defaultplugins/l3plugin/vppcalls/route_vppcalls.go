@@ -19,8 +19,10 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
+	"time"
 )
 
 // Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
@@ -49,7 +51,14 @@ const (
 )
 
 // vppAddDelRoute adds or removes route according to provided input. Every route has to contain VRF ID (default is 0)
-func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error {
+func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+	// IPAddDelRoute time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(ip.IPAddDelRoute{}, time.Since(start))
+		}
+	}()
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -106,11 +115,11 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error 
 }
 
 // VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddRoute(route *Route, vppChan *govppapi.Channel) error {
-	return vppAddDelRoute(route, vppChan, false)
+func VppAddRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return vppAddDelRoute(route, vppChan, false, stopwatch)
 }
 
 // VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppDelRoute(route *Route, vppChan *govppapi.Channel) error {
-	return vppAddDelRoute(route, vppChan, true)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return vppAddDelRoute(route, vppChan, true, stopwatch)
 }

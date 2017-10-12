@@ -19,9 +19,11 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // FibLogicalReq groups multiple fields to not enumerate all of them in one function call (request, reply/callback)
@@ -36,13 +38,14 @@ type FibLogicalReq struct {
 }
 
 // NewL2FibVppCalls is a constructor
-func NewL2FibVppCalls(vppChan *govppapi.Channel) *L2FibVppCalls {
-	return &L2FibVppCalls{vppChan, list.New()}
+func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
+	return &L2FibVppCalls{vppChan, stopwatch, list.New()}
 }
 
 // L2FibVppCalls aggregates vpp calls related to l2 fib
 type L2FibVppCalls struct {
 	vppChan         *govppapi.Channel
+	stopwatch       *measure.Stopwatch
 	waitingForReply *list.List
 }
 
@@ -52,6 +55,13 @@ type L2FibVppCalls struct {
 // Add creates L2 FIB table entry
 func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error), log logging.Logger) error {
 	log.Debug("Adding L2 FIB table entry, mac: ", mac)
+	// L2fibAddDel time measurement
+	start := time.Now()
+	defer func() {
+		if fib.stopwatch != nil {
+			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
+		}
+	}()
 
 	return fib.request(&FibLogicalReq{
 		MAC:      mac,
@@ -67,6 +77,13 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 // Delete removes existing L2 FIB table entry
 func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error), log logging.Logger) error {
 	log.Debug("Removing L2 fib table entry, mac: ", mac)
+	// L2fibAddDel time measurement
+	start := time.Now()
+	defer func() {
+		if fib.stopwatch != nil {
+			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
+		}
+	}()
 
 	return fib.request(&FibLogicalReq{
 		MAC:      mac,

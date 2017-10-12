@@ -23,12 +23,22 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"time"
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
+func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+	// ACLAddReplace time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl_api.ACLAddReplace{}, time.Since(start))
+		}
+	}()
+
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -51,13 +61,23 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
 		log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
+
 		return reply.ACLIndex, nil
 	}
+
 	return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 }
 
 // AddMacIPAcl create new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) (uint32, error) {
+func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+	// MacipACLAdd time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl_api.MacipACLAdd{}, time.Since(start))
+		}
+	}()
+
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := transformACLMacIPRules(rules)
 	if err != nil {
@@ -79,6 +99,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 			return 0, fmt.Errorf("error %v while writing ACL %v to VPP", reply.Retval, aclName)
 		}
 		log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
+
 		return reply.ACLIndex, nil
 	}
 	log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
@@ -86,7 +107,16 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 }
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified
-func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel) error {
+func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
+	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+	// ACLAddReplace time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl_api.ACLAddReplace{}, time.Since(start))
+		}
+	}()
+
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -116,7 +146,15 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 }
 
 // DeleteIPAcl removes L3/L4 ACL
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+	// ACLDel time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl_api.ACLDel{}, time.Since(start))
+		}
+	}()
+
 	msg := &acl_api.ACLDel{}
 	msg.ACLIndex = aclIndex
 
@@ -134,7 +172,15 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel) e
 }
 
 // DeleteMacIPAcl removes L2 ACL
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+	// MacipACLDel time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl_api.MacipACLDel{}, time.Since(start))
+		}
+	}()
+
 	msg := &acl_api.MacipACLDel{}
 	msg.ACLIndex = aclIndex
 

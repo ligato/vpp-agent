@@ -22,6 +22,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -31,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"strconv"
+	"time"
 )
 
 // BFDConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -39,12 +41,13 @@ import (
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.
 type BFDConfigurator struct {
-	Log			 logging.Logger
+	Log logging.Logger
 
 	GoVppmux     govppmux.API
 	SwIfIndexes  ifaceidx.SwIfIndex
 	ServiceLabel servicelabel.ReaderAPI
 	BfdIDSeq     uint32
+	Stopwatch    *measure.Stopwatch // timer used to measure and store time
 	// Base mappings
 	bfdSessionsIndexes   idxvpp.NameToIdxRW
 	bfdKeysIndexes       idxvpp.NameToIdxRW
@@ -96,7 +99,7 @@ func (plugin *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Se
 		return fmt.Errorf("BFD source address %v does not match any of provided interface's ip adresses", bfdInput.SourceAddress)
 	}
 	// Call vpp api
-	err := vppcalls.AddBfdUDPSession(bfdInput, plugin.SwIfIndexes, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel)
+	err := vppcalls.AddBfdUDPSession(bfdInput, plugin.SwIfIndexes, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while configuring BFD for interface %v", bfdInput.Interface)
 	}
@@ -140,7 +143,7 @@ func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdSession *bfd.SingleHopBFD_
 			return fmt.Errorf("BFD adresses does not match. Odl session source: %v, dest: %v, new session source: %v, dest: %v",
 				oldBfdSession.SourceAddress, oldBfdSession.DestinationAddress, newBfdSession.SourceAddress, newBfdSession.DestinationAddress)
 		}
-		err := vppcalls.ModifyBfdUDPSession(newBfdSession, plugin.SwIfIndexes, plugin.vppChannel)
+		err := vppcalls.ModifyBfdUDPSession(newBfdSession, plugin.SwIfIndexes, plugin.vppChannel, plugin.Stopwatch)
 		if err != nil {
 			return fmt.Errorf("error while updating BFD for interface %v", newBfdSession.Interface)
 		}
@@ -158,7 +161,7 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 		return nil
 	}
 
-	err := vppcalls.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress, plugin.vppChannel)
+	err := vppcalls.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress, plugin.vppChannel, nil)
 	if err != nil {
 		return fmt.Errorf("error while deleting BFD for interface %v", bfdInput.Interface)
 	}
@@ -182,7 +185,7 @@ func (plugin *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_
 		plugin.ModifyBfdAuthKey(bfdAuthKey, bfdAuthKey)
 	}
 
-	err := vppcalls.SetBfdUDPAuthenticationKey(bfdAuthKey, plugin.Log, plugin.vppChannel)
+	err := vppcalls.SetBfdUDPAuthenticationKey(bfdAuthKey, plugin.Log, plugin.vppChannel, nil)
 	if err != nil {
 		return fmt.Errorf("error while setting up BFD auth key with ID %v", bfdAuthKey.Id)
 	}
@@ -207,7 +210,7 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 		plugin.Log.Debugf("Authentication key with ID %v recreated", oldInput.Id)
 	}
 	// Check that this auth key is not used in any session
-	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(newInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel)
+	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(newInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while verifying authentication key usage. Id: %v", oldInput.Id)
 	}
@@ -216,7 +219,7 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 		for _, bfds := range sessionList {
 			sourceAddr := net.HardwareAddr(bfds.LocalAddr).String()
 			destAddr := net.HardwareAddr(bfds.PeerAddr).String()
-			err := vppcalls.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr, plugin.vppChannel)
+			err := vppcalls.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -224,11 +227,11 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 		plugin.Log.Debugf("%v session(s) temporary removed", len(sessionList))
 	}
 
-	err = vppcalls.DeleteBfdUDPAuthenticationKey(oldInput, plugin.vppChannel)
+	err = vppcalls.DeleteBfdUDPAuthenticationKey(oldInput, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while removing BFD auth key with ID %v", oldInput.Id)
 	}
-	err = vppcalls.SetBfdUDPAuthenticationKey(newInput, plugin.Log, plugin.vppChannel)
+	err = vppcalls.SetBfdUDPAuthenticationKey(newInput, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while setting up BFD auth key with ID %v", oldInput.Id)
 	}
@@ -238,7 +241,7 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 	// Recreate BFD sessions if necessary
 	if len(sessionList) != 0 {
 		for _, bfdSession := range sessionList {
-			err := vppcalls.AddBfdUDPSessionFromDetails(bfdSession, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel)
+			err := vppcalls.AddBfdUDPSessionFromDetails(bfdSession, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -254,7 +257,7 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 	plugin.Log.Info("Deleting BFD auth key")
 
 	// Check that this auth key is not used in any session
-	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(bfdInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel)
+	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(bfdInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel, nil)
 	if err != nil {
 		return fmt.Errorf("error while verifying authentication key usage. Id: %v", bfdInput.Id)
 	}
@@ -264,14 +267,14 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 		for _, bfds := range sessionList {
 			sourceAddr := net.IP(bfds.LocalAddr[0:4]).String()
 			destAddr := net.IP(bfds.PeerAddr[0:4]).String()
-			err := vppcalls.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr, plugin.vppChannel)
+			err := vppcalls.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr, plugin.vppChannel, nil)
 			if err != nil {
 				return err
 			}
 		}
 		plugin.Log.Debugf("%v session(s) temporary removed", len(sessionList))
 	}
-	err = vppcalls.DeleteBfdUDPAuthenticationKey(bfdInput, plugin.vppChannel)
+	err = vppcalls.DeleteBfdUDPAuthenticationKey(bfdInput, plugin.vppChannel, nil)
 	if err != nil {
 		return fmt.Errorf("error while removing BFD auth key with ID %v", bfdInput.Id)
 	}
@@ -281,7 +284,7 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 	// Recreate BFD sessions if necessary
 	if len(sessionList) != 0 {
 		for _, bfdSession := range sessionList {
-			err := vppcalls.AddBfdUDPSessionFromDetails(bfdSession, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel)
+			err := vppcalls.AddBfdUDPSessionFromDetails(bfdSession, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel, nil)
 			if err != nil {
 				return err
 			}
@@ -301,7 +304,7 @@ func (plugin *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopB
 		return fmt.Errorf("interface %v does not exist", bfdInput.EchoSourceInterface)
 	}
 
-	err := vppcalls.AddBfdEchoFunction(bfdInput, plugin.SwIfIndexes, plugin.vppChannel)
+	err := vppcalls.AddBfdEchoFunction(bfdInput, plugin.SwIfIndexes, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while setting up BFD echo source with interface %v", bfdInput.EchoSourceInterface)
 	}
@@ -324,7 +327,7 @@ func (plugin *BFDConfigurator) ModifyBfdEchoFunction(oldInput *bfd.SingleHopBFD_
 func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
 	plugin.Log.Info("Deleting BFD echo function")
 
-	err := vppcalls.DeleteBfdEchoFunction(plugin.vppChannel)
+	err := vppcalls.DeleteBfdEchoFunction(plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("error while removing BFD echo source with interface %v", bfdInput.EchoSourceInterface)
 	}
@@ -337,6 +340,7 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 
 // LookupBfdSessions looks up all BFD sessions and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdSessions() error {
+	start := time.Now()
 	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
@@ -363,11 +367,17 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 		}
 	}
 
+	// BfdUDPSessionDump time
+	if plugin.Stopwatch != nil {
+		plugin.Stopwatch.LogTimeEntry(bfd_api.BfdUDPSessionDump{}, time.Since(start))
+	}
+
 	return nil
 }
 
 // LookupBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
 func (plugin *BFDConfigurator) LookupBfdKeys() error {
+	start := time.Now()
 	req := &bfd_api.BfdAuthKeysDump{}
 	reqCtx := plugin.vppChannel.SendMultiRequest(req)
 
@@ -389,6 +399,11 @@ func (plugin *BFDConfigurator) LookupBfdKeys() error {
 			plugin.Log.Debugf("BFD authentication key registered. Idx: %v", plugin.BfdIDSeq)
 			plugin.BfdIDSeq++
 		}
+	}
+
+	// BfdAuthKeysDump time
+	if plugin.Stopwatch != nil {
+		plugin.Stopwatch.LogTimeEntry(bfd_api.BfdAuthKeysDump{}, time.Since(start))
 	}
 
 	return nil
