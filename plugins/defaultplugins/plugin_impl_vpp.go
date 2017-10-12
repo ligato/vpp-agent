@@ -55,7 +55,8 @@ const (
 	// defaultResync calls the full resync for every default plugin
 	defaultResync = "default"
 	// interfaceBased checks existence of the configured interface on the VPP (except local0). If there are any, the full
-	// resync is executed, otherwise it's completely skipped
+	// resync is executed, otherwise it's completely skipped.
+	// Note: resync will be skipped also in case there is not configuration in VPP but exists in etcd
 	interfaceBased = "interface-based"
 	// resync is skipped in any case
 	skipResync = "skip"
@@ -199,13 +200,13 @@ func (plugin *Plugin) Init() error {
 			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
-		plugin.Log.Infof("Resync strategy is set to %v", plugin.resyncStrategy)
+		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		plugin.resyncStrategy = defaultResync
-		plugin.Log.Infof("Resync strategy config not found, set to default value %v", plugin.resyncStrategy)
+		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
