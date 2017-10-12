@@ -32,9 +32,15 @@ import (
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	// Calculate and log interface resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh)
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
 	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
 		return err
@@ -128,6 +134,12 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
 	// lookup BFD sessions
 	err := plugin.LookupBfdSessions()
@@ -153,6 +165,12 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.Print()
+		}
+	}()
 
 	// lookup BFD auth keys
 	err := plugin.LookupBfdKeys()

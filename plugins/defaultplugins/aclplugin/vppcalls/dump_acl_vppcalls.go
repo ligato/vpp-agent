@@ -16,13 +16,23 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
-	"github.com/ligato/cn-infra/logging"
+	"time"
 )
 
 // DumpInterface finds interface in VPP and returns its ACL configuration
-func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel) (*acl.ACLInterfaceListDetails, error) {
+func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (*acl.ACLInterfaceListDetails, error) {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLInterfaceListDump{}
 	req.SwIfIndex = swIndex
 
@@ -36,7 +46,15 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel) (*acl.ACLInterf
 }
 
 // DumpIPAcl test function
-func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel) error {
+func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// ACLDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl.ACLDump{}, time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLDump{}
 	req.ACLIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -56,7 +74,15 @@ func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel) error {
 }
 
 // DumpMacIPAcl test function
-func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel) error {
+func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// MacipACLDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl.MacipACLDump{}, time.Since(start))
+		}
+	}()
+
 	req := &acl.MacipACLDump{}
 	req.ACLIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -75,7 +101,15 @@ func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel) error {
 }
 
 // DumpInterfaces test function
-func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel) error {
+func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLInterfaceListDump{}
 	req.SwIfIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)

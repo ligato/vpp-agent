@@ -19,12 +19,22 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"time"
 )
 
 // SetInterfaceMac calls SwInterfaceSetMacAddress bin API
-func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel) error {
+func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// SwInterfaceSetMacAddress time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetMacAddress{}, time.Since(start))
+		}
+	}()
+
 	mac, macErr := net.ParseMAC(macAddress)
 	if macErr != nil {
 		return macErr
@@ -44,5 +54,6 @@ func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppCha
 		return fmt.Errorf("adding MAC address returned %d", reply.Retval)
 	}
 	log.WithFields(logging.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
+
 	return nil
 }

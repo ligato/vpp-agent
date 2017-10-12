@@ -17,11 +17,21 @@ package vppcalls
 import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
+	"time"
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+	// CreateLoopback time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(vpe.CreateLoopback{}, time.Since(start))
+		}
+	}()
+
 	req := &vpe.CreateLoopback{}
 	reply := &vpe.CreateLoopbackReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
@@ -33,11 +43,20 @@ func AddLoopbackInterface(vppChan *govppapi.Channel) (swIndex uint32, err error)
 	if 0 != reply.Retval {
 		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
 	}
+
 	return reply.SwIfIndex, nil
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel) error {
+func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// DeleteLoopback time measurement
+	start := time.Now()
+	defer func() {
+		if stopwatch != nil {
+			stopwatch.LogTimeEntry(vpe.DeleteLoopback{}, time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &vpe.DeleteLoopback{}
 	req.SwIfIndex = idx
@@ -51,5 +70,6 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel) error {
 	if 0 != reply.Retval {
 		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
 	}
+
 	return nil
 }
