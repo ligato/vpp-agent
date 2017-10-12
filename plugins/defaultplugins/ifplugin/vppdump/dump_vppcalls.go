@@ -21,13 +21,13 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	ifnb "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/cn-infra/logging"
 )
 
 // Interface is the wrapper structure for the interface northbound API structure.
@@ -149,13 +149,13 @@ func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails)
 	if ifs[ipDetails.SwIfIndex].IpAddresses == nil {
 		ifs[ipDetails.SwIfIndex].IpAddresses = make([]string, 0)
 	}
-	var ip string
+	var ipAddress string
 	if ipDetails.IsIpv6 == 1 {
-		ip = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
+		ipAddress = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
 	} else {
-		ip = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
+		ipAddress = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
 	}
-	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ip)
+	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ipAddress)
 }
 
 // dumpAFPacketDetails fills af_packet interface details into the provided interface map.

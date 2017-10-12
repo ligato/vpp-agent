@@ -21,11 +21,11 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/cn-infra/flavors/rpc"
 )
 
 // checkImplemensPlugin is used to let compiler check if
@@ -33,9 +33,9 @@ import (
 // (see following Inject() method).
 // It technique is done because following method Plugins()
 // uses reflection rather than enumerating all field again.
-var checkImplemensPlugin core.Plugin
+//var checkImplemensPlugin core.Plugin
 
-// FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using 
+// FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using
 // GRPC service
 type FlavorVppRPC struct {
 	*local.FlavorLocal
@@ -46,6 +46,7 @@ type FlavorVppRPC struct {
 	VPP              defaultplugins.Plugin
 
 	GRPCSvcPlugin GRPCSvcPlugin
+	RESTSvcPlugin RESTSvcPlugin
 
 	injected bool
 }
@@ -76,7 +77,10 @@ func (f *FlavorVppRPC) Inject() bool {
 
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
-	checkImplemensPlugin = &f.GRPCSvcPlugin
+	//checkImplemensPlugin = &f.GRPCSvcPlugin
+
+	f.RESTSvcPlugin.Deps.PluginInfraDeps = *f.InfraDeps("vpp-rest-svc")
+	f.RESTSvcPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 
 	return true
 }
