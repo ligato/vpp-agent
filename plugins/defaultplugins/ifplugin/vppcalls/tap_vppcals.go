@@ -27,12 +27,12 @@ import (
 )
 
 // AddTapInterface calls TapConnect bin API
-func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// TapConnect time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(tap.TapConnect{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -61,12 +61,12 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 }
 
 // DeleteTapInterface calls TapDelete bin API
-func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// TapDelete time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(tap.TapDelete{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

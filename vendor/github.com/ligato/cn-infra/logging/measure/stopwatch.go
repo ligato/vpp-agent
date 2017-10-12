@@ -20,7 +20,13 @@ import (
 	"time"
 	"sync"
 	"fmt"
+	"strconv"
 )
+
+// StopWatchEntry provides method to log measured time entries
+type StopWatchEntry interface {
+	LogTimeEntry(d time.Duration)
+}
 
 // Stopwatch keeps all time measurement results
 type Stopwatch struct {
@@ -28,11 +34,10 @@ type Stopwatch struct {
 	name string
 	// logger used while printing
 	logger logging.Logger
-	// map where measurements are stored. Map is in format [string][]Duration, for every binapi/netlink api there is
+	// map where measurements are stored. Map is in format [string]TimeLog (string is a name related to the measured time(s)
+	// which are stored in timelog), for every binapi/netlink api there is
 	// a set of times this binapi/netlink was called
 	timeTable sync.Map
-	// used to lock map
-	mx sync.Mutex
 }
 
 // NewStopwatch creates a new stopwatch object with empty time map
@@ -44,13 +49,25 @@ func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	}
 }
 
-// LogTimeEntry stores name of the binapi call and measured duration
-// <n> is a name of the measured entity (bin_api call object name or any other string)
-// <d> is measured time
-func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
-	st.mx.Lock()
-	defer st.mx.Unlock()
+// TimeLog is a wrapper for the measured data for specific name
+type TimeLog struct {
+	entries []time.Duration
+}
 
+// GetTimeLog returns a pointer to the TimeLog object related to the provided name (derived from the <n> parameter).
+// If stopwatch is not used, returns nil
+func GetTimeLog(n interface{}, s *Stopwatch) *TimeLog {
+	// return nil if does not exist
+	if s == nil {
+		return nil
+	}
+	return s.timeLog(n)
+}
+
+// looks over stopwatch timeTable map in order to find a TimeLog object for provided name. If the object does not exist,
+// it is created anew, stored in the map and returned
+func (st *Stopwatch) timeLog(n interface{}) *TimeLog {
+	// derive name
 	var name string
 	switch nType := n.(type) {
 	case string:
@@ -58,23 +75,32 @@ func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 	default:
 		name = reflect.TypeOf(n).String()
 	}
-	// look for entries with the same name
-	v, found := st.timeTable.Load(name)
-	if found {
-		durations, ok := v.([]time.Duration)
+	// create and initialize new TimeLog in case it does not exist
+	timer := &TimeLog{}
+	timer.entries = make([]time.Duration, 0)
+	// if there is no TimeLog under the name, store the created one. Otherwise, existing timer is returned
+	existingTimer, loaded := st.timeTable.LoadOrStore(name, timer)
+	if loaded {
+		// cast to object which can be returned
+		existing, ok := existingTimer.(*TimeLog)
 		if !ok {
-			panic("cannot cast timeTable map value to duration")
+			panic(fmt.Errorf("cannot cast timeTable map value to duration"))
 		}
-		st.timeTable.Store(name, append(durations, d))
+		return existing
 	} else {
-		// Store first time value for the specific key
-		durations := make([]time.Duration, 0)
-		st.timeTable.Store(name, append(durations, d))
+		return timer
 	}
 }
 
-// Print logs all entries from the map (partial times) + overall time if set
-func (st *Stopwatch) Print() {
+// Store time entry in TimeLog (the time log itself is stored in the stopwatch sync.Map)
+func (t *TimeLog) LogTimeEntry(d time.Duration) {
+	if t != nil && t.entries != nil {
+		t.entries = append(t.entries, d)
+	}
+}
+
+// Print all entries from TimeLog and reset it
+func (st *Stopwatch) PrintLog() {
 	isMapEmpty := true
 	var wasErr error
 	// Calculate overall time
@@ -88,16 +114,20 @@ func (st *Stopwatch) Print() {
 			// stops the iteration
 			return false
 		}
-		value, ok := v.([]time.Duration)
+		value, ok := v.(*TimeLog)
 		if !ok {
 			wasErr = fmt.Errorf("cannot cast timeTable map value to duration")
 			// stops the iteration
 			return false
 		}
 		// Print time value for every and calculate overall time
-		for _, entry := range value {
+		for index, entry := range value.entries {
+			name := key
+			if index != 0 {
+				name = key + "#" + strconv.Itoa(index)
+			}
+			st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": entry.Nanoseconds()}).Infof("%v call took %v", name, entry)
 			overall += entry
-			st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": entry.Nanoseconds()}).Infof("%v call took %v", key, entry)
 		}
 		return true
 	})

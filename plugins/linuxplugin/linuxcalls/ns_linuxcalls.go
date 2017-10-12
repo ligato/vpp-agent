@@ -151,7 +151,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 
 	if netIntf.Flags&net.FlagUp == 1 {
 		// re-enable interface
-		err = InterfaceAdminUp(ifName, stopwatch)
+		err = InterfaceAdminUp(ifName, measure.GetTimeLog("iface_admin_up", stopwatch))
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
@@ -165,7 +165,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 		if err != nil {
 			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
 		}
-		err = AddInterfaceIP(ifName, network, stopwatch)
+		err = AddInterfaceIP(ifName, network, measure.GetTimeLog("add_iface_ip", stopwatch))
 		if err != nil {
 			if err.Error() == "file exists" {
 				continue
@@ -176,7 +176,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 	}
 
 	// revert back the MTU config
-	err = SetInterfaceMTU(ifName, netIntf.MTU, stopwatch)
+	err = SetInterfaceMTU(ifName, netIntf.MTU, measure.GetTimeLog("set_iface_mtu", stopwatch))
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}

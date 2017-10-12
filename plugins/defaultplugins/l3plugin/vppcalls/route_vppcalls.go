@@ -51,12 +51,12 @@ const (
 )
 
 // vppAddDelRoute adds or removes route according to provided input. Every route has to contain VRF ID (default is 0)
-func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLog measure.StopWatchEntry) error {
 	// IPAddDelRoute time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(ip.IPAddDelRoute{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 	req := &ip.IPAddDelRoute{}
@@ -115,11 +115,11 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwa
 }
 
 // VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelRoute(route, vppChan, false, stopwatch)
+func VppAddRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	return vppAddDelRoute(route, vppChan, false, timeLog)
 }
 
 // VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppDelRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelRoute(route, vppChan, true, stopwatch)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	return vppAddDelRoute(route, vppChan, true, timeLog)
 }

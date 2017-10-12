@@ -23,12 +23,12 @@ import (
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// CreateLoopback time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.CreateLoopback{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -48,12 +48,12 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, stopwatch *measure.Stopwatc
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// DeleteLoopback time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.DeleteLoopback{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

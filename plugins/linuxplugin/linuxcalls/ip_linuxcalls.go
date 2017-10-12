@@ -25,11 +25,11 @@ import (
 )
 
 // AddInterfaceIP calls AddrAdd Netlink API
-func AddInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch) error {
+func AddInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("add_iface_ip", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -42,11 +42,11 @@ func AddInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch
 }
 
 // DelInterfaceIP calls AddrDel Netlink API
-func DelInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch) error {
+func DelInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("del_iface_ip", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -59,11 +59,11 @@ func DelInterfaceIP(ifName string, addr *net.IPNet, stopwatch *measure.Stopwatch
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API
-func SetInterfaceMTU(ifName string, mtu int, stopwatch *measure.Stopwatch) error {
+func SetInterfaceMTU(ifName string, mtu int, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("set_iface_mtu", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
