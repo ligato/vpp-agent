@@ -28,7 +28,8 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
 )
 
 // PluginID used in the Agent Core flavors
@@ -39,7 +40,7 @@ type Plugin struct {
 	Deps
 
 	ifIndexes      ifaceidx.LinuxIfIndexRW
-	ifConfigurator *LinuxInterfaceConfigurator
+	ifConfigurator *ifplugin.LinuxInterfaceConfigurator
 
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
@@ -110,7 +111,7 @@ func (plugin *Plugin) Init() error {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
-	plugin.ifConfigurator = &LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
+	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
 	plugin.ifConfigurator.Init(plugin.ifIndexes)
 
 	return plugin.subscribeWatcher()

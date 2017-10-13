@@ -25,7 +25,7 @@ import (
 	"strings"
 	"syscall"
 
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	"fmt"
 	"net"

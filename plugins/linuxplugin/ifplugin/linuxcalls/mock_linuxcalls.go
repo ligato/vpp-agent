@@ -19,7 +19,7 @@ package linuxcalls
 import (
 	"net"
 
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 )
 
 // NamespaceMgmtCtx is a mock type definition of the real NamespaceMgmtCtx from ns_linuxcalls.go.

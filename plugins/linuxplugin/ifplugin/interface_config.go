@@ -14,7 +14,7 @@
 
 //go:generate protoc --proto_path=model --gogo_out=model model/interfaces/interfaces.proto
 
-package linuxplugin
+package ifplugin
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	"github.com/vishvananda/netlink"
 
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/linuxcalls"
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	"strings"
 
@@ -37,7 +37,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 )
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
@@ -146,37 +146,6 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 	plugin.wg.Wait()
 
 	return wasErr
-}
-
-// Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
-func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfaces_Interface) error {
-	var wasError error
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
-	start := time.Now()
-	defer func() {
-		if plugin.Stopwatch != nil {
-			timeLog := measure.GetTimeLog("linux-interface resync", plugin.Stopwatch)
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	// Step 1: Create missing Linux interfaces and recreate existing ones
-	for _, iface := range interfaces {
-		err := plugin.ConfigureLinuxInterface(iface)
-		if err != nil {
-			wasError = err
-		}
-	}
-
-	// Step 2: Dump pre-existing and currently not managed interfaces in the current namespace.
-	err := plugin.LookupLinuxInterfaces()
-	if err != nil {
-		return err
-	}
-
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
-
-	return wasError
 }
 
 // LookupLinuxInterfaces looks up all currently unmanaged Linux interfaces in the current namespace and registers them into
