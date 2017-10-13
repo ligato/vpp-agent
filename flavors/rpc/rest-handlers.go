@@ -38,7 +38,7 @@ func (plugin *RESTSvcPlugin) interfaceGetHandler(formatter *render.Render) http.
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
 			} else {
-				res, err := vppdump.DumpInterfaces(plugin.Deps.Log, ch)
+				res, err := vppdump.DumpInterfaces(plugin.Deps.Log, ch, nil)
 				if err != nil {
 					plugin.Deps.Log.Errorf("Error: %v", err)
 					formatter.JSON(w, http.StatusInternalServerError, nil)
