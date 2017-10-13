@@ -15,7 +15,7 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
