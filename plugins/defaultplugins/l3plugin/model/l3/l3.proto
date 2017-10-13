@@ -5,6 +5,8 @@ package l3;
 /* Static IPv4 / IPv6 routes */
 message StaticRoutes {
     message Route {
+
+
         uint32 vrf_id = 1;                   /* VRF identifier, field required for remote client. This value should be
                                                 consistent with VRF ID in static route key. If it is not, value from
                                                 key will be preffered and this field will be overriden.  */
