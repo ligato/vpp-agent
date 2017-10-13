@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
-// Resync confgures the empty VPP (overwrites the static route)
+// Resync confgures the empty VPP - overwrites all static routes
 func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// Calculate and log route resync
@@ -41,6 +41,7 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	return wasError
 }
 
+// Resync configures the empty VPP - overwrites all VRF tables
 func (plugin *VrfConfigurator) Resync(vrfTables []*l3.VrfTable) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC tables begin. ")
 	// TODO lookup vpp Route Configs

@@ -30,7 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
-// VrfConfigurator
+// VrfConfigurator is for managing VRF tables
 type VrfConfigurator struct {
 	Log logging.Logger
 
@@ -50,12 +50,7 @@ func (plugin *VrfConfigurator) Init() (err error) {
 		return err
 	}
 
-	if err = plugin.checkMsgCompatibility(); err != nil {
-		return err
-	}
-
-	return nil
-}
+	return plugin.checkMsgCompatibility()}
 
 // Creates unique identifier which serves as a name in name to index mapping
 func tableIdentifier(vrf uint32) string {
