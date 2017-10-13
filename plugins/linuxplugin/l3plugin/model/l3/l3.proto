@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package l3;
+
+enum Scope {
+    GLOBAL = 0;
+    SITE = 1;
+    LINK = 2;
+    HOST = 3;
+};
+
+/* static ip routes */
+message StaticRoutes {
+    message Route {
+        string interface = 1;       /* interface name */
+        string description = 3;     /* optional description */
+        Scope scope = 4;            /* the scope of the area where the link is valid */
+        string src_ip_addr = 5;     /* source ip address + prefix in format <address>/<prefix> */
+        string dst_ip_addr = 6;     /* destination ip address  */
+        string gw_addr = 7;         /* gateway address */
+        uint32 priority = 8;        /* routing priority (weight) */
+        uint32 table = 9;           /* linux kernel routing table */
+    }
+    repeated Route route = 1;       /* list of IP static routes */
+}
+
+enum NudState {
+    PERMANENT = 0;
+    NOARP = 1;
+    REACHABLE = 2;
+    STATE = 3;
+};
+
+/* static arp entires */
+message StaticArpEntries {
+    message ArpEntry {
+        string interface = 1;            /* interface to which this neighbour is attached */
+        NudState nud_state = 2;          /* state of the neighbour entry */
+        string ip_addr = 3;              /* ip address + prefix in format <address>/<prefix> */
+        string hw_address = 4;           /* mac address */
+    }
+    repeated ArpEntry arp_entry = 1;     /* list of IP static routes */
+}

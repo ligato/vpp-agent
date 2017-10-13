@@ -17,6 +17,7 @@ package ifplugin
 import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"time"
+	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
@@ -26,8 +27,8 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*interfaces.LinuxI
 	start := time.Now()
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.LogTimeEntry("linux-interface resync", time.Since(start))
-			plugin.Stopwatch.Print()
+			timeLog := measure.GetTimeLog("linux-interface resync", plugin.Stopwatch)
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
