@@ -50,14 +50,14 @@ var (
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
-// VPP resync strategy. Can be set in defaultplugins.conf. If no strategy is set, the default behavior is defined by 'defaultResync'
+// VPP resync strategy. Can be set in defaultplugins.conf. If no strategy is set, the default behavior is defined by 'fullResync'
 const (
-	// defaultResync calls the full resync for every default plugin
-	defaultResync = "default"
-	// interfaceBased checks existence of the configured interface on the VPP (except local0). If there are any, the full
+	// fullResync calls the full resync for every default plugin
+	fullResync = "default"
+	// optimizeColdStart checks existence of the configured interface on the VPP (except local0). If there are any, the full
 	// resync is executed, otherwise it's completely skipped.
 	// Note: resync will be skipped also in case there is not configuration in VPP but exists in etcd
-	interfaceBased = "interface-based"
+	optimizeColdStart = "optimize"
 	// resync is skipped in any case
 	skipResync = "skip"
 )
@@ -205,7 +205,7 @@ func (plugin *Plugin) Init() error {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
-		plugin.resyncStrategy = defaultResync
+		plugin.resyncStrategy = fullResync
 		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
 
@@ -266,11 +266,11 @@ func (plugin *Plugin) Init() error {
 	return nil
 }
 func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
-	if strategy == defaultResync || strategy == interfaceBased || strategy == skipResync {
+	if strategy == fullResync || strategy == optimizeColdStart || strategy == skipResync {
 		return strategy
 	}
 	plugin.Log.Infof("Resync strategy %v is not known, setting up the default", strategy)
-	return defaultResync
+	return fullResync
 }
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies
