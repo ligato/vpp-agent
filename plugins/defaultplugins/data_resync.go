@@ -89,9 +89,9 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Info("resync the VPP Configuration end in %v", vppResync)
 	}()
 
-	// If the strategy is interface-based, run interface configurator resync which provides the information
+	// If the strategy is optimize-cold-start, run interface configurator resync which provides the information
 	// whether resync should continue or be terminated
-	if plugin.resyncStrategy == interfaceBased {
+	if plugin.resyncStrategy == optimizeColdStart {
 		stop, err := plugin.ifConfigurator.Resync(req.Interfaces, true)
 		// Terminate the resync process if required
 		if stop {

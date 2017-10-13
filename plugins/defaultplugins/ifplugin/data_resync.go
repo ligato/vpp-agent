@@ -28,7 +28,7 @@ import (
 // Resync writes interfaces to the empty VPP
 //
 // - resyncs the VPP
-// - resolves interface-based resync strategy if used and interrupt resync if needed
+// - resolves optimize-cold-start resync strategy if used and interrupt resync if needed
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
 // method returns boolean flag whether resync should continue (based on strategy resolution result)
@@ -49,12 +49,12 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		return stop, err
 	}
 
-	// Step 1: Resolve resync strategy. If the strategy is interface-based, look over all dumped VPP interfaces and check
-	// for the configured ones (leave out the local0). If there are any other interfaces, continue with resync. If not,
-	// stop and return a flag which cancels the VPP resync operation.
+	// Step 1: Resolve resync strategy. If the strategy is optimize-cold-start, look over all dumped VPP interfaces and
+	// check for the configured ones (leave out the local0). If there are any other interfaces, continue with resync.
+	// If not, stop and return a flag which cancels the VPP resync operation.
 	// In case there is different strategy chosen, continue normally
 	if ifaceBasedStr {
-		plugin.Log.Info("interface-based VPP resync strategy chosen, resolving...")
+		plugin.Log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
 		if len(vppIfaces) == 0 {
 			stop = true
 			plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
