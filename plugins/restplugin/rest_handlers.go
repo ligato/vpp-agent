@@ -26,29 +26,22 @@ func (plugin *RESTAPIPlugin) interfaceGetHandler(formatter *render.Render) http.
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Deps.Log.Info("Getting list of all interfaces")
-		// connect to VPP
-		conn, err := govpp.Connect()
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			// create an API channel
-			ch, err := conn.NewAPIChannel()
+			res, err := vppdump.DumpInterfaces(plugin.Deps.Log, ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
 			} else {
-				res, err := vppdump.DumpInterfaces(plugin.Deps.Log, ch, nil)
-				if err != nil {
-					plugin.Deps.Log.Errorf("Error: %v", err)
-					formatter.JSON(w, http.StatusInternalServerError, nil)
-				} else {
-					plugin.Deps.Log.Debug(res)
-					formatter.JSON(w, http.StatusOK, res)
-				}
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
 			}
-			defer ch.Close()
 		}
-		defer conn.Disconnect()
+		defer ch.Close()
 	}
 }

@@ -17,6 +17,7 @@ package restplugin
 import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // RESTAPIPlugin - registers VPP REST API Plugin
@@ -28,6 +29,7 @@ type RESTAPIPlugin struct {
 type RESTAPIPluginDeps struct {
 	local.PluginInfraDeps
 	HTTPHandlers rest.HTTPHandlers
+	GoVppmux          govppmux.API
 }
 
 // Init - initializes the RESTSvcPlugin
