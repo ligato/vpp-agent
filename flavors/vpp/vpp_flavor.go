@@ -112,8 +112,8 @@ func (f *Flavor) Inject() bool {
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
-	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.InfraDeps("restapiplugin")
-	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.HTTP
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
+	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 
 	return true
 }
