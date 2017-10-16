@@ -31,18 +31,18 @@ type RESTAPIPluginDeps struct {
 }
 
 // Init - initializes the RESTSvcPlugin
-func (plugin *RESTAPIPlugin) Init() error {
+func (plugin *RESTAPIPlugin) Init() (err error) {
 	return nil
 }
 
 // AfterInit - used to register HTTP handlers
-func (plugin *RESTAPIPlugin) AfterInit() error {
+func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.Deps.Log.Info("VPP REST API Plugin is up and running !!")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfaceGetHandler, "GET")
 	return nil
 }
 
 // Close - used to clean up resources used by RESTSvcPlugin
-func (plugin *RESTAPIPlugin) Close() error {
+func (plugin *RESTAPIPlugin) Close() (err error) {
 	return nil
 }
