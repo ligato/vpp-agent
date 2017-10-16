@@ -34,7 +34,7 @@ import (
 
 // Interface is the wrapper structure for the interface northbound API structure.
 type Interface struct {
-	VPPInternalName string
+	VPPInternalName string `json:"vpp_internal_name"`
 	ifnb.Interfaces_Interface
 }
 

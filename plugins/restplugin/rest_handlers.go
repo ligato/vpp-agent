@@ -15,13 +15,14 @@
 package restplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
+	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
+	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	"github.com/unrolled/render"
 	"net/http"
 )
 
 //interfaceGetHandler - used to get list of all interfaces
-func (plugin *RESTAPIPlugin) interfaceGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Deps.Log.Info("Getting list of all interfaces")
@@ -32,7 +33,82 @@ func (plugin *RESTAPIPlugin) interfaceGetHandler(formatter *render.Render) http.
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			res, err := vppdump.DumpInterfaces(plugin.Deps.Log, ch, nil)
+			res, err := ifplugin.DumpInterfaces(plugin.Deps.Log, ch, nil)
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, nil)
+			} else {
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
+			}
+		}
+		defer ch.Close()
+	}
+}
+
+//bridgeDomainGetHandler - used to get list of all bridge domains
+func (plugin *RESTAPIPlugin) bridgeDomainGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all bridge domains")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+		} else {
+			res, err := l2plugin.DumpBridgeDomains(plugin.Deps.Log, ch, nil)
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, nil)
+			} else {
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
+			}
+		}
+		defer ch.Close()
+	}
+}
+
+//fibTableEntriesGetHandler - used to get list of all fib entries
+func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all fibs")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+		} else {
+			res, err := l2plugin.DumpFIBTableEntries(plugin.Deps.Log, ch, nil)
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, nil)
+			} else {
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
+			}
+		}
+		defer ch.Close()
+	}
+}
+
+//xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
+func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all xconnect pairs")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+		} else {
+			res, err := l2plugin.DumpXConnectPairs(plugin.Deps.Log, ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
