@@ -25,7 +25,7 @@ import (
 func (plugin *RESTAPIPlugin) interfaceGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Debug("Getting list of all interfaces")
+		plugin.Deps.Log.Info("Getting list of all interfaces")
 		// connect to VPP
 		conn, err := govpp.Connect()
 		if err != nil {
