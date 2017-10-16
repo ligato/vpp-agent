@@ -15,7 +15,6 @@
 package restplugin
 
 import (
-	"git.fd.io/govpp.git"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/unrolled/render"
 	"net/http"
