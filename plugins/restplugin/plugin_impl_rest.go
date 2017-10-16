@@ -40,7 +40,10 @@ func (plugin *RESTAPIPlugin) Init() (err error) {
 // AfterInit - used to register HTTP handlers
 func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.Deps.Log.Info("VPP REST API Plugin is up and running !!")
-	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfaceGetHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainGetHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/fibs", plugin.fibTableEntriesGetHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/xconnectpairs", plugin.xconnectPairsGetHandler, "GET")
 	return nil
 }
 
