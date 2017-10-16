@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package restplugin
 
 import (
 	"git.fd.io/govpp.git"
@@ -22,7 +22,7 @@ import (
 )
 
 //interfaceGetHandler - used to get list of all interfaces
-func (plugin *RESTSvcPlugin) interfaceGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *RESTAPIPlugin) interfaceGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Deps.Log.Debug("Getting list of all interfaces")

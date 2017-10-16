@@ -46,7 +46,6 @@ type FlavorVppRPC struct {
 	VPP              defaultplugins.Plugin
 
 	GRPCSvcPlugin GRPCSvcPlugin
-	RESTSvcPlugin RESTSvcPlugin
 
 	injected bool
 }
@@ -78,9 +77,6 @@ func (f *FlavorVppRPC) Inject() bool {
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
 	checkImplemensPlugin = &f.GRPCSvcPlugin
-
-	f.RESTSvcPlugin.Deps.PluginInfraDeps = *f.InfraDeps("vpp-rest-svc")
-	f.RESTSvcPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 
 	return true
 }

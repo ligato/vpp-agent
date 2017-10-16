@@ -12,37 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package restplugin
 
 import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
-// RESTSvcPlugin - registers VPP REST Plugin
-type RESTSvcPlugin struct {
-	Deps RESTSvcPluginDeps
+// RESTAPIPlugin - registers VPP REST API Plugin
+type RESTAPIPlugin struct {
+	Deps RESTAPIPluginDeps
 }
 
-// RESTSvcPluginDeps - dependencies of RESTSvcPluginDeps
-type RESTSvcPluginDeps struct {
+// RESTAPIPluginDeps - dependencies of RESTSvcPluginDeps
+type RESTAPIPluginDeps struct {
 	local.PluginInfraDeps
 	HTTPHandlers rest.HTTPHandlers
 }
 
 // Init - initializes the RESTSvcPlugin
-func (plugin *RESTSvcPlugin) Init() error {
+func (plugin *RESTAPIPlugin) Init() error {
 	return nil
 }
 
 // AfterInit - used to register HTTP handlers
-func (plugin *RESTSvcPlugin) AfterInit() error {
+func (plugin *RESTAPIPlugin) AfterInit() error {
 	plugin.Deps.Log.Info("VPP REST API Plugin is up and running !!")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfaceGetHandler, "GET")
 	return nil
 }
 
 // Close - used to clean up resources used by RESTSvcPlugin
-func (plugin *RESTSvcPlugin) Close() error {
+func (plugin *RESTAPIPlugin) Close() error {
 	return nil
 }
