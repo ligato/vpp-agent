@@ -6,7 +6,7 @@ package interfaces
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x89847d0a
+const VlAPIVersion = 0x7e70e757
 
 // VlibCounter represents the VPP binary API data type 'vlib_counter'.
 // Generated from '/usr/share/vpp/api/interface.api.json', line 3:
