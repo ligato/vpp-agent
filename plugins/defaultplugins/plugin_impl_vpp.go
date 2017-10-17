@@ -36,6 +36,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	"github.com/namsral/flag"
+)
+
+// defaultpluigns specific flags
+var (
+	// skip resync flag
+	skipResyncFlag = flag.Bool("skip-vpp-resync", false, "Skip defaultplugins resync with VPP")
 )
 
 // no operation writer that helps avoiding NIL pointer based segmentation fault
@@ -53,7 +60,7 @@ var (
 // VPP resync strategy. Can be set in defaultplugins.conf. If no strategy is set, the default behavior is defined by 'fullResync'
 const (
 	// fullResync calls the full resync for every default plugin
-	fullResync = "default"
+	fullResync = "full"
 	// optimizeColdStart checks existence of the configured interface on the VPP (except local0). If there are any, the full
 	// resync is executed, otherwise it's completely skipped.
 	// Note: resync will be skipped also in case there is not configuration in VPP but exists in etcd
@@ -128,13 +135,13 @@ type Plugin struct {
 	watchStatusReg   datasync.WatchRegistration
 
 	// From config file
-	ifMtu uint32
+	ifMtu          uint32
 	resyncStrategy string
 
 	// Common
 	enableStopwatch bool
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	cancel          context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
+	wg              sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
 // Deps is here to group injected dependencies of plugin
@@ -161,7 +168,7 @@ type linuxpluginAPI interface {
 type DPConfig struct {
 	Mtu       uint32 `json:"mtu"`
 	Stopwatch bool   `json:"stopwatch"`
-	Strategy string  `json:"strategy"`
+	Strategy  string `json:"strategy"`
 }
 
 var (
@@ -180,6 +187,8 @@ func plugin() *Plugin {
 // Init gets handlers for ETCD, Messaging and delegates them to ifConfigurator & ifStateUpdater
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
+	// handle flag
+	flag.Parse()
 
 	plugin.fixNilPointers()
 
@@ -266,10 +275,14 @@ func (plugin *Plugin) Init() error {
 	return nil
 }
 func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
-	if strategy == fullResync || strategy == optimizeColdStart || strategy == skipResync {
+	// first check skip resync flag
+	if *skipResyncFlag {
+		return skipResync
+		// else check if strategy is set in configfile
+	} else if strategy == fullResync || strategy == optimizeColdStart {
 		return strategy
 	}
-	plugin.Log.Infof("Resync strategy %v is not known, setting up the default", strategy)
+	plugin.Log.Warnf("Resync strategy %v is not known, setting up the full resync", strategy)
 	return fullResync
 }
 

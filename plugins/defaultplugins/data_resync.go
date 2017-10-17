@@ -74,34 +74,44 @@ func NewDataResyncReq() *DataResyncReq {
 		StaticRoutes: []*l3.StaticRoutes_Route{}}
 }
 
-// delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
-func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
-	var err error
-	// If the strategy is to skip the resync, do so
-	if plugin.resyncStrategy == skipResync {
-		plugin.Log.Info("skip VPP resync strategy chosen, VPP resync is omitted")
-		return err
-	}
+// delegates full resync request
+func (plugin *Plugin) resyncConfigPropageFullRequest(req *DataResyncReq) error {
 	plugin.Log.Info("resync the VPP Configuration begin")
 	startTime := time.Now()
 	defer func() {
 		vppResync := time.Since(startTime)
-		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Info("resync the VPP Configuration end in %v", vppResync)
+		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
+	}()
+
+	return plugin.resyncConfig(req)
+}
+
+// delegates optimize-cold-stasrt resync request
+func (plugin *Plugin) resyncConfigPropageOptimizedRequest(req *DataResyncReq) error {
+	plugin.Log.Info("resync the VPP Configuration begin")
+	startTime := time.Now()
+	defer func() {
+		vppResync := time.Since(startTime)
+		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
 	}()
 
 	// If the strategy is optimize-cold-start, run interface configurator resync which provides the information
 	// whether resync should continue or be terminated
-	if plugin.resyncStrategy == optimizeColdStart {
-		stop, err := plugin.ifConfigurator.Resync(req.Interfaces, true)
-		// Terminate the resync process if required
-		if stop {
-			return err
-		}
-	} else {
-		// otherwise continue normally
-		_, err = plugin.ifConfigurator.Resync(req.Interfaces, false)
+	stopResync := plugin.ifConfigurator.VerifyVPPConfigPresence(req.Interfaces)
+	if stopResync {
+		// terminate the resync operation
+		return nil
 	}
-	// continue with resync of other plugins
+	// continue resync normally
+	return plugin.resyncConfig(req)
+}
+
+// delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
+func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
+	var err error
+	if err = plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		return err
+	}
 	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
 		return err
 	}
