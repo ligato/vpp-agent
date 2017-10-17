@@ -90,7 +90,7 @@ dev_vpp_agent_shrink                                  latest              bd2e76
 ### Starting the Image
 By default, the VPP & the Agent processes will be started automatically 
 in the container. This is useful e.g. for deployments with Kubernetes, 
-as described in [this README](../k8s/README.md). However, this option is
+as described in [this README](../../k8s/dev-setup/README.md). However, this option is
 not really required for development purposes, and it can be overridden by
 specifying a different container entry point, e.g. bash, as shown below.
 
@@ -316,4 +316,4 @@ console.
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
 
-[1]: #-starting-the-image
+[1]: #starting-the-image
