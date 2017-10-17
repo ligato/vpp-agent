@@ -86,19 +86,18 @@ func (st *Stopwatch) timeLog(n interface{}) *TimeLog {
 			panic(fmt.Errorf("cannot cast timeTable map value to duration"))
 		}
 		return existing
-	} else {
-		return timer
 	}
+	return timer
 }
 
-// Store time entry in TimeLog (the time log itself is stored in the stopwatch sync.Map)
+// LogTimeEntry stores time entry to the TimeLog (the time log itself is stored in the stopwatch sync.Map)
 func (t *TimeLog) LogTimeEntry(d time.Duration) {
 	if t != nil && t.entries != nil {
 		t.entries = append(t.entries, d)
 	}
 }
 
-// Print all entries from TimeLog and reset it
+// PrintLog all entries from TimeLog and reset it
 func (st *Stopwatch) PrintLog() {
 	isMapEmpty := true
 	var wasErr error
@@ -124,7 +123,7 @@ func (st *Stopwatch) PrintLog() {
 		// Add to total
 		stTotal += nameTotal
 		st.logger.WithFields(logging.Fields{"conf": st.name, "wasCalled": len(value.entries),
-		"durationInNs": average.Nanoseconds()}).Infof("%v call took %v", name, average)
+			"durationInNs": average.Nanoseconds()}).Infof("%v call took %v", name, average)
 
 		return true
 	})

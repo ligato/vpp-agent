@@ -13,6 +13,6 @@
 // limitations under the License.
 
 // Package msg contains:
-// - the definition of PROTOBUF structures and GRPC service
-// - plus helpers for mapping between PROTOBUF structures & the datasync_api.go
+// - the definition of PROTOBUF structures and GRPC service,
+// - helpers for mapping between PROTOBUF structures & the datasync_api.go.
 package msg
