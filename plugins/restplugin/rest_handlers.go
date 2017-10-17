@@ -19,10 +19,12 @@ import (
 	aclplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
-	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
+	//l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/unrolled/render"
 	"net/http"
 	"strconv"
+	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 )
 
 //interfaceGetHandler - used to get list of all interfaces
@@ -151,6 +153,7 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 }
 
 //staticRoutesGetHandler - used to get list of all static routes
+/*
 func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -174,6 +177,7 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 		defer ch.Close()
 	}
 }
+*/
 
 //interfaceAclPostHandler - used to get acl configuration for a particular interface
 func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) http.HandlerFunc {
@@ -207,6 +211,49 @@ func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) h
 				}
 			} else {
 				formatter.JSON(w, http.StatusBadRequest, "swIndex parameter not found")
+			}
+		}
+	}
+}
+
+//showCommandHandler - used to execute VPP CLI show commands
+func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Received request to execute show command : ")
+
+		params := mux.Vars(req)
+		if params != nil && len(params) > 0 {
+			showCommand := params["showCommand"]
+			if showCommand != "" {
+				// create an API channel
+				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+				if err != nil {
+					plugin.Deps.Log.Errorf("Error: %v", err)
+					formatter.JSON(w, http.StatusInternalServerError, err)
+				} else {
+					// prepare the message
+					req := &vpe.CliInband{}
+					req.Length = uint32(len(showCommand))
+					req.Cmd = []byte(showCommand)
+
+					reply := &vpe.CliInbandReply{}
+					err = ch.SendRequest(req).ReceiveReply(reply)
+					if err != nil {
+						plugin.Deps.Log.Errorf("Error: %v", err)
+						formatter.JSON(w, http.StatusInternalServerError, err)
+					}
+
+					if 0 != reply.Retval {
+						plugin.Deps.Log.Errorf("Command returned: %v", reply.Retval)
+					}
+
+					plugin.Deps.Log.Debug(reply)
+					formatter.JSON(w, http.StatusOK, reply)
+				}
+				defer ch.Close()
+			} else {
+				formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
 			}
 		}
 	}
