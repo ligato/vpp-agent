@@ -64,7 +64,7 @@ prod_vpp_agent                                        latest              e33a55
 ### Starting the Image
 By default, the VPP & the Agent processes will be started automatically 
 in the container. This is useful, for example, in deployments with Kubernetes,
-as described in this [README](../k8s/README.md). However, this option is
+as described in this [README](../../k8s/dev-setup/README.md). However, this option is
 not really required for development purposes. This default behavior can 
 be overridden by specifying another container entrypoint, e.g. bash, as 
 we do in the following steps described below.
