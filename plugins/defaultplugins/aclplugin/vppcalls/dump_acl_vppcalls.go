@@ -24,12 +24,12 @@ import (
 )
 
 // DumpInterface finds interface in VPP and returns its ACL configuration
-func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (*acl.ACLInterfaceListDetails, error) {
+func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (*acl.ACLInterfaceListDetails, error) {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -46,12 +46,12 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, stopwatch *meas
 }
 
 // DumpIPAcl test function
-func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// ACLDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl.ACLDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -74,12 +74,12 @@ func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *meas
 }
 
 // DumpMacIPAcl test function
-func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// MacipACLDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl.MacipACLDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -101,12 +101,12 @@ func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *m
 }
 
 // DumpInterfaces test function
-func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl.ACLInterfaceListDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

@@ -81,7 +81,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 	plugin.Log.Debugf("adding route: %+v", route)
 	// Create and register new route
 	if route != nil {
-		err := vppcalls.VppAddRoute(route, plugin.vppChan, plugin.Stopwatch)
+		err := vppcalls.VppAddRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 	// Remove and unregister old route
-	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan, plugin.Stopwatch)
+	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 	// Create and register new route
-	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan, plugin.Stopwatch)
+	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	}
 	plugin.Log.Debugf("deleting route: %+v", route)
 	// Remove and unregister route
-	err = vppcalls.VppDelRoute(route, plugin.vppChan, plugin.Stopwatch)
+	err = vppcalls.VppDelRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}

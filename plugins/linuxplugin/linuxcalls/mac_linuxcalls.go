@@ -25,11 +25,11 @@ import (
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API
-func SetInterfaceMac(ifName string, macAddress string, stopwatch *measure.Stopwatch) error {
+func SetInterfaceMac(ifName string, macAddress string, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("set_iface_mac", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

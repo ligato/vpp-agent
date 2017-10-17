@@ -25,12 +25,12 @@ import (
 )
 
 // AddMemifInterface calls MemifCreate bin API
-func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// MemifCreate time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(memif.MemifCreate{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -74,12 +74,12 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 }
 
 // DeleteMemifInterface calls MemifDelete bin API
-func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// MemifDelete time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(memif.MemifDelete{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

@@ -1,4 +1,9 @@
-# Release v1.0.5 (NOT_RELEASED)
+# Release v1.0.5 (2017-10-17)
+
+## Profiling
+* new [logging/measure](logging/measure) - time measurement utility to measure duration of binary api calls 
+  or linuxplugin netlink during resync. The feature is disabled by default and it can be enabled in 
+  defaultplugins.conf and linuxplugin.conf file (see plugin's readme)
 
 ## Kafka
 * proto_connection.go and bytes_connection.go consolidated, bytes_connection.go now mirrors all 

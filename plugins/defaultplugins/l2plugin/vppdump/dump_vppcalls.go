@@ -27,12 +27,12 @@ import (
 )
 
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries
-func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) ([]uint32, error) {
+func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]uint32, error) {
 	// BridgeDomainDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.BridgeDomainDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -74,12 +74,12 @@ type BridgeDomainInterface struct {
 // LIMITATIONS:
 // - not able to dump ArpTerminationTable - missing binary API
 //
-func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*BridgeDomain, error) {
+func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[uint32]*BridgeDomain, error) {
 	// BridgeDomainDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.BridgeDomainDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -134,12 +134,12 @@ type FIBTableEntry struct {
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 // map indexed by destination MAC address.
-func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[string]*FIBTableEntry, error) {
+func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]*FIBTableEntry, error) {
 	// L2FibTableDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.L2FibTableDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -189,12 +189,12 @@ type XConnectPairs struct {
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 // map indexed by rx interface index.
-func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*XConnectPairs, error) {
+func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[uint32]*XConnectPairs, error) {
 	// L2XconnectDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.L2XconnectDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

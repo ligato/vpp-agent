@@ -28,13 +28,13 @@ import (
 
 // VppAddArpTerminationTableEntry adds ARP termination entry
 func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Info("Adding arp termination entry")
 	// BdIPMacAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.BdIPMacAddDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -76,13 +76,13 @@ func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry
 func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Info("'Deleting' arp entry")
 	// BdIPMacAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.BdIPMacAddDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

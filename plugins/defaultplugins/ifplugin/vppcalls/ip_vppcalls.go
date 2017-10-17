@@ -27,12 +27,12 @@ import (
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
-func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddress{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -74,12 +74,12 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
-func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
 	// SwInterfaceAddDelAddressReply time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceAddDelAddressReply{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

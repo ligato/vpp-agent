@@ -60,12 +60,12 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1
-func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -87,12 +87,12 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0
-func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vxlan.VxlanAddDelTunnelReply{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

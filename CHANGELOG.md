@@ -1,7 +1,9 @@
-# Release v1.0.6 (not released yet)
+# Release v1.0.6 (2017-10-17)
 
 ## Major Themes
 
+- [cn-infra]
+    - updated to version 1.0.5
 - [LinuxPlugin](plugins/linuxplugin)
    - Configuration of vEth interfaces modified. Veth configuration defines
    two names: symbolic used internally and the one used in host OS.

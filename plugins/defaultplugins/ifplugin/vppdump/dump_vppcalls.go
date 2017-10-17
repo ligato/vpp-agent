@@ -83,31 +83,32 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	}
 
 	// SwInterfaceDump time
-	if stopwatch != nil {
-		stopwatch.LogTimeEntry(interfaces.SwInterfaceDump{}, time.Since(start))
+	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, stopwatch)
+	if timeLog != nil {
+		timeLog.LogTimeEntry(time.Since(start))
 	}
 
-	err := dumpIPAddressDetails(log, vppChan, ifs, 0, stopwatch)
+	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, stopwatch)
+	err := dumpIPAddressDetails(log, vppChan, ifs, 0, timeLog)
+	if err != nil {
+		return nil, err
+	}
+	err = dumpIPAddressDetails(log, vppChan, ifs, 1, timeLog)
 	if err != nil {
 		return nil, err
 	}
 
-	err = dumpIPAddressDetails(log, vppChan, ifs, 1, stopwatch)
+	err = dumpMemifDetails(log, vppChan, ifs, measure.GetTimeLog(memif.MemifDump{}, stopwatch))
 	if err != nil {
 		return nil, err
 	}
 
-	err = dumpMemifDetails(log, vppChan, ifs, stopwatch)
+	err = dumpTapDetails(log, vppChan, ifs, measure.GetTimeLog(tap.SwInterfaceTapDump{}, stopwatch))
 	if err != nil {
 		return nil, err
 	}
 
-	err = dumpTapDetails(log, vppChan, ifs, stopwatch)
-	if err != nil {
-		return nil, err
-	}
-
-	err = dumpVxlanDetails(log, vppChan, ifs, stopwatch)
+	err = dumpVxlanDetails(log, vppChan, ifs, measure.GetTimeLog(vxlan.VxlanTunnelDump{}, stopwatch))
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, stopwatch *measure.Stopwatch) error {
+func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
 	notifChan := make(chan govppapi.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
@@ -147,8 +148,8 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 		}
 
 		// IPAddressDump time
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(ip.IPAddressDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}
 
@@ -182,12 +183,12 @@ func dumpAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName str
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *measure.Stopwatch) error {
+func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// MemifDetails time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(memif.MemifDetails{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -219,12 +220,12 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
-func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *measure.Stopwatch) error {
+func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceTapDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(tap.SwInterfaceTapDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -249,12 +250,12 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 }
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
-func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, stopwatch *measure.Stopwatch) error {
+func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// VxlanTunnelDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vxlan.VxlanTunnelDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

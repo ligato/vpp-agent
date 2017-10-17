@@ -24,13 +24,13 @@ import (
 )
 
 // VppSetL2XConnect creates xConnect between two existing interfaces
-func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -53,13 +53,13 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 }
 
 // VppUnsetL2XConnect removes xConnect between two interfaces
-func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(vpe.SwInterfaceSetL2Xconnect{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

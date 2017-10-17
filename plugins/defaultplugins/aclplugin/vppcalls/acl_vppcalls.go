@@ -30,12 +30,12 @@ import (
 )
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, timeLog measure.StopWatchEntry) (uint32, error) {
 	// ACLAddReplace time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl_api.ACLAddReplace{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -69,12 +69,12 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 }
 
 // AddMacIPAcl create new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, timeLog measure.StopWatchEntry) (uint32, error) {
 	// MacipACLAdd time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl_api.MacipACLAdd{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -108,12 +108,12 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified
 func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+	vppChannel *api.Channel, timeLog measure.StopWatchEntry) error {
 	// ACLAddReplace time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl_api.ACLAddReplace{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -146,12 +146,12 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 }
 
 // DeleteIPAcl removes L3/L4 ACL
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, timeLog measure.StopWatchEntry) error {
 	// ACLDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl_api.ACLDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -172,12 +172,12 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, s
 }
 
 // DeleteMacIPAcl removes L2 ACL
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel, timeLog measure.StopWatchEntry) error {
 	// MacipACLDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(acl_api.MacipACLDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

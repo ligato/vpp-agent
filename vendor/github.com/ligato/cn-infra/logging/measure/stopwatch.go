@@ -15,12 +15,17 @@
 package measure
 
 import (
-	"reflect"
-	"github.com/ligato/cn-infra/logging"
-	"time"
-	"sync"
 	"fmt"
+	"github.com/ligato/cn-infra/logging"
+	"reflect"
+	"sync"
+	"time"
 )
+
+// StopWatchEntry provides method to log measured time entries
+type StopWatchEntry interface {
+	LogTimeEntry(d time.Duration)
+}
 
 // Stopwatch keeps all time measurement results
 type Stopwatch struct {
@@ -28,29 +33,40 @@ type Stopwatch struct {
 	name string
 	// logger used while printing
 	logger logging.Logger
-	// map where measurements are stored. Map is in format [string][]Duration, for every binapi/netlink api there is
+	// map where measurements are stored. Map is in format [string]TimeLog (string is a name related to the measured time(s)
+	// which are stored in timelog), for every binapi/netlink api there is
 	// a set of times this binapi/netlink was called
 	timeTable sync.Map
-	// used to lock map
-	mx sync.Mutex
 }
 
 // NewStopwatch creates a new stopwatch object with empty time map
 func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	return &Stopwatch{
-		name: name,
-		logger: log,
+		name:      name,
+		logger:    log,
 		timeTable: sync.Map{},
 	}
 }
 
-// LogTimeEntry stores name of the binapi call and measured duration
-// <n> is a name of the measured entity (bin_api call object name or any other string)
-// <d> is measured time
-func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
-	st.mx.Lock()
-	defer st.mx.Unlock()
+// TimeLog is a wrapper for the measured data for specific name
+type TimeLog struct {
+	entries []time.Duration
+}
 
+// GetTimeLog returns a pointer to the TimeLog object related to the provided name (derived from the <n> parameter).
+// If stopwatch is not used, returns nil
+func GetTimeLog(n interface{}, s *Stopwatch) *TimeLog {
+	// return nil if does not exist
+	if s == nil {
+		return nil
+	}
+	return s.timeLog(n)
+}
+
+// looks over stopwatch timeTable map in order to find a TimeLog object for provided name. If the object does not exist,
+// it is created anew, stored in the map and returned
+func (st *Stopwatch) timeLog(n interface{}) *TimeLog {
+	// derive name
 	var name string
 	switch nType := n.(type) {
 	case string:
@@ -58,47 +74,57 @@ func (st *Stopwatch) LogTimeEntry(n interface{}, d time.Duration) {
 	default:
 		name = reflect.TypeOf(n).String()
 	}
-	// look for entries with the same name
-	v, found := st.timeTable.Load(name)
-	if found {
-		durations, ok := v.([]time.Duration)
+	// create and initialize new TimeLog in case it does not exist
+	timer := &TimeLog{}
+	timer.entries = make([]time.Duration, 0)
+	// if there is no TimeLog under the name, store the created one. Otherwise, existing timer is returned
+	existingTimer, loaded := st.timeTable.LoadOrStore(name, timer)
+	if loaded {
+		// cast to object which can be returned
+		existing, ok := existingTimer.(*TimeLog)
 		if !ok {
-			panic("cannot cast timeTable map value to duration")
+			panic(fmt.Errorf("cannot cast timeTable map value to duration"))
 		}
-		st.timeTable.Store(name, append(durations, d))
-	} else {
-		// Store first time value for the specific key
-		durations := make([]time.Duration, 0)
-		st.timeTable.Store(name, append(durations, d))
+		return existing
+	}
+	return timer
+}
+
+// LogTimeEntry stores time entry to the TimeLog (the time log itself is stored in the stopwatch sync.Map)
+func (t *TimeLog) LogTimeEntry(d time.Duration) {
+	if t != nil && t.entries != nil {
+		t.entries = append(t.entries, d)
 	}
 }
 
-// Print logs all entries from the map (partial times) + overall time if set
-func (st *Stopwatch) Print() {
+// PrintLog all entries from TimeLog and reset it
+func (st *Stopwatch) PrintLog() {
 	isMapEmpty := true
 	var wasErr error
-	// Calculate overall time
-	var overall time.Duration
+	// Calculate stTotal time
+	var stTotal time.Duration
 	st.timeTable.Range(func(k, v interface{}) bool {
 		// Remember that the map contained entries
 		isMapEmpty = false
-		key, ok := k.(string)
+		name, ok := k.(string)
 		if !ok {
 			wasErr = fmt.Errorf("cannot cast timeTable map key to string")
 			// stops the iteration
 			return false
 		}
-		value, ok := v.([]time.Duration)
+		value, ok := v.(*TimeLog)
 		if !ok {
 			wasErr = fmt.Errorf("cannot cast timeTable map value to duration")
 			// stops the iteration
 			return false
 		}
-		// Print time value for every and calculate overall time
-		for _, entry := range value {
-			overall += entry
-			st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": entry.Nanoseconds()}).Infof("%v call took %v", key, entry)
-		}
+		// Calculate average value of entry list
+		nameTotal, average := st.calculateAverage(value.entries)
+		// Add to total
+		stTotal += nameTotal
+		st.logger.WithFields(logging.Fields{"conf": st.name, "wasCalled": len(value.entries),
+			"durationInNs": average.Nanoseconds()}).Infof("%v call took %v", name, average)
+
 		return true
 	})
 
@@ -112,8 +138,22 @@ func (st *Stopwatch) Print() {
 		st.logger.WithField("conf", st.name).Infof("stopwatch has no entries")
 	}
 	// Log overall time
-	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": overall.Nanoseconds()}).Infof("partial resync time is %v", overall)
+	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": stTotal.Nanoseconds()}).Infof("partial resync time is %v", stTotal)
 
 	// clear map after use
 	st.timeTable = sync.Map{}
+}
+
+// calculates average duration of binary api + total duration of that binary api (if called more than once)
+func (st *Stopwatch) calculateAverage(durations []time.Duration) (total time.Duration, average time.Duration) {
+	if len(durations) == 0 {
+		return 0, 0
+	}
+	for _, duration := range durations {
+		total += duration
+	}
+
+	avgVal := total.Nanoseconds() / int64(len(durations))
+
+	return total, time.Duration(avgVal)
 }
