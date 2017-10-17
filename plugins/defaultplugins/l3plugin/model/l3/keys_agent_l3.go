@@ -30,6 +30,12 @@ const (
 	FibPrefix = "vpp/config/v1/fib/"
 	// ARPPrefix is the relative key prefix for ARP table entries.
 	ARPPrefix = FibPrefix + "{fib}/arp/{if}/{ip}"
+	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
+	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
+	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP-enabled interfaces.
+	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
