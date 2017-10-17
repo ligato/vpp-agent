@@ -15,10 +15,14 @@
 package restplugin
 
 import (
+	"github.com/gorilla/mux"
+	aclplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
+	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
 	"github.com/unrolled/render"
 	"net/http"
+	"strconv"
 )
 
 //interfaceGetHandler - used to get list of all interfaces
@@ -47,7 +51,32 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 }
 
 //bridgeDomainGetHandler - used to get list of all bridge domains
-func (plugin *RESTAPIPlugin) bridgeDomainGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all bridge domain ids")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+		} else {
+			res, err := l2plugin.DumpBridgeDomainIDs(plugin.Deps.Log, ch, nil)
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, nil)
+			} else {
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
+			}
+		}
+		defer ch.Close()
+	}
+}
+
+//bridgeDomainGetHandler - used to get list of all bridge domains
+func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Deps.Log.Info("Getting list of all bridge domains")
@@ -118,5 +147,67 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 			}
 		}
 		defer ch.Close()
+	}
+}
+
+//staticRoutesGetHandler - used to get list of all static routes
+func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all static routes")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+		} else {
+			res, err := l3plugin.DumpStaticRoutes(plugin.Deps.Log, ch, nil)
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, nil)
+			} else {
+				plugin.Deps.Log.Debug(res)
+				formatter.JSON(w, http.StatusOK, res)
+			}
+		}
+		defer ch.Close()
+	}
+}
+
+//interfaceAclPostHandler - used to get acl configuration for a particular interface
+func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Deps.Log.Info("Getting list of all static routes")
+
+		params := mux.Vars(req)
+		if params != nil && len(params) > 0 {
+			swIndexStr := params["swIndex"]
+			if swIndexStr != "" {
+				swIndexuInt64, err := strconv.ParseUint(swIndexStr, 10, 32)
+				swIndex := uint32(swIndexuInt64)
+				if err != nil {
+					// create an API channel
+					ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+					if err != nil {
+						plugin.Deps.Log.Errorf("Error: %v", err)
+						formatter.JSON(w, http.StatusInternalServerError, nil)
+					} else {
+						res, err := aclplugin.DumpInterface(swIndex, ch, nil)
+						if err != nil {
+							plugin.Deps.Log.Errorf("Error: %v", err)
+							formatter.JSON(w, http.StatusInternalServerError, nil)
+						} else {
+							plugin.Deps.Log.Debug(res)
+							formatter.JSON(w, http.StatusOK, res)
+						}
+					}
+					defer ch.Close()
+				}
+			} else {
+				formatter.JSON(w, http.StatusBadRequest, "swIndex parameter not found")
+			}
+		}
 	}
 }
