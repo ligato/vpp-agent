@@ -487,6 +487,9 @@ func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName 
 }
 
 func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {
+	if newConfig == nil || oldConfig == nil {
+		return true
+	}
 	if newConfig.RingSize == 0 {
 		newConfig.RingSize = 1 // default
 	}
@@ -504,6 +507,9 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 }
 
 func (plugin *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Vxlan, oldConfig *intf.Interfaces_Interface_Vxlan) bool {
+	if newConfig == nil || oldConfig == nil {
+		return true
+	}
 	if newConfig.SrcAddress != oldConfig.SrcAddress || newConfig.DstAddress != oldConfig.DstAddress || newConfig.Vni != oldConfig.Vni {
 		return false
 	}
