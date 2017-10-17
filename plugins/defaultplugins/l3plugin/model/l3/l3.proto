@@ -24,10 +24,27 @@ message StaticRoutes {
 message ArpTableEntries {
     message ArpTableEntry {
         uint32 fib_index = 1;                          /* IP FIB index, 0 is the default FIB */
-        string interface = 2;                          /* Interface to which this APR entry applies */
+        string interface = 2;                          /* interface to which this APR entry applies */
         string ip_address = 3;                         /* IP address */
         string phys_address = 4;                       /* MAC address matching to the IP */
         bool static = 5;                               /* TRUE if this is a static ARP entry */
     }
     repeated ArpTableEntry arp_table_entries = 100;    /* list of ARP entries */
+}
+
+/* Proxy ARP ranges */
+message ProxyArpRanges {
+    message ProxyArpRange {
+        string range_ip_start = 1;                  /* low (starting) IP address of the proxy ARP range */
+        string range_ip_end = 2;                    /* high (last) IP address of the proxy ARP range  */
+    }
+    repeated ProxyArpRange proxy_arp_ranges = 100;  /* list of proxy arp ranges */
+}
+
+/* Proxy ARP interfaces */
+message ProxyArpInterfaces {
+    message ProxyArpInterface {
+        string interface = 1;                               /* interface name */
+    }
+    repeated ProxyArpInterface proxy_arp_interfaces = 100;  /* list of proxy arp-enabled interfaces */
 }
