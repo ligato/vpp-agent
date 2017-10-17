@@ -41,12 +41,13 @@ type Agent struct {
 	timer Timer
 }
 
+// Timer holds all startup times
 type Timer struct {
 	// The startup/initialization must take no longer that maxStartup.
 	MaxStartupTime time.Duration
 	// timers
 	agentStart     time.Time
-	initStart      time.Time // todo same as agent start?
+	initStart      time.Time
 	afterInitStart time.Time
 	// durations
 	init      time.Duration

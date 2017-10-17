@@ -69,3 +69,11 @@ import:
   version: v0.8.0
   subpackages:
   - prometheus/promhttp
+- package: github.com/mattn/go-isatty
+  version: a5cdd64afdee435007ee3e9f6ed4684af949d568
+- package: github.com/davecgh/go-spew
+  version: dce690a33ebe33040a7a2ffeb96dd200060f3fca
+- package: github.com/gogo/protobuf
+  version: f7f1376d9d231a646d4e62fe1075623ced6db327
+  subpackages:
+  - proto

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package grpcsync implements (in ALPHA VERSION) the gRPC transport client
-// and server that satisfies the datasync API. See the definition of the
+// Package grpcsync implements (in ALPHA VERSION) the gRPC client
+// and server that satisfies the datasync API (see the definition of the
 // service in ../syncbase/msg package). This implementation is special
 // (comparing to dbsync or msgsync) because it does not use any intermediate
 // persistence between the client and the server. Therefore the client does

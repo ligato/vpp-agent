@@ -14,14 +14,14 @@
 
 // Package datasync defines the datasync API, which abstracts the data
 // transport between app plugins and backend data sources. Data sources
-// can be data stores, clients connected to a message bus, or remote clients
-// connected to a CN-Infra app. Transport can be, for example, HTTP or gRPC.
+// may be data stores, clients connected to a message bus, or remote clients
+// connected to CN-Infra app. Transport may be, for example, HTTP or gRPC.
 //
 // These events are processed asynchronously.
-// With each event, app plugin also receives a separate callback which is used
+// With each event, the app plugin also receives a separate callback which is used
 // to propagate any errors encountered during the event processing back
-// to the user of datasync package. A successfully finalized event processing
-// should be signaled by sending nil value (meaning no error) via the associated
+// to the user of the datasync package. Successfully finalized event processing
+// is signaled by sending nil value (meaning no error) via the associated
 // callback.
 //
 // See the examples under the dedicated examples package.
