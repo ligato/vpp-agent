@@ -15,12 +15,11 @@
 package measure
 
 import (
-	"reflect"
-	"github.com/ligato/cn-infra/logging"
-	"time"
-	"sync"
 	"fmt"
-	"strconv"
+	"github.com/ligato/cn-infra/logging"
+	"reflect"
+	"sync"
+	"time"
 )
 
 // StopWatchEntry provides method to log measured time entries
@@ -43,8 +42,8 @@ type Stopwatch struct {
 // NewStopwatch creates a new stopwatch object with empty time map
 func NewStopwatch(name string, log logging.Logger) *Stopwatch {
 	return &Stopwatch{
-		name: name,
-		logger: log,
+		name:      name,
+		logger:    log,
 		timeTable: sync.Map{},
 	}
 }
@@ -103,12 +102,12 @@ func (t *TimeLog) LogTimeEntry(d time.Duration) {
 func (st *Stopwatch) PrintLog() {
 	isMapEmpty := true
 	var wasErr error
-	// Calculate overall time
-	var overall time.Duration
+	// Calculate stTotal time
+	var stTotal time.Duration
 	st.timeTable.Range(func(k, v interface{}) bool {
 		// Remember that the map contained entries
 		isMapEmpty = false
-		key, ok := k.(string)
+		name, ok := k.(string)
 		if !ok {
 			wasErr = fmt.Errorf("cannot cast timeTable map key to string")
 			// stops the iteration
@@ -120,15 +119,13 @@ func (st *Stopwatch) PrintLog() {
 			// stops the iteration
 			return false
 		}
-		// Print time value for every and calculate overall time
-		for index, entry := range value.entries {
-			name := key
-			if index != 0 {
-				name = key + "#" + strconv.Itoa(index)
-			}
-			st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": entry.Nanoseconds()}).Infof("%v call took %v", name, entry)
-			overall += entry
-		}
+		// Calculate average value of entry list
+		nameTotal, average := st.calculateAverage(value.entries)
+		// Add to total
+		stTotal += nameTotal
+		st.logger.WithFields(logging.Fields{"conf": st.name, "wasCalled": len(value.entries),
+		"durationInNs": average.Nanoseconds()}).Infof("%v call took %v", name, average)
+
 		return true
 	})
 
@@ -142,8 +139,22 @@ func (st *Stopwatch) PrintLog() {
 		st.logger.WithField("conf", st.name).Infof("stopwatch has no entries")
 	}
 	// Log overall time
-	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": overall.Nanoseconds()}).Infof("partial resync time is %v", overall)
+	st.logger.WithFields(logging.Fields{"conf": st.name, "durationInNs": stTotal.Nanoseconds()}).Infof("partial resync time is %v", stTotal)
 
 	// clear map after use
 	st.timeTable = sync.Map{}
+}
+
+// calculates average duration of binary api + total duration of that binary api (if called more than once)
+func (st *Stopwatch) calculateAverage(durations []time.Duration) (total time.Duration, average time.Duration) {
+	if len(durations) == 0 {
+		return 0, 0
+	}
+	for _, duration := range durations {
+		total += duration
+	}
+
+	avgVal := total.Nanoseconds() / int64(len(durations))
+
+	return total, time.Duration(avgVal)
 }
