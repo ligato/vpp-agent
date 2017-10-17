@@ -25,12 +25,12 @@ import (
 )
 
 // SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value
-func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetMtu time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetMtu{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

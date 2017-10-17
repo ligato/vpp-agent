@@ -24,12 +24,12 @@ import (
 )
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0
-func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -51,12 +51,12 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *meas
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1
-func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetFlags{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

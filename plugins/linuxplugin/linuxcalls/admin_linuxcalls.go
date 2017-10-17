@@ -23,11 +23,11 @@ import (
 )
 
 // InterfaceAdminDown calls Netlink API LinkSetDown
-func InterfaceAdminDown(ifName string, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminDown(ifName string, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("iface_admin_down", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -39,11 +39,11 @@ func InterfaceAdminDown(ifName string, stopwatch *measure.Stopwatch) error {
 }
 
 // InterfaceAdminUp calls Netlink API LinkSetUp
-func InterfaceAdminUp(ifName string, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminUp(ifName string, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("up", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

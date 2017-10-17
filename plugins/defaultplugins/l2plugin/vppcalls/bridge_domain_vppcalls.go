@@ -26,13 +26,13 @@ import (
 
 // VppAddBridgeDomain adds new bridge domain
 func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Debug("Adding VPP bridge domain ", bridgeDomain.Name)
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -66,7 +66,7 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
 	if oldBdIdx != 0 {
-		err := VppDeleteBridgeDomain(oldBdIdx, log, vppChan, stopwatch)
+		err := VppDeleteBridgeDomain(oldBdIdx, log, vppChan, measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, stopwatch))
 		if err != nil {
 			return err
 		}
@@ -75,8 +75,9 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
+		timeLog := measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, stopwatch)
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -106,12 +107,12 @@ func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2
 }
 
 // VppDeleteBridgeDomain removes existing bridge domain
-func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l2ba.BridgeDomainAddDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

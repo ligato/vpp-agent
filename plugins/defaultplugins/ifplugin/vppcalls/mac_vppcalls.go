@@ -26,12 +26,12 @@ import (
 )
 
 // SetInterfaceMac calls SwInterfaceSetMacAddress bin API
-func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetMacAddress time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(interfaces.SwInterfaceSetMacAddress{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

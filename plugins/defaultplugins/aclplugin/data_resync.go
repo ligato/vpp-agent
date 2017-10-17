@@ -25,7 +25,7 @@ func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.L
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.Print()
+			plugin.Stopwatch.PrintLog()
 		}
 	}()
 

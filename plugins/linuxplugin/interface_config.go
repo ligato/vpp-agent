@@ -155,8 +155,8 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 	start := time.Now()
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.LogTimeEntry("linux-interface resync", time.Since(start))
-			plugin.Stopwatch.Print()
+			timeLog := measure.GetTimeLog("linux-interface resync", plugin.Stopwatch)
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -291,7 +291,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 
 	// set interface up
 	if iface.config.Enabled {
-		err := linuxcalls.InterfaceAdminUp(iface.config.HostIfName, plugin.Stopwatch)
+		err := linuxcalls.InterfaceAdminUp(iface.config.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.Stopwatch))
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface: %v", err)
 		}
@@ -302,7 +302,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	// configure optional mac address
 	if iface.config.PhysAddress != "" {
 		plugin.Log.WithFields(log.Fields{"PhysAddress": iface.config.PhysAddress, "ifName": iface.config.Name}).Debug("MAC address configured.")
-		err := linuxcalls.SetInterfaceMac(iface.config.HostIfName, iface.config.PhysAddress, plugin.Stopwatch)
+		err := linuxcalls.SetInterfaceMac(iface.config.HostIfName, iface.config.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.Stopwatch))
 		if err != nil {
 			wasError = fmt.Errorf("failed to assign physical address to Linux interface: %v", err)
 		}
@@ -315,7 +315,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	}
 	for i := range newAddrs {
 		plugin.Log.WithFields(log.Fields{"IPaddress": newAddrs[i], "ifName": iface.config.Name}).Debug("IP address added.")
-		err := linuxcalls.AddInterfaceIP(iface.config.HostIfName, newAddrs[i], plugin.Stopwatch)
+		err := linuxcalls.AddInterfaceIP(iface.config.HostIfName, newAddrs[i], measure.GetTimeLog("add_iface_ip", plugin.Stopwatch))
 		if nil != err {
 			wasError = fmt.Errorf("failed to assign IPv4 address to Linux interface: %v", err)
 		}
@@ -325,7 +325,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	mtu := iface.config.Mtu
 	if mtu > 0 {
 		plugin.Log.WithFields(log.Fields{"MTU": mtu, "ifName": iface.config.Name}).Debug("MTU configured.")
-		err := linuxcalls.SetInterfaceMTU(iface.config.HostIfName, int(mtu), plugin.Stopwatch)
+		err := linuxcalls.SetInterfaceMTU(iface.config.HostIfName, int(mtu), measure.GetTimeLog("set_iface_mtu", plugin.Stopwatch))
 		if nil != err {
 			wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 		}
@@ -403,9 +403,9 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	// admin status
 	if newConfig.Enabled != oldConfig.Enabled {
 		if newConfig.Enabled {
-			err = linuxcalls.InterfaceAdminUp(ifName, plugin.Stopwatch)
+			err = linuxcalls.InterfaceAdminUp(ifName, measure.GetTimeLog("iface_admin_up", plugin.Stopwatch))
 		} else {
-			err = linuxcalls.InterfaceAdminDown(ifName, plugin.Stopwatch)
+			err = linuxcalls.InterfaceAdminDown(ifName, measure.GetTimeLog("iface_admin_down", plugin.Stopwatch))
 		}
 		if nil != err {
 			wasError = fmt.Errorf("failed to enable/disable Linux interface: %v", err)
@@ -415,7 +415,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	// configure new mac address if set
 	if newConfig.PhysAddress != "" && newConfig.PhysAddress != oldConfig.PhysAddress {
 		plugin.Log.WithFields(log.Fields{"PhysAddress": newConfig.PhysAddress, "ifName": ifName}).Debug("MAC address re-configured.")
-		err := linuxcalls.SetInterfaceMac(ifName, newConfig.PhysAddress, plugin.Stopwatch)
+		err := linuxcalls.SetInterfaceMac(ifName, newConfig.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.Stopwatch))
 		if err != nil {
 			wasError = fmt.Errorf("failed to assign physical address to a Linux interface: %v", err)
 		}
@@ -436,7 +436,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 
 	for i := range del {
 		plugin.Log.WithFields(log.Fields{"IPaddress": del[i], "ifName": ifName}).Debug("IP address deleted.")
-		err := linuxcalls.DelInterfaceIP(ifName, del[i], plugin.Stopwatch)
+		err := linuxcalls.DelInterfaceIP(ifName, del[i], measure.GetTimeLog("del_iface_ip", plugin.Stopwatch))
 		if nil != err {
 			wasError = fmt.Errorf("failed to unassign IPv4 address from a Linux interface: %v", err)
 		}
@@ -444,7 +444,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 
 	for i := range add {
 		plugin.Log.WithFields(log.Fields{"IPaddress": add[i], "ifName": ifName}).Debug("IP address added.")
-		err := linuxcalls.AddInterfaceIP(ifName, add[i], plugin.Stopwatch)
+		err := linuxcalls.AddInterfaceIP(ifName, add[i], measure.GetTimeLog("add_iface_ip", plugin.Stopwatch))
 		if nil != err {
 			wasError = fmt.Errorf("failed to assign IPv4 address to a Linux interface: %v", err)
 		}
@@ -455,7 +455,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 		mtu := newConfig.Mtu
 		if mtu > 0 {
 			plugin.Log.WithFields(log.Fields{"MTU": mtu, "ifName": ifName}).Debug("MTU re-configured.")
-			err := linuxcalls.SetInterfaceMTU(ifName, int(mtu), plugin.Stopwatch)
+			err := linuxcalls.SetInterfaceMTU(ifName, int(mtu), measure.GetTimeLog("set_iface_mtu", plugin.Stopwatch))
 			if nil != err {
 				wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 			}
@@ -501,7 +501,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	}
 	defer revertNs()
 
-	err = linuxcalls.DelVethInterface(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, plugin.Stopwatch)
+	err = linuxcalls.DelVethInterface(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to delete VETH interface: %v", err)
 	}
@@ -523,7 +523,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	exists, err := linuxcalls.InterfaceExists(hostIfName, plugin.Stopwatch)
+	exists, err := linuxcalls.InterfaceExists(hostIfName, measure.GetTimeLog("iface_exists", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -533,7 +533,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	ifType, err := linuxcalls.GetInterfaceType(hostIfName, plugin.Stopwatch)
+	ifType, err := linuxcalls.GetInterfaceType(hostIfName, measure.GetTimeLog("get_iface_type", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -541,13 +541,13 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	if ifType != "veth" {
 		return fmt.Errorf("interface '%s' already exists and is not VETH", vethName)
 	}
-	peerName, err := linuxcalls.GetVethPeerName(hostIfName, plugin.Stopwatch)
+	peerName, err := linuxcalls.GetVethPeerName(hostIfName, measure.GetTimeLog("get_veth_peer", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
 	}
 	plugin.Log.WithFields(log.Fields{"ifName": vethName, "peerName": peerName}).Debug("Removing obsolete VETH interface")
-	err = linuxcalls.DelVethInterface(hostIfName, peerName, plugin.Log, plugin.Stopwatch)
+	err = linuxcalls.DelVethInterface(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -582,7 +582,7 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls
 	if err != nil {
 		return err
 	}
-	err = linuxcalls.AddVethInterface(iface.HostIfName, peer.HostIfName, plugin.Log, plugin.Stopwatch)
+	err = linuxcalls.AddVethInterface(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to create new VETH: %v", err)
 	}

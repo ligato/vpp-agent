@@ -19,6 +19,7 @@ function static_analysis() {
   local GRPCMUX=$(${TOOL} "${PWD}/rpc/grpc${SELECTOR}")
   local IDXMAP=$(${TOOL} "${PWD}/idxmap${SELECTOR}")
   local LOGGING=$(${TOOL} "${PWD}/logging${SELECTOR}")
+  local LOGGING=$(${TOOL} "${PWD}/logging/measure${SELECTOR}")
   local MESSAGING=$(${TOOL} "${PWD}/messaging${SELECTOR}")
   local SERVICELABEL=$(${TOOL} "${PWD}/servicelabel${SELECTOR}")
   local PROBE=$(${TOOL} "${PWD}/health/probe${SELECTOR}")

@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"time"
 )
 
 // FIBConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -227,6 +228,15 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, cal
 // for them
 func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 	plugin.Log.Infof("Looking up FIB entries")
+	// L2FibTableDump time measurement
+	start := time.Now()
+	defer func() {
+		if plugin.Stopwatch != nil {
+			timeLog := measure.GetTimeLog(l2ba.L2FibTableDump{}, plugin.Stopwatch)
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &l2ba.L2FibTableDump{}
 	req.BdID = bridgeDomain
 	reqContext := plugin.syncVppChannel.SendMultiRequest(req)

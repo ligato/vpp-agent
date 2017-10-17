@@ -23,11 +23,11 @@ import (
 )
 
 // GetInterfaceType returns the type (string representation) of a given interface.
-func GetInterfaceType(ifName string, stopwatch *measure.Stopwatch) (string, error) {
+func GetInterfaceType(ifName string, timeLog measure.StopWatchEntry) (string, error) {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("get_iface_type", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -39,11 +39,11 @@ func GetInterfaceType(ifName string, stopwatch *measure.Stopwatch) (string, erro
 }
 
 // InterfaceExists checks if interface with a given name exists.
-func InterfaceExists(ifName string, stopwatch *measure.Stopwatch) (bool, error) {
+func InterfaceExists(ifName string, timeLog measure.StopWatchEntry) (bool, error) {
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry("iface_exists", time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

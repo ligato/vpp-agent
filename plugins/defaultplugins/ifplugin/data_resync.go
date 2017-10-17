@@ -35,7 +35,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 	// Calculate and log interface resync
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.Print()
+			plugin.Stopwatch.PrintLog()
 		}
 	}()
 
@@ -137,7 +137,7 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.Print()
+			plugin.Stopwatch.PrintLog()
 		}
 	}()
 
@@ -168,7 +168,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 	// Calculate and log bfd resync
 	defer func() {
 		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.Print()
+			plugin.Stopwatch.PrintLog()
 		}
 	}()
 

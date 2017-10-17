@@ -30,12 +30,12 @@ import (
 
 // AddBfdUDPSession adds new BFD session with authentication if available
 func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx,
-	log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPAdd{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -106,12 +106,12 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 
 // AddBfdUDPSessionFromDetails adds new BFD session with authentication if available
 func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
-	vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPAdd{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -157,12 +157,12 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 }
 
 // ModifyBfdUDPSession modifies existing BFD session excluding authentication which cannot be changed this way
-func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPMod time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPMod{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -215,12 +215,12 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 }
 
 // DeleteBfdUDPSession removes existing BFD session
-func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPDel time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPDel{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -246,12 +246,12 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 
 // DumpBfdUDPSessionsWithID returns a list of BFD session's metadata
 func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfIndex, bfdSessionIndexes idxvpp.NameToIdx,
-	vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) ([]*bfd_api.BfdUDPSessionDetails, error) {
+	vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
 	// BfdUDPSessionDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPSessionDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -291,12 +291,12 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 }
 
 // SetBfdUDPAuthenticationKey creates configures new authentication key
-func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdAuthSetKey time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdAuthSetKey{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -332,12 +332,12 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 }
 
 // DeleteBfdUDPAuthenticationKey removes authentication key
-func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdAuthDelKey time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdAuthDelKey{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -359,12 +359,12 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 }
 
 // AddBfdEchoFunction sets up echo function  for interface
-func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPSetEchoSource time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPSetEchoSource{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -391,12 +391,12 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 }
 
 // DeleteBfdEchoFunction removes echo function
-func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPDelEchoSource time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(bfd_api.BfdUDPDelEchoSource{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 

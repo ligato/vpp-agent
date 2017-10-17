@@ -39,13 +39,13 @@ type FibLogicalReq struct {
 
 // NewL2FibVppCalls is a constructor
 func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
-	return &L2FibVppCalls{vppChan, stopwatch, list.New()}
+	return &L2FibVppCalls{vppChan, measure.GetTimeLog(l2ba.L2fibAddDel{}, stopwatch), list.New()}
 }
 
 // L2FibVppCalls aggregates vpp calls related to l2 fib
 type L2FibVppCalls struct {
 	vppChan         *govppapi.Channel
-	stopwatch       *measure.Stopwatch
+	timeLog         measure.StopWatchEntry
 	waitingForReply *list.List
 }
 
@@ -58,8 +58,8 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 	// L2fibAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if fib.stopwatch != nil {
-			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
+		if fib.timeLog != nil {
+			fib.timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -80,8 +80,8 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 	// L2fibAddDel time measurement
 	start := time.Now()
 	defer func() {
-		if fib.stopwatch != nil {
-			fib.stopwatch.LogTimeEntry(l2ba.L2fibAddDel{}, time.Since(start))
+		if fib.timeLog != nil {
+			fib.timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
