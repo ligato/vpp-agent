@@ -20,10 +20,10 @@ import (
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	//l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/unrolled/render"
 	"net/http"
 	"strconv"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 )
 
