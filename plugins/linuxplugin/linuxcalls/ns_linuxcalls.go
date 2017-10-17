@@ -25,12 +25,13 @@ import (
 	"strings"
 	"syscall"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
 
 	"fmt"
 	"net"
 
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
@@ -104,9 +105,10 @@ func GetDefaultNamespace() *intf.LinuxInterfaces_Interface_Namespace {
 }
 
 // SetInterfaceNamespace moves a given Linux interface into a specified namespace.
-func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace) error {
+func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace,
+	log logging.Logger, stopwatch *measure.Stopwatch) error {
 	// Get network namespace file descriptor
-	ns, err := GetOrCreateNs(namespace)
+	ns, err := GetOrCreateNs(namespace, log)
 	if err != nil {
 		return err
 	}
@@ -137,11 +139,11 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 	if err != nil {
 		return err
 	}
-	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "dest-namespace": NamespaceToStr(namespace),
+	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": NamespaceToStr(namespace),
 		"dest-namespace-fd": int(ns)}).Debug("Moved Linux interface across namespaces")
 
 	// re-configure interface in its new namespace
-	revertNs, err := SwitchNamespace(ctx, namespace)
+	revertNs, err := SwitchNamespace(ctx, namespace, log)
 	if err != nil {
 		return err
 	}
@@ -149,11 +151,11 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 
 	if netIntf.Flags&net.FlagUp == 1 {
 		// re-enable interface
-		err = InterfaceAdminUp(ifName)
+		err = InterfaceAdminUp(ifName, measure.GetTimeLog("iface_admin_up", stopwatch))
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
-		log.DefaultLogger().WithFields(log.Fields{"ifName": ifName}).Debug("Linux interface was re-enabled")
+		log.WithFields(logging.Fields{"ifName": ifName}).Debug("Linux interface was re-enabled")
 	}
 
 	// re-add IP addresses
@@ -163,22 +165,22 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 		if err != nil {
 			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
 		}
-		err = AddInterfaceIP(ifName, network)
+		err = AddInterfaceIP(ifName, network, measure.GetTimeLog("add_iface_ip", stopwatch))
 		if err != nil {
 			if err.Error() == "file exists" {
 				continue
 			}
 			return fmt.Errorf("failed to assign IPv4 address to a Linux interface `%s`: %v", ifName, err)
 		}
-		log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "addr": network}).Debug("IP address was re-assigned to Linux interface")
+		log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).Debug("IP address was re-assigned to Linux interface")
 	}
 
 	// revert back the MTU config
-	err = SetInterfaceMTU(ifName, netIntf.MTU)
+	err = SetInterfaceMTU(ifName, netIntf.MTU, measure.GetTimeLog("set_iface_mtu", stopwatch))
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}
-	log.DefaultLogger().WithFields(log.Fields{"ifName": ifName, "mtu": netIntf.MTU}).Debug("MTU was reconfigured for Linux interface")
+	log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).Debug("MTU was reconfigured for Linux interface")
 
 	return nil
 }
@@ -186,7 +188,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 // SwitchNamespace switches the network namespace of the current thread.
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
-func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Interface_Namespace) (revert func(), err error) {
+func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Interface_Namespace, log logging.Logger) (revert func(), err error) {
 	var ns netns.NsHandle
 
 	// Save the current network namespace
@@ -196,7 +198,7 @@ func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Inte
 	}
 
 	// Get network namespace file descriptor
-	ns, err = GetOrCreateNs(namespace)
+	ns, err = GetOrCreateNs(namespace, log)
 	if err != nil {
 		return func() {}, err
 	}
@@ -207,23 +209,23 @@ func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Inte
 		// Lock the OS Thread so we don't accidentally switch namespaces later.
 		runtime.LockOSThread()
 		ctx.lockedOsThread = true
-		log.DefaultLogger().Debug("Locked OS thread")
+		log.Debug("Locked OS thread")
 	}
 
 	// Switch the namespace.
 	netns.Set(ns)
-	log.DefaultLogger().WithFields(log.Fields{"dest-namespace": NamespaceToStr(namespace), "dest-namespace-fd": int(ns)}).Debug(
+	log.WithFields(logging.Fields{"dest-namespace": NamespaceToStr(namespace), "dest-namespace-fd": int(ns)}).Debug(
 		"Switched Linux network namespace")
 
 	return func() {
 		netns.Set(origns)
-		log.DefaultLogger().WithFields(log.Fields{"namespace-fd": int(origns)}).Debug(
+		log.WithFields(logging.Fields{"namespace-fd": int(origns)}).Debug(
 			"Switched back to the original Linux network namespace")
 		origns.Close()
 		if !alreadyLocked {
 			runtime.UnlockOSThread()
 			ctx.lockedOsThread = false
-			log.DefaultLogger().Debug("Unlocked OS thread")
+			log.Debug("Unlocked OS thread")
 		}
 	}, nil
 }
@@ -237,7 +239,7 @@ func dupNsHandle(ns netns.NsHandle) (netns.NsHandle, error) {
 // GetOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.NsHandle, error) {
+func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace, log logging.Logger) (netns.NsHandle, error) {
 	var ns netns.NsHandle
 	var err error
 
@@ -262,13 +264,13 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 		ns, err = netns.GetFromName(namespace.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, err = CreateNamedNetNs(namespace.Name)
+			_, _, err = CreateNamedNetNs(namespace.Name, log)
 			if err != nil {
 				return netns.None(), err
 			}
 			ns, err = netns.GetFromName(namespace.Name)
 			if err != nil {
-				return netns.None(), errors.New("Failed to get namespace by name")
+				return netns.None(), errors.New("failed to get namespace by name")
 			}
 		}
 	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
@@ -280,7 +282,7 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 			return netns.None(), err
 		}
 	case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
-		return netns.None(), errors.New("Don't know how to convert microservice label to PID at this level")
+		return netns.None(), errors.New("don't know how to convert microservice label to PID at this level")
 	}
 
 	return ns, nil
@@ -288,8 +290,13 @@ func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace) (netns.N
 
 // CreateNamedNetNs creates a new named Linux network namespace.
 // It does exactly the same thing as the command "ip netns add NAMESPACE" .
-func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
-	log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Debug("Creating new named Linux namespace")
+func CreateNamedNetNs(namespace string, log logging.Logger) (netns.NsHandle, *intf.LinuxInterfaces_Interface_Namespace, error) {
+	log.WithFields(logging.Fields{"namespace": namespace}).Debug("Creating new named Linux namespace")
+	// Prepare namespace proto object
+	nsObj := &intf.LinuxInterfaces_Interface_Namespace{
+		Type: intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+		Name: namespace,
+	}
 
 	// Lock the OS Thread so we don't accidentally switch namespaces
 	runtime.LockOSThread()
@@ -298,16 +305,16 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 	// Save the current network namespace
 	origns, err := netns.Get()
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("Failed to get the original namespace")
-		return netns.None(), err
+		log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("Failed to get the original namespace")
+		return netns.None(), nsObj, err
 	}
 	defer origns.Close()
 
 	// Create directory for namespace mounts
 	err = os.MkdirAll(netnsMountDir, 0755)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("Failed to create directory for namespace mounts")
-		return netns.None(), err
+		log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("Failed to create directory for namespace mounts")
+		return netns.None(), nsObj, err
 	}
 
 	/* Make it possible for network namespace mounts to propagate between
@@ -323,34 +330,34 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 			break
 		}
 		if e, ok := err.(syscall.Errno); !ok || e != syscall.EINVAL || mountedNetnsDir {
-			log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("mount --make-shared failed")
-			return netns.None(), err
+			log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("mount --make-shared failed")
+			return netns.None(), nsObj, err
 		}
 		/* Upgrade netnsMountDir to a mount point */
 		err = syscall.Mount(netnsMountDir, netnsMountDir, "none", syscall.MS_BIND, "")
 		if err != nil {
-			log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("mount --bind failed")
-			return netns.None(), err
+			log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("mount --bind failed")
+			return netns.None(), nsObj, err
 		}
 		mountedNetnsDir = true
 	}
 
 	// Create file path for the mount
-	netnsMountFile := path.Join(netnsMountDir, namespace)
+	netnsMountFile := path.Join(netnsMountDir, nsObj.Name)
 	file, err := os.OpenFile(netnsMountFile, os.O_RDONLY|os.O_CREATE|os.O_EXCL, 0444)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create destination path for the namespace mount")
-		return netns.None(), err
+		log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("failed to create destination path for the namespace mount")
+		return netns.None(), nsObj, err
 	}
 	file.Close()
 
 	// Create and switch to a new namespace
-	newns, err := netns.New()
+	newNsHandle, err := netns.New()
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create namespace")
-		return netns.None(), err
+		log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("failed to create namespace")
+		return netns.None(), nsObj, err
 	}
-	netns.Set(newns)
+	netns.Set(newNsHandle)
 
 	// Create a bind-mount for the namespace
 	tid := syscall.Gettid()
@@ -360,31 +367,46 @@ func CreateNamedNetNs(namespace string) (netns.NsHandle, error) {
 	netns.Set(origns)
 
 	if err != nil {
-		newns.Close()
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to create namespace bind-mount")
-		return netns.None(), err
+		newNsHandle.Close()
+		log.WithFields(logging.Fields{"namespace": nsObj.Name}).Error("failed to create namespace bind-mount")
+		return netns.None(), nsObj, err
 	}
 
-	return newns, nil
+	return newNsHandle, nsObj, nil
 }
 
 // DeleteNamedNetNs deletes an existing named Linux network namespace.
 // It does exactly the same thing as the command "ip netns del NAMESPACE" .
-func DeleteNamedNetNs(namespace string) error {
-	log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Debug("Deleting named Linux namespace")
+func DeleteNamedNetNs(namespace string, log logging.Logger) error {
+	log.WithFields(logging.Fields{"namespace": namespace}).Debug("Deleting named Linux namespace")
 
 	// Unmount the namespace
 	netnsMountFile := path.Join(netnsMountDir, namespace)
 	err := syscall.Unmount(netnsMountFile, syscall.MNT_DETACH)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to unmount namespace")
+		log.WithFields(logging.Fields{"namespace": namespace}).Error("failed to unmount namespace")
 	}
 
 	// Remove file path used for the mount
 	err = os.Remove(netnsMountFile)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"namespace": namespace}).Error("failed to remove namespace file")
+		log.WithFields(logging.Fields{"namespace": namespace}).Error("failed to remove namespace file")
 	}
 
 	return err
+}
+
+// NamedNetNsExists checks whether namespace exists.
+func NamedNetNsExists(namespace string, log logging.Logger) (bool, error) {
+	netnsMountFile := path.Join(netnsMountDir, namespace)
+	if _, err := os.Stat(netnsMountFile); err != nil {
+		if os.IsNotExist(err) {
+			log.WithFields(logging.Fields{"namespace": namespace}).Debug("namespace not found")
+			return false, nil
+		}
+		log.WithFields(logging.Fields{"namespace": namespace}).Error("failed to read namespace")
+		return false, err
+	}
+	log.WithFields(logging.Fields{"namespace": namespace}).Debug("namespace found")
+	return true, nil
 }

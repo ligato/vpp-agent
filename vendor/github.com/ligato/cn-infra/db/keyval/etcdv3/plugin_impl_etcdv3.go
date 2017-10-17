@@ -34,7 +34,7 @@ type Plugin struct {
 	Deps // inject
 	*plugin.Skeleton
 	disabled   bool
-	connection *BytesConnectionEtcd
+	connection keyval.CoreBrokerWatcher
 }
 
 // Deps lists dependencies of the etcdv3 plugin.
@@ -53,24 +53,24 @@ type Deps struct {
 // Check clientv3.New from coreos/etcd for possible errors returned when
 // the connection cannot be established.
 func (p *Plugin) Init() (err error) {
-	// Retrieve config
-	var cfg Config
-	found, err := p.PluginConfig.GetValue(&cfg)
-	if !found {
-		p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
-		p.disabled = true
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	etcdConfig, err := ConfigToClientv3(&cfg)
-	if err != nil {
-		return err
-	}
-
 	// Init connection
 	if p.Skeleton == nil {
+		// Retrieve config
+		var cfg Config
+		found, err := p.PluginConfig.GetValue(&cfg)
+		if !found {
+			p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
+			p.disabled = true
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		etcdConfig, err := ConfigToClientv3(&cfg)
+		if err != nil {
+			return err
+		}
+
 		p.connection, err = NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
 		if err != nil {
 			return err
@@ -114,14 +114,15 @@ func (p *Plugin) AfterInit() error {
 
 // FromExistingConnection is used mainly for testing to inject existing
 // connection into the plugin.
+// Note, need to set Deps for returned value!
 func FromExistingConnection(connection keyval.CoreBrokerWatcher, sl servicelabel.ReaderAPI) *Plugin {
 	skel := plugin.NewSkeleton("testing", sl, connection)
-	return &Plugin{Skeleton: skel}
+	return &Plugin{Skeleton: skel, connection: connection}
 }
 
 // Close shutdowns the connection.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
+	_, err := safeclose.CloseAll(p.Skeleton)
 	return err
 }
 

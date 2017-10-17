@@ -17,7 +17,6 @@ package statuscheck
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/cn-infra/health/statuscheck/pluginstatusmap"
 )
 
 //go:generate protoc --proto_path=model/status --gogo_out=model/status model/status/status.proto
@@ -52,9 +51,8 @@ type AgentStatusReader interface {
 	GetAgentStatus() status.AgentStatus
 }
 
-// PluginStatusReader allows to retrieve a map containing status of all plugins.
-type PluginStatusReader interface {
-	//TODO combine AgentStatusReader and PluginStatusReader in one interface
+// StatusReader allows to lookup agent status and retrieve a map containing status of all plugins.
+type StatusReader interface {
+	AgentStatusReader
 	GetAllPluginStatus() map[string]*status.PluginStatus
-	GetPluginStatusMap() pluginstatusmap.PluginStatusIdxMap
 }

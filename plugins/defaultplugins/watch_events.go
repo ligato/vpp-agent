@@ -17,7 +17,6 @@ package defaultplugins
 import (
 	"strings"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"golang.org/x/net/context"
@@ -31,7 +30,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 	for {
 		select {
 		case resyncConfigEv := <-plugin.resyncConfigChan:
-			req := resyncParseEvent(resyncConfigEv)
+			req := plugin.resyncParseEvent(resyncConfigEv)
 			err := plugin.resyncConfigPropageRequest(req)
 
 			resyncConfigEv.Done(err)
@@ -39,7 +38,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case resyncStatusEv := <-plugin.resyncStatusChan:
 			var wasError error
 			for key, vals := range resyncStatusEv.GetValues() {
-				log.DefaultLogger().Debugf("trying to delete obsolete status for key %v begin ", key)
+				plugin.Log.Debugf("trying to delete obsolete status for key %v begin ", key)
 				if strings.HasPrefix(key, interfaces.IfStatePrefix) {
 					keys := []string{}
 					for {
@@ -90,7 +89,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.DefaultLogger().Error(err)
+						plugin.Log.Error(err)
 					}
 				})
 				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
@@ -99,7 +98,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
 				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.DefaultLogger().Error(err)
+						plugin.Log.Error(err)
 					}
 				})
 				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
@@ -108,11 +107,17 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			ifIdxEv.Done()
 
 		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
+			var name string
+			if linuxIfIdxEv.Metadata != nil && linuxIfIdxEv.Metadata.HostIfName != "" {
+				name = linuxIfIdxEv.Metadata.HostIfName
+			} else {
+				name = linuxIfIdxEv.Name
+			}
 			if !linuxIfIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveCreatedLinuxInterface(linuxIfIdxEv.Name, linuxIfIdxEv.Idx)
+				plugin.ifConfigurator.ResolveCreatedLinuxInterface(name, linuxIfIdxEv.Idx)
 				// TODO propagate error
 			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(linuxIfIdxEv.Name)
+				plugin.ifConfigurator.ResolveDeletedLinuxInterface(name)
 				// TODO propagate error
 			}
 			linuxIfIdxEv.Done()
@@ -121,14 +126,14 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			if !bdIdxEv.IsDelete() {
 				plugin.fibConfigurator.ResolveCreatedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.DefaultLogger().Error(err)
+						plugin.Log.Error(err)
 					}
 				})
 				// TODO propagate error
 			} else {
 				plugin.fibConfigurator.ResolveDeletedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
-						log.DefaultLogger().Error(err)
+						plugin.Log.Error(err)
 					}
 				})
 				// TODO propagate error
@@ -136,7 +141,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			bdIdxEv.Done()
 
 		case <-ctx.Done():
-			log.DefaultLogger().Debug("Stop watching events")
+			plugin.Log.Debug("Stop watching events")
 			return
 		}
 	}

@@ -19,12 +19,10 @@ import (
 
 	"sync"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -100,6 +98,8 @@ type Plugin struct {
 	ifStateNotifications messaging.ProtoPublisher
 	ifMtu                uint32
 
+	enableStopwatch bool
+
 	watchConfigReg datasync.WatchRegistration
 	watchStatusReg datasync.WatchRegistration
 
@@ -111,7 +111,7 @@ type Plugin struct {
 }
 
 // Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// to not mix with other plugin fieldsMtu.
 type Deps struct {
 	// inject all below
 	local.PluginInfraDeps
@@ -130,9 +130,10 @@ type linuxpluginAPI interface {
 	GetLinuxIfIndexes() ifaceidx2.LinuxIfIndex
 }
 
-// DPConfig holds the value of maximum transmission unit in bytes.
+// DPConfig holds the defaultpluigns configuration
 type DPConfig struct {
-	Mtu uint32 `json:"mtu"`
+	Mtu       uint32 `json:"mtu"`
+	Stopwatch bool   `json:"stopwatch"`
 }
 
 var (
@@ -143,7 +144,7 @@ var (
 // plugin function is used in api to access the plugin instance. It panics if the plugin instance is not initialized.
 func plugin() *Plugin {
 	if gPlugin == nil {
-		log.DefaultLogger().Panic("Trying to access the Interface Plugin but it is still not initialized")
+		panic("Trying to access the Interface Plugin but it is still not initialized")
 	}
 	return gPlugin
 }
@@ -155,16 +156,23 @@ func (plugin *Plugin) Init() error {
 	plugin.fixNilPointers()
 
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
-	config, err := plugin.retrieveMtuConfig()
+	config, err := plugin.retrieveDPConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
 		plugin.ifMtu = config.Mtu
 		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
+		plugin.enableStopwatch = config.Stopwatch
+		if plugin.enableStopwatch {
+			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
+		} else {
+			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		}
 	} else {
 		plugin.ifMtu = defaultMtu
-		plugin.Log.Infof("Mtu config not found, set to default value %v", plugin.ifMtu)
+		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
+		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -245,8 +253,12 @@ func (plugin *Plugin) fixNilPointers() {
 }
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
+	// configurator loggers
+	ifLogger := plugin.Log.NewLogger("-if-conf")
+	ifStateLogger := plugin.Log.NewLogger("-if-state")
+	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	// Interface indexes
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName,
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 
 	// get pointer to the map with Linux interface indexes
@@ -257,19 +269,19 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 
 	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_session_indexes", nil)
+	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_session_indexes", nil)
 
 	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_auth_keys_indexes", nil)
+	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_auth_keys_indexes", nil)
 
 	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_echo_function_index", nil)
+	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_echo_function_index", nil)
 
 	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "bfd_removed_auth_keys", nil)
+	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
-	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{GoVppmux: plugin.GoVppmux}
+	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Log: ifStateLogger, GoVppmux: plugin.GoVppmux}
 	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
 		select {
 		case plugin.ifStateChan <- state:
@@ -281,20 +293,31 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("InterfaceConfigurator", ifLogger)
+	}
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
+		Log:          ifLogger,
 		GoVppmux:     plugin.GoVppmux,
 		ServiceLabel: plugin.ServiceLabel,
 		Linux:        plugin.Linux,
+		Stopwatch:    stopwatch,
 	}
 	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("BFDConfigurator", bfdLogger)
+	}
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
+		Log:          bfdLogger,
 		GoVppmux:     plugin.GoVppmux,
 		ServiceLabel: plugin.ServiceLabel,
 		SwIfIndexes:  plugin.swIfIndexes,
 		BfdIDSeq:     1,
+		Stopwatch:    stopwatch,
 	}
 	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
 
@@ -304,16 +327,24 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
+	// logger
+	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
-	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "acl_l3_l4_indexes", nil)
+	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil)
 
-	plugin.aclL2Indexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "acl_l2_indexes", nil)
+	plugin.aclL2Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil)
 
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ACLConfigurator", aclLogger)
+	}
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
+		Log:            aclLogger,
 		GoVppmux:       plugin.GoVppmux,
 		ACLL3L4Indexes: plugin.aclL3L4Indexes,
 		ACLL2Indexes:   plugin.aclL2Indexes,
 		SwIfIndexes:    plugin.swIfIndexes,
+		Stopwatch:      stopwatch,
 	}
 
 	// Init ACL plugin
@@ -327,29 +358,40 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
+	// loggers
+	bdLogger := plugin.Log.NewLogger("-l2-bd-conf")
+	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
+	fibLogger := plugin.Log.NewLogger("-l2-fib-conf")
+	xcLogger := plugin.Log.NewLogger("-l2-xc-conf")
 	// Bridge domain indexes
-	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName,
+	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
 		"bd_indexes", bdidx.IndexMetadata))
 
 	// Interface to bridge domain indexes - desired state
-	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "if_to_bd_des_indexes", nil)
+	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_des_indexes", nil)
 
 	// Interface to bridge domain indexes - current state
 
-	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "if_to_bd_real_indexes", nil)
+	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_real_indexes", nil)
 
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("BDConfigurator", bdLogger)
+	}
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
+		Log:                bdLogger,
 		GoVppmux:           plugin.GoVppmux,
 		SwIfIndexes:        plugin.swIfIndexes,
 		BdIndexes:          plugin.bdIndexes,
 		BridgeDomainIDSeq:  1,
 		IfToBdIndexes:      plugin.ifToBdDesIndexes,
 		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
+		Stopwatch:          stopwatch,
 	}
 
 	// Bridge domain state and state updater
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{GoVppmux: plugin.GoVppmux}
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Log: bdStateLogger, GoVppmux: plugin.GoVppmux}
 	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
 		select {
 		case plugin.bdStateChan <- state:
@@ -360,9 +402,13 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "fib_indexes", nil)
+	plugin.fibIndexes = nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil)
 
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
+	}
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
+		Log:           fibLogger,
 		GoVppmux:      plugin.GoVppmux,
 		SwIfIndexes:   plugin.swIfIndexes,
 		BdIndexes:     plugin.bdIndexes,
@@ -370,17 +416,23 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		FibIndexes:    plugin.fibIndexes,
 		FibIndexSeq:   1,
 		FibDesIndexes: plugin.fibDesIndexes,
+		Stopwatch:     stopwatch,
 	}
 
 	// L2 xConnect indexes
 
-	plugin.xcIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "xc_indexes", nil)
+	plugin.xcIndexes = nametoidx.NewNameToIdx(xcLogger, plugin.PluginName, "xc_indexes", nil)
 
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("XConnectConfigurator", xcLogger)
+	}
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
+		Log:         xcLogger,
 		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 		XcIndexes:   plugin.xcIndexes,
 		XcIndexSeq:  1,
+		Stopwatch:   stopwatch,
 	}
 
 	// Init
@@ -409,13 +461,20 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
-	plugin.routeIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "route_indexes", nil)
+	l3Logger := plugin.Log.NewLogger("-l3-plugin")
+	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
 
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("RouteConfigurator", l3Logger)
+	}
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
+		Log:           l3Logger,
 		GoVppmux:      plugin.GoVppmux,
 		RouteIndexes:  plugin.routeIndexes,
 		RouteIndexSeq: 1,
 		SwIfIndexes:   plugin.swIfIndexes,
+		Stopwatch:     stopwatch,
 	}
 	err := plugin.routeConfigurator.Init()
 	if err != nil {
@@ -427,23 +486,23 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	return nil
 }
 
-func (plugin *Plugin) retrieveMtuConfig() (*DPConfig, error) {
+func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	config := &DPConfig{}
 	found, err := plugin.PluginConfig.GetValue(config)
 	if !found {
-		plugin.Log.Debug("Mtu config not found")
+		plugin.Log.Debug("Defaultplugins config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("config found, Mtu value %v", config.Mtu)
+	plugin.Log.Debug("Defaultplugins config found")
 	return config, err
 }
 
 func (plugin *Plugin) initErrorHandler() error {
-
-	plugin.errorIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "error_indexes", nil)
+	ehLogger := plugin.Log.NewLogger("-error-handler")
+	plugin.errorIndexes = nametoidx.NewNameToIdx(ehLogger, plugin.PluginName, "error_indexes", nil)
 
 	// Init mapping index
 	plugin.errorIdxSeq = 1

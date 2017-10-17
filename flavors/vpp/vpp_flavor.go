@@ -48,6 +48,16 @@ const GoVPPConf = "govpp.conf"
 // GoVPPConfUsage used as flag usage for GoVPPConfFlag.
 const GoVPPConfUsage = "Location of the GoVPP configuration file; also set via 'GOVPP_CONFIG' env variable."
 
+// LinuxPluginConfFlag used as flag name (see implementation in declareFlags())
+// It is used to load configuration of the linuxplugin.
+const LinuxPluginConfFlag = "linuxplugin-config"
+
+// LinuxPluginConf is default (flag value) - filename for the linuxplugin configuration.
+const LinuxPluginConf = "linuxplugin.conf"
+
+// LinuxPluginConfUsage used as flag usage for LinuxPluginConfFlag.
+const LinuxPluginConfUsage = "Location of the linuxplugin configuration file; also set via 'LINUX_PLUGIN_CONFIG' env variable."
+
 // Flavor glues together multiple plugins to build a full-featured VPP agent.
 type Flavor struct {
 	*local.FlavorLocal
@@ -96,6 +106,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	return true
@@ -126,4 +137,5 @@ func declareFlags() {
 	flag.String(DefaultPluginsConfFlag, DefaultPluginsConf, DefaultPluginsConfUsage)
 	flag.String(IfStatePubConfFlag, IfStatePubConf, IfStatePubConfUsage)
 	flag.String(GoVPPConfFlag, GoVPPConf, GoVPPConfUsage)
+	flag.String(LinuxPluginConfFlag, LinuxPluginConf, LinuxPluginConfUsage)
 }

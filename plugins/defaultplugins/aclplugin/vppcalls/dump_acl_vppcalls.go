@@ -16,13 +16,23 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
+	"time"
 )
 
 // DumpInterface finds interface in VPP and returns its ACL configuration
-func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel) (*acl.ACLInterfaceListDetails, error) {
+func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (*acl.ACLInterfaceListDetails, error) {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLInterfaceListDump{}
 	req.SwIfIndex = swIndex
 
@@ -36,8 +46,15 @@ func DumpInterface(swIndex uint32, vppChannel *govppapi.Channel) (*acl.ACLInterf
 }
 
 // DumpIPAcl test function
-func DumpIPAcl(vppChannel *govppapi.Channel) error {
-	log.DefaultLogger().Print("List of ACLs:")
+func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// ACLDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLDump{}
 	req.ACLIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -50,14 +67,22 @@ func DumpIPAcl(vppChannel *govppapi.Channel) error {
 		if stop {
 			break
 		}
-		log.DefaultLogger().Printf("ACL index: %v, rule count: %v, tag: %v", msg.ACLIndex, msg.Count, string(msg.Tag[:]))
+		log.Infof("ACL index: %v, rule count: %v, tag: %v", msg.ACLIndex, msg.Count, string(msg.Tag[:]))
 
 	}
 	return nil
 }
 
 // DumpMacIPAcl test function
-func DumpMacIPAcl(vppChannel *govppapi.Channel) error {
+func DumpMacIPAcl(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// MacipACLDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &acl.MacipACLDump{}
 	req.ACLIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -70,13 +95,21 @@ func DumpMacIPAcl(vppChannel *govppapi.Channel) error {
 		if stop {
 			break
 		}
-		log.DefaultLogger().Print(msg.ACLIndex)
+		log.Info(msg.ACLIndex)
 	}
 	return nil
 }
 
 // DumpInterfaces test function
-func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, vppChannel *govppapi.Channel) error {
+func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &acl.ACLInterfaceListDump{}
 	req.SwIfIndex = 0xffffffff
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -93,7 +126,7 @@ func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, vppChannel *govppapi.Channel) 
 		if !found {
 			continue
 		}
-		log.DefaultLogger().Printf("Interface %v is in %v acl in direction %v and applied in %v",
+		log.Infof("Interface %v is in %v acl in direction %v and applied in %v",
 			name, msg.Count, msg.NInput, msg.Acls)
 	}
 	return nil
