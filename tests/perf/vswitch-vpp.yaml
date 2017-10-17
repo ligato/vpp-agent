@@ -9,10 +9,9 @@ data:
       nodaemon
       cli-listen 0.0.0.0:5002
     }
-    plugins {
-      plugin dpdk_plugin.so {
-        disable
-      }
+    dpdk {
+      dev 0000:00:08.0
+      uio-driver igb_uio
     }
 ---
 apiVersion: v1
@@ -36,7 +35,7 @@ metadata:
 spec:
   containers:
     - name: "vswitch-vpp"
-      image: ligato/vpp-agent:pantheon-dev
+      image: dev_vpp_agent
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true

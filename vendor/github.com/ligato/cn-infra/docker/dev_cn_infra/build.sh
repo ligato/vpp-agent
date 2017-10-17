@@ -21,5 +21,4 @@ done
 
 echo "build agent commit number: "$AGENT_COMMIT
 
-sudo docker build -t dev_cn_infra --build-arg AGENT_COMMIT=$AGENT_COMMIT --no-cache .
-
+sudo docker build --force-rm=true -t dev_cn_infra --build-arg AGENT_COMMIT=$AGENT_COMMIT --no-cache .

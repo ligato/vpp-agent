@@ -42,7 +42,7 @@ type clusterConsumer interface {
 type Consumer struct {
 	logging.Logger
 	Config       *Config
-	Client       sarama.Client
+	SConsumer    sarama.Consumer
 	Consumer     clusterConsumer
 	closed       bool
 	xwg          *sync.WaitGroup
@@ -52,7 +52,7 @@ type Consumer struct {
 
 // NewConsumer returns a Consumer instance. If startHandlers is set to true, reading of messages, errors
 // and notifications is started using new consumer. Otherwise, only instance is returned
-func NewConsumer(config *Config, startHandlers bool, wg *sync.WaitGroup) (*Consumer, error) {
+func NewConsumer(config *Config, wg *sync.WaitGroup) (*Consumer, error) {
 	if config.Debug {
 		config.Logger.SetLevel(logging.DebugLevel)
 	}
@@ -79,10 +79,15 @@ func NewConsumer(config *Config, startHandlers bool, wg *sync.WaitGroup) (*Consu
 		return nil, err
 	}
 
+	sConsumer, err := sarama.NewConsumerFromClient(cClient)
+	if err != nil {
+		return nil, err
+	}
+
 	csmr := &Consumer{
 		Logger:       config.Logger,
 		Config:       config,
-		Client:       cClient,
+		SConsumer:    sConsumer,
 		Consumer:     consumer,
 		closed:       false,
 		closeChannel: make(chan struct{}),
@@ -94,23 +99,41 @@ func NewConsumer(config *Config, startHandlers bool, wg *sync.WaitGroup) (*Consu
 		csmr.xwg.Add(1)
 	}
 
-	if startHandlers {
-		config.Logger.Info("Starting message handlers for new consumer ...")
-		// if required, start reading from the notifications channel
-		if config.ConsumerConfig().Group.Return.Notifications {
-			go csmr.notificationHandler(csmr.Consumer.Notifications())
-		}
+	return csmr, nil
+}
 
-		// if required, start reading from the errors channel
-		if config.ProducerConfig().Consumer.Return.Errors {
-			go csmr.errorHandler(csmr.Consumer.Errors())
-		}
-
-		// start the message handler
-		go csmr.MessageHandler(csmr.Consumer.Messages())
+// StartConsumerHandlers starts required handlers using bsm/sarama consumer. Used when partitioner set in config is
+// non-manual
+func (ref *Consumer) StartConsumerHandlers() {
+	config := ref.Config
+	config.Logger.Info("Starting message handlers for new consumer ...")
+	// if required, start reading from the notifications channel
+	if config.ConsumerConfig().Group.Return.Notifications {
+		go ref.notificationHandler(ref.Consumer.Notifications())
 	}
 
-	return csmr, nil
+	// if required, start reading from the errors channel
+	if config.ProducerConfig().Consumer.Return.Errors {
+		go ref.errorHandler(ref.Consumer.Errors())
+	}
+
+	// start the message handler
+	go ref.messageHandler(ref.Consumer.Messages())
+}
+
+// StartConsumerManualHandlers starts required handlers using sarama partition consumer. Used when partitioner set in config is
+// manual
+func (ref *Consumer) StartConsumerManualHandlers(partitionConsumer sarama.PartitionConsumer) {
+	config := ref.Config
+	config.Logger.Info("Starting message handlers for new manual consumer ...")
+
+	// if required, start reading from the errors channel
+	if config.ProducerConfig().Consumer.Return.Errors {
+		go ref.manualErrorHandler(partitionConsumer.Errors())
+	}
+
+	// start the message handler
+	go ref.messageHandler(partitionConsumer.Messages())
 }
 
 // NewClient initializes new sarama client instance from provided config and with defined partitioner
@@ -191,17 +214,6 @@ func (ref *Consumer) Close() error {
 	}
 	ref.Debug("consumer closed")
 
-	// close client
-	ref.Debug("closing client ...")
-	if ref.Client != nil {
-		err = ref.Client.Close()
-		if err != nil {
-			ref.Errorf("client close error: %v", err)
-			return err
-		}
-	}
-	ref.Debug("client closed")
-
 	return nil
 }
 
@@ -258,9 +270,9 @@ func (ref *Consumer) PrintNotification(note map[string][]int32) {
 	}
 }
 
-// MessageHandler processes each incoming message
-func (ref *Consumer) MessageHandler(in <-chan *sarama.ConsumerMessage) {
-	ref.Debug("MessageHandler started ...")
+// messageHandler processes each incoming message
+func (ref *Consumer) messageHandler(in <-chan *sarama.ConsumerMessage) {
+	ref.Debug("messageHandler started ...")
 
 	for {
 		select {
@@ -288,8 +300,8 @@ func (ref *Consumer) MessageHandler(in <-chan *sarama.ConsumerMessage) {
 	}
 }
 
-// ConsumerErrorHandler processes each error message
-func (ref *Consumer) ConsumerErrorHandler(in <-chan *sarama.ConsumerError) {
+// manualErrorHandler processes each error message for partition consumer
+func (ref *Consumer) manualErrorHandler(in <-chan *sarama.ConsumerError) {
 	ref.Debug("errorHandler started ...")
 	for {
 		select {
@@ -322,8 +334,7 @@ func (ref *Consumer) errorHandler(in <-chan error) {
 	}
 }
 
-// NotificationHandler processes each message received when the consumer
-// is rebalanced
+// NotificationHandler processes each message received when the consumer is rebalanced
 func (ref *Consumer) notificationHandler(in <-chan *cluster.Notification) {
 	ref.Debug("NotificationHandler started ...")
 

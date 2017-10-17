@@ -31,9 +31,9 @@ message AccessLists {
                 message IpRule {
                     // IP version used in this Access List Entry.
                     message Ip {
-                        // Destination IPv4/IPv6 network
+                        // Destination IPv4/IPv6 network address (<ip>/<network>)
                         string destination_network = 1;
-                        // Destination IPv4/IPv6 network
+                        // Destination IPv4/IPv6 network address (<ip>/<network>)
                         string source_network = 2;
                     }
                     Ip ip = 1;

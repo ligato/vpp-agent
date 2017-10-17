@@ -19,11 +19,20 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
+	"time"
 )
 
 // AddInterfaceIP calls AddrAdd Netlink API
-func AddInterfaceIP(ifName string, addr *net.IPNet) error {
+func AddInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
 		return err
@@ -33,7 +42,14 @@ func AddInterfaceIP(ifName string, addr *net.IPNet) error {
 }
 
 // DelInterfaceIP calls AddrDel Netlink API
-func DelInterfaceIP(ifName string, addr *net.IPNet) error {
+func DelInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
 		return err
@@ -43,7 +59,14 @@ func DelInterfaceIP(ifName string, addr *net.IPNet) error {
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API
-func SetInterfaceMTU(ifName string, mtu int) error {
+func SetInterfaceMTU(ifName string, mtu int, timeLog measure.StopWatchEntry) error {
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
 		return err

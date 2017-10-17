@@ -62,6 +62,7 @@ type ProtoPublisher interface {
 // ProtoWatcher allows to subscribe for receiving of messages published
 // to selected topics.
 type ProtoWatcher interface {
+	OffsetHandler
 	// Watch starts consuming all selected <topics>.
 	// Returns error if 'manual' partitioner scheme is chosen
 	// Callback <msgCallback> is called for each delivered message.
@@ -75,6 +76,7 @@ type ProtoWatcher interface {
 // ProtoPartitionWatcher allows to subscribe for receiving of messages published
 // to selected topics, partitions and offsets
 type ProtoPartitionWatcher interface {
+	OffsetHandler
 	// WatchPartition starts consuming specific <partition> of a selected <topic>
 	// from a given <offset>. Offset is the oldest message index consumed,
 	// all previously published messages are ignored.
@@ -110,4 +112,12 @@ type ProtoMessageErr interface {
 	// Error returns an error instance describing the cause of the failed
 	// delivery.
 	Error() error
+}
+
+// OffsetHandler allows to mark offset or commit
+type OffsetHandler interface {
+	// MarkOffset marks the message received by a consumer as processed.
+	MarkOffset(msg ProtoMessage, metadata string)
+	// CommitOffsets manually commits marked offsets.
+	CommitOffsets() error
 }

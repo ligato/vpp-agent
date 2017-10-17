@@ -43,8 +43,8 @@ type Plugin struct {
 	disabled bool
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps //inject
 }
@@ -87,7 +87,8 @@ func (plugin *Plugin) Init() (err error) {
 
 	// Initialize both multiplexers to allow both, dynamic and manual mode
 	if plugin.mux == nil {
-		name := plugin.ServiceLabel.GetAgentLabel() + "-hash"
+		name := clientCfg.GroupID
+		plugin.Log.Infof("Group ID is set to %v", name)
 		plugin.mux, err = mux.InitMultiplexerWithConfig(clientCfg, plugin.hsClient, plugin.manClient, name, plugin.Log)
 		if err != nil {
 			return err
@@ -112,7 +113,7 @@ func (plugin *Plugin) AfterInit() error {
 	if plugin.StatusCheck != nil && !plugin.disabled {
 		plugin.StatusCheck.Register(plugin.PluginName, func() (statuscheck.PluginState, error) {
 			if plugin.hsClient == nil || plugin.hsClient.Closed() {
-				return statuscheck.Error, fmt.Errorf("kafka client/consumer not initialized")
+				return statuscheck.Error, fmt.Errorf("kafka client/consumer not available")
 			}
 			// Method 'RefreshMetadata()' returns error if kafka server is unavailable
 			err := plugin.hsClient.RefreshMetadata(topic)
@@ -137,15 +138,15 @@ func (plugin *Plugin) Close() error {
 
 // NewBytesConnection returns a new instance of a connection to access kafka brokers. The connection allows to create
 // new kafka providers/consumers on multiplexer with hash partitioner.
-func (plugin *Plugin) NewBytesConnection(name string) *mux.BytesConnection {
+func (plugin *Plugin) NewBytesConnection(name string) *mux.BytesConnectionStr {
 	return plugin.mux.NewBytesConnection(name)
 }
 
 // NewBytesConnectionToPartition returns a new instance of a connection to access kafka brokers. The connection allows to create
 // new kafka providers/consumers on multiplexer with manual partitioner which allows to send messages to specific partition
 // in kafka cluster and watch on partition/offset.
-func (plugin *Plugin) NewBytesConnectionToPartition(name string) *mux.BytesConnection {
-	return plugin.mux.NewBytesConnection(name)
+func (plugin *Plugin) NewBytesConnectionToPartition(name string) *mux.BytesManualConnectionStr {
+	return plugin.mux.NewBytesManualConnection(name)
 }
 
 // NewProtoConnection returns a new instance of a connection to access kafka brokers. The connection allows to create
@@ -209,7 +210,12 @@ func (plugin *Plugin) getClientConfig(config *mux.Config, logger logging.Logger,
 	} else {
 		clientCfg.SetBrokers(mux.DefAddress)
 	}
-	clientCfg.SetGroup(plugin.ServiceLabel.GetAgentLabel())
+	// Set group ID obtained from kafka config. In case there is none, use a service label
+	if config.GroupID != "" {
+		clientCfg.SetGroup(config.GroupID)
+	} else {
+		clientCfg.SetGroup(plugin.ServiceLabel.GetAgentLabel())
+	}
 	clientCfg.SetRecvMessageChan(plugin.subscription)
 	clientCfg.SetInitialOffset(sarama.OffsetNewest)
 	clientCfg.SetTopics(topic)

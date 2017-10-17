@@ -52,15 +52,13 @@ type ProtoConnectionFields struct {
 }
 
 type protoSyncPublisherKafka struct {
-	conn      *ProtoConnection
-	topic     string
-	partition int32
+	conn  *ProtoConnection
+	topic string
 }
 
 type protoAsyncPublisherKafka struct {
 	conn         *ProtoConnection
 	topic        string
-	partition    int32
 	succCallback func(messaging.ProtoMessage)
 	errCallback  func(messaging.ProtoMessageErr)
 }
@@ -81,12 +79,12 @@ type protoManualAsyncPublisherKafka struct {
 
 // NewSyncPublisher creates a new instance of protoSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewSyncPublisher(topic string) (messaging.ProtoPublisher, error) {
-	return &protoSyncPublisherKafka{conn, topic, DefPartition}, nil
+	return &protoSyncPublisherKafka{conn, topic}, nil
 }
 
 // NewAsyncPublisher creates a new instance of protoAsyncPublisherKafka that allows to publish sync kafka messages using common messaging API
 func (conn *ProtoConnection) NewAsyncPublisher(topic string, successClb func(messaging.ProtoMessage), errorClb func(messaging.ProtoMessageErr)) (messaging.ProtoPublisher, error) {
-	return &protoAsyncPublisherKafka{conn, topic, DefPartition, successClb, errorClb}, nil
+	return &protoAsyncPublisherKafka{conn, topic, successClb, errorClb}, nil
 }
 
 // NewSyncPublisherToPartition creates a new instance of protoManualSyncPublisherKafka that allows to publish sync kafka messages using common messaging API
@@ -168,11 +166,7 @@ func (conn *ProtoManualConnection) WatchPartition(msgClb func(messaging.ProtoMes
 func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
 	conn.multiplexer.rwlock.Lock()
 	defer conn.multiplexer.rwlock.Unlock()
-
-	byteClb := func(bm *client.ConsumerMessage) {
-		pm := client.NewProtoConsumerMessage(bm, conn.serializer)
-		msgClb(pm)
-	}
+	var err error
 
 	// check if we have already consumed the topic on partition and offset
 	var found bool
@@ -188,6 +182,11 @@ func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoM
 			subs = subscription
 			break
 		}
+	}
+
+	byteClb := func(bm *client.ConsumerMessage) {
+		pm := client.NewProtoConsumerMessage(bm, conn.serializer)
+		msgClb(pm)
 	}
 
 	if !found {
@@ -208,44 +207,37 @@ func (conn *ProtoManualConnection) ConsumePartition(msgClb func(messaging.ProtoM
 
 	if conn.multiplexer.started {
 		conn.multiplexer.Infof("Starting 'post-init' manual Consumer")
-		return conn.StartPostInitConsumer(msgClb, topic, partition, offset)
+		subs.partitionConsumer, err = conn.StartPostInitConsumer(topic, partition, offset)
+		if err != nil {
+			return err
+		}
+		if subs.partitionConsumer == nil {
+			return nil
+		}
 	}
 
 	return nil
 }
 
-// StartPostInitConsumer allows to start a new partition consumer after mux is initialized
-func (conn *ProtoConnectionFields) StartPostInitConsumer(msgClb func(messaging.ProtoMessage), topic string, partition int32, offset int64) error {
+// StartPostInitConsumer allows to start a new partition consumer after mux is initialized. Created partition consumer
+// is returned so it can be stored in subscription and closed if needed
+func (conn *ProtoManualConnection) StartPostInitConsumer(topic string, partition int32, offset int64) (*sarama.PartitionConsumer, error) {
 	multiplexer := conn.multiplexer
 	multiplexer.WithFields(logging.Fields{"topic": topic}).Debugf("Post-init consuming started")
 
-	if multiplexer.sConsumer == nil {
-		multiplexer.Warn("Unable to start post-init Consumer, client not available on the mux")
-		return nil
+	if multiplexer.Consumer == nil || multiplexer.Consumer.SConsumer == nil {
+		multiplexer.Warn("Unable to start post-init Consumer, client not available in the mux")
+		return nil, nil
 	}
 
 	// Consumer that reads topic/partition/offset. Throws error if offset is 'in the future' (message with offset does not exist yet)
-	partitionConsumer, err := multiplexer.sConsumer.ConsumePartition(topic, partition, offset)
+	partitionConsumer, err := multiplexer.Consumer.SConsumer.ConsumePartition(topic, partition, offset)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	// Create client consumer but do not allow to start message handlers
-	consumer, err := client.NewConsumer(multiplexer.config, false, nil)
-	if err != nil {
-		return err
-	}
+	multiplexer.Consumer.StartConsumerManualHandlers(partitionConsumer)
 
-	// store newly created consumer in mux, so it can be closed properly
-	multiplexer.postInitConsumers = append(multiplexer.postInitConsumers, consumer)
-
-	// Start message handler
-	go consumer.MessageHandler(partitionConsumer.Messages())
-	// Start error handler
-	go consumer.ConsumerErrorHandler(partitionConsumer.Errors())
-	// Start consumer
-	go conn.multiplexer.laterStageConsumer(consumer)
-
-	return nil
+	return &partitionConsumer, nil
 }
 
 // StopWatch is an alias for StopConsuming method. The alias was added in order to conform to messaging.Mux interface.
@@ -270,13 +262,13 @@ func (conn *ProtoConnectionFields) StopConsumingPartition(topic string, partitio
 
 // Put publishes a message into kafka
 func (p *protoSyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	_, err := p.conn.sendSyncMessage(p.topic, p.partition, key, message, false)
+	_, err := p.conn.sendSyncMessage(p.topic, DefPartition, key, message, false)
 	return err
 }
 
 // Put publishes a message into kafka
 func (p *protoAsyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
-	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, false, nil, p.succCallback, p.errCallback)
+	return p.conn.sendAsyncMessage(p.topic, DefPartition, key, message, false, nil, p.succCallback, p.errCallback)
 }
 
 // Put publishes a message into kafka
@@ -288,6 +280,30 @@ func (p *protoManualSyncPublisherKafka) Put(key string, message proto.Message, o
 // Put publishes a message into kafka
 func (p *protoManualAsyncPublisherKafka) Put(key string, message proto.Message, opts ...datasync.PutOption) error {
 	return p.conn.sendAsyncMessage(p.topic, p.partition, key, message, true, nil, p.succCallback, p.errCallback)
+}
+
+// MarkOffset marks the specified message as read
+func (conn *ProtoConnectionFields) MarkOffset(msg messaging.ProtoMessage, metadata string) {
+	if conn.multiplexer != nil && conn.multiplexer.Consumer != nil {
+		if msg == nil {
+			return
+		}
+		consumerMsg := &client.ConsumerMessage{
+			Topic:     msg.GetTopic(),
+			Partition: msg.GetPartition(),
+			Offset:    msg.GetOffset(),
+		}
+
+		conn.multiplexer.Consumer.MarkOffset(consumerMsg, metadata)
+	}
+}
+
+// CommitOffsets manually commits message offsets
+func (conn *ProtoConnectionFields) CommitOffsets() error {
+	if conn.multiplexer != nil && conn.multiplexer.Consumer != nil {
+		return conn.multiplexer.Consumer.CommitOffsets()
+	}
+	return fmt.Errorf("cannot commit offsets, consumer not available")
 }
 
 // sendSyncMessage sends a message using the sync API. If manual mode is chosen, the appropriate producer will be used.

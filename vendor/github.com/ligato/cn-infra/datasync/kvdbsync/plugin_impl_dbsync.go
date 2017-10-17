@@ -58,8 +58,8 @@ func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent
 	return &plugin // copy (no pointer receiver)
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps                      // inject
 	ResyncOrch            resync.Subscriber    // inject
@@ -126,6 +126,21 @@ func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOp
 	}
 
 	return errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
+}
+
+// Delete propagates this call to a particular kvdb.Plugin unless the kvdb.Plugin is Disabled().
+//
+// This method is supposed to be called in Plugin.AfterInit() or later (even from different go routine).
+func (plugin *Plugin) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
+	if plugin.KvPlugin.Disabled() {
+		return false, nil
+	}
+
+	if plugin.adapter != nil {
+		return plugin.adapter.db.Delete(key, opts...)
+	}
+
+	return false, errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
 }
 
 // Close resources

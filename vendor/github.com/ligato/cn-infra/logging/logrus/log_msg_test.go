@@ -45,7 +45,7 @@ func TestEntryPanicln(t *testing.T) {
 	logger := NewLogger("testLogger")
 	logger.std.Out = &bytes.Buffer{}
 	entry := NewEntry(logger)
-	entry.withField("err", errBoom).Panicln("kaboom")
+	entry.WithField("err", errBoom).Panicln("kaboom")
 }
 
 func TestEntryPanicf(t *testing.T) {
@@ -67,5 +67,5 @@ func TestEntryPanicf(t *testing.T) {
 	logger := NewLogger("testLogger")
 	logger.std.Out = &bytes.Buffer{}
 	entry := NewEntry(logger)
-	entry.withField("err", errBoom).Panicf("kaboom %v", true)
+	entry.WithField("err", errBoom).Panicf("kaboom %v", true)
 }

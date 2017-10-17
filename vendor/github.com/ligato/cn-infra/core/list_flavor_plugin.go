@@ -51,9 +51,8 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 	return l
 }
 
-// listPluginsInFlavor lists plugins in a Flavor. If there are multiple
-// instances of a given plugin type, only one plugin instance is listed.
-// A Flavor is composed of multiple Flavor and Plugins. The composition
+// listPluginsInFlavor lists all plugins in a Flavor. A Flavor is composed
+// of one or more Plugins and (optionally) multiple Flavors. The composition
 // is recursive: a component Flavor contains Plugin components and may
 // contain Flavor components as well. The function recursively lists
 // plugins contained in component Flavors.
