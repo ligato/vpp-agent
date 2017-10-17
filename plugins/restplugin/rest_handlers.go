@@ -20,10 +20,10 @@ import (
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	//l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/unrolled/render"
 	"net/http"
 	"strconv"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 )
 
@@ -220,12 +220,11 @@ func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) h
 func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Received request to execute show command : ")
-
 		params := mux.Vars(req)
 		if params != nil && len(params) > 0 {
 			showCommand := params["showCommand"]
 			if showCommand != "" {
+				plugin.Deps.Log.Infof("Received request to execute show command :: %v ", showCommand)
 				// create an API channel
 				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 				if err != nil {
@@ -248,7 +247,7 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 						plugin.Deps.Log.Errorf("Command returned: %v", reply.Retval)
 					}
 
-					plugin.Deps.Log.Debug(reply)
+					plugin.Deps.Log.Infof("reply :: %v", reply)
 					formatter.JSON(w, http.StatusOK, reply)
 				}
 				defer ch.Close()
