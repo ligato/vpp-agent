@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package l3;
 
+/* Static IPv4 / IPv6 routes */
 message StaticRoutes {
     message Route {
         uint32 vrf_id = 1;                   /* VRF identifier, field required for remote client. This value should be
@@ -17,4 +18,16 @@ message StaticRoutes {
                                              /* (a poor man's primary and backup) */
     }
     repeated Route route = 1;                /* list of IP static routes */
+}
+
+/* Static IP ARP entries */
+message ArpTableEntries {
+    message ArpTableEntry {
+        uint32 fib_index = 1;                          /* IP FIB index, 0 is the default FIB */
+        string interface = 2;                          /* Interface to which this APR entry applies */
+        string ip_address = 3;                         /* IP address */
+        string phys_address = 4;                       /* MAC address matching to the IP */
+        bool static = 5;                               /* TRUE if this is a static ARP entry */
+    }
+    repeated ArpTableEntry arp_table_entries = 100;    /* list of ARP entries */
 }
