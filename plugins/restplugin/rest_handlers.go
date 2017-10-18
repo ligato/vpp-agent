@@ -15,7 +15,6 @@
 package restplugin
 
 import (
-	"github.com/gorilla/mux"
 	aclplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
