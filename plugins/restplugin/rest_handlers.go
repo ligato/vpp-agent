@@ -26,8 +26,6 @@ import (
 	"strconv"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"encoding/json"
-	"fmt"
-	"github.com/docker/docker/daemon/logger"
 	"io/ioutil"
 )
 
