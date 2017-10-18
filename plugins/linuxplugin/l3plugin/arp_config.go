@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // LinuxArpConfigurator watches for any changes in the configuration of static ARPs as modelled by the proto file
@@ -46,5 +47,25 @@ func (plugin *LinuxArpConfigurator) Init(arpIndexes l3idx.LinuxARPIndexRW) error
 
 // Close closes all goroutines started during Init
 func (plugin *LinuxArpConfigurator) Close() error {
+	return nil
+}
+
+// ConfigureLinuxStaticArpEntry reacts to a new northbound Linux ARP entry config by creating and configuring
+// the entry in the host network stack through Netlink API.
+func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.LinuxStaticArpEntries_ArpEntry) error {
+	// todo implement
+	return nil
+}
+
+// ModifyLinuxStaticArpEntry applies changes in the NB configuration of a Linux ARP into the host network stack
+// through Netlink API.
+func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.LinuxStaticArpEntries_ArpEntry, oldArpEntry *l3.LinuxStaticArpEntries_ArpEntry) error {
+	// todo implement
+	return nil
+}
+
+// DeleteLinuxStaticArpEntry reacts to a removed NB configuration of a Linux ARP entry.
+func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.LinuxStaticArpEntries_ArpEntry) error {
+	// todo implement
 	return nil
 }
