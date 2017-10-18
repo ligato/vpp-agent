@@ -25,6 +25,10 @@ import (
 	"net/http"
 	"strconv"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
+	"encoding/json"
+	"fmt"
+	"github.com/docker/docker/daemon/logger"
+	"io/ioutil"
 )
 
 //interfaceGetHandler - used to get list of all interfaces
@@ -220,46 +224,69 @@ func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) h
 func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		params := mux.Vars(req)
-		if params != nil && len(params) > 0 {
-			showCommand := params["showCommand"]
+		//params := mux.Vars(req)
+		//if params != nil && len(params) > 0 {
+		//	showCommand := params["showCommand"]
 
-			plugin.Deps.Log.Infof("Received request to execute show command :: %v ", showCommand)
+		/* Parse input request */
+		var reqParam map[string]string
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to parse request body.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+		}
 
-			showCommand = "show interface"
-			if showCommand != "" {
-				// create an API channel
-				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		plugin.Deps.Log.Infof("request body = %v", body)
+		err = json.Unmarshal(body, &reqParam)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to unmarshall request body.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+		}
+
+		command, ok := reqParam["vppclicommand"]
+
+		if !ok {
+			plugin.Deps.Log.Error("command paramenter not included.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			//TODO: return
+		}
+
+		plugin.Deps.Log.Infof("Received request to execute command :: %v ", command)
+		plugin.Deps.Log.WithField("VPPCLI command", command)
+
+		if command != "" {
+			// create an API channel
+			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, err)
+			} else {
+				// prepare the message
+				req := &vpe.CliInband{}
+				req.Length = uint32(len(command))
+				req.Cmd = []byte(command)
+
+				reply := &vpe.CliInbandReply{}
+				err = ch.SendRequest(req).ReceiveReply(reply)
 				if err != nil {
 					plugin.Deps.Log.Errorf("Error: %v", err)
 					formatter.JSON(w, http.StatusInternalServerError, err)
-				} else {
-					// prepare the message
-					req := &vpe.CliInband{}
-					req.Length = uint32(len(showCommand))
-					req.Cmd = []byte(showCommand)
-
-					reply := &vpe.CliInbandReply{}
-					err = ch.SendRequest(req).ReceiveReply(reply)
-					if err != nil {
-						plugin.Deps.Log.Errorf("Error: %v", err)
-						formatter.JSON(w, http.StatusInternalServerError, err)
-					}
-
-					if 0 != reply.Retval {
-						plugin.Deps.Log.Errorf("Command returned: %v", reply)
-					}
-
-					plugin.Deps.Log.Infof("reply :: %v", reply)
-					plugin.Deps.Log.Infof("reply returned :: %v", string(reply.Reply))
-					formatter.JSON(w, http.StatusOK, reply)
 				}
-				defer ch.Close()
-			} else {
-				formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
+
+				if 0 != reply.Retval {
+					plugin.Deps.Log.Errorf("Command returned code :: %v", reply.Retval)
+				}
+
+				plugin.Deps.Log.Infof("Command returned reply :: %v", string(reply.Reply))
+				plugin.Deps.Log.WithField("VPPCLI response", string(reply.Reply))
+				formatter.JSON(w, http.StatusOK, reply)
 			}
+			defer ch.Close()
 		} else {
-			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
+			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
 		}
+		//} else {
+		//	formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
+		//}
 	}
 }
