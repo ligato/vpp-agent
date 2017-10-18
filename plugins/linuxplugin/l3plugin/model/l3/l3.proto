@@ -2,13 +2,6 @@ syntax = "proto3";
 
 package l3;
 
-enum Scope {
-    GLOBAL = 0;
-    SITE = 1;
-    LINK = 2;
-    HOST = 3;
-};
-
 /* static ip routes */
 message LinuxStaticRoutes {
     message Route {                         /* route name */
@@ -31,7 +24,18 @@ message LinuxStaticRoutes {
 
         string interface = 3;               /* interface name */
         string description = 4;             /* optional description */
-        Scope scope = 5;                    /* the scope of the area where the link is valid */
+
+        message Scope {                     /* the scope of the area where the link is valid */
+            enum ScopeType {
+                GLOBAL = 0;
+                SITE = 1;
+                LINK = 2;
+                HOST = 3;
+            }
+            ScopeType type = 1;
+        }
+        Scope scope = 5;
+
         string src_ip_addr = 6;             /* source ip address + prefix in format <address>/<prefix> */
         string dst_ip_addr = 7;             /* destination ip address  */
         string gw_addr = 8;                 /* gateway address */
@@ -40,13 +44,6 @@ message LinuxStaticRoutes {
     }
     repeated Route route = 1;               /* list of IP static routes */
 }
-
-enum NudState {
-    PERMANENT = 0;
-    NOARP = 1;
-    REACHABLE = 2;
-    STATE = 3;
-};
 
 /* static arp entires */
 message LinuxStaticArpEntries {
@@ -70,9 +67,20 @@ message LinuxStaticArpEntries {
         Namespace namespace = 2;
 
         string interface = 3;               /* interface to which this neighbour is attached */
-        NudState nud_state = 4;             /* state of the neighbour entry */
-        string ip_addr = 5;                 /* ip address + prefix in format <address>/<prefix> */
+
+        message NudState {
+            enum NudStateType {
+                PERMANENT = 0;
+                NOARP = 1;
+                REACHABLE = 2;
+                STATE = 3;
+            }
+            NudStateType type = 1;
+        }
+        NudState state = 4;                 /* state of the neighbour entry */
+
+        string ip_addr = 5;                 /* ip address */
         string hw_address = 6;              /* mac address */
     }
-    repeated ArpEntry arp_entry = 1;        /* list of IP static routes */
+    repeated ArpEntry arp_entry = 1;        /* list of ARP entries */
 }
