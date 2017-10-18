@@ -57,11 +57,7 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 		return err
 	}
 
-	if err := plugin.routeConfigurator.Resync(req.Routes); err != nil {
-		return err
-	}
-
-	return nil
+	return plugin.routeConfigurator.Resync(req.Routes)
 }
 
 func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {

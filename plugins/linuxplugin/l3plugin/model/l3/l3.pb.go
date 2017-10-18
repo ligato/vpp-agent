@@ -19,58 +19,6 @@ import proto "github.com/gogo/protobuf/proto"
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 
-type Scope int32
-
-const (
-	Scope_GLOBAL Scope = 0
-	Scope_SITE   Scope = 1
-	Scope_LINK   Scope = 2
-	Scope_HOST   Scope = 3
-)
-
-var Scope_name = map[int32]string{
-	0: "GLOBAL",
-	1: "SITE",
-	2: "LINK",
-	3: "HOST",
-}
-var Scope_value = map[string]int32{
-	"GLOBAL": 0,
-	"SITE":   1,
-	"LINK":   2,
-	"HOST":   3,
-}
-
-func (x Scope) String() string {
-	return proto.EnumName(Scope_name, int32(x))
-}
-
-type NudState int32
-
-const (
-	NudState_PERMANENT NudState = 0
-	NudState_NOARP     NudState = 1
-	NudState_REACHABLE NudState = 2
-	NudState_STATE     NudState = 3
-)
-
-var NudState_name = map[int32]string{
-	0: "PERMANENT",
-	1: "NOARP",
-	2: "REACHABLE",
-	3: "STATE",
-}
-var NudState_value = map[string]int32{
-	"PERMANENT": 0,
-	"NOARP":     1,
-	"REACHABLE": 2,
-	"STATE":     3,
-}
-
-func (x NudState) String() string {
-	return proto.EnumName(NudState_name, int32(x))
-}
-
 type LinuxStaticRoutes_Route_Namespace_NamespaceType int32
 
 const (
@@ -95,6 +43,32 @@ var LinuxStaticRoutes_Route_Namespace_NamespaceType_value = map[string]int32{
 
 func (x LinuxStaticRoutes_Route_Namespace_NamespaceType) String() string {
 	return proto.EnumName(LinuxStaticRoutes_Route_Namespace_NamespaceType_name, int32(x))
+}
+
+type LinuxStaticRoutes_Route_Scope_ScopeType int32
+
+const (
+	LinuxStaticRoutes_Route_Scope_GLOBAL LinuxStaticRoutes_Route_Scope_ScopeType = 0
+	LinuxStaticRoutes_Route_Scope_SITE   LinuxStaticRoutes_Route_Scope_ScopeType = 1
+	LinuxStaticRoutes_Route_Scope_LINK   LinuxStaticRoutes_Route_Scope_ScopeType = 2
+	LinuxStaticRoutes_Route_Scope_HOST   LinuxStaticRoutes_Route_Scope_ScopeType = 3
+)
+
+var LinuxStaticRoutes_Route_Scope_ScopeType_name = map[int32]string{
+	0: "GLOBAL",
+	1: "SITE",
+	2: "LINK",
+	3: "HOST",
+}
+var LinuxStaticRoutes_Route_Scope_ScopeType_value = map[string]int32{
+	"GLOBAL": 0,
+	"SITE":   1,
+	"LINK":   2,
+	"HOST":   3,
+}
+
+func (x LinuxStaticRoutes_Route_Scope_ScopeType) String() string {
+	return proto.EnumName(LinuxStaticRoutes_Route_Scope_ScopeType_name, int32(x))
 }
 
 type LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType int32
@@ -123,6 +97,32 @@ func (x LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType) String() string 
 	return proto.EnumName(LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_name, int32(x))
 }
 
+type LinuxStaticArpEntries_ArpEntry_NudState_NudStateType int32
+
+const (
+	LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 0
+	LinuxStaticArpEntries_ArpEntry_NudState_NOARP     LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 1
+	LinuxStaticArpEntries_ArpEntry_NudState_REACHABLE LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 2
+	LinuxStaticArpEntries_ArpEntry_NudState_STATE     LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 3
+)
+
+var LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_name = map[int32]string{
+	0: "PERMANENT",
+	1: "NOARP",
+	2: "REACHABLE",
+	3: "STATE",
+}
+var LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_value = map[string]int32{
+	"PERMANENT": 0,
+	"NOARP":     1,
+	"REACHABLE": 2,
+	"STATE":     3,
+}
+
+func (x LinuxStaticArpEntries_ArpEntry_NudState_NudStateType) String() string {
+	return proto.EnumName(LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_name, int32(x))
+}
+
 // static ip routes
 type LinuxStaticRoutes struct {
 	Route []*LinuxStaticRoutes_Route `protobuf:"bytes,1,rep,name=route" json:"route,omitempty"`
@@ -144,7 +144,7 @@ type LinuxStaticRoutes_Route struct {
 	Namespace   *LinuxStaticRoutes_Route_Namespace `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
 	Interface   string                             `protobuf:"bytes,3,opt,name=interface,proto3" json:"interface,omitempty"`
 	Description string                             `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Scope       Scope                              `protobuf:"varint,5,opt,name=scope,proto3,enum=l3.Scope" json:"scope,omitempty"`
+	Scope       *LinuxStaticRoutes_Route_Scope     `protobuf:"bytes,5,opt,name=scope" json:"scope,omitempty"`
 	SrcIpAddr   string                             `protobuf:"bytes,6,opt,name=src_ip_addr,proto3" json:"src_ip_addr,omitempty"`
 	DstIpAddr   string                             `protobuf:"bytes,7,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
 	GwAddr      string                             `protobuf:"bytes,8,opt,name=gw_addr,proto3" json:"gw_addr,omitempty"`
@@ -163,6 +163,13 @@ func (m *LinuxStaticRoutes_Route) GetNamespace() *LinuxStaticRoutes_Route_Namesp
 	return nil
 }
 
+func (m *LinuxStaticRoutes_Route) GetScope() *LinuxStaticRoutes_Route_Scope {
+	if m != nil {
+		return m.Scope
+	}
+	return nil
+}
+
 type LinuxStaticRoutes_Route_Namespace struct {
 	Type         LinuxStaticRoutes_Route_Namespace_NamespaceType `protobuf:"varint,1,opt,name=type,proto3,enum=l3.LinuxStaticRoutes_Route_Namespace_NamespaceType" json:"type,omitempty"`
 	Pid          uint32                                          `protobuf:"varint,2,opt,name=pid,proto3" json:"pid,omitempty"`
@@ -174,6 +181,14 @@ type LinuxStaticRoutes_Route_Namespace struct {
 func (m *LinuxStaticRoutes_Route_Namespace) Reset()         { *m = LinuxStaticRoutes_Route_Namespace{} }
 func (m *LinuxStaticRoutes_Route_Namespace) String() string { return proto.CompactTextString(m) }
 func (*LinuxStaticRoutes_Route_Namespace) ProtoMessage()    {}
+
+type LinuxStaticRoutes_Route_Scope struct {
+	Type LinuxStaticRoutes_Route_Scope_ScopeType `protobuf:"varint,1,opt,name=type,proto3,enum=l3.LinuxStaticRoutes_Route_Scope_ScopeType" json:"type,omitempty"`
+}
+
+func (m *LinuxStaticRoutes_Route_Scope) Reset()         { *m = LinuxStaticRoutes_Route_Scope{} }
+func (m *LinuxStaticRoutes_Route_Scope) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticRoutes_Route_Scope) ProtoMessage()    {}
 
 // static arp entires
 type LinuxStaticArpEntries struct {
@@ -195,7 +210,7 @@ type LinuxStaticArpEntries_ArpEntry struct {
 	Name      string                                    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Namespace *LinuxStaticArpEntries_ArpEntry_Namespace `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
 	Interface string                                    `protobuf:"bytes,3,opt,name=interface,proto3" json:"interface,omitempty"`
-	NudState  NudState                                  `protobuf:"varint,4,opt,name=nud_state,proto3,enum=l3.NudState" json:"nud_state,omitempty"`
+	State     *LinuxStaticArpEntries_ArpEntry_NudState  `protobuf:"bytes,4,opt,name=state" json:"state,omitempty"`
 	IpAddr    string                                    `protobuf:"bytes,5,opt,name=ip_addr,proto3" json:"ip_addr,omitempty"`
 	HwAddress string                                    `protobuf:"bytes,6,opt,name=hw_address,proto3" json:"hw_address,omitempty"`
 }
@@ -207,6 +222,13 @@ func (*LinuxStaticArpEntries_ArpEntry) ProtoMessage()    {}
 func (m *LinuxStaticArpEntries_ArpEntry) GetNamespace() *LinuxStaticArpEntries_ArpEntry_Namespace {
 	if m != nil {
 		return m.Namespace
+	}
+	return nil
+}
+
+func (m *LinuxStaticArpEntries_ArpEntry) GetState() *LinuxStaticArpEntries_ArpEntry_NudState {
+	if m != nil {
+		return m.State
 	}
 	return nil
 }
@@ -225,9 +247,19 @@ func (m *LinuxStaticArpEntries_ArpEntry_Namespace) Reset() {
 func (m *LinuxStaticArpEntries_ArpEntry_Namespace) String() string { return proto.CompactTextString(m) }
 func (*LinuxStaticArpEntries_ArpEntry_Namespace) ProtoMessage()    {}
 
+type LinuxStaticArpEntries_ArpEntry_NudState struct {
+	Type LinuxStaticArpEntries_ArpEntry_NudState_NudStateType `protobuf:"varint,1,opt,name=type,proto3,enum=l3.LinuxStaticArpEntries_ArpEntry_NudState_NudStateType" json:"type,omitempty"`
+}
+
+func (m *LinuxStaticArpEntries_ArpEntry_NudState) Reset() {
+	*m = LinuxStaticArpEntries_ArpEntry_NudState{}
+}
+func (m *LinuxStaticArpEntries_ArpEntry_NudState) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticArpEntries_ArpEntry_NudState) ProtoMessage()    {}
+
 func init() {
-	proto.RegisterEnum("l3.Scope", Scope_name, Scope_value)
-	proto.RegisterEnum("l3.NudState", NudState_name, NudState_value)
 	proto.RegisterEnum("l3.LinuxStaticRoutes_Route_Namespace_NamespaceType", LinuxStaticRoutes_Route_Namespace_NamespaceType_name, LinuxStaticRoutes_Route_Namespace_NamespaceType_value)
+	proto.RegisterEnum("l3.LinuxStaticRoutes_Route_Scope_ScopeType", LinuxStaticRoutes_Route_Scope_ScopeType_name, LinuxStaticRoutes_Route_Scope_ScopeType_value)
 	proto.RegisterEnum("l3.LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType", LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_name, LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_value)
+	proto.RegisterEnum("l3.LinuxStaticArpEntries_ArpEntry_NudState_NudStateType", LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_name, LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_value)
 }
