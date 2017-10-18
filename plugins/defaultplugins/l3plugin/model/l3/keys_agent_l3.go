@@ -26,10 +26,8 @@ const (
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
 	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
-	// FibPrefix is the relative key prefix for IP FIBs.
-	FibPrefix = "vpp/config/v1/fib/"
 	// ARPPrefix is the relative key prefix for ARP table entries.
-	ARPPrefix = FibPrefix + "{fib}/arp/{if}/{ip}"
+	ARPPrefix = "vpp/config/v1/arp/{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
