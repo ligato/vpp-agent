@@ -223,9 +223,11 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		params := mux.Vars(req)
 		if params != nil && len(params) > 0 {
 			showCommand := params["showCommand"]
+
+			plugin.Deps.Log.Infof("Received request to execute show command :: %v ", showCommand)
+
 			showCommand = "show interface"
 			if showCommand != "" {
-				plugin.Deps.Log.Infof("Received request to execute show command :: %v ", showCommand)
 				// create an API channel
 				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 				if err != nil {
@@ -245,10 +247,11 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 					}
 
 					if 0 != reply.Retval {
-						plugin.Deps.Log.Errorf("Command returned: %v", reply.Retval)
+						plugin.Deps.Log.Errorf("Command returned: %v", reply)
 					}
 
 					plugin.Deps.Log.Infof("reply :: %v", reply)
+					plugin.Deps.Log.Infof("reply returned :: %v", string(reply.Reply))
 					formatter.JSON(w, http.StatusOK, reply)
 				}
 				defer ch.Close()
