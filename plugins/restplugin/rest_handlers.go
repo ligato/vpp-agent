@@ -223,6 +223,7 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		params := mux.Vars(req)
 		if params != nil && len(params) > 0 {
 			showCommand := params["showCommand"]
+			showCommand = "show interface"
 			if showCommand != "" {
 				plugin.Deps.Log.Infof("Received request to execute show command :: %v ", showCommand)
 				// create an API channel
@@ -252,8 +253,10 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 				}
 				defer ch.Close()
 			} else {
-				formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
+				formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
 			}
+		} else {
+			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
 		}
 	}
 }
