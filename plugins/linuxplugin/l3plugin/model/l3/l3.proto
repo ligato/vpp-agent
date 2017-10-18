@@ -11,17 +11,34 @@ enum Scope {
 
 /* static ip routes */
 message LinuxStaticRoutes {
-    message Route {
-        string interface = 1;       /* interface name */
-        string description = 3;     /* optional description */
-        Scope scope = 4;            /* the scope of the area where the link is valid */
-        string src_ip_addr = 5;     /* source ip address + prefix in format <address>/<prefix> */
-        string dst_ip_addr = 6;     /* destination ip address  */
-        string gw_addr = 7;         /* gateway address */
-        uint32 priority = 8;        /* routing priority (weight) */
-        uint32 table = 9;           /* linux kernel routing table */
+    message Route {                         /* route name */
+        string name = 1;
+
+        message Namespace {                 /* Linux network namespace to attach the route entry into. */
+            enum NamespaceType {
+                PID_REF_NS = 0;             /* Attach to namespace of a given process. */
+                MICROSERVICE_REF_NS = 1;    /* Attach to namespace of a docker container running given microservice. */
+                NAMED_NS = 2;               /* Attach to named namespace. */
+                FILE_REF_NS = 3;            /* Attach to namespace referenced by a file handle. */
+            }
+            NamespaceType type = 1;
+            uint32 pid = 2;
+            string microservice = 3;
+            string name = 4;
+            string filepath = 5;
+        }
+        Namespace namespace = 2;
+
+        string interface = 3;               /* interface name */
+        string description = 4;             /* optional description */
+        Scope scope = 5;                    /* the scope of the area where the link is valid */
+        string src_ip_addr = 6;             /* source ip address + prefix in format <address>/<prefix> */
+        string dst_ip_addr = 7;             /* destination ip address  */
+        string gw_addr = 8;                 /* gateway address */
+        uint32 priority = 9;                /* routing priority (weight) */
+        uint32 table = 10;                  /* linux kernel routing table */
     }
-    repeated Route route = 1;       /* list of IP static routes */
+    repeated Route route = 1;               /* list of IP static routes */
 }
 
 enum NudState {
@@ -34,10 +51,28 @@ enum NudState {
 /* static arp entires */
 message LinuxStaticArpEntries {
     message ArpEntry {
-        string interface = 1;            /* interface to which this neighbour is attached */
-        NudState nud_state = 2;          /* state of the neighbour entry */
-        string ip_addr = 3;              /* ip address + prefix in format <address>/<prefix> */
-        string hw_address = 4;           /* mac address */
+        string name = 1;                    /* arp entry name */
+
+
+        message Namespace {                 /* Linux network namespace to attach the arp entry into. */
+            enum NamespaceType {
+                PID_REF_NS = 0;             /* Attach to namespace of a given process. */
+                MICROSERVICE_REF_NS = 1;    /* Attach to namespace of a docker container running given microservice. */
+                NAMED_NS = 2;               /* Attach to named namespace. */
+                FILE_REF_NS = 3;            /* Attach to namespace referenced by a file handle. */
+            }
+            NamespaceType type = 1;
+            uint32 pid = 2;
+            string microservice = 3;
+            string name = 4;
+            string filepath = 5;
+        }
+        Namespace namespace = 2;
+
+        string interface = 3;               /* interface to which this neighbour is attached */
+        NudState nud_state = 4;             /* state of the neighbour entry */
+        string ip_addr = 5;                 /* ip address + prefix in format <address>/<prefix> */
+        string hw_address = 6;              /* mac address */
     }
-    repeated ArpEntry arp_entry = 1;     /* list of IP static routes */
+    repeated ArpEntry arp_entry = 1;        /* list of IP static routes */
 }
