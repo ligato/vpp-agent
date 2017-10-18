@@ -19,13 +19,14 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"time"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -75,10 +76,10 @@ func NewDataResyncReq() *DataResyncReq {
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
 func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
-	log.DefaultLogger().Info("resync the VPP Configuration begin")
-
+	plugin.Log.Info("resync the VPP Configuration begin")
+	startTime := time.Now()
 	plugin.ifConfigurator.Resync(req.Interfaces)
-	plugin.aclConfigurator.Resync(req.ACLs)
+	plugin.aclConfigurator.Resync(req.ACLs, plugin.Log)
 	plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey)
 	plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession)
 	plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho)
@@ -87,51 +88,52 @@ func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
 	plugin.xcConfigurator.Resync(req.XConnects)
 	plugin.routeConfigurator.Resync(req.StaticRoutes)
 
-	log.DefaultLogger().Debug("resync the VPP Configuration end")
+	vppResync := time.Since(startTime)
+	plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
 
 	return nil
 }
 
-func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
+func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		log.DefaultLogger().Debug("Received RESYNC key ", key)
+		plugin.Log.Debug("Received RESYNC key ", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if strings.HasPrefix(key, acl.KeyPrefix()) {
 			numAcls := appendACLInterface(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC ACL values ", numAcls)
+			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
 		} else if strings.HasPrefix(key, intf.InterfaceKeyPrefix()) {
 			numInterfaces := appendResyncInterface(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC interface values ", numInterfaces)
+			plugin.Log.Debug("Received RESYNC interface values ", numInterfaces)
 		} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
 			numBfdSession := resyncAppendBfdSession(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC BFD Session values ", numBfdSession)
+			plugin.Log.Debug("Received RESYNC BFD Session values ", numBfdSession)
 		} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
 			numBfdAuthKeys := resyncAppendBfdAuthKeys(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC BFD Auth Key values ", numBfdAuthKeys)
+			plugin.Log.Debug("Received RESYNC BFD Auth Key values ", numBfdAuthKeys)
 		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC BFD Echo values ", numBfdEchos)
+			plugin.Log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
 		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC BD values ", numBDs)
-			log.DefaultLogger().Debug("Received RESYNC L2 FIB values ", numL2FIBs)
+			plugin.Log.Debug("Received RESYNC BD values ", numBDs)
+			plugin.Log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
 		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
 			numXCons := resyncAppendXCons(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC XConnects values ", numXCons)
+			plugin.Log.Debug("Received RESYNC XConnects values ", numXCons)
 		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
-			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, key, req)
-			log.DefaultLogger().Debug("Received RESYNC VRF values ", numVRFs)
-			log.DefaultLogger().Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
+			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
 		} else {
-			log.DefaultLogger().Warn("ignoring ", resyncEv, " by VPP standard plugins")
+			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
 	}
 	return req
 }
 
-func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq) error {
+func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
 	route := &l3.StaticRoutes_Route{}
 	err := fibData.GetValue(route)
 	if err != nil {
@@ -143,7 +145,7 @@ func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResync
 		return err
 	}
 	if vrfIndex != strconv.Itoa(int(route.VrfId)) {
-		log.DefaultLogger().Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
+		log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
 			intVrfKeyIndex, route.VrfId)
 		route.VrfId = uint32(intVrfKeyIndex)
 	}
@@ -152,7 +154,7 @@ func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResync
 	return nil
 }
 
-func resyncAppendVRFs(resyncData datasync.KeyValIterator, key string, req *DataResyncReq) (numVRFs, numL3FIBs int) {
+func resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) (numVRFs, numL3FIBs int) {
 	numVRFs = 0
 	numL3FIBs = 0
 	for {
@@ -162,12 +164,12 @@ func resyncAppendVRFs(resyncData datasync.KeyValIterator, key string, req *DataR
 			key := vrfData.GetKey()
 			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
 			if fib {
-				err := resyncAppendL3FIB(vrfData, vrfIndex, req)
+				err := resyncAppendL3FIB(vrfData, vrfIndex, req, log)
 				if err == nil {
 					numL3FIBs++
 				}
 			} else {
-				log.DefaultLogger().Warn("VRF RESYNC is not implemented")
+				log.Warn("VRF RESYNC is not implemented")
 			}
 		}
 	}
@@ -309,14 +311,14 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 
 // put here all registration for above channel select (it ensures proper order during initialization
 func (plugin *Plugin) subscribeWatcher() (err error) {
-	log.DefaultLogger().Debug("subscribeWatcher begin")
+	plugin.Log.Debug("subscribeWatcher begin")
 	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIdxWatchCh)
-	log.DefaultLogger().Debug("swIfIndexes watch registration finished")
+	plugin.Log.Debug("swIfIndexes watch registration finished")
 	plugin.bdIndexes.WatchNameToIdx(plugin.PluginName, plugin.bdIdxWatchCh)
-	log.DefaultLogger().Debug("bdIndexes watch registration finished")
+	plugin.Log.Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
 		plugin.linuxIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.linuxIfIdxWatchCh)
-		log.DefaultLogger().Debug("linuxIfIndexes watch registration finished")
+		plugin.Log.Debug("linuxIfIndexes watch registration finished")
 	}
 
 	plugin.watchConfigReg, err = plugin.Watch.
@@ -340,7 +342,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	log.DefaultLogger().Debug("data Transport watch finished")
+	plugin.Log.Debug("data Transport watch finished")
 
 	return nil
 }
@@ -352,7 +354,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
 		return false, nil
 	}
-	log.DefaultLogger().Debug("Start processing change for key: ", key)
+	plugin.Log.Debug("Start processing change for key: ", key)
 	if strings.HasPrefix(key, acl.KeyPrefix()) {
 		var value, prevValue acl.AccessLists_Acl
 		if err := dataChng.GetValue(&value); err != nil {
@@ -472,10 +474,10 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			// Vrf
 			// TODO vrf not implemented yet
-			log.DefaultLogger().Warn("VRFs are not supported yet")
+			plugin.Log.Warn("VRFs are not supported yet")
 		}
 	} else {
-		log.DefaultLogger().Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
+		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
 	return false, nil
 }

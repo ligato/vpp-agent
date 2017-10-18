@@ -55,7 +55,7 @@ Usage of synchronous producer:
 	producer.SendMsgByte(topic, key, value, meta)
 
 	// key and value are of type Encoder
-	producer.SendMsg(topic, key, value, meta)
+	producer.SendMsgToPartition(topic, key, value, meta)
 
 Usage of asynchronous producer:
 	succCh := make(chan *client.ProducerMessage)
@@ -147,7 +147,11 @@ The config file specifies addresses of kafka brokers:
 
 To create a Connection that reuses Multiplexer access to kafka run:
 
-	cn := mx.NewConnection("c1")
+	cn := mx.NewBytesConnection("c1")
+
+	or
+
+	cn := mx.NewProtoConnection("c1")
 
 Afterwards you can produce messages using sync API:
 

@@ -27,7 +27,7 @@ import (
 	goredis "github.com/go-redis/redis"
 )
 
-// TLS configures TLS properties
+// TLS configures Transport layer security properties.
 type TLS struct {
 	Enabled    bool   `json:"enabled"`     // enable/disable TLS
 	SkipVerify bool   `json:"skip-verify"` // whether to skip verification of server name & certificate
@@ -71,17 +71,19 @@ func createTLSConfig(config TLS) (*tls.Config, error) {
 ///////////////////////////////////////////////////////////////////////////////
 // go-redis https://github.com/go-redis/redis
 
-// GoRedisNil go-redis return this error when Redis replies nil, .e.g. when key does not exist.
+// GoRedisNil is error returned by go-redis when Redis replies with nil,
+// .e.g. when key does not exist.
 const GoRedisNil = goredis.Nil
 
-// Client Common interface to adapt all types of Redis clients
+// Client is common interface used to adapt all types of Redis clients.
 type Client interface {
 	// The easiest way to adapt Cmdable interface is to just embed it.
 	goredis.Cmdable
 	/*
-		But that means we'll have to mock each and every method in Cmdable for unit tests,
-		making it a whole lot more complicated.  When the time comes, it may be more manageable
-		to only declare (duplicate) the methods we need from Cmdable.  As follows:
+		But that means we'll have to mock each and every method in Cmdable for
+		unit tests, making it a whole lot more complicated.  When the time comes,
+		it may be more manageable to only declare (duplicate) the methods
+		we need from Cmdable.  As follows:
 			Del(keys ...string) *goredis.IntCmd
 			Get(key string) *goredis.StringCmd
 			MGet(keys ...string) *goredis.SliceCmd
@@ -90,34 +92,58 @@ type Client interface {
 			Set(key string, value interface{}, expiration time.Duration) *goredis.StatusCmd
 	*/
 
-	// Declare these additional methods to enable access to them through this interface
+	// Declare these additional methods to enable access to them through this
+	// interface.
 	Close() error
 	TxPipeline() goredis.Pipeliner
 	PSubscribe(channels ...string) *goredis.PubSub
 }
 
-// ClientConfig Configuration common to all types of Redis clients
+// ClientConfig is configuration common to all types of Redis clients.
 type ClientConfig struct {
-	Password     string        `json:"password"`      // Password for authentication, if required
-	DialTimeout  time.Duration `json:"dial-timeout"`  // Dial timeout for establishing new connections. Default is 5 seconds.
-	ReadTimeout  time.Duration `json:"read-timeout"`  // Timeout for socket reads. If reached, commands will fail with a timeout instead of blocking. Default is 3 seconds.
-	WriteTimeout time.Duration `json:"write-timeout"` // Timeout for socket writes. If reached, commands will fail with a timeout instead of blocking. Default is ReadTimeout.
-	Pool         PoolConfig    `json:"pool"`          // Connection pool configuration
+	// Password for authentication, if required.
+	Password string `json:"password"`
+
+	// Dial timeout for establishing new connections. Default is 5 seconds.
+	DialTimeout time.Duration `json:"dial-timeout"`
+
+	// Timeout for socket reads. If reached, commands will fail with a timeout
+	// instead of blocking. Default is 3 seconds.
+	ReadTimeout time.Duration `json:"read-timeout"`
+
+	// Timeout for socket writes. If reached, commands will fail with a timeout
+	// instead of blocking. Default is ReadTimeout.
+	WriteTimeout time.Duration `json:"write-timeout"`
+
+	// Connection pool configuration.
+	Pool PoolConfig `json:"pool"`
 }
 
 // NodeConfig Node client configuration
 type NodeConfig struct {
-	Endpoint               string `json:"endpoint"`              // host:port address of a Redis node
-	DB                     int    `json:"db"`                    // Database to be selected after connecting to the server.
-	EnableReadQueryOnSlave bool   `json:"enable-query-on-slave"` // Enables read only queries on slave nodes.
-	TLS                    TLS    `json:"tls"`                   // TLS configuration -- only applies to node client.
+	// host:port address of a Redis node
+	Endpoint string `json:"endpoint"`
+
+	// Database to be selected after connecting to the server.
+	DB int `json:"db"`
+
+	// Enables read only queries on slave nodes.
+	EnableReadQueryOnSlave bool `json:"enable-query-on-slave"`
+
+	// TLS configuration -- only applies to node client.
+	TLS TLS `json:"tls"`
+
+	// Embedded common client configuration.
 	ClientConfig
 }
 
 // ClusterConfig Cluster client configuration
 type ClusterConfig struct {
-	Endpoints              []string `json:"endpoints"`             // A seed list of host:port addresses of cluster nodes.
-	EnableReadQueryOnSlave bool     `json:"enable-query-on-slave"` // Enables read only queries on slave nodes.
+	// A seed list of host:port addresses of cluster nodes.
+	Endpoints []string `json:"endpoints"`
+
+	// Enables read only queries on slave nodes.
+	EnableReadQueryOnSlave bool `json:"enable-query-on-slave"`
 
 	// The maximum number of redirects before giving up.
 	// Command is retried on network errors and MOVED/ASK redirects. Default is 16.
@@ -130,14 +156,19 @@ type ClusterConfig struct {
 
 // SentinelConfig Sentinel client configuration
 type SentinelConfig struct {
-	Endpoints  []string `json:"endpoints"`   // A seed list of host:port addresses sentinel nodes.
-	MasterName string   `json:"master-name"` // The sentinel master name.
-	DB         int      `json:"db"`          // Database to be selected after connecting to the server.
+	// A seed list of host:port addresses sentinel nodes.
+	Endpoints []string `json:"endpoints"`
+
+	// The sentinel master name.
+	MasterName string `json:"master-name"`
+
+	// Database to be selected after connecting to the server.
+	DB int `json:"db"`
 
 	ClientConfig
 }
 
-// PoolConfig Configuration of go-redis connection pool
+// PoolConfig is a configuration of the go-redis connection pool.
 type PoolConfig struct {
 	// Maximum number of socket connections.
 	// Default is 10 connections per every CPU as reported by runtime.NumCPU.
@@ -156,7 +187,8 @@ type PoolConfig struct {
 	IdleCheckFrequency time.Duration `json:"idle-check-frequency"`
 }
 
-// CreateClient Creates an appropriate client according to the configuration parameter.
+// CreateClient creates an appropriate client according to the configuration
+// parameter.
 func CreateClient(config interface{}) (Client, error) {
 	switch cfg := config.(type) {
 	case NodeConfig:
@@ -168,10 +200,11 @@ func CreateClient(config interface{}) (Client, error) {
 	case nil:
 		return nil, fmt.Errorf("Configuration cannot be nil")
 	}
-	return nil, fmt.Errorf("Unknown configureation type %T", config)
+	return nil, fmt.Errorf("Unknown configuration type %T", config)
 }
 
-// CreateNodeClient Creates a client that will connect to a redis node, like master and/or slave.
+// CreateNodeClient creates a client that will connect to a redis node,
+// like master and/or slave.
 func CreateNodeClient(config NodeConfig) (Client, error) {
 	var tlsConfig *tls.Config
 	if config.TLS.Enabled {

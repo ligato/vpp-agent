@@ -29,6 +29,7 @@ import (
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/fsnotify/fsnotify"
+	"github.com/namsral/flag"
 )
 
 const (
@@ -37,9 +38,15 @@ const (
 	notificationChannelBufSize = 100 // default size of the notification channel buffers
 )
 
-const (
+var (
+	// Configurable delay between VPP readiness and actual connection
+	delay = flag.Int("delay", 0, "VPP connection delay time in [ms].")
+)
+
+var (
 	healthCheckProbeInterval = time.Second * 1        // default health check probe interval
 	healthCheckReplyTimeout  = time.Millisecond * 100 // timeout for reply to a health check probe
+	healthCheckThreshold     = 1                      // number of failed healthProbe until the error is reported
 )
 
 // ConnectionState holds the current state of the connection to VPP.
@@ -113,6 +120,28 @@ func init() {
 // SetLogger sets global logger to provided one.
 func SetLogger(l *logger.Logger) {
 	log = l
+}
+
+// SetHealthCheckProbeInterval sets health check probe interval.
+// Beware: Function is not thread-safe. It is recommended to setup this parameter
+// before connecting to vpp.
+func SetHealthCheckProbeInterval(interval time.Duration) {
+	healthCheckProbeInterval = interval
+}
+
+// SetHealthCheckReplyTimeout sets timeout for reply to a health check probe.
+// If reply arrives after the timeout, check is considered as failed.
+// Beware: Function is not thread-safe. It is recommended to setup this parameter
+// before connecting to vpp.
+func SetHealthCheckReplyTimeout(timeout time.Duration) {
+	healthCheckReplyTimeout = timeout
+}
+
+// SetHealthCheckThreshold sets the number of failed healthProbe checks until the error is reported.
+// Beware: Function is not thread-safe. It is recommended to setup this parameter
+// before connecting to vpp.
+func SetHealthCheckThreshold(threshold int) {
+	healthCheckThreshold = threshold
 }
 
 // Connect connects to VPP using specified VPP adapter and returns the connection handle.
@@ -254,6 +283,10 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
 		waitForVpp()
+		// Delay after watched file was crated
+		log.Infof("Sleeping %v [ms] while VPP will be ready", *delay)
+		time.Sleep(time.Duration(*delay) * time.Millisecond)
+		log.Info("VPP is ready to connect")
 		err := c.connectVPP()
 		if err == nil {
 			// signal connected event
@@ -276,6 +309,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 		return
 	}
 
+	failedChecks := 0
 	// send health check probes until an error occurs
 	for {
 		// wait for healthCheckProbeInterval
@@ -298,8 +332,14 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 			err = errors.New("probe reply not received within the timeout period")
 		}
 
-		// in case of error, break & disconnect
 		if err != nil {
+			failedChecks++
+		} else {
+			failedChecks = 0
+		}
+
+		if failedChecks >= healthCheckThreshold {
+			// in case of error, break & disconnect
 			log.Errorf("VPP health check failed: %v", err)
 			// signal disconnected event via channel
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Disconnected}

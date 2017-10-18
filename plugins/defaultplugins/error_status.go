@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/datasync"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
@@ -65,52 +64,58 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 		var err error
 		var iface, prevIface interfaces.Interfaces_Interface
 		if err := change.GetValue(&iface); err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate interface error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate interface error, cause: %v", err)
 			return
 		}
 		var prevValExists bool
 		if prevValExists, err = change.GetPrevValue(&prevIface); err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate interface error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate interface error, cause: %v", err)
 			return
 		}
 		var ifaceName string
-		if iface.Name == "" && prevValExists {
+		if iface.Name != "" {
+			ifaceName = iface.Name
+		} else if prevValExists && prevIface.Name != "" {
 			ifaceName = prevIface.Name
 		} else {
-			ifaceName = iface.Name
+			plugin.Log.Errorf("Unable to log error for key %v: cannot obtain interface name to build an interface err key", key)
+			return
 		}
 		ifaceErrKey := interfaces.InterfaceErrorKey(ifaceName)
 		ifaceErrList := plugin.composeInterfaceErrors(ifaceName, changeType, errInfo)
-		log.DefaultLogger().Infof("Logging error for interface %v", ifaceName)
+		plugin.Log.Infof("Logging error for interface %v", ifaceName)
 		err = plugin.addErrorLogEntry(ifaceErrKey, ifaceErrList)
 		if err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate interface error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate interface error, cause: %v", err)
 		}
 		// Bridge domains
 	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
 		var err error
 		var bd, prevBd l2.BridgeDomains_BridgeDomain
 		if err := change.GetValue(&bd); err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate bridge domain error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate bridge domain error, cause: %v", err)
 			return
 		}
 		var prevValExists bool
 		if prevValExists, err = change.GetPrevValue(&prevBd); err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate bridgeDomain error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate bridgeDomain error, cause: %v", err)
 			return
 		}
 		var bdName string
-		if bd.Name == "" && prevValExists {
+		if bd.Name != "" {
+			bdName = bd.Name
+		} else if prevValExists && prevBd.Name != "" {
 			bdName = prevBd.Name
 		} else {
-			bdName = bd.Name
+			plugin.Log.Errorf("Unable to log error for key %v: cannot obtain bd name to build a bd err key", key)
+			return
 		}
 		bdErrKey := l2.BridgeDomainErrorKey(bdName)
 		bdErrList := plugin.composeBridgeDomainErrors(bdName, changeType, errInfo)
-		log.DefaultLogger().Infof("Logging error for bridge domain %v", bdName)
+		plugin.Log.Infof("Logging error for bridge domain %v", bdName)
 		err = plugin.addErrorLogEntry(bdErrKey, bdErrList)
 		if err != nil {
-			log.DefaultLogger().Errorf("Failed to propagate bridge domain error, cause: %v", err)
+			plugin.Log.Errorf("Failed to propagate bridge domain error, cause: %v", err)
 		}
 	}
 }
@@ -199,7 +204,7 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 	if totalErrorCount > maxErrCount {
 		// Remove oldest entry
 		if !found {
-			log.DefaultLogger().Infof("There is no error entry with index %v", firstActiveIndex)
+			plugin.Log.Infof("There is no error entry with index %v", firstActiveIndex)
 		} else {
 			var oldEntryKey string
 			if _, ok := oldErrors.([]*interfaces.InterfaceErrors_Interface_ErrorData); ok {
@@ -207,9 +212,9 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 			} else if _, ok := oldErrors.([]*l2.BridgeDomainErrors_BridgeDomain_ErrorData); ok {
 				oldEntryKey = l2.BridgeDomainErrorKey(name)
 			} else {
-				log.DefaultLogger().Warnf("Unknown type od data: %v", errors)
+				plugin.Log.Warnf("Unknown type od data: %v", errors)
 			}
-			log.DefaultLogger().Debugf("Removing error log entry from history: %v, %v", name, oldEntryKey)
+			plugin.Log.Debugf("Removing error log entry from history: %v, %v", name, oldEntryKey)
 			plugin.removeOldestErrorLogEntry(oldEntryKey)
 		}
 	}
@@ -225,7 +230,7 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 			return err
 		}
 	} else {
-		log.DefaultLogger().Warnf("Unknown type od data: %v", errors)
+		plugin.Log.Warnf("Unknown type od data: %v", errors)
 	}
 	return nil
 }
@@ -237,22 +242,27 @@ func (plugin *Plugin) removeErrorLog(key string) {
 	// The rest is a prefix
 	prefix := strings.Replace(key, name, "", 1)
 
+	if plugin.Publish == nil {
+		// if there is no publish destination set, there is nothing to be deleted
+		return
+	}
+
 	if prefix == interfaces.InterfacePrefix {
 		key := interfaces.InterfaceErrorKey(name)
 		plugin.Publish.Put(key, nil)
-		log.DefaultLogger().Infof("Error status log for interface %v cleared", name)
+		plugin.Log.Infof("Error status log for interface %v cleared", name)
 	} else if prefix == l2.BdPrefix {
 		key := l2.BridgeDomainErrorKey(name)
 		plugin.Publish.Put(key, nil)
-		log.DefaultLogger().Infof("Error status log for bridge domain %v cleared", name)
+		plugin.Log.Infof("Error status log for bridge domain %v cleared", name)
 	} else {
-		log.DefaultLogger().Infof("Error status log: unknown type of prefix: %v", prefix)
+		plugin.Log.Infof("Error status log: unknown type of prefix: %v", prefix)
 	}
 }
 
 // Generic method which can be used to remove oldest error data under provided key
 func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
-	log.DefaultLogger().Warnf("Key: %v", key)
+	plugin.Log.Warnf("Key: %v", key)
 	var name string
 	var metaData interface{}
 	var exists bool
@@ -264,14 +274,14 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
 	}
 	if !exists {
-		log.DefaultLogger().Debugf("There is no error log related to the %v", name)
+		plugin.Log.Debugf("There is no error log related to the %v", name)
 		return
 	}
 	if metaData == nil {
-		log.DefaultLogger().Infof("Error-Idx-Map entry %v: missing metaData", name)
+		plugin.Log.Infof("Error-Idx-Map entry %v: missing metaData", name)
 		return
 	}
-	log.DefaultLogger().Warnf("Name: %v", name)
+	plugin.Log.Warnf("Name: %v", name)
 	switch errData := metaData.(type) {
 	// Interfaces
 	case []*interfaces.InterfaceErrors_Interface_ErrorData:
@@ -279,7 +289,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 		// If there are more than one error under the interface key, remove the oldest one
 		if len(errData) > 1 {
 			errData = append(errData[:0], errData[1:]...)
-			log.DefaultLogger().Infof("Error log for interface %v: oldest entry removed", name)
+			plugin.Log.Infof("Error log for interface %v: oldest entry removed", name)
 			plugin.Publish.Put(key, &interfaces.InterfaceErrors_Interface{
 				InterfaceName: name,
 				ErrorData:     errData,
@@ -287,7 +297,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 			plugin.errorIndexes.RegisterName(name, plugin.errorIdxSeq, errData)
 			plugin.errorIdxSeq++
 		} else {
-			log.DefaultLogger().Infof("Error log for interface %v cleared", name)
+			plugin.Log.Infof("Error log for interface %v cleared", name)
 			plugin.Publish.Put(key, nil)
 			plugin.errorIndexes.UnregisterName(name)
 		}
@@ -297,7 +307,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 		// If there are more than one error under the bridge domain key, remove the oldest one
 		if len(errData) > 1 {
 			errData = append(errData[:0], errData[1:]...)
-			log.DefaultLogger().Infof("Error log for bridge domain %v: oldest entry removed", name)
+			plugin.Log.Infof("Error log for bridge domain %v: oldest entry removed", name)
 			plugin.Publish.Put(key, &l2.BridgeDomainErrors_BridgeDomain{
 				BdName:    name,
 				ErrorData: errData,
@@ -305,7 +315,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 			plugin.errorIndexes.RegisterName(name, plugin.errorIdxSeq, errData)
 			plugin.errorIdxSeq++
 		} else {
-			log.DefaultLogger().Infof("Error log for bridge domain %v cleared", name)
+			plugin.Log.Infof("Error log for bridge domain %v cleared", name)
 			plugin.Publish.Put(key, nil)
 			plugin.errorIndexes.UnregisterName(name)
 		}

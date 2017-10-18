@@ -38,7 +38,8 @@ func ToProtoMsgChan(ch chan ProtoMessage, opts ...interface{}) func(ProtoMessage
 	}
 }
 
-// ToProtoMsgErrChan allows to receive error messages through channel instead of callback.
+// ToProtoMsgErrChan allows to receive error messages through channel instead
+// of callback.
 func ToProtoMsgErrChan(ch chan ProtoMessageErr, opts ...interface{}) func(ProtoMessageErr) {
 
 	timeout, logger := ParseOpts(opts...)
@@ -69,22 +70,25 @@ func ParseOpts(opts ...interface{}) (time.Duration, logging.Logger) {
 
 }
 
-// WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
+// WithTimeoutOpt defines the maximum time allocated to deliver a notification.
 type WithTimeoutOpt struct {
 	timeout time.Duration
 }
 
-// WithTimeout creates an option for ToChan function that defines a timeout for notification delivery.
+// WithTimeout creates an option for ToChan function that defines a timeout for
+// notification delivery.
 func WithTimeout(timeout time.Duration) *WithTimeoutOpt {
 	return &WithTimeoutOpt{timeout: timeout}
 }
 
-// WithLoggerOpt defines a logger that logs if delivery of notification is unsuccessful.
+// WithLoggerOpt defines a logger that logs if delivery of notification is
+// unsuccessful.
 type WithLoggerOpt struct {
 	logger logging.Logger
 }
 
-// WithLogger creates an option for ToChan function that specifies a logger to be used.
+// WithLogger creates an option for ToChan function that specifies a logger
+// to be used.
 func WithLogger(logger logging.Logger) *WithLoggerOpt {
 	return &WithLoggerOpt{logger: logger}
 }

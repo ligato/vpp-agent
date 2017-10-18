@@ -149,8 +149,6 @@ func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxR
 	}
 
 	for name, idx := range persist.nameToIdx {
-		log.DefaultLogger().WithFields(log.Fields{"name": name, "idx": idx}).Debug(
-			"Loaded mapping from the persistent storage")
 		loadedFromFile.RegisterName(name, idx, nil)
 	}
 	return nil

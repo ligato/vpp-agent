@@ -110,6 +110,7 @@ type LogWithLevel interface {
 	Fatal(args ...interface{})
 	// Fatalf prints formatted log using Fatal level and calls os.Exit(1)
 	Fatalf(format string, args ...interface{})
+	Fatalln(args ...interface{})
 	Print(v ...interface{})
 	Printf(format string, v ...interface{})
 	Println(v ...interface{})
@@ -126,7 +127,7 @@ type Registry interface {
 	// GetLevel returns the currently set log level of the logger from registry
 	GetLevel(logger string) (string, error)
 	// Lookup returns a logger instance identified by name from registry
-	Lookup(loggerName string) (Logger, bool)
+	Lookup(loggerName string) (logger Logger, found bool)
 	// ClearRegistry removes all loggers except the default one from registry
 	ClearRegistry()
 }

@@ -5,6 +5,7 @@ Library      vat_term.py
 
 *** Variables ***
 ${terminal_timeout}=      30s
+${bd_timeout}=            15s
 
 *** Keywords ***
 
@@ -24,7 +25,6 @@ vat_term: Open VAT Terminal
     [Arguments]    ${node}
     [Documentation]    Wait for VAT terminal on node ${node} or timeout
     wait until keyword succeeds  ${terminal_timeout}    5s   vat_term: Check VAT Terminal    ${node}
-
 
 vat_term: Exit VAT Terminal
     [Arguments]        ${node}
@@ -48,6 +48,15 @@ vat_term: Interfaces Dump
     [Documentation]    Executing command sw_interface_dump
     Log Many           ${node}
     ${out}=            vat_term: Issue Command  ${node}  sw_interface_dump
+    [Return]           ${out}
+
+vat_term: Bridge Domain Dump
+    [Arguments]        ${node}    ${bd_id}=${EMPTY}
+    [Documentation]    Executing command bridge_domain_dump
+    Log Many           ${node}    ${bd_id}
+    ${add_params}=     Set Variable If    '''${bd_id}'''==""    ${EMPTY}    bd_id ${bd_id}
+    ${out}=            vat_term: Issue Command  ${node}  bridge_domain_dump ${add_params}
+    ${out}=            Evaluate    """${out}"""["""${out}""".find('['):"""${out}""".rfind(']')+1]
     [Return]           ${out}
 
 vat_term: IP FIB Dump
@@ -204,4 +213,65 @@ vat_term: Check Memif Interface State
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
+
+vat_term: Check Bridge Domain State
+    [Arguments]          ${node}    ${bd}    @{desired_state}
+    Log Many             ${node}    ${bd}    ${desired_state}
+    ${bd_id}=            vpp_ctl: Get Bridge Domain ID    ${node}    ${bd}
+    Log                  ${bd_id}
+    ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
+    Log                  ${bd_dump}
+    ${bd_json}=          Evaluate    json.loads('''${bd_dump}''')    json
+    Log                  ${bd_json}
+    ${flood}=            Set Variable    ${bd_json[0]["flood"]}
+    ${forward}=          Set Variable    ${bd_json[0]["forward"]}
+    ${learn}=            Set Variable    ${bd_json[0]["learn"]}
+    ${bd_details}=       vpp_term: Show Bridge-Domain Detail    ${node}    ${bd_id}
+    Log                  ${bd_details}
+    ${bd_state}=         Parse BD Details    ${bd_details}
+    Log                  ${bd_state}
+    ${etcd_dump}=        Get ETCD Dump
+    Log                  ${etcd_dump}
+    ${etcd_json}=        Convert_ETCD_Dump_To_JSON    ${etcd_dump}
+    Log                  ${etcd_json}
+    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_json}    ${bd_dump}
+    Log                  ${interfaces}
+    ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
+    Append To List       ${actual_state}    @{bd_state}    @{interfaces}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vat_term: BD Is Created
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    Wait Until Keyword Succeeds    ${bd_timeout}   3s    vat_term: Check BD Presence    ${node}    ${interfaces}
+
+vat_term: BD Is Deleted
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    Wait Until Keyword Succeeds    ${bd_timeout}   3s    vat_term: Check BD Presence    ${node}    ${interfaces}    ${FALSE}
+
+vat_term: BD Exists
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    vat_term: Check BD Presence    ${node}    ${interfaces}
+
+vat_term: BD Not Exists
+    [Arguments]    ${node}    @{interfaces}
+    Log Many       ${node}    ${interfaces}
+    vat_term: Check BD Presence    ${node}    ${interfaces}    ${FALSE}
+
+vat_term: Check BD Presence
+    [Arguments]        ${node}     ${interfaces}    ${status}=${TRUE}
+    Log Many           ${node}     ${interfaces}    ${status}
+    ${indexes}=    Create List
+    :FOR    ${int}    IN    @{interfaces}
+    \    ${sw_if_index}=    vpp_ctl: Get Interface Sw If Index    ${node}    ${int}
+    \    Append To List    ${indexes}    ${sw_if_index}
+    Log List    ${indexes}
+    ${bd_dump}=        vat_term: Bridge Domain Dump    ${node}    
+    Log                ${bd_dump}
+    ${result}=         Check BD Presence    ${bd_dump}    ${indexes}
+    Should Be Equal    ${result}    ${status}
 

@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/testing"
+	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 
 // Start Agent plugins selected for this example
@@ -102,9 +102,9 @@ type ExamplePlugin struct {
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	Publisher                 datasync.KeyProtoValWriter // injected
-	Agent1                    *kvdbsync.Plugin           // injected
-	Agent2                    *kvdbsync.Plugin           // injected
+	Publisher             datasync.KeyProtoValWriter // injected
+	Agent1                *kvdbsync.Plugin           // injected
+	Agent2                *kvdbsync.Plugin           // injected
 	local.PluginInfraDeps                            // injected
 }
 
@@ -123,6 +123,15 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// get access to local bridge domain indexes
 	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
 
+	// Run consumer
+	go plugin.consume()
+
+	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name
+	// /vnf-agent/agent1/vpp/config/v1/bd/
+	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
+	// /vnf-agent/agent2/vpp/config/v1/bd/
+	plugin.bdIdxAgent2 = bdidx.Cache(plugin.Agent2, plugin.PluginName)
+
 	return nil
 }
 
@@ -137,15 +146,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	if err != nil {
 		return err
 	}
-
-	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name
-	// /vnf-agent/agent1/vpp/config/v1/bd/
-	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
-	// /vnf-agent/agent2/vpp/config/v1/bd/
-	plugin.bdIdxAgent2 = bdidx.Cache(plugin.Agent2, plugin.PluginName)
-
-	// Run consumer
-	go plugin.consume()
 
 	// Publish test data
 	plugin.publish()
@@ -165,19 +165,19 @@ func (plugin *ExamplePlugin) Close() error {
 // Test data are published to different agents (including local)
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create bridge domain in local agent
-	br0 := testing.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
+	br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
 	err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent1
-	br1 := testing.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
+	br1 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
 	err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), &br1)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent2
-	br2 := testing.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
+	br2 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
 	err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), &br2)
 	return err
 }
@@ -197,7 +197,7 @@ func (plugin *ExamplePlugin) consume() {
 	for watching {
 		select {
 		case bdIdxEvent := <-bdIdxChan:
-			plugin.Log.Infof("Event received: bridge domain %v", bdIdxEvent.Name)
+			plugin.Log.Info("Event received: bridge domain ", bdIdxEvent.Name, " of ", bdIdxEvent.RegistryTitle)
 			counter++
 		}
 		// Example is expecting 3 events

@@ -5,7 +5,7 @@ language: go
 go_import_path: github.com/ligato/vpp-agent
 
 go:
-  - 1.8.x
+  - 1.9.x
 
 cache:
   directories:
@@ -15,6 +15,7 @@ before_install:
   - go get -v github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
   - sudo ./scripts/build-vpp.sh
+  - sudo apt-get update
   - sudo apt-get install npm && npm install -g markdown-link-check
 
 script:
@@ -22,7 +23,7 @@ script:
   - make lint
   - make
   - make test-cover
-  - make test-examples || true
+  - sudo make test-examples
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

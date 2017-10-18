@@ -7,8 +7,8 @@ two APIs:
   written for a specific key. Multiple writes can be executed in a 
   transaction.
 * **The Watcher API** - used by app plugins to WATCH data on a specified 
-  key; Watching means to monitor data changes on and be notified as soon 
-  as the change occurs.
+  key. Watching means to monitor for data changes and be notified as soon
+  as a change occurs.
 
 ![db](../docs/imgs/db.png)
 

@@ -15,13 +15,19 @@
 package l3plugin
 
 import (
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
 // Resync confgures the empty VPP (overwrites the static route)
 func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC routes begin. ")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
+	// Calculate and log route resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
+
 	// TODO lookup vpp Route Configs
 
 	var wasError error
@@ -31,6 +37,6 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 			wasError = plugin.ConfigureRoute(route, string(route.VrfId))
 		}
 	}
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
 	return wasError
 }

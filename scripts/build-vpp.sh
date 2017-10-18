@@ -2,7 +2,8 @@
 set -e
 
 VPP_CACHE_DIR=$HOME/build-cache/vpp
-VPP_COMMIT="8e4222fc7e23a478b021930ade3cb7d20938e398"
+VPP_COMMIT="2096063b0856808326cbd2c1c8a3a786c98ea896"
+VPP_IMG_TAG="2096063"
 
 if [ ! -d "$VPP_CACHE_DIR" ]; then
     echo "Building VPP binaries."

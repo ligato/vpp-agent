@@ -24,8 +24,9 @@ import (
 // DefaultNotifTimeout for delivery of notification
 const DefaultNotifTimeout = 2 * time.Second
 
-// ToChan creates a callback that can be passed to the Watch function in order to receive
-// notifications through a channel. If the notification can not be delivered until timeout it is dropped.
+// ToChan creates a callback that can be passed to the Watch function
+// in order to receive notifications through a channel. If the notification
+// can not be delivered until timeout, it is dropped.
 func ToChan(ch chan NamedMappingGenericEvent, opts ...interface{}) func(dto NamedMappingGenericEvent) {
 
 	timeout := DefaultNotifTimeout

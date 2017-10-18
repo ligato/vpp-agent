@@ -145,7 +145,7 @@
 // them accept the prefix argument. The prefix will be automatically
 // prepended to all keys in put/delete requests made from the proxy instances. I
 // n case of get-like calls (GetValue, ListValues, ...) the prefix is trimmed
-// from the key of the returned values. They contain only a part following the
+// from the key of the returned values. They contain only the part following the
 // prefix in the key field. The created proxy instances share the connection of
 // the BytesConnectionEtcd.
 //
@@ -171,7 +171,7 @@
 //
 // The package also provides a proto decorator that simplifies the manipulation
 // of proto modelled data. The proto decorator accepts arguments of type
-// proto.message and  marshals them into []byte slices.
+// proto.message and marshals them into []byte slices.
 //
 //
 //      +-------------------+--------------------+       crud/watch         ______
@@ -211,7 +211,7 @@
 //      if allReceived {
 //         break
 //      }
-//	err = kv.GetValue(contact)
+//      err = kv.GetValue(contact)
 //      if err != nil {
 //          os.Exit(1)
 //      }

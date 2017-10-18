@@ -25,17 +25,19 @@ import (
 // PluginStatusIdxMap provides map of plugin names to plugin status.
 // Other plugins can watch changes to this map.
 type PluginStatusIdxMap interface {
-	// GetMapping returns internal read-only mapping with Value of type interface{}.
+	// GetMapping returns internal read-only mapping with Value
+	// of type interface{}.
 	GetMapping() idxmap.NamedMapping
 
-	// GetValue looks up previously stored item identified by index in mapping.
+	// GetValue looks up previously stored status by plugin name in the mapping.
 	GetValue(pluginName string) (data *status.PluginStatus, exists bool)
 
-	// WatchNameToIdx allows to subscribe for watching changes in pluginStatusMap mapping
+	// WatchNameToIdx allows to subscribe for watching changes in pluginStatusMap
+	// mapping.
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan PluginStatusEvent)
 }
 
-// PluginStatusIdxMapRW exposes not only PluginStatusIdxMap but also write methods
+// PluginStatusIdxMapRW exposes not only PluginStatusIdxMap but also write methods.
 type PluginStatusIdxMapRW interface {
 	PluginStatusIdxMap
 
@@ -46,19 +48,20 @@ type PluginStatusIdxMapRW interface {
 	Delete(pluginName string) (data *status.PluginStatus, exists bool)
 }
 
-// NewPluginStatusMap is a constructor
-func NewPluginStatusMap(owner core.PluginName) PluginStatusIdxMap {
+// NewPluginStatusMap is a constructor for PluginStatusIdxMapRW.
+func NewPluginStatusMap(owner core.PluginName) PluginStatusIdxMapRW {
 	return &pluginStatusMap{mapping: mem.NewNamedMapping(logroot.StandardLogger(),
 		owner, "plugin status", IndexPluginStatus)}
 }
 
-// pluginStatusMap is type-safe implementation of PluginStatusMap
+// pluginStatusMap is a type-safe implementation of PluginStatusIdxMap(RW).
 type pluginStatusMap struct {
 	mapping idxmap.NamedMappingRW
 }
 
-// PluginStatusEvent represents an item sent through watch channel in pluginStatusMap.
-// In contrast to NameToIdxDto it contains typed Value.
+// PluginStatusEvent represents an item sent through the watch channel
+// in PluginStatusMap.WatchNameToIdx().
+// In contrast to NameToIdxDto it contains a typed Value.
 type PluginStatusEvent struct {
 	idxmap.NamedMappingEvent
 	Value *status.PluginStatus
@@ -68,17 +71,19 @@ const (
 	stateIndexKey = "stateKey"
 )
 
-// GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the pluginStatusMap.
+// GetMapping returns internal read-only mapping.
+// It is used in tests to inspect the content of the pluginStatusMap.
 func (swi *pluginStatusMap) GetMapping() idxmap.NamedMapping {
 	return swi.mapping
 }
 
-// RegisterName adds new item into name-to-index mapping.
+// RegisterName adds new item into the name-to-index mapping.
 func (swi *pluginStatusMap) Put(pluginName string, pluginStatus *status.PluginStatus) {
 	swi.mapping.Put(pluginName, pluginStatus)
 }
 
-// IndexPluginStatus creates indexes for Value. Index for State will be created
+// IndexPluginStatus creates indexes for plugin states and records the state
+// passed as untyped data.
 func IndexPluginStatus(data interface{}) map[string][]string {
 	logroot.StandardLogger().Debug("IndexPluginStatus ", data)
 

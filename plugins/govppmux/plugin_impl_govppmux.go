@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"time"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
@@ -45,6 +46,13 @@ type GOVPPPlugin struct {
 // to not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps // inject
+}
+
+// Config groups the configurable parameter of GoVpp
+type Config struct {
+	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
+	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
+	HealthCheckThreshold     int           `json:"health-check-threshold"`
 }
 
 // FromExistingAdapter is used mainly for testing purposes.
@@ -69,12 +77,25 @@ func (plugin *GOVPPPlugin) Init() error {
 
 	plugin.PluginName = plugin.Deps.PluginName
 
+	cfg := defaultConfig()
+	found, err := plugin.PluginConfig.GetValue(&cfg)
+	if err != nil {
+		return err
+	}
+	if found {
+		govpp.SetHealthCheckProbeInterval(cfg.HealthCheckProbeInterval)
+		govpp.SetHealthCheckReplyTimeout(cfg.HealthCheckReplyTimeout)
+		govpp.SetHealthCheckThreshold(cfg.HealthCheckThreshold)
+		plugin.Log.Debug("Setting govpp parameters", cfg)
+	}
+
 	if plugin.vppAdapter == nil {
 		plugin.vppAdapter = vppapiclient.NewVppAdapter()
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing
 	}
 
+	startTime := time.Now()
 	plugin.vppConn, plugin.vppConChan, err = govpp.AsyncConnect(plugin.vppAdapter)
 	if err != nil {
 		return err
@@ -86,6 +107,8 @@ func (plugin *GOVPPPlugin) Init() error {
 	if status.State != govpp.Connected {
 		return errors.New("unable to connect to VPP")
 	}
+	vppConnectTime := time.Since(startTime)
+	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
 
 	// register for providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
@@ -153,4 +176,13 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func defaultConfig() Config {
+	c := Config{
+		HealthCheckProbeInterval: time.Second,
+		HealthCheckReplyTimeout:  100 * time.Millisecond,
+		HealthCheckThreshold:     1,
+	}
+	return c
 }

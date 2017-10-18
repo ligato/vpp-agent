@@ -78,3 +78,91 @@ def Parse_Memif_Info(info):
         state.append("connected=0")
     return state
 
+# input - output from show br br_id detail command
+# output - state info list
+def Parse_BD_Details(details):
+    state = []
+    line = details.splitlines()[1]
+    if (line.strip().split()[6]) == "on":
+        state.append("unicast=1")
+    else:
+        state.append("unicast=0")
+    if (line.strip().split()[8]) == "on":
+        state.append("arp_term=1")
+    else:
+        state.append("arp_term=0")
+    return state
+
+# input - etcd dump
+# output - etcd dump converted to json + key, node, name, type atributes
+def Convert_ETCD_Dump_To_JSON(dump):
+    etcd_json = '['
+    key = ''
+    data = ''
+    firstline = True
+    for line in dump.splitlines():
+        if line.strip() != '':
+            if line[0] == '/':
+                if not firstline:
+                    etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'},'
+                key = line
+                node = key.split('/')[2]
+                name = key.split('/')[-1]
+                type = key.split('/')[4]
+                data = ''
+                firstline = False
+            else:
+                if line == "null":
+                    line = '{"error":"null"}'
+                data += line 
+    if not firstline:
+        etcd_json += '{"key":"'+key+'","node":"'+node+'","name":"'+name+'","type":"'+type+'","data":'+data+'}'
+    etcd_json += ']'
+    return etcd_json
+
+# input - node name, bd name, etcd dump converted to json, bridge domain dump
+# output - list of interfaces (etcd names) in bd
+def Parse_BD_Interfaces(node, bd, etcd_json, bd_dump):
+    interfaces = []
+    bd_dump = json.loads(bd_dump)
+    etcd_json = json.loads(etcd_json)
+    for int in bd_dump[0]["sw_if"]:
+        bd_sw_if_index =  int["sw_if_index"]
+        etcd_name = "none"
+        for key_data in etcd_json:
+            if key_data["node"] and key_data["type"] == "status" and "/interface/" in key_data["key"]:
+                if "if_index" in key_data["data"]:
+                    if key_data["data"]["if_index"] == bd_sw_if_index:
+                        etcd_name = key_data["data"]["name"]
+        interfaces.append("interface="+etcd_name)
+    if bd_dump[0]["bvi_sw_if_index"] != 4294967295:
+        bvi_sw_if_index = bd_dump[0]["bvi_sw_if_index"]
+        etcd_name = "none"
+        for key_data in etcd_json:
+            if key_data["node"] and key_data["type"] == "status" and "/interface/" in key_data["key"]:
+                if "if_index" in key_data["data"]:
+                    if key_data["data"]["if_index"] == bvi_sw_if_index:
+                        etcd_name = key_data["data"]["name"]
+        interfaces.append("bvi_int="+etcd_name)
+    else:
+        interfaces.append("bvi_int=none")
+    return interfaces
+
+# input - bridge domain dump, interfaces indexes
+# output - true if bd with int indexes exists, false id bd not exists
+def Check_BD_Presence(bd_dump, indexes):
+    bd_dump = json.loads(bd_dump)
+    present = False
+    for bd in bd_dump:
+        bd_present = True
+        for index in indexes:
+            int_present = False
+            for bd_int in bd["sw_if"]:
+                if bd_int["sw_if_index"] == index:
+                    int_present = True
+            if int_present == False:
+                bd_present = False
+        if bd_present == True:
+            present = True
+    return present
+

@@ -13,7 +13,7 @@ It has these top-level messages:
 */
 package interfaces
 
-import "github.com/gogo/protobuf/proto"
+import proto "github.com/gogo/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,17 +41,20 @@ const (
 	LinuxInterfaces_Interface_Namespace_PID_REF_NS          LinuxInterfaces_Interface_Namespace_NamespaceType = 0
 	LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS LinuxInterfaces_Interface_Namespace_NamespaceType = 1
 	LinuxInterfaces_Interface_Namespace_NAMED_NS            LinuxInterfaces_Interface_Namespace_NamespaceType = 2
+	LinuxInterfaces_Interface_Namespace_FILE_REF_NS         LinuxInterfaces_Interface_Namespace_NamespaceType = 3
 )
 
 var LinuxInterfaces_Interface_Namespace_NamespaceType_name = map[int32]string{
 	0: "PID_REF_NS",
 	1: "MICROSERVICE_REF_NS",
 	2: "NAMED_NS",
+	3: "FILE_REF_NS",
 }
 var LinuxInterfaces_Interface_Namespace_NamespaceType_value = map[string]int32{
 	"PID_REF_NS":          0,
 	"MICROSERVICE_REF_NS": 1,
 	"NAMED_NS":            2,
+	"FILE_REF_NS":         3,
 }
 
 func (x LinuxInterfaces_Interface_Namespace_NamespaceType) String() string {
@@ -80,6 +83,7 @@ type LinuxInterfaces_Interface struct {
 	Enabled     bool                          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	PhysAddress string                        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
 	Mtu         uint32                        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	HostIfName  string                        `protobuf:"bytes,7,opt,name=host_if_name,proto3" json:"host_if_name,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	Namespace   *LinuxInterfaces_Interface_Namespace `protobuf:"bytes,50,opt,name=namespace" json:"namespace,omitempty"`
@@ -105,12 +109,12 @@ func (m *LinuxInterfaces_Interface) GetVeth() *LinuxInterfaces_Interface_Veth {
 }
 
 // Linux network namespace to attach the interface into.
-// Configure only for Linux interfaces (VETH).
 type LinuxInterfaces_Interface_Namespace struct {
 	Type         LinuxInterfaces_Interface_Namespace_NamespaceType `protobuf:"varint,1,opt,name=type,proto3,enum=interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType" json:"type,omitempty"`
-	Pid          uint32                                            `protobuf:"varint,3,opt,name=pid,proto3" json:"pid,omitempty"`
-	Microservice string                                            `protobuf:"bytes,4,opt,name=microservice,proto3" json:"microservice,omitempty"`
-	Name         string                                            `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Pid          uint32                                            `protobuf:"varint,2,opt,name=pid,proto3" json:"pid,omitempty"`
+	Microservice string                                            `protobuf:"bytes,3,opt,name=microservice,proto3" json:"microservice,omitempty"`
+	Name         string                                            `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Filepath     string                                            `protobuf:"bytes,5,opt,name=filepath,proto3" json:"filepath,omitempty"`
 }
 
 func (m *LinuxInterfaces_Interface_Namespace) Reset()         { *m = LinuxInterfaces_Interface_Namespace{} }

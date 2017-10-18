@@ -159,11 +159,11 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 	logger.SetFormatter(new(lg.JSONFormatter))
 	entry := NewEntry(logger)
 
-	entry2 := entry.withFields(Fields{
+	entry2 := entry.WithFields(lg.Fields{
 		"key1": "value1",
 	})
 
-	entry2.withField("key2", "value2").Info("test")
+	entry2.WithField("key2", "value2").Info("test")
 	err := json.Unmarshal(buffer.Bytes(), &fields)
 	gomega.Expect(err).To(gomega.BeNil())
 
@@ -244,7 +244,7 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
 	gomega.Expect(err).To(gomega.BeNil(), "should have decoded first message")
-	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(6), "should only have msg/time/level/context/loc/tag fields")
+	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(7), "should only have msg/time/level/context/loc/tag/logger fields")
 	gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("looks delicious"))
 	gomega.Expect(fields["context"]).To(gomega.BeEquivalentTo("eating raw fish"))
 
@@ -254,7 +254,7 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 
 	err = json.Unmarshal(buffer.Bytes(), &fields)
 	gomega.Expect(err).To(gomega.BeNil(), "should have decoded second message")
-	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(6), "should only have msg/time/level/context fields")
+	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(7), "should only have msg/time/level/context/logger fields")
 	gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("omg it is!"))
 	gomega.Expect(fields["context"]).To(gomega.BeEquivalentTo("eating raw fish"))
 	gomega.Expect(fields["fields.msg"]).To(gomega.BeNil(), "should not have prefixed previous `msg` entry")

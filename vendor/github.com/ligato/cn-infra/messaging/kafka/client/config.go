@@ -267,10 +267,7 @@ func (ref *Config) ValidateAsyncProducerConfig() error {
 	if ref.SendError && ref.ErrorChan == nil {
 		return errors.New("error channel not specified")
 	}
-	if err := ref.ProducerConfig().Validate(); err != nil {
-		return err
-	}
-	return nil
+	return ref.ProducerConfig().Validate()
 }
 
 // ValidateSyncProducerConfig validates config for a Sync Producer
@@ -278,10 +275,7 @@ func (ref *Config) ValidateSyncProducerConfig() error {
 	if ref.Brokers == nil {
 		return errors.New("invalid Brokers - one or more brokers must be specified")
 	}
-	if err := ref.ProducerConfig().Validate(); err != nil {
-		return err
-	}
-	return nil
+	return ref.ProducerConfig().Validate()
 }
 
 // ValidateConsumerConfig validates config for Consumer
@@ -292,9 +286,6 @@ func (ref *Config) ValidateConsumerConfig() error {
 	if ref.GroupID == "" {
 		return errors.New("invalid GroupID - no GroupID specified")
 	}
-	if ref.Topics == nil {
-		return errors.New("invalid Topics - one or more topics must be specified")
-	}
 	if ref.RecvNotification && ref.RecvNotificationChan == nil {
 		return errors.New("notification channel not specified")
 	}
@@ -304,8 +295,5 @@ func (ref *Config) ValidateConsumerConfig() error {
 	if ref.RecvMessageChan == nil {
 		return errors.New("recvMessageChan not specified")
 	}
-	if err := ref.ConsumerConfig().Validate(); err != nil {
-		return err
-	}
-	return nil
+	return ref.ConsumerConfig().Validate()
 }

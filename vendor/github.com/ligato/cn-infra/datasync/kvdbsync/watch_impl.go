@@ -119,7 +119,6 @@ func (keys *watchBrokerKeys) resync() error {
 	case <-time.After(4 * time.Second):
 		logroot.StandardLogger().Warn("Timeout of resync callback")
 	}
-
 	return nil
 }
 

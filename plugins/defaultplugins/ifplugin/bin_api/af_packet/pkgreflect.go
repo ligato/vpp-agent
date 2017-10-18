@@ -5,23 +5,21 @@ package af_packet
 import "reflect"
 
 var Types = map[string]reflect.Type{
-	"AfPacketCreate": reflect.TypeOf((*AfPacketCreate)(nil)).Elem(),
+	"AfPacketCreate":      reflect.TypeOf((*AfPacketCreate)(nil)).Elem(),
 	"AfPacketCreateReply": reflect.TypeOf((*AfPacketCreateReply)(nil)).Elem(),
-	"AfPacketDelete": reflect.TypeOf((*AfPacketDelete)(nil)).Elem(),
+	"AfPacketDelete":      reflect.TypeOf((*AfPacketDelete)(nil)).Elem(),
 	"AfPacketDeleteReply": reflect.TypeOf((*AfPacketDeleteReply)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
-	"NewAfPacketCreate": reflect.ValueOf(NewAfPacketCreate),
+	"NewAfPacketCreate":      reflect.ValueOf(NewAfPacketCreate),
 	"NewAfPacketCreateReply": reflect.ValueOf(NewAfPacketCreateReply),
-	"NewAfPacketDelete": reflect.ValueOf(NewAfPacketDelete),
+	"NewAfPacketDelete":      reflect.ValueOf(NewAfPacketDelete),
 	"NewAfPacketDeleteReply": reflect.ValueOf(NewAfPacketDeleteReply),
 }
 
-var Variables = map[string]reflect.Value{
-}
+var Variables = map[string]reflect.Value{}
 
 var Consts = map[string]reflect.Value{
 	"VlAPIVersion": reflect.ValueOf(VlAPIVersion),
 }
-

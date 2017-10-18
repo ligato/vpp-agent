@@ -6,11 +6,13 @@ ARG VPP_COMMIT="xxx"
 
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
-    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor
+    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
+    default-jre default-jdk
 
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
 RUN mkdir /opt/vpp-agent/plugin
+RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
 
@@ -22,6 +24,7 @@ RUN /bin/bash -c "if [ '${VPP_URL}' == 'xxx' ]; then \
         git checkout ${VPP_COMMIT} && \
         yes | make install-dep && \
         make bootstrap && \
+        make dpdk-install-dev && \
         make pkg-deb && \
         cd build-root && \
         dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb ; \
@@ -31,10 +34,10 @@ RUN /bin/bash -c "if [ '${VPP_URL}' == 'xxx' ]; then \
     fi"
 
 # install Go & Glide
-RUN wget https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz && \
-    tar -xvf go1.8.3.linux-amd64.tar.gz && \
+RUN wget https://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz && \
+    tar -xvf go1.9.linux-amd64.tar.gz && \
     mv go /usr/local && \
-    rm -f go1.8.3.linux-amd64.tar.gz
+    rm -f go1.9.linux-amd64.tar.gz
 
 # build & install Protobuf & gogo protobuf compiler
 RUN apt-get install -y make && \
@@ -55,12 +58,22 @@ RUN ./build-agent.sh ${AGENT_COMMIT}
 
 COPY etcd.conf .
 COPY kafka.conf .
+COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
+COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
 
 # add supervisor conf file
-COPY supervisord.conf /etc/supervisord.conf
+COPY supervisord.conf /etc/supervisord/supervisord.conf
+
+# and default plugins conf
+COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
+
+# and linux plugin conf
+COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
+
 
 # run supervisor as the default executable
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
+CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && /usr/bin/supervisord -c /etc/supervisord/supervisord.conf

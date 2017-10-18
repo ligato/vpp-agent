@@ -23,23 +23,25 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-// item stored in mapping
+// mappingItem represents single item stored in mapping.
 type mappingItem struct {
-	// name identifies item in the mapping (primary index)
+	// name identifies item in the mapping (primary index).
 	name string
 	// stored data
 	value interface{}
-	// indexed contains fields extracted from value (secondary indexes). Extracted field can be used as lookup criteria.
+	// indexed contains fields extracted from value (secondary indexes).
+	// Extracted field can be used as lookup criteria.
 	indexed map[string][]string
 }
 
+// memNamedMapping is an in-memory implementation of idxmap.NamedMappingRW.
 type memNamedMapping struct {
 	logging.Logger
 	access    sync.RWMutex
 	nameToIdx map[string]*mappingItem
-	// function that computes secondary indexes
+	// createIndexes is function that computes secondary indexes for a given item.
 	createIndexes func(interface{}) map[string][]string
-	// register of secondary indexes
+	// indexes is a register of secondary indexes
 	indexes map[string] /* index name */ map[string] /* index value */ *nameSet
 	// subscribers to whom notifications are delivered
 	subscribers map[core.PluginName]func(idxmap.NamedMappingGenericEvent)
@@ -47,8 +49,10 @@ type memNamedMapping struct {
 	title       string
 }
 
-// NewNamedMapping creates a new instance of the in-memory implementation of idxmap.NamedMappingRW
-// An index function that creates secondary indexes can be defined.
+// NewNamedMapping creates a new instance of the in-memory implementation
+// of idxmap.NamedMappingRW
+// An index function that builds secondary indexes for an item can be defined
+// and passed as <indexFunction>.
 func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 	indexFunction func(interface{}) map[string][]string) idxmap.NamedMappingRW {
 	mem := memNamedMapping{}
@@ -62,8 +66,8 @@ func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 	return &mem
 }
 
-// Put adds an item to the mapping associated with the name. If there is an already stored
-// item with that name, it is overwritten.
+// Put adds an item to the mapping associated with the <name>.
+// If there is an already stored item with that name, it gets overwritten.
 func (mem *memNamedMapping) Put(name string, value interface{}) {
 	mem.access.Lock()
 	defer mem.access.Unlock()
@@ -74,7 +78,7 @@ func (mem *memNamedMapping) Put(name string, value interface{}) {
 
 }
 
-// Delete removes an item associated with the given name from the mapping.
+// Delete removes an item associated with the given <name> from the mapping.
 func (mem *memNamedMapping) Delete(name string) (value interface{}, found bool) {
 	mem.access.Lock()
 	defer mem.access.Unlock()
@@ -95,7 +99,7 @@ func (mem *memNamedMapping) GetRegistryTitle() string {
 	return mem.title
 }
 
-// GetValue looks up an item in the mapping by name (primary index).
+// GetValue looks up an item in the mapping by <name> (primary index).
 func (mem *memNamedMapping) GetValue(name string) (value interface{}, exists bool) {
 	mem.access.RLock()
 	defer mem.access.RUnlock()
@@ -140,7 +144,8 @@ func (mem *memNamedMapping) ListNames(field string, value string) []string {
 	return set.content()
 }
 
-// Watch allows to subscribe for tracking changes in the mapping. When an item is added or removed, the given callback is triggered.
+// Watch allows to subscribe for tracking changes in the mapping.
+// When an item is added or removed, the given <callback> is triggered.
 func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxmap.NamedMappingGenericEvent)) error {
 	mem.Debug("Watch ", subscriber)
 	mem.access.Lock()

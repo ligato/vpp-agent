@@ -39,7 +39,7 @@ Add Loopback1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_LOOP1}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=${NAME_LOOP1}    mac=${MAC_LOOP1}    ip=${IP_LOOP1}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
 
-Check Loopback1 is created
+Check Loopback1 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_LOOP1}
     vat_term: Check Loopback Interface State    agent_vpp_1    ${NAME_LOOP1}    enabled=1     mac=${MAC_LOOP1}    mtu=${MTU}  ipv4=${IP_LOOP1}/${PREFIX}
 
@@ -47,7 +47,7 @@ Add Loopback2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_LOOP2}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1     name=${NAME_LOOP2}    mac=${MAC_LOOP2}    ip=${IP_LOOP2}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
 
-Check Loopback2 is created
+Check Loopback2 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_LOOP2}
     vat_term: Check Loopback Interface State    agent_vpp_1    ${NAME_LOOP2}    enabled=1     mac=${MAC_LOOP2}    mtu=${MTU}    ipv4=${IP_LOOP2}/${PREFIX}
 
