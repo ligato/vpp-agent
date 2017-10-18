@@ -251,7 +251,6 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 			return
 		}
 
-		plugin.Deps.Log.Infof("request body = %v", body)
 		err = json.Unmarshal(body, &reqParam)
 		if err != nil {
 			plugin.Deps.Log.Error("Failed to unmarshal request body.")
@@ -262,18 +261,18 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		command, ok := reqParam["vppclicommand"]
 
 		if !ok {
-			plugin.Deps.Log.Error("command paramenter not included.")
+			plugin.Deps.Log.Error("command parameter not included.")
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		plugin.Deps.Log.Infof("Received request to execute command :: %v ", command)
-		plugin.Deps.Log.WithField("VPPCLI command", command).Infof("Received command :: %v", command)
-
 		if command != "" {
+
+			plugin.Deps.Log.WithField("VPPCLI command", command).Infof("Received command: %v", command)
+
 			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
+				plugin.Deps.Log.Errorf("Error creating channel: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, err)
 			} else {
 				req := &vpe.CliInband{}
@@ -283,15 +282,17 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 				reply := &vpe.CliInbandReply{}
 				err = ch.SendRequest(req).ReceiveReply(reply)
 				if err != nil {
-					plugin.Deps.Log.Errorf("Error: %v", err)
+					plugin.Deps.Log.Errorf("Error processing request: %v", err)
 					formatter.JSON(w, http.StatusInternalServerError, err)
 				}
 
-				if 0 != reply.Retval {
-					plugin.Deps.Log.Errorf("Command returned code :: %v", reply.Retval)
+				if reply.Retval > 0 {
+					plugin.Deps.Log.Errorf("Command returned code: %v", reply.Retval)
 				}
+
 				plugin.Deps.Log.WithField("VPPCLI response", string(reply.Reply)).Infof("Command returned reply :: %v", string(reply.Reply))
-				formatter.JSON(w, http.StatusOK, reply)
+
+				formatter.JSON(w, http.StatusOK, string(reply.Reply))
 			}
 			defer ch.Close()
 		} else {
