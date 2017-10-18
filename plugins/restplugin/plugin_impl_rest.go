@@ -48,7 +48,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	//plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interface/acl", plugin.interfaceAclPostHandler, "POST")
 
-	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/{showCommand}", plugin.showCommandHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/", plugin.showCommandHandler, "POST")
 
 	return nil
 }
