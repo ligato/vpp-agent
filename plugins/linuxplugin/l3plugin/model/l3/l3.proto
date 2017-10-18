@@ -50,8 +50,7 @@ message LinuxStaticArpEntries {
     message ArpEntry {
         string name = 1;                    /* arp entry name */
 
-
-        message Namespace {                 /* Linux network namespace to attach the arp entry into. */
+        message Namespace {                 /* The namespace of the interface ARP is attached to */
             enum NamespaceType {
                 PID_REF_NS = 0;             /* Attach to namespace of a given process. */
                 MICROSERVICE_REF_NS = 1;    /* Attach to namespace of a docker container running given microservice. */
@@ -73,7 +72,7 @@ message LinuxStaticArpEntries {
                 PERMANENT = 0;
                 NOARP = 1;
                 REACHABLE = 2;
-                STATE = 3;
+                STALE = 3;
             }
             NudStateType type = 1;
         }

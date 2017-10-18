@@ -45,6 +45,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 var (
@@ -180,6 +181,10 @@ func main() {
 			reportIfaceErrorState(db)
 		case "-bderr":
 			reportBdErrorState(db)
+		case "-clarp":
+			createLinuxArp(db)
+		case "-dlarp":
+			delete(db, l32.StaticArpKey("arp1"))
 		default:
 			usage()
 		}
@@ -939,4 +944,23 @@ func printState(db keyval.ProtoBroker) {
 
 		fmt.Println(entry)
 	}
+}
+
+func createLinuxArp(db keyval.ProtoBroker) {
+	linuxArpEntries := l32.LinuxStaticArpEntries{}
+	linuxArpEntries.ArpEntry = make([]*l32.LinuxStaticArpEntries_ArpEntry, 1)
+	linuxArpEntries.ArpEntry[0] = new(l32.LinuxStaticArpEntries_ArpEntry)
+	linuxArpEntries.ArpEntry[0].Name = "arp1"
+	linuxArpEntries.ArpEntry[0].Namespace = new(l32.LinuxStaticArpEntries_ArpEntry_Namespace)
+	linuxArpEntries.ArpEntry[0].Namespace.Type = l32.LinuxStaticArpEntries_ArpEntry_Namespace_NAMED_NS
+	linuxArpEntries.ArpEntry[0].Namespace.Name = "ns1"
+	linuxArpEntries.ArpEntry[0].Interface = "veth1"
+	linuxArpEntries.ArpEntry[0].IpAddr = "130.0.0.1"
+	linuxArpEntries.ArpEntry[0].HwAddress = "ab:cd:ef:01:02:03"
+	linuxArpEntries.ArpEntry[0].State = new(l32.LinuxStaticArpEntries_ArpEntry_NudState)
+	linuxArpEntries.ArpEntry[0].State.Type = l32.LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT
+
+	log.Println(linuxArpEntries)
+
+	db.Put(l32.StaticArpKey(linuxArpEntries.ArpEntry[0].Name), linuxArpEntries.ArpEntry[0])
 }

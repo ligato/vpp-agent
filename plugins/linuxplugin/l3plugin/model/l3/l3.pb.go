@@ -103,20 +103,20 @@ const (
 	LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 0
 	LinuxStaticArpEntries_ArpEntry_NudState_NOARP     LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 1
 	LinuxStaticArpEntries_ArpEntry_NudState_REACHABLE LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 2
-	LinuxStaticArpEntries_ArpEntry_NudState_STATE     LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 3
+	LinuxStaticArpEntries_ArpEntry_NudState_STALE     LinuxStaticArpEntries_ArpEntry_NudState_NudStateType = 3
 )
 
 var LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_name = map[int32]string{
 	0: "PERMANENT",
 	1: "NOARP",
 	2: "REACHABLE",
-	3: "STATE",
+	3: "STALE",
 }
 var LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_value = map[string]int32{
 	"PERMANENT": 0,
 	"NOARP":     1,
 	"REACHABLE": 2,
-	"STATE":     3,
+	"STALE":     3,
 }
 
 func (x LinuxStaticArpEntries_ArpEntry_NudState_NudStateType) String() string {

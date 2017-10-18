@@ -32,7 +32,7 @@ const (
 	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
 	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
-	// ProxyARPRangePrefix is the relative key prefix for proxy ARP-enabled interfaces.
+	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
 	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
 	// STNPrefix is the relative key prefix for STN entries.
 	STNPrefix = "vpp/config/v1/stn/{ip}"

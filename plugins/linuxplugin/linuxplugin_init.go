@@ -158,7 +158,11 @@ func (plugin *Plugin) initARP() error {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("LinuxARPConfigurator", linuxLogger)
 	}
-	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
+	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{
+		Log: linuxLogger,
+		LinuxIfIdx: plugin.ifIndexes,
+		ArpIdxSeq: 1,
+		Stopwatch: stopwatch}
 	return plugin.arpConfigurator.Init(plugin.arpIndexes)
 }
 
