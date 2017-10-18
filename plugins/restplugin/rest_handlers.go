@@ -185,60 +185,79 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all static routes")
+		plugin.Deps.Log.Info("Getting acl configuration of interface")
 
-		params := mux.Vars(req)
-		if params != nil && len(params) > 0 {
-			swIndexStr := params["swIndex"]
-			if swIndexStr != "" {
-				swIndexuInt64, err := strconv.ParseUint(swIndexStr, 10, 32)
-				swIndex := uint32(swIndexuInt64)
-				if err != nil {
-					// create an API channel
-					ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-					if err != nil {
-						plugin.Deps.Log.Errorf("Error: %v", err)
-						formatter.JSON(w, http.StatusInternalServerError, nil)
-					} else {
-						res, err := aclplugin.DumpInterface(swIndex, ch, nil)
-						if err != nil {
-							plugin.Deps.Log.Errorf("Error: %v", err)
-							formatter.JSON(w, http.StatusInternalServerError, nil)
-						} else {
-							plugin.Deps.Log.Debug(res)
-							formatter.JSON(w, http.StatusOK, res)
-						}
-					}
-					defer ch.Close()
-				}
-			} else {
-				formatter.JSON(w, http.StatusBadRequest, "swIndex parameter not found")
-			}
-		}
-	}
-}
-
-//showCommandHandler - used to execute VPP CLI show commands
-func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		//params := mux.Vars(req)
-		//if params != nil && len(params) > 0 {
-		//	showCommand := params["showCommand"]
-
-		/* Parse input request */
 		var reqParam map[string]string
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			plugin.Deps.Log.Error("Failed to parse request body.")
 			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		plugin.Deps.Log.Infof("request body = %v", body)
 		err = json.Unmarshal(body, &reqParam)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to unmarshall request body.")
+			plugin.Deps.Log.Error("Failed to unmarshal request body.")
 			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		swIndexStr, ok := reqParam["swIndex"]
+
+		if !ok {
+			plugin.Deps.Log.Error("swIndex paramenter not included.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		plugin.Deps.Log.Infof("Received request for swIndex :: %v ", swIndexStr)
+
+		if swIndexStr != "" {
+			swIndexuInt64, err := strconv.ParseUint(swIndexStr, 10, 32)
+			swIndex := uint32(swIndexuInt64)
+			if err != nil {
+				// create an API channel
+				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+				if err != nil {
+					plugin.Deps.Log.Errorf("Error: %v", err)
+					formatter.JSON(w, http.StatusInternalServerError, err)
+				} else {
+					res, err := aclplugin.DumpInterface(swIndex, ch, nil)
+					if err != nil {
+						plugin.Deps.Log.Errorf("Error: %v", err)
+						formatter.JSON(w, http.StatusInternalServerError, err)
+					} else {
+						plugin.Deps.Log.Debug(res)
+						formatter.JSON(w, http.StatusOK, res)
+					}
+				}
+				defer ch.Close()
+			}
+		} else {
+			formatter.JSON(w, http.StatusBadRequest, "swIndex parameter not found")
+		}
+	}
+}
+
+//showCommandHandler - used to execute VPP CLI commands
+func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		var reqParam map[string]string
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to parse request body.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		plugin.Deps.Log.Infof("request body = %v", body)
+		err = json.Unmarshal(body, &reqParam)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to unmarshal request body.")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		command, ok := reqParam["vppclicommand"]
@@ -246,20 +265,18 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		if !ok {
 			plugin.Deps.Log.Error("command paramenter not included.")
 			formatter.JSON(w, http.StatusInternalServerError, err)
-			//TODO: return
+			return
 		}
 
 		plugin.Deps.Log.Infof("Received request to execute command :: %v ", command)
 		plugin.Deps.Log.WithField("VPPCLI command", command)
 
 		if command != "" {
-			// create an API channel
 			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, err)
 			} else {
-				// prepare the message
 				req := &vpe.CliInband{}
 				req.Length = uint32(len(command))
 				req.Cmd = []byte(command)
@@ -283,8 +300,5 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		} else {
 			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
 		}
-		//} else {
-		//	formatter.JSON(w, http.StatusBadRequest, "showCommand parameter not found")
-		//}
 	}
 }
