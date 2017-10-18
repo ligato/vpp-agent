@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // LinuxRouteConfigurator watches for any changes in the configuration of static routes as modelled by the proto file
@@ -46,5 +47,25 @@ func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW) er
 
 // Close closes all goroutines started during Init
 func (plugin *LinuxRouteConfigurator) Close() error {
+	return nil
+}
+
+// ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
+// the route in the host network stack through Netlink API.
+func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) error {
+	// todo implement
+	return nil
+}
+
+// ModifyLinuxStaticRoute applies changes in the NB configuration of a Linux static route into the host network stack
+// through Netlink API.
+func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxStaticRoutes_Route, oldRoute *l3.LinuxStaticRoutes_Route) error {
+	// todo implement
+	return nil
+}
+
+// DeleteLinuxStaticRoute reacts to a removed NB configuration of a Linux static route entry.
+func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) error {
+	// todo implement
 	return nil
 }
