@@ -9,8 +9,8 @@ It is generated from these files:
 	l3.proto
 
 It has these top-level messages:
-	StaticRoutes
-	StaticArpEntries
+	LinuxStaticRoutes
+	LinuxStaticArpEntries
 */
 package l3
 
@@ -72,22 +72,22 @@ func (x NudState) String() string {
 }
 
 // static ip routes
-type StaticRoutes struct {
-	Route []*StaticRoutes_Route `protobuf:"bytes,1,rep,name=route" json:"route,omitempty"`
+type LinuxStaticRoutes struct {
+	Route []*LinuxStaticRoutes_Route `protobuf:"bytes,1,rep,name=route" json:"route,omitempty"`
 }
 
-func (m *StaticRoutes) Reset()         { *m = StaticRoutes{} }
-func (m *StaticRoutes) String() string { return proto.CompactTextString(m) }
-func (*StaticRoutes) ProtoMessage()    {}
+func (m *LinuxStaticRoutes) Reset()         { *m = LinuxStaticRoutes{} }
+func (m *LinuxStaticRoutes) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticRoutes) ProtoMessage()    {}
 
-func (m *StaticRoutes) GetRoute() []*StaticRoutes_Route {
+func (m *LinuxStaticRoutes) GetRoute() []*LinuxStaticRoutes_Route {
 	if m != nil {
 		return m.Route
 	}
 	return nil
 }
 
-type StaticRoutes_Route struct {
+type LinuxStaticRoutes_Route struct {
 	Interface   string `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Scope       Scope  `protobuf:"varint,4,opt,name=scope,proto3,enum=l3.Scope" json:"scope,omitempty"`
@@ -98,36 +98,36 @@ type StaticRoutes_Route struct {
 	Table       uint32 `protobuf:"varint,9,opt,name=table,proto3" json:"table,omitempty"`
 }
 
-func (m *StaticRoutes_Route) Reset()         { *m = StaticRoutes_Route{} }
-func (m *StaticRoutes_Route) String() string { return proto.CompactTextString(m) }
-func (*StaticRoutes_Route) ProtoMessage()    {}
+func (m *LinuxStaticRoutes_Route) Reset()         { *m = LinuxStaticRoutes_Route{} }
+func (m *LinuxStaticRoutes_Route) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticRoutes_Route) ProtoMessage()    {}
 
 // static arp entires
-type StaticArpEntries struct {
-	ArpEntry []*StaticArpEntries_ArpEntry `protobuf:"bytes,1,rep,name=arp_entry" json:"arp_entry,omitempty"`
+type LinuxStaticArpEntries struct {
+	ArpEntry []*LinuxStaticArpEntries_ArpEntry `protobuf:"bytes,1,rep,name=arp_entry" json:"arp_entry,omitempty"`
 }
 
-func (m *StaticArpEntries) Reset()         { *m = StaticArpEntries{} }
-func (m *StaticArpEntries) String() string { return proto.CompactTextString(m) }
-func (*StaticArpEntries) ProtoMessage()    {}
+func (m *LinuxStaticArpEntries) Reset()         { *m = LinuxStaticArpEntries{} }
+func (m *LinuxStaticArpEntries) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticArpEntries) ProtoMessage()    {}
 
-func (m *StaticArpEntries) GetArpEntry() []*StaticArpEntries_ArpEntry {
+func (m *LinuxStaticArpEntries) GetArpEntry() []*LinuxStaticArpEntries_ArpEntry {
 	if m != nil {
 		return m.ArpEntry
 	}
 	return nil
 }
 
-type StaticArpEntries_ArpEntry struct {
+type LinuxStaticArpEntries_ArpEntry struct {
 	Interface string   `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
 	NudState  NudState `protobuf:"varint,2,opt,name=nud_state,proto3,enum=l3.NudState" json:"nud_state,omitempty"`
 	IpAddr    string   `protobuf:"bytes,3,opt,name=ip_addr,proto3" json:"ip_addr,omitempty"`
 	HwAddress string   `protobuf:"bytes,4,opt,name=hw_address,proto3" json:"hw_address,omitempty"`
 }
 
-func (m *StaticArpEntries_ArpEntry) Reset()         { *m = StaticArpEntries_ArpEntry{} }
-func (m *StaticArpEntries_ArpEntry) String() string { return proto.CompactTextString(m) }
-func (*StaticArpEntries_ArpEntry) ProtoMessage()    {}
+func (m *LinuxStaticArpEntries_ArpEntry) Reset()         { *m = LinuxStaticArpEntries_ArpEntry{} }
+func (m *LinuxStaticArpEntries_ArpEntry) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticArpEntries_ArpEntry) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("l3.Scope", Scope_name, Scope_value)

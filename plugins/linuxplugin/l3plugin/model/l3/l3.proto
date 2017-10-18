@@ -10,7 +10,7 @@ enum Scope {
 };
 
 /* static ip routes */
-message StaticRoutes {
+message LinuxStaticRoutes {
     message Route {
         string interface = 1;       /* interface name */
         string description = 3;     /* optional description */
@@ -32,7 +32,7 @@ enum NudState {
 };
 
 /* static arp entires */
-message StaticArpEntries {
+message LinuxStaticArpEntries {
     message ArpEntry {
         string interface = 1;            /* interface to which this neighbour is attached */
         NudState nud_state = 2;          /* state of the neighbour entry */
