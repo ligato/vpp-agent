@@ -28,8 +28,10 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 )
 
 // PluginID used in the Agent Core flavors
@@ -39,8 +41,17 @@ const PluginID core.PluginName = "linuxplugin"
 type Plugin struct {
 	Deps
 
+	// interfaces
 	ifIndexes      ifaceidx.LinuxIfIndexRW
 	ifConfigurator *ifplugin.LinuxInterfaceConfigurator
+
+	// ARPs
+	arpIndexes      l3idx.LinuxARPIndexRW
+	arpConfigurator *l3plugin.LinuxArpConfigurator
+
+	// static routes
+	rtIndexes         l3idx.LinuxRouteIndexRW
+	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
@@ -101,6 +112,26 @@ func (plugin *Plugin) Init() error {
 	// run event handler go routines
 	go plugin.watchEvents(ctx)
 
+	err = plugin.initIF()
+	if err != nil {
+		return err
+	}
+
+	err = plugin.initARP()
+	if err != nil {
+		return err
+	}
+
+	err = plugin.initRoutes()
+	if err != nil {
+		return err
+	}
+
+	return plugin.subscribeWatcher()
+}
+
+// Initialize linux interface plugin
+func (plugin *Plugin) initIF() error {
 	// Interface indexes
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
 		"linux_if_indexes", nil))
@@ -112,9 +143,39 @@ func (plugin *Plugin) Init() error {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	plugin.ifConfigurator.Init(plugin.ifIndexes)
+	return plugin.ifConfigurator.Init(plugin.ifIndexes)
+}
 
-	return plugin.subscribeWatcher()
+// Initialize linux static ARP plugin
+func (plugin *Plugin) initARP() error {
+	// ARP indexes
+	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+		"linux_arp_indexes", nil))
+
+	// Linux ARP configurator
+	linuxLogger := plugin.Log.NewLogger("-arp-conf")
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("LinuxARPConfigurator", linuxLogger)
+	}
+	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
+	return plugin.arpConfigurator.Init(plugin.arpIndexes)
+}
+
+// Initialize linux static route plugin
+func (plugin *Plugin) initRoutes() error {
+	// Route indexes
+	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+		"linux_route_indexes", nil))
+
+	// Linux Route configurator
+	linuxLogger := plugin.Log.NewLogger("-route-conf")
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", linuxLogger)
+	}
+	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
+	return plugin.routeConfigurator.Init(plugin.rtIndexes)
 }
 
 // AfterInit runs subscribeWatcher
