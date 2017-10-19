@@ -49,7 +49,7 @@ func main() {
 	cn := mx.NewBytesConnection("plugin")
 
 	// Send one message synchronously.
-	offset, err := cn.SendSyncString("test", mux.DefPartition, "key", "value")
+	offset, err := cn.SendSyncString("test", "key", "value")
 	if err == nil {
 		fmt.Println("Sync published ", offset)
 	}
@@ -60,7 +60,7 @@ func main() {
 	signal.Notify(signalChan, os.Interrupt)
 
 	// Send one message asynchronously.
-	cn.SendAsyncString("test", mux.DefPartition, "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
+	cn.SendAsyncString("test", "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
 
 	// Receive the asynchronously send message.
 	select {

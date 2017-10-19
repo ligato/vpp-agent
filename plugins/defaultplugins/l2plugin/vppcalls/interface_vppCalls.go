@@ -16,16 +16,25 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"time"
 )
 
 // VppSetAllInterfacesToBridgeDomain does lookup all interfaces which belongs to bridge domain, and bvi interface
 func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, vppChan *govppapi.Channel) ([]string, []string, string) {
-	log.DefaultLogger().Debug("Interface lookup started for ", bridgeDomain.Name)
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) ([]string, []string, string) {
+	log.Debug("Interface lookup started for ", bridgeDomain.Name)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 
 	var allBdInterfaces []string
 	var configuredBdInterfaces []string
@@ -33,7 +42,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 
 	// Find bridge domain interfaces
 	if len(bridgeDomain.Interfaces) == 0 {
-		log.DefaultLogger().Printf("Bridge domain %v has no interface to set", bridgeDomain.Name)
+		log.Infof("Bridge domain %v has no interface to set", bridgeDomain.Name)
 		return allBdInterfaces, configuredBdInterfaces, bviInterfaceName
 	}
 
@@ -46,7 +55,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 		// Find wheteher interface already exists
 		interfaceIndex, _, found := swIfIndexes.LookupIdx(bdInterface.Name)
 		if !found {
-			log.DefaultLogger().Infof("Interface %v not found", bdInterface.Name)
+			log.Infof("Interface %v not found", bdInterface.Name)
 			allBdInterfaces = append(allBdInterfaces, bdInterface.Name)
 			continue
 		}
@@ -57,19 +66,19 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 		if bdInterface.BridgedVirtualInterface {
 			// Set up BVI interface
 			req.Bvi = 1
-			log.DefaultLogger().Debugf("Interface %v set as BVI", bdInterface.Name)
+			log.Debugf("Interface %v set as BVI", bdInterface.Name)
 		}
 		reply := &vpe.SwInterfaceSetL2BridgeReply{}
 		err := vppChan.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
-			log.DefaultLogger().WithFields(log.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while assigning interface to bridge domain")
+			log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while assigning interface to bridge domain")
 			continue
 		}
 		if 0 != reply.Retval {
-			log.DefaultLogger().WithFields(log.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+			log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 			continue
 		}
-		log.DefaultLogger().WithFields(log.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Debug("Interface set to bridge domain.")
+		log.WithFields(logging.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Debug("Interface set to bridge domain.")
 		allBdInterfaces = append(allBdInterfaces, bdInterface.Name)
 		configuredBdInterfaces = append(configuredBdInterfaces, bdInterface.Name)
 	}
@@ -79,15 +88,22 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 
 // VppUnsetAllInterfacesFromBridgeDomain removes all interfaces from bridge domain (set them as L3)
 func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, vppChan *govppapi.Channel) []string {
-	log.DefaultLogger().Debug("Interface lookup started for ", bridgeDomain.Name)
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) []string {
+	log.Debug("Interface lookup started for ", bridgeDomain.Name)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 
 	// Store all interface names, will be used to unregister potential bridge domain to interface pairs
 	var interfaces []string
 
 	// Find all interfaces including BVI
 	if len(bridgeDomain.Interfaces) == 0 {
-		log.DefaultLogger().Printf("Bridge domain %v has no interfaces, nothin go unset", bridgeDomain.Name)
+		log.Infof("Bridge domain %v has no interfaces, nothin go unset", bridgeDomain.Name)
 		return interfaces
 	}
 
@@ -97,7 +113,7 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 		// Find interface
 		interfaceIndex, _, found := swIfIndexes.LookupIdx(bdInterface.Name)
 		if !found {
-			log.DefaultLogger().Debugf("Interface %v not found, no need to unset", bdInterface.Name)
+			log.Debugf("Interface %v not found, no need to unset", bdInterface.Name)
 			continue
 		}
 		req := &vpe.SwInterfaceSetL2Bridge{}
@@ -108,22 +124,30 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 		reply := &vpe.SwInterfaceSetL2BridgeReply{}
 		err := vppChan.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
-			log.DefaultLogger().WithFields(log.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while setting up interface as L3")
+			log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while setting up interface as L3")
 			continue
 		}
 		if 0 != reply.Retval {
-			log.DefaultLogger().WithFields(log.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+			log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 			continue
 		}
-		log.DefaultLogger().WithFields(log.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Debug("Interface removed from bridge domain.")
+		log.WithFields(logging.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Debug("Interface removed from bridge domain.")
 	}
 
 	return interfaces
 }
 
 // VppSetInterfaceToBridgeDomain sets provided interface to bridge domain
-func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, vppChan *govppapi.Channel) {
-	log.DefaultLogger().Debugf("Setting up interface %v to bridge domain %v ", interfaceIndex, bridgeDomainIndex)
+func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) {
+	log.Debugf("Setting up interface %v to bridge domain %v ", interfaceIndex, bridgeDomainIndex)
+	// SwInterfaceSetL2Bridge time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 
 	req := &vpe.SwInterfaceSetL2Bridge{}
 	req.BdID = bridgeDomainIndex
@@ -138,10 +162,10 @@ func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint
 	reply := &vpe.SwInterfaceSetL2BridgeReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
-		log.DefaultLogger().WithFields(log.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
+		log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
 	}
 	if 0 != reply.Retval {
-		log.DefaultLogger().WithFields(log.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 	}
-	log.DefaultLogger().WithFields(log.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain.")
+	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain.")
 }

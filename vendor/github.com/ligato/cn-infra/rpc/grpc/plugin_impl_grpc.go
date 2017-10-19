@@ -133,8 +133,11 @@ func (plugin *Plugin) AfterInit() (err error) {
 
 // Close stops the HTTP netListener.
 func (plugin *Plugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.netListener, plugin.grpcServer)
-	return err
+	wasError := safeclose.Close(plugin.netListener)
+
+	plugin.grpcServer.Stop()
+
+	return wasError
 }
 
 // String returns plugin name (if not set defaults to "HTTP")

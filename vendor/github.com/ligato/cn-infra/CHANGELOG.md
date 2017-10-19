@@ -1,3 +1,25 @@
+# Release v1.0.5 (2017-10-17)
+
+## Profiling
+* new [logging/measure](logging/measure) - time measurement utility to measure duration of binary api calls 
+  or linuxplugin netlink during resync. The feature is disabled by default and it can be enabled in 
+  defaultplugins.conf and linuxplugin.conf file (see plugin's readme)
+
+## Kafka
+* proto_connection.go and bytes_connection.go consolidated, bytes_connection.go now mirrors all 
+  the functionality from proto_connection.go. 
+  * mux can create two types of connection, standard bytes connection and bytes manual connection.
+    This enables to call only respective methods on them (to use manual partitioning, it is needed to 
+    create manual connection, etc.)
+  * method ConsumeTopicOnPartition renamed to ConsumeTopic (similar naming as in the proto_connection.go).
+    The rest of the signature is not changed.     
+* post-init watcher enabled in bytes_connection.go api
+* added methods MarkOffset and CommitOffsets to both, proto and bytes connection. Automatic offset marking
+  was removed
+* one instance of mux in kafka plugin 
+* new field `group-id` can be added to kafka.conf. This value is used as a Group ID in order to set it 
+  manually. In case the value is not provided, the service label is used instead (just like before). 
+      
 # Release v1.0.4 (2017-9-25)
 
 ## Documentation

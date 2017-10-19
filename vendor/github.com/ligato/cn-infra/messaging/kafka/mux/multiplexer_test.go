@@ -168,17 +168,17 @@ func TestStopConsumingPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewBytesConnection("c1")
+	c1 := mock.Mux.NewBytesManualConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
-	c2 := mock.Mux.NewBytesConnection("c2")
+	c2 := mock.Mux.NewBytesManualConnection("c2")
 	gomega.Expect(c2).NotTo(gomega.BeNil())
 
 	ch1 := make(chan *client.ConsumerMessage)
 	ch2 := make(chan *client.ConsumerMessage)
 
-	err := c1.ConsumeTopicOnPartition(ToBytesMsgChan(ch1), "topic1", 1, 0)
+	err := c1.ConsumePartition(ToBytesMsgChan(ch1), "topic1", 1, 0)
 	gomega.Expect(err).To(gomega.BeNil())
-	err = c2.ConsumeTopicOnPartition(ToBytesMsgChan(ch2), "topic2", 2, 1)
+	err = c2.ConsumePartition(ToBytesMsgChan(ch2), "topic2", 2, 1)
 	gomega.Expect(err).To(gomega.BeNil())
 
 	mock.Mux.Start()
@@ -265,11 +265,11 @@ func TestSendSync(t *testing.T) {
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err := c1.SendSyncByte("topic", DefPartition, []byte("key"), []byte("value"))
+	_, err := c1.SendSyncByte("topic", []byte("key"), []byte("value"))
 	gomega.Expect(err).To(gomega.BeNil())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err = c1.SendSyncString("topic", DefPartition, "key", "value")
+	_, err = c1.SendSyncString("topic", "key", "value")
 	gomega.Expect(err).To(gomega.BeNil())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
@@ -279,7 +279,7 @@ func TestSendSync(t *testing.T) {
 	publisher, err := c1.NewSyncPublisher("test")
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	publisher.Publish("key", []byte("val"))
+	publisher.Put("key", []byte("val"))
 
 	mock.Mux.Close()
 }
@@ -316,20 +316,20 @@ func TestSendSyncToCustomPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewBytesConnection("c1")
+	c1 := mock.Mux.NewBytesManualConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	_, err := c1.SendSyncString("topic", 1, "key", "value")
+	_, err := c1.SendSyncStringToPartition("topic", 1, "key", "value")
 	gomega.Expect(err).To(gomega.BeNil())
 
-	publisher, err := c1.NewSyncPublisher("test")
+	publisher, err := c1.NewSyncPublisherToPartition("test", 1)
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.SyncPub.ExpectSendMessageAndSucceed()
-	publisher.Publish("key", []byte("val"))
+	publisher.Put("key", []byte("val"))
 
 	mock.Mux.Close()
 }
@@ -373,10 +373,10 @@ func TestSendAsync(t *testing.T) {
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncByte("topic", DefPartition, []byte("key"), []byte("value"), nil, nil, nil)
+	c1.SendAsyncByte("topic", []byte("key"), []byte("value"), nil, nil, nil)
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncString("topic", DefPartition, "key", "value", nil, nil, nil)
+	c1.SendAsyncString("topic", "key", "value", nil, nil, nil)
 
 	mock.AsyncPub.ExpectInputAndSucceed()
 	c1.SendAsyncMessage("topic", sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")), nil, nil, nil)
@@ -384,7 +384,7 @@ func TestSendAsync(t *testing.T) {
 	publisher, err := c1.NewAsyncPublisher("test", nil, nil)
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.AsyncPub.ExpectInputAndSucceed()
-	publisher.Publish("key", []byte("val"))
+	publisher.Put("key", []byte("val"))
 
 	mock.Mux.Close()
 }
@@ -411,7 +411,7 @@ func TestSendProtoAsync(t *testing.T) {
 		messaging.ToProtoMsgErrChan(asyncErrorChannel))
 	gomega.Expect(err).To(gomega.BeNil())
 
-	publisher, err := c1.NewAsyncPublisher("test",  messaging.ToProtoMsgChan(asyncSuccessChannel),
+	publisher, err := c1.NewAsyncPublisher("test", messaging.ToProtoMsgChan(asyncSuccessChannel),
 		messaging.ToProtoMsgErrChan(asyncErrorChannel))
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.AsyncPub.ExpectInputAndSucceed()
@@ -425,22 +425,22 @@ func TestSendAsyncToCustomPartition(t *testing.T) {
 	mock := Mock(t)
 	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
 
-	c1 := mock.Mux.NewBytesConnection("c1")
+	c1 := mock.Mux.NewBytesManualConnection("c1")
 	gomega.Expect(c1).NotTo(gomega.BeNil())
 
 	mock.Mux.Start()
 	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
 
 	mock.AsyncPub.ExpectInputAndSucceed()
-	c1.SendAsyncString("topic", 1, "key", "value", nil, nil, nil)
+	c1.SendAsyncStringToPartition("topic", 1, "key", "value", nil, nil, nil)
 
 	mock.AsyncPub.ExpectInputAndSucceed()
 	c1.SendAsyncMessageToPartition("topic", 2, sarama.ByteEncoder([]byte("key")), sarama.ByteEncoder([]byte("value")), nil, nil, nil)
 
-	publisher, err := c1.NewAsyncPublisher("test", nil, nil)
+	publisher, err := c1.NewAsyncPublisherToPartition("test", 1, nil, nil)
 	gomega.Expect(err).To(gomega.BeNil())
 	mock.AsyncPub.ExpectInputAndSucceed()
-	publisher.Publish("key", []byte("val"))
+	publisher.Put("key", []byte("val"))
 
 	mock.Mux.Close()
 }
@@ -477,4 +477,36 @@ func TestSendProtoAsyncToCustomPartition(t *testing.T) {
 	publisher.Put("key", enc, nil)
 
 	mock.Mux.Close()
+}
+
+func TestCustomPartition(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	mock := Mock(t)
+	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
+
+	c1 := mock.Mux.NewBytesManualConnection("c1")
+	gomega.Expect(c1).NotTo(gomega.BeNil())
+	mock.Mux.Start()
+	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
+
+	asyncSubscription := make(chan *client.ConsumerMessage)
+
+	err := c1.ConsumePartition(ToBytesMsgChan(asyncSubscription), "test", 1, OffsetOldest)
+	gomega.Expect(err).To(gomega.BeNil())
+}
+
+func TestProtoCustomPartition(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	mock := Mock(t)
+	gomega.Expect(mock.Mux).NotTo(gomega.BeNil())
+
+	c1 := mock.Mux.NewProtoManualConnection("c1", &keyval.SerializerJSON{})
+	gomega.Expect(c1).NotTo(gomega.BeNil())
+	mock.Mux.Start()
+	gomega.Expect(mock.Mux.started).To(gomega.BeTrue())
+
+	asyncSubscription := make(chan messaging.ProtoMessage)
+
+	err := c1.WatchPartition(messaging.ToProtoMsgChan(asyncSubscription), "test", 1, OffsetOldest)
+	gomega.Expect(err).To(gomega.BeNil())
 }

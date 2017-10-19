@@ -40,7 +40,7 @@ func (reg *registration) StatusChan() chan StatusEvent {
 	return reg.statusChan
 }
 
-// String returns name of the registration
+// String returns the name of the registration
 func (reg *registration) String() string {
 	return reg.resyncName
 }

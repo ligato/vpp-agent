@@ -17,9 +17,10 @@
 //
 // - KeyValProtoWatcher maintains watch registrations/subscriptions.
 //
-// - Registry of latest revisions of values per each key synchronized by datasync.
+// - Registry of the latest revisions of values per each key, synchronized by
+//   datasync.
 //
 // - Default implementation of Events & Iterators interfaces defined in data_api.go.
 //
-// - Events & Iterators in this package are reused by some but all datasync transports.
+// - Events & Iterators in this package are reused by some datasync transports.
 package syncbase

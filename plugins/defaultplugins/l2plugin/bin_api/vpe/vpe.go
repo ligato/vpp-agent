@@ -6,7 +6,7 @@ package vpe
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xfdf4b648
+const VlAPIVersion = 0x3b5df17c
 
 // CreateVlanSubif represents the VPP binary API message 'create_vlan_subif'.
 // Generated from '/usr/share/vpp/api/vpe.api.json', line 6:

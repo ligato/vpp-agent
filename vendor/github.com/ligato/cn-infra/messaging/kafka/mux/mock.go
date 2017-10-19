@@ -37,7 +37,7 @@ func Mock(t *testing.T) *KafkaMock {
 	}
 
 	return &KafkaMock{
-		NewMultiplexer(getMockConsumerFactory(t), nil, producers, nil, nil, nil, "name", logroot.StandardLogger()),
+		NewMultiplexer(getMockConsumerFactory(t), producers, &client.Config{}, "name", logroot.StandardLogger()),
 		aMock, sMock}
 }
 

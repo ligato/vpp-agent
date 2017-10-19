@@ -16,11 +16,9 @@ package defaultplugins
 
 import (
 	"context"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
-
 
 // Resync deletes obsolete operation status of network interfaces in DB
 // Obsolete state is one that is not part of SwIfIndex
@@ -37,9 +35,9 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 			if err != nil {
 				return err
 			}
-			log.DefaultLogger().Debugf("Obsolete status for %v deleted", key)
+			plugin.Log.Debugf("Obsolete status for %v deleted", key)
 		} else {
-			log.DefaultLogger().WithField("ifaceName", ifaceName).Debug("interface status is needed")
+			plugin.Log.WithField("ifaceName", ifaceName).Debug("interface status is needed")
 		}
 	}
 
@@ -95,9 +93,9 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 			if err != nil {
 				return err
 			}
-			log.DefaultLogger().Debugf("Obsolete status for %v deleted", key)
+			plugin.Log.Debugf("Obsolete status for %v deleted", key)
 		} else {
-			log.DefaultLogger().WithField("bdName", bdName).Debug("bridge domain status required")
+			plugin.Log.WithField("bdName", bdName).Debug("bridge domain status required")
 		}
 	}
 
@@ -117,13 +115,13 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
 					plugin.Publish.Put(key, nil)
-					log.DefaultLogger().Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
+					plugin.Log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
 					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
 					plugin.Publish.Put(key, bdState.State)
-					log.DefaultLogger().Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
+					plugin.Log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
 				} else {
-					log.DefaultLogger().Warnf("Unable to process bridge domain state with Idx %v and Name %v",
+					plugin.Log.Warnf("Unable to process bridge domain state with Idx %v and Name %v",
 						bdState.State.Index, bdState.State.InternalName)
 				}
 			}

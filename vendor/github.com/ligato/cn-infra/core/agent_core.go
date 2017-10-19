@@ -35,19 +35,23 @@ type Agent struct {
 	// plugin list
 	plugins []*NamedPlugin
 	logging.Logger
-	// agent startup details
-	startup
-}
-
-type startup struct {
-	// The startup/initialization must take no longer that maxStartup.
-	MaxStartupTime time.Duration
-	// successfully initialized plugins
-	initDuration time.Duration
-	// successfully after-initialized plugins
-	afterInitDuration time.Duration
 	// the field is set before initialization of every plugin with its name
 	currentlyProcessing string
+	// agent's stopwatch
+	timer Timer
+}
+
+// Timer holds all startup times
+type Timer struct {
+	// The startup/initialization must take no longer that maxStartup.
+	MaxStartupTime time.Duration
+	// timers
+	agentStart     time.Time
+	initStart      time.Time
+	afterInitStart time.Time
+	// durations
+	init      time.Duration
+	afterInit time.Duration
 }
 
 const (
@@ -64,6 +68,13 @@ const (
 	defaultTimerValue = -1
 )
 
+// init result flags
+const (
+	done    = "done"
+	errStatus   = "error"
+	timeout = "timeout"
+)
+
 // NewAgent returns a new instance of the Agent with plugins.
 // <logger> will be used to log messages related to the agent life-cycle,
 // but not for the plugins themselves.
@@ -76,7 +87,12 @@ func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*Named
 	a := Agent{
 		plugins,
 		logger,
-		startup{MaxStartupTime: maxStartup},
+		"",
+		Timer{
+			MaxStartupTime: maxStartup,
+			init:           defaultTimerValue,
+			afterInit:      defaultTimerValue,
+		},
 	}
 	return &a
 }
@@ -104,6 +120,7 @@ func (agent *Agent) Start() error {
 	}
 
 	go func() {
+		agent.timer.agentStart = time.Now()
 		err := agent.initPlugins()
 		if err != nil {
 			errChannel <- err
@@ -120,24 +137,14 @@ func (agent *Agent) Start() error {
 	//block until all Plugins are initialized or timeout expires
 	select {
 	case err := <-errChannel:
-		agent.WithField("durationInNs", agent.initDuration.Nanoseconds()).Infof("Agent Init took %v", agent.initDuration)
-		agent.WithField("durationInNs", agent.afterInitDuration.Nanoseconds()).Infof("Agent AfterInit took %v", agent.afterInitDuration)
+
+		agent.printStatistics(errStatus)
 		return err
 	case <-doneChannel:
-		agent.WithField("durationInNs", agent.initDuration.Nanoseconds()).Infof("Agent Init took %v", agent.initDuration)
-		agent.WithField("durationInNs", agent.afterInitDuration.Nanoseconds()).Infof("Agent AfterInit took %v", agent.afterInitDuration)
-		duration := agent.initDuration + agent.afterInitDuration
-		agent.WithField("durationInNs", duration.Nanoseconds()).Info(fmt.Sprintf("All plugins initialized successfully, took %v", duration))
+		agent.printStatistics(done)
 		return nil
-	case <-time.After(agent.MaxStartupTime):
-		if agent.initDuration == defaultTimerValue {
-			agent.Infof("Agent Init took > %v", agent.MaxStartupTime)
-			agent.WithField("durationInNs", agent.afterInitDuration.Nanoseconds()).Infof("Agent AfterInit took %v", agent.afterInitDuration)
-		} else if agent.afterInitDuration == defaultTimerValue {
-			agent.WithField("durationInNs", agent.initDuration.Nanoseconds()).Infof("Agent Init took %v", agent.initDuration)
-			agent.Infof("Agent AfterInit took > %v", agent.MaxStartupTime)
-		}
-
+	case <-time.After(agent.timer.MaxStartupTime):
+		agent.printStatistics(timeout)
 		return fmt.Errorf(logTimeoutFmt, agent.currentlyProcessing)
 	}
 }
@@ -178,8 +185,8 @@ func (agent *Agent) initPlugins() error {
 	var pluginFailed bool
 	var wasError error
 
-	agent.initDuration = defaultTimerValue
-	initStartTime := time.Now()
+	//	agent.initDuration = defaultTimerValue
+	agent.timer.initStart = time.Now()
 	for index, plugin := range agent.plugins {
 		initPluginCounter = index
 
@@ -205,7 +212,7 @@ func (agent *Agent) initPlugins() error {
 			agent.WithField("durationInNs", pluginSuccTime.Nanoseconds()).Infof(logSuccessFmt, plugin.PluginName, pluginSuccTime)
 		}
 	}
-	agent.initDuration = time.Since(initStartTime)
+	agent.timer.init = time.Since(agent.timer.initStart)
 
 	if wasError != nil {
 		//Stop the plugins that are initialized
@@ -228,8 +235,8 @@ func (agent *Agent) handleAfterInit() error {
 	var pluginFailed bool
 	var wasError error
 
-	agent.afterInitDuration = defaultTimerValue
-	afterInitStartTime := time.Now()
+	//	agent.afterInitDuration = defaultTimerValue
+	agent.timer.afterInitStart = time.Now()
 	for _, plug := range agent.plugins {
 		// set currently after-initialized plugin name
 		agent.currentlyProcessing = string(plug.PluginName)
@@ -258,11 +265,34 @@ func (agent *Agent) handleAfterInit() error {
 			agent.Info(fmt.Sprintf(logNoAfterInitFmt, plug.PluginName))
 		}
 	}
-	agent.afterInitDuration = time.Since(afterInitStartTime)
+	agent.timer.afterInit = time.Since(agent.timer.afterInitStart)
 
 	if wasError != nil {
 		agent.Stop()
 		return wasError
 	}
 	return nil
+}
+
+// Print detailed log entry about startup time
+func (agent *Agent) printStatistics(flag string) {
+	switch flag {
+	case done:
+		overall := agent.timer.init + agent.timer.afterInit
+		agent.WithField("durationInNs", overall.Nanoseconds()).Info(fmt.Sprintf("All plugins initialized successfully, took %v", overall))
+		agent.WithField("durationInNs", agent.timer.init.Nanoseconds()).Infof("Agent Init took %v", agent.timer.init)
+		agent.WithField("durationInNs", agent.timer.afterInit.Nanoseconds()).Infof("Agent AfterInit took %v", agent.timer.afterInit)
+	case errStatus:
+		agent.WithField("durationInNs", agent.timer.init.Nanoseconds()).Infof("Agent Init took %v", agent.timer.init)
+		agent.WithField("durationInNs", agent.timer.afterInit.Nanoseconds()).Infof("Agent AfterInit took %v", agent.timer.afterInit)
+	case timeout:
+		if agent.timer.init == defaultTimerValue {
+			agent.Infof("Agent Init took > %v", agent.timer.MaxStartupTime)
+			agent.WithField("durationInNs", agent.timer.afterInit.Nanoseconds()).Infof("Agent AfterInit took %v", agent.timer.afterInit)
+		} else if agent.timer.afterInit == defaultTimerValue {
+			agent.WithField("durationInNs", agent.timer.init.Nanoseconds()).Infof("Agent Init took %v", agent.timer.init)
+			agent.Infof("Agent AfterInit took > %v", agent.timer.MaxStartupTime)
+		}
+	}
+
 }

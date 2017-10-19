@@ -25,7 +25,17 @@ const (
 	// VrfPrefix is the relative key prefix for VRFs.
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
-	RoutesPrefix = "vpp/config/v1/vrf/{vrf}/fib/{net}/{mask}/{next-hop}"
+	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
+	// ARPPrefix is the relative key prefix for ARP table entries.
+	ARPPrefix = "vpp/config/v1/arp/{if}/{ip}"
+	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
+	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
+	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP-enabled interfaces.
+	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
+	// STNPrefix is the relative key prefix for STN entries.
+	STNPrefix = "vpp/config/v1/stn/{ip}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
@@ -33,11 +43,17 @@ func VrfKeyPrefix() string {
 	return VrfPrefix
 }
 
+// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
+func RouteKeyPrefix() string {
+	return RoutesPrefix
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
 	dstNetMask, _ := dstAddr.Mask.Size()
-	key := strings.Replace(RoutesPrefix, "{vrf}", strconv.Itoa(int(vrf)), 1)
+	key := RoutesPrefix
+	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
 	key = strings.Replace(key, "{net}", dstNetAddr, 1)
 	key = strings.Replace(key, "{mask}", strconv.Itoa(dstNetMask), 1)
 	key = strings.Replace(key, "{next-hop}", nextHopAddr, 1)
@@ -56,9 +72,4 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 		}
 	}
 	return false, "", "", 0, ""
-}
-
-// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
-func RouteKeyPrefix() string {
-	return RoutesPrefix
 }

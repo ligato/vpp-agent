@@ -152,11 +152,6 @@ func (ref *SyncProducer) SendMsgByte(topic string, key []byte, msg []byte) (*Pro
 	return ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg))
 }
 
-// SendMsg sends a message to Kafka using default partition
-func (ref *SyncProducer) SendMsg(topic string, key sarama.Encoder, msg sarama.Encoder) (*ProducerMessage, error) {
-	return ref.SendMsgToPartition(topic, ref.Partition, key, msg)
-}
-
 // SendMsgToPartition sends a message to Kafka
 func (ref *SyncProducer) SendMsgToPartition(topic string, partition int32, key sarama.Encoder, msg sarama.Encoder) (*ProducerMessage, error) {
 	if msg == nil {
