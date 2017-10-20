@@ -28,6 +28,10 @@ data:
   kafka.conf: |
     addrs:
      - "172.17.0.1:9092"
+  defaultplugins.conf: |
+    stopwatch: true
+  linuxplugin.conf: |
+    stopwatch: true
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -47,10 +51,17 @@ data:
     priority=1
 
     [program:agent]
-    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --delay=200
-    autorestart=true
+    ;command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --delay=200
+    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --default-plugins-config=/opt/vpp-agent/dev/defaultplugins.conf --linuxplugin-config=/opt/vpp-agent/dev/linuxplugin.conf --delay=200
+    autorestart=false
     redirect_stderr=true
     priority=2
+    
+    ; This event listener waits for event of vpp or agent  exitting. Once received, it kills supervisord process and this makes
+    ; subsequently the exit of docker container. You should also set agent autorestart=false.
+    [eventlistener:vpp_or_agent_not_running]
+    command=/usr/bin/supervisord_kill.py
+    events=PROCESS_STATE_EXITED
 ---   
 apiVersion: v1
 kind: Pod
