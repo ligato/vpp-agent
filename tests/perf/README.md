@@ -73,7 +73,12 @@ and use comments to choose proper yaml file .
 Example for using vswitch yaml file
 #kubectl apply -f vpp.yaml
 kubectl apply -f vswitch-vpp.yaml
-
+You must provide correct MAC ADDR in yaml file by editing the dev value.
+    dpdk {
+      dev 0000:00:08.0
+      uio-driver igb_uio
+    }
+Value 0000:00:08.0 is just an example here.
 
 ### Output example
 
