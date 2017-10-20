@@ -15,7 +15,7 @@ calcTimeFormat(){
     echo $retstr
 }
 
-# takes timemstamp format valu anbd calculates nanoseconds
+# takes timemstamp format value and calculates nanoseconds
 calcNanoTime(){
     a=(`echo $1 | sed -e 's/[:]/ /g'`)
     seconds= echo "${a[2]}+60*${a[1]}+3600*${a[0]}" | bc
@@ -35,7 +35,7 @@ showTime(){
 }
 
 # proccess intermediate file log/out.csv
-# line itteration and calculation of time duration
+# line iteration and calculation of time duration
 # results are stored in log/measuring_exp.csv
 processResult(){
 start=0

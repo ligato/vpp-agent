@@ -51,7 +51,7 @@ Once the Kubernetes is running and VPP Agent image is availalbe locally, you can
 
 There is possibility to load prepared topology into the etcd before the profiling is started
 There are few scripts topology*.sh that do the loading and are called inside the timemeasure.sh script
-It is easy to preprade yopur own topology according these scripts and modify function  setup() in timemeasure.sh
+It is easy to prepare your own topology according these scripts and modify function  setup() in timemeasure.sh
 to load your own topology.
 
 ## Process to kill
