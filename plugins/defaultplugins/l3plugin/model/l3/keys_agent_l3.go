@@ -26,6 +26,16 @@ const (
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
 	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
+	// ARPPrefix is the relative key prefix for ARP table entries.
+	ARPPrefix = "vpp/config/v1/arp/{if}/{ip}"
+	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
+	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
+	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
+	// ProxyARPRangePrefix is the relative key prefix for proxy ARP-enabled interfaces.
+	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
+	// STNPrefix is the relative key prefix for STN entries.
+	STNPrefix = "vpp/config/v1/stn/{ip}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance

@@ -74,24 +74,69 @@ func NewDataResyncReq() *DataResyncReq {
 		StaticRoutes: []*l3.StaticRoutes_Route{}}
 }
 
-// delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
-func (plugin *Plugin) resyncConfigPropageRequest(req *DataResyncReq) error {
+// delegates full resync request
+func (plugin *Plugin) resyncConfigPropageFullRequest(req *DataResyncReq) error {
 	plugin.Log.Info("resync the VPP Configuration begin")
 	startTime := time.Now()
-	plugin.ifConfigurator.Resync(req.Interfaces)
-	plugin.aclConfigurator.Resync(req.ACLs, plugin.Log)
-	plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey)
-	plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession)
-	plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho)
-	plugin.bdConfigurator.Resync(req.BridgeDomains)
-	plugin.fibConfigurator.Resync(req.FibTableEntries)
-	plugin.xcConfigurator.Resync(req.XConnects)
-	plugin.routeConfigurator.Resync(req.StaticRoutes)
+	defer func() {
+		vppResync := time.Since(startTime)
+		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
+	}()
 
-	vppResync := time.Since(startTime)
-	plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
+	return plugin.resyncConfig(req)
+}
 
-	return nil
+// delegates optimize-cold-stasrt resync request
+func (plugin *Plugin) resyncConfigPropageOptimizedRequest(req *DataResyncReq) error {
+	plugin.Log.Info("resync the VPP Configuration begin")
+	startTime := time.Now()
+	defer func() {
+		vppResync := time.Since(startTime)
+		plugin.Log.WithField("durationInNs", vppResync.Nanoseconds()).Infof("resync the VPP Configuration end in %v", vppResync)
+	}()
+
+	// If the strategy is optimize-cold-start, run interface configurator resync which provides the information
+	// whether resync should continue or be terminated
+	stopResync := plugin.ifConfigurator.VerifyVPPConfigPresence(req.Interfaces)
+	if stopResync {
+		// terminate the resync operation
+		return nil
+	}
+	// continue resync normally
+	return plugin.resyncConfig(req)
+}
+
+// delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
+func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
+	var err error
+	if err = plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		return err
+	}
+	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+		return err
+	}
+	if err = plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+		return err
+	}
+	if err = plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+		return err
+	}
+	if err = plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+		return err
+	}
+	if err = plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+		return err
+	}
+	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+		return err
+	}
+	return err
 }
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {

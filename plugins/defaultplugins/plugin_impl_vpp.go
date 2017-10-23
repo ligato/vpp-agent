@@ -36,6 +36,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	"github.com/namsral/flag"
+)
+
+// defaultpluigns specific flags
+var (
+	// skip resync flag
+	skipResyncFlag = flag.Bool("skip-vpp-resync", false, "Skip defaultplugins resync with VPP")
 )
 
 // no operation writer that helps avoiding NIL pointer based segmentation fault
@@ -50,6 +57,18 @@ var (
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
+// VPP resync strategy. Can be set in defaultplugins.conf. If no strategy is set, the default behavior is defined by 'fullResync'
+const (
+	// fullResync calls the full resync for every default plugin
+	fullResync = "full"
+	// optimizeColdStart checks existence of the configured interface on the VPP (except local0). If there are any, the full
+	// resync is executed, otherwise it's completely skipped.
+	// Note: resync will be skipped also in case there is not configuration in VPP but exists in etcd
+	optimizeColdStart = "optimize"
+	// resync is skipped in any case
+	skipResync = "skip"
+)
+
 // Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
 // is set, use default
 const defaultMtu = 9000
@@ -58,60 +77,75 @@ const defaultMtu = 9000
 type Plugin struct {
 	Deps
 
+	// ACL plugin fields
 	aclConfigurator *aclplugin.ACLConfigurator
 	aclL3L4Indexes  idxvpp.NameToIdxRW
 	aclL2Indexes    idxvpp.NameToIdxRW
 
+	// Interface plugin fields
+	ifConfigurator       *ifplugin.InterfaceConfigurator
 	swIfIndexes          ifaceidx.SwIfIndexRW
 	linuxIfIndexes       ifaceidx2.LinuxIfIndex
-	ifConfigurator       *ifplugin.InterfaceConfigurator
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
 	ifStateChan          chan *intf.InterfaceStateNotification
-	bdVppNotifChan       chan l2plugin.BridgeDomainStateMessage
-	bdStateUpdater       *l2plugin.BridgeDomainStateUpdater
-	bdStateChan          chan *l2plugin.BridgeDomainStateNotification
-	bfdSessionIndexes    idxvpp.NameToIdxRW
-	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
-	bfdEchoFunctionIndex idxvpp.NameToIdxRW
+	ifStateNotifications messaging.ProtoPublisher
+	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
+	linuxIfIdxWatchCh    chan ifaceidx2.LinuxIfIndexDto
 
-	bfdConfigurator   *ifplugin.BFDConfigurator
+	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
-	fibConfigurator   *l2plugin.FIBConfigurator
-	xcConfigurator    *l2plugin.XConnectConfigurator
-	routeConfigurator *l3plugin.RouteConfigurator
 	bdIndexes         bdidx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
-	fibIndexes        idxvpp.NameToIdxRW
-	fibDesIndexes     idxvpp.NameToIdxRW
-	xcIndexes         idxvpp.NameToIdxRW
-	routeIndexes      idxvpp.NameToIdxRW
-	errorIndexes      idxvpp.NameToIdxRW
-	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
+	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
+	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
+	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
 	bdIdxWatchCh      chan bdidx.ChangeDto
-	linuxIfIdxWatchCh chan ifaceidx2.LinuxIfIndexDto
 
-	resyncConfigChan     chan datasync.ResyncEvent
-	resyncStatusChan     chan datasync.ResyncEvent
-	changeChan           chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
-	ifStateNotifications messaging.ProtoPublisher
-	ifMtu                uint32
+	// Bidirectional forwarding detection fields
+	bfdSessionIndexes    idxvpp.NameToIdxRW
+	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
+	bfdEchoFunctionIndex idxvpp.NameToIdxRW
+	bfdConfigurator      *ifplugin.BFDConfigurator
 
-	enableStopwatch bool
+	// Forwarding information base fields
+	fibConfigurator *l2plugin.FIBConfigurator
+	fibIndexes      idxvpp.NameToIdxRW
+	fibDesIndexes   idxvpp.NameToIdxRW
 
-	watchConfigReg datasync.WatchRegistration
-	watchStatusReg datasync.WatchRegistration
+	// xConnect fields
+	xcConfigurator *l2plugin.XConnectConfigurator
+	xcIndexes      idxvpp.NameToIdxRW
 
+	// L3 route fields
+	routeConfigurator *l3plugin.RouteConfigurator
+	routeIndexes      idxvpp.NameToIdxRW
+
+	// Error handler
+	errorIndexes idxvpp.NameToIdxRW
 	errorChannel chan ErrCtx
 	errorIdxSeq  uint32
 
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	// Resync
+	resyncConfigChan chan datasync.ResyncEvent
+	resyncStatusChan chan datasync.ResyncEvent
+	changeChan       chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
+	watchConfigReg   datasync.WatchRegistration
+	watchStatusReg   datasync.WatchRegistration
+
+	// From config file
+	ifMtu          uint32
+	resyncStrategy string
+
+	// Common
+	enableStopwatch bool
+	cancel          context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
+	wg              sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
 // Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fieldsMtu.
+// to not mix with other plugin fields.
 type Deps struct {
 	// inject all below
 	local.PluginInfraDeps
@@ -134,6 +168,7 @@ type linuxpluginAPI interface {
 type DPConfig struct {
 	Mtu       uint32 `json:"mtu"`
 	Stopwatch bool   `json:"stopwatch"`
+	Strategy  string `json:"strategy"`
 }
 
 var (
@@ -152,10 +187,14 @@ func plugin() *Plugin {
 // Init gets handlers for ETCD, Messaging and delegates them to ifConfigurator & ifStateUpdater
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
+	// handle flag
+	flag.Parse()
 
 	plugin.fixNilPointers()
 
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
+
+	// read config file and set all related fields
 	config, err := plugin.retrieveDPConfig()
 	if err != nil {
 		return err
@@ -169,10 +208,14 @@ func (plugin *Plugin) Init() error {
 		} else {
 			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
+		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
+		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		plugin.resyncStrategy = fullResync
+		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -230,6 +273,17 @@ func (plugin *Plugin) Init() error {
 	gPlugin = plugin
 
 	return nil
+}
+func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
+	// first check skip resync flag
+	if *skipResyncFlag {
+		return skipResync
+		// else check if strategy is set in configfile
+	} else if strategy == fullResync || strategy == optimizeColdStart {
+		return strategy
+	}
+	plugin.Log.Warnf("Resync strategy %v is not known, setting up the full resync", strategy)
+	return fullResync
 }
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies
@@ -490,13 +544,13 @@ func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	config := &DPConfig{}
 	found, err := plugin.PluginConfig.GetValue(config)
 	if !found {
-		plugin.Log.Debug("Defaultplugins config not found")
+		plugin.Log.Debug("defaultplugins config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("Defaultplugins config found")
+	plugin.Log.Debug("defaultplugins config found")
 	return config, err
 }
 
