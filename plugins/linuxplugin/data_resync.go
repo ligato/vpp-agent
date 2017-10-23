@@ -177,7 +177,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 		if err == nil {
 			err = plugin.dataChangeArp(diff, &value, &prevValue, dataChng.GetChangeType())
 		}
-	} else if strings.HasPrefix(key, l3.StaticArpKeyPrefix()) {
+	} else if strings.HasPrefix(key, l3.StaticRouteKeyPrefix()) {
 		var value, prevValue l3.LinuxStaticRoutes_Route
 		err = dataChng.GetValue(&value)
 		if err != nil {

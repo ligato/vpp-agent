@@ -159,10 +159,10 @@ func (plugin *Plugin) initARP() error {
 		stopwatch = measure.NewStopwatch("LinuxARPConfigurator", linuxLogger)
 	}
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{
-		Log: linuxLogger,
+		Log:        linuxLogger,
 		LinuxIfIdx: plugin.ifIndexes,
-		ArpIdxSeq: 1,
-		Stopwatch: stopwatch}
+		ArpIdxSeq:  1,
+		Stopwatch:  stopwatch}
 	return plugin.arpConfigurator.Init(plugin.arpIndexes)
 }
 
@@ -178,7 +178,11 @@ func (plugin *Plugin) initRoutes() error {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", linuxLogger)
 	}
-	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
+	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{
+		Log:         linuxLogger,
+		LinuxIfIdx:  plugin.ifIndexes,
+		RouteIdxSeq: 1,
+		Stopwatch:   stopwatch}
 	return plugin.routeConfigurator.Init(plugin.rtIndexes)
 }
 

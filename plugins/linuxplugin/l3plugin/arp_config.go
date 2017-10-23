@@ -95,7 +95,7 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericNs(arpEntry.Namespace)
+	arpNs := linuxcalls.ToGenericArpNs(arpEntry.Namespace)
 
 	// ARP entry has to be created in the same namespace as the interface
 	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
@@ -126,8 +126,8 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	// ModifyArpEntry (analogy to 'ip neigh replace') would create a new entry instead of modifying the existing one
 	callReplace := true
 
-	oldArpNs := linuxcalls.ToGenericNs(newArpEntry.Namespace)
-	newArpNs := linuxcalls.ToGenericNs(oldArpEntry.Namespace)
+	oldArpNs := linuxcalls.ToGenericArpNs(oldArpEntry.Namespace)
+	newArpNs := linuxcalls.ToGenericArpNs(newArpEntry.Namespace)
 	result := oldArpNs.CompareNamespaces(newArpNs)
 	if result != 0 || oldArpEntry.Interface != newArpEntry.Interface || oldArpEntry.IpAddr != newArpEntry.IpAddr {
 		callReplace = false
@@ -171,7 +171,7 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericNs(newArpEntry.Namespace)
+	arpNs := linuxcalls.ToGenericArpNs(newArpEntry.Namespace)
 
 	// ARP entry has to be created in the same namespace as the interface
 	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
@@ -209,7 +209,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericNs(arpEntry.Namespace)
+	arpNs := linuxcalls.ToGenericArpNs(arpEntry.Namespace)
 
 	// ARP entry has to be removed from the same namespace as the interface
 	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)

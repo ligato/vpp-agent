@@ -22,17 +22,45 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
-// ToGenericNs converts arp-type namespace to generic type namespace. Such an object can be used to call common
+// ToGenericArpNs converts arp-type namespace to generic type namespace. Such an object can be used to call common
 // namespace-related methods
-func ToGenericNs(ns *l3.LinuxStaticArpEntries_ArpEntry_Namespace) *linuxcalls.Namespace {
+func ToGenericArpNs(ns *l3.LinuxStaticArpEntries_ArpEntry_Namespace) *linuxcalls.Namespace {
 	if ns == nil {
 		return &linuxcalls.Namespace{}
 	}
 	return &linuxcalls.Namespace{Type: int32(ns.Type), Pid: ns.Pid, Microservice: ns.Microservice, Name: ns.Name, Filepath: ns.Filepath}
 }
 
-// ToInterfaceNs converts generic namespace to arp-type namespace
-func ToInterfaceNs(ns *linuxcalls.Namespace) (*l3.LinuxStaticArpEntries_ArpEntry_Namespace, error) {
+// ToGenericRouteNs converts route-type namespace to generic type namespace. Such an object can be used to call common
+// namespace-related methods
+func ToGenericRouteNs(ns *l3.LinuxStaticRoutes_Route_Namespace) *linuxcalls.Namespace {
+	if ns == nil {
+		return &linuxcalls.Namespace{}
+	}
+	return &linuxcalls.Namespace{Type: int32(ns.Type), Pid: ns.Pid, Microservice: ns.Microservice, Name: ns.Name, Filepath: ns.Filepath}
+}
+
+// ToRouteNs converts generic namespace to arp-type namespace
+func ToRouteNs(ns *linuxcalls.Namespace) (*l3.LinuxStaticRoutes_Route_Namespace, error) {
+	if ns == nil {
+		return nil, fmt.Errorf("provided namespace is nil")
+	}
+	var namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType
+	switch ns.Type {
+	case 0:
+		namespaceType = l3.LinuxStaticRoutes_Route_Namespace_PID_REF_NS
+	case 1:
+		namespaceType = l3.LinuxStaticRoutes_Route_Namespace_MICROSERVICE_REF_NS
+	case 2:
+		namespaceType = l3.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+	case 3:
+		namespaceType = l3.LinuxStaticRoutes_Route_Namespace_FILE_REF_NS
+	}
+	return &l3.LinuxStaticRoutes_Route_Namespace{Type: namespaceType, Pid: ns.Pid, Microservice: ns.Microservice, Name: ns.Name, Filepath: ns.Filepath}, nil
+}
+
+// ToArpNs converts generic namespace to arp-type namespace
+func ToArpNs(ns *linuxcalls.Namespace) (*l3.LinuxStaticArpEntries_ArpEntry_Namespace, error) {
 	if ns == nil {
 		return nil, fmt.Errorf("provided namespace is nil")
 	}
