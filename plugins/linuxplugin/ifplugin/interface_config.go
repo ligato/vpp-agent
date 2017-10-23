@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+        "github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netlink"
 
 	log "github.com/ligato/cn-infra/logging/logrus"
