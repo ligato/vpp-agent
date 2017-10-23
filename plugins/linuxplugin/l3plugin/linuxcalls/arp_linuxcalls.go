@@ -17,9 +17,9 @@
 package linuxcalls
 
 import (
-	"github.com/vishvananda/netlink"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/vishvananda/netlink"
 	"time"
 )
 

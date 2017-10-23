@@ -185,6 +185,12 @@ func main() {
 			createLinuxArp(db)
 		case "-dlarp":
 			delete(db, l32.StaticArpKey("arp1"))
+		case "-clrt":
+			createLinuxRoute(db)
+		case "-clrtdef":
+			createDefaultLinuxRoute(db)
+		case "-dlrt":
+			delete(db, l32.StaticRouteKey("route1"))
 		default:
 			usage()
 		}
@@ -963,4 +969,41 @@ func createLinuxArp(db keyval.ProtoBroker) {
 	log.Println(linuxArpEntries)
 
 	db.Put(l32.StaticArpKey(linuxArpEntries.ArpEntry[0].Name), linuxArpEntries.ArpEntry[0])
+}
+
+func createLinuxRoute(db keyval.ProtoBroker) {
+	linuxRoutes := l32.LinuxStaticRoutes{}
+	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
+	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
+	linuxRoutes.Route[0].Name = "route1"
+	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
+	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+	linuxRoutes.Route[0].Namespace.Name = "ns1"
+	linuxRoutes.Route[0].DstIpAddr = "10.0.2.0/24"
+	//linuxRoutes.Route[0].SrcIpAddr = "128.0.0.10"
+	//linuxRoutes.Route[0].GwAddr = "128.0.0.1"
+	linuxRoutes.Route[0].Interface = "veth1"
+	linuxRoutes.Route[0].Metric = 100
+
+	log.Println(linuxRoutes)
+
+	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
+}
+
+func createDefaultLinuxRoute(db keyval.ProtoBroker) {
+	linuxRoutes := l32.LinuxStaticRoutes{}
+	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
+	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
+	linuxRoutes.Route[0].Name = "defRoute"
+	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
+	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+	linuxRoutes.Route[0].Namespace.Name = "ns1"
+	linuxRoutes.Route[0].Default = true
+	linuxRoutes.Route[0].Interface = "veth1"
+	linuxRoutes.Route[0].GwAddr = "10.0.2.2"
+	linuxRoutes.Route[0].Metric = 100
+
+	log.Println(linuxRoutes)
+
+	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
 }

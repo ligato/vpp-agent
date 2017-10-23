@@ -141,15 +141,16 @@ func (m *LinuxStaticRoutes) GetRoute() []*LinuxStaticRoutes_Route {
 
 type LinuxStaticRoutes_Route struct {
 	Name        string                             `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Namespace   *LinuxStaticRoutes_Route_Namespace `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
-	Interface   string                             `protobuf:"bytes,3,opt,name=interface,proto3" json:"interface,omitempty"`
-	Description string                             `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Scope       *LinuxStaticRoutes_Route_Scope     `protobuf:"bytes,5,opt,name=scope" json:"scope,omitempty"`
-	SrcIpAddr   string                             `protobuf:"bytes,6,opt,name=src_ip_addr,proto3" json:"src_ip_addr,omitempty"`
-	DstIpAddr   string                             `protobuf:"bytes,7,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
-	GwAddr      string                             `protobuf:"bytes,8,opt,name=gw_addr,proto3" json:"gw_addr,omitempty"`
-	Priority    uint32                             `protobuf:"varint,9,opt,name=priority,proto3" json:"priority,omitempty"`
-	Table       uint32                             `protobuf:"varint,10,opt,name=table,proto3" json:"table,omitempty"`
+	Default     bool                               `protobuf:"varint,2,opt,name=default,proto3" json:"default,omitempty"`
+	Namespace   *LinuxStaticRoutes_Route_Namespace `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
+	Interface   string                             `protobuf:"bytes,5,opt,name=interface,proto3" json:"interface,omitempty"`
+	Description string                             `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	Scope       *LinuxStaticRoutes_Route_Scope     `protobuf:"bytes,7,opt,name=scope" json:"scope,omitempty"`
+	DstIpAddr   string                             `protobuf:"bytes,8,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
+	SrcIpAddr   string                             `protobuf:"bytes,9,opt,name=src_ip_addr,proto3" json:"src_ip_addr,omitempty"`
+	GwAddr      string                             `protobuf:"bytes,10,opt,name=gw_addr,proto3" json:"gw_addr,omitempty"`
+	Metric      uint32                             `protobuf:"varint,11,opt,name=metric,proto3" json:"metric,omitempty"`
+	Table       uint32                             `protobuf:"varint,12,opt,name=table,proto3" json:"table,omitempty"`
 }
 
 func (m *LinuxStaticRoutes_Route) Reset()         { *m = LinuxStaticRoutes_Route{} }
@@ -210,9 +211,10 @@ type LinuxStaticArpEntries_ArpEntry struct {
 	Name      string                                    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Namespace *LinuxStaticArpEntries_ArpEntry_Namespace `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
 	Interface string                                    `protobuf:"bytes,3,opt,name=interface,proto3" json:"interface,omitempty"`
-	State     *LinuxStaticArpEntries_ArpEntry_NudState  `protobuf:"bytes,4,opt,name=state" json:"state,omitempty"`
-	IpAddr    string                                    `protobuf:"bytes,5,opt,name=ip_addr,proto3" json:"ip_addr,omitempty"`
-	HwAddress string                                    `protobuf:"bytes,6,opt,name=hw_address,proto3" json:"hw_address,omitempty"`
+	Family    uint32                                    `protobuf:"varint,4,opt,name=family,proto3" json:"family,omitempty"`
+	State     *LinuxStaticArpEntries_ArpEntry_NudState  `protobuf:"bytes,5,opt,name=state" json:"state,omitempty"`
+	IpAddr    string                                    `protobuf:"bytes,6,opt,name=ip_addr,proto3" json:"ip_addr,omitempty"`
+	HwAddress string                                    `protobuf:"bytes,7,opt,name=hw_address,proto3" json:"hw_address,omitempty"`
 }
 
 func (m *LinuxStaticArpEntries_ArpEntry) Reset()         { *m = LinuxStaticArpEntries_ArpEntry{} }
