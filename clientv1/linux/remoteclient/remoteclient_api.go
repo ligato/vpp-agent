@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/linux/dbadapter"
 )
 
-// DataResyncRequestDB allows to create a RESYNC request using convenient RESYNC
-// DSL and send it through the provided <broker>.
+// DataResyncRequestDB allows creating a RESYNC request, using convenient RESYNC
+// DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys
 // prior to RESYNC - it is handled by DataResyncDSL.
@@ -29,8 +29,8 @@ func DataResyncRequestDB(broker keyval.ProtoBroker) linux.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(broker.NewTxn(), broker.ListKeys)
 }
 
-// DataChangeRequestDB allows to create Data Change requests using convenient
-// Data Change DSL and send it through the provided <broker>.
+// DataChangeRequestDB allows creating Data Change requests, using convenient
+// Data Change DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
 func DataChangeRequestDB(broker keyval.ProtoBroker) linux.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(broker.NewTxn())

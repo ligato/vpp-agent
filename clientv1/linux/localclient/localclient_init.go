@@ -14,7 +14,7 @@
 
 package localclient
 
-// Plugin allows to load Linux localclient as a plugin
+// Plugin allows loading Linux localclient as a plugin
 // (even though the Init() method does not really do anything).
 type Plugin struct {
 }
