@@ -83,7 +83,7 @@ func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxv
 
 // NameToIdxPersist is a decorator for NameToIdxRW implementing persistent storage.
 type NameToIdxPersist struct {
-	// to now about registration
+	// registrations notifies about the changes made in the mapping to be persisted
 	registrations chan idxvpp.NameToIdxDto
 
 	// Configuration associated with this mapping.

@@ -31,7 +31,7 @@ import (
 // checkImplemensPlugin is used to let compiler check if
 // a particular plugin implements go interface core.Plugin
 // (see following Inject() method).
-// It technique is done because following method Plugins()
+// This construct is used because the following method Plugins()
 // uses reflection rather than enumerating all field again.
 var checkImplemensPlugin core.Plugin
 

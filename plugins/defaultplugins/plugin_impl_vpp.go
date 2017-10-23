@@ -47,15 +47,13 @@ var (
 	skipResyncFlag = flag.Bool("skip-vpp-resync", false, "Skip defaultplugins resync with VPP")
 )
 
-// no operation writer that helps avoiding NIL pointer based segmentation fault
-// used as default if some dependency was not injected
 var (
-	// no operation writer that helps avoiding NIL pointer based segmentation fault
-	// used as default if some dependency was not injected
+	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
 	noopWriter = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{}}
 
-	// no operation watcher that helps avoiding NIL pointer based segmentation fault
-	// used as default if some dependency was not injected
+	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
@@ -683,7 +681,7 @@ func (plugin *Plugin) initErrorHandler() error {
 	return nil
 }
 
-// AfterInit delegates to ifStateUpdater
+// AfterInit delegates the call to ifStateUpdater.
 func (plugin *Plugin) AfterInit() error {
 	plugin.Log.Debug("vpp plugins AfterInit begin")
 

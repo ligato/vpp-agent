@@ -139,7 +139,7 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 
 // Close stops all goroutines started by linuxplugin.
 func (plugin *LinuxInterfaceConfigurator) Close() error {
-	// remove veth pre-configure namespace
+	// Remove veth pre-configure namespace.
 	wasErr := linuxcalls.DeleteNamedNetNs(plugin.vethCfgNamespace.Name, plugin.Log)
 	plugin.cancel()
 	plugin.wg.Wait()
@@ -202,7 +202,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	peer := plugin.getInterfaceConfig(iface.Veth.PeerIfName)
 	config := plugin.addToCache(iface, peer)
 
-	// Create only after both ends are configured and target namespaces are available.
+	// Create after both ends are configured and target namespaces are available.
 	if !plugin.isNamespaceAvailable(iface.Namespace) || peer == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
 		plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "host-if-name": iface.HostIfName}).Debug("VETH interface is not ready to be configured")
 		return nil
@@ -493,7 +493,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ns)
 	defer revertNs()
 	if err != nil {
-		// already removed as namespace no longer exists
+		// Already removed as namespace no longer exists.
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
@@ -684,7 +684,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 		}
 
-		// First check if any microservice has terminated
+		// First check if any microservice has terminated.
 		plugin.cfgLock.Lock()
 		for container := range plugin.microserviceByID {
 			details, err := plugin.dockerClient.InspectContainer(container)
@@ -746,7 +746,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		}
 
 	nextRefresh:
-		// Sleep before another refresh
+		// Sleep before another refresh.
 		select {
 		case <-time.After(dockerRefreshPeriod):
 			continue
@@ -801,7 +801,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 				skip[peer.config.Name] = struct{}{}
 			}
 			if peer != nil && plugin.isNamespaceAvailable(peer.config.Namespace) {
-				// VETH is ready to be created and configured.
+				// VETH is ready to be created and configured
 				err := plugin.addVethInterface(nsMgmtCtx, intf.config, peer.config)
 				if err != nil {
 					plugin.Log.Warn(err.Error())

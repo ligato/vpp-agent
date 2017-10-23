@@ -214,8 +214,8 @@ func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *vppsvc.De
 	return &vppsvc.DelResponse{}, err
 }
 
-// ResyncConfig full data resync request of defaultvppplugin configuration
-// (forwards the input to the localclient).
+// ResyncConfig fills data resync request of defaultvppplugin configuration
+// , i.e. forwards the input to the localclient.
 func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *vppsvc.ResyncConfigRequest) (
 	*vppsvc.ResyncConfigResponse, error) {
 

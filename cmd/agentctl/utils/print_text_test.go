@@ -24,8 +24,8 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// Test01VppInterfacePrintText verifies presence of every VPP and an interface from the input data in both
-// text and tree output. Both data sets have the same content to test
+// Test01VppInterfacePrintText verifies presence of every VPP and an interface in the input data in both
+// text and tree output. Both data sets have the same content to test.
 func Test01VppInterfacePrintText(t *testing.T) {
 	gomega.RegisterTestingT(t)
 	etcdDump := utils.NewEtcdDump()

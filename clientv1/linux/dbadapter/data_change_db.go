@@ -60,8 +60,8 @@ type DeleteDSL struct {
 	vppDelete vpp_clientv1.DeleteDSL
 }
 
-// Put initiates a chained sequence of data change DSL statements declaring
-// new configurable objects or changing existing ones.
+// Put initiates a chained sequence of data change DSL statements and declares
+// new configurable objects or changes existing ones.
 func (dsl *DataChangeDSL) Put() linux.PutDSL {
 	return &PutDSL{dsl, dsl.vppDataChange.Put()}
 }

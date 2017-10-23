@@ -39,15 +39,13 @@ type DataChangeDSL interface {
 	// Put initiates a chained sequence of data change DSL statements, declaring
 	// new configurable objects or changing existing ones, e.g.:
 	//     Put().LinuxInterface(&veth).VppInterface(&afpacket).BD(&BD) ... Send()
-	// The set of available objects to be created or changed is defined by PutDSL
-	// interface which the returned object implements.
+	// The set of available objects to be created or changed is defined by PutDSL.
 	Put() PutDSL
 
 	// Delete initiates a chained sequence of data change DSL statements,
 	// removing existing configurable objects (by name), e.g:
 	//     Delete().LinuxInterface(vethName).VppInterface(afpacketName).BD(BDName) ... Send()
-	// The set of available objects to be removed is defined by DeleteDSL
-	// interface which the returned object implements.
+	// The set of available objects to be removed is defined by DeleteDSL.
 	Delete() DeleteDSL
 
 	// Send propagates requested changes to the plugins.

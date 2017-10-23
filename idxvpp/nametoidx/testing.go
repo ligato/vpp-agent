@@ -87,7 +87,7 @@ func (given *GivenKW) NameToIdx(idxMapFactory Factory, reg map[MappingName]Mappi
 		given.plug1NameIdx.RegisterName(n, uint32(idx), nil)
 	}
 
-	// Register of given mappings is done before watch (therefore there will be no notifications).
+	// Registration of given mappings is done before watch (therefore there will be no notifications).
 	given.watchNameIdx()
 	return given
 }
@@ -100,7 +100,7 @@ func (given *GivenKW) watchNameIdx() {
 		for {
 			v := <-plug1NameIdxChan
 			given.plug1NameIdxChan <- v
-			v.Done() //we can do that we are just buffering in given.plug1NameIdxChan (because of assertions)
+			v.Done() // We can mark event as processed by calling Done() because we want to have events buffered in given.plug1NameIdxChan (because of assertions).
 		}
 	}()
 

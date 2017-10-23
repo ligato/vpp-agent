@@ -40,7 +40,7 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 
 		//TODO refactor this to several funcs
 		if strings.HasSuffix(reqName, "_dump") {
-			// Do nothing and let reply next time for control_ping
+			// Do not reply to the dump message and reply to the following control_ping.
 		} else {
 			if replyMsg, msgID, ok := vppMock.ReplyFor(reqName); ok {
 				val := reflect.ValueOf(replyMsg)

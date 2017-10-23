@@ -79,7 +79,7 @@ type NameToIdxRW interface {
 // For example, a static L2 FIB table entry refers to an underlying network
 // interface, which is specified as a logical interface name at the L2
 // plugin's NB API. During configuration, the LookupIdx() function must
-// be called to determine the VPP if index that corresponds to the
+// be called to determine which VPP if index corresponds to the
 // specified logical name.
 type NameToIdx interface {
 	// GetRegistryTitle returns the title assigned to the registry.
@@ -91,7 +91,7 @@ type NameToIdx interface {
 	LookupIdx(name string) (idx uint32, metadata interface{}, exists bool)
 
 	// LookupName retrieves a previously stored name by particular index.
-	// Metadata can be nil. Name is supposed to be only when exists==false.
+	// Metadata can be nil. Name contains nonempty value only if exists==true.
 	//
 	// Principle:
 	// A. Registry stores mappings between names and indexes. API can optionally
@@ -108,10 +108,9 @@ type NameToIdx interface {
 	// ListNames returns all names in the mapping.
 	ListNames() (names []string)
 
-	// Watch subscribes to watching changes to name-to-index mappings.
-	// Watching NameToIndex mapping is critical for performance. You could delay
-	// something if you are very slowly handling these events. The idea of this text
-	// was to prepare disclaimer for that.
+	// Watch subscribes to watching changes to NameToIndex mappings.
+	// NOTE: Watching NameToIndex mapping can have negative impact on performance in case
+	// the events are handled slowly.
 	//
 	// Example:
 	//

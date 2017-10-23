@@ -44,24 +44,22 @@ type Interface struct {
 // map indexed by software interface index.
 //
 // LIMITATIONS:
-// - There is no af_packet dump binary API. We rely on naming conventions
-//   of the internal VPP interface names.
-// - ip.IPAddressDetails has wrong internal structure, as a workaround
-//   we need to handle it as notifications.
+// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
+// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
 //
 func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*Interface, error) {
 	start := time.Now()
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*Interface)
 
-	// first, dump all interfaces to create initial data
+	// First, dump all interfaces to create initial data.
 	reqCtx := vppChan.SendMultiRequest(&interfaces.SwInterfaceDump{})
 
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)
@@ -128,9 +126,8 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	return ifs, nil
 }
 
-// dumpIPAddressDetails dumps IP address details of interfaces from VPP
-// and fills them into the provided interface map.
-func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, stopwatch *measure.Stopwatch) error {
+// dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
+func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
 	notifChan := make(chan govppapi.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
@@ -172,8 +169,7 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 	return nil
 }
 
-// processIPDetails processes ip.IPAddressDetails binary API message
-// and fills the details into the provided interface map.
+// processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
 func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails) {
 	if ifs[ipDetails.SwIfIndex].IpAddresses == nil {
 		ifs[ipDetails.SwIfIndex].IpAddresses = make([]string, 0)

@@ -39,7 +39,7 @@ func Test01VppPrintJsonData(t *testing.T) {
 	gomega.Expect(strings.Contains(output, "vpp1")).To(gomega.BeTrue())
 	gomega.Expect(strings.Contains(output, "vpp2")).To(gomega.BeTrue())
 
-	// Check interface config (should be once per vpp).
+	// Check interface config (should be one per vpp).
 	gomega.Expect(strings.Contains(output, utils.IfConfig)).To(gomega.BeTrue())
 	gomega.Expect(strings.Count(output, utils.IfConfig)).To(gomega.BeEquivalentTo(2))
 

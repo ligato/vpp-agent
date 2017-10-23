@@ -77,10 +77,10 @@ func (helper *CacheHelper) DoChange(dataChng datasync.ChangeEvent) error {
 // - UnregisterName (for names that are not a part of ResyncEvent)
 func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 	var wasError error
-	//idx.RegisterName()
+
 	ifaces, found := resyncEv.GetValues()[helper.Prefix]
 	if found {
-		// Step 1: fill the existing things
+		// Step 1: fill the existing items.
 		resyncNames := map[string]interface{}{}
 		for {
 			item, stop := ifaces.GetNext()

@@ -86,12 +86,12 @@ type DataChangeDSL struct {
 	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 }
 
-// PutDSL is here to put here most recent and previous value with revisions
+// PutDSL allows to add or edit the configuration of delault plugins based on grpc requests.
 type PutDSL struct {
 	parent *DataChangeDSL
 }
 
-// DeleteDSL is here to put here most recent and previous value with revisions
+// DeleteDSL allows to remove the configuration of delault plugins based on grpc requests.
 type DeleteDSL struct {
 	parent *DataChangeDSL
 }

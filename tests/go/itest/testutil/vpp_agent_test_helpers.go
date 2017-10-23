@@ -111,7 +111,7 @@ func (t *VppAgentT) Teardown() {
 	}
 }
 
-// VppMock allows to flavors the Vpp Mock
+// VppMock allows to mock go VPP plugin in a flavor.
 func VppMock(vppMockSetups ...func(adapter *mock.VppAdapter)) *govppmux.GOVPPPlugin {
 	vppMock := &mock.VppAdapter{}
 	for _, vppMockSetup := range vppMockSetups {

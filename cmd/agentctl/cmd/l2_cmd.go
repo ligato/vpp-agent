@@ -20,8 +20,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// 'putBridgeDomain' command can be used to put bridge domain configuration to etcd. This command can be used with attribute flags
-// (forward, learn, etc.) or to manipulate inner BD configuration (attach or remove interfaces, add or remove
+// 'putBridgeDomain' command can be used to put bridge domain configuration to etcd. This command can be used
+// with attribute flags (forward, learn, etc.) in order to change BD attributes
+// and it can also manipulate inner BD configuration (attach or remove interfaces, add or remove
 // ARP table or FIB table entries).
 var putBridgeDomainCommand = &cobra.Command{
 	Use:        "bridge-domain -l <agent-label> -n <bd-name>",

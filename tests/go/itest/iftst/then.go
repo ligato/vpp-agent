@@ -50,22 +50,22 @@ type SwIfIndexesAssertions struct {
 type BfdIndexesAssertions struct {
 }
 
-// ContainsName checks several times if sw_if_index - ifName mapping ....
+// ContainsName checks several times if sw_if_index - ifName mapping exists.
 func (a *SwIfIndexesAssertions) ContainsName(ifName string) {
 	idxtst.ContainsName(a.VPP.GetSwIfIndexes().GetMapping(), ifName)
 }
 
-// ContainsName checks several times if bfd_index
+// ContainsName checks several times if there is an entry with the given name in bfd_index.
 func (a *BfdIndexesAssertions) ContainsName(mapping idx.NameToIdx, bfdIface string) {
 	idxtst.ContainsName(mapping, bfdIface)
 }
 
-// NotContainsName checks several times the sw_if_index - ifName mapping ....
+// NotContainsName checks several times the sw_if_index - ifName mapping does not exist.
 func (a *SwIfIndexesAssertions) NotContainsName(ifName string) {
 	idxtst.NotContainsNameAfter(a.VPP.GetSwIfIndexes().GetMapping(), ifName)
 }
 
-// NotContainsName checks several times the bfd_index
+// NotContainsName checks several times if there is no entry with the given name in bfd_index.
 func (a *BfdIndexesAssertions) NotContainsName(mapping idx.NameToIdx, bfdInterface string) {
 	idxtst.NotContainsNameAfter(mapping, bfdInterface)
 }
