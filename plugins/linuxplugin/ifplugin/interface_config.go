@@ -131,15 +131,15 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
 	plugin.ifWatcherDoneCh = make(chan struct{})
 
-	// Create cfg namespace.
+	// Create cfg namespace
 	err = plugin.prepareVethConfigNamespace()
 
 	return err
 }
 
-// Close stops all goroutines started by linuxplugin.
+// Close stops all goroutines started by linuxplugin
 func (plugin *LinuxInterfaceConfigurator) Close() error {
-	// Remove veth pre-configure namespace.
+	// remove veth pre-configure namespace
 	wasErr := linuxcalls.DeleteNamedNetNs(plugin.vethCfgNamespace.Name, plugin.Log)
 	plugin.cancel()
 	plugin.wg.Wait()
@@ -232,7 +232,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	if err != nil {
 		return err
 	}
-	// Push defer to a stack as the first one, so it will be called last.
+	// Push defer to a stack as the first one, so it will be called last
 	defer revertCfgNs()
 
 	idx := GetLinuxInterfaceIndex(iface.config.HostIfName)
