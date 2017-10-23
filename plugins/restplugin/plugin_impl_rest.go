@@ -25,14 +25,14 @@ type RESTAPIPlugin struct {
 	Deps RESTAPIPluginDeps
 }
 
-// RESTAPIPluginDeps - dependencies of RESTSvcPluginDeps
+// RESTAPIPluginDeps - dependencies of RESTAPIPlugin
 type RESTAPIPluginDeps struct {
 	local.PluginInfraDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
 }
 
-// Init - initializes the RESTSvcPlugin
+// Init - initializes the RESTAPIPlugin
 func (plugin *RESTAPIPlugin) Init() (err error) {
 	return nil
 }
@@ -53,7 +53,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	return nil
 }
 
-// Close - used to clean up resources used by RESTSvcPlugin
+// Close - used to clean up resources used by RESTAPIPlugin
 func (plugin *RESTAPIPlugin) Close() (err error) {
 	return nil
 }

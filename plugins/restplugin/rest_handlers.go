@@ -15,20 +15,18 @@
 package restplugin
 
 import (
+	"encoding/json"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	aclplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
-	//l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/unrolled/render"
+	"io/ioutil"
 	"net/http"
 	"strconv"
-	//"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
-	"encoding/json"
-	"io/ioutil"
 )
 
-//interfaceGetHandler - used to get list of all interfaces
+//interfacesGetHandler - used to get list of all interfaces
 func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -53,7 +51,7 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 	}
 }
 
-//bridgeDomainGetHandler - used to get list of all bridge domains
+//bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
 func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -78,7 +76,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 	}
 }
 
-//bridgeDomainGetHandler - used to get list of all bridge domains
+//bridgeDomainsGetHandler - used to get list of all bridge domains
 func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
