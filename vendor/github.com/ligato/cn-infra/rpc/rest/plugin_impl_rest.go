@@ -99,8 +99,6 @@ func (plugin *Plugin) AfterInit() (err error) {
 	} else {
 		plugin.Log.Info("Listening on http://", cfgCopy.Endpoint)
 		plugin.server, err = ListenAndServeHTTP(cfgCopy, plugin.mx)
-
-		//register list of handlers
 	}
 
 	return err
