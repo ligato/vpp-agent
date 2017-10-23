@@ -41,33 +41,34 @@ const (
 	NoSpace string = "There is not enough space to show the whole table. Use --short"
 )
 
-// TableVppDataContext is data context for one vpp (where number of interfaces == rows) with mandatory info: agent
-// label (vpp name), list of interfaces used in table (without filtered items) and interfaceMap with statistics data
+// TableVppDataContext is the data context for one vpp (where number of interfaces == rows)
+// with mandatory info: agent label (vpp name), list of interfaces used in table
+// (without filtered items) and interfaceMap with statistics data.
 type TableVppDataContext struct {
 	vppName      string
 	interfaces   []string
 	interfaceMap map[string]InterfaceWithMD
 }
 
-// PrintDataAsTable receives the complete Etcd data, applies all filters, flags and other restrictions, then prints table
-// filled with interface statistics
+// PrintDataAsTable receives the complete etcd data, applies all filters, flags
+// and other restrictions, then prints table filled with interface statistics.
 func (ed EtcdDump) PrintDataAsTable(table *goterm.Table, filter []string, short bool, active bool) (*goterm.Table, error) {
-	// Resolve vpp and interface filters. Name(s) of the vpp(s) and interface(s) that will be shown are returned
+	// Resolve vpp and interface filters. Name(s) of the vpp(s) and interface(s) that will be shown are returned.
 	vppFilter, interfaceFilter, err := processFilters(filter)
 	if err != nil {
 		return table, err
 	}
-	// Get all vpp keys
+	// Get all vpp keys.
 	sortedVppKeys := ed.getSortedKeys()
-	// Apply vpp filter, remove all unwanted vpp keys and sort
+	// Apply vpp filter, remove all unwanted vpp keys and sort.
 	if len(vppFilter) > 0 {
 		sortedVppKeys = filterElements(sortedVppKeys, vppFilter)
 		sort.Strings(sortedVppKeys)
 	}
 
-	// Get list of table data contexts (vpp + interfaces + statistics data). Every context contains only wanted
-	// interfaces at this point (interface filter is applied), and if active flag is set, all full-zero rows are
-	// removed as well
+	// Get list of table data contexts (vpp + interfaces + statistics data).
+	// Every context contains only wanted interfaces at this point (interface filter is applied).
+	// If an active flag is set, all full-zero rows are removed as well.
 	tableDataContext, dataDisplayed := ed.getAllTableDataContexts(sortedVppKeys, interfaceFilter, active)
 
 	// If no data are displayed, print message
@@ -76,9 +77,9 @@ func (ed EtcdDump) PrintDataAsTable(table *goterm.Table, filter []string, short 
 		return table, nil
 	}
 
-	// According to table data context, prepare list of items which will be in the table header
+	// According to the table data context, prepare list of items which will be in the table header.
 	headerItems := getHeaderItems(short, active, tableDataContext)
-	// Get two strings; the table header with required items and the formatting string used in print
+	// Get two strings: the table header with required items and the formatting string used in print.
 	tableHeader, format := composeHeader(headerItems)
 
 	// Print table header and every row
@@ -90,39 +91,39 @@ func (ed EtcdDump) PrintDataAsTable(table *goterm.Table, filter []string, short 
 	return table, nil
 }
 
-// Returns list of TableVppDataContext objects with all necessary info to print the whole table. Bool flag watches
-// whether some data will be even displayed after applying all filters
+// Returns list of TableVppDataContext objects with all necessary info to print the whole table.
+// Bool flag watches whether some data will be actually displayed after applying all filters.
 func (ed EtcdDump) getAllTableDataContexts(sortedVppKeys []string, interfaceFilter []string, active bool) ([]*TableVppDataContext, bool) {
 	dataDisplayed := false
 	var tableDataContext []*TableVppDataContext
 
-	// Iterate over every agent label (vpp)
+	// Iterate over every agent label (vpp).
 	for _, vppName := range sortedVppKeys {
 		vppData, exists := ed[vppName]
 		if exists {
-			// Obtain map of all interfaces belonging to the vpp
+			// Obtain map of all interfaces belonging to the vpp.
 			interfaceMap := vppData.Interfaces
 			var interfaceNames []string
-			// Leverage all interface names to the separate list
+			// Leverage all interface names to the separate list.
 			for name := range interfaceMap {
 				interfaceNames = append(interfaceNames, name)
 			}
 
-			// Remove all interfaces without statistics data todo add flag to show <no_data> in table
+			// Remove all interfaces without statistics data todo add flag to show <no_data> in table.
 			interfaceNames = filterInterfacesWithoutData(interfaceNames, interfaceMap)
 
-			// Apply interface filter - remove all interfaces except the ones defined in the filter
+			// Apply interface filter - remove all interfaces except those defined in the filter.
 			if len(interfaceFilter) > 0 && len(interfaceNames) > 0 {
 				interfaceNames = filterElements(interfaceNames, interfaceFilter)
 			}
-			// Apply active filter - remove all full-zero rows (columns are processed later)
+			// Apply active filter - remove all full-zero rows (columns are processed later).
 			if active && len(interfaceNames) > 0 {
 				interfaceNames = filterInactiveInterfaces(interfaceNames, interfaceMap)
 			}
 			sort.Strings(interfaceNames)
 
-			// Verify there are some interfaces left. If there are data for at least one interface, data
-			// will be shown
+			// Verify there are some interfaces left. If there are data for at least
+			// one interface, the data will be shown.
 			if len(interfaceNames) > 0 {
 				dataDisplayed = true
 			}
@@ -133,14 +134,14 @@ func (ed EtcdDump) getAllTableDataContexts(sortedVppKeys []string, interfaceFilt
 	return tableDataContext, dataDisplayed
 }
 
-// Process provided vpp/interface filters
+// Process provided vpp/interface filters.
 func processFilters(filter []string) ([]string, []string, error) {
 	var vppFilter []string
 	var interfaceFilter []string
 	if len(filter) == 1 {
 		vppFilter = strings.Split(filter[0], ",")
 	} else if len(filter) == 2 {
-		// There should be only one vpp
+		// There should be only one vpp.
 		vppFilter = strings.Split(filter[0], ",")
 		if len(vppFilter) > 1 {
 			return vppFilter, interfaceFilter,
@@ -151,7 +152,7 @@ func processFilters(filter []string) ([]string, []string, error) {
 	return vppFilter, interfaceFilter, nil
 }
 
-// Remove interfaces without statistics data from the provided list and return the remaining items
+// Remove interfaces without statistics data from the provided list and return the remaining items.
 func filterInterfacesWithoutData(interfaces []string, interfaceMap map[string]InterfaceWithMD) []string {
 	var filteredInterfaces []string
 	for _, iface := range interfaces {
@@ -164,7 +165,8 @@ func filterInterfacesWithoutData(interfaces []string, interfaceMap map[string]In
 	return filteredInterfaces
 }
 
-// Remove all items which are not a part of the filter list (also items which are part of the filter but don't exist)
+// Remove all items which are not a part of the filter list (also the items which
+// are part of the filter but don't exist).
 func filterElements(itemList []string, filter []string) []string {
 	var filteredItems []string
 	for _, item := range itemList {
@@ -177,7 +179,7 @@ func filterElements(itemList []string, filter []string) []string {
 	return filteredItems
 }
 
-// Remove all inactive interfaces from provided interface list
+// Remove all inactive interfaces from provided interface list.
 func filterInactiveInterfaces(interfaceList []string, interfaceMap map[string]InterfaceWithMD) []string {
 	var filteredInterfaces []string
 	for _, name := range interfaceList {
@@ -196,14 +198,15 @@ func filterInactiveInterfaces(interfaceList []string, interfaceMap map[string]In
 	return filteredInterfaces
 }
 
-// getHeaderItems resolves every field in statistics according to format parameters. Rules:
-// * Short table shows InPackets, OutPackets and Drop
-// * Full table shows All fields except InNoBufPackets, Ipv4Packets and Ipv6Packets
-// * Detail table shows everything
-// * Active table shows only non-zero columns (at least one value has to be non-zero). All restrictions mentioned above
-//   are also applied
-// Other filters (vpp, interface) are already applied at this point, do data context does not contain these elements.
-// Also all full-zero rows were removed if active flag is set, so only columns are resolved here
+// getHeaderItems resolves every field in statistics according to the format parameters. Rules:
+// * Short table shows InPackets, OutPackets and Drop.
+// * Full table shows All fields except InNoBufPackets, and Ipv4Packets, and Ipv6Packets.
+// * Detail table shows everything.
+// * Active table shows only non-zero columns (at least one value has to be non-zero).
+//   All restrictions mentioned above are applied as well.
+// Other filters (vpp, interface) are already applied at this point, though data context
+// does not contain these elements.
+// Also all full-zero rows were removed if active flag is set, so only columns are resolved here.
 func getHeaderItems(short bool, active bool, dataContext []*TableVppDataContext) []string {
 	var headerItems []string
 	if active && short {
@@ -263,20 +266,20 @@ func composeHeader(headerItems []string) (tableHeader string, format string) {
 	// Base format string (interface name is always shown, vpp is added later in printTable)
 	format = "\t%s"
 	for _, headerItem := range headerItems {
-		// Add new tab and the header item
+		// Add new tab and the header item.
 		tableHeader = tableHeader + "\t" + headerItem
-		// Add new tab and the digit placeholder for the item
+		// Add new tab and the digit placeholder for the item.
 		format = format + "\t%d"
 	}
-	// Finally add new line to the end of the header and the format
+	// Finally add new line to the end of the header and the format.
 	tableHeader = tableHeader + "\n"
 	format = format + "\n"
 
 	return tableHeader, format
 }
 
-// Checks specific data type in all table rows whether there are non-zero values. If particular statistic data type
-// in zero-value in whole column, return false, otherwise return true.
+// Checks specific data type in all table rows and evaluates whether there are non-zero values.
+// If particular statistic data type is zero-value in the whole column, return false, otherwise return true.
 func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 	// Assume that the whole column is zero (easier to evaluate)
 	isZeroColumn := true
@@ -369,13 +372,13 @@ func isNonZeroColumn(dataContext []*TableVppDataContext, dataType string) bool {
 			}
 		}
 	}
-	// At Last revert the value to return correct result
+	// At Last revert the value to return correct result.
 	return !isZeroColumn
 }
 
-// Print row to the provided table object for single vpp todo cutoff data list to separate method
+// Print row to the provided table object for a single vpp. todo cutoff data list to separate method
 func (row *TableVppDataContext) printTable(table *goterm.Table, items []string, format string) {
-	// Iterate over vpp interfaces
+	// Iterate over vpp interfaces.
 	for index, name := range row.interfaces {
 		ifaceData := row.interfaceMap[name]
 		if ifaceData.State == nil || ifaceData.State.InterfaceState == nil || ifaceData.State.InterfaceState.Statistics == nil {
@@ -383,7 +386,7 @@ func (row *TableVppDataContext) printTable(table *goterm.Table, items []string, 
 		}
 		stats := ifaceData.State.InterfaceState.Statistics
 		var dataList []interface{}
-		// Vpp label is written only one for better readability
+		// Vpp label is written only once for better readability.
 		if index == 0 {
 			dataList = append(dataList, row.vppName, name)
 		} else {
@@ -426,7 +429,7 @@ func (row *TableVppDataContext) printTable(table *goterm.Table, items []string, 
 		}
 
 		if index == 0 {
-			// Print vpp name in first line only
+			// Print vpp name in the first line only.
 			fmt.Fprintf(table, "%s:"+format, dataList...)
 		} else {
 			fmt.Fprintf(table, "%s"+format, dataList...)

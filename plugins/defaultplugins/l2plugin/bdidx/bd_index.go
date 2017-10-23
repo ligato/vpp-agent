@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-// BDIndex provides read-only access to mapping between indexes (used internally in VPP) and Bridge Domain names.
+// BDIndex provides read-only access to mapping between indices (used internally in VPP) and Bridge Domain names.
 type BDIndex interface {
 	// GetMapping returns internal read-only mapping with metadata of type interface{}.
 	GetMapping() idxvpp.NameToIdxRW
@@ -39,7 +39,7 @@ type BDIndex interface {
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
 }
 
-// BDIndexRW is mapping between indexes (used internally in VPP) and Bridge Domain names.
+// BDIndexRW is mapping between indices (used internally in VPP) and Bridge Domain names.
 type BDIndexRW interface {
 	BDIndex
 
@@ -57,7 +57,7 @@ type bdIndex struct {
 }
 
 // ChangeDto represents an item sent through watch channel in bdIndex.
-// In contrast to NameToIdxDto it contains typed metadata.
+// In contrast to NameToIdxDto, it contains typed metadata.
 type ChangeDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *l2.BridgeDomains_BridgeDomain
@@ -82,7 +82,7 @@ func (swi *bdIndex) RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomai
 	swi.mapping.RegisterName(name, idx, ifMeta)
 }
 
-// IndexMetadata creates indexes for metadata. Index for IPAddress will be created
+// IndexMetadata creates indices for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*l2.BridgeDomains_BridgeDomain)
@@ -101,7 +101,7 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 	return indexes
 }
 
-// UnregisterName removes an item identified by name from mapping
+// UnregisterName removes an item identified by name from mapping.
 func (swi *bdIndex) UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
 	idx, meta, exists := swi.mapping.UnregisterName(name)
 	return idx, swi.castMetadata(meta), exists
@@ -125,7 +125,7 @@ func (swi *bdIndex) LookupName(idx uint32) (name string, metadata *l2.BridgeDoma
 	return name, metadata, exists
 }
 
-// LookupNameByIP returns names of items that contains given IP address in metadata
+// LookupNameByIP returns names of items that contain given IP address in metadata.
 func (swi *bdIndex) LookupNameByIfaceName(ifaceName string) []string {
 	return swi.mapping.LookupNameByMetadata(ifaceNameIndexKey, ifaceName)
 }
@@ -138,7 +138,7 @@ func (swi *bdIndex) castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomai
 	return ifMeta
 }
 
-// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
+// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
 func (swi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	swi.mapping.Watch(subscriber, nametoidx.ToChan(ch))

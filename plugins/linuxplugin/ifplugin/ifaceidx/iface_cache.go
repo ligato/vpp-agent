@@ -26,8 +26,8 @@ import (
 	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 )
 
-// Cache the VETH interfaces of a particular agent by watching transport. If change appears, it is registered in
-// idx map
+// Cache the VETH interfaces of a particular agent by watching transport.
+// If change appears, it is registered in idx map.
 func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) LinuxIfIndex {
 	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
 	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
@@ -44,7 +44,7 @@ func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) LinuxIfI
 	return linuxIfIdx
 }
 
-// ParseNameFromKey returns suffix of the key (name)
+// ParseNameFromKey returns suffix of the key (name).
 func ParseNameFromKey(key string) (name string, err error) {
 	lastSlashPos := strings.LastIndex(key, "/")
 	if lastSlashPos > 0 && lastSlashPos < len(key)-1 {

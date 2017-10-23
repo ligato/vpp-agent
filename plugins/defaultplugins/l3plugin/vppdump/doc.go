@@ -1,2 +1,2 @@
-// Package vppdump provides helpers to dump all L3 FIBs configured in VPP.
+// Package vppdump provides helpers for dumping all L3 FIBs configured in VPP.
 package vppdump

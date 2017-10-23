@@ -11,13 +11,13 @@ import (
 const pluginName = core.PluginName("when_iface")
 
 // WhenIface is a collection of test step methods (see Behavior Driven Development)
-// (methods that will be called from test scenarios)
+// (methods that will be called from test scenarios).
 type WhenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
 	Log       logging.Logger
 }
 
-// StoreIf stores configuration of a given interface into ETCD.
+// StoreIf stores configuration of a given interface in ETCD.
 func (step *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interface{}) {
 	step.Log.Debug("When_StoreIf begin")
 	err := step.NewChange(pluginName).Put().Interface(data).Send().ReceiveReply()
@@ -38,7 +38,7 @@ func (step *WhenIface) DelIf(data *intf.Interfaces_Interface) {
 }
 
 /*
-// VppLinkDown send SwInterfaceSetFlags{LinkUpDown: 0} using VPP mock
+// VppLinkDown sends SwInterfaceSetFlags{LinkUpDown: 0} using VPP mock.
 func (step *WhenIface) VppLinkDown(data *intf.Interfaces_Interface, given *testing.GivenAndKW) {
 	given.And().VppMock(func(mockVpp *govppmock.VppAdapter) {
 		n := data.Name
@@ -54,7 +54,7 @@ func (step *WhenIface) VppLinkDown(data *intf.Interfaces_Interface, given *testi
 	})
 }
 
-// VppLinkUp send SwInterfaceSetFlags{LinkUpDown: 1} using VPP mock
+// VppLinkUp sends SwInterfaceSetFlags{LinkUpDown: 1} using VPP mock.
 func (step *WhenIface) VppLinkUp(data *intf.Interfaces_Interface, given *testing.GivenAndKW) {
 	given.And().VppMock(func(mockVpp *govppmock.VppAdapter) {
 		n := data.Name
@@ -70,7 +70,7 @@ func (step *WhenIface) VppLinkUp(data *intf.Interfaces_Interface, given *testing
 	})
 }
 
-// StoreBfdSession stores configuration of a given BFD session into ETCD.
+// StoreBfdSession stores configuration of a given BFD session in ETCD.
 func (step *WhenIface) StoreBfdSession(data *bfd.SingleHopBFD_Session) {
 	log.Debug("When_StoreBfdSession begin")
 	k := bfd.SessionKey(data.Interface)
@@ -81,7 +81,7 @@ func (step *WhenIface) StoreBfdSession(data *bfd.SingleHopBFD_Session) {
 	log.Debug("When_StoreBfdSession end")
 }
 
-// StoreBfdAuthKey stores configuration of a given BFD key into ETCD.
+// StoreBfdAuthKey stores configuration of a given BFD key in ETCD.
 func (step *WhenIface) StoreBfdAuthKey(data *bfd.SingleHopBFD_Key) {
 	log.Debug("When_StoreBfdKey begin")
 	k := bfd.AuthKeysKey(strconv.FormatUint(uint64(data.Id), 10))
@@ -92,7 +92,7 @@ func (step *WhenIface) StoreBfdAuthKey(data *bfd.SingleHopBFD_Key) {
 	log.Debug("When_StoreBfdKey end")
 }
 
-// StoreBfdEchoFunction stores configuration of a given BFD echo function into ETCD.
+// StoreBfdEchoFunction stores configuration of a given BFD echo function in ETCD.
 func (step *WhenIface) StoreBfdEchoFunction(data *bfd.SingleHopBFD_EchoFunction) {
 	log.Debug("When_StoreBfdEchoFunction begin")
 	k := bfd.EchoFunctionKey(data.EchoSourceInterface)
@@ -125,7 +125,7 @@ func (step *WhenIface) DelBfdAuthKey(data *bfd.SingleHopBFD_Key) {
 	log.Debug("When_DelBfdKey end")
 }
 
-// DelBfdEchoFunction removes configuration of a given BFD echo function into ETCD.
+// DelBfdEchoFunction removes configuration of a given BFD echo function from ETCD.
 func (step *WhenIface) DelBfdEchoFunction(data *bfd.SingleHopBFD_EchoFunction) {
 	log.Debug("When_DelBfdEchoFunction begin")
 	k := bfd.EchoFunctionKey(data.EchoSourceInterface)

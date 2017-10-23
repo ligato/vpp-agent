@@ -18,7 +18,7 @@ import (
 	"git.fd.io/govpp.git/api"
 )
 
-// API for other plugins to get connectivity to VPP
+// API for other plugins to get connectivity to VPP.
 type API interface {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.

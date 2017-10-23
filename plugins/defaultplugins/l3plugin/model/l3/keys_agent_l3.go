@@ -41,22 +41,22 @@ const (
 	STNPrefix = "vpp/config/v1/stn/{ip}"
 )
 
-// VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance
+// VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance.
 func VrfKeyPrefix() string {
 	return VrfPrefix
 }
 
-// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance
+// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance.
 func RouteKeyPrefix() string {
 	return RoutesPrefix
 }
 
-// ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance
+// ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance.
 func ArpKeyPrefix() string {
 	return ArpPrefix
 }
 
-// RouteKey returns the key used in ETCD to store vpp route for vpp instance
+// RouteKey returns the key used in ETCD to store vpp route for vpp instance.
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
 	dstNetMask, _ := dstAddr.Mask.Size()
@@ -68,7 +68,7 @@ func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	return key
 }
 
-// ParseRouteKey parses VRF label and route address from a route key
+// ParseRouteKey parses VRF label and route address from a route key.
 func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string) {
 	if strings.HasPrefix(key, VrfKeyPrefix()) {
 		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())

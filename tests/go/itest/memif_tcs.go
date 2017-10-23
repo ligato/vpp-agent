@@ -19,7 +19,7 @@ func (t *suiteMemif) SetupTestingFlavor(flavor *testutil.VppOnlyTestingFlavor) {
 	t.Then.VPP = &flavor.VPP
 }
 
-// TC01EmptyVppCrudEtcd asserts that data written to ETCD after Agent Starts are processed
+// TC01EmptyVppCrudEtcd asserts that data written to ETCD after Agent Starts are processed.
 func (t *suiteMemif) TC01EmptyVppCrudEtcd() {
 	t.SetupTestingFlavor(t.SetupDefault())
 	defer t.Teardown()
@@ -38,7 +38,7 @@ func (t *suiteMemif) TC01EmptyVppCrudEtcd() {
 }
 
 /*
-// TC02EmptyVppResyncAtStartup that data written to ETCD before Agent Starts are processed (startup RESYNC)
+// TC02EmptyVppResyncAtStartup tests that data written to ETCD before Agent Starts are processed (startup RESYNC).
 func (t *suiteMemif) TC02EmptyVppResyncAtStartup() {
 	t.Given(t.T).VppMock(given.RepliesSuccess).
 		And().StartedAgent(append(Plugins(), Init("ETCD before startup", func() error {

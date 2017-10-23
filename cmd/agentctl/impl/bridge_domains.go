@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// BridgeDomainCommonFields defines all fields which can be set using flags in bridge domain config
+// BridgeDomainCommonFields defines all fields which can be set using flags in bridge domain config.
 type BridgeDomainCommonFields struct {
 	Name    string
 	Flood   bool
@@ -33,7 +33,7 @@ type BridgeDomainCommonFields struct {
 	MacAge  uint32
 }
 
-// BridgeDomainInterfaceFields defines all fields used as flags in bridge domain interface command
+// BridgeDomainInterfaceFields defines all fields used as flags in bridge domain interface command.
 type BridgeDomainInterfaceFields struct {
 	BdName            string
 	IfName            string
@@ -42,7 +42,7 @@ type BridgeDomainInterfaceFields struct {
 	IsDelete          bool
 }
 
-// BridgeDomainArpFields defines all fields used as flags in bridge domain arp command
+// BridgeDomainArpFields defines all fields used as flags in bridge domain arp command.
 type BridgeDomainArpFields struct {
 	BdName      string
 	IPAddress   string
@@ -50,7 +50,7 @@ type BridgeDomainArpFields struct {
 	IsDelete    bool
 }
 
-// L2FIBEntryFields defines all fields used as flags in bridge domain fib command
+// L2FIBEntryFields defines all fields used as flags in bridge domain fib command.
 type L2FIBEntryFields struct {
 	PhysAddress       string
 	BdName            string
@@ -64,7 +64,7 @@ type L2FIBEntryFields struct {
 var bdCommonFields BridgeDomainCommonFields
 
 // CreateUpdateBridgeDomain creates a new bridge domain or updates an old one. All bridge domain attributes
-// are set here. New bridge domain is created without attached interfaces, ARP table or FIB entries
+// are set here. New bridge domain is created without attached interfaces, or ARP table, or FIB entries.
 func CreateUpdateBridgeDomain(endpoints []string, label string) {
 	_, key, bd, db := utils.GetBridgeDomainKeyAndValue(endpoints, label, bdCommonFields.Name)
 
@@ -78,7 +78,7 @@ func CreateUpdateBridgeDomain(endpoints []string, label string) {
 	utils.WriteBridgeDomainToDb(db, key, bd)
 }
 
-// DeleteBridgeDomain removes bridge domain from the configuration including all attached interfaces and ARP table entries
+// DeleteBridgeDomain removes bridge domain from the configuration, including all attached interfaces and ARP table entries.
 func DeleteBridgeDomain(endpoints []string, label string) {
 	found, key, _, db := utils.GetBridgeDomainKeyAndValue(endpoints, label, bdCommonFields.Name)
 	if found {
@@ -86,7 +86,7 @@ func DeleteBridgeDomain(endpoints []string, label string) {
 	}
 }
 
-// AddUpdateInterfaceToBridgeDomain adds interface to bridge domain
+// AddUpdateInterfaceToBridgeDomain adds interface to bridge domain.
 func AddUpdateInterfaceToBridgeDomain(endpoints []string, label string, iface *BridgeDomainInterfaceFields) {
 	// Name flag is mandatory
 	if iface.IfName == "" {
@@ -97,16 +97,16 @@ func AddUpdateInterfaceToBridgeDomain(endpoints []string, label string, iface *B
 	if !found {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Interface configured from a nonexisting bridge domain"))
 	}
-	// Obtain actual list of interfaces attached
+	// Obtain current list of interfaces attached.
 	interfaceList := bd.Interfaces
 	for i, ifaceEntry := range interfaceList {
-		// If interface already exists, remove it. It will be created anew (update)
+		// If interface already exists, remove it. It will be created anew (update).
 		if ifaceEntry.Name == iface.IfName {
 			interfaceList = append(interfaceList[:i], interfaceList[i+1:]...)
 			break
 		}
 	}
-	// Create new bridge domain interface and add it to the list
+	// Create new bridge domain interface and add it to the list.
 	interfaceToAdd := new(l2.BridgeDomains_BridgeDomain_Interfaces)
 	interfaceToAdd.Name = iface.IfName
 	interfaceToAdd.BridgedVirtualInterface = iface.Bvi
@@ -117,7 +117,7 @@ func AddUpdateInterfaceToBridgeDomain(endpoints []string, label string, iface *B
 	utils.WriteBridgeDomainToDb(db, key, bd)
 }
 
-// DeleteInterfaceFromBridgeDomain removes interface from bridge domain
+// DeleteInterfaceFromBridgeDomain removes interface from bridge domain.
 func DeleteInterfaceFromBridgeDomain(endpoints []string, label string, iface *BridgeDomainInterfaceFields) {
 	// Name flag is mandatory
 	if iface.IfName == "" {
@@ -128,7 +128,7 @@ func DeleteInterfaceFromBridgeDomain(endpoints []string, label string, iface *Br
 	if !found {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Unable to remove interface from a nonexisting bridge domain"))
 	}
-	// Create a new set of bridge domain interfaces without the removed one
+	// Create a new set of bridge domain interfaces without the removed one.
 	var interfaceList []*l2.BridgeDomains_BridgeDomain_Interfaces
 	for _, existingInterface := range bd.Interfaces {
 		if existingInterface.Name == iface.IfName {
@@ -141,7 +141,7 @@ func DeleteInterfaceFromBridgeDomain(endpoints []string, label string, iface *Br
 	utils.WriteBridgeDomainToDb(db, key, bd)
 }
 
-// AddUpdateArpEntry creates or updates ARP entry in the bridge domain
+// AddUpdateArpEntry creates or updates ARP entry in the bridge domain.
 func AddUpdateArpEntry(endpoints []string, label string, arp *BridgeDomainArpFields) {
 	// IP address is mandatory (identification)
 	if arp.IPAddress == "" {
@@ -152,16 +152,16 @@ func AddUpdateArpEntry(endpoints []string, label string, arp *BridgeDomainArpFie
 	if !found {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Arp entry configured from a nonexisting bridge domain"))
 	}
-	// Obtain actual list of ARP entries
+	// Obtain current list of ARP entries.
 	arpTable := bd.ArpTerminationTable
 	for i, arpEntry := range bd.ArpTerminationTable {
-		// If ARP entry already exists, remove it. It will be created anew (update)
+		// If ARP entry already exists, remove it. It will be created anew (update).
 		if arpEntry.IpAddress == arp.IPAddress {
 			arpTable = append(arpTable[:i], arpTable[i+1:]...)
 			break
 		}
 	}
-	// Create new bridge domain ARP and add it to the list
+	// Create new bridge domain ARP and add it to the list.
 	arpToAdd := new(l2.BridgeDomains_BridgeDomain_ArpTerminationTable)
 	arpToAdd.IpAddress = arp.IPAddress
 	arpToAdd.PhysAddress = arp.PhysAddress
@@ -171,7 +171,7 @@ func AddUpdateArpEntry(endpoints []string, label string, arp *BridgeDomainArpFie
 	utils.WriteBridgeDomainToDb(db, key, bd)
 }
 
-// DeleteArpEntry removes ARP entry from the bridge domain
+// DeleteArpEntry removes ARP entry from the bridge domain.
 func DeleteArpEntry(endpoints []string, label string, arp *BridgeDomainArpFields) {
 	// IP address is mandatory (identification)
 	if arp.IPAddress == "" {
@@ -182,7 +182,7 @@ func DeleteArpEntry(endpoints []string, label string, arp *BridgeDomainArpFields
 	if !found {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Unable to remove ARP entry from a nonexisting bridge domain"))
 	}
-	// Remove ARP table from the list
+	// Remove ARP table from the list.
 	var newArpTable []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable
 	for _, existingArpEntry := range bd.ArpTerminationTable {
 		if existingArpEntry.IpAddress == arp.IPAddress {
@@ -195,9 +195,9 @@ func DeleteArpEntry(endpoints []string, label string, arp *BridgeDomainArpFields
 	utils.WriteBridgeDomainToDb(db, key, bd)
 }
 
-// AddFibEntry adds new FIB entry to the FIB table
+// AddFibEntry adds new FIB entry to the FIB table.
 func AddFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
-	// MAC address is required because it serves as an identification
+	// MAC address is required because it serves as an identification.
 	if fib.PhysAddress == "" {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("FIB entry does not contain physical address"))
 	}
@@ -206,12 +206,12 @@ func AddFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
 	if !found {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Fib entry configured for a nonexisting bridge domain"))
 	}
-	// If FIB with the same MAC address exists, remove it first
+	// If FIB with the same MAC address exists, remove it first.
 	found, key, _ := utils.GetFibEntry(endpoints, label, fib.BdName, fib.PhysAddress)
 	if found {
 		utils.DeleteFibDataFromDb(db, key)
 	}
-	// Create new FIB entry
+	// Create new FIB entry.
 	fibToAdd := new(l2.FibTableEntries_FibTableEntry)
 	fibToAdd.PhysAddress = fib.PhysAddress
 	fibToAdd.BridgeDomain = fib.BdName
@@ -227,7 +227,7 @@ func AddFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
 	utils.WriteFibDataToDb(db, key, fibToAdd)
 }
 
-// DelFibEntry from the FIB table
+// DelFibEntry from the FIB table.
 func DelFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
 	db, err := utils.GetDbForOneAgent(endpoints, label)
 	if err != nil {
@@ -237,12 +237,12 @@ func DelFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
 	utils.DeleteFibDataFromDb(db, key)
 }
 
-// AddBridgeDomainNameFlag adds 'name' flag to the common fields
+// AddBridgeDomainNameFlag adds 'name' flag to the common fields.
 func AddBridgeDomainNameFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&bdCommonFields.Name, "name", "n", "", "Bridge domain name")
 }
 
-// AddBridgeDomainFlags adds all bridge domain flags
+// AddBridgeDomainFlags adds all bridge domain flags.
 func AddBridgeDomainFlags(cmd *cobra.Command) {
 	AddBridgeDomainNameFlag(cmd)
 	cmd.Flags().BoolVarP(&bdCommonFields.Flood, "flood", "", false, "Enable/disable bcast/mcast flooding ")

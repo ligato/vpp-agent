@@ -16,6 +16,7 @@ package ifaceidx
 
 import (
 	"fmt"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logroot"
@@ -24,8 +25,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
-// Cache the network interfaces of a particular agent by watching (ETCD or different transport)
-// Beware: the indexes in cache do not correspond to the real indexes.
+// Cache the network interfaces of a particular agent by watching (ETCD or different transport).
+// Beware: the indices in cache do not correspond with the real indices.
 func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) SwIfIndex {
 	resyncName := fmt.Sprintf("iface-cache-%s-%s", caller, watcher)
 	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))

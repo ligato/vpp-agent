@@ -20,7 +20,7 @@ import (
 	"unicode/utf8"
 )
 
-// PfxStack is helper struct while creating tree output
+// PfxStack is helper struct while creating tree output.
 type PfxStack struct {
 	Entries    []PfxStackEntry
 	Spaces     int
@@ -29,13 +29,13 @@ type PfxStack struct {
 	LastDash   string
 }
 
-// PfxStackEntry represents entry in prefix stack entry list
+// PfxStackEntry represents entry in prefix stack entry list.
 type PfxStackEntry struct {
 	Preamble string
 	Last     bool
 }
 
-// GetPrefix returns prefix as a sum of preambles
+// GetPrefix returns prefix as a sum of preambles.
 func (stack *PfxStack) GetPrefix() string {
 	var pfx = ""
 	for _, se := range stack.Entries {
@@ -52,7 +52,7 @@ func (stack *PfxStack) SetLast() {
 }
 
 // Push increases the current prefix stack level (i.e. it makes the prefix
-// stack longer. If the list at the current level continues (i.e. the
+// stack longer). If the list at the current level continues (i.e. the
 // list element is not the Last element), the current prefix element
 // is replaced with a vertical bar (MiddleDash) icon. If the current
 // element is the Last element of a list, the current prefix element
@@ -72,16 +72,16 @@ func (stack *PfxStack) Push() {
 		}
 
 	}
-	// Add new entry at the top of the prefix stack
+	// Add new entry at the top of the prefix stack.
 	stack.Entries = append(stack.Entries, PfxStackEntry{
 		Preamble: stack.GetPreamble(stack.FirstDash),
 		Last:     false})
 }
 
 // Pop increases the current prefix stack level (i.e. it make the
-// prefix stack shorter. If after Pop the element at the top of the
-// prefix stack is not the the Last element on a list, it's replaced
-// by the list element (FirstDash) icon.
+// prefix stack shorter). If the element at the top of the
+// prefix stack is not the the Last element on a list after Pop, it's replaced
+// with the list element (FirstDash) icon.
 func (stack *PfxStack) Pop() {
 	stack.Entries = stack.Entries[:len(stack.Entries)-1]
 	if !stack.Entries[len(stack.Entries)-1].Last {

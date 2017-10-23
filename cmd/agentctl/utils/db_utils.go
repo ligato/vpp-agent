@@ -29,97 +29,97 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
-// VppMetaData defines the Etcd metadata
+// VppMetaData defines the etcd metadata.
 type VppMetaData struct {
 	Rev int64
 	Key string
 }
 
 // InterfaceWithMD contains a data record for interface and its
-// Etcd metadata
+// etcd metadata.
 type InterfaceWithMD struct {
 	Config *IfConfigWithMD
 	State  *IfStateWithMD
 }
 
 // IfConfigWithMD contains a data record for interface configuration
-// and its Etcd metadata
+// and its etcd metadata.
 type IfConfigWithMD struct {
 	Metadata  VppMetaData
 	Interface *interfaces.Interfaces_Interface
 }
 
-// IfStateWithMD contains a data record for interface State and its
-// Etcd metadata
+// IfStateWithMD contains a data record for interface state and its
+// etcd metadata.
 type IfStateWithMD struct {
 	Metadata       VppMetaData
 	InterfaceState *interfaces.InterfacesState_Interface
 }
 
 // InterfaceErrorWithMD contains a data record for interface errors and its
-// Etcd metadata
+// etcd metadata.
 type InterfaceErrorWithMD struct {
 	VppMetaData
 	InterfaceErrorList []*interfaces.InterfaceErrors_Interface
 }
 
 // BridgeDomainErrorWithMD contains a data record for bridge domain errors and its
-// Etcd metadata
+// etcd metadata.
 type BridgeDomainErrorWithMD struct {
 	VppMetaData
 	BdErrorList []*l2.BridgeDomainErrors_BridgeDomain
 }
 
-// BdWithMD contains a Bridge Domain data record and its Etcd
-// metadata
+// BdWithMD contains a Bridge Domain data record and its etcd
+// metadata.
 type BdWithMD struct {
 	Config *BdConfigWithMD
 	State  *BdStateWithMD
 }
 
-// BdConfigWithMD contains a Bridge Domain config data record and its Etcd
-// metadata
+// BdConfigWithMD contains a Bridge Domain config data record and its etcd
+// metadata.
 type BdConfigWithMD struct {
 	Metadata     VppMetaData
 	BridgeDomain *l2.BridgeDomains_BridgeDomain
 }
 
-// BdStateWithMD contains a Bridge Domain state data record and its Etcd
-// metadata
+// BdStateWithMD contains a Bridge Domain state data record and its etcd
+// metadata.
 type BdStateWithMD struct {
 	Metadata          VppMetaData
 	BridgeDomainState *l2.BridgeDomainState_BridgeDomain
 }
 
-// FibTableWithMD contains a FIB table data record and its Etcd
-// metadata
+// FibTableWithMD contains an FIB table data record and its etcd
+// metadata.
 type FibTableWithMD struct {
 	VppMetaData
 	FibTable []*l2.FibTableEntries_FibTableEntry
 }
 
 // XconnectWithMD contains an l2 cross-Connect data record and its
-// Etcd metadata
+// etcd metadata.
 type XconnectWithMD struct {
 	VppMetaData
 	*l2.XConnectPairs_XConnectPair
 }
 
 // StaticRoutesWithMD contains a static route data record and its
-// Etcd metadata
+// etcd metadata.
 type StaticRoutesWithMD struct {
 	VppMetaData
 	Routes []*l3.StaticRoutes_Route
 }
 
-// VppStatusWithMD contains a VPP Status data record and its Etcd
-// metadata
+// VppStatusWithMD contains a VPP Status data record and its etcd
+// metadata.
 type VppStatusWithMD struct {
 	VppMetaData
 	status.AgentStatus
 }
 
-// VppData defines a structure to hold all Etcd data records (of all
+// VppData defines a structure to hold all etcd data records (of all
 // types) for one VPP.
 type VppData struct {
 	Interfaces         map[string]InterfaceWithMD
@@ -134,11 +134,11 @@ type VppData struct {
 }
 
 // EtcdDump is a map of VppData records. It constitutes a temporary
-// storage for data retrieved from Etcd. "Temporary" means during
-// the execution of an agentctl command. Every command first reads
-// data from Etcd, then processes it, and finally either outputs
+// storage for data retrieved from etcd. "Temporary" means during
+// the execution of an agentctl command. Every command reads
+// data from etcd first, then processes it, and finally either outputs
 // the processed data to the user or updates one or more data records
-// in Etcd.
+// in etcd.
 type EtcdDump map[string]*VppData
 
 const (
@@ -146,7 +146,7 @@ const (
 )
 
 // NewEtcdDump returns a new instance of the temporary storage
-// that will hold data retrieved from Etcd.
+// that will hold data retrieved from etcd.
 func NewEtcdDump() EtcdDump {
 	return make(EtcdDump)
 }
@@ -158,7 +158,7 @@ func (ed EtcdDump) CreateEmptyRecord(key string) {
 	ed[label] = newVppDataRecord()
 }
 
-// ReadDataFromDb reads a data record from Etcd, parses it according to
+// ReadDataFromDb reads a data record from etcd, parses it according to
 // the expected record type and stores it in the EtcdDump temporary
 // storage. A record is identified by a Key.
 //
@@ -390,7 +390,7 @@ func readDataFromDb(db keyval.ProtoBroker, key string, obj proto.Message) (bool,
 	return found, rev, nil
 }
 
-// DeleteDataFromDb deletes the specified Key from the database, if
+// DeleteDataFromDb deletes the specified Key from the database if
 // the Key matches both the labelFilter and the dataFilter.
 //
 // The function returns an error if the etcd client encountered an

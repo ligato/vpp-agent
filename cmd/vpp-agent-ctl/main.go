@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // package vpp-agent-ctl implements the vpp-agent-ctl test tool for testing
-// of VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
+// VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
 // be used to demonstrate the usage of VPP Agent plugins and their APIs.
 package main
 

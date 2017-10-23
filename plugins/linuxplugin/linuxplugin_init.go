@@ -37,7 +37,7 @@ import (
 // PluginID used in the Agent Core flavors
 const PluginID core.PluginName = "linuxplugin"
 
-// Plugin implements Plugin interface, therefore it can be loaded with other plugins
+// Plugin implements Plugin interface, therefore it can be loaded with other plugins.
 type Plugin struct {
 	Deps
 
@@ -62,23 +62,23 @@ type Plugin struct {
 
 	enableStopwatch bool
 
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups injected dependencies of plugin
+// so that they do not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
 }
 
-// LinuxConfig holds the linuxplugin configuration
+// LinuxConfig holds the linuxplugin configuration.
 type LinuxConfig struct {
 	Stopwatch bool `json:"Stopwatch"`
 }
 
-// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
 // interface indexes.
 func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return plugin.ifIndexes
@@ -96,7 +96,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 	return plugin.rtIndexes
 }
 
-// Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
+// Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing Linux interface plugin")
 
@@ -119,11 +119,11 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
 
-	// create plugin context, save cancel function into the plugin handle
+	// Create plugin context and save cancel function into the plugin handle.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 
-	// run event handler go routines
+	// Run event handler go routines
 	go plugin.watchEvents(ctx)
 
 	err = plugin.initIF()
@@ -207,7 +207,7 @@ func (plugin *Plugin) AfterInit() error {
 	return nil
 }
 
-// Close cleans up the resources
+// Close cleans up the resources.
 func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()

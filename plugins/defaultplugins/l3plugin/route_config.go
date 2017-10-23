@@ -48,11 +48,11 @@ type RouteConfigurator struct {
 	Stopwatch     *measure.Stopwatch // timer used to measure and store time
 }
 
-// Init members (channels...) and start go routines
+// Init members (channels...) and start go routines.
 func (plugin *RouteConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L3 plugin")
 
-	// Init VPP API channel
+	// Init VPP API channel.
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
@@ -66,20 +66,20 @@ func (plugin *RouteConfigurator) Init() (err error) {
 	return nil
 }
 
-// ConfigureRoute process the NB config and propagates it to bin api calls
+// ConfigureRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.Log.Infof("Creating new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
-	// Validate VRF index from key and it's value in data
+	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
-	// Transform route data
+	// Transform route data.
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
 	plugin.Log.Debugf("adding route: %+v", route)
-	// Create and register new route
+	// Create and register new route.
 	if route != nil {
 		err := vppcalls.VppAddRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 		if err != nil {
@@ -94,19 +94,19 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 	return nil
 }
 
-// ModifyRoute process the NB config and propagates it to bin api calls
+// ModifyRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-	// Validate old route data Vrf
+	// Validate old route data Vrf.
 	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
 		return err
 	}
-	// Transform old route data
+	// Transform old route data.
 	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
-	// Remove and unregister old route
+	// Remove and unregister old route.
 	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
@@ -119,16 +119,16 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		plugin.Log.Warnf("Unregister failed, old route %v not found", oldRouteIdentifier)
 	}
 
-	// Validate new route data Vrf
+	// Validate new route data Vrf.
 	if err := plugin.validateVrfFromKey(newConfig, vrfFromKey); err != nil {
 		return err
 	}
-	// Transform new route data
+	// Transform new route data.
 	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
-	// Create and register new route
+	// Create and register new route.
 	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
@@ -141,14 +141,14 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	return nil
 }
 
-// DeleteRoute process the NB config and propagates it to bin api calls
+// DeleteRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
-	// Validate VRF index from key and it's value in data
+	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
-	// Transform route data
+	// Transform route data.
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
@@ -157,7 +157,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 		return nil
 	}
 	plugin.Log.Debugf("deleting route: %+v", route)
-	// Remove and unregister route
+	// Remove and unregister route.
 	err = vppcalls.VppDelRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
 	if err != nil {
 		return err
@@ -202,12 +202,12 @@ func (plugin *RouteConfigurator) checkMsgCompatibility() error {
 	return err
 }
 
-// Close GOVPP channel
+// Close GOVPP channel.
 func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// Creates unique identifier which serves as a name in name to index mapping
+// Create unique identifier which serves as a name in name-to-index mapping.
 func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
 }

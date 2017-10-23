@@ -20,9 +20,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Can be used to put bridge domain configuration to ETCD. This command can be used with attribute flags
+// 'putBridgeDomain' command can be used to put bridge domain configuration to etcd. This command can be used with attribute flags
 // (forward, learn, etc.) or to manipulate inner BD configuration (attach or remove interfaces, add or remove
-// ARP table or FIB table entries)
+// ARP table or FIB table entries).
 var putBridgeDomainCommand = &cobra.Command{
 	Use:        "bridge-domain -l <agent-label> -n <bd-name>",
 	Aliases:    []string{"b", "br", "bd"},
@@ -54,9 +54,9 @@ $ agentctl p b -l <agent-label> -n <bd-name>
 	},
 }
 
-// Removes bridge domain including ARP table and all attached interfaces.
+// 'delBridgeDomain' command removes bridge domain including ARP table and all attached interfaces.
 // Note: FIB table is displayed outside of the removed bridge domain, so all related
-// FIB entries will stay in the config
+// FIB entries will stay in the config.
 var delBridgeDomainCommand = &cobra.Command{
 	Use:        "bridge-domain -l <agent-label> -n <bd-name>",
 	Aliases:    []string{"b", "br", "bd"},
@@ -79,7 +79,7 @@ $ agentctl d b -l <agent-label> -n <bd-name>
 	},
 }
 
-// The command is used to add or remove interface in bridge domain
+// 'l2Interface' command is used to add or remove interface in bridge domain.
 var l2InterfaceCommand = &cobra.Command{
 	Use:        "interface -l <agent-label> -n <bd-name> -i<interface-name>",
 	Aliases:    []string{"i", "if", "int"},
@@ -115,7 +115,7 @@ $ agentctl p b i -l <agent-label> -n <bd-name> -i <interface-name> -D
 	},
 }
 
-// The command is used to add or remove ARP table entry in bridge domain
+// 'l2ArpEntry' command is used to add or remove ARP table entry in bridge domain.
 var l2ArpEntryCommand = &cobra.Command{
 	Use:        "arp -l <agent-label> -n <bd-name> -i<ip-address>",
 	Aliases:    []string{"a", "ar"},
@@ -149,7 +149,7 @@ $ agentctl p b a -l <agent-label> -n <bd-name> -i <arp-ip> -D
 	},
 }
 
-// The command is used to add or remove FIB entry in the FIB table
+// 'l2FibEntry' command is used to add or remove FIB entry in the FIB table.
 var l2FibEntryCommand = &cobra.Command{
 	Use:        "fib -l <agent-label> -n <bd-name> -i<mac-address>",
 	Aliases:    []string{"f", "fi"},

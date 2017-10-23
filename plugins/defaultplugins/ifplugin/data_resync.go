@@ -40,7 +40,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		}
 	}()
 
-	// Step 0: Dump actual state of the VPP
+	// Step 0: Dump current state of the VPP
 	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
 	if err != nil {
 		return err
