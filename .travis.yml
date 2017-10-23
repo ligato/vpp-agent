@@ -12,7 +12,8 @@ cache:
     - $HOME/build-cache
 
 before_install:
-  - go get -v github.com/golang/lint/golint
+  - go get -u -f "github.com/alecthomas/gometalinter"
+  - gometalinter --install
   - go get github.com/mattn/goveralls
   - sudo ./scripts/build-vpp.sh
   - sudo apt-get update
