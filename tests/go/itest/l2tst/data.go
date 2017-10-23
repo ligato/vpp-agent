@@ -1,4 +1,4 @@
-// Package testing provides tools and input data for unit testing of the
+// Package l2tst provides tools and input data for unit testing of the
 // l2plugin. What remains to be defined are scenarios.
 package l2tst
 
