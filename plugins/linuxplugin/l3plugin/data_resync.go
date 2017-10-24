@@ -21,8 +21,9 @@ import (
 )
 
 // Resync configures an initial set of ARPs. Existing Linux ARPs are registered and potentially re-configured.
-func (plugin *LinuxArpConfigurator) Resync(interfaces []*l3.LinuxStaticArpEntries_ArpEntry) error {
+func (plugin *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_ArpEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC ARPs begin.")
+	var wasErr error
 	start := time.Now()
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -31,16 +32,29 @@ func (plugin *LinuxArpConfigurator) Resync(interfaces []*l3.LinuxStaticArpEntrie
 		}
 	}()
 
-	// todo implement
+	// Create missing arp entries and update existing ones
+	for _, entry := range arpEntries {
+		err := plugin.ConfigureLinuxStaticArpEntry(entry)
+		if err != nil {
+			wasErr = err
+		}
+	}
+
+	// Dump pre-existing not managed arp entries
+	err := plugin.LookupLinuxArpEntries()
+	if err != nil {
+		wasErr = err
+	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC ARPs end. ")
 
-	return nil
+	return wasErr
 }
 
 // Resync configures an initial set of static routes. Existing Linux static routes are registered and potentially re-configured.
-func (plugin *LinuxRouteConfigurator) Resync(interfaces []*l3.LinuxStaticRoutes_Route) error {
+func (plugin *LinuxRouteConfigurator) Resync(routes []*l3.LinuxStaticRoutes_Route) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC static routes begin.")
+	var wasErr error
 	start := time.Now()
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -49,9 +63,36 @@ func (plugin *LinuxRouteConfigurator) Resync(interfaces []*l3.LinuxStaticRoutes_
 		}
 	}()
 
-	// todo implement
+	// Create missing routes and update existing ones
+	var defaultEntries []*l3.LinuxStaticRoutes_Route
+	for _, entry := range routes {
+		// if default entry is found, store it and configure as the last one
+		if entry.Default {
+			defaultEntries = append(defaultEntries, entry)
+			continue
+		}
+		err := plugin.ConfigureLinuxStaticRoute(entry)
+		if err != nil {
+			wasErr = err
+		}
+	}
+	// configure default entries if there are some
+	if len(defaultEntries) != 0 {
+		for _, defEntry := range defaultEntries {
+			err := plugin.ConfigureLinuxStaticRoute(defEntry)
+			if err != nil {
+				wasErr = err
+			}
+		}
+	}
+
+	// Dump pre-existing not managed arp entries
+	err := plugin.LookupLinuxRoutes()
+	if err != nil {
+		wasErr = err
+	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC static routes end. ")
 
-	return nil
+	return wasErr
 }

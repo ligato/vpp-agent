@@ -108,9 +108,9 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	err = linuxcalls.AddArpEntry(arpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("add-arp-entry", plugin.Stopwatch))
 
 	// Register created ARP entry
-	plugin.arpIndexes.RegisterName(arpEntry.Name, plugin.ArpIdxSeq, nil)
+	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.ArpIdxSeq, nil)
 	plugin.ArpIdxSeq++
-	plugin.Log.Debug("ARP entry %v registered", arpEntry.Name)
+	plugin.Log.Debug("ARP entry %v registered as %v", arpEntry.Name, arpIdentifier(neigh))
 
 	return err
 }
@@ -219,7 +219,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	defer revertNs()
 
 	// Read all ARP entries configured for interface
-	entries, err := linuxcalls.ReadArpEntry(int(idx), plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
+	entries, err := linuxcalls.ReadArpEntries(int(idx), plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	// Remove the ARP entry from the interface namespace
 	err = linuxcalls.DeleteArpEntry(arpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("del-arp-entry", plugin.Stopwatch))
 
-	_, _, found = plugin.arpIndexes.UnregisterName(arpEntry.Name)
+	_, _, found = plugin.arpIndexes.UnregisterName(arpIdentifier(neigh))
 	if !found {
 		plugin.Log.Warnf("Attempt to unregister non-existing ARP entry %v", arpEntry.Name)
 	} else {
@@ -248,6 +248,29 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	}
 
 	return err
+}
+
+// LookupLinuxArpEntries reads all ARP entries from all interfaces and registers them if needed
+func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
+	plugin.Log.Infof("Browsing Linux ARP entries")
+
+	// Set interface index to 0 reads arp entries from all of the interfaces
+	entries, err := linuxcalls.ReadArpEntries(0, plugin.Log, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		plugin.Log.WithField("interface", entry.LinkIndex).Debugf("Found new static linux ARP entry")
+		_, _, found := plugin.arpIndexes.LookupIdx(arpIdentifier(&entry))
+		if !found {
+			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, nil)
+			plugin.ArpIdxSeq++
+			plugin.Log.Debug("ARP entry registered as %v", arpIdentifier(&entry))
+		}
+	}
+
+	return nil
 }
 
 // arpStateParser returns representation of neighbor unreachability detection index as defined in netlink
@@ -280,4 +303,8 @@ func compareARPLinkIdxAndIP(arp1 *netlink.Neigh, arp2 *netlink.Neigh) bool {
 		return false
 	}
 	return true
+}
+
+func arpIdentifier(arp *netlink.Neigh) string {
+	return fmt.Sprintf("iface%v-%v-%v", arp.LinkIndex, arp.IP.String(), arp.HardwareAddr)
 }
