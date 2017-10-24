@@ -42,7 +42,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.Deps.Log.Debug("VPP REST API Plugin is up and running !!")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
-	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
+	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/fibs", plugin.fibTableEntriesGetHandler, "GET")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/xconnectpairs", plugin.xconnectPairsGetHandler, "GET")
 	//plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
