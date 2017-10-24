@@ -102,6 +102,10 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	err = linuxcalls.AddStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch))
 
+	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.RouteIdxSeq, nil)
+	plugin.RouteIdxSeq++
+	plugin.Log.Debugf("Route %v registered", route.Name)
+
 	return err
 }
 
@@ -169,7 +173,7 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	defer revertNs()
 
 	// Remove old route and create a new one
-	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err!= nil {
+	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err != nil {
 		return err
 	}
 	return plugin.DeleteLinuxStaticRoute(oldRoute)
@@ -222,7 +226,36 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	defer revertNs()
 
 	err = linuxcalls.DeleteStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("del-linux-route", plugin.Stopwatch))
+
+	_, _, found := plugin.rtIndexes.UnregisterName(routeIdentifier(netLinkRoute))
+	if !found {
+		plugin.Log.Warnf("Attempt to unregister non-registered route %v", route.Name)
+	}
+	plugin.Log.Debugf("Route %v unregistered", route.Name)
+
 	return err
+}
+
+// LookupLinuxRoutes reads all routes and registers them if needed
+func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
+	plugin.Log.Infof("Browsing Linux routes")
+
+	// read all routes
+	routes, err := linuxcalls.ReadStaticRoutes(nil, 0, plugin.Log, nil)
+	if err != nil {
+		return err
+	}
+	for _, route := range routes {
+		plugin.Log.WithField("interface", route.LinkIndex).Debugf("Found new static linux route")
+		_, _, found := plugin.rtIndexes.LookupIdx(routeIdentifier(&route))
+		if !found {
+			plugin.rtIndexes.RegisterName(routeIdentifier(&route), plugin.RouteIdxSeq, nil)
+			plugin.RouteIdxSeq++
+			plugin.Log.Debug("route registered as %v", routeIdentifier(&route))
+		}
+	}
+
+	return nil
 }
 
 // Create default route object with gateway address. Destination address has to be set in such a case
@@ -335,4 +368,11 @@ func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoute
 		plugin.Log.Infof("Unknown scope type, setting to default (link): %v", scope.Type)
 		return netlink.SCOPE_LINK
 	}
+}
+
+func routeIdentifier(route *netlink.Route) string {
+	if route.Dst == nil {
+		return fmt.Sprintf("default-iface%v-table%v-%v", route.LinkIndex, route.Table, route.Gw.String())
+	}
+	return fmt.Sprintf("dst%v-iface%v-table%v-%v", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
 }

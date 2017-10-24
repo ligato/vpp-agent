@@ -64,8 +64,8 @@ func DeleteArpEntry(name string, arpEntry *netlink.Neigh, log logging.Logger, ti
 	return netlink.NeighDel(arpEntry)
 }
 
-// ReadArpEntry reads all configured static ARP entries for given interface
-func ReadArpEntry(interfaceIdx int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Neigh, error) {
+// ReadArpEntries reads all configured static ARP entries for given interface
+func ReadArpEntries(interfaceIdx int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Neigh, error) {
 	log.Debugf("Reading ARP entries")
 	start := time.Now()
 	defer func() {
