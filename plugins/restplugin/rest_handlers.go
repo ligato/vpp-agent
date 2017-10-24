@@ -34,6 +34,8 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -47,7 +49,6 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 
@@ -59,6 +60,8 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -72,7 +75,6 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 
@@ -84,6 +86,8 @@ func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) h
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -97,7 +101,6 @@ func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) h
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 
@@ -109,6 +112,8 @@ func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render)
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -122,7 +127,6 @@ func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render)
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 
@@ -134,6 +138,8 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -147,7 +153,6 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 
@@ -160,6 +165,8 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 
 		// create an API channel
 		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -173,7 +180,6 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 				formatter.JSON(w, http.StatusOK, res)
 			}
 		}
-		defer ch.Close()
 	}
 }
 */
@@ -216,6 +222,8 @@ func (plugin *RESTAPIPlugin) interfaceACLPostHandler(formatter *render.Render) h
 			if err != nil {
 				// create an API channel
 				ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+				defer ch.Close()
+
 				if err != nil {
 					plugin.Deps.Log.Errorf("Error: %v", err)
 					formatter.JSON(w, http.StatusInternalServerError, err)
@@ -229,7 +237,6 @@ func (plugin *RESTAPIPlugin) interfaceACLPostHandler(formatter *render.Render) h
 						formatter.JSON(w, http.StatusOK, res)
 					}
 				}
-				defer ch.Close()
 			}
 		} else {
 			formatter.JSON(w, http.StatusBadRequest, "swIndex parameter not found")
@@ -269,6 +276,8 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 			plugin.Deps.Log.WithField("VPPCLI command", command).Infof("Received command: %v", command)
 
 			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+			defer ch.Close()
+
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error creating channel: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, err)
@@ -292,7 +301,6 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 
 				formatter.JSON(w, http.StatusOK, string(reply.Reply))
 			}
-			defer ch.Close()
 		} else {
 			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
 		}
