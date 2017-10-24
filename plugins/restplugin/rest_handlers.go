@@ -178,8 +178,8 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 }
 */
 
-//interfaceAclPostHandler - used to get acl configuration for a particular interface
-func (plugin *RESTAPIPlugin) interfaceAclPostHandler(formatter *render.Render) http.HandlerFunc {
+//interfaceACLPostHandler - used to get acl configuration for a particular interface
+func (plugin *RESTAPIPlugin) interfaceACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Deps.Log.Info("Getting acl configuration of interface")
