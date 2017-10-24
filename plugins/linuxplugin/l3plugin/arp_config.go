@@ -30,6 +30,11 @@ import (
 	"net"
 )
 
+const (
+	noIfaceIdxFilter = 0
+	noFamilyFilter   = 0
+)
+
 // LinuxArpConfigurator watches for any changes in the configuration of static ARPs as modelled by the proto file
 // "model/l3/l3.proto" and stored in ETCD under the key "/vnf-agent/{vnf-agent}/linux/config/v1/arp".
 // Updates received from the northbound API are compared with the Linux network configuration and differences
@@ -92,6 +97,9 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 
 	// Set ARP entry state
 	neigh.State = arpStateParser(arpEntry.State)
+
+	// Set ip family
+	neigh.Family = int(arpEntry.Family)
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
@@ -169,6 +177,9 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	// Set ARP entry state
 	neigh.State = arpStateParser(newArpEntry.State)
 
+	// Set ip family
+	neigh.Family = int(newArpEntry.Family)
+
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
 	arpNs := linuxcalls.ToGenericArpNs(newArpEntry.Namespace)
@@ -219,7 +230,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	defer revertNs()
 
 	// Read all ARP entries configured for interface
-	entries, err := linuxcalls.ReadArpEntries(int(idx), plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
+	entries, err := linuxcalls.ReadArpEntries(int(idx), noFamilyFilter, plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -254,8 +265,8 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 	plugin.Log.Infof("Browsing Linux ARP entries")
 
-	// Set interface index to 0 reads arp entries from all of the interfaces
-	entries, err := linuxcalls.ReadArpEntries(0, plugin.Log, nil)
+	// Set interface index and family to 0 reads all arp entries from all of the interfaces
+	entries, err := linuxcalls.ReadArpEntries(noIfaceIdxFilter, noFamilyFilter, plugin.Log, nil)
 	if err != nil {
 		return err
 	}

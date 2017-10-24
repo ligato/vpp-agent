@@ -241,7 +241,7 @@ func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
 	plugin.Log.Infof("Browsing Linux routes")
 
 	// read all routes
-	routes, err := linuxcalls.ReadStaticRoutes(nil, 0, plugin.Log, nil)
+	routes, err := linuxcalls.ReadStaticRoutes(nil, noFamilyFilter, plugin.Log, nil)
 	if err != nil {
 		return err
 	}

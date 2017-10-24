@@ -63,6 +63,7 @@ func DeleteStaticRoute(name string, route *netlink.Route, log logging.Logger, ti
 }
 
 // ReadStaticRoutes reads static routes
+// // <link> and <family> parameters works as filters, if they are set to nil/zero values, all routes are returned
 func ReadStaticRoutes(link netlink.Link, family int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Route, error) {
 	log.Debug("Reading static routes")
 	start := time.Now()

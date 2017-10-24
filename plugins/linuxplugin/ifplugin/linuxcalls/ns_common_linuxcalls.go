@@ -47,7 +47,7 @@ func init() {
 	defaultNs, _ = netns.Get()
 }
 
-// Namespace is a generic representation of typed namespace (interface, arp)
+// Namespace is a generic representation of typed namespace (interface, arp, etc...)
 type Namespace struct {
 	Type         int32
 	Pid          uint32

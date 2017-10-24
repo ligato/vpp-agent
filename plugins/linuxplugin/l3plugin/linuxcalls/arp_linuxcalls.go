@@ -33,8 +33,6 @@ func AddArpEntry(name string, arpEntry *netlink.Neigh, log logging.Logger, timeL
 		}
 	}()
 
-	arpEntry.Family = 0 // todo configure family?
-
 	return netlink.NeighAdd(arpEntry)
 }
 
@@ -65,7 +63,8 @@ func DeleteArpEntry(name string, arpEntry *netlink.Neigh, log logging.Logger, ti
 }
 
 // ReadArpEntries reads all configured static ARP entries for given interface
-func ReadArpEntries(interfaceIdx int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Neigh, error) {
+// <interfaceIdx> and <family> parameters works as filters, if they are set to zero, all arp entries are returned
+func ReadArpEntries(interfaceIdx int, family int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Neigh, error) {
 	log.Debugf("Reading ARP entries")
 	start := time.Now()
 	defer func() {
@@ -74,5 +73,5 @@ func ReadArpEntries(interfaceIdx int, log logging.Logger, timeLog measure.StopWa
 		}
 	}()
 
-	return netlink.NeighList(interfaceIdx, 0) // todo fixed family index?
+	return netlink.NeighList(interfaceIdx, family)
 }
