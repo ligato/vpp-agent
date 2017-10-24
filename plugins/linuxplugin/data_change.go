@@ -46,7 +46,7 @@ func (plugin *Plugin) dataChangeArp(diff bool, value *l3.LinuxStaticArpEntries_A
 	return plugin.arpConfigurator.ConfigureLinuxStaticArpEntry(value)
 }
 
-// DataChangeRoute propagates data change to the ifConfigurator
+// DataChangeRoute propagates data change to the routeConfigurator
 func (plugin *Plugin) dataChangeRoute(diff bool, value *l3.LinuxStaticRoutes_Route, prevValue *l3.LinuxStaticRoutes_Route,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeRoute ", diff, " ", changeType, " ", value, " ", prevValue)
