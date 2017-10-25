@@ -48,6 +48,11 @@ func RouteKeyPrefix() string {
 	return RoutesPrefix
 }
 
+// APRKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance
+func APRKeyPrefix() string {
+	return ARPPrefix
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
@@ -73,3 +78,15 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 	}
 	return false, "", "", 0, ""
 }
+
+// ARPKey returns the key to store ARP entry
+func ARPKey(ifs string, ipAddr string) string {
+	key := ARPPrefix
+	key = strings.Replace(key, "{if}", ifs, 1)
+	key = strings.Replace(key, "{ip}", ipAddr, 1)
+	return key
+}
+
+//func ParseARPKey(key string) (isARPKey bool, ifs string, ipAddr string) {
+//  if (strings.HasPrefix(key, ))
+//}
