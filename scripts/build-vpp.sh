@@ -5,15 +5,15 @@ VPP_CACHE_DIR=$HOME/build-cache/vpp
 VPP_COMMIT=`git submodule status vpp | awk '{print $1}'`
 VPP_IMG_TAG=`echo ${VPP_COMMIT} | cut -c1-7`
 
-IMG_NAME=ligato/vppdeb:${VPP_IMG_TAG}
+if [ -d "$VPP_CACHE_DIR" ] && [ ! -f ${VPP_CACHE_DIR}/vpp_*${VPP_IMG_TAG}*.deb ]; then
+    echo "Found different VPP version in cache, removing folderr"
+    rm -rf "$VPP_CACHE_DIR"
+fi
 
-#if [ -d "$VPP_CACHE_DIR" ] && [ ! -f ${VPP_CACHE_DIR}/vpp_*${VPP_IMG_TAG}*.deb ]; then
-#    echo "Found old VPP binaries, removing VPP cache folder"
-#    rm -rf "$VPP_CACHE_DIR"
-#fi
 
 if [ ! -d "$VPP_CACHE_DIR" ]; then
-    echo "Pulling fresh VPP binaries from image ${IMG_NAME}"
+    IMG_NAME=ligato/vppdeb:${VPP_IMG_TAG}
+    echo "Pulling VPP binaries (commit ${VPP_IMG_TAG})"
 
     docker pull ${IMG_NAME}
     id=$(docker create ${IMG_NAME})
@@ -49,7 +49,7 @@ if [ ! -d "$VPP_CACHE_DIR" ]; then
 #    mkdir $VPP_CACHE_DIR
 #    cp /tmp/vpp/build-root/*.deb $VPP_CACHE_DIR
 else
-    echo "Using cached VPP binaries from folder $VPP_CACHE_DIR (commit tag ${VPP_IMG_TAG})"
+    echo "Using cached VPP binaries from $VPP_CACHE_DIR (commit ${VPP_IMG_TAG})"
 fi
 
 # install VPP
