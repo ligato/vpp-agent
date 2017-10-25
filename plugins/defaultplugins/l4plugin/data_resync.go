@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/l4 --gogo_out=model/l4 model/l4/l4.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=bin_api
-
 package l4plugin
+
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+
+// Resync configures app namespaces to the empty VPP
+func (plugin *L4Configurator) Resync(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
+	return nil
+}

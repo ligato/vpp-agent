@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {
@@ -277,4 +278,17 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+}
+
+// DataChangeStaticRoute propagates data change to the routeConfigurator
+func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_AppNamespace, prevValue *l4.AppNamespaces_AppNamespace,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.l4Configurator.DeleteAppNamespace(prevValue)
+	} else if diff {
+		return plugin.l4Configurator.ModifyAppNamespace(value, prevValue)
+	}
+	return plugin.l4Configurator.ConfigureAppNamespace(value)
 }
