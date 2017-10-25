@@ -67,6 +67,13 @@ vpp_term: Show IP Fib
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib ${ip}
     [Return]           ${out}
 
+vpp_term: Show IP Fib Table
+    [Arguments]        ${node}    ${id}
+    [Documentation]    Show IP fib output for VRF table defined in input
+    Log Many           ${node}    ${id}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip fib table ${id}
+    [Return]           ${out}
+
 vpp_term: Show L2fib
     [Arguments]        ${node}
     Log Many           ${node}
@@ -95,7 +102,7 @@ vpp_term: Check Interface Presence
     ${ints}=           vpp_term: Show Hardware    ${node}
     ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
     Should Be Equal    ${result}    ${status}
-    
+
 vpp_term: Interface Is Created
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
@@ -110,7 +117,7 @@ vpp_term: Interface Exists
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
     vpp_term: Check Interface Presence    ${node}    ${mac}
-    
+
 vpp_term: Interface Not Exists
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
@@ -130,7 +137,7 @@ vpp_term: Check Interface UpDown Status
     Should Be Equal As Integers    ${enabled}    ${status}
 
 vpp_term: Get Interface IPs
-    [Arguments]          ${node}     ${interface} 
+    [Arguments]          ${node}     ${interface}
     Log Many             ${node}     ${interface}
     ${int_addr}=         vpp_term: Show Interfaces Address    ${node}    ${interface}
     Log                  ${int_addr}
@@ -173,4 +180,3 @@ vpp_term: Show Memif
     Log Many           ${node}    ${interface}
     ${out}=            vpp_term: Issue Command  ${node}   sh memif ${interface}
     [Return]           ${out}
-
