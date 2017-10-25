@@ -35,7 +35,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
 )
 
@@ -85,13 +85,13 @@ type Plugin struct {
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	swIfIndexes          ifaceidx.SwIfIndexRW
-	linuxIfIndexes       ifaceidx2.LinuxIfIndex
+	linuxIfIndexes       ifaceLinux.LinuxIfIndex
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
 	ifStateChan          chan *intf.InterfaceStateNotification
 	ifStateNotifications messaging.ProtoPublisher
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
-	linuxIfIdxWatchCh    chan ifaceidx2.LinuxIfIndexDto
+	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -161,7 +161,7 @@ type linuxpluginAPI interface {
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
-	GetLinuxIfIndexes() ifaceidx2.LinuxIfIndex
+	GetLinuxIfIndexes() ifaceLinux.LinuxIfIndex
 }
 
 // DPConfig holds the defaultpluigns configuration
@@ -226,7 +226,7 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
 	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
-	plugin.linuxIfIdxWatchCh = make(chan ifaceidx2.LinuxIfIndexDto, 100)
+	plugin.linuxIfIdxWatchCh = make(chan ifaceLinux.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
 	// create plugin context, save cancel function into the plugin handle
