@@ -18,8 +18,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.20.0.1",
-                        "source_network": "192.168.1.2"
+                        "destination_network": "10.20.1.0/24",
+                        "source_network": "192.168.1.2/32"
                     },
                     "tcp": {
                         "destination_port_range": {
