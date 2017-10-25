@@ -42,16 +42,15 @@ type StaticRouteIP struct {
 type NextHop struct {
 	OutgoingInterfaceSwIfIdx    uint32
 	OutgoingInterfaceConfigured bool
-	l3nb.StaticRoutes_Route_NextHops
 }
 
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*StaticRoutes, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch measure.StopWatchEntry) (map[uint32]*StaticRoutes, error) {
 	// IPFibDump time measurement
 	start := time.Now()
 	defer func() {
 		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l3ba.IPFibDump{}, time.Since(start))
+			stopwatch.LogTimeEntry(time.Since(start))
 		}
 	}()
 
@@ -109,8 +108,8 @@ func dumpStaticRouteDetails(routes map[uint32]*StaticRoutes, tableID uint32,
 	}
 	route := &StaticRouteIP{
 		StaticRoutes_Route: l3nb.StaticRoutes_Route{
-			VrfId:              tableID,
-			DestinationAddress: ipAddr,
+			VrfId:     tableID,
+			DstIpAddr: ipAddr,
 		},
 		NextHops: []*NextHop{},
 	}
@@ -127,11 +126,9 @@ func dumpStaticRouteDetails(routes map[uint32]*StaticRoutes, tableID uint32,
 		route.NextHops = append(route.NextHops, &NextHop{
 			OutgoingInterfaceSwIfIdx:    path.SwIfIndex,
 			OutgoingInterfaceConfigured: path.SwIfIndex < ^uint32(0),
-			StaticRoutes_Route_NextHops: l3nb.StaticRoutes_Route_NextHops{
-				Address:    nextHopAddr,
-				Weight:     path.Weight,
-				Preference: uint32(path.Preference),
-			},
 		})
+		route.NextHopAddr = nextHopAddr
+		route.Weight = uint32(path.Weight)
+		route.Preference = uint32(path.Preference)
 	}
 }
