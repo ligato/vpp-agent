@@ -69,7 +69,7 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch m
 			log.Error(err)
 			return nil, err
 		}
-		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 	}
 
 	// dump IPv6 l3 FIB
