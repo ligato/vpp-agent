@@ -49,6 +49,8 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC
+	ArpEntries []*l3.ArpTable_ArpTableEntry
 }
 
 // NewDataResyncReq is a constructor
@@ -62,7 +64,9 @@ func NewDataResyncReq() *DataResyncReq {
 		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
 		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
-		StaticRoutes:        []*l3.StaticRoutes_Route{}}
+		StaticRoutes:        []*l3.StaticRoutes_Route{},
+		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
+	}
 }
 
 // delegates full resync request
@@ -127,6 +131,9 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 		return err
 	}
+	if err = plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -162,11 +169,37 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
 	}
 	return req
+}
+
+func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			log.Warn("ARP RESYNC is not implemented")
+			_ = arpData.GetKey()
+			/*iface, ipAddr, macAddr, err := l3.ParseArpKey(key)
+			if err == nil {
+				numL3FIBs++
+				entry := &l3.ArpTable_ArpTableEntry{}
+				entry.Interface = iface
+				req.ArpEntries = append(req.ArpEntries, entry)
+			} else {
+				log.Warn("Resync: parsing ARP key failed:", err)
+				continue
+			}*/
+		}
+	}
+	return num
 }
 
 func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {

@@ -155,6 +155,23 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// TODO vrf not implemented yet
 			plugin.Log.Warn("VRFs are not supported yet")
 		}
+	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+		//iface, ipAddr, macAddr, err := l3.ParseArpKey(key)
+		_, _, _, err := l3.ParseArpKey(key)
+		if err != nil {
+			return false, err
+		}
+		var value, prevValue l3.ArpTable_ArpTableEntry
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeARP(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
+				return true, err
+			}
+		} else {
+			return false, err
+		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -237,6 +254,19 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 		return plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
 	}
 	return plugin.bdConfigurator.ConfigureBridgeDomain(value)
+}
+
+// dataChangeARP propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+	changeType datasync.PutDel, callback func(error)) error {
+	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.arpConfigurator.Delete(prevValue)
+	} else if diff {
+		return plugin.arpConfigurator.Diff(prevValue, value)
+	}
+	return plugin.arpConfigurator.Add(value)
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator
