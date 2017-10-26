@@ -16,68 +16,49 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
-// VppAddArpTerminationTableEntry adds ARP termination entry
-func VppAddArpTerminationTableEntry(bridgeDomainID uint32, mac string, ip string, log logging.Logger,
-	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	log.Info("Adding arp termination entry")
-	// BdIPMacAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+// VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain
+func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string,
+	log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	log.Info("Adding ARP termination entry")
 
-	parsedMac, errMac := net.ParseMAC(mac)
-	if errMac != nil {
-		return fmt.Errorf("error while parsing MAC address %v", mac)
-	}
-
-	// Convert ipv4 string to []byte
-	ipv4Octets := strings.Split(ip, ".")
-	var parsedIP []byte
-	for _, ipv4Octet := range ipv4Octets {
-		ipv4IntPart, err := strconv.ParseInt(ipv4Octet, 0, 32)
-		if err != nil {
-			return fmt.Errorf("unable to parse ip address %s", ip)
-		}
-		parsedIP = append(parsedIP, byte(ipv4IntPart))
-	}
-
-	req := &vpe.BdIPMacAddDel{}
-	req.BdID = bridgeDomainID
-	req.IPAddress = parsedIP
-	req.MacAddress = parsedMac
-	req.IsIpv6 = 0
-	req.IsAdd = 1
-
-	reply := &vpe.BdIPMacAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	err := callBdIPMacAddDel(true, bdID, mac, ip, vppChan, timeLog)
 	if err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("adding arp entry returned %d", reply.Retval)
-	}
-	log.WithFields(logging.Fields{"Bridge domain": bridgeDomainID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry added.")
+
+	log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).
+		Debug("ARP termination entry added")
 
 	return nil
 }
 
-// VppRemoveArpTerminationTableEntry removes ARP termination entry
+// VppRemoveArpTerminationTableEntry removes ARP termination entry from bridge domain
 func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger,
 	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	log.Info("'Deleting' arp entry")
+	log.Info("Removing ARP termination entry")
+
+	err := callBdIPMacAddDel(false, bdID, mac, ip, vppChan, timeLog)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).
+		Debug("ARP termination entry removed")
+
+	return nil
+}
+
+func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BdIPMacAddDel time measurement
 	start := time.Now()
 	defer func() {
@@ -86,37 +67,35 @@ func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log l
 		}
 	}()
 
-	parsedMac, errMac := net.ParseMAC(mac)
-	if errMac != nil {
-		return fmt.Errorf("error while parsing MAC address %v", mac)
-	}
-
-	// Convert ipv4 string to []byte
-	ipv4Octets := strings.Split(ip, ".")
-	var parsedIP []byte
-	for _, ipv4Octet := range ipv4Octets {
-		ipv4IntPart, err := strconv.ParseInt(ipv4Octet, 0, 32)
-		if err != nil {
-			return fmt.Errorf("unable to parse ip address %s", ip)
-		}
-		parsedIP = append(parsedIP, byte(ipv4IntPart))
-	}
-
-	req := &vpe.BdIPMacAddDel{}
-	req.BdID = bdID
-	req.MacAddress = parsedMac
-	req.IPAddress = parsedIP
-	req.IsAdd = 0
-
-	reply := &vpe.BdIPMacAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	macAddr, err := net.ParseMAC(mac)
 	if err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("deleting arp entry returned %d", reply.Retval)
+	ipAddr := []byte(net.ParseIP(ip).To4())
+	if ipAddr == nil {
+		return fmt.Errorf("invalid IP address: %q", ipAddr)
 	}
-	log.WithFields(logging.Fields{"bdID": bdID, "Mac": parsedMac, "Ip Address": ip}).Debug("Arp termination entry removed.")
+
+	req := &vpe.BdIPMacAddDel{
+		BdID:       bdID,
+		IPAddress:  ipAddr,
+		MacAddress: macAddr,
+		IsIpv6:     0,
+	}
+	if isAdd {
+		req.IsAdd = 1
+	} else {
+		req.IsAdd = 0
+	}
+
+	reply := &vpe.BdIPMacAddDelReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("vpp call %q returned: %d", reply.GetMessageName(), reply.Retval)
+	}
 
 	return nil
 }
