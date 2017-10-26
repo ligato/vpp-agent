@@ -62,6 +62,7 @@ The set of plugins in the VPP Agent is as follows:
 * [CN-Infra datasync][12] - data synchronization after HA events
 * [CN-Infra core][13] - lifecycle management of plugins (loading, 
   initialization, unloading)
+* [RESTAPI](plugins/restplugin) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
 
 ## Tools
 The VPP agent repository also contains tools for building and troubleshooting 
