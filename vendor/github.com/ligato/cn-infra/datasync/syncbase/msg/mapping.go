@@ -28,7 +28,7 @@ func DataMsgRequestToKVs(req *DataMsgRequest, keyPrefixes []string) map[string] 
 		for _, keyPrefix := range keyPrefixes {
 			if strings.HasPrefix(dataResync.Key, keyPrefix) {
 				kvs, found := ret[keyPrefix]
-				kv := syncbase.NewKeyValBytes(dataResync.Key, dataResync.Content, 0) /*TODO prev value*/
+				kv := syncbase.NewKeyValBytes(dataResync.Key, dataResync.Content, nil, 0)
 				if !found {
 					kvs = []datasync.KeyVal{kv}
 				} else {

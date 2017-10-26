@@ -133,7 +133,9 @@ endef
 # run test examples
 define test_examples
     @echo "# Testing examples"
-    @./scripts/test_examples.sh
+    @./scripts/test_examples/test_examples.sh
+		@echo "# Testing examples: reactions to disconnect/reconnect of plugins redis, cassandra ..."
+		@./scripts/test_examples/plugin_reconnect.sh
     @echo "# done"
 endef
 

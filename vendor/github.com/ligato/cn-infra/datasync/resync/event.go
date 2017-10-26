@@ -14,21 +14,21 @@
 
 package resync
 
-// Status status used in the events
+// Status used in the events.
 type Status string
 
-// Started means that the Resync has started
+// Started means that the Resync has started.
 const Started Status = "Started"
 
-// NotActive means that Resync has not started yet or it has been finished
+// NotActive means that Resync has not started yet or it has been finished.
 const NotActive Status = "NotActive"
 
-// StatusEvent is the base type that will be propagated to the channel
+// StatusEvent is the base type that will be propagated to the channel.
 type StatusEvent interface {
-	// Status() is used by the Plugin if it needs to Start resync
+	// Status() is used by the Plugin if it needs to Start resync.
 	ResyncStatus() Status
 
 	// Ack() is used by the Plugin to acknowledge that it processed this event.
-	// It is supposed to call this after the configuration was applied by the Plugin
+	// This is supposed to be called after the configuration was applied by the Plugin.
 	Ack()
 }

@@ -23,20 +23,20 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewProtoTxn is a constructor
+// NewProtoTxn is a constructor.
 func NewProtoTxn(commit func(map[string] /*key*/ datasync.ChangeValue) error) *ProtoTxn {
 	return &ProtoTxn{items: map[string] /*key*/ *ProtoTxnItem{}, commit: commit}
 }
 
-// ProtoTxn is a concurrent map of proto messages
-// The intent is to collect the user data and propagate them when commit happens
+// ProtoTxn is a concurrent map of proto messages.
+// The intent is to collect the user data and propagate them when commit happens.
 type ProtoTxn struct {
 	items  map[string] /*key*/ *ProtoTxnItem
 	access sync.Mutex
 	commit func(map[string] /*key*/ datasync.ChangeValue) error
 }
 
-//Put adds store operation into transaction
+//Put adds store operation into transaction.
 func (txn *ProtoTxn) Put(key string, data proto.Message) keyval.ProtoTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -46,7 +46,7 @@ func (txn *ProtoTxn) Put(key string, data proto.Message) keyval.ProtoTxn {
 	return txn
 }
 
-//Delete add delete operation into transaction
+//Delete adds delete operation into transaction.
 func (txn *ProtoTxn) Delete(key string) keyval.ProtoTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -56,7 +56,7 @@ func (txn *ProtoTxn) Delete(key string) keyval.ProtoTxn {
 	return txn
 }
 
-//Commit executes the transaction
+//Commit executes the transaction.
 func (txn *ProtoTxn) Commit() error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -73,13 +73,13 @@ func (txn *ProtoTxn) Commit() error {
 	return txn.commit(kvs)
 }
 
-// ProtoTxnItem is used in ProtoTxn
+// ProtoTxnItem is used in ProtoTxn.
 type ProtoTxnItem struct {
 	Data   proto.Message
 	Delete bool
 }
 
-// GetValue returns the value of the pair
+// GetValue returns the value of the pair.
 func (lazy *ProtoTxnItem) GetValue(out proto.Message) error {
 	if lazy.Data != nil {
 		proto.Merge(out, lazy.Data)

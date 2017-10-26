@@ -31,7 +31,7 @@ type Subscriber interface {
 // Intent of this API is to have a chance to react on error by triggering
 // RESYNC among registered plugins.
 type Reporter interface {
-	// ReportError is called by the Plugins when the binary api call was not successful.
+	// ReportError is called by Plugins when the binary api call was not successful.
 	// Based on that the Resync Orchestrator starts the Resync.
 	ReportError(name core.PluginName, err error)
 }

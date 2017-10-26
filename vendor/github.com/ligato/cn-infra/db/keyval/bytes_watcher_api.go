@@ -26,7 +26,8 @@ import (
 type BytesWatcher interface {
 	// Watch starts subscription for changes associated with the selected keys.
 	// Watch events will be delivered to callback (not channel) <respChan>.
-	Watch(respChan func(BytesWatchResp), keys ...string) error
+	// Channel <closeChan> can be used to close watching on respective key
+	Watch(respChan func(BytesWatchResp), closeChan chan string, keys ...string) error
 }
 
 // BytesWatchResp represents a notification about data change.

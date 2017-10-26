@@ -23,7 +23,7 @@ func NewDoneChannel(doneChan chan error) *DoneChannel {
 	return &DoneChannel{doneChan}
 }
 
-// DoneChannel is small reusable part that is embedded to other events using composition.
+// DoneChannel is a small reusable part that is embedded to other events using composition.
 // It implements datasync.CallbackResult.
 type DoneChannel struct {
 	DoneChan chan error
@@ -43,13 +43,13 @@ func (ev *DoneChannel) Done(err error) {
 	}
 }
 
-// DoneCallback is small reusable part that is embedded to other events using composition.
+// DoneCallback is a small reusable part that is embedded to other events using composition.
 // It implements datasync.CallbackResult.
 type DoneCallback struct {
 	Callback func(error)
 }
 
-// Done propagates error to the callback
+// Done propagates error to the callback.
 func (ev *DoneCallback) Done(err error) {
 	if ev.Callback != nil {
 		ev.Callback(err)
@@ -58,7 +58,7 @@ func (ev *DoneCallback) Done(err error) {
 	}
 }
 
-// AggregateDone can be reused to avoid repetitive code that triggers slice of events and waits until it is finished
+// AggregateDone can be reused to avoid repetitive code that triggers a slice of events and waits until it is finished.
 func AggregateDone(events []func(chan error), done chan error) {
 	partialDone := make(chan error, 5)
 	go collectDoneEvents(partialDone, done, len(events))

@@ -32,7 +32,6 @@ import (
 var dataBroker *BytesConnectionEtcd
 var dataBrokerErr *BytesConnectionEtcd
 var pluginDataBroker *BytesBrokerWatcherEtcd
-var pluginDataBrokerErr *BytesBrokerWatcherEtcd
 
 // Mock data broker err
 type MockKVErr struct {
@@ -142,8 +141,7 @@ func init() {
 	mockKvErr := &MockKVErr{}
 	dataBroker = &BytesConnectionEtcd{Logger: logroot.StandardLogger(), etcdClient: &clientv3.Client{KV: mockKv, Watcher: mockKv}}
 	dataBrokerErr = &BytesConnectionEtcd{Logger: logroot.StandardLogger(), etcdClient: &clientv3.Client{KV: mockKvErr, Watcher: mockKvErr}}
-	pluginDataBroker = &BytesBrokerWatcherEtcd{Logger: logroot.StandardLogger(), kv: mockKv, watcher: mockKv}
-	pluginDataBrokerErr = &BytesBrokerWatcherEtcd{Logger: logroot.StandardLogger(), kv: mockKvErr, watcher: mockKvErr}
+	pluginDataBroker = &BytesBrokerWatcherEtcd{Logger: logroot.StandardLogger(), closeCh: make(chan string), kv: mockKv, watcher: mockKv}
 }
 
 func TestNewTxn(t *testing.T) {
@@ -254,20 +252,22 @@ func TestNewWatcher(t *testing.T) {
 
 func TestWatch(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	err := pluginDataBroker.Watch(func(keyval.BytesWatchResp) {}, "key")
+	err := pluginDataBroker.Watch(func(keyval.BytesWatchResp) {}, nil,"key")
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 }
 
 func TestWatchPutResp(t *testing.T) {
 	var rev int64 = 1
 	value := []byte("data")
+	prevVal := []byte("prevData")
 	key := "key"
 	gomega.RegisterTestingT(t)
-	createResp := NewBytesWatchPutResp(key, value, rev)
+	createResp := NewBytesWatchPutResp(key, value, prevVal, rev)
 	gomega.Expect(createResp).NotTo(gomega.BeNil())
 	gomega.Expect(createResp.GetChangeType()).To(gomega.BeEquivalentTo(datasync.Put))
 	gomega.Expect(createResp.GetKey()).To(gomega.BeEquivalentTo(key))
 	gomega.Expect(createResp.GetValue()).To(gomega.BeEquivalentTo(value))
+	gomega.Expect(createResp.GetPrevValue()).To(gomega.BeEquivalentTo(prevVal))
 	gomega.Expect(createResp.GetRevision()).To(gomega.BeEquivalentTo(rev))
 }
 
