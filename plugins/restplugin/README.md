@@ -18,5 +18,8 @@ curl http://0.0.0.0:9191/bridgedomains
 curl http://0.0.0.0:9191/fibs
 curl http://0.0.0.0:9191/xconnectpairs
 curl http://0.0.0.0:9191/staticroutes
+
+curl -H "Content-Type: application/json" -X POST -d '{"swIndex":"0"}' http://0.0.0.0:9191/interface/acl
 ```
 ## Logging mechanism
+The REST API request is logged to stdout. The log contains VPPCLI command and VPPCLI response. It is searchable in elastic search using "VPPCLI".
