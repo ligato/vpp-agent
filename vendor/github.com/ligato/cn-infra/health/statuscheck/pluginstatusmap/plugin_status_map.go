@@ -48,8 +48,8 @@ type PluginStatusIdxMapRW interface {
 	Delete(pluginName string) (data *status.PluginStatus, exists bool)
 }
 
-// NewPluginStatusMap is a constructor for PluginStatusIdxMap.
-func NewPluginStatusMap(owner core.PluginName) PluginStatusIdxMap {
+// NewPluginStatusMap is a constructor for PluginStatusIdxMapRW.
+func NewPluginStatusMap(owner core.PluginName) PluginStatusIdxMapRW {
 	return &pluginStatusMap{mapping: mem.NewNamedMapping(logroot.StandardLogger(),
 		owner, "plugin status", IndexPluginStatus)}
 }

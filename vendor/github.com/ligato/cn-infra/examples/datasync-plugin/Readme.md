@@ -1,6 +1,8 @@
 # Datasync example
 
-To start the examples you have to have ETCD running first.
+### Requirements
+
+To start the example you have to have ETCD running first.
 if you don't have it installed locally you can use the following docker
 image.
 ```
@@ -11,6 +13,8 @@ sudo docker run -p 2379:2379 --name etcd --rm \
 ```
 
 It will bring up ETCD listening on port 2379 for client communication.
+
+### Usage
 
 In the example, the location of the ETCD configuration file is defined
 with the `-etcdv3-config` argument or through the `ETCDV3_CONFIG`

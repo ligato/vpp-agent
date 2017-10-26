@@ -31,7 +31,8 @@ const (
 type Plugin struct {
 	Deps
 	*plugin.Skeleton
-	disabled bool
+	disabled   bool
+	connection *BytesConnectionRedis
 }
 
 // Deps lists dependencies of the redis plugin.
@@ -58,19 +59,15 @@ func (p *Plugin) Init() error {
 		return err
 	}
 
-	connection, err := NewBytesConnection(client, p.Log)
+	p.connection, err = NewBytesConnection(client, p.Log)
 	if err != nil {
 		return err
 	}
 
-	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, connection)
-	return p.Skeleton.Init()
-}
-
-// AfterInit is called by the Agent Core after all plugins have been initialized.
-func (p *Plugin) AfterInit() error {
-	if p.disabled {
-		return nil
+	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, p.connection)
+	err = p.Skeleton.Init()
+	if err != nil {
+		return err
 	}
 
 	// Register for providing status reports (polling mode)
@@ -84,6 +81,15 @@ func (p *Plugin) AfterInit() error {
 		})
 	} else {
 		p.Log.Warnf("Unable to start status check for redis")
+	}
+
+	return nil
+}
+
+// AfterInit is called by the Agent Core after all plugins have been initialized.
+func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		return nil
 	}
 
 	return nil

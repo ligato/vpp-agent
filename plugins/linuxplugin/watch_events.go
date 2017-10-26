@@ -15,7 +15,6 @@
 package linuxplugin
 
 import (
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -27,7 +26,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 	for {
 		select {
 		case resyncEv := <-plugin.resyncChan:
-			req := resyncParseEvent(resyncEv)
+			req := resyncParseEvent(resyncEv, plugin.Log)
 			err := plugin.resyncPropageRequest(req)
 
 			resyncEv.Done(err)
@@ -38,7 +37,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			dataChng.Done(err)
 
 		case <-ctx.Done():
-			log.DefaultLogger().Debug("Stop watching events")
+			plugin.Log.Debug("Stop watching events")
 			return
 		}
 	}

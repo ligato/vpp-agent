@@ -18,6 +18,7 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
@@ -27,6 +28,16 @@ type Flavor interface {
 	// Plugins returns list of plugins.
 	// Name of the plugin is supposed to be related to field name of Flavor struct
 	Plugins() []*NamedPlugin
+
+	// Inject method is supposed to be implemented by each Flavor
+	// to inject dependencies between the plugins.
+	// When this method is called for the first time it returns true
+	// (meaning the dependency injection ran at the first time).
+	// It is possible to call this method repeatedly (then it will return false).
+	Inject() (firstRun bool)
+
+	// LogRegistry is a getter for accessing log registry (that allows to create new loggers)
+	LogRegistry() logging.Registry
 }
 
 // ListPluginsInFlavor lists plugins in a Flavor.
@@ -40,9 +51,8 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 	return l
 }
 
-// listPluginsInFlavor lists plugins in a Flavor. If there are multiple
-// instances of a given plugin type, only one plugin instance is listed.
-// A Flavor is composed of multiple Flavor and Plugins. The composition
+// listPluginsInFlavor lists all plugins in a Flavor. A Flavor is composed
+// of one or more Plugins and (optionally) multiple Flavors. The composition
 // is recursive: a component Flavor contains Plugin components and may
 // contain Flavor components as well. The function recursively lists
 // plugins contained in component Flavors.
@@ -53,7 +63,7 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 // an error is logged, but the function does not return an error.
 // in the argument
 func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[Plugin] /*nil*/ interface{}) ([]*NamedPlugin, error) {
-	logroot.StandardLogger().Error("inspect flavor structure ", flavorValue.Type())
+	logroot.StandardLogger().Debug("inspect flavor structure ", flavorValue.Type())
 
 	var res []*NamedPlugin
 

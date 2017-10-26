@@ -43,8 +43,11 @@ type Mux interface {
 		successClb func(ProtoMessage), errorClb func(err ProtoMessageErr)) (ProtoPublisher, error)
 
 	// Initializes new watcher which can start/stop watching on topic,
-	// eventually partition and offset.
 	NewWatcher(subscriberName string) ProtoWatcher
+
+	// Initializes new watcher which can start/stop watching on topic,
+	// eventually partition and offset.
+	NewPartitionWatcher(subscriberName string) ProtoPartitionWatcher
 
 	// Disabled if the plugin config was not found.
 	Disabled() (disabled bool)
@@ -59,6 +62,7 @@ type ProtoPublisher interface {
 // ProtoWatcher allows to subscribe for receiving of messages published
 // to selected topics.
 type ProtoWatcher interface {
+	OffsetHandler
 	// Watch starts consuming all selected <topics>.
 	// Returns error if 'manual' partitioner scheme is chosen
 	// Callback <msgCallback> is called for each delivered message.
@@ -67,7 +71,12 @@ type ProtoWatcher interface {
 	// StopWatch cancels the previously created subscription for consuming
 	// a given <topic>.
 	StopWatch(topic string) error
+}
 
+// ProtoPartitionWatcher allows to subscribe for receiving of messages published
+// to selected topics, partitions and offsets
+type ProtoPartitionWatcher interface {
+	OffsetHandler
 	// WatchPartition starts consuming specific <partition> of a selected <topic>
 	// from a given <offset>. Offset is the oldest message index consumed,
 	// all previously published messages are ignored.
@@ -103,4 +112,12 @@ type ProtoMessageErr interface {
 	// Error returns an error instance describing the cause of the failed
 	// delivery.
 	Error() error
+}
+
+// OffsetHandler allows to mark offset or commit
+type OffsetHandler interface {
+	// MarkOffset marks the message received by a consumer as processed.
+	MarkOffset(msg ProtoMessage, metadata string)
+	// CommitOffsets manually commits marked offsets.
+	CommitOffsets() error
 }

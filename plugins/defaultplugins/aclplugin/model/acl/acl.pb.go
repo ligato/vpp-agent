@@ -13,7 +13,7 @@ It has these top-level messages:
 */
 package acl
 
-import "github.com/gogo/protobuf/proto"
+import proto "github.com/gogo/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -206,9 +206,9 @@ func (m *AccessLists_Acl_Rule_Matches_IpRule) GetOther() *AccessLists_Acl_Rule_M
 
 // IP version used in this Access List Entry.
 type AccessLists_Acl_Rule_Matches_IpRule_Ip struct {
-	// Destination IPv4/IPv6 network
+	// Destination IPv4/IPv6 network address (<ip>/<network>)
 	DestinationNetwork string `protobuf:"bytes,1,opt,name=destination_network,proto3" json:"destination_network,omitempty"`
-	// Destination IPv4/IPv6 network
+	// Destination IPv4/IPv6 network address (<ip>/<network>)
 	SourceNetwork string `protobuf:"bytes,2,opt,name=source_network,proto3" json:"source_network,omitempty"`
 }
 

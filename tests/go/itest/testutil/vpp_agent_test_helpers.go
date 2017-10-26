@@ -47,9 +47,9 @@ type VppOnlyTestingFlavor struct {
 }
 
 // Inject sets object references
-func (f *VppOnlyTestingFlavor) Inject() error {
+func (f *VppOnlyTestingFlavor) Inject() bool {
 	if f.injected {
-		return nil
+		return true
 	}
 	f.injected = true
 
@@ -67,7 +67,7 @@ func (f *VppOnlyTestingFlavor) Inject() error {
 
 	//TODO f.VPP.Deps.Publish = local_sync.Get()
 
-	return nil
+	return false
 }
 
 // Plugins combines Generic Plugins and Standard VPP Plugins

@@ -30,16 +30,16 @@ type PubPlugin struct {
 	adapter messaging.ProtoPublisher
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps               // inject
 	Messaging             messaging.Mux // inject
 	Cfg
 }
 
-// Cfg is here to group configuration fields.
-// It can be extended with other fields (such as sync/async, partition...)
+// Cfg groups configurations fields. It can be extended with other fields
+// (such as sync/async, partition...)
 type Cfg struct {
 	Topic string
 }

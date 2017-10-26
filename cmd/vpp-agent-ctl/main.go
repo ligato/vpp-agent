@@ -44,7 +44,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 var (
@@ -115,7 +116,7 @@ func main() {
 		case "-dms":
 			delete(db, interfaces.InterfaceKey(memif))
 		case "-cvx":
-			createVxlan(db, vxlan, 13, "192.168.42.1/24", "192.168.42.2/24")
+			createVxlan(db, vxlan, 13, "192.168.42.1", "192.168.42.2")
 		case "-dvx":
 			delete(db, interfaces.InterfaceKey(vxlan))
 		case "-acl":
@@ -180,6 +181,16 @@ func main() {
 			reportIfaceErrorState(db)
 		case "-bderr":
 			reportBdErrorState(db)
+		case "-clarp":
+			createLinuxArp(db)
+		case "-dlarp":
+			delete(db, l32.StaticArpKey("arp1"))
+		case "-clrt":
+			createLinuxRoute(db)
+		case "-clrtdef":
+			createDefaultLinuxRoute(db)
+		case "-dlrt":
+			delete(db, l32.StaticRouteKey("route1"))
 		default:
 			usage()
 		}
@@ -507,22 +518,22 @@ func listAllAgentKeys(db *etcdv3.BytesConnectionEtcd) {
 	}
 }
 
-func create(db keyval.ProtoBroker, ifname1 string, ipAddr string) {
+func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	// fill in data - option 1
 	ifs := interfaces.Interfaces{}
 	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
+	ifs.Interface[0].Name = ifname
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
 	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
 	ifs.Interface[0].Enabled = true
 	//ifs.Interface[0].Mtu = 555
 	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "10.1.1.2"
+	ifs.Interface[0].IpAddresses[0] = ipAddr
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
 	log.Println(ifs)
 
@@ -569,13 +580,9 @@ func createLoopback(db keyval.ProtoBroker, ifname string, physAddr string, ipv4A
 
 	ifs.Interface[0].Enabled = true
 	ifs.Interface[0].Mtu = 1478
-	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].IpAddresses = make([]string, 2)
 	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1478
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv6Addr
+	ifs.Interface[0].IpAddresses[1] = ipv6Addr
 
 	log.Println(ifs)
 
@@ -943,4 +950,60 @@ func printState(db keyval.ProtoBroker) {
 
 		fmt.Println(entry)
 	}
+}
+
+func createLinuxArp(db keyval.ProtoBroker) {
+	linuxArpEntries := l32.LinuxStaticArpEntries{}
+	linuxArpEntries.ArpEntry = make([]*l32.LinuxStaticArpEntries_ArpEntry, 1)
+	linuxArpEntries.ArpEntry[0] = new(l32.LinuxStaticArpEntries_ArpEntry)
+	linuxArpEntries.ArpEntry[0].Name = "arp1"
+	linuxArpEntries.ArpEntry[0].Namespace = new(l32.LinuxStaticArpEntries_ArpEntry_Namespace)
+	linuxArpEntries.ArpEntry[0].Namespace.Type = l32.LinuxStaticArpEntries_ArpEntry_Namespace_NAMED_NS
+	linuxArpEntries.ArpEntry[0].Namespace.Name = "ns1"
+	linuxArpEntries.ArpEntry[0].Interface = "veth1"
+	linuxArpEntries.ArpEntry[0].IpAddr = "130.0.0.1"
+	linuxArpEntries.ArpEntry[0].HwAddress = "ab:cd:ef:01:02:03"
+	linuxArpEntries.ArpEntry[0].State = new(l32.LinuxStaticArpEntries_ArpEntry_NudState)
+	linuxArpEntries.ArpEntry[0].State.Type = l32.LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT
+
+	log.Println(linuxArpEntries)
+
+	db.Put(l32.StaticArpKey(linuxArpEntries.ArpEntry[0].Name), linuxArpEntries.ArpEntry[0])
+}
+
+func createLinuxRoute(db keyval.ProtoBroker) {
+	linuxRoutes := l32.LinuxStaticRoutes{}
+	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
+	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
+	linuxRoutes.Route[0].Name = "route1"
+	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
+	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+	linuxRoutes.Route[0].Namespace.Name = "ns1"
+	linuxRoutes.Route[0].DstIpAddr = "10.0.2.0/24"
+	//linuxRoutes.Route[0].SrcIpAddr = "128.0.0.10"
+	//linuxRoutes.Route[0].GwAddr = "128.0.0.1"
+	linuxRoutes.Route[0].Interface = "veth1"
+	linuxRoutes.Route[0].Metric = 100
+
+	log.Println(linuxRoutes)
+
+	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
+}
+
+func createDefaultLinuxRoute(db keyval.ProtoBroker) {
+	linuxRoutes := l32.LinuxStaticRoutes{}
+	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
+	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
+	linuxRoutes.Route[0].Name = "defRoute"
+	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
+	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+	linuxRoutes.Route[0].Namespace.Name = "ns1"
+	linuxRoutes.Route[0].Default = true
+	linuxRoutes.Route[0].Interface = "veth1"
+	linuxRoutes.Route[0].GwAddr = "10.0.2.2"
+	linuxRoutes.Route[0].Metric = 100
+
+	log.Println(linuxRoutes)
+
+	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
 }

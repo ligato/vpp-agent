@@ -1,4 +1,26 @@
-# Release v1.0.4 (NOT RELEASED)
+# Release v1.0.5 (2017-10-17)
+
+## Profiling
+* new [logging/measure](logging/measure) - time measurement utility to measure duration of binary api calls 
+  or linuxplugin netlink during resync. The feature is disabled by default and it can be enabled in 
+  defaultplugins.conf and linuxplugin.conf file (see plugin's readme)
+
+## Kafka
+* proto_connection.go and bytes_connection.go consolidated, bytes_connection.go now mirrors all 
+  the functionality from proto_connection.go. 
+  * mux can create two types of connection, standard bytes connection and bytes manual connection.
+    This enables to call only respective methods on them (to use manual partitioning, it is needed to 
+    create manual connection, etc.)
+  * method ConsumeTopicOnPartition renamed to ConsumeTopic (similar naming as in the proto_connection.go).
+    The rest of the signature is not changed.     
+* post-init watcher enabled in bytes_connection.go api
+* added methods MarkOffset and CommitOffsets to both, proto and bytes connection. Automatic offset marking
+  was removed
+* one instance of mux in kafka plugin 
+* new field `group-id` can be added to kafka.conf. This value is used as a Group ID in order to set it 
+  manually. In case the value is not provided, the service label is used instead (just like before). 
+      
+# Release v1.0.4 (2017-9-25)
 
 ## Documentation
 * Improved documentation of public APIs (comments)
@@ -31,12 +53,24 @@
 * Connection in bytes_connection.go renamed to BytesConnection
 * kafka plugin initializes two multiplexers for dynamic mode (automatic partitions) and manual mode.
   Every multiplexer can create its own connection and provides access to different set of methods 
-  (publishing to partition, watching on partition/offset) 
+  (publishing to partition, watching on partition/offset)
+* ProtoWatcher from API was changed - methods WatchPartition and StopWatchPartition were removed 
+  from the ProtoWatcher interface and added to newly created ProtoPartitionWatcher. There is also a new 
+  method under Mux interface - NewPartitionWatcher(subscriber) which returns ProtoPartitionWatcher
+  instance that allows to call partition-related methods
+* Offset mark is done for hash/default-partitioned messages only. Manually partitioned message's offset 
+  is not marked.
+* It is possible to start kafka consumer on partition after kafka plugin initialization procedure. New
+  example [post-init-consumer](examples/kafka-plugin/post-init-consumer) was created to show the 
+  functionality     
 * fixes inside Mux.NewSyncPublisher() & Mux.NewAsyncPublisher() related to previous partition changes
-* TODO offset improvements
 * Known Issues:
   * More than one network connection to Kafka (multiple instances of MUX)
   * TODO Minimalistic examples & documentation for Kafka API will be improved in a later release.
+
+## Flavors
+* optionally GPRC server can be enabled in [rpc flavor](flavors/rpc) using --grpc-port=9111 (or using config gprc.conf)
+* [Flavor interface](core/list_flavor_plugin.go) now contains three methods: Plugins(), Inject(), LogRegistry() to standardize these methods over all flavors. Note, LogRegistry() is usually embedded using local flavor.
 
 # Release v1.0.3 (2017-09-08)
 * [FlavorAllConnectors](flavors/connectors)

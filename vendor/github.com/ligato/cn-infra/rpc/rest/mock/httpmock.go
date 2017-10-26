@@ -43,12 +43,12 @@ func (mock *HTTPMock) SetHandler(config rest.Config, handler http.Handler) (http
 
 // NewRequest propagates the request to the httpmux
 func (mock *HTTPMock) NewRequest(method, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	recorder := &httptest.ResponseRecorder{}
+	recorder := httptest.NewRecorder()
 	mock.handler.ServeHTTP(recorder, req)
 	return recorder.Result(), nil
 }

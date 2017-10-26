@@ -50,3 +50,9 @@ type AgentStatusReader interface {
 	// GetAgentStatus returns the current global operational state of the agent.
 	GetAgentStatus() status.AgentStatus
 }
+
+// StatusReader allows to lookup agent status and retrieve a map containing status of all plugins.
+type StatusReader interface {
+	AgentStatusReader
+	GetAllPluginStatus() map[string]*status.PluginStatus
+}

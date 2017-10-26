@@ -113,9 +113,9 @@ type Flavor struct {
 }
 
 // Inject sets object references
-func (f *Flavor) Inject() error {
+func (f *Flavor) Inject() bool {
 	if f.injected {
-		return nil
+		return false
 	}
 	f.injected = true
 
@@ -128,6 +128,7 @@ func (f *Flavor) Inject() error {
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
 
 	//...
+	return true
 }
 ```
 

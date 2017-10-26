@@ -25,6 +25,9 @@ Current examples:
   VPP plugins running within the same agent instance (i.e. within the same 
   OS process). Behind the scenes the configuration data is transported via
   go channels.
+* **[remoteclient_grpc_vpp](remoteclient_grpc_vpp/main.go)** demonstrates how to
+  use the remoteclient package to push example configuration into
+  VPP default plugins running within different vpp-agent OS process.
 
 * **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra platform
   plugins.

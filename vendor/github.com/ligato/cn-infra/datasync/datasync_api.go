@@ -25,9 +25,9 @@ import (
 // notification.
 const DefaultNotifTimeout = 2 * time.Second
 
-// KeyValProtoWatcher is used by plugin to subscribe to both data change events
-// and data resync events. Multiple keys can be specified and the caller will
-// be subscribed to events on each key.
+// KeyValProtoWatcher is used by plugins to subscribe to both data change
+// events and data resync events. Multiple keys can be specified and the
+// caller will be subscribed to events on each key.
 // See README.md for description of the Events.
 type KeyValProtoWatcher interface {
 	// Watch using ETCD or any other data transport.

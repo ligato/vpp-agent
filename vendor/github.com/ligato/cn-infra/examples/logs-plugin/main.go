@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 )
@@ -36,8 +35,8 @@ func main() {
 
 // ExamplePlugin presents the PluginLogger API.
 type ExamplePlugin struct {
-	local.PluginLogDeps // this field is usually injected in flavor
-	exampleFinished         chan struct{}
+	Deps
+	exampleFinished chan struct{}
 }
 
 // Init demonstrates the usage of PluginLogger API.

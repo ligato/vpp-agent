@@ -22,13 +22,12 @@ import (
 
 // Option defines the maximum time that is attempted to deliver notification.
 type Option interface {
-	//OptionMarkCore is just for marking implementation that it implements this interface
-	OptionMarkCore()
+	//OptionMarkerCore is just for marking implementation that it implements this interface
+	OptionMarkerCore()
 }
 
 // WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
 type WithTimeoutOpt struct {
-	OptionMarkerCore
 	Timeout time.Duration
 }
 
@@ -39,7 +38,6 @@ func WithTimeout(timeout time.Duration) *WithTimeoutOpt {
 
 // WithLoggerOpt defines a logger that logs if delivery of notification is unsuccessful.
 type WithLoggerOpt struct {
-	OptionMarkerCore
 	Logger logging.Logger
 }
 
@@ -48,8 +46,8 @@ func WithLogger(logger logging.Logger) *WithLoggerOpt {
 	return &WithLoggerOpt{Logger: logger}
 }
 
-// OptionMarkerCore is meant for anonymous composition in With*Opt structs
-type OptionMarkerCore struct{}
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (marker *WithTimeoutOpt) OptionMarkerCore() {}
 
 // OptionMarkerCore is just for marking implementation that it implements this interface
-func (marker *OptionMarkerCore) OptionMarkerCore() {}
+func (marker *WithLoggerOpt) OptionMarkerCore() {}

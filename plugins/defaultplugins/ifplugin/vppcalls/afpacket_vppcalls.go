@@ -18,12 +18,22 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"time"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel) (swIndex uint32, err error) {
+func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+	// AfPacketCreate time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &af_packet.AfPacketCreate{}
 
@@ -37,13 +47,22 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	}
 
 	if 0 != reply.Retval {
-		return 0, fmt.Errorf("Add af_packet interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("add af_packet interface returned %d", reply.Retval)
 	}
+
 	return reply.SwIfIndex, nil
 }
 
 // DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel) error {
+func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// AfPacketDelete time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	// prepare the message
 	req := &af_packet.AfPacketDelete{}
 	req.HostIfName = []byte(afPacketIntf.HostIfName)
@@ -55,7 +74,8 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Deleting of af_packet interface returned %d", reply.Retval)
+		return fmt.Errorf("deleting of af_packet interface returned %d", reply.Retval)
 	}
+
 	return nil
 }

@@ -3,16 +3,27 @@ package main
 import (
 	"time"
 
+	"fmt"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/examples/model"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/namsral/flag"
+	"os"
+	"strconv"
 )
 
 //********************************************************************
 // This example shows how to use the Agent's Kafka APIs to perform
 // synchronous/asynchronous calls and how to watch on these events.
 //********************************************************************
+
+var (
+	// Flags used to read the input arguments. Applies for both, sync and async message
+	offsetMsg    = flag.String("offsetMsg", os.Getenv("KAFKA_OFFSET"), "Use 'latest', 'oldest' or exact number of message offset")
+	messageCount = flag.String("messageCount", os.Getenv("MSG_COUNT"), "Number of messages which will be send. Set to '0' to just watch")
+)
 
 func main() {
 	// Init close channel used to stop the example
@@ -35,40 +46,70 @@ type ExamplePlugin struct {
 	subscription        chan (messaging.ProtoMessage)
 	kafkaSyncPublisher  messaging.ProtoPublisher
 	kafkaAsyncPublisher messaging.ProtoPublisher
-	kafkaWatcher        messaging.ProtoWatcher
+	kafkaWatcher        messaging.ProtoPartitionWatcher
 	// Successfully published kafka message is sent through the message channel.
 	// In case of a failure it sent through the error channel.
 	asyncSubscription   chan (messaging.ProtoMessage)
 	asyncSuccessChannel chan (messaging.ProtoMessage)
 	asyncErrorChannel   chan (messaging.ProtoMessageErr)
 	// Fields below are used to properly finish the example.
-	syncCaseDone  bool
-	asyncCaseDone bool
-	closeChannel  *chan struct{}
+	messagesSent bool
+	asyncSuccess bool
+	closeChannel *chan struct{}
 }
 
 const (
-	// Number of sync messages sent. Ensure that syncMessageCount >= syncMessageOffset
-	syncMessageCount = 10
 	// Partition sync messages are sent and watched on
 	syncMessagePartition = 1
-	// Offset for sync messages watcher
-	syncMessageOffset = 5
 	// Partiton async messages are sent and watched on
 	asyncMessagePartition = 2
-	// Offset for async messages watcher
-	asyncMessageOffset = 0
 )
 
-// Topics
+// These vars are applied for both, sync and async case
+var (
+	// Offset for sync messages watcher
+	messageOffset int64
+	// How many messages will be sent
+	messageCountNum = 10
+)
+
+// Consts
 const (
-	topic1 = "example-sync-topic"
-	topic2 = "example-async-topic"
+	topic1     = "example-sync-topic"
+	topic2     = "example-async-topic"
 	connection = "example-proto-connection"
+	subscriber = "example-part-watcher"
 )
 
 // Init initializes and starts producers and consumers.
 func (plugin *ExamplePlugin) Init() (err error) {
+	// handle flags
+	flag.Parse()
+	// sync/async offset flag
+	if *offsetMsg != "" {
+		messageOffset, err = resolveOffset(*offsetMsg)
+		if err != nil {
+			return fmt.Errorf("incorrect sync offset value %v", *offsetMsg)
+		}
+	} else {
+		plugin.Log.Info("offset arg not set, using default value")
+	}
+	// message count flag
+	if *messageCount != "" {
+		messageCountNum, err = resolveMsgCount(*messageCount)
+		if err != nil {
+			return fmt.Errorf("'messageCount' has to be a number, not %v", *messageCount)
+		}
+		if messageCountNum < 0 {
+			plugin.Log.Warnf("'messageCount' %v is not a positive number, defaulting to 0")
+			messageCountNum = 0
+		}
+	} else {
+		plugin.Log.Info("messageCount arg not set, using default value")
+	}
+
+	plugin.Log.Infof("Offset: %v, message count: %v", messageOffset, messageCountNum)
+
 	// Create a synchronous and asynchronous publisher.
 	// In the manual mode, every publisher has selected its target partition.
 	plugin.kafkaSyncPublisher, err = plugin.Kafka.NewSyncPublisherToPartition(connection, topic1, syncMessagePartition)
@@ -85,7 +126,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// Initialize sync watcher.
-	plugin.kafkaWatcher = plugin.Kafka.NewWatcher("example-watcher")
+	plugin.kafkaWatcher = plugin.Kafka.NewPartitionWatcher(subscriber)
 
 	// Prepare subscription channel. Relevant kafka messages are send to this
 	// channel so that the watcher can read it.
@@ -94,7 +135,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// If there is a producer who stores message to the same partition under
 	// the same or a newer offset, the message will be consumed.
 	err = plugin.kafkaWatcher.WatchPartition(messaging.ToProtoMsgChan(plugin.subscription), topic1,
-		syncMessagePartition, syncMessageOffset)
+		syncMessagePartition, messageOffset)
 	if err != nil {
 		plugin.Log.Error(err)
 	}
@@ -106,7 +147,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// If there is a producer who stores message to the same partition under
 	// the same or a newer offset, the message will be consumed.
 	err = plugin.kafkaWatcher.WatchPartition(messaging.ToProtoMsgChan(plugin.asyncSubscription), topic2,
-		asyncMessagePartition, asyncMessageOffset)
+		asyncMessagePartition, messageOffset)
 	if err != nil {
 		plugin.Log.Error(err)
 	}
@@ -128,7 +169,20 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 func (plugin *ExamplePlugin) closeExample() {
 	for {
-		if plugin.syncCaseDone && plugin.asyncCaseDone {
+		if plugin.messagesSent && plugin.asyncSuccess {
+			time.Sleep(2 * time.Second)
+			err := plugin.kafkaWatcher.StopWatchPartition(topic1, syncMessagePartition, messageOffset)
+			if err != nil {
+				plugin.Log.Errorf("Error while stopping watcher: %v", err)
+			} else {
+				plugin.Log.Info("Sync watcher closed")
+			}
+			err = plugin.kafkaWatcher.StopWatchPartition(topic2, asyncMessagePartition, messageOffset)
+			if err != nil {
+				plugin.Log.Errorf("Error while stopping watcher: %v", err)
+			} else {
+				plugin.Log.Info("Async watcher closed")
+			}
 			plugin.Log.Info("kafka example finished, sending shutdown ...")
 			*plugin.closeChannel <- struct{}{}
 			break
@@ -138,9 +192,7 @@ func (plugin *ExamplePlugin) closeExample() {
 
 // Close closes the subscription and the channels used by the async producer.
 func (plugin *ExamplePlugin) Close() error {
-	safeclose.Close(plugin.subscription)
-	safeclose.Close(plugin.asyncErrorChannel)
-	safeclose.Close(plugin.asyncSuccessChannel)
+	safeclose.CloseAll(plugin.subscription, plugin.asyncErrorChannel, plugin.asyncSuccessChannel)
 	return nil
 }
 
@@ -148,8 +200,8 @@ func (plugin *ExamplePlugin) Close() error {
  * Producers *
  *************/
 
-// producer sends messages to a desired topic and in the manual mode also
-// to a specified partition.
+// producer sends messages to a desired topic and in the manual mode also to a specified partition. Tho number of messages
+// sent can be set with flag
 func (plugin *ExamplePlugin) producer() {
 	// Wait for the both event handlers to initialize.
 	time.Sleep(2 * time.Second)
@@ -160,9 +212,9 @@ func (plugin *ExamplePlugin) producer() {
 		Uint32Val: uint32(0),
 		BoolVal:   true,
 	}
-	// Send several sync messages with offsets 0,1,...
-	plugin.Log.Infof("Sending %v Kafka notifications (protobuf) ...", syncMessageCount)
-	for i := 0; i < syncMessageCount; i++ {
+	// Send several sync messages with offsets offsetLast+1, offsetLast+2,...
+	plugin.Log.Infof("Sending %v sync Kafka notifications (protobuf) ...", messageCountNum)
+	for i := 0; i < messageCountNum; i++ {
 		err := plugin.kafkaSyncPublisher.Put("proto-key", enc)
 		if err != nil {
 			plugin.Log.Errorf("Failed to sync-send a proto message, error %v", err)
@@ -173,13 +225,16 @@ func (plugin *ExamplePlugin) producer() {
 	// Delivery status is propagated back to the application through
 	// the configured pair of channels - one for the success events and one for
 	// the errors.
-	plugin.Log.Info("Sending async Kafka notification (protobuf)")
-	err := plugin.kafkaAsyncPublisher.Put("async-proto-key", enc)
-	if err != nil {
-		plugin.Log.Errorf("Failed to async-send a proto message, error %v", err)
-	} else {
-		plugin.Log.Info("Async proto message sent")
+	plugin.Log.Infof("Sending %v async Kafka notifications (protobuf) ...", messageCountNum)
+	for i := 0; i < messageCountNum; i++ {
+		err := plugin.kafkaAsyncPublisher.Put("async-proto-key", enc)
+		if err != nil {
+			plugin.Log.Errorf("Failed to async-send a proto message, error %v", err)
+		}
 	}
+
+	// Mark that all messages were sent
+	plugin.messagesSent = true
 }
 
 /*************
@@ -193,22 +248,19 @@ func (plugin *ExamplePlugin) producer() {
 func (plugin *ExamplePlugin) syncEventHandler() {
 	plugin.Log.Info("Started Kafka sync event handler...")
 
-	// Producer sends several messages (set in syncMessageCount).
+	// Producer sends several messages (set in messageCount).
 	// Consumer should receive only messages from desired partition and offset.
-	messageCounter := 0
+	receivedMessageCounter := 0
 	for message := range plugin.subscription {
 		plugin.Log.Infof("Received sync Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
 			message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
-		messageCounter++
+		// Note: mark the offset if required
+		receivedMessageCounter++
 		if message.GetPartition() != syncMessagePartition {
 			plugin.Log.Errorf("Received sync message with unexpected partition: %v", message.GetOffset())
 		}
-		if message.GetOffset() < syncMessageOffset {
+		if message.GetOffset() < messageOffset {
 			plugin.Log.Errorf("Received sync message with unexpected offset: %v", message.GetOffset())
-		}
-		// For example purpose: let it know that this part of the example is done
-		if messageCounter == (syncMessageCount - syncMessageOffset) {
-			plugin.syncCaseDone = true
 		}
 	}
 
@@ -220,27 +272,52 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 // will receive it.
 func (plugin *ExamplePlugin) asyncEventHandler() {
 	plugin.Log.Info("Started Kafka async event handler...")
+	asyncSuccessCounter := 0
+	if messageCountNum == 0 {
+		plugin.asyncSuccess = true
+	}
+
 	for {
 		select {
 		// Channel subscribed with watcher
 		case message := <-plugin.asyncSubscription:
 			plugin.Log.Infof("Received async Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
 				message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
+			// Note: mark the offset if required
 			if message.GetPartition() != asyncMessagePartition {
 				plugin.Log.Errorf("Received async message with unexpected partition: %v", message.GetOffset())
 			}
-			if message.GetOffset() < asyncMessageOffset {
+			if message.GetOffset() < messageOffset {
 				plugin.Log.Errorf("Received async message with unexpected offset: %v", message.GetOffset())
 			}
-			// For example purpose: let it know that this part of the example is done
-			plugin.asyncCaseDone = true
 		// Success callback channel
 		case message := <-plugin.asyncSuccessChannel:
 			plugin.Log.Infof("Async message successfully delivered, topic '%s', partition '%v', offset '%v', key: '%s', ",
 				message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
+			// Note: mark the offset if required
+			asyncSuccessCounter++
+			if asyncSuccessCounter == messageCountNum {
+				plugin.asyncSuccess = true
+			}
 		// Error callback channel
 		case err := <-plugin.asyncErrorChannel:
 			plugin.Log.Errorf("Failed to publish async message, %v", err)
 		}
 	}
+}
+
+func resolveOffset(offset string) (int64, error) {
+	if offset == "latest" {
+		return mux.OffsetNewest, nil
+	} else if offset == "oldest" {
+		return mux.OffsetOldest, nil
+	} else {
+		result, err := strconv.Atoi(offset)
+		return int64(result), err
+	}
+}
+
+func resolveMsgCount(count string) (int, error) {
+	result, err := strconv.Atoi(count)
+	return result, err
 }

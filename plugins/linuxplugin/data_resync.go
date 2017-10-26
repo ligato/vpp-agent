@@ -18,44 +18,65 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // DataResyncReq is used to transfer expected configuration of the Linux network stack to the plugins
 type DataResyncReq struct {
 	// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC
 	Interfaces []*interfaces.LinuxInterfaces_Interface
+	// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC
+	ARPs []*l3.LinuxStaticArpEntries_ArpEntry
+	// Routes is a list af all routes that are expected to be in Linux after RESYNC
+	Routes []*l3.LinuxStaticRoutes_Route
 }
 
-// NewDataResyncReq is a constructor
+// NewDataResyncReq is a constructor of object requirements which are expected to be re-synced
 func NewDataResyncReq() *DataResyncReq {
 	return &DataResyncReq{
 		// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC
 		Interfaces: []*interfaces.LinuxInterfaces_Interface{},
+		// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC
+		ARPs: []*l3.LinuxStaticArpEntries_ArpEntry{},
+		// Routes is a list af all routes that are expected to be in Linux after RESYNC
+		Routes: []*l3.LinuxStaticRoutes_Route{},
 	}
 }
 
-// DataResync delegates resync request only to interface configurator for now.
+// DataResync delegates resync request linuxplugin configurators.
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
-	log.DefaultLogger().Info("resync the Linux Configuration")
+	plugin.Log.Info("resync the Linux Configuration")
 
-	plugin.ifConfigurator.Resync(req.Interfaces)
+	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		return err
+	}
 
-	return nil
+	if err := plugin.arpConfigurator.Resync(req.ARPs); err != nil {
+		return err
+	}
+
+	return plugin.routeConfigurator.Resync(req.Routes)
 }
 
-func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
+func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		log.DefaultLogger().Debug("Received RESYNC key ", key)
+		log.Debug("Received RESYNC key ", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 			numInterfaces := resyncAppendInterface(resyncData, req)
-			log.DefaultLogger().Debug("Received RESYNC interface values ", numInterfaces)
+			log.Debug("Received RESYNC interface values ", numInterfaces)
+		} else if strings.HasPrefix(key, l3.StaticArpKeyPrefix()) {
+			numARPs := resyncAppendARPs(resyncData, req)
+			log.Debug("Received RESYNC ARP entry values ", numARPs)
+		} else if strings.HasPrefix(key, l3.StaticRouteKeyPrefix()) {
+			numRoutes := resyncAppendRoutes(resyncData, req)
+			log.Debug("Received RESYNC route values ", numRoutes)
 		} else {
-			log.DefaultLogger().Warn("ignoring ", resyncEv)
+			log.Warn("ignoring ", resyncEv)
 		}
 	}
 	return req
@@ -78,16 +99,53 @@ func resyncAppendInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 	return num
 }
 
+func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &l3.LinuxStaticArpEntries_ArpEntry{}
+			err := arpData.GetValue(value)
+			if err == nil {
+				req.ARPs = append(req.ARPs, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if routeData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &l3.LinuxStaticRoutes_Route{}
+			err := routeData.GetValue(value)
+			if err == nil {
+				req.Routes = append(req.Routes, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
 func (plugin *Plugin) subscribeWatcher() (err error) {
-	log.DefaultLogger().Debug("subscribeWatcher begin")
+	plugin.Log.Debug("subscribeWatcher begin")
 
 	plugin.watchDataReg, err = plugin.Watcher.
-		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan, interfaces.InterfaceKeyPrefix())
+		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan,
+			interfaces.InterfaceKeyPrefix(),
+			l3.StaticArpKeyPrefix(),
+			l3.StaticRouteKeyPrefix())
 	if err != nil {
 		return err
 	}
 
-	log.DefaultLogger().Debug("data watcher watch finished")
+	plugin.Log.Debug("data watcher watch finished")
 
 	return nil
 }
@@ -95,7 +153,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) error {
 	var err error
 	key := dataChng.GetKey()
-	log.DefaultLogger().Debug("Start processing change for key: ", key)
+	plugin.Log.Debug("Start processing change for key: ", key)
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
@@ -103,12 +161,35 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 		if err != nil {
 			return err
 		}
-		diff, err := dataChng.GetPrevValue(&prevValue)
+		var diff bool
+		diff, err = dataChng.GetPrevValue(&prevValue)
 		if err == nil {
 			err = plugin.dataChangeIface(diff, &value, &prevValue, dataChng.GetChangeType())
 		}
+	} else if strings.HasPrefix(key, l3.StaticArpKeyPrefix()) {
+		var value, prevValue l3.LinuxStaticArpEntries_ArpEntry
+		err = dataChng.GetValue(&value)
+		if err != nil {
+			return err
+		}
+		var diff bool
+		diff, err = dataChng.GetPrevValue(&prevValue)
+		if err == nil {
+			err = plugin.dataChangeArp(diff, &value, &prevValue, dataChng.GetChangeType())
+		}
+	} else if strings.HasPrefix(key, l3.StaticRouteKeyPrefix()) {
+		var value, prevValue l3.LinuxStaticRoutes_Route
+		err = dataChng.GetValue(&value)
+		if err != nil {
+			return err
+		}
+		var diff bool
+		diff, err = dataChng.GetPrevValue(&prevValue)
+		if err == nil {
+			err = plugin.dataChangeRoute(diff, &value, &prevValue, dataChng.GetChangeType())
+		}
 	} else {
-		log.DefaultLogger().Warn("ignoring change ", dataChng) //NOT ERROR!
+		plugin.Log.Warn("ignoring change ", dataChng) //NOT ERROR!
 	}
 	return err
 }

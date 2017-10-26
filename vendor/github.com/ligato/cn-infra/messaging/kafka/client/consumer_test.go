@@ -37,7 +37,7 @@ func ExampleConsumer() {
 	config.SetTopics("topic1,topic2,topic3")
 	config.SetGroup("test-group")
 
-	// init consumer
+	// init consumer with message handlers
 	consumer, err := NewConsumer(config, nil)
 	if err != nil {
 		log.Errorf("NewConsumer Error: %v", err)

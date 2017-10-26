@@ -18,7 +18,6 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
@@ -32,16 +31,21 @@ import (
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
 func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) error {
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	// Calculate and log interface resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.vppCh)
-	// old implemention: err = plugin.LookupVPPInterfaces()
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
 
-	log.DefaultLogger().Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
+	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
 
 	// Step 1: Correlate vppIfaces with northbound interfaces
 	// it means to find out names for vpp swIndexes
@@ -65,7 +69,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		for _, nbIface := range nbIfaces {
 			if vppSwIfIdx, meta, found := tmpCorr.LookupIdx(nbIface.Name); found {
 				corr.RegisterName(nbIface.Name, vppSwIfIdx, meta)
-				log.DefaultLogger().WithField("swIfIndex", vppSwIfIdx).Debug("Correlation ", nbIface.Name)
+				plugin.Log.WithField("swIfIndex", vppSwIfIdx).Debug("Correlation ", nbIface.Name)
 			}
 		}
 	}
@@ -84,7 +88,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		} else if !found {
 			err := plugin.deleteVPPInterface(&vppIface.Interfaces_Interface, vppSwIfIdx)
 
-			log.DefaultLogger().WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
+			plugin.Log.WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
 				Info("Interface deletion ", err)
 
 			if err != nil {
@@ -121,14 +125,56 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		}
 	}
 
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
 	return wasError
 }
 
+// VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except
+// the local0), it returns false (do not interrupt the resto of the resync), otherwise returns true
+func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	// notify that the resync should be stopped
+	var stop bool
+
+	// Step 0: Dump actual state of the VPP
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
+	if err != nil {
+		return stop
+	}
+
+	// The strategy is optimize-cold-start, so look over all dumped VPP interfaces and check for the configured ones
+	// (leave out the local0). If there are any other interfaces, return true (resync will continue).
+	// If not, return a false flag which cancels the VPP resync operation.
+	plugin.Log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
+	if len(vppIfaces) == 0 {
+		stop = true
+		plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
+		return stop
+	}
+	// in interface exists, try to find local0 interface (index 0)
+	_, ok := vppIfaces[0]
+	// in case local0 is the only interface on the vpp, stop the resync
+	if len(vppIfaces) == 1 && ok {
+		stop = true
+		plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
+		return stop
+	}
+	// otherwise continue normally
+	plugin.Log.Infof("... VPP configuration found, continue with VPP resync")
+
+	return stop
+}
+
 // ResyncSession writes BFD sessions to the empty VPP
 func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
 
 	// lookup BFD sessions
 	err := plugin.LookupBfdSessions()
@@ -146,14 +192,20 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 		}
 	}
 
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
 
 	return wasError
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
+	// Calculate and log bfd resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
 
 	// lookup BFD auth keys
 	err := plugin.LookupBfdKeys()
@@ -171,7 +223,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 		}
 	}
 
-	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
 
 	return wasError
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync/grpcsync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/unrolled/render"
@@ -44,17 +43,16 @@ type Plugin struct {
 	// Used mainly for testing purposes
 	listenAndServe ListenAndServe
 
-	server     io.Closer
-	mx         *mux.Router
-	formatter  *render.Render
-	grpcServer *grpcsync.Adapter
+	server    io.Closer
+	mx        *mux.Router
+	formatter *render.Render
 }
 
 // Deps lists the dependencies of the Rest plugin.
 type Deps struct {
 	Log        logging.PluginLogger //inject
 	PluginName core.PluginName      //inject
-	config.PluginConfig
+	config.PluginConfig             //inject
 }
 
 // Init is the plugin entry point called by Agent Core
@@ -108,7 +106,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 
 // Close stops the HTTP server.
 func (plugin *Plugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.grpcServer, plugin.server)
+	_, err := safeclose.CloseAll(plugin.server)
 	return err
 }
 

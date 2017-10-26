@@ -34,7 +34,7 @@ const (
 	Error PluginState = "error"
 
 	// frequency of periodic writes of state data into ETCD
-	periodicWriteTimeout   time.Duration = time.Second * 10
+	periodicWriteTimeout time.Duration = time.Second * 10
 
 	// frequency of periodic plugin state probing
 	periodicProbingTimeout time.Duration = time.Second * 5
@@ -291,4 +291,13 @@ func stateToProto(state PluginState) status.OperationalState {
 	default:
 		return status.OperationalState_ERROR
 	}
+}
+
+// GetAllPluginStatus returns a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetAllPluginStatus() map[string]*status.PluginStatus {
+	//TODO - used currently, will be removed after incoporating improvements for exposing copy of map
+	p.access.Lock()
+	defer p.access.Unlock()
+
+	return p.pluginStat
 }

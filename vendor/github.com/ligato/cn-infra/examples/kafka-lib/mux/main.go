@@ -39,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	// Initialize multiplexer named "default".
-	mx, err := mux.InitMultiplexer(configFile, "default", client.Hash, logroot.StandardLogger())
+	mx, err := mux.InitMultiplexer(configFile, "default", logroot.StandardLogger())
 	if err != nil {
 		os.Exit(1)
 	}
@@ -49,7 +49,7 @@ func main() {
 	cn := mx.NewBytesConnection("plugin")
 
 	// Send one message synchronously.
-	offset, err := cn.SendSyncString("test", mux.DefPartition, "key", "value")
+	offset, err := cn.SendSyncString("test", "key", "value")
 	if err == nil {
 		fmt.Println("Sync published ", offset)
 	}
@@ -60,7 +60,7 @@ func main() {
 	signal.Notify(signalChan, os.Interrupt)
 
 	// Send one message asynchronously.
-	cn.SendAsyncString("test", mux.DefPartition, "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
+	cn.SendAsyncString("test", "key", "async!!", "meta", mux.ToBytesProducerChan(succCh), mux.ToBytesProducerErrChan(errCh))
 
 	// Receive the asynchronously send message.
 	select {
