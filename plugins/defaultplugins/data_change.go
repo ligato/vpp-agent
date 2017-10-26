@@ -294,14 +294,14 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 }
 
 // DataChangeL4Features propagates data change to the l4Configurator
-func (plugin *Plugin) dataChangeL4Features(diff bool, value *l4.L4Features, prevValue *l4.L4Features,
+func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L4Features,
 	changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangeL4Feature ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("dataChangeL4Feature ", changeType, " ", value, " ", prevValue)
 
+	// diff and previous value is not important, features flag can be either set or not.
+	// If removed, it is always set to false
 	if datasync.Delete == changeType {
-		return plugin.l4Configurator.DeleteL4FeatureFlag(prevValue)
-	} else if diff {
-		return plugin.l4Configurator.ModifyL4FeatureFlag(value, prevValue)
+		return plugin.l4Configurator.DeleteL4FeatureFlag()
 	}
 	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
 }

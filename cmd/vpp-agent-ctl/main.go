@@ -46,6 +46,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 var (
@@ -189,6 +190,10 @@ func main() {
 			createLinuxRoute(db)
 		case "-clrtdef":
 			createDefaultLinuxRoute(db)
+		case "-ef":
+			enableL4Features(db)
+		case "-df":
+			disableL4Features(db)
 		case "-dlrt":
 			delete(db, l32.StaticRouteKey("route1"))
 		default:
@@ -1006,4 +1011,22 @@ func createDefaultLinuxRoute(db keyval.ProtoBroker) {
 	log.Println(linuxRoutes)
 
 	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
+}
+
+func enableL4Features(db keyval.ProtoBroker) {
+	l4Fatures := &l4.L4Features{}
+	l4Fatures.Enabled = true
+
+	log.Println(l4Fatures)
+
+	db.Put(l4.FeatureKey(), l4Fatures)
+}
+
+func disableL4Features(db keyval.ProtoBroker) {
+	l4Fatures := &l4.L4Features{}
+	l4Fatures.Enabled = false
+
+	log.Println(l4Fatures)
+
+	db.Put(l4.FeatureKey(), l4Fatures)
 }

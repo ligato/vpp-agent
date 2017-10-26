@@ -370,11 +370,16 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 }
 
 func resyncFeatures(resyncData datasync.KeyValIterator, req *DataResyncReq)  {
-	appResyncData, _ := resyncData.GetNext()
-	value := &l4.L4Features{}
-	err := appResyncData.GetValue(value)
-	if err == nil {
-		req.L4Features = value
+	for {
+		appResyncData, stop := resyncData.GetNext()
+		if stop {
+			break
+		}
+		value := &l4.L4Features{}
+		err := appResyncData.GetValue(value)
+		if err == nil {
+			req.L4Features = value
+		}
 	}
 }
 
@@ -416,7 +421,9 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.VrfKeyPrefix())
+			l3.VrfKeyPrefix(),
+			l4.FeatureKeyPrefix(),
+			l4.AppNamespacesKeyPrefix())
 	if err != nil {
 		return err
 	}
@@ -579,8 +586,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeL4Features(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+		if _, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeL4Features(&value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
 		} else {

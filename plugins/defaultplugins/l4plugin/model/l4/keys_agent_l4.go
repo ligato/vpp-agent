@@ -41,3 +41,8 @@ func FeatureKeyPrefix() string {
 	return L4FeaturesPrefix
 }
 
+// FeatureKey returns the key used in ETCD to store L4Feature flag
+func FeatureKey() string {
+	return L4FeaturesPrefix + "feature"
+}
+

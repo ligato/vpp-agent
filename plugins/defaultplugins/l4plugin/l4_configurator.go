@@ -51,6 +51,9 @@ type L4Configurator struct {
 
 	// channel to communicate with the vpp
 	vppCh *govppapi.Channel
+
+	// Features flag - internal state whether the L4 features are enabled or disabled
+	features bool
 }
 
 // Init members (channels...) and start go routines
@@ -74,16 +77,35 @@ func (plugin *L4Configurator) Close() error {
 
 // ConfigureL4FeatureFlag process the NB Features config and propagates it to bin api calls
 func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) error {
-	return nil
-}
+	plugin.Log.Info("Configuring L4 features")
 
-// ModifyL4FeatureFlag process the NB Features config and propagates it to bin api calls
-func (plugin *L4Configurator) ModifyL4FeatureFlag(newFeatures *l4.L4Features, oldFeatures *l4.L4Features) error {
+	if features.Enabled {
+		if err := vppcalls.EnableL4Features(plugin.Log, plugin.vppCh); err != nil {
+			return err
+		}
+		plugin.features = true
+		plugin.Log.Infof("L4 features were enabled")
+	} else {
+		if err := vppcalls.DisableL4Features(plugin.Log, plugin.vppCh); err != nil {
+			return err
+		}
+		plugin.features = false
+		plugin.Log.Infof("L4 features were disabled")
+	}
+
 	return nil
 }
 
 // DeleteL4FeatureFlag process the NB Features config and propagates it to bin api calls
-func (plugin *L4Configurator) DeleteL4FeatureFlag(features *l4.L4Features) error {
+func (plugin *L4Configurator) DeleteL4FeatureFlag() error {
+	plugin.Log.Info("Deleting L4 features")
+
+	if err := vppcalls.DisableL4Features(plugin.Log, plugin.vppCh); err != nil {
+		return err
+	}
+	plugin.features = false
+	plugin.Log.Infof("L4 features were disabled")
+
 	return nil
 }
 
