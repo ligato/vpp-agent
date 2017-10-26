@@ -21,7 +21,7 @@ import (
 )
 
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace
-func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, len uint8, log logging.Logger,  vppChan *govppapi.Channel) error {
+func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, log logging.Logger,  vppChan *govppapi.Channel) error {
 	log.Debugf("Adding App Namespace %v to interface %v", string(id), swIfIdx)
 
 	req := &session.AppNamespaceAddDel{
@@ -30,7 +30,7 @@ func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byt
 		IP4FibID: ip4FibID,
 		IP6FibID: ip6FibID,
 		NamespaceID: id,
-		NamespaceIDLen: len,
+		NamespaceIDLen: uint8(len(id)),
 	}
 
 	reply := &session.AppNamespaceAddDelReply{}

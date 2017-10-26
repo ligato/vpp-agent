@@ -17,6 +17,11 @@ package l4plugin
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 
 // Resync configures app namespaces to the empty VPP
-func (plugin *L4Configurator) Resync(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
+func (plugin *L4Configurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
+	return nil
+}
+
+// Resync configures app namespaces to the empty VPP
+func (plugin *L4Configurator) ResyncFeatures(l4Features *l4.L4Features) error {
 	return nil
 }

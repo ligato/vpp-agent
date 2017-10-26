@@ -51,6 +51,8 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// L4Features is a bool flag that is expected to be set in VPP after RESYNC
+	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC
 	AppNamespaces []*l4.AppNamespaces_AppNamespace
 }
@@ -67,6 +69,7 @@ func NewDataResyncReq() *DataResyncReq {
 		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{}},
+		L4Features: 		 &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{}}
 }
 
@@ -132,7 +135,10 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 		return err
 	}
-	if err = plugin.l4Configurator.Resync(req.AppNamespaces); err != nil {
+	if err = plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+		return err
+	}
+	if err = plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
 		return err
 	}
 	return err
@@ -170,6 +176,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		}  else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+			resyncFeatures(resyncData, req)
+			plugin.Log.Debug("Received RESYNC AppNs feature flag")
 		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 			numAppNs := resyncAppendAppNs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
@@ -358,6 +367,15 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 		}
 	}
 	return num
+}
+
+func resyncFeatures(resyncData datasync.KeyValIterator, req *DataResyncReq)  {
+	appResyncData, _ := resyncData.GetNext()
+	value := &l4.L4Features{}
+	err := appResyncData.GetValue(value)
+	if err == nil {
+		req.L4Features = value
+	}
 }
 
 func resyncAppendAppNs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
@@ -551,6 +569,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeAppNamespace(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+		var value, prevValue l4.L4Features
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeL4Features(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
 		} else {

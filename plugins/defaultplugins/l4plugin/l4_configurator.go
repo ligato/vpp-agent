@@ -72,6 +72,21 @@ func (plugin *L4Configurator) Close() error {
 	return nil
 }
 
+// ConfigureL4FeatureFlag process the NB Features config and propagates it to bin api calls
+func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) error {
+	return nil
+}
+
+// ModifyL4FeatureFlag process the NB Features config and propagates it to bin api calls
+func (plugin *L4Configurator) ModifyL4FeatureFlag(newFeatures *l4.L4Features, oldFeatures *l4.L4Features) error {
+	return nil
+}
+
+// DeleteL4FeatureFlag process the NB Features config and propagates it to bin api calls
+func (plugin *L4Configurator) DeleteL4FeatureFlag(features *l4.L4Features) error {
+	return nil
+}
+
 // ConfigureAppNamespace process the NB AppNamespace config and propagates it to bin api calls
 func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Configuring new AppNamespace with ID %v", ns.NamespaceId)
@@ -86,7 +101,7 @@ func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppName
 	nsId := []byte(ns.NamespaceId)
 
 
-	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsId, 0, plugin.Log, plugin.vppCh)
+	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsId, plugin.Log, plugin.vppCh)
 	if err != nil {
 		return err
 	}
@@ -94,7 +109,7 @@ func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppName
 	return nil
 }
 
-// ModifyAppNamespace process the NB AppNamespace config and propagates it to bin api calls
+// ConfigureL4FeatureFlag process the NB AppNamespace config and propagates it to bin api calls
 func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
 	return nil
 }

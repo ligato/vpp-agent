@@ -280,7 +280,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
 }
 
-// DataChangeStaticRoute propagates data change to the routeConfigurator
+// DataChangeStaticRoute propagates data change to the l4Configurator
 func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_AppNamespace, prevValue *l4.AppNamespaces_AppNamespace,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
@@ -291,4 +291,17 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 		return plugin.l4Configurator.ModifyAppNamespace(value, prevValue)
 	}
 	return plugin.l4Configurator.ConfigureAppNamespace(value)
+}
+
+// DataChangeL4Features propagates data change to the l4Configurator
+func (plugin *Plugin) dataChangeL4Features(diff bool, value *l4.L4Features, prevValue *l4.L4Features,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeL4Feature ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.l4Configurator.DeleteL4FeatureFlag(prevValue)
+	} else if diff {
+		return plugin.l4Configurator.ModifyL4FeatureFlag(value, prevValue)
+	}
+	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
 }
