@@ -27,7 +27,8 @@ import (
 type ProtoWatcher interface {
 	// Watch starts to monitor changes associated with the keys.
 	// Watch events will be delivered to callback (not channel) <respChan>.
-	Watch(respChan func(ProtoWatchResp), key ...string) error
+	// Channel <closeChan> can be used to close watching on respective key
+	Watch(respChan func(ProtoWatchResp), closeChan chan string, key ...string) error
 }
 
 // ProtoWatchResp represents a notification about data change.
