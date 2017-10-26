@@ -45,6 +45,7 @@ type ProtoBroker interface {
 // ProtoKvPair group getter for single key-value pair
 type ProtoKvPair interface {
 	datasync.LazyValue
+	datasync.WithPrevValue
 	datasync.WithKey
 }
 

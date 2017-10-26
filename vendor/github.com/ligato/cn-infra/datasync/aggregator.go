@@ -67,7 +67,7 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 // This function implements KeyProtoValWriter.Put().
 func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...PutOption) error {
 	if len(ta.Adapters) == 0 {
-		return fmt.Errorf("No transport is available in aggregator")
+		return fmt.Errorf("no transport is available in aggregator")
 	}
 	var wasError error
 	for _, transport := range ta.Adapters {
@@ -77,6 +77,16 @@ func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...Pu
 		}
 	}
 	return wasError
+}
+
+// Unregister closed registration of specific key under all available aggregator objects.
+// Call Unregister(keyPrefix) on specific registration to remove key from that registration only
+func (wa *AggregatedRegistration) Unregister(keyPrefix string) error {
+	for _, registration := range wa.Registrations {
+		registration.Unregister(keyPrefix)
+	}
+
+	return nil
 }
 
 // Close every registration under the aggregator.

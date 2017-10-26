@@ -63,7 +63,7 @@ func main() {
 
 	// Register watcher and select the respChan channel as the destination
 	// for the delivery of all the change events.
-	err = protoBroker.Watch(keyval.ToChanProto(respChan), phonebook.EtcdPath())
+	err = protoBroker.Watch(keyval.ToChanProto(respChan), make(chan string), phonebook.EtcdPath())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

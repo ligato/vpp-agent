@@ -22,18 +22,18 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// NewChangeWatchResp is a constructor
+// NewChangeWatchResp is a constructor.
 func NewChangeWatchResp(message *DataChangeRequest, callback func(error)) *ChangeWatchResp {
 	return &ChangeWatchResp{message: message, callback: callback}
 }
 
-// ChangeWatchResp adapts Datamessage to interface datasync.ChangeEvent
+// ChangeWatchResp adapts Datamessage to interface datasync.ChangeEvent.
 type ChangeWatchResp struct {
 	message  *DataChangeRequest
 	callback func(error)
 }
 
-// GetChangeType - see the comment in implemented interface datasync.ChangeEvent
+// GetChangeType - see the comment in implemented interface datasync.ChangeEvent.
 func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
 	if ev.message.OperationType == PutDel_DEL {
 		return datasync.Delete
@@ -42,7 +42,7 @@ func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
 	return datasync.Put
 }
 
-// GetKey returns the key associated with the change
+// GetKey returns the key associated with the change.
 func (ev *ChangeWatchResp) GetKey() string {
 	return ev.message.Key
 }
@@ -52,12 +52,12 @@ func (ev *ChangeWatchResp) GetRevision() int64 {
 	return 0
 }
 
-// GetValue - see the comments in the interface datasync.ChangeEvent
+// GetValue - see the comments in the interface datasync.ChangeEvent.
 func (ev *ChangeWatchResp) GetValue(val proto.Message) error {
 	return json.Unmarshal(ev.message.Content, val) //TODO use contentType...
 }
 
-// GetPrevValue returns the value before change
+// GetPrevValue returns the value before change.
 func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (prevExists bool, err error) {
 	if ev.message.OperationType == PutDel_DEL {
 		return false, err
@@ -66,7 +66,7 @@ func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (prevExists bool,
 	return false, err //TODO prev value
 }
 
-// Done does nothing yet
+// Done does nothing yet.
 func (ev *ChangeWatchResp) Done(err error) {
 	//TODO publish response to the topic
 	if err != nil {

@@ -50,5 +50,9 @@ type KeyProtoValWriter interface {
 // WatchRegistration is a facade that avoids importing the io.Closer package
 // into Agent plugin implementations.
 type WatchRegistration interface {
+	// Unregister <keyPrefix> from adapter subscription. If called on registration
+	// returned by composite watcher, unregister <keyPrefix> from all adapters
+	Unregister(keyPrefix string) error
+
 	io.Closer
 }

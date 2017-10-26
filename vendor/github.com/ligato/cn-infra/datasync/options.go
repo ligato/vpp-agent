@@ -21,7 +21,7 @@ import (
 // PutOption defines options for Put operation.
 // The available options can be found below.
 type PutOption interface {
-	// PutOptionMark is used just to mark structures implementing PutOption
+	// PutOptionMark is used only to mark structures implementing PutOption
 	// interface.
 	PutOptionMark()
 }
@@ -61,13 +61,13 @@ func WithPrefix() *WithPrefixOpt {
 // PutOptionMarker is meant for anonymous composition in With*Opt structs.
 type PutOptionMarker struct{}
 
-// PutOptionMark is used just to mark structures implementing PutOption
+// PutOptionMark is used only to mark structures implementing PutOption
 // interface.
 func (marker *PutOptionMarker) PutOptionMark() {}
 
 // DelOptionMarker is meant for anonymous composition in With*Opt structs.
 type DelOptionMarker struct{}
 
-// DelOptionMark is used just to mark structures implementing DelOption
+// DelOptionMark is used only to mark structures implementing DelOption
 // interface.
 func (marker *DelOptionMarker) DelOptionMark() {}
