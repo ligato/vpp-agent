@@ -190,6 +190,8 @@ func main() {
 			createLinuxRoute(db)
 		case "-clrtdef":
 			createDefaultLinuxRoute(db)
+		case "-appns":
+			createAppNamespace(db)
 		case "-ef":
 			enableL4Features(db)
 		case "-df":
@@ -1011,6 +1013,19 @@ func createDefaultLinuxRoute(db keyval.ProtoBroker) {
 	log.Println(linuxRoutes)
 
 	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
+}
+
+func createAppNamespace(db keyval.ProtoBroker) {
+	appNamespace := l4.AppNamespaces{}
+	appNamespace.AppNamespaces = make([]*l4.AppNamespaces_AppNamespace, 1)
+	appNamespace.AppNamespaces[0] = new(l4.AppNamespaces_AppNamespace)
+	appNamespace.AppNamespaces[0].NamespaceId = "ns8"
+	appNamespace.AppNamespaces[0].Secret = 1
+	appNamespace.AppNamespaces[0].Interface = "tap1"
+
+	log.Println(appNamespace)
+
+	db.Put(l4.AppNamespacesKey(appNamespace.AppNamespaces[0].NamespaceId), appNamespace.AppNamespaces[0])
 }
 
 func enableL4Features(db keyval.ProtoBroker) {

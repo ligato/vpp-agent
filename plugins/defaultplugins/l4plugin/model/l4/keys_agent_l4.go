@@ -31,8 +31,8 @@ func AppNamespacesKeyPrefix() string {
 	return L4NamespacesPrefix
 }
 
-// NamespacesKey returns the key used in ETCD to store namespaces
-func NamespacesKey(namespaceID string) string {
+// AppNamespacesKey returns the key used in ETCD to store namespaces
+func AppNamespacesKey(namespaceID string) string {
 	return L4NamespacesPrefix + namespaceID
 }
 

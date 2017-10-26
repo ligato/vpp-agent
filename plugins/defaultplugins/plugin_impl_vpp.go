@@ -127,6 +127,7 @@ type Plugin struct {
 	// L4 fields
 	l4Configurator    *l4plugin.L4Configurator
 	namespaceIndexes  nsidx.AppNsIndexRW
+	notConfAppNsIndexes  nsidx.AppNsIndexRW
 
 	// Error handler
 	errorIndexes idxvpp.NameToIdxRW
@@ -563,17 +564,21 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	l4Logger := plugin.Log.NewLogger("-l4-plugin")
 	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
 		"namespace_indexes", nil))
+	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+		"not_configured_namespace_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
 	}
 	plugin.l4Configurator = &l4plugin.L4Configurator{
-		Log:           l4Logger,
-		GoVppmux:      plugin.GoVppmux,
-		AppNsIndexs:   plugin.namespaceIndexes,
-		SwIfIndexes:   plugin.swIfIndexes,
-		Stopwatch:     stopwatch,
+		Log:          l4Logger,
+		GoVppmux:     plugin.GoVppmux,
+		AppNsIndexes: plugin.namespaceIndexes,
+		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
+		AppNsIdxSeq:  1,
+		SwIfIndexes:  plugin.swIfIndexes,
+		Stopwatch:    stopwatch,
 	}
 	err := plugin.l4Configurator.Init()
 	if err != nil {

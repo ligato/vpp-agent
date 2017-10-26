@@ -32,6 +32,9 @@ type AppNsIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *l4.AppNamespaces_AppNamespace, exists bool)
 
+	// LookupNamesByInterface returns names of items that contains given IP address in metadata
+	LookupNamesByInterface(ifName string) []*l4.AppNamespaces_AppNamespace
+
 	// WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
 }
@@ -103,6 +106,18 @@ func (swi *appNsIndex) LookupName(idx uint32) (name string, metadata *l4.AppName
 	return name, metadata, exists
 }
 
+// LookupNamesByInterface returns all names related to the provided interface
+func (swi *appNsIndex) LookupNamesByInterface(ifName string) []*l4.AppNamespaces_AppNamespace {
+	var match []*l4.AppNamespaces_AppNamespace
+	for _, name := range swi.mapping.ListNames() {
+		_, meta, found := swi.LookupIdx(name)
+		if found && meta != nil && meta.Interface == ifName {
+			match = append(match, meta)
+		}
+	}
+	return match
+}
+
 // WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
 func (swi *appNsIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
@@ -119,9 +134,17 @@ func (swi *appNsIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel 
 }
 
 func (swi *appNsIndex) castMetadata(meta interface{}) *l4.AppNamespaces_AppNamespace {
-	ifMeta, ok := meta.(*l4.AppNamespaces_AppNamespace)
+	appNsMeta, ok := meta.(*l4.AppNamespaces_AppNamespace)
 	if !ok {
 		return nil
+	}
+	return appNsMeta
+}
+
+func (swi *appNsIndex) castIfMetadata(meta interface{}) string {
+	ifMeta, ok := meta.(string)
+	if !ok {
+		return ""
 	}
 	return ifMeta
 }
