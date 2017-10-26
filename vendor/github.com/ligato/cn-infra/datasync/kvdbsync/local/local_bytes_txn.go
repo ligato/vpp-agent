@@ -22,20 +22,20 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewBytesTxn is a constructor
+// NewBytesTxn is a constructor.
 func NewBytesTxn(commit func(map[string] /*key*/ datasync.ChangeValue) error) *BytesTxn {
 	return &BytesTxn{items: map[string] /*key*/ *BytesTxnItem{}, commit: commit}
 }
 
-// BytesTxn is just an concurrent map of Bytes messages
-// The intent is to collect the user data and propagate them when commit happens
+// BytesTxn is just a concurrent map of Bytes messages.
+// The intent is to collect the user data and propagate them when commit happens.
 type BytesTxn struct {
 	items  map[string] /*key*/ *BytesTxnItem
 	access sync.Mutex
 	commit func(map[string] /*key*/ datasync.ChangeValue) error
 }
 
-//Put adds store operation into transaction
+//Put adds store operation into transaction.
 func (txn *BytesTxn) Put(key string, data []byte) keyval.BytesTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -45,7 +45,7 @@ func (txn *BytesTxn) Put(key string, data []byte) keyval.BytesTxn {
 	return txn
 }
 
-//Delete add delete operation into transaction
+//Delete add delete operation into transaction.
 func (txn *BytesTxn) Delete(key string) keyval.BytesTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -55,7 +55,7 @@ func (txn *BytesTxn) Delete(key string) keyval.BytesTxn {
 	return txn
 }
 
-//Commit executes the transaction
+//Commit executes the transaction.
 func (txn *BytesTxn) Commit() error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
@@ -72,7 +72,7 @@ func (txn *BytesTxn) Commit() error {
 	return txn.commit(kvs)
 }
 
-// BytesTxnItem is used in BytesTxn
+// BytesTxnItem is used in BytesTxn.
 type BytesTxnItem struct {
 	Data   []byte
 	Delete bool

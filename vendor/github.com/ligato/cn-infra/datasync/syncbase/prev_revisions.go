@@ -19,41 +19,41 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 )
 
-// NewLatestRev is a constructor
+// NewLatestRev is a constructor.
 func NewLatestRev() *PrevRevisions {
 	return &PrevRevisions{map[string] /*key*/ datasync.LazyValueWithRev{}}
 }
 
-// PrevRevisions maintains the map of keys & values with revision
+// PrevRevisions maintains the map of keys & values with revision.
 type PrevRevisions struct {
 	revisions map[string] /*key*/ datasync.LazyValueWithRev
 }
 
-// valWithRev stores the tuple (see the map above)
+// valWithRev stores the tuple (see the map above).
 type valWithRev struct {
 	val datasync.LazyValue
 	rev int64
 }
 
-// GetValue gets the current in the data change event.
+// GetValue gets the current value in the data change event.
 // The caller must provide an address of a proto message buffer
 // for each value.
 // returns:
-// - error if value argument can not be properly filled
+// - error if value argument can not be properly filled.
 func (d *valWithRev) GetValue(value proto.Message) error {
 	return d.val.GetValue(value)
 }
 
-// GetRevision gets the current in the data change event.
+// GetRevision gets the revision associated with the value in the data change event.
 // The caller must provide an address of a proto message buffer
 // for each value.
 // returns:
-// - revision associated with the latest change in the key-value pair
+// - revision associated with the latest change in the key-value pair.
 func (d *valWithRev) GetRevision() (rev int64) {
 	return d.rev
 }
 
-// Put updates entry in the revisions and returns previous value
+// Put updates the entry in the revisions and returns previous value.
 func (r *PrevRevisions) Put(key string, val datasync.LazyValue) (
 	found bool, prev datasync.LazyValueWithRev, currRev int64) {
 
@@ -74,7 +74,7 @@ func (r *PrevRevisions) Put(key string, val datasync.LazyValue) (
 	return found, prev, currRev
 }
 
-// PutWithRevision updates entry in the revisions and returns previous value
+// PutWithRevision updates the entry in the revisions and returns previous value.
 func (r *PrevRevisions) PutWithRevision(key string, inCurrent datasync.LazyValueWithRev) (
 	found bool, prev datasync.LazyValueWithRev) {
 
@@ -90,7 +90,7 @@ func (r *PrevRevisions) PutWithRevision(key string, inCurrent datasync.LazyValue
 	return found, prev
 }
 
-// Del deletes entry from revisions and returns previous value
+// Del deletes the entry from revisions and returns previous value.
 func (r *PrevRevisions) Del(key string) (found bool, prev datasync.LazyValueWithRev) {
 	found, prev = r.Get(key)
 
@@ -101,7 +101,7 @@ func (r *PrevRevisions) Del(key string) (found bool, prev datasync.LazyValueWith
 	return found, prev
 }
 
-// Get gets last proto.Message with it's revision
+// Get gets the last proto.Message with it's revision.
 func (r *PrevRevisions) Get(key string) (found bool, value datasync.LazyValueWithRev) {
 	prev, found := r.revisions[key]
 
@@ -112,7 +112,7 @@ func (r *PrevRevisions) Get(key string) (found bool, value datasync.LazyValueWit
 	return found, nil
 }
 
-// ListKeys returns all stored keys
+// ListKeys returns all stored keys.
 func (r *PrevRevisions) ListKeys() []string {
 	ret := []string{}
 	for key := range r.revisions {

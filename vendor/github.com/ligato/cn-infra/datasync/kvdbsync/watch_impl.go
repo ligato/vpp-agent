@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// WatchBrokerKeys implements go routines on top of Change & Resync channels
+// WatchBrokerKeys implements go routines on top of Change & Resync channels.
 type watchBrokerKeys struct {
 	resyncReg  resync.Registration
 	changeChan chan datasync.ChangeEvent
@@ -39,14 +39,11 @@ type watcher struct {
 	base *syncbase.Registry
 }
 
-// WatchAndResyncBrokerKeys calls keyval watcher Watch() & resync Register()
-// This creates go routines for each tuple changeChan+resyncChan.
+// WatchAndResyncBrokerKeys calls keyval watcher Watch() & resync Register().
+// This creates go routines for each tuple changeChan + resyncChan.
 func watchAndResyncBrokerKeys(resyncReg resync.Registration, changeChan chan datasync.ChangeEvent, resyncChan chan datasync.ResyncEvent,
-	adapter *watcher, keyPrefixes ...string) (*watchBrokerKeys, error) {
-
-	var wasError error
-
-	keys := &watchBrokerKeys{
+	closeChan chan string, adapter *watcher, keyPrefixes ...string) (keys *watchBrokerKeys, err error) {
+	keys = &watchBrokerKeys{
 		resyncReg:  resyncReg,
 		changeChan: changeChan,
 		resyncChan: resyncChan,
@@ -57,12 +54,9 @@ func watchAndResyncBrokerKeys(resyncReg resync.Registration, changeChan chan dat
 		go keys.watchResync(resyncReg)
 	}
 	if changeChan != nil {
-		err := keys.adapter.dbW.Watch(keys.watchChanges, keys.prefixes...)
-		if err != nil {
-			wasError = err
-		}
+		err = keys.adapter.dbW.Watch(keys.watchChanges, closeChan, keys.prefixes...)
 	}
-	return keys, wasError
+	return keys, err
 }
 
 func (keys *watchBrokerKeys) watchChanges(x keyval.ProtoWatchResp) {
@@ -89,7 +83,7 @@ func (keys *watchBrokerKeys) watchResync(resyncReg resync.Registration) {
 		if resyncStatus.ResyncStatus() == resync.Started {
 			err := keys.resync()
 			if err != nil {
-				logroot.StandardLogger().Error("error getting resync data ", err) //we are not able to propagate it somewhere else
+				logroot.StandardLogger().Error("error getting resync data ", err) // We are not able to propagate it somewhere else.
 				// TODO NICE-to-HAVE publish the err using the transport asynchronously
 			}
 		}
@@ -97,7 +91,7 @@ func (keys *watchBrokerKeys) watchResync(resyncReg resync.Registration) {
 	}
 }
 
-// Resync fills the resyncChan with most recent snapshot (db.ListValues)
+// Resync fills the resyncChan with the most recent snapshot (db.ListValues).
 func (keys *watchBrokerKeys) resync() error {
 	its := map[string] /*keyPrefix*/ datasync.KeyValIterator{}
 	for _, keyPrefix := range keys.prefixes {
@@ -122,7 +116,7 @@ func (keys *watchBrokerKeys) resync() error {
 	return nil
 }
 
-// String returns resyncName
+// String returns resyncName.
 func (keys *watchBrokerKeys) String() string {
 	return keys.resyncReg.String()
 }

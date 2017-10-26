@@ -24,12 +24,12 @@ func NewIterator(delegate keyval.ProtoKeyValIterator) *Iterator {
 	return &Iterator{delegate: delegate}
 }
 
-// Iterator adapts the db_proto.KeyValIterator to the datasync.KeyValIterator
+// Iterator adapts the db_proto.KeyValIterator to the datasync.KeyValIterator.
 type Iterator struct {
 	delegate keyval.ProtoKeyValIterator
 }
 
-// GetNext just delegate GetNext
+// GetNext only delegates the call to internal iterator.
 func (it *Iterator) GetNext() (kv datasync.KeyVal, stop bool) {
 	kv, stop = it.delegate.GetNext()
 	if stop {

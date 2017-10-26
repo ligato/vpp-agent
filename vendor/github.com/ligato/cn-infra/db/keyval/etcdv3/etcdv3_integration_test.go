@@ -94,7 +94,7 @@ func testPrefixedWatcher(t *testing.T) {
 	defer teardownBrokers()
 
 	watchCh := make(chan keyval.BytesWatchResp)
-	err := prefixedWatcher.Watch(keyval.ToChan(watchCh), watchKey)
+	err := prefixedWatcher.Watch(keyval.ToChan(watchCh), nil, 	watchKey)
 	gomega.Expect(err).To(gomega.BeNil())
 
 	wg := sync.WaitGroup{}
