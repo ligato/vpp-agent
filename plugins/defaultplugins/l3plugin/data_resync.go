@@ -54,7 +54,7 @@ func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpTableEntry) e
 	var wasError error
 	if len(arpEntries) > 0 {
 		for _, entry := range arpEntries {
-			wasError = plugin.Add(entry)
+			wasError = plugin.AddArp(entry)
 		}
 	}
 

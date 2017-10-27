@@ -261,11 +261,11 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry,
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.arpConfigurator.Delete(prevValue)
+		return plugin.arpConfigurator.DeleteArp(prevValue)
 	} else if diff {
-		return plugin.arpConfigurator.Diff(prevValue, value)
+		return plugin.arpConfigurator.ChangeArp(prevValue, value)
 	}
-	return plugin.arpConfigurator.Add(value)
+	return plugin.arpConfigurator.AddArp(value)
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator

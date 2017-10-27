@@ -30,6 +30,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+// ArpConfiguratorruns in the background in its own goroutine where it watches for any changes
+// in the configuration of L3 arp entries as modelled by the proto file "../model/l3/l3.proto" and stored
+// in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/arp". Updates received from the northbound API
+// are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type ArpConfigurator struct {
 	Log logging.Logger
 
@@ -99,7 +103,8 @@ func TransformArp(arpInput *l3.ArpTable_ArpTableEntry, index ifaceidx.SwIfIndex,
 	return arp, nil
 }
 
-func (plugin *ArpConfigurator) Add(entry *l3.ArpTable_ArpTableEntry) error {
+// AddArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
 	//plugin.Log.Infof("Creating new ARP entry %v -> %v (%v) for interface %v", entry.IpAddress, entry.PhysAddress, entry.Static, entry.Interface)
 	plugin.Log.Infof("Creating ARP entry %+v", *entry)
 
@@ -126,11 +131,13 @@ func (plugin *ArpConfigurator) Add(entry *l3.ArpTable_ArpTableEntry) error {
 	return nil
 }
 
-func (plugin *ArpConfigurator) Diff(entry *l3.ArpTable_ArpTableEntry, prevEntry *l3.ArpTable_ArpTableEntry) error {
-	return fmt.Errorf("ARP DIFF NOT IMPLEMENTED")
+// ChangeArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevEntry *l3.ArpTable_ArpTableEntry) error {
+	return fmt.Errorf("CHANGE ARP NOT IMPLEMENTED")
 }
 
-func (plugin *ArpConfigurator) Delete(entry *l3.ArpTable_ArpTableEntry) error {
+// DeleteArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error {
 	plugin.Log.Infof("Deleting ARP entry %+v", *entry)
 
 	// Transform route data
