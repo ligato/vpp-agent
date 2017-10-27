@@ -137,7 +137,7 @@ func (plugin *Plugin) dataChangeVrfTable(diff bool, value *l3.VrfTable, prevValu
 	plugin.Log.Debug("dataChangeVrfTable ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return fmt.Errorf("DELETE VRF TABLE NOT IMPLEMENTED")
+		return plugin.vrfConfigurator.DeleteTable(value, vrfFromKey)
 	} else if diff {
 		return fmt.Errorf("MODIFY VRF TABLE NOT IMPLEMENTED")
 	}

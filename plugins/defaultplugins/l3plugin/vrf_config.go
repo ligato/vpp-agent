@@ -50,14 +50,15 @@ func (plugin *VrfConfigurator) Init() (err error) {
 		return err
 	}
 
-	return plugin.checkMsgCompatibility()}
+	return plugin.checkMsgCompatibility()
+}
 
 // Creates unique identifier which serves as a name in name to index mapping
 func tableIdentifier(vrf uint32) string {
 	return fmt.Sprintf("vrftable-%v", vrf)
 }
 
-// AddTable creates new table
+// AddTable creates VRF table
 func (plugin *VrfConfigurator) AddTable(config *l3.VrfTable, vrfFromKey string) error {
 	plugin.Log.Infof("Creating new VRF table %s (ID: %v)", config.Name, config.VrfId)
 	// Validate VRF index from key and it's value in data
@@ -70,7 +71,7 @@ func (plugin *VrfConfigurator) AddTable(config *l3.VrfTable, vrfFromKey string) 
 		return err
 	}
 	plugin.Log.Debugf("adding table: %+v", table)
-	// Create and register new table
+	// Create and register VRF table
 	if table != nil {
 		if err := vppcalls.VppAddIPTable(table, plugin.vppChan); err != nil {
 			return err
@@ -84,85 +85,37 @@ func (plugin *VrfConfigurator) AddTable(config *l3.VrfTable, vrfFromKey string) 
 	return nil
 }
 
-/*
-// ModifyRoute process the NB config and propagates it to bin api calls
-func (plugin *VrfConfigurator) ModifyRoute(newConfig *l3.VrfTable, oldConfig *l3.VrfTable, vrfFromKey string) error {
-	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-	// Validate old route data Vrf
-	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
-		return err
-	}
-	// Transform old route data
-	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	// Remove and unregister old route
-	err = vppcalls.VppDelRoute(oldRoute, plugin.vppChan)
-	if err != nil {
-		return err
-	}
-	oldRouteIdentifier := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
-	_, _, found := plugin.RouteIndexes.UnregisterName(oldRouteIdentifier)
-	if found {
-		plugin.Log.Infof("Old route %v unregistered", oldRouteIdentifier)
-	} else {
-		plugin.Log.Warnf("Unregister failed, old route %v not found", oldRouteIdentifier)
-	}
-
-	// Validate new route data Vrf
-	if err := plugin.validateVrfFromKey(newConfig, vrfFromKey); err != nil {
-		return err
-	}
-	// Transform new route data
-	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	// Create and register new route
-	err = vppcalls.VppAddRoute(newRoute, plugin.vppChan)
-	if err != nil {
-		return err
-	}
-	newRouteIdentifier := routeIdentifier(newRoute.VrfID, newRoute.DstAddr.String(), newRoute.NextHopAddr.String())
-	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
-	plugin.RouteIndexSeq++
-	plugin.Log.Infof("New route %v registered", newRouteIdentifier)
-
-	return nil
-}
-
-// DeleteRoute process the NB config and propagates it to bin api calls
-func (plugin *VrfConfigurator) DeleteRoute(config *l3.VrfTable, vrfFromKey string) (wasError error) {
-	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+// DeleteTable deletes VRF table
+func (plugin *VrfConfigurator) DeleteTable(config *l3.VrfTable, vrfFromKey string) error {
+	plugin.Log.Infof("Deleting VRF table %s (ID: %v)", config.Name, config.VrfId)
 	// Validate VRF index from key and it's value in data
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
-	// Transform route data
-	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
+
+	// Transform table data
+	table, err := TransformVrfTable(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
-	if route == nil {
-		return nil
-	}
-	plugin.Log.Debugf("deleting route: %+v", route)
-	// Remove and unregister route
-	err = vppcalls.VppDelRoute(route, plugin.vppChan)
-	if err != nil {
-		return err
-	}
-	routeIdentifier := routeIdentifier(route.VrfID, route.DstAddr.String(), route.NextHopAddr.String())
-	_, _, found := plugin.RouteIndexes.UnregisterName(routeIdentifier)
-	if found {
-		plugin.Log.Infof("Route %v unregistered", routeIdentifier)
-	} else {
-		plugin.Log.Warnf("Unregister failed, route %v not found", routeIdentifier)
+	plugin.Log.Debugf("deleting table: %+v", table)
+
+	// Delete and unregister VRF table
+	if table != nil {
+		if err := vppcalls.VppDelIPTable(table, plugin.vppChan); err != nil {
+			return err
+		}
+		identifier := tableIdentifier(table.TableID)
+		_, _, found := plugin.TableIndexes.UnregisterName(identifier)
+		if found {
+			plugin.Log.Infof("VRF table %v unregistered", identifier)
+		} else {
+			plugin.Log.Warnf("Unregister failed, VRF table %v not found", identifier)
+		}
 	}
 
 	return nil
-}*/
+}
 
 func (plugin *VrfConfigurator) validateVrfFromKey(config *l3.VrfTable, vrfFromKey string) error {
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
