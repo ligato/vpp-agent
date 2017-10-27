@@ -137,7 +137,7 @@ func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppName
 	return plugin.configureAppNamespace(ns, ifIdx)
 }
 
-// ConfigureL4FeatureFlag process the NB AppNamespace config and propagates it to bin api calls
+// ModifyAppNamespace process the NB AppNamespace config and propagates it to bin api calls
 func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Modifying AppNamespace with ID %v", newNs.NamespaceId)
 
@@ -221,9 +221,9 @@ func (plugin *L4Configurator) ResolveDeletedInterface(interfaceName string, inte
 
 func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppNamespace, ifIdx uint32) error {
 	// Namespace ID
-	nsId := []byte(ns.NamespaceId)
+	nsID := []byte(ns.NamespaceId)
 
-	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsId, plugin.Log, plugin.vppCh)
+	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.Log, plugin.vppCh)
 	if err != nil {
 		return err
 	}
