@@ -30,7 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
-// ArpConfiguratorruns in the background in its own goroutine where it watches for any changes
+// ArpConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of L3 arp entries as modelled by the proto file "../model/l3/l3.proto" and stored
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/arp". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
