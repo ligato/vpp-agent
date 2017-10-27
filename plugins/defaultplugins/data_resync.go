@@ -185,18 +185,11 @@ func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			log.Warn("ARP RESYNC is not implemented")
-			_ = arpData.GetKey()
-			/*iface, ipAddr, macAddr, err := l3.ParseArpKey(key)
-			if err == nil {
-				numL3FIBs++
-				entry := &l3.ArpTable_ArpTableEntry{}
-				entry.Interface = iface
+			entry := &l3.ArpTable_ArpTableEntry{}
+			if err := arpData.GetValue(entry); err == nil {
 				req.ArpEntries = append(req.ArpEntries, entry)
-			} else {
-				log.Warn("Resync: parsing ARP key failed:", err)
-				continue
-			}*/
+				num++
+			}
 		}
 	}
 	return num
@@ -399,7 +392,9 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.VrfKeyPrefix())
+			l3.VrfKeyPrefix(),
+			l3.ArpKeyPrefix(),
+		)
 	if err != nil {
 		return err
 	}

@@ -101,25 +101,27 @@ func TransformArp(arpInput *l3.ArpTable_ArpTableEntry, index ifaceidx.SwIfIndex,
 
 func (plugin *ArpConfigurator) Add(entry *l3.ArpTable_ArpTableEntry) error {
 	//plugin.Log.Infof("Creating new ARP entry %v -> %v (%v) for interface %v", entry.IpAddress, entry.PhysAddress, entry.Static, entry.Interface)
-	plugin.Log.Infof("Creating new ARP entry %v", entry)
+	plugin.Log.Infof("Creating ARP entry %+v", *entry)
 
 	// Transform route data
 	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
 	}
-	plugin.Log.Debugf("adding ARP entry: %+v", arp)
-	// Create and register new route
-	if arp != nil {
-		err := vppcalls.VppAddArp(arp, plugin.vppChan, measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
-		if err != nil {
-			return err
-		}
-		arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
-		plugin.ArpIndexes.RegisterName(arpID, plugin.ArpIndexSeq, nil)
-		plugin.ArpIndexSeq++
-		plugin.Log.Infof("ARP entry %v registered", arpID)
+	if arp == nil {
+		return nil
 	}
+	plugin.Log.Debugf("adding ARP: %+v", *arp)
+
+	// Create and register new route
+	err = vppcalls.VppAddArp(arp, plugin.vppChan, measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
+	plugin.ArpIndexes.RegisterName(arpID, plugin.ArpIndexSeq, nil)
+	plugin.ArpIndexSeq++
+	plugin.Log.Infof("ARP entry %v registered", arpID)
 
 	return nil
 }
@@ -129,7 +131,32 @@ func (plugin *ArpConfigurator) Diff(entry *l3.ArpTable_ArpTableEntry, prevEntry 
 }
 
 func (plugin *ArpConfigurator) Delete(entry *l3.ArpTable_ArpTableEntry) error {
-	return fmt.Errorf("ARP DELETE NOT IMPLEMENTED")
+	plugin.Log.Infof("Deleting ARP entry %+v", *entry)
+
+	// Transform route data
+	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
+	if err != nil {
+		return err
+	}
+	if arp == nil {
+		return nil
+	}
+	plugin.Log.Debugf("deleting ARP: %+v", arp)
+
+	// Delete and unregister new route
+	err = vppcalls.VppDelArp(arp, plugin.vppChan, measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
+	_, _, found := plugin.ArpIndexes.UnregisterName(arpID)
+	if found {
+		plugin.Log.Infof("ARP entry %v unregistered", arpID)
+	} else {
+		plugin.Log.Warnf("Unregister failed, ARP entry %v not found", arpID)
+	}
+
+	return nil
 }
 
 // Close GOVPP channel
@@ -152,9 +179,4 @@ func (plugin *ArpConfigurator) checkMsgCompatibility() error {
 		plugin.Log.Error(err)
 	}
 	return err
-}
-
-func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpTableEntry) error {
-
-	return nil
 }

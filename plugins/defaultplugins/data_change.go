@@ -156,8 +156,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			plugin.Log.Warn("VRFs are not supported yet")
 		}
 	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
-		//iface, ipAddr, macAddr, err := l3.ParseArpKey(key)
-		_, _, _, err := l3.ParseArpKey(key)
+		_, _, err := l3.ParseArpKey(key)
 		if err != nil {
 			return false, err
 		}

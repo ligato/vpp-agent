@@ -30,7 +30,7 @@ const (
 	// ArpPrefix is the relative key prefix for ARP.
 	ArpPrefix = "vpp/config/v1/arp/"
 	// ArpEntryPrefix is the relative key prefix for ARP table entries.
-	ArpKey = ArpPrefix + "{if}/{ip}/{mac}"
+	ArpKey = ArpPrefix + "{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
@@ -83,24 +83,22 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 }
 
 // ArpEntryKey returns the key to store ARP entry
-func ArpEntryKey(iface, ipAddr, macAddr string) string {
+func ArpEntryKey(iface, ipAddr string) string {
 	key := ArpKey
 	key = strings.Replace(key, "{if}", iface, 1)
 	key = strings.Replace(key, "{ip}", ipAddr, 1)
-	key = strings.Replace(key, "{mac}", macAddr, 1)
+	//key = strings.Replace(key, "{mac}", macAddr, 1)
 	return key
 }
 
 // ParseArpKey parses ARP entry from a key
-func ParseArpKey(key string) (iface uint32, ipAddr, macAddr string, err error) {
+func ParseArpKey(key string) (iface string, ipAddr string, err error) {
 	if strings.HasPrefix(key, ArpPrefix) {
 		arpSuffix := strings.TrimPrefix(key, ArpPrefix)
 		arpComps := strings.Split(arpSuffix, "/")
-		if len(arpComps) == 3 {
-			if ifac, err := strconv.Atoi(arpComps[0]); err == nil {
-				return uint32(ifac), arpComps[1], arpComps[2], nil
-			}
+		if len(arpComps) == 2 {
+			return arpComps[0], arpComps[1], nil
 		}
 	}
-	return 0, "", "", fmt.Errorf("invalid ARP key")
+	return "", "", fmt.Errorf("invalid ARP key")
 }

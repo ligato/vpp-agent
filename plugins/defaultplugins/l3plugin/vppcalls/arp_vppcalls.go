@@ -74,12 +74,11 @@ func vppAddDelArp(entry *ArpEntry, vppChan *govppapi.Channel, delete bool, timeL
 	// Send message
 	reply := &ip.IPNeighborAddDelReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
-
 	if err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("IPNeighborAddDel returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
