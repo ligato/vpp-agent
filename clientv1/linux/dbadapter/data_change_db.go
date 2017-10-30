@@ -16,17 +16,18 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 	"net"
 )
 
@@ -78,6 +79,18 @@ func (dsl *DataChangeDSL) Send() vpp_clientv1.Reply {
 // LinuxInterface adds a request to create or update Linux network interface.
 func (dsl *PutDSL) LinuxInterface(val *interfaces.LinuxInterfaces_Interface) linux.PutDSL {
 	dsl.parent.txn.Put(interfaces.InterfaceKey(val.Name), val)
+	return dsl
+}
+
+// LinuxArpEntry adds a request to create or update Linux ARP entry.
+func (dsl *PutDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linux.PutDSL {
+	dsl.parent.txn.Put(l3.StaticArpKey(val.Name), val)
+	return dsl
+}
+
+// LinuxRoute adds a request to create or update Linux route.
+func (dsl *PutDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linux.PutDSL {
+	dsl.parent.txn.Put(l3.StaticRouteKey(val.Name), val)
 	return dsl
 }
 
@@ -152,6 +165,18 @@ func (dsl *PutDSL) Send() vpp_clientv1.Reply {
 // interface.
 func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linux.DeleteDSL {
 	dsl.parent.txn.Delete(interfaces.InterfaceKey(interfaceName))
+	return dsl
+}
+
+// LinuxArpEntry adds a request to delete Linux ARP entry.
+func (dsl *DeleteDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticArpKey(val.Name))
+	return dsl
+}
+
+// LinuxRoute adds a request to delete Linux route.
+func (dsl *DeleteDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticRouteKey(val.Name))
 	return dsl
 }
 

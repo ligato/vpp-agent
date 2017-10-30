@@ -15,7 +15,7 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -23,6 +23,7 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -34,6 +35,10 @@ import (
 type DataResyncDSL interface {
 	// LinuxInterface adds Linux interface to the RESYNC request.
 	LinuxInterface(intf *interfaces.LinuxInterfaces_Interface) DataResyncDSL
+	// LinuxInterface adds Linux ARP entry to the RESYNC request.
+	LinuxArpEntry(intf *l3.LinuxStaticArpEntries_ArpEntry) DataResyncDSL
+	// LinuxInterface adds Linux route to the RESYNC request.
+	LinuxRoute(intf *l3.LinuxStaticRoutes_Route) DataResyncDSL
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_intf.Interfaces_Interface) DataResyncDSL

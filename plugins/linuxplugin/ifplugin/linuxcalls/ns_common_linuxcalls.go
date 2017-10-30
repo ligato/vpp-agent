@@ -18,33 +18,27 @@ package linuxcalls
 
 import (
 	"errors"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/vishvananda/netns"
 	"os"
 	"path"
 	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
-
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
-
-	"fmt"
-	"net"
-
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netns"
 )
 
 const (
 	netnsMountDir = "/var/run/netns"
 )
 
-// NamespaceMgmtCtx represents context of an ongoing management of Linux namespaces.
-// The same context should not be used concurrently.
-type NamespaceMgmtCtx struct {
-	lockedOsThread bool
-}
+// Namespace types
+const (
+	PidRefNs          = 0
+	MicroserviceRefNs = 1
+	NamedNs           = 2
+	FileRefNs         = 3
+)
 
 var defaultNs = netns.None()
 
@@ -53,143 +47,77 @@ func init() {
 	defaultNs, _ = netns.Get()
 }
 
+// Namespace is a generic representation of typed namespace (interface, arp, etc...)
+type Namespace struct {
+	Type         int32
+	Pid          uint32
+	Microservice string
+	Name         string
+	Filepath     string
+}
+
+// NamespaceMgmtCtx represents context of an ongoing management of Linux namespaces.
+// The same context should not be used concurrently.
+type NamespaceMgmtCtx struct {
+	lockedOsThread bool
+}
+
 // NewNamespaceMgmtCtx creates and returns a new context for management of Linux namespaces.
 func NewNamespaceMgmtCtx() *NamespaceMgmtCtx {
 	return &NamespaceMgmtCtx{lockedOsThread: false}
 }
 
-// CompareNamespaces is a comparison function for "intf.Interfaces_Interface_Namespace" type.
-func CompareNamespaces(ns1 *intf.LinuxInterfaces_Interface_Namespace, ns2 *intf.LinuxInterfaces_Interface_Namespace) int {
-	if ns1 == nil || ns2 == nil {
-		if ns1 == ns2 {
+// CompareNamespaces is a comparison function for "Namespace" type.
+func (ns *Namespace) CompareNamespaces(nsToCompare *Namespace) int {
+	if ns == nil || nsToCompare == nil {
+		if ns == nsToCompare {
 			return 0
 		}
 		return -1
 	}
-	if ns1.Type != ns2.Type {
-		return int(ns1.Type) - int(ns2.Type)
+	if ns.Type != nsToCompare.Type {
+		return int(ns.Type) - int(nsToCompare.Type)
 	}
-	switch ns1.Type {
-	case intf.LinuxInterfaces_Interface_Namespace_PID_REF_NS:
-		return int(ns1.Pid) - int(ns2.Pid)
-	case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
-		return strings.Compare(ns1.Microservice, ns2.Microservice)
-	case intf.LinuxInterfaces_Interface_Namespace_NAMED_NS:
-		return strings.Compare(ns1.Name, ns2.Name)
-	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
-		return strings.Compare(ns1.Filepath, ns2.Filepath)
+	switch ns.Type {
+	case PidRefNs:
+		return int(ns.Pid) - int(ns.Pid)
+	case MicroserviceRefNs:
+		return strings.Compare(ns.Microservice, nsToCompare.Microservice)
+	case NamedNs:
+		return strings.Compare(ns.Name, nsToCompare.Name)
+	case FileRefNs:
+		return strings.Compare(ns.Filepath, nsToCompare.Filepath)
 	}
 	return 0
 }
 
 // NamespaceToStr returns a string representation of a namespace suitable for logging purposes.
-func NamespaceToStr(namespace *intf.LinuxInterfaces_Interface_Namespace) string {
-	if namespace != nil {
-		switch namespace.Type {
-		case intf.LinuxInterfaces_Interface_Namespace_PID_REF_NS:
-			return "PID:" + strconv.Itoa(int(namespace.Pid))
-		case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
-			return "MICROSERVICE:" + namespace.Microservice
-		case intf.LinuxInterfaces_Interface_Namespace_NAMED_NS:
-			return namespace.Name
-		case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
-			return "FILE:" + namespace.Filepath
+func (ns *Namespace) NamespaceToStr() string {
+	if ns != nil {
+		switch ns.Type {
+		case PidRefNs:
+			return "PID:" + strconv.Itoa(int(ns.Pid))
+		case MicroserviceRefNs:
+			return "MICROSERVICE:" + ns.Microservice
+		case NamedNs:
+			return ns.Name
+		case FileRefNs:
+			return "FILE:" + ns.Filepath
 		}
 	}
 	return "<nil>"
 }
 
-// GetDefaultNamespace returns an instance of the proto message referencing default namespace.
-func GetDefaultNamespace() *intf.LinuxInterfaces_Interface_Namespace {
-	return &intf.LinuxInterfaces_Interface_Namespace{Type: intf.LinuxInterfaces_Interface_Namespace_NAMED_NS, Name: ""}
-}
-
-// SetInterfaceNamespace moves a given Linux interface into a specified namespace.
-func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace,
-	log logging.Logger, stopwatch *measure.Stopwatch) error {
-	// Get network namespace file descriptor
-	ns, err := GetOrCreateNs(namespace, log)
-	if err != nil {
-		return err
-	}
-	defer ns.Close()
-
-	// Get the link handler.
-	link, err := netlink.LinkByName(ifName)
-	if err != nil {
-		return err
-	}
-
-	// When interface moves from one namespace to another, it loses all its IP addresses, admin status
-	// and MTU configuration -- we need to remember the interface configuration before the move
-	// and re-configure the interface in the new namespace.
-
-	netIntf, err := net.InterfaceByName(ifName)
-	if err != nil {
-		return err
-	}
-
-	addrs, err := netIntf.Addrs()
-	if err != nil {
-		return err
-	}
-
-	// Move the interface into the namespace.
-	err = netlink.LinkSetNsFd(link, int(ns))
-	if err != nil {
-		return err
-	}
-	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": NamespaceToStr(namespace),
-		"dest-namespace-fd": int(ns)}).Debug("Moved Linux interface across namespaces")
-
-	// re-configure interface in its new namespace
-	revertNs, err := SwitchNamespace(ctx, namespace, log)
-	if err != nil {
-		return err
-	}
-	defer revertNs()
-
-	if netIntf.Flags&net.FlagUp == 1 {
-		// re-enable interface
-		err = InterfaceAdminUp(ifName, measure.GetTimeLog("iface_admin_up", stopwatch))
-		if nil != err {
-			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
-		}
-		log.WithFields(logging.Fields{"ifName": ifName}).Debug("Linux interface was re-enabled")
-	}
-
-	// re-add IP addresses
-	for i := range addrs {
-		ip, network, err := net.ParseCIDR(addrs[i].String())
-		network.IP = ip /* combine IP address with netmask */
-		if err != nil {
-			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
-		}
-		err = AddInterfaceIP(ifName, network, measure.GetTimeLog("add_iface_ip", stopwatch))
-		if err != nil {
-			if err.Error() == "file exists" {
-				continue
-			}
-			return fmt.Errorf("failed to assign IPv4 address to a Linux interface `%s`: %v", ifName, err)
-		}
-		log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).Debug("IP address was re-assigned to Linux interface")
-	}
-
-	// revert back the MTU config
-	err = SetInterfaceMTU(ifName, netIntf.MTU, measure.GetTimeLog("set_iface_mtu", stopwatch))
-	if nil != err {
-		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
-	}
-	log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).Debug("MTU was reconfigured for Linux interface")
-
-	return nil
+// GetDefaultNamespace returns a generic default namespace
+func GetDefaultNamespace() *Namespace {
+	return &Namespace{Type: NamedNs, Name: ""}
 }
 
 // SwitchNamespace switches the network namespace of the current thread.
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
-func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Interface_Namespace, log logging.Logger) (revert func(), err error) {
-	var ns netns.NsHandle
+func (ns *Namespace) SwitchNamespace(ctx *NamespaceMgmtCtx, log logging.Logger) (revert func(), err error) {
+	var nsHandle netns.NsHandle
 
 	// Save the current network namespace
 	origns, err := netns.Get()
@@ -198,11 +126,11 @@ func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Inte
 	}
 
 	// Get network namespace file descriptor
-	ns, err = GetOrCreateNs(namespace, log)
+	nsHandle, err = ns.GetOrCreateNs(log)
 	if err != nil {
 		return func() {}, err
 	}
-	defer ns.Close()
+	defer nsHandle.Close()
 
 	alreadyLocked := ctx.lockedOsThread
 	if !alreadyLocked {
@@ -213,8 +141,8 @@ func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Inte
 	}
 
 	// Switch the namespace.
-	netns.Set(ns)
-	log.WithFields(logging.Fields{"dest-namespace": NamespaceToStr(namespace), "dest-namespace-fd": int(ns)}).Debug(
+	netns.Set(nsHandle)
+	log.WithFields(logging.Fields{"dest-namespace": ns.NamespaceToStr(), "dest-namespace-fd": int(nsHandle)}).Debug(
 		"Switched Linux network namespace")
 
 	return func() {
@@ -239,62 +167,62 @@ func dupNsHandle(ns netns.NsHandle) (netns.NsHandle, error) {
 // GetOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func GetOrCreateNs(namespace *intf.LinuxInterfaces_Interface_Namespace, log logging.Logger) (netns.NsHandle, error) {
-	var ns netns.NsHandle
+func (ns *Namespace) GetOrCreateNs(log logging.Logger) (netns.NsHandle, error) {
+	var nsHandle netns.NsHandle
 	var err error
 
-	if namespace == nil {
+	if ns == nil {
 		return dupNsHandle(defaultNs)
 	}
 
-	switch namespace.Type {
-	case intf.LinuxInterfaces_Interface_Namespace_PID_REF_NS:
-		if namespace.Pid == 0 {
+	switch ns.Type {
+	case PidRefNs:
+		if ns.Pid == 0 {
 			// We consider scheduler's PID as the representation of the default namespace
 			return dupNsHandle(defaultNs)
 		}
-		ns, err = netns.GetFromPid(int(namespace.Pid))
+		nsHandle, err = netns.GetFromPid(int(ns.Pid))
 		if err != nil {
 			return netns.None(), err
 		}
-	case intf.LinuxInterfaces_Interface_Namespace_NAMED_NS:
-		if namespace.Name == "" {
+	case NamedNs:
+		if ns.Name == "" {
 			return dupNsHandle(defaultNs)
 		}
-		ns, err = netns.GetFromName(namespace.Name)
+		nsHandle, err = netns.GetFromName(ns.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, _, err = CreateNamedNetNs(namespace.Name, log)
+			_, _, err = CreateNamedNetNs(ns.Name, log)
 			if err != nil {
 				return netns.None(), err
 			}
-			ns, err = netns.GetFromName(namespace.Name)
+			nsHandle, err = netns.GetFromName(ns.Name)
 			if err != nil {
 				return netns.None(), errors.New("failed to get namespace by name")
 			}
 		}
-	case intf.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
-		if namespace.Filepath == "" {
+	case FileRefNs:
+		if ns.Filepath == "" {
 			return dupNsHandle(defaultNs)
 		}
-		ns, err = netns.GetFromPath(namespace.Filepath)
+		nsHandle, err = netns.GetFromPath(ns.Filepath)
 		if err != nil {
 			return netns.None(), err
 		}
-	case intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
+	case MicroserviceRefNs:
 		return netns.None(), errors.New("don't know how to convert microservice label to PID at this level")
 	}
 
-	return ns, nil
+	return nsHandle, nil
 }
 
 // CreateNamedNetNs creates a new named Linux network namespace.
 // It does exactly the same thing as the command "ip netns add NAMESPACE" .
-func CreateNamedNetNs(namespace string, log logging.Logger) (netns.NsHandle, *intf.LinuxInterfaces_Interface_Namespace, error) {
+func CreateNamedNetNs(namespace string, log logging.Logger) (netns.NsHandle, *Namespace, error) {
 	log.WithFields(logging.Fields{"namespace": namespace}).Debug("Creating new named Linux namespace")
 	// Prepare namespace proto object
-	nsObj := &intf.LinuxInterfaces_Interface_Namespace{
-		Type: intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+	nsObj := &Namespace{
+		Type: NamedNs,
 		Name: namespace,
 	}
 

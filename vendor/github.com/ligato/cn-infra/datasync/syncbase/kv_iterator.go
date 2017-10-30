@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 )
 
-// KVIterator is a simple in memory implementation of data.Iterator
+// KVIterator is a simple in memory implementation of data.Iterator.
 type KVIterator struct {
 	data  []datasync.KeyVal
 	index int
@@ -43,19 +43,19 @@ func NewKeyVal(key string, value datasync.LazyValue, rev int64) *KeyVal {
 	return &KeyVal{key, value, rev}
 }
 
-// KeyVal represents a single Key-value pair
+// KeyVal represents a single key-value pair.
 type KeyVal struct {
 	key string
 	datasync.LazyValue
 	rev int64
 }
 
-// GetKey returns the Key of the pair
+// GetKey returns the key of the pair.
 func (kv *KeyVal) GetKey() string {
 	return kv.key
 }
 
-// GetRevision returns revision associated with the latest change in the Key-value pair
+// GetRevision returns revision associated with the latest change in the key-value pair.
 func (kv *KeyVal) GetRevision() int64 {
 	return kv.rev
 }
@@ -64,7 +64,7 @@ type lazyProto struct {
 	val proto.Message
 }
 
-// GetValue returns the value of the pair
+// GetValue returns the value of the pair.
 func (lazy *lazyProto) GetValue(out proto.Message) error {
 	if lazy.val != nil {
 		proto.Merge(out, lazy.val)
@@ -82,25 +82,25 @@ func NewKeyValBytes(key string, value []byte, rev int64) *KeyValBytes {
 	return &KeyValBytes{key, value, rev}
 }
 
-// KeyValBytes represents a single Key-value pair
+// KeyValBytes represents a single key-value pair.
 type KeyValBytes struct {
 	key   string
 	value []byte
 	rev   int64
 }
 
-// GetKey returns the Key of the pair
+// GetKey returns the key of the pair.
 func (kv *KeyValBytes) GetKey() string {
 	return kv.key
 }
 
-// GetValue returns the value of the pair
+// GetValue returns the value of the pair.
 func (kv *KeyValBytes) GetValue(message proto.Message) error {
 	json.Unmarshal(kv.value, message)
 	return nil
 }
 
-// GetRevision returns revision associated with the latest change in the Key-value pair
+// GetRevision returns revision associated with the latest change in the key-value pair.
 func (kv *KeyValBytes) GetRevision() int64 {
 	return kv.rev
 }

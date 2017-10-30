@@ -25,7 +25,7 @@ var (
 	gTransportAccess sync.Mutex
 )
 
-// Get returns global singleton instance
+// Get returns global singleton instance.
 func Get() *syncbase.Registry {
 	gTransportAccess.Lock()
 	defer gTransportAccess.Unlock()

@@ -22,19 +22,20 @@ import (
 // BytesWatchPutResp is sent when new key-value pair has been inserted
 // or the value has been updated.
 type BytesWatchPutResp struct {
-	key   string
-	value []byte
-	rev   int64
+	key       string
+	value     []byte
+	prevValue []byte
+	rev       int64
 }
 
 // Watch starts subscription for changes associated with the selected <keys>.
 // KeyPrefix defined in constructor is prepended to all <keys> in the argument
 // list. The prefix is removed from the keys returned in watch events.
 // Watch events will be delivered to <resp> callback.
-func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), keys ...string) error {
+func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
 	var err error
 	for _, k := range keys {
-		err = watchInternal(pdb.Logger, pdb.watcher, pdb.closeCh, k, resp)
+		err = watchInternal(pdb.Logger, pdb.watcher, closeChan, k, resp)
 		if err != nil {
 			break
 		}
@@ -43,8 +44,8 @@ func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), keys 
 }
 
 // NewBytesWatchPutResp creates an instance of BytesWatchPutResp.
-func NewBytesWatchPutResp(key string, value []byte, revision int64) *BytesWatchPutResp {
-	return &BytesWatchPutResp{key: key, value: value, rev: revision}
+func NewBytesWatchPutResp(key string, value []byte, prevValue []byte, revision int64) *BytesWatchPutResp {
+	return &BytesWatchPutResp{key: key, value: value, prevValue: prevValue, rev: revision}
 }
 
 // GetChangeType returns "Put" for BytesWatchPutResp.
@@ -60,6 +61,11 @@ func (resp *BytesWatchPutResp) GetKey() string {
 // GetValue returns the value that has been inserted.
 func (resp *BytesWatchPutResp) GetValue() []byte {
 	return resp.value
+}
+
+// GetPrevValue returns the previous value that has been inserted.
+func (resp *BytesWatchPutResp) GetPrevValue() []byte {
+	return resp.prevValue
 }
 
 // GetRevision returns the revision associated with the 'put' operation.
@@ -90,6 +96,11 @@ func (resp *BytesWatchDelResp) GetKey() string {
 
 // GetValue returns nil for BytesWatchDelResp.
 func (resp *BytesWatchDelResp) GetValue() []byte {
+	return nil
+}
+
+// GetPrevValue returns nil for BytesWatchDelResp.
+func (resp *BytesWatchDelResp) GetPrevValue() []byte {
 	return nil
 }
 

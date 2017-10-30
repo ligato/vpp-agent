@@ -21,42 +21,23 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/addrs"
 	l3ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	l3nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"time"
 )
 
-// StaticRoutes is the wrapper structure for the static routes API structure.
-type StaticRoutes struct {
-	IP []*StaticRouteIP
-}
-
-// StaticRouteIP is the wrapper structure for the static IP route API structure.
-// NOTE: NextHops in StaticRoutes_Ip is overridden by the local NextHops member.
-type StaticRouteIP struct {
-	NextHops []*NextHop
-	l3nb.StaticRoutes_Route
-}
-
-// NextHop is the wrapper structure for the bridge domain interface northbound API structure.
-type NextHop struct {
-	OutgoingInterfaceSwIfIdx    uint32
-	OutgoingInterfaceConfigured bool
-	l3nb.StaticRoutes_Route_NextHops
-}
-
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*StaticRoutes, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.Route, error) {
 	// IPFibDump time measurement
 	start := time.Now()
 	defer func() {
-		if stopwatch != nil {
-			stopwatch.LogTimeEntry(l3ba.IPFibDump{}, time.Since(start))
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
 
-	// map for the resulting l3 FIBs
-	routes := make(map[uint32]*StaticRoutes)
+	var routes []*vppcalls.Route
 
 	// dump IPv4 l3 FIB
 	reqCtx := vppChan.SendMultiRequest(&l3ba.IPFibDump{})
@@ -70,7 +51,12 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *
 			log.Error(err)
 			return nil, err
 		}
-		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+
+		ipv4Route, err := dumpStaticRouteIPv4Details(fibDetails)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, ipv4Route)
 	}
 
 	// dump IPv6 l3 FIB
@@ -85,16 +71,27 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, stopwatch *
 			log.Error(err)
 			return nil, err
 		}
-		dumpStaticRouteDetails(routes, fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+		ipv6Route, err := dumpStaticRouteIPv6Details(fibDetails)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, ipv6Route)
 	}
 
 	return routes, nil
 }
 
-// dumpStaticRouteDetails processes static route details and fills them into the provided routes map.
-func dumpStaticRouteDetails(routes map[uint32]*StaticRoutes, tableID uint32,
-	address []byte, prefixLen uint8, paths []l3ba.FibPath, ipv6 bool) {
+func dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*vppcalls.Route, error) {
+	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 
+}
+
+func dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*vppcalls.Route, error) {
+	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+}
+
+// dumpStaticRouteIPDetails processes static route details and returns a route object
+func dumpStaticRouteIPDetails(tableID uint32, address []byte, prefixLen uint8, path []l3ba.FibPath, ipv6 bool) (*vppcalls.Route, error) {
 	// route details
 	var ipAddr string
 	if ipv6 {
@@ -102,36 +99,31 @@ func dumpStaticRouteDetails(routes map[uint32]*StaticRoutes, tableID uint32,
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
 	}
-	if _, ok := routes[tableID]; !ok {
-		routes[tableID] = &StaticRoutes{
-			IP: make([]*StaticRouteIP, 0),
-		}
-	}
-	route := &StaticRouteIP{
-		StaticRoutes_Route: l3nb.StaticRoutes_Route{
-			VrfId:              tableID,
-			DestinationAddress: ipAddr,
-		},
-		NextHops: []*NextHop{},
-	}
-	routes[tableID].IP = append(routes[tableID].IP, route)
 
-	// next hops
-	for _, path := range paths {
-		var nextHopAddr string
-		if ipv6 {
-			nextHopAddr = net.IP(path.NextHop).To16().String()
-		} else {
-			nextHopAddr = net.IP(path.NextHop[:4]).To4().String()
-		}
-		route.NextHops = append(route.NextHops, &NextHop{
-			OutgoingInterfaceSwIfIdx:    path.SwIfIndex,
-			OutgoingInterfaceConfigured: path.SwIfIndex < ^uint32(0),
-			StaticRoutes_Route_NextHops: l3nb.StaticRoutes_Route_NextHops{
-				Address:    nextHopAddr,
-				Weight:     path.Weight,
-				Preference: uint32(path.Preference),
-			},
-		})
+	rt := &vppcalls.Route{}
+
+	// IP net
+	parsedIP, _, err := addrs.ParseIPWithPrefix(ipAddr)
+	if err != nil {
+		return nil, err
 	}
+
+	rt.VrfID = tableID
+	rt.DstAddr = *parsedIP
+
+	if len(path) > 0 {
+		var nextHopAddr net.IP
+		if ipv6 {
+			nextHopAddr = net.IP(path[0].NextHop).To16()
+		} else {
+			nextHopAddr = net.IP(path[0].NextHop[:4]).To4()
+		}
+
+		rt.NextHopAddr = nextHopAddr
+		rt.OutIface = path[0].SwIfIndex
+		rt.Preference = uint32(path[0].Preference)
+		rt.Weight = uint32(path[0].Weight)
+	}
+
+	return rt, nil
 }

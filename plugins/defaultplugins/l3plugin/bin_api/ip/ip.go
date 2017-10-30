@@ -6,7 +6,7 @@ package ip
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x778de971
+const VlAPIVersion = 0x3e60ceed
 
 // FibPath represents the VPP binary API data type 'fib_path'.
 // Generated from '/usr/share/vpp/api/ip.api.json', line 3:
@@ -837,7 +837,7 @@ func NewSwInterfaceIP6SetLinkLocalAddressReply() api.Message {
 //            ["u8", "is_resolve_host"],
 //            ["u8", "is_resolve_attached"],
 //            ["u8", "is_l2_bridged"],
-//            ["u8", "not_last"],
+//            ["u8", "is_source_lookup"],
 //            ["u8", "next_hop_weight"],
 //            ["u8", "next_hop_preference"],
 //            ["u8", "dst_address_length"],
@@ -846,7 +846,7 @@ func NewSwInterfaceIP6SetLinkLocalAddressReply() api.Message {
 //            ["u8", "next_hop_n_out_labels"],
 //            ["u32", "next_hop_via_label"],
 //            ["u32", "next_hop_out_label_stack", 0, "next_hop_n_out_labels"],
-//            {"crc" : "0x6b9c42d7"}
+//            {"crc" : "0x36cd6855"}
 //        ],
 //
 type IPAddDelRoute struct {
@@ -866,7 +866,7 @@ type IPAddDelRoute struct {
 	IsResolveHost        uint8
 	IsResolveAttached    uint8
 	IsL2Bridged          uint8
-	NotLast              uint8
+	IsSourceLookup       uint8
 	NextHopWeight        uint8
 	NextHopPreference    uint8
 	DstAddressLength     uint8
@@ -884,7 +884,7 @@ func (*IPAddDelRoute) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IPAddDelRoute) GetCrcString() string {
-	return "6b9c42d7"
+	return "36cd6855"
 }
 func NewIPAddDelRoute() api.Message {
 	return &IPAddDelRoute{}

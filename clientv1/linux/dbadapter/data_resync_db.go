@@ -16,7 +16,7 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
@@ -27,6 +27,7 @@ import (
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -52,6 +53,24 @@ type DataResyncDSL struct {
 // LinuxInterface adds Linux interface to the RESYNC request.
 func (dsl *DataResyncDSL) LinuxInterface(val *interfaces.LinuxInterfaces_Interface) linux.DataResyncDSL {
 	key := interfaces.InterfaceKey(val.Name)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// LinuxArpEntry adds Linux ARP entry to the RESYNC request.
+func (dsl *DataResyncDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linux.DataResyncDSL {
+	key := l3.StaticArpKey(val.Name)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// LinuxRoute adds Linux route to the RESYNC request.
+func (dsl *DataResyncDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linux.DataResyncDSL {
+	key := l3.StaticRouteKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

@@ -6,7 +6,7 @@ package af_packet
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x7d5c5d55
+const VlAPIVersion = 0xca5d0502
 
 // AfPacketCreate represents the VPP binary API message 'af_packet_create'.
 // Generated from '/usr/share/vpp/api/af_packet.api.json', line 6:
@@ -105,7 +105,7 @@ func NewAfPacketDelete() api.Message {
 //            ["u32", "context"],
 //            ["i32", "retval"],
 //            {"crc" : "0x1a80431a"}
-//        ]
+//        ],
 //
 type AfPacketDeleteReply struct {
 	Retval int32
@@ -122,4 +122,61 @@ func (*AfPacketDeleteReply) GetCrcString() string {
 }
 func NewAfPacketDeleteReply() api.Message {
 	return &AfPacketDeleteReply{}
+}
+
+// AfPacketSetL4CksumOffload represents the VPP binary API message 'af_packet_set_l4_cksum_offload'.
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 35:
+//
+//        ["af_packet_set_l4_cksum_offload",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u8", "sw_if_index"],
+//            ["u8", "set"],
+//            {"crc" : "0xe371db06"}
+//        ],
+//
+type AfPacketSetL4CksumOffload struct {
+	SwIfIndex uint8
+	Set       uint8
+}
+
+func (*AfPacketSetL4CksumOffload) GetMessageName() string {
+	return "af_packet_set_l4_cksum_offload"
+}
+func (*AfPacketSetL4CksumOffload) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*AfPacketSetL4CksumOffload) GetCrcString() string {
+	return "e371db06"
+}
+func NewAfPacketSetL4CksumOffload() api.Message {
+	return &AfPacketSetL4CksumOffload{}
+}
+
+// AfPacketSetL4CksumOffloadReply represents the VPP binary API message 'af_packet_set_l4_cksum_offload_reply'.
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 43:
+//
+//        ["af_packet_set_l4_cksum_offload_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x3cd60131"}
+//        ]
+//
+type AfPacketSetL4CksumOffloadReply struct {
+	Retval int32
+}
+
+func (*AfPacketSetL4CksumOffloadReply) GetMessageName() string {
+	return "af_packet_set_l4_cksum_offload_reply"
+}
+func (*AfPacketSetL4CksumOffloadReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*AfPacketSetL4CksumOffloadReply) GetCrcString() string {
+	return "3cd60131"
+}
+func NewAfPacketSetL4CksumOffloadReply() api.Message {
+	return &AfPacketSetL4CksumOffloadReply{}
 }

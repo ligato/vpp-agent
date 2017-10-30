@@ -273,6 +273,7 @@ func (ref *Consumer) PrintNotification(note map[string][]int32) {
 // messageHandler processes each incoming message
 func (ref *Consumer) messageHandler(in <-chan *sarama.ConsumerMessage) {
 	ref.Debug("messageHandler started ...")
+	var prevValue []byte
 
 	for {
 		select {
@@ -283,11 +284,14 @@ func (ref *Consumer) messageHandler(in <-chan *sarama.ConsumerMessage) {
 			consumerMsg := &ConsumerMessage{
 				Key:       msg.Key,
 				Value:     msg.Value,
+				PrevValue: prevValue,
 				Topic:     msg.Topic,
 				Partition: msg.Partition,
 				Offset:    msg.Offset,
 				Timestamp: msg.Timestamp,
 			}
+			// Store value as previous for the next iteration
+			prevValue = consumerMsg.Value
 			select {
 			case ref.Config.RecvMessageChan <- consumerMsg:
 			case <-time.After(1 * time.Second):

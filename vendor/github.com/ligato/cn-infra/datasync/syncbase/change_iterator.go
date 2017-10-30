@@ -24,7 +24,7 @@ func NewChangeIterator(data []*Change) *ChangeIterator {
 	return &ChangeIterator{data: data}
 }
 
-// ChangeIterator is a simple in-memory implementation of data.Iterator
+// ChangeIterator is a simple in-memory implementation of data.Iterator.
 type ChangeIterator struct {
 	data  []*Change
 	index int
@@ -51,7 +51,7 @@ func NewChangeBytes(key string, value []byte, rev int64, changeType datasync.Put
 	return &Change{changeType, &KeyValBytes{key, value, rev}}
 }
 
-// Change represents a single Key-value pair plus changeType
+// Change represents a single Key-value pair plus changeType.
 type Change struct {
 	changeType datasync.PutDel
 	datasync.KeyVal

@@ -31,8 +31,17 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		select {
 		case resyncConfigEv := <-plugin.resyncConfigChan:
 			req := plugin.resyncParseEvent(resyncConfigEv)
-			err := plugin.resyncConfigPropageRequest(req)
-
+			var err error
+			if plugin.resyncStrategy == skipResync {
+				// skip resync
+				plugin.Log.Info("skip VPP resync strategy chosen, VPP resync is omitted")
+			} else if plugin.resyncStrategy == optimizeColdStart {
+				// optimize resync
+				err = plugin.resyncConfigPropageOptimizedRequest(req)
+			} else {
+				// full resync
+				err = plugin.resyncConfigPropageFullRequest(req)
+			}
 			resyncConfigEv.Done(err)
 
 		case resyncStatusEv := <-plugin.resyncStatusChan:

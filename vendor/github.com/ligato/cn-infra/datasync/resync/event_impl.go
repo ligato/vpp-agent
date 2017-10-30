@@ -18,28 +18,28 @@ import (
 	"time"
 )
 
-// newStatusEvent is a constructor
+// newStatusEvent is a constructor.
 func newStatusEvent(status Status) *statusEvent {
 	return &statusEvent{status: status, ackChan: make(chan time.Time)}
 }
 
-// StatusEvent is propagated to Plugins using GOLANG channel
+// StatusEvent is propagated to Plugins using GOLANG channel.
 type statusEvent struct {
 	status  Status
 	ackChan chan time.Time
 }
 
-// Status gets the status
+// Status gets the status.
 func (event *statusEvent) ResyncStatus() Status {
 	return event.status
 }
 
-// Ack - see the comment in interface chngapi.StatusEvent.Ack()
+// Ack - see the comment in interface chngapi.StatusEvent.Ack().
 func (event *statusEvent) Ack() {
 	event.ackChan <- time.Now()
 }
 
-// ReceiveAck allows to wait until Plugin calls the Ack()
+// ReceiveAck allows waiting until Plugin calls the Ack().
 func (event *statusEvent) ReceiveAck() chan time.Time {
 	return event.ackChan
 }

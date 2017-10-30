@@ -31,11 +31,11 @@ type Encoder interface {
 
 // ConsumerMessage encapsulates a Kafka message returned by the consumer.
 type ConsumerMessage struct {
-	Key, Value []byte
-	Topic      string
-	Partition  int32
-	Offset     int64
-	Timestamp  time.Time
+	Key, Value, PrevValue []byte
+	Topic                 string
+	Partition             int32
+	Offset                int64
+	Timestamp             time.Time
 }
 
 // GetTopic returns the topic associated with the message
@@ -60,6 +60,11 @@ func (cm *ConsumerMessage) GetKey() string {
 
 // GetValue returns the value associated with the message.
 func (cm *ConsumerMessage) GetValue() []byte {
+	return cm.Value
+}
+
+// GetPrevValue returns the previous value associated with the message.
+func (cm *ConsumerMessage) GetPrevValue() []byte {
 	return cm.Value
 }
 
@@ -102,6 +107,19 @@ func (cm *ProtoConsumerMessage) GetValue(msg proto.Message) error {
 		return err
 	}
 	return nil
+}
+
+// GetPrevValue returns the previous value associated with the latest message.
+func (cm *ProtoConsumerMessage) GetPrevValue(msg proto.Message) (prevValueExist bool, err error) {
+	prevVal := cm.ConsumerMessage.GetPrevValue()
+	if prevVal == nil {
+		return false, nil
+	}
+	err = cm.serializer.Unmarshal(prevVal, msg)
+	if err != nil {
+		return true, err
+	}
+	return true, nil
 }
 
 // ProducerMessage is the collection of elements passed to the Producer in order to send a message.
@@ -157,6 +175,11 @@ func (pm *ProducerMessage) GetKey() string {
 func (pm *ProducerMessage) GetValue() []byte {
 	val, _ := pm.Value.Encode()
 	return val
+}
+
+// GetPrevValue returns nil for the producer
+func (pm *ProducerMessage) GetPrevValue() []byte {
+	return nil
 }
 
 func (pm *ProducerMessage) String() string {
@@ -235,6 +258,11 @@ func (ppm *ProtoProducerMessage) GetValue(msg proto.Message) error {
 		return err
 	}
 	return nil
+}
+
+// GetPrevValue for producer returns false (value does not exist)
+func (ppm *ProtoProducerMessage) GetPrevValue(msg proto.Message) (prevValueExist bool, err error) {
+	return false, nil
 }
 
 // ProtoProducerMessageErr represents a proto-modelled message that was not published successfully.
