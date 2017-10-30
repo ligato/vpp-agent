@@ -229,7 +229,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		for _, intf := range dsl.txnPutIntf {
 			putIntfs = append(putIntfs, intf)
 		}
-		_, err := dsl.client.PutInterfaces(context.Background(), &interfaces.Interfaces{putIntfs})
+		_, err := dsl.client.PutInterfaces(context.Background(), &interfaces.Interfaces{Interface: putIntfs})
 		if err != nil {
 			wasErr = err
 		}
@@ -239,7 +239,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		for _, bd := range dsl.txnPutBD {
 			putBDs = append(putBDs, bd)
 		}
-		_, err := dsl.client.PutBDs(context.Background(), &l2.BridgeDomains{putBDs})
+		_, err := dsl.client.PutBDs(context.Background(), &l2.BridgeDomains{BridgeDomains: putBDs})
 		if err != nil {
 			wasErr = err
 		}
@@ -249,7 +249,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		for _, xcon := range dsl.txnPutXCon {
 			putXCons = append(putXCons, xcon)
 		}
-		_, err := dsl.client.PutXCons(context.Background(), &l2.XConnectPairs{putXCons})
+		_, err := dsl.client.PutXCons(context.Background(), &l2.XConnectPairs{XConnectPairs: putXCons})
 		if err != nil {
 			wasErr = err
 		}
@@ -259,7 +259,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		for _, route := range dsl.txnPutStaticRoute {
 			putRoutes = append(putRoutes, route)
 		}
-		_, err := dsl.client.PutStaticRoutes(context.Background(), &l3.StaticRoutes{putRoutes})
+		_, err := dsl.client.PutStaticRoutes(context.Background(), &l3.StaticRoutes{Route: putRoutes})
 		if err != nil {
 			wasErr = err
 		}
@@ -269,7 +269,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		for _, acl := range dsl.txnPutACL {
 			putACLs = append(putACLs, acl)
 		}
-		_, err := dsl.client.PutACLs(context.Background(), &acl.AccessLists{putACLs})
+		_, err := dsl.client.PutACLs(context.Background(), &acl.AccessLists{Acl: putACLs})
 		if err != nil {
 			wasErr = err
 		}

@@ -447,12 +447,12 @@ func consumeEvent(respChan chan keyval.BytesWatchResp, eventCount int) {
 		if ok {
 			switch r.GetChangeType() {
 			case datasync.Put:
-				log.Debugf("KeyValProtoWatcher received %v: %s=%s (rev %d)",
-					r.GetChangeType(), r.GetKey(), string(r.GetValue()), r.GetRevision())
+				log.Debugf("KeyValProtoWatcher received %v: %s=%s prev=%s (rev %d)",
+					r.GetChangeType(), r.GetKey(), string(r.GetValue()), string(r.GetPrevValue()), r.GetRevision())
 			case datasync.Delete:
-				log.Debugf("KeyValProtoWatcher received %v: %s (rev %d)",
-					r.GetChangeType(), r.GetKey(), r.GetRevision())
-				r.GetValue()
+				log.Debugf("KeyValProtoWatcher received %v: %s=%s prev=%s(rev %d)",
+					r.GetChangeType(), r.GetKey(), string(r.GetValue()), string(r.GetPrevValue()), r.GetRevision())
+
 			}
 		} else {
 			log.Error("Something wrong with Watch channel... bail out")
@@ -531,7 +531,7 @@ func TestBrokerClosed(t *testing.T) {
 	txn = bytesConn.NewTxn()
 	gomega.Expect(txn).Should(gomega.BeNil())
 
-	bytesConn.Watch(keyval.ToChan(respChan), "key")
+	bytesConn.Watch(keyval.ToChan(respChan), nil,"key")
 
 	// bytesBrokerWatcher
 	err = bytesBrokerWatcher.Put("any", []byte("any"))
@@ -553,7 +553,7 @@ func TestBrokerClosed(t *testing.T) {
 	txn2 = bytesBrokerWatcher.NewTxn()
 	gomega.Expect(txn2).Should(gomega.BeNil())
 
-	bytesBrokerWatcher.Watch(keyval.ToChan(respChan), "key")
+	bytesBrokerWatcher.Watch(keyval.ToChan(respChan), nil, "key")
 
 	err = safeclose.Close(bytesConn)
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())

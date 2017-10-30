@@ -47,6 +47,39 @@ Once the Kubernetes is running and VPP Agent image is availalbe locally, you can
   Finally all the log files and csv files are zipped into the logresult.zip for further investigation and easy archiving
   
 
+## Topology
+
+There is possibility to load prepared topology into the etcd before the profiling is started
+There are few scripts topology*.sh that do the loading and are called inside the timemeasure.sh script
+It is easy to prepare your own topology according these scripts and modify function  setup() in timemeasure.sh
+to load your own topology.
+
+## Process to kill
+
+The mechanism of restart the container is based on this approach:
+supervisord is the main process, once it is killed, the container 
+is getting restarted. Tehre is a eventlistener in supervisord conf file
+defined. Its task is to listen on the vpp and vpp-agent processed.
+If eighter of them is killed supervisod is killed to and container is restarted.
+To be able to choose which process to kill, modify the timemeasure.sh script
+variable kill_proc. If kill_proc=0 - VPP process is to be killed
+if kill_proc=1  VPP-Agent is to be killed
+
+
+## Vswitch.
+There is also possibility to profile VPP acting as vswitch. For that purpose
+a yaml file vswitch-vpp.yaml is available. To make it used in script find this two lines 
+and use comments to choose proper yaml file .
+Example for using vswitch yaml file
+#kubectl apply -f vpp.yaml
+kubectl apply -f vswitch-vpp.yaml
+You must provide correct MAC ADDR in yaml file by editing the dev value.
+    dpdk {
+      dev 0000:00:08.0
+      uio-driver igb_uio
+    }
+Value 0000:00:08.0 is just an example here.
+
 ### Output example
 
 This is example of output that is in the measuring_exp.csv file.

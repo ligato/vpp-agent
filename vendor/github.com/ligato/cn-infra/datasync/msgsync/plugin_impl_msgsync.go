@@ -39,12 +39,12 @@ type Deps struct {
 }
 
 // Cfg groups configurations fields. It can be extended with other fields
-// (such as sync/async, partition...)
+// (such as sync/async, partition...).
 type Cfg struct {
 	Topic string
 }
 
-// Init does nothing
+// Init does nothing.
 func (plugin *PubPlugin) Init() error {
 	return nil
 }
@@ -67,7 +67,7 @@ func (plugin *PubPlugin) AfterInit() error {
 	return nil
 }
 
-// Put propagates this call to a particular messaging Publisher
+// Put propagates this call to a particular messaging Publisher.
 //
 // This method is supposed to be called in PubPlugin.AfterInit() or later (even from different go routine).
 func (plugin *PubPlugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
@@ -82,12 +82,12 @@ func (plugin *PubPlugin) Put(key string, data proto.Message, opts ...datasync.Pu
 	return errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
 }
 
-// Close resources
+// Close resources.
 func (plugin *PubPlugin) Close() error {
 	return nil
 }
 
-// String returns if set Deps.PluginName or "pub-msgsync" otherwise
+// String returns Deps.PluginName if set, "pub-msgsync" otherwise.
 func (plugin *PubPlugin) String() string {
 	if len(plugin.PluginName) == 0 {
 		return "pub-msgsync"

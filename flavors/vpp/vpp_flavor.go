@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/vpp-agent/plugins/restplugin"
 	"github.com/namsral/flag"
 )
 
@@ -72,6 +73,8 @@ type Flavor struct {
 	Linux linuxplugin.Plugin
 	VPP   defaultplugins.Plugin
 
+	RESTAPIPlugin restplugin.RESTAPIPlugin
+
 	injected bool
 }
 
@@ -108,6 +111,10 @@ func (f *Flavor) Inject() bool {
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
+
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
+	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
+	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
 
 	return true
 }

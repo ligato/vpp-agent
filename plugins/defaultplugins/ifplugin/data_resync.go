@@ -41,7 +41,6 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 
 	// Step 0: Dump actual state of the VPP
 	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
-	// old implemention: err = plugin.LookupVPPInterfaces()
 	if err != nil {
 		return err
 	}
@@ -129,6 +128,42 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
 
 	return wasError
+}
+
+// VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except
+// the local0), it returns false (do not interrupt the resto of the resync), otherwise returns true
+func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+	// notify that the resync should be stopped
+	var stop bool
+
+	// Step 0: Dump actual state of the VPP
+	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
+	if err != nil {
+		return stop
+	}
+
+	// The strategy is optimize-cold-start, so look over all dumped VPP interfaces and check for the configured ones
+	// (leave out the local0). If there are any other interfaces, return true (resync will continue).
+	// If not, return a false flag which cancels the VPP resync operation.
+	plugin.Log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
+	if len(vppIfaces) == 0 {
+		stop = true
+		plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
+		return stop
+	}
+	// in interface exists, try to find local0 interface (index 0)
+	_, ok := vppIfaces[0]
+	// in case local0 is the only interface on the vpp, stop the resync
+	if len(vppIfaces) == 1 && ok {
+		stop = true
+		plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
+		return stop
+	}
+	// otherwise continue normally
+	plugin.Log.Infof("... VPP configuration found, continue with VPP resync")
+
+	return stop
 }
 
 // ResyncSession writes BFD sessions to the empty VPP

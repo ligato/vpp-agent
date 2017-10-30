@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 )
 
 // Cache the VETH interfaces of a particular agent by watching transport. If change appears, it is registered in

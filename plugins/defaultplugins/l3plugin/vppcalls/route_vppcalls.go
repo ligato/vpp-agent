@@ -28,12 +28,12 @@ import (
 // Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
 // when a given routing table entry is applied.
 type Route struct {
-	VrfID       uint32
-	DstAddr     net.IPNet
-	NextHopAddr net.IP
-	OutIface    uint32
-	Weight      uint32
-	Preference  uint32
+	VrfID       uint32    `json:"vrf_id"`
+	DstAddr     net.IPNet `json:"dst_addr"`
+	NextHopAddr net.IP    `json:"next_hop_addr"`
+	OutIface    uint32    `json:"out_iface"`
+	Weight      uint32    `json:"weight"`
+	Preference  uint32    `json:"preference"`
 }
 
 const (

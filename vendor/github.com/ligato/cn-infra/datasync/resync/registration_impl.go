@@ -30,17 +30,17 @@ type registration struct {
 	reconciliationFinishedChan chan time.Time
 }
 
-// NewRegistration is a constructor
+// NewRegistration is a constructor.
 func NewRegistration(resyncName string, statusChan chan StatusEvent) Registration {
 	return &registration{resyncName: resyncName, statusChan: statusChan}
 }
 
-// StatusChan is here for Plugins to get channel for notifications about Resync status
+// StatusChan enables Plugins to get channel for notifications about Resync status.
 func (reg *registration) StatusChan() chan StatusEvent {
 	return reg.statusChan
 }
 
-// String returns the name of the registration
+// String returns the name of the registration.
 func (reg *registration) String() string {
 	return reg.resyncName
 }

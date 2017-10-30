@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package linuxplugin
+package l4
 
-import (
-	"net"
+// Prefixes
+const (
+	// L4Prefix is the relative key prefix for VPP L4 plugin.
+	L4Prefix = "vpp/config/v1/l4/"
+
+	// L4FeaturesPrefix is the relative key prefix for VPP L4 features.
+	L4FeaturesPrefix = L4Prefix + "features"
+
+	// L4NamespacesPrefix is the relative key prefix for VPP L4 application namespaces.
+	L4NamespacesPrefix = L4Prefix + "namespaces/{id}"
 )
-
-// GetLinuxInterfaceIndex returns the index of a Linux interface identified by its name.
-// In Linux, interface index is a positive integer that starts at one, zero is never used.
-// Function returns negative number in case of a failure, such as when the interface doesn't exist.
-// TODO: move to the package with network utilities
-func GetLinuxInterfaceIndex(ifName string) int {
-	iface, err := net.InterfaceByName(ifName)
-	if err != nil {
-		return -1
-	}
-	return iface.Index
-}
