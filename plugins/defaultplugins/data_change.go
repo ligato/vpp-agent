@@ -255,19 +255,6 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 	return plugin.bdConfigurator.ConfigureBridgeDomain(value)
 }
 
-// dataChangeARP propagates data change to the arpConfigurator
-func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
-	changeType datasync.PutDel, callback func(error)) error {
-	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
-
-	if datasync.Delete == changeType {
-		return plugin.arpConfigurator.DeleteArp(prevValue)
-	} else if diff {
-		return plugin.arpConfigurator.ChangeArp(prevValue, value)
-	}
-	return plugin.arpConfigurator.AddArp(value)
-}
-
 // dataChangeFIB propagates data change to the fibConfigurator
 func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTableEntry, prevValue *l2.FibTableEntries_FibTableEntry,
 	changeType datasync.PutDel, callback func(error)) error {
@@ -306,4 +293,17 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+}
+
+// dataChangeARP propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+	changeType datasync.PutDel, callback func(error)) error {
+	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.arpConfigurator.DeleteArp(prevValue)
+	} else if diff {
+		return plugin.arpConfigurator.ChangeArp(value, prevValue)
+	}
+	return plugin.arpConfigurator.AddArp(value)
 }

@@ -30,6 +30,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+var msgCompatibilityARP = []govppapi.Message{
+	&ip.IPNeighborAddDel{},
+	&ip.IPNeighborAddDelReply{},
+}
+
 // ArpConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of L3 arp entries as modelled by the proto file "../model/l3/l3.proto" and stored
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/arp". Updates received from the northbound API
@@ -56,9 +61,93 @@ func (plugin *ArpConfigurator) Init() (err error) {
 		return err
 	}
 
-	err = plugin.checkMsgCompatibility()
+	if err := plugin.vppChan.CheckMessageCompatibility(msgCompatibilityARP...); err != nil {
+		plugin.Log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+// Close GOVPP channel
+func (plugin *ArpConfigurator) Close() error {
+	return safeclose.Close(plugin.vppChan)
+}
+
+// Creates unique identifier which serves as a name in name to index mapping
+func arpIdentifier(iface uint32, ip, mac string) string {
+	return fmt.Sprintf("arp-iface%v-%v-%v", iface, ip, mac)
+}
+
+// AddArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
+	//plugin.Log.Infof("Creating new ARP entry %v -> %v (%v) for interface %v", entry.IpAddress, entry.PhysAddress, entry.Static, entry.Interface)
+	plugin.Log.Infof("Creating ARP entry %v", *entry)
+
+	// Transform route data
+	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
+	}
+	if arp == nil {
+		return nil
+	}
+	plugin.Log.Debugf("adding ARP: %+v", *arp)
+
+	// Create and register new route
+	err = vppcalls.VppAddArp(arp, plugin.vppChan,
+		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
+	plugin.ArpIndexes.RegisterName(arpID, plugin.ArpIndexSeq, nil)
+	plugin.ArpIndexSeq++
+	plugin.Log.Infof("ARP entry %v registered", arpID)
+
+	return nil
+}
+
+// ChangeArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevEntry *l3.ArpTable_ArpTableEntry) error {
+	plugin.Log.Infof("Change ARP entry %v to %v", *prevEntry, *entry)
+
+	if err := plugin.DeleteArp(prevEntry); err != nil {
+		return err
+	}
+	if err := plugin.AddArp(entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteArp processes the NB config and propagates it to bin api call
+func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error {
+	plugin.Log.Infof("Deleting ARP entry %v", *entry)
+
+	// Transform route data
+	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
+	if err != nil {
+		return err
+	}
+	if arp == nil {
+		return nil
+	}
+	plugin.Log.Debugf("deleting ARP: %+v", arp)
+
+	// Delete and unregister new route
+	err = vppcalls.VppDelArp(arp, plugin.vppChan,
+		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
+	_, _, found := plugin.ArpIndexes.UnregisterName(arpID)
+	if found {
+		plugin.Log.Infof("ARP entry %v unregistered", arpID)
+	} else {
+		plugin.Log.Warnf("Unregister failed, ARP entry %v not found", arpID)
 	}
 
 	return nil
@@ -101,89 +190,4 @@ func TransformArp(arpInput *l3.ArpTable_ArpTableEntry, index ifaceidx.SwIfIndex,
 		Static:     arpInput.Static,
 	}
 	return arp, nil
-}
-
-// AddArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
-	//plugin.Log.Infof("Creating new ARP entry %v -> %v (%v) for interface %v", entry.IpAddress, entry.PhysAddress, entry.Static, entry.Interface)
-	plugin.Log.Infof("Creating ARP entry %+v", *entry)
-
-	// Transform route data
-	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	if arp == nil {
-		return nil
-	}
-	plugin.Log.Debugf("adding ARP: %+v", *arp)
-
-	// Create and register new route
-	err = vppcalls.VppAddArp(arp, plugin.vppChan, measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
-	if err != nil {
-		return err
-	}
-	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
-	plugin.ArpIndexes.RegisterName(arpID, plugin.ArpIndexSeq, nil)
-	plugin.ArpIndexSeq++
-	plugin.Log.Infof("ARP entry %v registered", arpID)
-
-	return nil
-}
-
-// ChangeArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevEntry *l3.ArpTable_ArpTableEntry) error {
-	return fmt.Errorf("CHANGE ARP NOT IMPLEMENTED")
-}
-
-// DeleteArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error {
-	plugin.Log.Infof("Deleting ARP entry %+v", *entry)
-
-	// Transform route data
-	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	if arp == nil {
-		return nil
-	}
-	plugin.Log.Debugf("deleting ARP: %+v", arp)
-
-	// Delete and unregister new route
-	err = vppcalls.VppDelArp(arp, plugin.vppChan, measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
-	if err != nil {
-		return err
-	}
-	arpID := arpIdentifier(arp.Interface, arp.IPAddress.String(), arp.MacAddress.String())
-	_, _, found := plugin.ArpIndexes.UnregisterName(arpID)
-	if found {
-		plugin.Log.Infof("ARP entry %v unregistered", arpID)
-	} else {
-		plugin.Log.Warnf("Unregister failed, ARP entry %v not found", arpID)
-	}
-
-	return nil
-}
-
-// Close GOVPP channel
-func (plugin *ArpConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
-}
-
-// Creates unique identifier which serves as a name in name to index mapping
-func arpIdentifier(iface uint32, ip, mac string) string {
-	return fmt.Sprintf("arp-iface%v-%v-%v", iface, ip, mac)
-}
-
-func (plugin *ArpConfigurator) checkMsgCompatibility() error {
-	msgs := []govppapi.Message{
-		&ip.IPNeighborAddDel{},
-		&ip.IPNeighborAddDelReply{},
-	}
-	err := plugin.vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		plugin.Log.Error(err)
-	}
-	return err
 }
