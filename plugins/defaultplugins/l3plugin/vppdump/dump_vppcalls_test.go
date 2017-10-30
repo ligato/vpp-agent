@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"git.fd.io/govpp.git"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 func TestDumpL3(t *testing.T) {
@@ -39,11 +40,9 @@ func TestDumpL3(t *testing.T) {
 	}
 	defer ch.Close()
 
-	res3, _ := DumpStaticRoutes(ch)
+	res3, _ := DumpStaticRoutes(logrus.DefaultLogger(), ch, nil)
 	fmt.Printf("%+v\n", res3)
-	for _, routes := range res3 {
-		for _, route := range routes.IP {
-			fmt.Printf("%+v %+v\n", route, route.NextHops)
-		}
+	for _, route := range res3 {
+		fmt.Printf("%+v %+v\n", route.VrfID, route)
 	}
 }

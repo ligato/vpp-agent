@@ -33,10 +33,6 @@ type BytesConnectionEtcd struct {
 	etcdClient *clientv3.Client
 	lessor     clientv3.Lease
 	opTimeout  time.Duration
-
-	// closeCh is a channel closed when Close method is called.
-	// It is leveraged to stop go routines.
-	closeCh chan struct{}
 }
 
 // BytesBrokerWatcherEtcd uses BytesConnectionEtcd to access the datastore.
@@ -46,7 +42,7 @@ type BytesConnectionEtcd struct {
 // to all keys in its methods in order to shorten keys used in arguments.
 type BytesBrokerWatcherEtcd struct {
 	logging.Logger
-	closeCh   chan struct{}
+	closeCh   chan string
 	lessor    clientv3.Lease
 	kv        clientv3.KV
 	watcher   clientv3.Watcher
@@ -70,9 +66,10 @@ type bytesKeyIterator struct {
 
 // bytesKeyVal represents a single key-value pair.
 type bytesKeyVal struct {
-	key      string
-	value    []byte
-	revision int64
+	key       string
+	value     []byte
+	prevValue []byte
+	revision  int64
 }
 
 // NewEtcdConnectionWithBytes creates new connection to etcd based on the given
@@ -100,7 +97,6 @@ func NewEtcdConnectionUsingClient(etcdClient *clientv3.Client, log logging.Logge
 	conn := BytesConnectionEtcd{}
 	conn.Logger = log
 	conn.etcdClient = etcdClient
-	conn.closeCh = make(chan struct{})
 	conn.lessor = clientv3.NewLease(etcdClient)
 	conn.opTimeout = defaultOpTimeout
 	return &conn, nil
@@ -108,7 +104,6 @@ func NewEtcdConnectionUsingClient(etcdClient *clientv3.Client, log logging.Logge
 
 // Close closes the connection to ETCD.
 func (db *BytesConnectionEtcd) Close() error {
-	close(db.closeCh)
 	if db.etcdClient != nil {
 		return db.etcdClient.Close()
 	}
@@ -122,7 +117,7 @@ func (db *BytesConnectionEtcd) Close() error {
 // the argument.
 func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
+		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
 }
 
 // NewWatcher creates a new instance of a proxy that provides
@@ -132,7 +127,7 @@ func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 // argument.
 func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix), closeCh: db.closeCh}
+		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
 }
 
 // Put calls 'Put' function of the underlying BytesConnectionEtcd.
@@ -185,7 +180,11 @@ func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *
 		resp(NewBytesWatchDelResp(string(ev.Kv.Key), ev.Kv.ModRevision))
 	} else if ev.IsCreate() || ev.IsModify() {
 		if ev.Kv.Value != nil {
-			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, ev.Kv.ModRevision))
+			var prevKvValue []byte
+			if ev.PrevKv != nil {
+				prevKvValue = ev.PrevKv.Value
+			}
+			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, prevKvValue, ev.Kv.ModRevision))
 			log.Debug("NewBytesWatchPutResp")
 		}
 	}
@@ -207,10 +206,13 @@ func newTxnInternal(kv clientv3.KV) keyval.BytesTxn {
 
 // Watch starts subscription for changes associated with the selected keys.
 // Watch events will be delivered to <resp> callback.
-func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), keys ...string) error {
+// closeCh is a channel closed when Close method is called.It is leveraged
+// to stop go routines from specific subscription, or only goroutine with
+// provided key prefix
+func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
 	var err error
 	for _, k := range keys {
-		err = watchInternal(db.Logger, db.etcdClient, db.closeCh, k, resp)
+		err = watchInternal(db.Logger, db.etcdClient, closeChan, k, resp)
 		if err != nil {
 			break
 		}
@@ -219,20 +221,22 @@ func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), keys ...s
 }
 
 // watchInternal starts the watch subscription for key.
-func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan struct{}, key string, resp func(keyval.BytesWatchResp)) error {
-
+func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan string, key string, resp func(keyval.BytesWatchResp)) error {
 	recvChan := watcher.Watch(context.Background(), key, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
 	go func() {
+		registeredKey := key
 		for {
 			select {
 			case wresp := <-recvChan:
 				for _, ev := range wresp.Events {
 					handleWatchEvent(log, resp, ev)
 				}
-			case <-closeCh:
-				log.WithField("key", key).Debug("Watch ended")
-				return
+			case closeVal := <-closeCh:
+				if closeVal == "" || registeredKey == closeVal {
+					log.WithField("key", key).Debug("Watch ended")
+					return
+				}
 			}
 		}
 	}()
@@ -269,6 +273,20 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 		return err
 	}
 	return nil
+}
+
+// PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
+// succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
+func (db *BytesConnectionEtcd) PutIfNotExists(key string, binData []byte) (succeeded bool, err error) {
+	// if key doesn't exist its version is equal to 0
+	response, err := db.etcdClient.Txn(context.Background()).
+		If(clientv3.Compare(clientv3.Version(key), "=", 0)).
+		Then(clientv3.OpPut(key, string(binData))).
+		Commit()
+	if err != nil {
+		return false, err
+	}
+	return response.Succeeded, nil
 }
 
 // Delete removes data identified by the <key>.
@@ -400,8 +418,15 @@ func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
 	key := string(ctx.resp.Kvs[ctx.index].Key)
 	data := ctx.resp.Kvs[ctx.index].Value
 	rev := ctx.resp.Kvs[ctx.index].ModRevision
+
+	var prevValue []byte
+	if len(ctx.resp.Kvs) > 0 && ctx.index > 0 {
+		prevValue = ctx.resp.Kvs[ctx.index-1].Value
+	}
+
 	ctx.index++
-	return &bytesKeyVal{key, data, rev}, false
+
+	return &bytesKeyVal{key, data, prevValue, rev}, false
 }
 
 // GetNext returns the following key (+ revision) from the result set.
@@ -434,6 +459,11 @@ func (kv *bytesKeyVal) Close() error {
 // GetValue returns the value of the pair.
 func (kv *bytesKeyVal) GetValue() []byte {
 	return kv.value
+}
+
+// GetPrevValue returns the previous value of the pair.
+func (kv *bytesKeyVal) GetPrevValue() []byte {
+	return kv.prevValue
 }
 
 // GetKey returns the key of the pair.

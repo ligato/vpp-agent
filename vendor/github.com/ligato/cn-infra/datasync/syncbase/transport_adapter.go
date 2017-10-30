@@ -21,13 +21,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// Adapter implements datasync.TransportAdapter but allows optionally implement these Watch / Put
+// Adapter implements datasync.TransportAdapter but allows the Watch/ Put functions to be optionally implemented.
 type Adapter struct {
 	Watcher   datasync.KeyValProtoWatcher
 	Publisher datasync.KeyProtoValWriter
 }
 
-// Watch using Kafka KeyValProtoWatcher Topic KeyValProtoWatcher
+// Watch uses Kafka KeyValProtoWatcher Topic KeyValProtoWatcher.
 func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
@@ -39,7 +39,7 @@ func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.Change
 	return nil, nil
 }
 
-// Put using Kafka KeyValProtoWatcher Topic KeyProtoValWriter
+// Put uses Kafka KeyValProtoWatcher Topic KeyProtoValWriter.
 func (adapter *Adapter) Put(key string, data proto.Message) error {
 	if adapter.Publisher != nil {
 		return adapter.Publisher.Put(key, data)

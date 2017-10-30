@@ -16,7 +16,8 @@ package linuxplugin
 
 import (
 	"github.com/ligato/cn-infra/datasync"
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // DataChangeIface propagates data change to the ifConfigurator
@@ -30,4 +31,30 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *intf.LinuxInterfaces_Int
 		return plugin.ifConfigurator.ModifyLinuxInterface(value, prevValue)
 	}
 	return plugin.ifConfigurator.ConfigureLinuxInterface(value)
+}
+
+// DataChangeArp propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeArp(diff bool, value *l3.LinuxStaticArpEntries_ArpEntry, prevValue *l3.LinuxStaticArpEntries_ArpEntry,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeArp ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.arpConfigurator.DeleteLinuxStaticArpEntry(prevValue)
+	} else if diff {
+		return plugin.arpConfigurator.ModifyLinuxStaticArpEntry(value, prevValue)
+	}
+	return plugin.arpConfigurator.ConfigureLinuxStaticArpEntry(value)
+}
+
+// DataChangeRoute propagates data change to the routeConfigurator
+func (plugin *Plugin) dataChangeRoute(diff bool, value *l3.LinuxStaticRoutes_Route, prevValue *l3.LinuxStaticRoutes_Route,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeRoute ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.routeConfigurator.DeleteLinuxStaticRoute(prevValue)
+	} else if diff {
+		return plugin.routeConfigurator.ModifyLinuxStaticRoute(value, prevValue)
+	}
+	return plugin.routeConfigurator.ConfigureLinuxStaticRoute(value)
 }

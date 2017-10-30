@@ -29,14 +29,15 @@ const keySpaceEventPrefix = "__keyspace@*__:"
 
 // BytesWatchPutResp is sent when new key-value pair has been inserted or the value is updated
 type BytesWatchPutResp struct {
-	key   string
-	value []byte
-	rev   int64 // TODO Does Redis data have revision?
+	key       string
+	value     []byte
+	prevValue []byte
+	rev       int64 // TODO Does Redis data have revision?
 }
 
 // NewBytesWatchPutResp creates an instance of BytesWatchPutResp
-func NewBytesWatchPutResp(key string, value []byte, revision int64) *BytesWatchPutResp {
-	return &BytesWatchPutResp{key: key, value: value, rev: revision}
+func NewBytesWatchPutResp(key string, value []byte, prevValue []byte, revision int64) *BytesWatchPutResp {
+	return &BytesWatchPutResp{key: key, value: value, prevValue: prevValue, rev: revision}
 }
 
 // GetChangeType returns "Put" for BytesWatchPutResp
@@ -52,6 +53,11 @@ func (resp *BytesWatchPutResp) GetKey() string {
 // GetValue returns the value that has been inserted
 func (resp *BytesWatchPutResp) GetValue() []byte {
 	return resp.value
+}
+
+// GetPrevValue returns the value that has been inserted
+func (resp *BytesWatchPutResp) GetPrevValue() []byte {
+	return resp.prevValue
 }
 
 // GetRevision returns the revision associated with create action
@@ -85,6 +91,11 @@ func (resp *BytesWatchDelResp) GetValue() []byte {
 	return nil
 }
 
+// GetPrevValue returns nil for BytesWatchDelResp
+func (resp *BytesWatchDelResp) GetPrevValue() []byte {
+	return nil
+}
+
 // GetRevision returns the revision associated with the delete operation
 func (resp *BytesWatchDelResp) GetRevision() int64 {
 	return resp.rev
@@ -92,14 +103,16 @@ func (resp *BytesWatchDelResp) GetRevision() int64 {
 
 // Watch starts subscription for changes associated with the selected key. Watch events will be delivered to respChan.
 // Subscription can be canceled by StopWatch call.
-func (db *BytesConnectionRedis) Watch(resp func(keyval.BytesWatchResp), keys ...string) error {
+func (db *BytesConnectionRedis) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
 	if db.closed {
-		return fmt.Errorf("Watch(%v) called on a closed connection", keys)
+		return fmt.Errorf("watch(%v) called on a closed connection", keys)
 	}
+	db.closeCh = closeChan
+
 	return watch(db, resp, db.closeCh, nil, nil, keys...)
 }
 
-func watch(db *BytesConnectionRedis, resp func(keyval.BytesWatchResp), closeChan <-chan struct{},
+func watch(db *BytesConnectionRedis, resp func(keyval.BytesWatchResp), closeChan <-chan string,
 	addPrefix func(key string) string, trimPrefix func(key string) string, keys ...string) error {
 	patterns := make([]string, len(keys))
 	for i, k := range keys {
@@ -131,6 +144,8 @@ func startWatch(db *BytesConnectionRedis, pubSub *goredis.PubSub,
 	go func() {
 		defer func() { db.Debugf("Watch(%v) exited", patterns) }()
 		db.Debugf("start Watch(%v)", patterns)
+		// to store previous value
+		var prevVal []byte
 		for {
 			msg, err := pubSub.ReceiveMessage()
 			if db.closed {
@@ -161,7 +176,8 @@ func startWatch(db *BytesConnectionRedis, pubSub *goredis.PubSub,
 				if trimPrefix != nil {
 					key = trimPrefix(key)
 				}
-				resp(NewBytesWatchPutResp(key, val, rev))
+				resp(NewBytesWatchPutResp(key, val, prevVal, rev))
+				prevVal = val
 			case "del", "expired":
 				if trimPrefix != nil {
 					key = trimPrefix(key)
@@ -175,9 +191,9 @@ func startWatch(db *BytesConnectionRedis, pubSub *goredis.PubSub,
 }
 
 // Watch starts subscription for changes associated with the selected key. Watch events will be delivered to respChan.
-func (pdb *BytesBrokerWatcherRedis) Watch(resp func(keyval.BytesWatchResp), keys ...string) error {
+func (pdb *BytesBrokerWatcherRedis) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
 	if pdb.delegate.closed {
-		return fmt.Errorf("Watch(%v) called on a closed connection", keys)
+		return fmt.Errorf("watch(%v) called on a closed connection", keys)
 	}
-	return watch(pdb.delegate, resp, pdb.closeCh, pdb.addPrefix, pdb.trimPrefix, keys...)
+	return watch(pdb.delegate, resp, closeChan, pdb.addPrefix, pdb.trimPrefix, keys...)
 }

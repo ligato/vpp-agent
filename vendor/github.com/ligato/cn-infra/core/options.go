@@ -20,23 +20,23 @@ import (
 	"github.com/ligato/cn-infra/logging"
 )
 
-// Option defines the maximum time that is attempted to deliver notification.
+// Option defines the maximum time for which the notification delivery is attempted.
 type Option interface {
-	//OptionMarkerCore is just for marking implementation that it implements this interface
+	//OptionMarkerCore is just for marking implementation that implements this interface.
 	OptionMarkerCore()
 }
 
-// WithTimeoutOpt defines the maximum time that is attempted to deliver notification.
+// WithTimeoutOpt defines the maximum time for which the notification delivery is attempted.
 type WithTimeoutOpt struct {
 	Timeout time.Duration
 }
 
-// WithTimeout creates an option for ToChan function that defines a timeout for notification delivery.
+// WithTimeout creates an option for ToChan function that defines a notification delivery timeout.
 func WithTimeout(timeout time.Duration) *WithTimeoutOpt {
 	return &WithTimeoutOpt{Timeout: timeout}
 }
 
-// WithLoggerOpt defines a logger that logs if delivery of notification is unsuccessful.
+// WithLoggerOpt defines a logger that logs if notification delivery is unsuccessful.
 type WithLoggerOpt struct {
 	Logger logging.Logger
 }
@@ -46,8 +46,8 @@ func WithLogger(logger logging.Logger) *WithLoggerOpt {
 	return &WithLoggerOpt{Logger: logger}
 }
 
-// OptionMarkerCore is just for marking implementation that it implements this interface
+// OptionMarkerCore is only for marking implementation that implements this interface.
 func (marker *WithTimeoutOpt) OptionMarkerCore() {}
 
-// OptionMarkerCore is just for marking implementation that it implements this interface
+// OptionMarkerCore is just for marking implementation that implements this interface.
 func (marker *WithLoggerOpt) OptionMarkerCore() {}

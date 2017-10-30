@@ -33,7 +33,7 @@ func NewResyncEvent(m map[string] /*keyPrefix*/ []datasync.KeyVal) *ResyncEventD
 	return &ResyncEventDB{its, NewDoneChannel(make(chan error, 1))}
 }
 
-// ResyncEventDB implements interface datasync.ResyncEvent (see comments in there)
+// ResyncEventDB implements the interface datasync.ResyncEvent (see comments in there).
 type ResyncEventDB struct {
 	its map[string] /*keyPrefix*/ datasync.KeyValIterator
 	*DoneChannel

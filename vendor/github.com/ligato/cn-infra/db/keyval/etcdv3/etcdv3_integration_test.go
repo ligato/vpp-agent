@@ -56,6 +56,8 @@ func TestDataBroker(t *testing.T) {
 	t.Run("txn", testPrefixedTxn)
 	embd.CleanDs()
 	t.Run("testDelWithPrefix", testDelWithPrefix)
+	embd.CleanDs()
+	t.Run("testPutIfNotExist", testPutIfNotExists)
 }
 
 func teardownBrokers() {
@@ -94,7 +96,7 @@ func testPrefixedWatcher(t *testing.T) {
 	defer teardownBrokers()
 
 	watchCh := make(chan keyval.BytesWatchResp)
-	err := prefixedWatcher.Watch(keyval.ToChan(watchCh), watchKey)
+	err := prefixedWatcher.Watch(keyval.ToChan(watchCh), nil, watchKey)
 	gomega.Expect(err).To(gomega.BeNil())
 
 	wg := sync.WaitGroup{}
@@ -200,6 +202,55 @@ func testDelWithPrefix(t *testing.T) {
 	_, found, _, err = broker.GetValue("something/a/val3")
 	gomega.Expect(found).To(gomega.BeFalse())
 	gomega.Expect(err).To(gomega.BeNil())
+
+}
+
+func testPutIfNotExists(t *testing.T) {
+
+	conn, err := NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logroot.StandardLogger())
+
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(conn).NotTo(gomega.BeNil())
+
+	const key = "myKey"
+	var (
+		intialValue  = []byte("abcd")
+		changedValue = []byte("modified")
+	)
+
+	_, found, _, err := conn.GetValue(key)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(found).To(gomega.BeFalse())
+
+	inserted, err := conn.PutIfNotExists(key, intialValue)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(inserted).To(gomega.BeTrue())
+
+	data, found, _, err := conn.GetValue(key)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(string(data)).To(gomega.BeEquivalentTo(string(intialValue)))
+
+	inserted, err = conn.PutIfNotExists(key, changedValue)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(inserted).To(gomega.BeFalse())
+
+	data, found, _, err = conn.GetValue(key)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(string(data)).To(gomega.BeEquivalentTo(string(intialValue)))
+
+	_, err = conn.Delete(key)
+	gomega.Expect(err).To(gomega.BeNil())
+
+	inserted, err = conn.PutIfNotExists(key, changedValue)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(inserted).To(gomega.BeTrue())
+
+	data, found, _, err = conn.GetValue(key)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(string(data)).To(gomega.BeEquivalentTo(string(changedValue)))
 
 }
 
