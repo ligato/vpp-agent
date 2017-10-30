@@ -15,7 +15,9 @@
 package defaultplugins
 
 import (
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"strings"
+
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
@@ -23,6 +25,141 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 )
+
+func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {
+	key := dataChng.GetKey()
+
+	// Skip potential changes on error keys
+	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
+		return false, nil
+	}
+	plugin.Log.Debug("Start processing change for key: ", key)
+	if strings.HasPrefix(key, acl.KeyPrefix()) {
+		var value, prevValue acl.AccessLists_Acl
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
+		var value, prevValue interfaces.Interfaces_Interface
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeIface(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
+		var value, prevValue bfd.SingleHopBFD_Session
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeBfdSession(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
+		var value, prevValue bfd.SingleHopBFD_Key
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeBfdKey(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
+		var value, prevValue bfd.SingleHopBFD_EchoFunction
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeBfdEchoFunction(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
+		fib, _, _ := l2.ParseFibKey(key)
+		if fib {
+			// L2 FIB entry
+			var value, prevValue l2.FibTableEntries_FibTableEntry
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeFIB(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
+					return true, err
+				}
+			} else {
+				return false, err
+			}
+		} else {
+			// Bridge domain
+			var value, prevValue l2.BridgeDomains_BridgeDomain
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeBD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		}
+	} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
+		var value, prevValue l2.XConnectPairs_XConnectPair
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeXCon(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
+		if isRoute {
+			// Route
+			var value, prevValue l3.StaticRoutes_Route
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeStaticRoute(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		} else {
+			// Vrf
+			// TODO vrf not implemented yet
+			plugin.Log.Warn("VRFs are not supported yet")
+		}
+	} else {
+		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
+	}
+	return false, nil
+}
 
 // dataChangeACL propagates to the particular aclConfigurator
 func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevValue *acl.AccessLists_Acl,
@@ -38,7 +175,7 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 }
 
 // DataChangeIface propagates data change to the ifConfigurator
-func (plugin *Plugin) dataChangeIface(diff bool, value *intf.Interfaces_Interface, prevValue *intf.Interfaces_Interface,
+func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_Interface, prevValue *interfaces.Interfaces_Interface,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
