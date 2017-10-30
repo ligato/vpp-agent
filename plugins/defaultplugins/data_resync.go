@@ -51,7 +51,7 @@ type DataResyncReq struct {
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
 	// VrfTables is a list of all VRF tables
-	VrfTables []*l3.VrfTable
+	VrfTables []*l3.VRFTable
 }
 
 // NewDataResyncReq is a constructor
@@ -76,7 +76,7 @@ func NewDataResyncReq() *DataResyncReq {
 		// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 		StaticRoutes: []*l3.StaticRoutes_Route{},
 		// VrfTables is a list of all VRF tables
-		VrfTables: []*l3.VrfTable{}}
+		VrfTables: []*l3.VRFTable{}}
 }
 
 // delegates full resync request
@@ -527,7 +527,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return false, err
 			}
 		} else {
-			var value, prevValue l3.VrfTable
+			var value, prevValue l3.VRFTable
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
@@ -536,7 +536,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return false, err
 			}
 
-			if err := plugin.dataChangeVrfTable(diff, &value, &prevValue, vrfFromKey, dataChng.GetChangeType()); err != nil {
+			if err := plugin.dataChangeVrfTable(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
 		}

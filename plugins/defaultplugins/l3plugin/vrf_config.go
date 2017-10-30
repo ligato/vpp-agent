@@ -12,23 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=bin_api
+
 // Package l3plugin implements the L3 plugin that handles L3 FIBs.
 package l3plugin
 
 import (
-	"fmt"
-	"strconv"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/prometheus/common/log"
 )
+
+var msgCompatiblityVRF = []govppapi.Message{
+	&ip.IPTableAddDel{},
+	&ip.IPTableAddDelReply{},
+	&interfaces.SwInterfaceSetTable{},
+	&interfaces.SwInterfaceSetTableReply{},
+	&interfaces.SwInterfaceGetTable{},
+	&interfaces.SwInterfaceGetTableReply{},
+}
 
 // VrfConfigurator is for managing VRF tables
 type VrfConfigurator struct {
@@ -38,7 +48,8 @@ type VrfConfigurator struct {
 	TableIndexes  idxvpp.NameToIdxRW
 	TableIndexSeq uint32
 	SwIfIndexes   ifaceidx.SwIfIndex
-	vppChan       *govppapi.Channel
+
+	vppChan *govppapi.Channel
 }
 
 // Init members (channels...) and start go routines
@@ -50,96 +61,7 @@ func (plugin *VrfConfigurator) Init() (err error) {
 		return err
 	}
 
-	return plugin.checkMsgCompatibility()
-}
-
-// Creates unique identifier which serves as a name in name to index mapping
-func tableIdentifier(vrf uint32) string {
-	return fmt.Sprintf("vrftable-%v", vrf)
-}
-
-// AddTable creates VRF table
-func (plugin *VrfConfigurator) AddTable(config *l3.VrfTable, vrfFromKey string) error {
-	plugin.Log.Infof("Creating new VRF table %s (ID: %v)", config.Name, config.VrfId)
-	// Validate VRF index from key and it's value in data
-	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
-		return err
-	}
-	// Transform table data
-	table, err := TransformVrfTable(config, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	plugin.Log.Debugf("adding table: %+v", table)
-	// Create and register VRF table
-	if table != nil {
-		if err := vppcalls.VppAddIPTable(table, plugin.vppChan); err != nil {
-			return err
-		}
-		identifier := tableIdentifier(table.TableID)
-		plugin.TableIndexes.RegisterName(identifier, plugin.TableIndexSeq, nil)
-		plugin.TableIndexSeq++
-		plugin.Log.Infof("Table %v registered", identifier)
-	}
-
-	return nil
-}
-
-// DeleteTable deletes VRF table
-func (plugin *VrfConfigurator) DeleteTable(config *l3.VrfTable, vrfFromKey string) error {
-	plugin.Log.Infof("Deleting VRF table %s (ID: %v)", config.Name, config.VrfId)
-	// Validate VRF index from key and it's value in data
-	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
-		return err
-	}
-
-	// Transform table data
-	table, err := TransformVrfTable(config, plugin.SwIfIndexes, plugin.Log)
-	if err != nil {
-		return err
-	}
-	plugin.Log.Debugf("deleting table: %+v", table)
-
-	// Delete and unregister VRF table
-	if table != nil {
-		if err := vppcalls.VppDelIPTable(table, plugin.vppChan); err != nil {
-			return err
-		}
-		identifier := tableIdentifier(table.TableID)
-		_, _, found := plugin.TableIndexes.UnregisterName(identifier)
-		if found {
-			plugin.Log.Infof("VRF table %v unregistered", identifier)
-		} else {
-			plugin.Log.Warnf("Unregister failed, VRF table %v not found", identifier)
-		}
-	}
-
-	return nil
-}
-
-func (plugin *VrfConfigurator) validateVrfFromKey(config *l3.VrfTable, vrfFromKey string) error {
-	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
-	if intVrfFromKey != int(config.VrfId) {
-		if err != nil {
-			return err
-		}
-		plugin.Log.Warnf("VRF index from key (%v) does not match config (%v), using value from the key",
-			intVrfFromKey, config.VrfId)
-		config.VrfId = uint32(intVrfFromKey)
-	}
-	return nil
-}
-
-func (plugin *VrfConfigurator) checkMsgCompatibility() error {
-	msgs := []govppapi.Message{
-		&ip.IPTableAddDel{},
-		&ip.IPTableAddDelReply{},
-	}
-	err := plugin.vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		plugin.Log.Error(err)
-	}
-	return err
+	return plugin.vppChan.CheckMessageCompatibility(msgCompatiblityVRF...)
 }
 
 // Close GOVPP channel
@@ -147,25 +69,64 @@ func (plugin *VrfConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// TransformVrfTable transforms table data for VPP
-func TransformVrfTable(input *l3.VrfTable, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.IPTable, error) {
-	if input == nil {
-		log.Infof("Table input is empty")
-		return nil, nil
+// AddTable creates VRF table
+func (plugin *VrfConfigurator) AddTable(table *l3.VRFTable) error {
+	l := plugin.Log.WithField("name", table.Name)
+	l.Debugf("Creating VRF table.")
+
+	// Create and register VRF table
+	vrfIdx := plugin.TableIndexSeq
+
+	l = plugin.Log.WithFields(map[string]interface{}{
+		"vrfName": table.Name,
+		"vrfIdx":  vrfIdx,
+	})
+
+	if err := vppcalls.VppAddIPTable(vrfIdx, table.Name, plugin.vppChan); err != nil {
+		return err
 	}
-	vrfID := input.VrfId
-	//isIPv6 := input.IsIpv6
-	if input.Name == "" {
-		name := fmt.Sprintf("vrf_table_%03d", vrfID)
-		log.Infof("Route did not contain name, will use %q", name)
-		input.Name = name
-		//return nil, nil
+	plugin.TableIndexes.RegisterName(table.Name, vrfIdx, nil)
+	plugin.TableIndexSeq++
+	l.Infof("VRF table registered")
+
+	// Set interfaces to VRF
+	for _, iface := range table.Interfaces {
+		ifaceIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			log.Infof("Interface %v not found", iface.Name)
+			continue
+		}
+		if err := vppcalls.VppSetInterfaceToVRF(vrfIdx, ifaceIdx, plugin.Log, plugin.vppChan); err != nil {
+			log.Error("Set interface to VRF failed:", err)
+			continue
+		}
 	}
 
-	output := &vppcalls.IPTable{
-		TableID: vrfID,
-		//IsIPv6:  isIPv6,
-		Name: []byte(input.Name),
+	return nil
+}
+
+// DeleteTable deletes VRF table
+func (plugin *VrfConfigurator) DeleteTable(table *l3.VRFTable) error {
+	l := plugin.Log.WithField("name", table.Name)
+	l.Debugf("Deleting VRF table.")
+
+	vrfIdx, _, found := plugin.TableIndexes.LookupIdx(table.Name)
+	if !found {
+		l.Debug("Unable to find index for VRF table to be deleted.")
+		return nil
 	}
-	return output, nil
+
+	l = plugin.Log.WithFields(map[string]interface{}{
+		"vrfName": table.Name,
+		"vrfIdx":  vrfIdx,
+	})
+
+	// Delete and unregister VRF table
+	if err := vppcalls.VppDelIPTable(vrfIdx, table.Name, plugin.vppChan); err != nil {
+		return err
+	}
+	plugin.TableIndexes.UnregisterName(table.Name)
+	l.Infof("VRF table unregistered.")
+
+	return nil
 }

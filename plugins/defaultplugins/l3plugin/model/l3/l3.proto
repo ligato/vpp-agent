@@ -2,6 +2,17 @@ syntax = "proto3";
 
 package l3;
 
+/* VRF table */
+message VRFTable {
+    //uint32 vrf_id = 1;    /* VRF table ID */
+    string name = 1;        /* VRF table name */
+
+    message Interfaces {
+        string name = 1;                    /* interface name assigned to this VRF table */
+    }
+    repeated Interfaces interfaces = 100;   /* list of interfaces */
+}
+
 /* Static IPv4 / IPv6 routes */
 message StaticRoutes {
     message Route {
@@ -55,9 +66,4 @@ message STNTable {
         string interface = 2;   /* interface where the packets will be punted */
     }
     repeated STNTableEntry stn_table_entries = 100;  /* list of STN entries */
-}
-
-message VrfTable {
-    uint32 vrf_id = 1;
-    string name = 2;
 }

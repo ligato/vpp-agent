@@ -132,16 +132,16 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 }
 
 // dataChangeVrfTable propagates data change to the vrfConfigurator
-func (plugin *Plugin) dataChangeVrfTable(diff bool, value *l3.VrfTable, prevValue *l3.VrfTable,
-	vrfFromKey string, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeVrfTable(diff bool, value *l3.VRFTable, prevValue *l3.VRFTable,
+	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeVrfTable ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.vrfConfigurator.DeleteTable(value, vrfFromKey)
+		return plugin.vrfConfigurator.DeleteTable(prevValue)
 	} else if diff {
 		return fmt.Errorf("MODIFY VRF TABLE NOT IMPLEMENTED")
 	}
-	return plugin.vrfConfigurator.AddTable(value, vrfFromKey)
+	return plugin.vrfConfigurator.AddTable(value)
 }
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator

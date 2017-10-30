@@ -18,36 +18,33 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/interfaces"
 )
 
-func vppAddDelIPTable(req *ip.IPTableAddDel, vppChan *govppapi.Channel) error {
+// VppSetInterfaceToVRF assigns VRF table to interface
+func VppSetInterfaceToVRF(vrfIndex, ifaceIndex uint32, log logging.Logger,
+	vppChan *govppapi.Channel) error {
+	log.Debugf("Setting up interface %v to VRF %v ", ifaceIndex, vrfIndex)
+
+	req := &interfaces.SwInterfaceSetTable{
+		VrfID:     vrfIndex,
+		SwIfIndex: ifaceIndex,
+	}
+	/*if table.IsIPv6 {
+		req.IsIpv6 = 1
+	} else {
+		req.IsIpv6 = 0
+	}*/
+
 	// Send message
-	reply := new(ip.IPTableAddDelReply)
+	reply := new(interfaces.SwInterfaceSetTableReply)
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("IPTableAddDelReply returned %d", reply.Retval)
+		return fmt.Errorf("SwInterfaceSetTableReply returned %d", reply.Retval)
 	}
 
 	return nil
-}
-
-// VppAddIPTable adds new IP table according to provided input
-func VppAddIPTable(vrfIdx uint32, tableName string, vppChan *govppapi.Channel) error {
-	return vppAddDelIPTable(&ip.IPTableAddDel{
-		TableID: vrfIdx,
-		Name:    []byte(tableName),
-		IsAdd:   1,
-	}, vppChan)
-}
-
-// VppDelIPTable removes old IP table according to provided input
-func VppDelIPTable(vrfIdx uint32, tableName string, vppChan *govppapi.Channel) error {
-	return vppAddDelIPTable(&ip.IPTableAddDel{
-		TableID: vrfIdx,
-		Name:    []byte(tableName),
-		IsAdd:   0,
-	}, vppChan)
 }
