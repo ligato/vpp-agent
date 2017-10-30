@@ -20,6 +20,7 @@ import (
 	aclplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
+	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
 	"github.com/unrolled/render"
 	"io/ioutil"
 	"net/http"
@@ -157,7 +158,6 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 }
 
 //staticRoutesGetHandler - used to get list of all static routes
-/*
 func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -182,7 +182,6 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 		}
 	}
 }
-*/
 
 //interfaceACLPostHandler - used to get acl configuration for a particular interface
 func (plugin *RESTAPIPlugin) interfaceACLPostHandler(formatter *render.Render) http.HandlerFunc {

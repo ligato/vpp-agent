@@ -140,12 +140,12 @@ func (m *Interfaces) GetInterface() []*Interfaces_Interface {
 }
 
 type Interfaces_Interface struct {
-	Name        string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" json:"name"`
-	Description string        `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty" json:"description"`
-	Type        InterfaceType `protobuf:"varint,3,opt,name=type,proto3,enum=interfaces.InterfaceType" json:"type,omitempty" json:"type"`
-	Enabled     bool          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty" json:"enabled"`
-	PhysAddress string        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty" json:"phys_address"`
-	Mtu         uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty" json:"mtu"`
+	Name        string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description string        `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Type        InterfaceType `protobuf:"varint,3,opt,name=type,proto3,enum=interfaces.InterfaceType" json:"type,omitempty"`
+	Enabled     bool          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PhysAddress string        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
+	Mtu         uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses []string                       `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	Memif       *Interfaces_Interface_Memif    `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`

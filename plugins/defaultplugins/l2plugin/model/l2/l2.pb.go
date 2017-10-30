@@ -58,15 +58,15 @@ func (m *BridgeDomains) GetBridgeDomains() []*BridgeDomains_BridgeDomain {
 }
 
 type BridgeDomains_BridgeDomain struct {
-	Name                string                                            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" json:"name"'`
-	Flood               bool                                              `protobuf:"varint,2,opt,name=flood,proto3" json:"flood,omitempty" json:"flood"`
-	UnknownUnicastFlood bool                                              `protobuf:"varint,3,opt,name=unknown_unicast_flood,proto3" json:"unknown_unicast_flood,omitempty" json:"unknown_unicast_flood"`
-	Forward             bool                                              `protobuf:"varint,4,opt,name=forward,proto3" json:"forward,omitempty" json:"forward"`
-	Learn               bool                                              `protobuf:"varint,5,opt,name=learn,proto3" json:"learn,omitempty" json:"learn"`
-	ArpTermination      bool                                              `protobuf:"varint,6,opt,name=arp_termination,proto3" json:"arp_termination,omitempty" json:"arp_termination"`
-	MacAge              uint32                                            `protobuf:"varint,7,opt,name=mac_age,proto3" json:"mac_age,omitempty" json:"mac_age"`
-	Interfaces          []*BridgeDomains_BridgeDomain_Interfaces          `protobuf:"bytes,100,rep,name=interfaces" json:"interfaces,omitempty" json:"interfaces"`
-	ArpTerminationTable []*BridgeDomains_BridgeDomain_ArpTerminationTable `protobuf:"bytes,102,rep,name=arp_termination_table" json:"arp_termination_table,omitempty" json:"arp_termination_table"`
+	Name                string                                            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Flood               bool                                              `protobuf:"varint,2,opt,name=flood,proto3" json:"flood,omitempty"`
+	UnknownUnicastFlood bool                                              `protobuf:"varint,3,opt,name=unknown_unicast_flood,proto3" json:"unknown_unicast_flood,omitempty"`
+	Forward             bool                                              `protobuf:"varint,4,opt,name=forward,proto3" json:"forward,omitempty"`
+	Learn               bool                                              `protobuf:"varint,5,opt,name=learn,proto3" json:"learn,omitempty"`
+	ArpTermination      bool                                              `protobuf:"varint,6,opt,name=arp_termination,proto3" json:"arp_termination,omitempty"`
+	MacAge              uint32                                            `protobuf:"varint,7,opt,name=mac_age,proto3" json:"mac_age,omitempty"`
+	Interfaces          []*BridgeDomains_BridgeDomain_Interfaces          `protobuf:"bytes,100,rep,name=interfaces" json:"interfaces,omitempty"`
+	ArpTerminationTable []*BridgeDomains_BridgeDomain_ArpTerminationTable `protobuf:"bytes,102,rep,name=arp_termination_table" json:"arp_termination_table,omitempty"`
 }
 
 func (m *BridgeDomains_BridgeDomain) Reset()         { *m = BridgeDomains_BridgeDomain{} }
