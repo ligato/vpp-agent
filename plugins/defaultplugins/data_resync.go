@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"time"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -26,7 +28,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"time"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -54,24 +55,15 @@ type DataResyncReq struct {
 // NewDataResyncReq is a constructor
 func NewDataResyncReq() *DataResyncReq {
 	return &DataResyncReq{
-		// ACLs is a list af all access lists that are expected to be in VPP after RESYNC
-		ACLs: []*acl.AccessLists_Acl{},
-		// Interfaces is a list af all interfaces that are expected to be in VPP after RESYNC
-		Interfaces: []*interfaces.Interfaces_Interface{},
-		// SingleHopBFDSession is a list af all BFD sessions that are expected to be in VPP after RESYNC
+		ACLs:                []*acl.AccessLists_Acl{},
+		Interfaces:          []*interfaces.Interfaces_Interface{},
 		SingleHopBFDSession: []*bfd.SingleHopBFD_Session{},
-		// SingleHopBFDKey is a list af all BFD authentication keys that are expected to be in VPP after RESYNC
-		SingleHopBFDKey: []*bfd.SingleHopBFD_Key{},
-		// SingleHopBFDEcho is a list af all BFD echo functions that are expected to be in VPP after RESYNC
-		SingleHopBFDEcho: []*bfd.SingleHopBFD_EchoFunction{},
-		// BridgeDomains is a list af all BDs that are expected to be in VPP after RESYNC
-		BridgeDomains: []*l2.BridgeDomains_BridgeDomain{},
-		// FibTableEntries is a list af all FIBs that are expected to be in VPP after RESYNC
-		FibTableEntries: []*l2.FibTableEntries_FibTableEntry{},
-		// XConnects is a list af all XCons that are expected to be in VPP after RESYNC
-		XConnects: []*l2.XConnectPairs_XConnectPair{},
-		// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
-		StaticRoutes: []*l3.StaticRoutes_Route{}}
+		SingleHopBFDKey:     []*bfd.SingleHopBFD_Key{},
+		SingleHopBFDEcho:    []*bfd.SingleHopBFD_EchoFunction{},
+		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
+		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
+		XConnects:           []*l2.XConnectPairs_XConnectPair{},
+		StaticRoutes:        []*l3.StaticRoutes_Route{}}
 }
 
 // delegates full resync request
