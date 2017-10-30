@@ -20,7 +20,7 @@ import (
 )
 
 // EventLoopWithInterrupt starts an instance of the agent created with NewAgent().
-// Agent is stopped when <closeChan> is closed or user interrupt (SIGINT)
+// Agent is stopped when <closeChan> is closed or a user interrupt (SIGINT)
 // is received.
 func EventLoopWithInterrupt(agent *Agent, closeChan chan struct{}) error {
 	err := agent.Start()

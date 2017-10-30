@@ -20,18 +20,18 @@ import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 )
 
-// Plugin grpcsync implements Plugin interface therefore can be loaded with other plugins
+// Plugin grpcsync implements Plugin interface, therefore can be loaded with other plugins.
 type Plugin struct {
 	Deps
 	Adapter datasync.KeyValProtoWatcher
 }
 
-// Deps - GRPC Plugin dependencies
+// Deps - gRPC Plugin dependencies
 type Deps struct {
 	GRPC grpc.Server
 }
 
-// Init register new GRPC service and instantiate plugin.Adapter
+// Init registers new gRPC service and instantiates plugin.Adapter.
 func (plugin *Plugin) Init() error {
 	grpcAdapter := NewAdapter(plugin.GRPC.Server())
 	plugin.Adapter = &syncbase.Adapter{Watcher: grpcAdapter}
@@ -39,7 +39,7 @@ func (plugin *Plugin) Init() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (plugin *Plugin) Close() error {
 	return nil
 }

@@ -27,29 +27,29 @@ type ResyncEvent interface {
 
 // CallbackResult can be used by an event receiver to indicate to the event
 // producer whether an operation was successful (error is nil) or unsuccessful
-// (error is not nil)
+// (error is not nil).
 type CallbackResult interface {
 	// Done allows plugins that are processing data change/resync to send
-	// feedback. If there was no error Done(nil) needs to be called.
+	// feedback. If there was no error, Done(nil) needs to be called.
 	// Use the noError=nil definition for better readability, for example:
 	//     Done(noError).
 	Done(error)
 }
 
-// ProtoWatchResp contains changed value
+// ProtoWatchResp contains changed value.
 type ProtoWatchResp interface {
 	ChangeValue
 	WithKey
 	WithPrevValue
 }
 
-// ChangeValue represents single propagated change.
+// ChangeValue represents a single propagated change.
 type ChangeValue interface {
 	LazyValueWithRev
 	WithChangeType
 }
 
-// LazyValueWithRev defines value that is unmarshalled into proto message
+// LazyValueWithRev defines value that is unmarshaled into proto message
 // on demand with a revision.
 type LazyValueWithRev interface {
 	LazyValue
@@ -59,7 +59,7 @@ type LazyValueWithRev interface {
 // WithKey is a simple helper interface embedded by all interfaces that require
 // access to the key of the key-value pair.
 // The intent is to ensure that the same method declaration is used in different
-// interfaces (composition of interfaces)
+// interfaces (composition of interfaces).
 type WithKey interface {
 	// GetKey returns the key of the pair
 	GetKey() string
@@ -68,7 +68,7 @@ type WithKey interface {
 // WithChangeType is a simple helper interface embedded by all interfaces that
 // require access to change type information.
 // The intent is to ensure that the same method declaration is used in different
-// interfaces (composition of interfaces)
+// interfaces (composition of interfaces).
 type WithChangeType interface {
 	GetChangeType() PutDel
 }
@@ -76,7 +76,7 @@ type WithChangeType interface {
 // WithRevision is a simple helper interface embedded by all interfaces that
 // require access to the value revision.
 // The intent is to ensure that the same method declaration is used in different
-// interfaces (composition of interfaces)
+// interfaces (composition of interfaces).
 type WithRevision interface {
 	// GetRevision gets revision of current value
 	GetRevision() (rev int64)
@@ -85,7 +85,7 @@ type WithRevision interface {
 // WithPrevValue is a simple helper interface embedded by all interfaces that
 // require access to the previous value.
 // The intent is to ensure that the same method declaration is used in different
-// interfaces (composition of interfaces)
+// interfaces (composition of interfaces).
 type WithPrevValue interface {
 	// GetPrevValue gets the previous value in the data change event.
 	// The caller must provide an address of a proto message buffer
@@ -96,7 +96,7 @@ type WithPrevValue interface {
 	GetPrevValue(prevValue proto.Message) (prevValueExist bool, err error)
 }
 
-// LazyValue defines value that is unmarshalled into proto message on demand.
+// LazyValue defines value that is unmarshaled into proto message on demand.
 // The reason for defining interface with only one method is primarily to unify
 // interfaces in this package.
 type LazyValue interface {
@@ -104,6 +104,6 @@ type LazyValue interface {
 	// The caller must provide an address of a proto message buffer
 	// as <value>.
 	// returns:
-	// - error if value argument can not be properly filled
+	// - error if value argument can not be properly filled.
 	GetValue(value proto.Message) error
 }

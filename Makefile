@@ -84,7 +84,7 @@ endef
 
 # run code analysis
 define lint_only
-   @echo "# running code analysis"
+    @echo "# running code analysis"
     @./scripts/static_analysis.sh golint vet
     @echo "# done"
 endef

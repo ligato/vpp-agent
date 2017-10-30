@@ -22,21 +22,21 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// Flavor is structure that contains a particular combination of plugins
-// (fields of plugins)
+// Flavor is a structure that contains a particular combination of plugins
+// (fields of plugins).
 type Flavor interface {
-	// Plugins returns list of plugins.
-	// Name of the plugin is supposed to be related to field name of Flavor struct
+	// Plugins returns a list of plugins.
+	// Name of the plugin is supposed to be related to field name of Flavor struct.
 	Plugins() []*NamedPlugin
 
 	// Inject method is supposed to be implemented by each Flavor
 	// to inject dependencies between the plugins.
-	// When this method is called for the first time it returns true
-	// (meaning the dependency injection ran at the first time).
+	// When this method is called for the first time, it returns true
+	// (meaning the dependency injection ran that first time).
 	// It is possible to call this method repeatedly (then it will return false).
 	Inject() (firstRun bool)
 
-	// LogRegistry is a getter for accessing log registry (that allows to create new loggers)
+	// LogRegistry is a getter for accessing log registry (that allows to create new loggers).
 	LogRegistry() logging.Registry
 }
 
@@ -55,13 +55,12 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 // of one or more Plugins and (optionally) multiple Flavors. The composition
 // is recursive: a component Flavor contains Plugin components and may
 // contain Flavor components as well. The function recursively lists
-// plugins contained in component Flavors.
+// plugins included in component Flavors.
 //
 // The function returns an error if the flavorValue argument does not
 // satisfy the Flavor interface. All components in the argument flavorValue
 // must satisfy either the Plugin or the Flavor interface. If they do not,
 // an error is logged, but the function does not return an error.
-// in the argument
 func listPluginsInFlavor(flavorValue reflect.Value, uniqueness map[Plugin] /*nil*/ interface{}) ([]*NamedPlugin, error) {
 	logroot.StandardLogger().Debug("inspect flavor structure ", flavorValue.Type())
 
