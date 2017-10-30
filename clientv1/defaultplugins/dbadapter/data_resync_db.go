@@ -128,6 +128,15 @@ func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyn
 	return dsl
 }
 
+// Arp adds L3 ARP entry to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
@@ -170,6 +179,11 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 		}
 		appendKeys(&toBeDeleted, keys)
 		keys, err = dsl.listKeys(l3.RouteKeyPrefix())
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l3.ArpKeyPrefix()())
 		if err != nil {
 			break
 		}

@@ -15,6 +15,8 @@
 package dbadapter
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -23,7 +25,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"net"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -125,6 +126,13 @@ func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 	return dsl
 }
 
+// Arp adds a request to create or update VPP L3 ARP entry.
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
+	dsl.parent.txn.Put(l3.ArpEntryKey(arp.Interface, arp.IpAddress), arp)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -181,7 +189,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 	return dsl
 }
 
-// StaticRoute adds a request to delete an existing VPP L3 Static Route..
+// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
 	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String()))
@@ -191,6 +199,13 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAd
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP entry.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.DeleteDSL {
+	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
+	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr.String()))
 	return dsl
 }
 

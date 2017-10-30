@@ -165,8 +165,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeARP(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-				return true, err
+			if err := plugin.dataChangeARP(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
 			}
 		} else {
 			return false, err
@@ -297,7 +297,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 
 // dataChangeARP propagates data change to the arpConfigurator
 func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
-	changeType datasync.PutDel, callback func(error)) error {
+	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {

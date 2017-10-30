@@ -15,12 +15,13 @@
 package defaultplugins
 
 import (
+	"net"
+
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	"net"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -73,6 +74,8 @@ type PutDSL interface {
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
+	// Arp adds a request to create or update VPP L3 ARP.
+	Arp(arp *l3.ArpTable_ArpTableEntry) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -107,6 +110,8 @@ type DeleteDSL interface {
 	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// Arp adds a request to delete an existing VPP L3 ARP.
+	Arp(ifaceName string, ipAddr net.IP)
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
