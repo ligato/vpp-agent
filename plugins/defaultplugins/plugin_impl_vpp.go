@@ -200,8 +200,7 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if config != nil {
-		plugin.ifMtu = config.Mtu
-		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
+		plugin.ifMtu = plugin.resolveMtu(config.Mtu)
 		plugin.enableStopwatch = config.Stopwatch
 		if plugin.enableStopwatch {
 			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
@@ -274,6 +273,7 @@ func (plugin *Plugin) Init() error {
 
 	return nil
 }
+
 func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	// first check skip resync flag
 	if *skipResyncFlag {
@@ -284,6 +284,15 @@ func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	}
 	plugin.Log.Warnf("Resync strategy %v is not known, setting up the full resync", strategy)
 	return fullResync
+}
+
+func (plugin *Plugin) resolveMtu(mtuFromCfg uint32) uint32 {
+	if mtuFromCfg == 0 {
+		plugin.Log.Infof("Mtu not defined in config, set to default")
+		return defaultMtu
+	}
+	plugin.Log.Infof("Mtu read from config is set to %v", plugin.ifMtu)
+	return mtuFromCfg
 }
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies
