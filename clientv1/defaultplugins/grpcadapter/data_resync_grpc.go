@@ -26,7 +26,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"golang.org/x/net/context"
-	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 // NewDataResyncDSL is a constructor
