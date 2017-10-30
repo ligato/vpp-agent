@@ -3,7 +3,7 @@ set -e
 
 VPP_CACHE_DIR=$HOME/build-cache/vpp
 
-VPP_COMMIT=`git submodule status vpp | awk '{print $1}'`
+VPP_COMMIT="92b0275a364022af6ab828dfac83e38c0117cfe6"
 VPP_IMG_TAG=`echo ${VPP_COMMIT} | cut -c1-7`
 
 # check if cache folder contains same version
