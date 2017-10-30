@@ -8,7 +8,7 @@ Library        String
 
 *** Keywords ***
 
-vpp_ctl: Put Json 
+vpp_ctl: Put Json
     [Arguments]        ${key}    ${json}    ${container}=vpp_agent_ctl
     Log Many           ${key}    ${json}    ${container}
     ${command}=        Set Variable    echo '${json}' | vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -put ${key} -
@@ -24,8 +24,8 @@ vpp_ctl: Read Key
     [Return]           ${out}
 
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${enabled}
     ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
