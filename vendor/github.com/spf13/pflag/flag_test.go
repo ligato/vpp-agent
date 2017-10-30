@@ -106,8 +106,8 @@ func TestUsage(t *testing.T) {
 	if GetCommandLine().Parse([]string{"--x"}) == nil {
 		t.Error("parse did not fail for unknown flag")
 	}
-	if !called {
-		t.Error("did not call Usage for unknown flag")
+	if called {
+		t.Error("did call Usage while using ContinueOnError")
 	}
 }
 
@@ -168,6 +168,7 @@ func testParse(f *FlagSet, t *testing.T) {
 	bool3Flag := f.Bool("bool3", false, "bool3 value")
 	intFlag := f.Int("int", 0, "int value")
 	int8Flag := f.Int8("int8", 0, "int value")
+	int16Flag := f.Int16("int16", 0, "int value")
 	int32Flag := f.Int32("int32", 0, "int value")
 	int64Flag := f.Int64("int64", 0, "int64 value")
 	uintFlag := f.Uint("uint", 0, "uint value")
@@ -192,6 +193,7 @@ func testParse(f *FlagSet, t *testing.T) {
 		"--bool3=false",
 		"--int=22",
 		"--int8=-8",
+		"--int16=-16",
 		"--int32=-32",
 		"--int64=0x23",
 		"--uint", "24",
@@ -236,8 +238,14 @@ func testParse(f *FlagSet, t *testing.T) {
 	if *int8Flag != -8 {
 		t.Error("int8 flag should be 0x23, is ", *int8Flag)
 	}
+	if *int16Flag != -16 {
+		t.Error("int16 flag should be -16, is ", *int16Flag)
+	}
 	if v, err := f.GetInt8("int8"); err != nil || v != *int8Flag {
 		t.Error("GetInt8 does not work.")
+	}
+	if v, err := f.GetInt16("int16"); err != nil || v != *int16Flag {
+		t.Error("GetInt16 does not work.")
 	}
 	if *int32Flag != -32 {
 		t.Error("int32 flag should be 0x23, is ", *int32Flag)
@@ -604,7 +612,6 @@ func aliasAndWordSepFlagNames(f *FlagSet, name string) NormalizedName {
 	switch name {
 	case oldName:
 		name = newName
-		break
 	}
 
 	return NormalizedName(name)
@@ -1052,6 +1059,7 @@ const defaultOutput = `      --A                         for bootstrapping, allo
       --custom custom             custom Value implementation
       --customP custom            a VarP with default (default 10)
       --maxT timeout              set timeout for dial
+  -v, --verbose count             verbosity
 `
 
 // Custom value that satisfies the Value interface.
@@ -1092,6 +1100,7 @@ func TestPrintDefaults(t *testing.T) {
 	fs.ShorthandLookup("E").NoOptDefVal = "1234"
 	fs.StringSlice("StringSlice", []string{}, "string slice with zero default")
 	fs.StringArray("StringArray", []string{}, "string array with zero default")
+	fs.CountP("verbose", "v", "verbosity")
 
 	var cv customValue
 	fs.Var(&cv, "custom", "custom Value implementation")

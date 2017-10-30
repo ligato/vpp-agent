@@ -535,10 +535,10 @@ func NewACLInterfaceListDump() api.Message {
 //        ],
 //
 type ACLInterfaceListDetails struct {
-	SwIfIndex uint32   `json:"sw_if_index"`
-	Count     uint8    `struc:"sizeof=Acls" json:"count"`
-	NInput    uint8    `json:"n_input"`
-	Acls      []uint32 `json:"acls"`
+	SwIfIndex uint32
+	Count     uint8 `struc:"sizeof=Acls"`
+	NInput    uint8
+	Acls      []uint32
 }
 
 func (*ACLInterfaceListDetails) GetMessageName() string {

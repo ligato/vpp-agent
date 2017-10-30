@@ -3,7 +3,7 @@ package datasync
 // KeyValIterator is an iterator for KeyVal.
 type KeyValIterator interface {
 	// GetNext retrieves the next value from the iterator context. The retrieved
-	// value is unmarshalled and returned as <kv>. The allReceived flag is
+	// value is unmarshaled and returned as <kv>. The allReceived flag is
 	// set to true on the last KeyVal pair in the context.
 	GetNext() (kv KeyVal, allReceived bool)
 }

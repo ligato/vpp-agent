@@ -21,8 +21,8 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// ParseConfigFromYamlFile parses a configuration from a file in yaml
-// format. The file's location is specified by the <path> parameter, and the
+// ParseConfigFromYamlFile parses a configuration from a file in YAML
+// format. The file's location is specified by the <path> parameter and the
 // resulting config is stored into the structure referenced by the <cfg>
 // parameter.
 // If the file doesn't exist or cannot be read, the returned error will
@@ -41,10 +41,10 @@ func ParseConfigFromYamlFile(path string, cfg interface{}) error {
 	return nil
 }
 
-// SaveConfigToYamlFile saves the configuration <cfg> into a yaml-formatted file
+// SaveConfigToYamlFile saves the configuration <cfg> into a YAML-formatted file
 // at the location <path> with permissions defined by <perm>.
 // <comment>, if non-empty, is printed at the beginning of the file before
-// the configuration (with a line break in between). Each line in <comment>
+// the configuration is printed (with a line break in between). Each line in <comment>
 // should thus begin with the number sign ( # ).
 // If the file cannot be created af the location, os.PathError is returned.
 // An untyped error is returned if the configuration couldn't be marshaled
