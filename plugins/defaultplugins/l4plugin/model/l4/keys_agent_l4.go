@@ -45,4 +45,3 @@ func FeatureKeyPrefix() string {
 func FeatureKey() string {
 	return L4FeaturesPrefix + "feature"
 }
-

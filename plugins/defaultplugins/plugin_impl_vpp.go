@@ -34,11 +34,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 )
 
 // defaultpluigns specific flags
@@ -125,9 +125,9 @@ type Plugin struct {
 	routeIndexes      idxvpp.NameToIdxRW
 
 	// L4 fields
-	l4Configurator    *l4plugin.L4Configurator
-	namespaceIndexes  nsidx.AppNsIndexRW
-	notConfAppNsIndexes  nsidx.AppNsIndexRW
+	l4Configurator      *l4plugin.L4Configurator
+	namespaceIndexes    nsidx.AppNsIndexRW
+	notConfAppNsIndexes nsidx.AppNsIndexRW
 
 	// Error handler
 	errorIndexes idxvpp.NameToIdxRW
@@ -572,13 +572,13 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
 	}
 	plugin.l4Configurator = &l4plugin.L4Configurator{
-		Log:          l4Logger,
-		GoVppmux:     plugin.GoVppmux,
-		AppNsIndexes: plugin.namespaceIndexes,
+		Log:                l4Logger,
+		GoVppmux:           plugin.GoVppmux,
+		AppNsIndexes:       plugin.namespaceIndexes,
 		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
-		AppNsIdxSeq:  1,
-		SwIfIndexes:  plugin.swIfIndexes,
-		Stopwatch:    stopwatch,
+		AppNsIdxSeq:        1,
+		SwIfIndexes:        plugin.swIfIndexes,
+		Stopwatch:          stopwatch,
 	}
 	err := plugin.l4Configurator.Init()
 	if err != nil {

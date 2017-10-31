@@ -11,9 +11,9 @@
 package vppcalls
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
 )
 
 // EnableL4Features sets L4 feature flag on VPP to true
@@ -37,6 +37,7 @@ func EnableL4Features(log logging.Logger, vppChan *govppapi.Channel) error {
 
 	return nil
 }
+
 // DisableL4Features sets L4 feature flag on VPP to false
 func DisableL4Features(log logging.Logger, vppChan *govppapi.Channel) error {
 	log.Debug("Disabling L4 features")

@@ -15,10 +15,10 @@
 package nsidx
 
 import (
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
-	"github.com/ligato/cn-infra/core"
 )
 
 // AppNsIndex provides read-only access to mapping between indexes (used internally in VPP) and AppNamespace indexes.
