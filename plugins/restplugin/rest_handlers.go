@@ -298,7 +298,7 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 
 				plugin.Deps.Log.WithField("VPPCLI response", string(reply.Reply)).Infof("Command returned reply :: %v", string(reply.Reply))
 
-				formatter.JSON(w, http.StatusOK, string(reply.Reply))
+				formatter.Text(w, http.StatusOK, string(reply.Reply))
 			}
 		} else {
 			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
