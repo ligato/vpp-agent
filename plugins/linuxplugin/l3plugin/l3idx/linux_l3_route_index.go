@@ -34,6 +34,9 @@ type LinuxRouteIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *l3.LinuxStaticRoutes_Route, exists bool)
 
+	// LookupNamesByInterface returns names of items that contains given interface name in metadata
+	LookupNamesByInterface(ifName string) []*l3.LinuxStaticRoutes_Route
+
 	// LookupNameByHostIfName looks up the interface identified by the name used in HostOs
 	LookupNameByHostIfName(hostIfName string) []string
 
@@ -92,6 +95,18 @@ func (linuxRouteIndex *linuxRouteIndex) LookupName(idx uint32) (name string, met
 		metadata = linuxRouteIndex.castMetadata(meta)
 	}
 	return name, metadata, exists
+}
+
+// LookupNamesByInterface returns all names related to the provided interface
+func (linuxRouteIndex *linuxRouteIndex) LookupNamesByInterface(ifName string) []*l3.LinuxStaticRoutes_Route {
+	var match []*l3.LinuxStaticRoutes_Route
+	for _, name := range linuxRouteIndex.mapping.ListNames() {
+		_, meta, found := linuxRouteIndex.LookupIdx(name)
+		if found && meta != nil && meta.Interface == ifName {
+			match = append(match, meta)
+		}
+	}
+	return match
 }
 
 // LookupNameByIP returns names of items that contains given IP address in metadata

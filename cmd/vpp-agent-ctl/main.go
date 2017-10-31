@@ -173,9 +173,9 @@ func main() {
 			createVeth(db, veth2, veth1, "ns2", "92:c7:42:67:ab:cd", "192.168.22.2/24",
 				"2001:842:0:0:0:ff00:13c7:1245/48")
 		case "-dvth1":
-			delete(db, interfaces.InterfaceKey(veth1))
+			delete(db, linuxIntf.InterfaceKey(veth1))
 		case "-dvth2":
-			delete(db, interfaces.InterfaceKey(veth2))
+			delete(db, linuxIntf.InterfaceKey(veth2))
 		case "-ps":
 			printState(db)
 		case "-ierr":
