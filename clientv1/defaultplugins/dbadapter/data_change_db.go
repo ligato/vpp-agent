@@ -128,7 +128,6 @@ func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 
 // Arp adds a request to create or update VPP L3 ARP entry.
 func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
 	dsl.parent.txn.Put(l3.ArpEntryKey(arp.Interface, arp.IpAddress), arp)
 	return dsl
 }

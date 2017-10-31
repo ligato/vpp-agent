@@ -183,7 +183,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.ArpKeyPrefix()())
+		keys, err = dsl.listKeys(l3.ArpKeyPrefix())
 		if err != nil {
 			break
 		}

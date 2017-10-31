@@ -111,7 +111,7 @@ type DeleteDSL interface {
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
-	Arp(ifaceName string, ipAddr net.IP)
+	Arp(ifaceName string, ipAddr net.IP) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
