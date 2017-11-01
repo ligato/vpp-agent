@@ -272,7 +272,8 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 
 		if command != "" {
 
-			plugin.Deps.Log.WithField("VPPCLI command", command).Infof("VPPCLI command: %v", command)
+			plugin.Deps.Log.Info("test1\ntest2\ntest3")
+			plugin.Deps.Log.Infof("VPPCLI command: %v", command)
 
 			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
 			defer ch.Close()
@@ -296,7 +297,7 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 					plugin.Deps.Log.Errorf("Command returned code: %v", reply.Retval)
 				}
 
-				plugin.Deps.Log.WithField("VPPCLI response", string(reply.Reply)).Infof("VPPCLI response:\n %v", string(reply.Reply))
+				plugin.Deps.Log.Infof("VPPCLI response: %v", string(reply.Reply))
 
 				formatter.Text(w, http.StatusOK, string(reply.Reply))
 			}
