@@ -19,12 +19,12 @@ import (
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
+	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"golang.org/x/net/context"
 )
 
@@ -162,11 +162,11 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 	}
 
 	_, err := dsl.client.ResyncConfig(context.Background(), &vppsvc.ResyncConfigRequest{
-		&interfaces.Interfaces{putIntfs},
-		&l2.BridgeDomains{putBDs},
-		&l2.XConnectPairs{putXCons},
-		&acl.AccessLists{putACLs},
-		&l3.StaticRoutes{putRoutes},
+		Interfaces:   &interfaces.Interfaces{Interface: putIntfs},
+		BDs:          &l2.BridgeDomains{BridgeDomains: putBDs},
+		XCons:        &l2.XConnectPairs{XConnectPairs: putXCons},
+		ACLs:         &acl.AccessLists{Acl: putACLs},
+		StaticRoutes: &l3.StaticRoutes{Route: putRoutes},
 	})
 
 	return &Reply{err: err}
