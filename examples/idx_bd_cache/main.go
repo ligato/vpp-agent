@@ -22,6 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
 )
 
 // Start Agent plugins selected for this example
@@ -44,6 +46,9 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
+	// Linux plugin dependency
+	VPP defaultplugins.API
+
 	bdIdxLocal  bdidx.BDIndex
 	bdIdxAgent1 bdidx.BDIndex
 	bdIdxAgent2 bdidx.BDIndex
@@ -65,7 +70,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// get access to local bridge domain indexes
-	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
+	plugin.bdIdxLocal = plugin.VPP.GetBDIndexes()
 
 	// Run consumer
 	go plugin.consume()

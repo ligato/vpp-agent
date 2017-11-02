@@ -79,10 +79,21 @@ type LinuxConfig struct {
 }
 
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
-// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-// Linux interfaces.
+// interface indexes.
 func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return plugin.ifIndexes
+}
+
+// GetLinuxARPIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// ARP entry indexes.
+func (plugin *Plugin) GetLinuxARPIndexes() l3idx.LinuxARPIndex {
+	return plugin.arpIndexes
+}
+
+// GetLinuxRouteIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// route indexes.
+func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
+	return plugin.rtIndexes
 }
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator

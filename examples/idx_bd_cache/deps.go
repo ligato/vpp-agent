@@ -57,6 +57,7 @@ func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
 	// Inject infra + transport (publisher, watcher) to example plugin
 	ef.IdxBdCacheExample.PluginInfraDeps = *ef.Flavor.InfraDeps("idx-bd-cache-example")
 	ef.IdxBdCacheExample.Publisher = &ef.ETCDDataSync
+	ef.IdxBdCacheExample.VPP = &ef.VPP
 	ef.IdxBdCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
 	ef.IdxBdCacheExample.Agent2 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent2", ef)
 

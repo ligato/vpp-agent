@@ -44,6 +44,9 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
+	// Linux plugin dependency
+	VPP defaultplugins.API
+
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
 	swIfIdxAgent2 ifaceidx.SwIfIndex
@@ -65,7 +68,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// get access to local interface indexes
-	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
+	plugin.swIfIdxLocal = plugin.VPP.GetSwIfIndexes()
 
 	// Run consumer
 	go plugin.consume()
