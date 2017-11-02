@@ -106,6 +106,16 @@ vpp_ctl: Put Bridge Domain
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Put Loopback Interface
+    [Arguments]    ${node}    ${name}    ${mac}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/loopback_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
 vpp_ctl: Put Loopback Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${ip}    ${prefix}    ${mtu}    ${enabled}
@@ -258,3 +268,23 @@ vpp_ctl: Delete Routes
     ${out}=         vpp_ctl: Delete key  ${uri}
     Log Many        ${out}
     [Return]       ${out}
+
+vpp_ctl: Put Vrf Table
+    [Arguments]    ${node}    ${name}    ${ints}
+    Log Many    ${node}    ${name}    ${ints}
+    ${interfaces}=        Create Interfaces Json From List    ${ints}
+    Log                   ${interfaces}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/vrf_table.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/vrf/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Vrf Table
+    [Arguments]    ${node}    ${name}
+    Log Many     ${node}    ${name}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/vrf/${name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}

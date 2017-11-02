@@ -6,6 +6,10 @@ Create Loopback Interface ${name} On ${node} With Ip ${ip}/${prefix} And Mac ${m
     Log Many    ${name}    ${node}    ${ip}    ${prefix}    ${mac}
     vpp_ctl: Put Loopback Interface With IP    ${node}    ${name}   ${mac}   ${ip}   ${prefix}
 
+Create Loopback Interface ${name} On ${node} With Mac ${mac}
+    Log Many    ${name}    ${node}    ${mac}
+    vpp_ctl: Put Loopback Interface    ${node}    ${name}   ${mac}
+
 Create ${type} ${name} On ${node} With MAC ${mac}, Key ${key} And ${sock} Socket
     Log Many    ${type}    ${name}    ${node}    ${mac}    ${key}    ${sock}
     ${type}=    Set Variable if    "${type}"=="Master"    true    false
@@ -68,3 +72,13 @@ Command: ${cmd} should ${expected}
     Log Many    @{out}
     Should Be Equal    @{out}[0]    ${expected}    ignore_case=True
     [Return]     ${out}
+
+Create Vrf Table ${name} On ${node} With Interfaces ${interfaces}
+    Log Many    ${name}    ${node}    ${interfaces}
+    @{ints}=    Split String   ${interfaces}    separator=,${space}
+    Log Many    @{ints}
+    vpp_ctl: Put Vrf Table    ${node}    ${name}   ${ints}
+
+Remove Vrf Table ${name} On ${node}
+    Log Many    ${name}    ${node}
+    vpp_ctl: Delete Vrf Table    ${node}    ${name}
