@@ -297,7 +297,7 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 					plugin.Deps.Log.Errorf("Command returned code: %v", reply.Retval)
 				}
 
-				plugin.Deps.Log.Infof("VPPCLI response: %v", string(reply.Reply))
+				plugin.Deps.Log.Infof("VPPCLI response start \n %v \n VPPCLI response end", string(reply.Reply))
 
 				formatter.Text(w, http.StatusOK, string(reply.Reply))
 			}
