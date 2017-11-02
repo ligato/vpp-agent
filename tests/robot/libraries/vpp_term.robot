@@ -67,6 +67,13 @@ vpp_term: Show IP Fib
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib ${ip}
     [Return]           ${out}
 
+vpp_term: Show IP Fib Table
+    [Arguments]        ${node}    ${id}
+    [Documentation]    Show IP fib output for VRF table defined in input
+    Log Many           ${node}    ${id}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip fib table ${id}
+    [Return]           ${out}
+
 vpp_term: Show L2fib
     [Arguments]        ${node}
     Log Many           ${node}

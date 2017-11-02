@@ -15,7 +15,7 @@
 package linuxplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 )
 
 // API of Linux Plugin

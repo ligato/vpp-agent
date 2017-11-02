@@ -33,10 +33,10 @@ type protoWatchResp struct {
 
 // Watch for changes in datastore.
 // <resp> callback is used for delivery of watch events.
-func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), keys ...string) error {
+func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), closeChan chan string, keys ...string) error {
 	err := pdb.watcher.Watch(func(msg keyval.BytesWatchResp) {
 		resp(NewWatchResp(pdb.serializer, msg))
-	}, keys...)
+	}, closeChan, keys...)
 	if err != nil {
 		return err
 	}
@@ -55,4 +55,17 @@ func (wr *protoWatchResp) GetValue(msg proto.Message) error {
 		return err
 	}
 	return nil
+}
+
+// GetPrevValue returns the previous value after the change.
+func (wr *protoWatchResp) GetPrevValue(msg proto.Message) (prevValueExist bool, err error) {
+	prevVal := wr.BytesWatchResp.GetPrevValue()
+	if prevVal == nil {
+		return false, nil
+	}
+	err = wr.serializer.Unmarshal(prevVal, msg)
+	if err != nil {
+		return true, err
+	}
+	return true, nil
 }

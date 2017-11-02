@@ -17,6 +17,6 @@
 // service in ../syncbase/msg package). This implementation is special
 // (comparing to dbsync or msgsync) because it does not use any intermediate
 // persistence between the client and the server. Therefore the client does
-// remote  calls to each individual server/agent instance (and needs to know
+// remote calls to each individual server/agent instance (and needs to know
 // its IP address & port).
 package grpcsync

@@ -35,7 +35,7 @@ type BytesConnectionRedis struct {
 
 	// closeCh will be closed when this connection is closed -- i.e., by the Close() method.
 	// It is used to give go routines a signal to stop.
-	closeCh chan struct{}
+	closeCh chan string
 
 	// Flag to indicate whether this connection is closed
 	closed bool
@@ -60,14 +60,15 @@ type bytesKeyValIterator struct {
 
 // bytesKeyVal represents a single key-value pair
 type bytesKeyVal struct {
-	key   string
-	value []byte
+	key       string
+	value     []byte
+	prevValue []byte
 }
 
 // NewBytesConnection creates a new instance of BytesConnectionRedis using the provided
 // Client (be it node, cluster, or sentinel client)
 func NewBytesConnection(client Client, log logging.Logger) (*BytesConnectionRedis, error) {
-	return &BytesConnectionRedis{log, client, make(chan struct{}), false}, nil
+	return &BytesConnectionRedis{log, client, make(chan string), false}, nil
 }
 
 // Close closes the connection to redis.
@@ -273,7 +274,13 @@ func (it *bytesKeyValIterator) GetNext() (kv keyval.BytesKeyVal, lastReceived bo
 		key = it.trimPrefix(key)
 	}
 
-	kv = &bytesKeyVal{key, it.values[it.index]}
+	value := it.values[it.index]
+	var prevValue []byte
+	if it.index > 0 {
+		prevValue = it.values[it.index-1]
+	}
+
+	kv = &bytesKeyVal{key, value, prevValue}
 	it.index++
 
 	return kv, false
@@ -282,6 +289,11 @@ func (it *bytesKeyValIterator) GetNext() (kv keyval.BytesKeyVal, lastReceived bo
 // GetValue returns the value of the pair
 func (kv *bytesKeyVal) GetValue() []byte {
 	return kv.value
+}
+
+// GetPrevValue returns the previous value of the pair
+func (kv *bytesKeyVal) GetPrevValue() []byte {
+	return kv.prevValue
 }
 
 // GetKey returns the key of the pair
@@ -400,7 +412,7 @@ type BytesBrokerWatcherRedis struct {
 
 	// closeCh is a channel closed when Close method of data broker is closed.
 	// It is used for giving go routines a signal to stop.
-	closeCh chan struct{}
+	closeCh chan string
 }
 
 // NewBrokerWatcher creates a new CRUD + KeyValProtoWatcher proxy instance to redis using through BytesConnectionRedis.

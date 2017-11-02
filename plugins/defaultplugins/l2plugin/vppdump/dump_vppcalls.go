@@ -58,13 +58,13 @@ func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, timeL
 // BridgeDomain is the wrapper structure for the bridge domain northbound API structure.
 // NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
 type BridgeDomain struct {
-	Interfaces []*BridgeDomainInterface
+	Interfaces []*BridgeDomainInterface `json:"interfaces"`
 	l2nb.BridgeDomains_BridgeDomain
 }
 
 // BridgeDomainInterface is the wrapper structure for the bridge domain interface northbound API structure.
 type BridgeDomainInterface struct {
-	SwIfIndex uint32
+	SwIfIndex uint32 `json:"sw_if_index"`
 	l2nb.BridgeDomains_BridgeDomain_Interfaces
 }
 
@@ -127,8 +127,8 @@ func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, timeLog me
 
 // FIBTableEntry is the wrapper structure for the FIB table entry northbound API structure.
 type FIBTableEntry struct {
-	BridgeDomainIdx          uint32
-	OutgoingInterfaceSwIfIdx uint32
+	BridgeDomainIdx          uint32 `json:"bridge_domain_idx"`
+	OutgoingInterfaceSwIfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
 	l2nb.FibTableEntries_FibTableEntry
 }
 
@@ -183,8 +183,8 @@ func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, timeLog 
 
 // XConnectPairs is the wrapper structure for the l2 xconnect northbound API structure.
 type XConnectPairs struct {
-	ReceiveInterfaceSwIfIdx  uint32
-	TransmitInterfaceSwIfIdx uint32
+	ReceiveInterfaceSwIfIdx  uint32 `json:"receive_interface_sw_if_idx"`
+	TransmitInterfaceSwIfIdx uint32 `json:"transmit_interface_sw_if_idx"`
 }
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure

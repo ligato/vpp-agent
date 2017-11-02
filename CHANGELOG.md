@@ -1,3 +1,26 @@
+# Release v1.0.7 (2017-10-30)
+
+## Compatibility
+VPP version v18.01-rc0~154-gfc1c612
+
+## Major Themes
+
+- [cn-infra]
+    - updated to version 1.0.6
+    
+- [Default VPP plugin](plugins/defaultplugins)
+    - added resync strategies. Resync of VPP plugins (defaultplugins) can be set using 
+    defaultpluigns config file; Resync can be set to full (always resync everything) or
+    dependent on VPP configuration (if there is none, skip resync). Resync can be also 
+    forced to skip using parameter. See appropriate changelog in 
+    [Defaultplugins](plugins/defaultplugins) for details.
+    
+# New Features
+
+- [Linuxplugins L3Plugin](plugins/linuxplugin/l3plugin)
+    - added support for basic CRUD operations with static Address resolution protocol 
+    entries and static Routes. 
+        
 # Release v1.0.6 (2017-10-17)
 
 ## Major Themes

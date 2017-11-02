@@ -30,8 +30,8 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifaceidx"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 )
 
 // *************************************************************************
