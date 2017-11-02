@@ -3,7 +3,7 @@
 *** Settings ***
 Library       Collections
 Library       RequestsLibrary
-#Library       SSHLibrary            timeout=60s
+Library       SSHLibrary            timeout=60s
 
 *** Variables ***
 ${timeout_etcd}=      30s
@@ -193,7 +193,8 @@ Start SFC Controller Container With Own Config
     Log                    ${config}
     Open SSH Connection    sfc_controller    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} create -it --name sfc_controller ${SFC_CONTROLLER_IMAGE_NAME}
-    Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp ${EXECDIR}/${TEST_DATA_FOLDER}/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
+    SSHLibrary.Put_file    ${TEST_DATA_FOLDER}/${config}	/tmp/
+    Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp /tmp/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
     Write To Machine       sfc_controller    ${DOCKER_COMMAND} start -i sfc_controller
     ${hostname}=           Execute On Machine    docker    ${DOCKER_COMMAND} exec sfc_controller bash -c 'echo $HOSTNAME'
     Set Suite Variable     ${SFC_CONTROLLER_HOSTNAME}    ${hostname}
