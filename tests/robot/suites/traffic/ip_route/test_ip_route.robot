@@ -106,7 +106,7 @@ Start Two Agents And Then Configure
 # Non default VRF table 3 used in Agent VPP Node agent_vpp_3
 Start Three Agents, Then Configure And Move Interfaces To Non Default VRF
     [Setup]         Test Setup
-    #[Teardown]      Test Teardown
+    [Teardown]      Test Teardown
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
