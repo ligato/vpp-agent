@@ -25,6 +25,9 @@ import (
 // API of VPP Plugin
 type API interface {
 
+	// DisableResync for one or more VPP plugins. Use in Init() phase.
+	DisableResync(keyPrefix... string)
+
 	// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
 	// This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
 	//

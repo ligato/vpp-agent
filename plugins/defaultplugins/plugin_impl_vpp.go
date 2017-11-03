@@ -144,6 +144,7 @@ type Plugin struct {
 	changeChan       chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	watchConfigReg   datasync.WatchRegistration
 	watchStatusReg   datasync.WatchRegistration
+	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
 	ifMtu          uint32
@@ -180,6 +181,12 @@ type DPConfig struct {
 	Mtu       uint32 `json:"mtu"`
 	Stopwatch bool   `json:"stopwatch"`
 	Strategy  string `json:"strategy"`
+}
+
+// DisableResync can be used to disable resync for one or more key prefixes
+func (plugin *Plugin) DisableResync(keyPrefix... string) {
+	plugin.Log.Infof("Keys with prefixes %v will be skipped", keyPrefix)
+	plugin.omittedPrefixes = keyPrefix
 }
 
 // GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
