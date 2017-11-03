@@ -81,7 +81,6 @@ func arpIdentifier(iface uint32, ip, mac string) string {
 
 // AddArp processes the NB config and propagates it to bin api call
 func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
-	//plugin.Log.Infof("Creating new ARP entry %v -> %v (%v) for interface %v", entry.IpAddress, entry.PhysAddress, entry.Static, entry.Interface)
 	plugin.Log.Infof("Creating ARP entry %v", *entry)
 
 	// Transform route data
