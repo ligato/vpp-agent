@@ -24,6 +24,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"golang.org/x/net/context"
 	"net"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+	"strconv"
 )
 
 // NewDataChangeDSL is a constructor
@@ -38,6 +40,8 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *l2.XConnectPairs_XConnectPair{},
 		map[string] /*key*/ *l3.StaticRoutes_Route{},
 		map[string] /*name*/ *acl.AccessLists_Acl{},
+		map[string] /*value*/ *l4.L4Features{},
+		map[string] /*id*/ *l4.AppNamespaces_AppNamespace{},
 
 		map[string] /*name*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
@@ -48,6 +52,8 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *struct{}{},
 		map[string] /*key*/ *vppsvc.DelStaticRoutesRequest_DelStaticRoute{},
 		map[string] /*name*/ *struct{}{},
+		map[string] /*id*/ *l4.L4Features{},
+		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 	}
 }
 
@@ -64,6 +70,8 @@ type DataChangeDSL struct {
 	txnPutXCon        map[string] /*name*/ *l2.XConnectPairs_XConnectPair
 	txnPutStaticRoute map[string] /*key*/ *l3.StaticRoutes_Route
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
+	txnPutL4Features  map[string] /*value*/ *l4.L4Features
+	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 
 	txnDelIntf        map[string] /*name*/ *struct{}
 	txnDelBfdSession  map[string] /*name*/ *struct{}
@@ -74,6 +82,8 @@ type DataChangeDSL struct {
 	txnDelXCon        map[string] /*name*/ *struct{}
 	txnDelStaticRoute map[string] /*key*/ *vppsvc.DelStaticRoutesRequest_DelStaticRoute
 	txnDelACL         map[string] /*name*/ *struct{}
+	txnDelL4Features  map[string] /*value*/ *l4.L4Features
+	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 }
 
 // PutDSL is here to put here most recent and previous value with revisions
@@ -146,6 +156,20 @@ func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 	return dsl
 }
 
+// L4Features create or update request for the L4Features
+func (dsl *PutDSL) L4Features(val *l4.L4Features) defaultplugins.PutDSL {
+	dsl.parent.txnPutL4Features[strconv.FormatBool(val.Enabled)] = val
+
+	return dsl
+}
+
+// AppNamespace create or update request for the Application Namespaces List
+func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.PutDSL {
+	dsl.parent.txnPutAppNs[val.NamespaceId] = val
+
+	return dsl
+}
+
 // Put gives you the ability to create Interface/BD...
 func (dsl *DataChangeDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl}
@@ -166,14 +190,35 @@ func (dsl *PutDSL) Send() defaultplugins.Reply {
 	return dsl.parent.Send()
 }
 
-// Interface create or update the network interface
+// Interface delete request for the network interface
 func (dsl *DeleteDSL) Interface(interfaceName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelIntf[interfaceName] = nil
 
 	return dsl
 }
 
-// BD create or update the Bridge Domain
+// BfdSession adds a request to delete an existing bidirectional forwarding
+// detection session.
+func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelBfdSession[bfdSessionIfaceName] = nil
+	return dsl
+}
+
+// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
+// detection key.
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelBfdAuthKey[AtoibfdKeyID] = nil
+	return dsl
+}
+
+// BfdEchoFunction adds a request to delete an existing bidirectional forwarding
+// detection echo function.
+func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelBfdEcho[bfdEchoName] = nil
+	return dsl
+}
+
+// BD delete request for the Bridge Domain
 func (dsl *DeleteDSL) BD(bdName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelBD[bdName] = nil
 
@@ -187,14 +232,14 @@ func (dsl *DeleteDSL) BDFIB(bdName string, mac string) defaultplugins.DeleteDSL 
 	return dsl
 }
 
-// XConnect create or update the Cross Connect
+// XConnect delete the Cross Connect
 func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelXCon[rxIfName] = nil
 
 	return dsl
 }
 
-// StaticRoute create or update the L3 Static Route
+// StaticRoute deletee the L3 Static Route
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
 	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txnDelStaticRoute[l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String())] =
@@ -206,6 +251,20 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAd
 // ACL delete request for Access Control List
 func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelACL[aclName] = nil
+
+	return dsl
+}
+
+// L4Features delete request for the L4Features
+func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
+	dsl.parent.txnPutL4Features["l4"] = nil
+
+	return dsl
+}
+
+// AppNamespace delete request for the Application Namespaces List
+func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
+	dsl.parent.txnPutAppNs[id] = nil
 
 	return dsl
 }

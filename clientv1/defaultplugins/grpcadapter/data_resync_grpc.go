@@ -25,7 +25,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 // NewDataResyncDSL is a constructor
@@ -40,6 +42,8 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*name*/ *l2.XConnectPairs_XConnectPair{},
 		map[string] /*key*/ *l3.StaticRoutes_Route{},
 		map[string] /*name*/ *acl.AccessLists_Acl{},
+		map[string] /*id*/ *l4.L4Features{},
+		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 	}
 }
 
@@ -56,6 +60,8 @@ type DataResyncDSL struct {
 	txnPutXCon        map[string] /*name*/ *l2.XConnectPairs_XConnectPair
 	txnPutStaticRoute map[string] /*key*/ *l3.StaticRoutes_Route
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
+	txnPutL4Features  map[string] /*value*/ *l4.L4Features
+	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 }
 
 // Interface add Bridge Domain to the RESYNC request
@@ -72,8 +78,8 @@ func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugi
 	return dsl
 }
 
-// BfdKeys BFD key to the RESYNC request
-func (dsl *DataResyncDSL) BfdKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
+// BfdAuthKeys BFD key to the RESYNC request
+func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
 	dsl.txnPutBfdAuthKey[val.Id] = val
 
 	return dsl
@@ -118,6 +124,20 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins
 // ACL adds Access Control List to the RESYNC request
 func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyncDSL {
 	dsl.txnPutACL[val.AclName] = val
+
+	return dsl
+}
+
+// L4Features adds L4Features to the RESYNC request
+func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResyncDSL {
+	dsl.txnPutL4Features[strconv.FormatBool(val.Enabled)] = val
+
+	return dsl
+}
+
+// AppNamespace adds Application Namespace to the RESYNC request
+func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
+	dsl.txnPutAppNs[val.NamespaceId] = val
 
 	return dsl
 }

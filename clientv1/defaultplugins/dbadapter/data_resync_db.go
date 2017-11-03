@@ -25,6 +25,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -122,6 +123,24 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins
 // ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyncDSL {
 	key := acl.Key(val.AclName)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// L4Features adds L4Features to the RESYNC request
+func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResyncDSL {
+	key := l4.FeatureKey()
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// AppNamespace adds Application Namespace to the RESYNC request
+func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
+	key := l4.AppNamespacesKey(val.NamespaceId)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
