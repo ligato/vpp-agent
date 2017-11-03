@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -52,6 +53,10 @@ type DataResyncDSL interface {
 	ACL(acl *acl.AccessLists_Acl) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *l3.ArpTable_ArpTableEntry) DataResyncDSL
+	// L4Features adds L4 features to the RESYNC request
+	L4Features(val *l4.L4Features) DataResyncDSL
+	// AppNamespace adds VPP Application namespaces to the RESYNC request
+	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply

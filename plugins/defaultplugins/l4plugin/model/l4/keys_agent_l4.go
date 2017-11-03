@@ -20,8 +20,28 @@ const (
 	L4Prefix = "vpp/config/v1/l4/"
 
 	// L4FeaturesPrefix is the relative key prefix for VPP L4 features.
-	L4FeaturesPrefix = L4Prefix + "features"
+	L4FeaturesPrefix = L4Prefix + "features/"
 
 	// L4NamespacesPrefix is the relative key prefix for VPP L4 application namespaces.
-	L4NamespacesPrefix = L4Prefix + "namespaces/{id}"
+	L4NamespacesPrefix = L4Prefix + "namespaces/"
 )
+
+// AppNamespacesKeyPrefix returns the prefix used in ETCD to store l4 namespaces
+func AppNamespacesKeyPrefix() string {
+	return L4NamespacesPrefix
+}
+
+// AppNamespacesKey returns the key used in ETCD to store namespaces
+func AppNamespacesKey(namespaceID string) string {
+	return L4NamespacesPrefix + namespaceID
+}
+
+// FeatureKeyPrefix returns the prefix used in ETCD to store l4 features value
+func FeatureKeyPrefix() string {
+	return L4FeaturesPrefix
+}
+
+// FeatureKey returns the key used in ETCD to store L4Feature flag
+func FeatureKey() string {
+	return L4FeaturesPrefix + "feature"
+}

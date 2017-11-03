@@ -21,8 +21,7 @@ import (
 	"time"
 )
 
-// DefaultNotifTimeout defines the default timeout for delivery of a datasync
-// notification.
+// DefaultNotifTimeout defines the default timeout for datasync notification delivery.
 const DefaultNotifTimeout = 2 * time.Second
 
 // KeyValProtoWatcher is used by plugins to subscribe to both data change
@@ -31,7 +30,7 @@ const DefaultNotifTimeout = 2 * time.Second
 // See README.md for description of the Events.
 type KeyValProtoWatcher interface {
 	// Watch using ETCD or any other data transport.
-	// <resyncName> is used as the name for the RESYNC subcription.
+	// <resyncName> is used for the name of the RESYNC subcription.
 	// <changeChan> channel is used for delivery of data CHANGE events.
 	// <resyncChan> channel is used for delivery of data RESYNC events.
 	// <keyPrefix> is a variable list of keys to watch on.

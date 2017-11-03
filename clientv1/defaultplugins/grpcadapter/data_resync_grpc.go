@@ -19,13 +19,15 @@ import (
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
+	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 // NewDataResyncDSL is a constructor
@@ -40,6 +42,8 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*name*/ *l2.XConnectPairs_XConnectPair{},
 		map[string] /*key*/ *l3.StaticRoutes_Route{},
 		map[string] /*name*/ *acl.AccessLists_Acl{},
+		map[string] /*id*/ *l4.L4Features{},
+		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 	}
 }
 
@@ -56,6 +60,8 @@ type DataResyncDSL struct {
 	txnPutXCon        map[string] /*name*/ *l2.XConnectPairs_XConnectPair
 	txnPutStaticRoute map[string] /*key*/ *l3.StaticRoutes_Route
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
+	txnPutL4Features  map[string] /*value*/ *l4.L4Features
+	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 }
 
 // Interface add Bridge Domain to the RESYNC request
@@ -72,8 +78,8 @@ func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugi
 	return dsl
 }
 
-// BfdKeys BFD key to the RESYNC request
-func (dsl *DataResyncDSL) BfdKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
+// BfdAuthKeys BFD key to the RESYNC request
+func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
 	dsl.txnPutBfdAuthKey[val.Id] = val
 
 	return dsl
@@ -122,6 +128,20 @@ func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyn
 	return dsl
 }
 
+// L4Features adds L4Features to the RESYNC request
+func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResyncDSL {
+	dsl.txnPutL4Features[strconv.FormatBool(val.Enabled)] = val
+
+	return dsl
+}
+
+// AppNamespace adds Application Namespace to the RESYNC request
+func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
+	dsl.txnPutAppNs[val.NamespaceId] = val
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fils the keySet with iterator values
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	for {
@@ -162,11 +182,11 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 	}
 
 	_, err := dsl.client.ResyncConfig(context.Background(), &vppsvc.ResyncConfigRequest{
-		&interfaces.Interfaces{putIntfs},
-		&l2.BridgeDomains{putBDs},
-		&l2.XConnectPairs{putXCons},
-		&acl.AccessLists{putACLs},
-		&l3.StaticRoutes{putRoutes},
+		Interfaces:   &interfaces.Interfaces{Interface: putIntfs},
+		BDs:          &l2.BridgeDomains{BridgeDomains: putBDs},
+		XCons:        &l2.XConnectPairs{XConnectPairs: putXCons},
+		ACLs:         &acl.AccessLists{Acl: putACLs},
+		StaticRoutes: &l3.StaticRoutes{Route: putRoutes},
 	})
 
 	return &Reply{err: err}

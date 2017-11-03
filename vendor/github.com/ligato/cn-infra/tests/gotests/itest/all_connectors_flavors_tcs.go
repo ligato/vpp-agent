@@ -36,7 +36,7 @@ type suiteFlavorAllConnectors struct {
 	Then
 }
 
-// AllConnectorsFlavorMocks
+// AllConnectorsFlavorMocks is container for mocks for AllConnectorsFlavor
 type AllConnectorsFlavorMocks struct {
 	KafkaMock *kafkamux.KafkaMock
 }
@@ -55,7 +55,7 @@ func (t *suiteFlavorAllConnectors) TC01StartStopWithoutConfig() {
 	gomega.Expect(t.agent).ShouldNot(gomega.BeNil(), "agent is not initialized")
 }
 
-// MockAllConnectororsFlavor initializes embeded ETCD & Kafka MOCK
+// MockAllConnectorsFlavor initializes embeded ETCD & Kafka MOCK
 //
 // Example:
 //

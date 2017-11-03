@@ -34,6 +34,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
@@ -125,6 +127,11 @@ type Plugin struct {
 	// L3 arp fields
 	arpConfigurator *l3plugin.ArpConfigurator
 	arpIndexes      idxvpp.NameToIdxRW
+
+	// L4 fields
+	l4Configurator      *l4plugin.L4Configurator
+	namespaceIndexes    nsidx.AppNsIndexRW
+	notConfAppNsIndexes nsidx.AppNsIndexRW
 
 	// Error handler
 	errorIndexes idxvpp.NameToIdxRW
@@ -259,6 +266,10 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	err = plugin.initL3(ctx)
+	if err != nil {
+		return err
+	}
+	err = plugin.initL4(ctx)
 	if err != nil {
 		return err
 	}
@@ -568,6 +579,36 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
+
+	return nil
+}
+
+func (plugin *Plugin) initL4(ctx context.Context) error {
+	l4Logger := plugin.Log.NewLogger("-l4-plugin")
+	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+		"namespace_indexes", nil))
+	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+		"not_configured_namespace_indexes", nil))
+
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
+	}
+	plugin.l4Configurator = &l4plugin.L4Configurator{
+		Log:                l4Logger,
+		GoVppmux:           plugin.GoVppmux,
+		AppNsIndexes:       plugin.namespaceIndexes,
+		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
+		AppNsIdxSeq:        1,
+		SwIfIndexes:        plugin.swIfIndexes,
+		Stopwatch:          stopwatch,
+	}
+	err := plugin.l4Configurator.Init()
+	if err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("l4Configurator Initialized")
 
 	return nil
 }
