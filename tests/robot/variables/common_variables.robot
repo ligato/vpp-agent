@@ -18,7 +18,8 @@ ${ETCD_SERVER_DESTROY}             ${DOCKER_COMMAND} rm -f etcd
 ${KAFKA_SERVER_CREATE}             ${DOCKER_COMMAND} create -it -p 2181:2181 -p 9092:9092 --env ADVERTISED_PORT=9092 --name kafka spotify/kafka
 ${KAFKA_SERVER_DESTROY}            ${DOCKER_COMMAND} rm -f kafka
 
-${SFC_CONTROLLER_IMAGE_NAME}       containers.cisco.com/odpm_jenkins_gen/dev_sfc_controller:master
+#${SFC_CONTROLLER_IMAGE_NAME}       containers.cisco.com/odpm_jenkins_gen/dev_sfc_controller:master
+${SFC_CONTROLLER_IMAGE_NAME}       ligato/prod_sfc_controller
 ${SFC_CONTROLLER_CONF_PATH}        /opt/sfc-controller/dev/sfc.conf
 
 # Variables for container with agent and VPP
@@ -68,7 +69,7 @@ ${AGENT_VPP_4_VPP_TERM_PROMPT}     vpp#
 ${AGENT_VPP_4_VPP_VAT_PROMPT}      vat#
 
 # Variables for container with agent and without vpp
-${AGENT_IMAGE_NAME}                dev_cn_infra
+${AGENT_IMAGE_NAME}                ligato/dev-cn-infra:latest
 ${AGENT_ETCD_CONF_PATH}            /opt/vpp-agent/dev/etcd.conf
 ${AGENT_KAFKA_CONF_PATH}           /opt/vpp-agent/dev/kafka.conf
 

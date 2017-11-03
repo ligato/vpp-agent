@@ -3,7 +3,7 @@
   "type": 2,
   "enabled": ${enabled},
   "phys_address": "${mac}",
-  "mtu": 1500,
+  "mtu": ${mtu},
   "memif": {
     "master": ${master},
     "id": ${id},
