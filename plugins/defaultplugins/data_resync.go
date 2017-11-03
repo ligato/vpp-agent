@@ -50,6 +50,8 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC
+	ArpEntries []*l3.ArpTable_ArpTableEntry
 	// L4Features is a bool flag that is expected to be set in VPP after RESYNC
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC
@@ -68,8 +70,10 @@ func NewDataResyncReq() *DataResyncReq {
 		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
+		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
 		L4Features:          &l4.L4Features{},
-		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{}}
+		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
+	}
 }
 
 // delegates full resync request
@@ -134,6 +138,9 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 		return err
 	}
+	if err = plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+		return err
+	}
 	if err = plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
 		return err
 	}
@@ -175,6 +182,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
 		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
 			resyncFeatures(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNs feature flag")
@@ -186,6 +196,22 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		}
 	}
 	return req
+}
+
+func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			entry := &l3.ArpTable_ArpTableEntry{}
+			if err := arpData.GetValue(entry); err == nil {
+				req.ArpEntries = append(req.ArpEntries, entry)
+				num++
+			}
+		}
+	}
+	return num
 }
 
 func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
@@ -421,8 +447,10 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
 			l3.VrfKeyPrefix(),
+			l3.ArpKeyPrefix(),
 			l4.FeatureKeyPrefix(),
-			l4.AppNamespacesKeyPrefix())
+			l4.AppNamespacesKeyPrefix(),
+		)
 	if err != nil {
 		return err
 	}

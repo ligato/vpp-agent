@@ -124,6 +124,10 @@ type Plugin struct {
 	routeConfigurator *l3plugin.RouteConfigurator
 	routeIndexes      idxvpp.NameToIdxRW
 
+	// L3 arp fields
+	arpConfigurator *l3plugin.ArpConfigurator
+	arpIndexes      idxvpp.NameToIdxRW
+
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
 	namespaceIndexes    nsidx.AppNsIndexRW
@@ -535,27 +539,46 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
-	l3Logger := plugin.Log.NewLogger("-l3-plugin")
-	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
+	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
+	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("RouteConfigurator", l3Logger)
+		stopwatch = measure.NewStopwatch("RouteConfigurator", routeLogger)
 	}
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		Log:           l3Logger,
+		Log:           routeLogger,
 		GoVppmux:      plugin.GoVppmux,
 		RouteIndexes:  plugin.routeIndexes,
 		RouteIndexSeq: 1,
 		SwIfIndexes:   plugin.swIfIndexes,
 		Stopwatch:     stopwatch,
 	}
-	err := plugin.routeConfigurator.Init()
-	if err != nil {
-		return err
+
+	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
+	plugin.arpIndexes = nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil)
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
+	}
+	plugin.arpConfigurator = &l3plugin.ArpConfigurator{
+		Log:         arpLogger,
+		GoVppmux:    plugin.GoVppmux,
+		ArpIndexes:  plugin.arpIndexes,
+		ArpIndexSeq: 1,
+		SwIfIndexes: plugin.swIfIndexes,
+		Stopwatch:   stopwatch,
 	}
 
+	if err := plugin.routeConfigurator.Init(); err != nil {
+		return err
+	}
 	plugin.Log.Debug("routeConfigurator Initialized")
+
+	if err := plugin.arpConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("arpConfigurator Initialized")
 
 	return nil
 }
@@ -636,7 +659,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
 
 	return err
 }

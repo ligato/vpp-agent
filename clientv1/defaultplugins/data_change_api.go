@@ -74,6 +74,8 @@ type PutDSL interface {
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
+	// Arp adds a request to create or update VPP L3 ARP.
+	Arp(arp *l3.ArpTable_ArpTableEntry) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -117,6 +119,8 @@ type DeleteDSL interface {
 	// AppNamespace adds a request to delete VPP Application namespace
 	// Note: current version does not support application namespace deletion
 	AppNamespace(id string) DeleteDSL
+	// Arp adds a request to delete an existing VPP L3 ARP.
+	Arp(ifaceName string, ipAddr net.IP) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

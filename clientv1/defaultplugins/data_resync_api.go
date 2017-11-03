@@ -51,6 +51,8 @@ type DataResyncDSL interface {
 	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
 	ACL(acl *acl.AccessLists_Acl) DataResyncDSL
+	// Arp adds VPP L3 ARP to the RESYNC request.
+	Arp(arp *l3.ArpTable_ArpTableEntry) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request

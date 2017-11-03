@@ -156,6 +156,22 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// TODO vrf not implemented yet
 			plugin.Log.Warn("VRFs are not supported yet")
 		}
+	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+		_, _, err := l3.ParseArpKey(key)
+		if err != nil {
+			return false, err
+		}
+		var value, prevValue l3.ArpTable_ArpTableEntry
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeARP(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
@@ -302,6 +318,19 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+}
+
+// dataChangeARP propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.arpConfigurator.DeleteArp(prevValue)
+	} else if diff {
+		return plugin.arpConfigurator.ChangeArp(value, prevValue)
+	}
+	return plugin.arpConfigurator.AddArp(value)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator
