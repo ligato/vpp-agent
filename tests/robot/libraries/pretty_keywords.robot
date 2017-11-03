@@ -2,6 +2,9 @@
 Ping From ${node} To ${ip}
     vpp_term: Check Ping    ${node}    ${ip}
 
+Ping On ${node} With IP ${ip}, Source ${source}
+    vpp_term: Check Ping Within Interface    ${node}    ${ip}    ${source}
+
 Create Loopback Interface ${name} On ${node} With Ip ${ip}/${prefix} And Mac ${mac}
     Log Many    ${name}    ${node}    ${ip}    ${prefix}    ${mac}
     vpp_ctl: Put Loopback Interface With IP    ${node}    ${name}   ${mac}   ${ip}   ${prefix}
