@@ -120,7 +120,7 @@ func runSimpleExmple() {
 	}
 
 	respChan := make(chan keyval.BytesWatchResp, 10)
-	err = watcher.Watch(keyval.ToChan(respChan), keyPrefix)
+	err = watcher.Watch(keyval.ToChan(respChan), make(chan string), keyPrefix)
 	if err != nil {
 		log.Error(err.Error())
 	}

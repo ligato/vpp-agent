@@ -1,3 +1,38 @@
+# Release v1.0.7 (2017-10-30)
+
+## Compatibility
+VPP version v18.01-rc0~154-gfc1c612
+
+## Major Themes
+
+- [cn-infra]
+    - updated to version 1.0.6
+    
+- [Default VPP plugin](plugins/defaultplugins)
+    - added resync strategies. Resync of VPP plugins (defaultplugins) can be set using 
+    defaultpluigns config file; Resync can be set to full (always resync everything) or
+    dependent on VPP configuration (if there is none, skip resync). Resync can be also 
+    forced to skip using parameter. See appropriate changelog in 
+    [Defaultplugins](plugins/defaultplugins) for details.
+    
+# New Features
+
+- [Linuxplugins L3Plugin](plugins/linuxplugin/l3plugin)
+    - added support for basic CRUD operations with static Address resolution protocol 
+    entries and static Routes. 
+        
+# Release v1.0.6 (2017-10-17)
+
+## Major Themes
+
+- [cn-infra]
+    - updated to version 1.0.5
+- [LinuxPlugin](plugins/linuxplugin)
+   - Configuration of vEth interfaces modified. Veth configuration defines
+   two names: symbolic used internally and the one used in host OS.
+   `HostIfName` field is optional. If it is not defined, the name in the host OS
+   will be the same as the symbolic one - defined by `Name` field.
+
 # Release v1.0.5 (2017-9-26)
 
 ## Compatibility
@@ -12,9 +47,9 @@ VPP version v17.10-rc0~334-gce41a5c
     - Changes in offset handling, only automatically partitioned messages (hash, random)
       have their offset marked. Manually partitioned messages are not marked.
     - Implemented post-init consumer (for manual partitioner only) which allows to start
-      consuming after kafka-plugin Init()   
+      consuming after kafka-plugin Init()
     - Minimalistic examples & documentation for Kafka API will be improved in a later release.
-    
+
 # Release v1.0.4 (2017-09-08)
 
 ## Major Themes

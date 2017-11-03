@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
@@ -127,12 +127,12 @@ func (plugin *ExamplePlugin) reconfigureLinuxAndVPP(ctx context.Context) {
 		// simulate configuration change exactly 20seconds after resync
 		err := localclient.DataChangeRequest(PluginID).
 			Put().
-			LinuxInterface(&veth11Ns1). /* move veth11 into the namespace "ns1" */
+			LinuxInterface(&veth11Ns1).     /* move veth11 into the namespace "ns1" */
 			LinuxInterface(&veth12WithMtu). /* reconfigure veth12 -- explicitly set Mtu to 1000 */
-			LinuxInterface(&veth21Ns2). /* create veth21-veth22 pair, put veth21 into the namespace "ns2" */
-			LinuxInterface(&veth22). /* enable veth22, keep default configuration */
-			VppInterface(&afpacket2). /* create afpacket2 interface and attach it to veth2 */
-			BD(&BDAfpackets). /* put afpacket1 and afpacket2 into the same bridge domain */
+			LinuxInterface(&veth21Ns2).     /* create veth21-veth22 pair, put veth21 into the namespace "ns2" */
+			LinuxInterface(&veth22).        /* enable veth22, keep default configuration */
+			VppInterface(&afpacket2).       /* create afpacket2 interface and attach it to veth2 */
+			BD(&BDAfpackets).               /* put afpacket1 and afpacket2 into the same bridge domain */
 			Delete().
 			VppInterface(tap1.Name). /* remove the tap interface */
 			Send().ReceiveReply()
@@ -215,9 +215,10 @@ var (
 
 	// veth11DefaultNs is one end of the veth11-veth12 VETH pair, put into the default namespace and NOT attached to VPP
 	veth11DefaultNs = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth11",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth11",
+		HostIfName: "veth11",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
@@ -226,9 +227,10 @@ var (
 
 	// veth11Ns1 is veth11DefaultNs moved to the namespace "ns1"
 	veth11Ns1 = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth11",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth11",
+		HostIfName: "veth11",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
@@ -241,9 +243,10 @@ var (
 
 	// veth12 is one end of the veth11-veth12 VETH pair, put into the default namespace and attached to VPP
 	veth12 = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth12",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth12",
+		HostIfName: "veth12",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth11",
 		},
@@ -251,9 +254,10 @@ var (
 
 	// veth12WithMtu is like veth12, but MTU is reconfigured
 	veth12WithMtu = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth12",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth12",
+		HostIfName: "veth12",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth11",
 		},
@@ -262,9 +266,10 @@ var (
 
 	// veth21Ns2 is one end of the veth21-veth22 VETH pair, put into the namespace "ns2" and NOT attached to VPP
 	veth21Ns2 = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth21",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth21",
+		HostIfName: "veth21",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth22",
 		},
@@ -277,11 +282,12 @@ var (
 
 	// veth22 is one end of the veth21-veth22 VETH pair, put into the default namespace and attached to VPP
 	veth22 = linux_intf.LinuxInterfaces_Interface{
-		Name:    "veth22",
-		Type:    linux_intf.LinuxInterfaces_VETH,
-		Enabled: true,
+		Name:       "veth22",
+		HostIfName: "veth22",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth2",
+			PeerIfName: "veth21",
 		},
 	}
 
@@ -316,10 +322,10 @@ var (
 		MacAge:              0, /* means disable aging */
 		Interfaces: []*vpp_l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "afpacket1",
+				Name: "afpacket1",
 				BridgedVirtualInterface: false,
 			}, {
-				Name:                    "afpacket2",
+				Name: "afpacket2",
 				BridgedVirtualInterface: false,
 			},
 		},

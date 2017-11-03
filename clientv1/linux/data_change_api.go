@@ -15,7 +15,7 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	"net"
 
@@ -25,6 +25,7 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -58,6 +59,10 @@ type DataChangeDSL interface {
 type PutDSL interface {
 	// LinuxInterface adds a request to create or update Linux network interface.
 	LinuxInterface(val *interfaces.LinuxInterfaces_Interface) PutDSL
+	// LinuxArpEntry adds a request to crete or update Linux ARP entry
+	LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) PutDSL
+	// LinuxRoute adds a request to crete or update Linux route
+	LinuxRoute(val *l3.LinuxStaticRoutes_Route) PutDSL
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_intf.Interfaces_Interface) PutDSL
@@ -95,6 +100,10 @@ type DeleteDSL interface {
 	// LinuxInterface adds a request to delete an existing Linux network
 	// interface.
 	LinuxInterface(ifaceName string) DeleteDSL
+	// LinuxArpEntry adds a request to crete or update Linux ARP entry
+	LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) DeleteDSL
+	// LinuxRoute adds a request to crete or update Linux route
+	LinuxRoute(val *l3.LinuxStaticRoutes_Route) DeleteDSL
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL

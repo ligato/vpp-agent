@@ -16,7 +16,7 @@ package resync
 
 import "fmt"
 
-// Registration is an interface that is returned by the Register() call
+// Registration is an interface that is returned by the Register() call.
 type Registration interface {
 	StatusChan() chan StatusEvent
 	fmt.Stringer

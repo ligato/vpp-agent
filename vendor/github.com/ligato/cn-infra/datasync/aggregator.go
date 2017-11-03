@@ -21,23 +21,23 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
-// CompositeKVProtoWatcher is an adapter that allows to aggregate multiple
-// watchers (KeyValProtoWatcher) into one.
-// Watch request is delegated into all of them.
+// CompositeKVProtoWatcher is an adapter that allows multiple
+// watchers (KeyValProtoWatcher) to be aggregated in one.
+// Watch request is delegated to all of them.
 type CompositeKVProtoWatcher struct {
 	Adapters []KeyValProtoWatcher
 }
 
-// CompositeKVProtoWriter is an adapter that allows to aggregate multiple
-// writers (KeyProtoValWriter) into one.
-// Put request is delegated into all of them.
+// CompositeKVProtoWriter is an adapter that allows multiple
+// writers (KeyProtoValWriter) in one.
+// Put request is delegated to all of them.
 type CompositeKVProtoWriter struct {
 	Adapters []KeyProtoValWriter
 }
 
-// AggregatedRegistration is adapter that allows to aggregate multiple
-// registrations (WatchRegistration) into one.
-// Close operation is applied collectively on all included registration.
+// AggregatedRegistration is adapter that allows multiple
+// registrations (WatchRegistration) to be aggregated in one.
+// Close operation is applied collectively to all included registration.
 type AggregatedRegistration struct {
 	Registrations []WatchRegistration
 }
@@ -67,7 +67,7 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 // This function implements KeyProtoValWriter.Put().
 func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...PutOption) error {
 	if len(ta.Adapters) == 0 {
-		return fmt.Errorf("No transport is available in aggregator")
+		return fmt.Errorf("no transport is available in aggregator")
 	}
 	var wasError error
 	for _, transport := range ta.Adapters {
@@ -77,6 +77,16 @@ func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...Pu
 		}
 	}
 	return wasError
+}
+
+// Unregister closed registration of specific key under all available aggregator objects.
+// Call Unregister(keyPrefix) on specific registration to remove key from that registration only
+func (wa *AggregatedRegistration) Unregister(keyPrefix string) error {
+	for _, registration := range wa.Registrations {
+		registration.Unregister(keyPrefix)
+	}
+
+	return nil
 }
 
 // Close every registration under the aggregator.

@@ -32,7 +32,7 @@ define test_cover_only
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit7.out ./db/keyval/redis
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit8.out ./db/sql/cassandra
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit9.out ./idxmap/mem
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit10.out ./tests/go/itest
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit10.out ./tests/gotests/itest
     @echo "# merging coverage results"
     @cd vendor/github.com/wadey/gocovmerge && go install -v
     @gocovmerge ${COVER_DIR}coverage_unit1.out ${COVER_DIR}coverage_unit2.out ${COVER_DIR}coverage_unit3.out ${COVER_DIR}coverage_unit4.out ${COVER_DIR}coverage_unit5.out ${COVER_DIR}coverage_unit6.out ${COVER_DIR}coverage_unit7.out  ${COVER_DIR}coverage_unit8.out ${COVER_DIR}coverage_unit9.out ${COVER_DIR}coverage_unit10.out > ${COVER_DIR}coverage.out
@@ -58,8 +58,7 @@ endef
 # run code analysis
 define lint_only
     @echo "# running code analysis"
-    @./scripts/golint.sh
-    @./scripts/govet.sh
+    @./scripts/static_analysis.sh golint vet
     @echo "# done"
 endef
 
@@ -133,7 +132,9 @@ endef
 # run test examples
 define test_examples
     @echo "# Testing examples"
-    @./scripts/test_examples.sh
+    @./scripts/test_examples/test_examples.sh
+		@echo "# Testing examples: reactions to disconnect/reconnect of plugins redis, cassandra ..."
+		@./scripts/test_examples/plugin_reconnect.sh
     @echo "# done"
 endef
 

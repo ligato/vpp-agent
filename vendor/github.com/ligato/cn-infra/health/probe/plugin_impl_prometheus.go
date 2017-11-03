@@ -122,8 +122,8 @@ func (p *PrometheusPlugin) AfterInit() error {
 	}
 
 	//TODO: Need improvement - instead of the exposing the map directly need to use in-memory mapping
-	if p.PluginStatusCheck != nil {
-		allPluginStatusMap := p.PluginStatusCheck.GetAllPluginStatus()
+	if p.StatusCheck != nil {
+		allPluginStatusMap := p.StatusCheck.GetAllPluginStatus()
 		for k, v := range allPluginStatusMap {
 			p.Log.Infof("k=%v, v=%v, state=%v", k, v, v.State)
 			p.registerGauge(
@@ -141,40 +141,6 @@ func (p *PrometheusPlugin) AfterInit() error {
 	} else {
 		p.Log.Error("PluginStatusCheck is nil")
 	}
-
-	/*if p.PluginStatusCheck != nil {
-		if p.PluginStatusCheck.GetPluginStatusMap() != nil {
-			pluginStatusIdx := p.PluginStatusCheck.GetPluginStatusMap()
-			allPluginNames := pluginStatusIdx.GetMapping().ListAllNames()
-			for _, v := range allPluginNames {
-				p.registerGauge(
-					Namespace,
-					Subsystem,
-					DependencyHealthName,
-					DependencyHealthHelp,
-					prometheus.Labels{
-						ServiceLabel:    agentName,
-						DependencyLabel: v,
-					},
-					func() float64 {
-						p.Log.Infof("DependencyHealth for Plugin %v", v)
-						pluginStatus, ok := pluginStatusIdx.GetValue(v)
-						if ok {
-							p.Log.Infof("DependencyHealth: %v", float64(pluginStatus.State))
-							return float64(pluginStatus.State)
-						} else {
-							p.Log.Info("DependencyHealth not found")
-							return float64(-1)
-						}
-					},
-				)
-			}
-		} else {
-			p.Log.Error("Plugin map is nil")
-		}
-	} else {
-		p.Log.Error("PluginStatusCheck is nil")
-	}*/
 
 	return nil
 }

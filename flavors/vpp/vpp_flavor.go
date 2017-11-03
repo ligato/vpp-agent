@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/vpp-agent/plugins/restplugin"
 	"github.com/namsral/flag"
 )
 
@@ -48,6 +49,16 @@ const GoVPPConf = "govpp.conf"
 // GoVPPConfUsage used as flag usage for GoVPPConfFlag.
 const GoVPPConfUsage = "Location of the GoVPP configuration file; also set via 'GOVPP_CONFIG' env variable."
 
+// LinuxPluginConfFlag used as flag name (see implementation in declareFlags())
+// It is used to load configuration of the linuxplugin.
+const LinuxPluginConfFlag = "linuxplugin-config"
+
+// LinuxPluginConf is default (flag value) - filename for the linuxplugin configuration.
+const LinuxPluginConf = "linuxplugin.conf"
+
+// LinuxPluginConfUsage used as flag usage for LinuxPluginConfFlag.
+const LinuxPluginConfUsage = "Location of the linuxplugin configuration file; also set via 'LINUX_PLUGIN_CONFIG' env variable."
+
 // Flavor glues together multiple plugins to build a full-featured VPP agent.
 type Flavor struct {
 	*local.FlavorLocal
@@ -61,6 +72,8 @@ type Flavor struct {
 	GoVPP govppmux.GOVPPPlugin
 	Linux linuxplugin.Plugin
 	VPP   defaultplugins.Plugin
+
+	RESTAPIPlugin restplugin.RESTAPIPlugin
 
 	injected bool
 }
@@ -96,7 +109,12 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
+
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
+	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
+	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
 
 	return true
 }
@@ -126,4 +144,5 @@ func declareFlags() {
 	flag.String(DefaultPluginsConfFlag, DefaultPluginsConf, DefaultPluginsConfUsage)
 	flag.String(IfStatePubConfFlag, IfStatePubConf, IfStatePubConfUsage)
 	flag.String(GoVPPConfFlag, GoVPPConf, GoVPPConfUsage)
+	flag.String(LinuxPluginConfFlag, LinuxPluginConf, LinuxPluginConfUsage)
 }

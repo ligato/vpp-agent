@@ -124,11 +124,6 @@ func (ref *AsyncProducer) SendMsgByte(topic string, key []byte, msg []byte, meta
 	ref.SendMsgToPartition(topic, ref.Partition, sarama.ByteEncoder(key), sarama.ByteEncoder(msg), metadata)
 }
 
-// SendMsg sends a message to Kafka using default partition
-func (ref *AsyncProducer) SendMsg(topic string, key sarama.Encoder, msg sarama.Encoder, metadata interface{}) {
-	ref.SendMsgToPartition(topic, ref.Partition, key, msg, metadata)
-}
-
 // SendMsgToPartition sends an async message to Kafka
 func (ref *AsyncProducer) SendMsgToPartition(topic string, partition int32, key Encoder, msg Encoder, metadata interface{}) {
 	if msg == nil {

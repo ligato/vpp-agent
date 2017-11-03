@@ -68,7 +68,7 @@ const (
 // These vars are applied for both, sync and async case
 var (
 	// Offset for sync messages watcher
-	messageOffset int64 = 5
+	messageOffset int64
 	// How many messages will be sent
 	messageCountNum = 10
 )
@@ -100,11 +100,15 @@ func (plugin *ExamplePlugin) Init() (err error) {
 		if err != nil {
 			return fmt.Errorf("'messageCount' has to be a number, not %v", *messageCount)
 		}
+		if messageCountNum < 0 {
+			plugin.Log.Warnf("'messageCount' %v is not a positive number, defaulting to 0")
+			messageCountNum = 0
+		}
 	} else {
 		plugin.Log.Info("messageCount arg not set, using default value")
 	}
 
-	plugin.Log.Infof("Offset: %v, message count: %v", messageOffset, messageCount)
+	plugin.Log.Infof("Offset: %v, message count: %v", messageOffset, messageCountNum)
 
 	// Create a synchronous and asynchronous publisher.
 	// In the manual mode, every publisher has selected its target partition.
@@ -167,6 +171,18 @@ func (plugin *ExamplePlugin) closeExample() {
 	for {
 		if plugin.messagesSent && plugin.asyncSuccess {
 			time.Sleep(2 * time.Second)
+			err := plugin.kafkaWatcher.StopWatchPartition(topic1, syncMessagePartition, messageOffset)
+			if err != nil {
+				plugin.Log.Errorf("Error while stopping watcher: %v", err)
+			} else {
+				plugin.Log.Info("Sync watcher closed")
+			}
+			err = plugin.kafkaWatcher.StopWatchPartition(topic2, asyncMessagePartition, messageOffset)
+			if err != nil {
+				plugin.Log.Errorf("Error while stopping watcher: %v", err)
+			} else {
+				plugin.Log.Info("Async watcher closed")
+			}
 			plugin.Log.Info("kafka example finished, sending shutdown ...")
 			*plugin.closeChannel <- struct{}{}
 			break
@@ -176,9 +192,7 @@ func (plugin *ExamplePlugin) closeExample() {
 
 // Close closes the subscription and the channels used by the async producer.
 func (plugin *ExamplePlugin) Close() error {
-	safeclose.Close(plugin.subscription)
-	safeclose.Close(plugin.asyncErrorChannel)
-	safeclose.Close(plugin.asyncSuccessChannel)
+	safeclose.CloseAll(plugin.subscription, plugin.asyncErrorChannel, plugin.asyncSuccessChannel)
 	return nil
 }
 
@@ -240,6 +254,7 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 	for message := range plugin.subscription {
 		plugin.Log.Infof("Received sync Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
 			message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
+		// Note: mark the offset if required
 		receivedMessageCounter++
 		if message.GetPartition() != syncMessagePartition {
 			plugin.Log.Errorf("Received sync message with unexpected partition: %v", message.GetOffset())
@@ -257,7 +272,6 @@ func (plugin *ExamplePlugin) syncEventHandler() {
 // will receive it.
 func (plugin *ExamplePlugin) asyncEventHandler() {
 	plugin.Log.Info("Started Kafka async event handler...")
-	receivedMessageCounter := 0
 	asyncSuccessCounter := 0
 	if messageCountNum == 0 {
 		plugin.asyncSuccess = true
@@ -269,7 +283,7 @@ func (plugin *ExamplePlugin) asyncEventHandler() {
 		case message := <-plugin.asyncSubscription:
 			plugin.Log.Infof("Received async Kafka Message, topic '%s', partition '%v', offset '%v', key: '%s', ",
 				message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
-			receivedMessageCounter++
+			// Note: mark the offset if required
 			if message.GetPartition() != asyncMessagePartition {
 				plugin.Log.Errorf("Received async message with unexpected partition: %v", message.GetOffset())
 			}
@@ -280,6 +294,7 @@ func (plugin *ExamplePlugin) asyncEventHandler() {
 		case message := <-plugin.asyncSuccessChannel:
 			plugin.Log.Infof("Async message successfully delivered, topic '%s', partition '%v', offset '%v', key: '%s', ",
 				message.GetTopic(), message.GetPartition(), message.GetOffset(), message.GetKey())
+			// Note: mark the offset if required
 			asyncSuccessCounter++
 			if asyncSuccessCounter == messageCountNum {
 				plugin.asyncSuccess = true

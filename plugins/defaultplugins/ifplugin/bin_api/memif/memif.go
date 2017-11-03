@@ -6,7 +6,7 @@ package memif
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xed3def5d
+const VlAPIVersion = 0xc39cfba7
 
 // MemifCreate represents the VPP binary API message 'memif_create'.
 // Generated from '/usr/share/vpp/api/memif.api.json', line 6:

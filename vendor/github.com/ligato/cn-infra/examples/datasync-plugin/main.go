@@ -43,6 +43,7 @@ type ExamplePlugin struct {
 	watchDataReg  datasync.WatchRegistration // To subscribe on data change/resync events.
 	// Fields below are used to properly finish the example.
 	eventCounter uint8
+	publisherDone bool
 	closeChannel *chan struct{}
 }
 
@@ -80,7 +81,7 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // operations with ETCD.
 func (plugin *ExamplePlugin) etcdPublisher() {
 	// Wait for the consumer to initialize
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 	plugin.Log.Print("KeyValPublisher started")
 
 	// Convert data into the proto format.
@@ -99,6 +100,18 @@ func (plugin *ExamplePlugin) etcdPublisher() {
 	// UPDATE: demonstrate how use the Data Broker Put() API to change
 	// an already stored data in ETCD.
 	plugin.Publisher.Put(label, exampleData)
+
+	// Prepare another different set of data.
+	plugin.Log.Infof("Update data at %v", label)
+	exampleData = plugin.buildData("string3", 2, false)
+
+	// UPDATE: only to demonstrate Unregister functionality
+	plugin.Publisher.Put(label, exampleData)
+
+	// Wait for the consumer (change should not be passed to listener)
+	time.Sleep(2* time.Second)
+
+	plugin.publisherDone = true
 }
 
 // consumer (watcher) is subscribed to watch on data store changes.
@@ -129,6 +142,11 @@ func (plugin *ExamplePlugin) consumer() {
 					dataChng.GetKey(), diff, dataChng.GetChangeType())
 				// Increase event counter (expecting two events).
 				plugin.eventCounter++
+
+				if plugin.eventCounter == 2 {
+					// After creating/updating data, unregister key
+					plugin.watchDataReg.Unregister(etcdKeyPrefix(plugin.ServiceLabel.GetAgentLabel()))
+				}
 			}
 			// Here you would test for other event types with one if statement
 			// for each key prefix:
@@ -167,7 +185,10 @@ func (plugin *ExamplePlugin) subscribeWatcher() (err error) {
 func (plugin *ExamplePlugin) closeExample() {
 	for {
 		// Two events are expected for successful example completion.
-		if plugin.eventCounter == 2 {
+		if plugin.publisherDone {
+			if plugin.eventCounter != 2 {
+				plugin.Log.Error("etcd/datasync example failed")
+			}
 			// Close the watcher
 			plugin.context.Done()
 			plugin.Log.Infof("etcd/datasync example finished, sending shutdown ...")

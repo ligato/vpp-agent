@@ -16,21 +16,24 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	"net"
+	"time"
 )
 
 // Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
 // when a given routing table entry is applied.
 type Route struct {
-	VrfID       uint32
-	DstAddr     net.IPNet
-	NextHopAddr net.IP
-	OutIface    uint32
-	Weight      uint32
-	Preference  uint32
+	VrfID       uint32    `json:"vrf_id"`
+	DstAddr     net.IPNet `json:"dst_addr"`
+	NextHopAddr net.IP    `json:"next_hop_addr"`
+	OutIface    uint32    `json:"out_iface"`
+	Weight      uint32    `json:"weight"`
+	Preference  uint32    `json:"preference"`
 }
 
 const (
@@ -47,8 +50,15 @@ const (
 	NextHopOutgoingIfUnset uint32 = ^uint32(0)
 )
 
-// VppAddDelRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
-func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error {
+// vppAddDelRoute adds or removes route according to provided input. Every route has to contain VRF ID (default is 0)
+func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLog measure.StopWatchEntry) error {
+	// IPAddDelRoute time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -102,4 +112,14 @@ func VppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool) error 
 	}
 
 	return nil
+}
+
+// VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
+func VppAddRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	return vppAddDelRoute(route, vppChan, false, timeLog)
+}
+
+// VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	return vppAddDelRoute(route, vppChan, true, timeLog)
 }

@@ -13,21 +13,21 @@ import (
 	"github.com/namsral/flag"
 )
 
-// FlagSuffix is added to plugin name while loading plugins configuration
+// FlagSuffix is added to plugin name while loading plugins configuration.
 const FlagSuffix = "-config"
 
-// EnvSuffix is added to plugin name while loading plugins configuration from ENV variable
+// EnvSuffix is added to plugin name while loading plugins configuration from ENV variable.
 const EnvSuffix = "_CONFIG"
 
-// DirFlag used as flag name (see implementation in declareFlags())
-// It is used to define default directory where config files reside.
-// This flag name is calculated from the name of the plugin.
+// DirFlag as flag name (see implementation in declareFlags())
+// is used to define default directory where config files reside.
+// This flag name is derived from the name of the plugin.
 const DirFlag = "config-dir"
 
-// DirDefault - default value for flag "." represents current working directory
+// DirDefault holds a default value "." for flag, which represents current working directory.
 const DirDefault = "."
 
-// DirUsage used as flag usage (see implementation in declareFlags())
+// DirUsage used as a flag (see implementation in declareFlags()).
 const DirUsage = "Location of the configuration files; also set via 'CONFIG_DIR' env variable."
 
 // PluginConfig is API for plugins to access configuration.
@@ -35,21 +35,21 @@ const DirUsage = "Location of the configuration files; also set via 'CONFIG_DIR'
 // Aim of this API is to let a particular plugin to bind it's configuration
 // without knowing a particular key name. The key name is injected in flavor (Plugin Name).
 type PluginConfig interface {
-	// GetValue parse configuration for a plugin a store the results in data.
-	// Argument data is a pointer to instance of a go structure.
+	// GetValue parses configuration for a plugin and stores the results in data.
+	// The argument data is a pointer to an instance of a go structure.
 	GetValue(data interface{}) (found bool, err error)
 
-	// GetConfigName returns usually derived config name from plugin name:
-	// flag = PluginName + FlagSuffix (evaluated most often a absolute path to a config file)
+	// GetConfigName returns config name derived from plugin name:
+	// flag = PluginName + FlagSuffix (evaluated most often as absolute path to a config file)
 	GetConfigName() string
 }
 
 // ForPlugin returns API that is injectable to a particular Plugin
-// to read it's configuration.
+// and is used to read it's configuration.
 //
 // It tries to lookup `plugin + "-config"` in flags and declare
-// the flag if it still not exists. It uses following opts.
-// opts (used for defining flag if it was not already defined):
+// the flag if it still not exists. It uses the following
+// opts (used to define flag (if it was not already defined)):
 // - default value
 // - usage
 func ForPlugin(pluginName string, opts ...string) PluginConfig {
@@ -82,7 +82,7 @@ type pluginConfig struct {
 	cfg        string
 }
 
-// GetValue binds the configuration to config method argument
+// GetValue binds the configuration to config method argument.
 func (p *pluginConfig) GetValue(config interface{}) (found bool, err error) {
 	cfgName := p.GetConfigName()
 	if cfgName == "" {
@@ -96,10 +96,10 @@ func (p *pluginConfig) GetValue(config interface{}) (found bool, err error) {
 	return true, nil
 }
 
-// GetConfigName lookups flag value and uses it to:
-// 1. find config in flag value location
-// 2. alternatively it tries to find it in config dir
-// (see also Dir() comments)
+// GetConfigName looks up flag value and uses it to:
+// 1. Find config in flag value location.
+// 2. Alternatively, it tries to find it in config dir
+// (see also Dir() comments).
 func (p *pluginConfig) GetConfigName() string {
 	p.access.Lock()
 	defer p.access.Unlock()
@@ -137,7 +137,7 @@ func (p *pluginConfig) getConfigName() string {
 	return ""
 }
 
-// Dir evaluates flag DirFlag. It interprets "." as current working directory.
+// Dir evaluates the flag DirFlag. It interprets "." as current working directory.
 func Dir() (string, error) {
 	flg := flag.CommandLine.Lookup(DirFlag)
 	if flg != nil {

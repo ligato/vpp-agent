@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 )
 
-// putMessage is just a stub prepared for later implementation
+// putMessage is only a stub prepared for later implementation.
 func (adapter *Adapter) putMessage(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		body, err := req.GetBody()
@@ -48,7 +48,7 @@ func (adapter *Adapter) putMessage(formatter *render.Render) http.HandlerFunc {
 	}
 }
 
-// delMessage just calls local dbadapter delete
+// delMessage only calls local dbadapter delete.
 func (adapter *Adapter) delMessage(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		localtxn := local.NewBytesTxn(adapter.base.PropagateChanges)
@@ -63,7 +63,7 @@ func (adapter *Adapter) delMessage(formatter *render.Render) http.HandlerFunc {
 	}
 }
 
-// simple test handler used to test in runtime that everything is integrated propely
+// Simple test handler is used to test that everything is integrated propely in runtime.
 func testHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		formatter.JSON(w, http.StatusOK, struct{ Test string }{"This is a test"})

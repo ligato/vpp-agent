@@ -21,21 +21,22 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 )
 
-// Plugin implements Plugin interface therefore can be loaded with other plugins
+// Plugin implements Plugin interface, therefore it can be loaded with other plugins.
 type Plugin struct {
 	Deps
 
+	regOrder      []string
 	registrations map[string]Registration
 	access        sync.Mutex
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginLogDeps // inject
 }
 
-// Init initializes variables
+// Init initializes variables.
 func (plugin *Plugin) Init() (err error) {
 	plugin.registrations = make(map[string]Registration)
 
@@ -46,7 +47,7 @@ func (plugin *Plugin) Init() (err error) {
 	return nil
 }
 
-// AfterInit method starts the resync
+// AfterInit method starts the resync.
 func (plugin *Plugin) AfterInit() (err error) {
 	plugin.startResync()
 
@@ -66,8 +67,8 @@ func (plugin *Plugin) Close() error {
 
 // Register function is supposed to be called in Init() by all VPP Agent plugins.
 // The plugins are supposed to load current state of their objects when newResync() is called.
-// But the actual CreateNewObjects(), DeleteObsoleteObjects() and ModifyExistingObjects() will be orchestrated
-// to ensure there is proper order of that. If an error occurs during Resync than new Resync is planned.
+// The actual CreateNewObjects(), DeleteObsoleteObjects() and ModifyExistingObjects() will be orchestrated
+// to ensure their proper order. If an error occurs during Resync, then new Resync is planned.
 func (plugin *Plugin) Register(resyncName string) Registration {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
@@ -76,23 +77,27 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 		plugin.Log.WithField("resyncName", resyncName).Panic("You are trying to register same resync twice")
 		return nil
 	}
+	// ensure that resync is triggered in the same order as the plugins were registered
+	plugin.regOrder = append(plugin.regOrder, resyncName)
 
 	reg := NewRegistration(resyncName, make(chan StatusEvent, 0)) /*Zero to have back pressure*/
 	plugin.registrations[resyncName] = reg
 	return reg
 }
 
-// call callback on plugins to create/delete/modify objects
+// Call callback on plugins to create/delete/modify objects.
 func (plugin *Plugin) startResync() {
-
+	plugin.Log.Info("Resync order", plugin.regOrder)
 	startTime := time.Now()
-	for regName, reg := range plugin.registrations {
-		resyncPartStart := time.Now()
+	for _, regName := range plugin.regOrder {
+		if reg, found := plugin.registrations[regName]; found {
+			resyncPartStart := time.Now()
 
-		plugin.startSingleResync(regName, reg)
+			plugin.startSingleResync(regName, reg)
 
-		resyncPart := time.Since(resyncPartStart)
-		plugin.Log.WithField("durationInNs", resyncPart.Nanoseconds()).Info("Resync of ", regName, " took ", resyncPart)
+			resyncPart := time.Since(resyncPartStart)
+			plugin.Log.WithField("durationInNs", resyncPart.Nanoseconds()).Info("Resync of ", regName, " took ", resyncPart)
+		}
 	}
 
 	resyncTime := time.Since(startTime)

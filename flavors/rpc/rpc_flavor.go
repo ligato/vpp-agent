@@ -21,11 +21,11 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/cn-infra/flavors/rpc"
 )
 
 // checkImplemensPlugin is used to let compiler check if
@@ -35,7 +35,7 @@ import (
 // uses reflection rather than enumerating all field again.
 var checkImplemensPlugin core.Plugin
 
-// FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using 
+// FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using
 // GRPC service
 type FlavorVppRPC struct {
 	*local.FlavorLocal
@@ -67,6 +67,7 @@ func (f *FlavorVppRPC) Inject() bool {
 	f.FlavorRPC.Inject()
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
 	f.Linux.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
 	f.VPP.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
 	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")

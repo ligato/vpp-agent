@@ -316,4 +316,4 @@ console.
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
 
-[1]: #-starting-the-image
+[1]: #starting-the-image

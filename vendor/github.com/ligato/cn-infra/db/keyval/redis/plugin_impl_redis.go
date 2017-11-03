@@ -97,7 +97,7 @@ func (p *Plugin) AfterInit() error {
 
 // Close shutdowns the connection to redis.
 func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.connection, p.Skeleton)
+	_, err := safeclose.CloseAll(p.Skeleton)
 	return err
 }
 

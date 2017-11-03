@@ -41,10 +41,10 @@ type infraDeps interface {
 	InfraDeps(pluginName string, opts ...local.InfraDepsOpts) *local.PluginInfraDeps
 }
 
-// OfDifferentAgent allows access DB of different agent (with a particular microservice label).
-// This method is a shortcut to simplify creating new instance of plugin
+// OfDifferentAgent allows accessing DB of a different agent (with a particular microservice label).
+// This method is a shortcut to simplify creating new instance of a plugin
 // that is supposed to watch different agent DB.
-// Method intentionally copies instance of plugin (assuming it has set all dependencies)
+// Method intentionally copies instance of a plugin (assuming it has set all dependencies)
 // and sets microservice label.
 func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent(
 	microserviceLabel string, infraDeps infraDeps) *Plugin {
@@ -58,15 +58,15 @@ func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent
 	return &plugin // copy (no pointer receiver)
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups dependencies injected into the plugin so that they are
+// logically separated from other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps                      // inject
 	ResyncOrch            resync.Subscriber    // inject
 	KvPlugin              keyval.KvProtoPlugin // inject
 }
 
-// Init just initializes plugin.registry.
+// Init only initializes plugin.registry.
 func (plugin *Plugin) Init() error {
 	plugin.registry = syncbase.NewRegistry()
 
@@ -76,9 +76,9 @@ func (plugin *Plugin) Init() error {
 // AfterInit uses provided connection to build new transport watcher.
 //
 // Plugin.registry subscriptions (registered by Watch method) are used for resync.
-// Resync is called only if ResyncOrch was injected (is not nil).
+// Resync is called only if ResyncOrch was injected (i.e. is not nil).
 // The order of plugins in flavor is not important to resync
-// since Watch() is called in Plugin.Init() but Resync.Register()
+// since Watch() is called in Plugin.Init() and Resync.Register()
 // is called in Plugin.AfterInit().
 func (plugin *Plugin) AfterInit() error {
 	if plugin.KvPlugin != nil && !plugin.KvPlugin.Disabled() {
@@ -89,7 +89,7 @@ func (plugin *Plugin) AfterInit() error {
 		if plugin.ResyncOrch != nil {
 			for resyncName, sub := range plugin.registry.Subscriptions() {
 				resyncReg := plugin.ResyncOrch.Register(resyncName)
-				_, err := watchAndResyncBrokerKeys(resyncReg, sub.ChangeChan, sub.ResyncChan,
+				_, err := watchAndResyncBrokerKeys(resyncReg, sub.ChangeChan, sub.ResyncChan, sub.CloseChan,
 					plugin.adapter, sub.KeyPrefixes...)
 				if err != nil {
 					return err
@@ -101,7 +101,7 @@ func (plugin *Plugin) AfterInit() error {
 	return nil
 }
 
-// Watch adds entry to the plugin.registry. By doing this other plugins will receive notifications
+// Watch adds entry to the plugin.registry. By doing this, other plugins will receive notifications
 // about data changes and data resynchronization.
 //
 // This method is supposed to be called in Plugin.Init().
@@ -128,12 +128,27 @@ func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOp
 	return errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
 }
 
-// Close resources
+// Delete propagates this call to a particular kvdb.Plugin unless the kvdb.Plugin is Disabled().
+//
+// This method is supposed to be called in Plugin.AfterInit() or later (even from different go routine).
+func (plugin *Plugin) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
+	if plugin.KvPlugin.Disabled() {
+		return false, nil
+	}
+
+	if plugin.adapter != nil {
+		return plugin.adapter.db.Delete(key, opts...)
+	}
+
+	return false, errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
+}
+
+// Close resources.
 func (plugin *Plugin) Close() error {
 	return nil
 }
 
-// String returns if set Deps.PluginName or "kvdbsync" otherwise
+// String returns Deps.PluginName if set, "kvdbsync" otherwise.
 func (plugin *Plugin) String() string {
 	if len(plugin.PluginName) == 0 {
 		return "kvdbsync"

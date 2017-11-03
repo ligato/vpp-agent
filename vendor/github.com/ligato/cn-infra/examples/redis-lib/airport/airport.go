@@ -141,9 +141,9 @@ func setup() bool {
 
 	cleanup(false)
 
-	arrivalWatcher.Watch(keyval.ToChanProto(arrivalChan), "")
-	departureWatcher.Watch(keyval.ToChanProto(departureChan), "")
-	hangarWatcher.Watch(keyval.ToChanProto(hangarChan), "")
+	arrivalWatcher.Watch(keyval.ToChanProto(arrivalChan), nil,"")
+	departureWatcher.Watch(keyval.ToChanProto(departureChan), nil, "")
+	hangarWatcher.Watch(keyval.ToChanProto(hangarChan), nil,"")
 
 	return true
 }

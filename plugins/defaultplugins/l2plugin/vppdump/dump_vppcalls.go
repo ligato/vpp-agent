@@ -19,13 +19,23 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"time"
 )
 
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries
-func DumpBridgeDomainIDs(vppChannel *govppapi.Channel) ([]uint32, error) {
+func DumpBridgeDomainIDs(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]uint32, error) {
+	// BridgeDomainDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
 	reqContext := vppChannel.SendMultiRequest(req)
@@ -33,7 +43,7 @@ func DumpBridgeDomainIDs(vppChannel *govppapi.Channel) ([]uint32, error) {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return activeDomains, err
 		}
 		if stop {
@@ -48,13 +58,13 @@ func DumpBridgeDomainIDs(vppChannel *govppapi.Channel) ([]uint32, error) {
 // BridgeDomain is the wrapper structure for the bridge domain northbound API structure.
 // NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
 type BridgeDomain struct {
-	Interfaces []*BridgeDomainInterface
+	Interfaces []*BridgeDomainInterface `json:"interfaces"`
 	l2nb.BridgeDomains_BridgeDomain
 }
 
 // BridgeDomainInterface is the wrapper structure for the bridge domain interface northbound API structure.
 type BridgeDomainInterface struct {
-	SwIfIndex uint32
+	SwIfIndex uint32 `json:"sw_if_index"`
 	l2nb.BridgeDomains_BridgeDomain_Interfaces
 }
 
@@ -64,7 +74,15 @@ type BridgeDomainInterface struct {
 // LIMITATIONS:
 // - not able to dump ArpTerminationTable - missing binary API
 //
-func DumpBridgeDomains(vppChan *govppapi.Channel) (map[uint32]*BridgeDomain, error) {
+func DumpBridgeDomains(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[uint32]*BridgeDomain, error) {
+	// BridgeDomainDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
 	// map for the resulting BDs
 	bds := make(map[uint32]*BridgeDomain)
 
@@ -78,7 +96,7 @@ func DumpBridgeDomains(vppChan *govppapi.Channel) (map[uint32]*BridgeDomain, err
 			break // break out of the loop
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return nil, err
 		}
 
@@ -109,14 +127,21 @@ func DumpBridgeDomains(vppChan *govppapi.Channel) (map[uint32]*BridgeDomain, err
 
 // FIBTableEntry is the wrapper structure for the FIB table entry northbound API structure.
 type FIBTableEntry struct {
-	BridgeDomainIdx          uint32
-	OutgoingInterfaceSwIfIdx uint32
+	BridgeDomainIdx          uint32 `json:"bridge_domain_idx"`
+	OutgoingInterfaceSwIfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
 	l2nb.FibTableEntries_FibTableEntry
 }
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 // map indexed by destination MAC address.
-func DumpFIBTableEntries(vppChan *govppapi.Channel) (map[string]*FIBTableEntry, error) {
+func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]*FIBTableEntry, error) {
+	// L2FibTableDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 
 	// map for the resulting FIBs
 	fibs := make(map[string]*FIBTableEntry)
@@ -129,7 +154,7 @@ func DumpFIBTableEntries(vppChan *govppapi.Channel) (map[string]*FIBTableEntry, 
 			break // break out of the loop
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return nil, err
 		}
 
@@ -158,13 +183,20 @@ func DumpFIBTableEntries(vppChan *govppapi.Channel) (map[string]*FIBTableEntry, 
 
 // XConnectPairs is the wrapper structure for the l2 xconnect northbound API structure.
 type XConnectPairs struct {
-	ReceiveInterfaceSwIfIdx  uint32
-	TransmitInterfaceSwIfIdx uint32
+	ReceiveInterfaceSwIfIdx  uint32 `json:"receive_interface_sw_if_idx"`
+	TransmitInterfaceSwIfIdx uint32 `json:"transmit_interface_sw_if_idx"`
 }
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 // map indexed by rx interface index.
-func DumpXConnectPairs(vppChan *govppapi.Channel) (map[uint32]*XConnectPairs, error) {
+func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[uint32]*XConnectPairs, error) {
+	// L2XconnectDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
 
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectPairs)
@@ -177,7 +209,7 @@ func DumpXConnectPairs(vppChan *govppapi.Channel) (map[uint32]*XConnectPairs, er
 			break // break out of the loop
 		}
 		if err != nil {
-			log.DefaultLogger().Error(err)
+			log.Error(err)
 			return nil, err
 		}
 

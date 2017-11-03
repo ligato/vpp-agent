@@ -20,13 +20,13 @@ package core
 // (there are multiple instances).
 type PluginName string
 
-// NamedPlugin represents a Plugin with a name
+// NamedPlugin represents a Plugin with a name.
 type NamedPlugin struct {
 	PluginName
 	Plugin
 }
 
-// String returns the PluginName
+// String returns the PluginName.
 func (np *NamedPlugin) String() string {
 	return string(np.PluginName)
 }
