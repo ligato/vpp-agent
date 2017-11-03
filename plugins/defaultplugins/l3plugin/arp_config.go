@@ -83,7 +83,7 @@ func arpIdentifier(iface uint32, ip, mac string) string {
 func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
 	plugin.Log.Infof("Creating ARP entry %v", *entry)
 
-	// Transform route data
+	// Transform arp data
 	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
 	}
 	plugin.Log.Debugf("adding ARP: %+v", *arp)
 
-	// Create and register new route
+	// Create and register new arp entry
 	err = vppcalls.VppAddArp(arp, plugin.vppChan,
 		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
 	if err != nil {
@@ -125,7 +125,7 @@ func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevE
 func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error {
 	plugin.Log.Infof("Deleting ARP entry %v", *entry)
 
-	// Transform route data
+	// Transform arp data
 	arp, err := TransformArp(entry, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error
 	}
 	plugin.Log.Debugf("deleting ARP: %+v", arp)
 
-	// Delete and unregister new route
+	// Delete and unregister new arp
 	err = vppcalls.VppDelArp(arp, plugin.vppChan,
 		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
 	if err != nil {
