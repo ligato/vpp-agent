@@ -280,7 +280,7 @@ func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index
 	// Search mapping for cached routes using the new interface
 	cachedRoutes := plugin.rtCachedIndexes.LookupNamesByInterface(name)
 	if len(cachedRoutes) > 0 {
-		plugin.Log.Warnf("Found %v cached routes for interface %v", len(cachedRoutes), name)
+		plugin.Log.Debugf("Found %v cached routes for interface %v", len(cachedRoutes), name)
 		// store default routes, they have to be configured as the last ones
 		var defRoutes []*l3.LinuxStaticRoutes_Route
 		// static routes
