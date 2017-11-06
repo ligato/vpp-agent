@@ -30,6 +30,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
+// Protocol types that can occur in ACLs
+const (
+	Icmpv4Proto = 1
+	TcpProto    = 6
+	UdpProto    = 17
+	Icmpv6Proto = 58
+)
+
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger, vppChannel *api.Channel, timeLog measure.StopWatchEntry) (uint32, error) {
 	// ACLAddReplace time measurement
@@ -198,6 +206,28 @@ func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel
 	return nil
 }
 
+// DumpInterface finds interface in VPP and returns its ACL configuration
+func DumpInterface(swIndex uint32, vppChannel *api.Channel, timeLog measure.StopWatchEntry) (*acl_api.ACLInterfaceListDetails, error) {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &acl_api.ACLInterfaceListDump{}
+	req.SwIfIndex = swIndex
+
+	msg := &acl_api.ACLInterfaceListDetails{}
+
+	err := vppChannel.SendRequest(req).ReceiveReply(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msg, nil
+}
+
 // Method transforms provided set of IP proto ACL rules to binapi ACL rules.
 func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.ACLRule, error) {
 	var aclIPRules []acl_api.ACLRule
@@ -355,7 +385,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp, aclRule *ac
 		return aclRule
 	}
 	if icmpRule.Icmpv6 {
-		aclRule.Proto = 58 // IANA ICMPv6
+		aclRule.Proto = Icmpv6Proto // IANA ICMPv6
 		aclRule.IsIpv6 = 1
 		// ICMPv6 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
@@ -364,7 +394,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp, aclRule *ac
 		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
 		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
 	} else {
-		aclRule.Proto = 1 // IANA ICMPv4
+		aclRule.Proto = Icmpv4Proto// IANA ICMPv4
 		aclRule.IsIpv6 = 0
 		// ICMPv4 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
@@ -378,7 +408,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp, aclRule *ac
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
 func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	aclRule.Proto = 6 // IANA TCP
+	aclRule.Proto = TcpProto // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
 	aclRule.DstportOrIcmpcodeFirst = uint16(tcpRule.DestinationPortRange.LowerPort)
@@ -390,7 +420,7 @@ func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp, aclRule *acl_a
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
 func udpACL(udpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	aclRule.Proto = 17 // IANA UDP
+	aclRule.Proto = UdpProto // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)
 	aclRule.DstportOrIcmpcodeFirst = uint16(udpRule.DestinationPortRange.LowerPort)
