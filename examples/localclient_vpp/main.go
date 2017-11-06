@@ -136,7 +136,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			Interface(&memif2).            /* newly added memif interface */
 			Interface(&tap1Enabled).       /* enable tap1 interface */
 			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
-			//ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
+			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
