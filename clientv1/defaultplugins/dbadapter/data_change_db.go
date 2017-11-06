@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"net"
@@ -125,6 +126,12 @@ func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 	return dsl
 }
 
+// ACL adds a request to create or update VPP Access Control List.
+func (dsl *PutDSL) StnRules(val *stn.StnRule) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -192,6 +199,11 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAd
 func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
 	return dsl
+}
+
+// StnRules adds Stn sules to the RESYNC request.
+func (dsl *DeleteDSL) StnRules(val *stn.StnRule) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(stn.Key(val.RuleName))
 }
 
 // Put changes the DSL mode to allow configuration editing.

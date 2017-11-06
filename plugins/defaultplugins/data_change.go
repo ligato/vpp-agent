@@ -24,6 +24,8 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
+	"golang.org/x/net/html/atom"
 )
 
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {
@@ -155,6 +157,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// TODO vrf not implemented yet
 			plugin.Log.Warn("VRFs are not supported yet")
 		}
+	} else if strings.HasPrefix(key, stn.KeyPrefix()){
+		var value, prevValue stn.StnRule
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeStnRule(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -277,4 +291,15 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+}
+
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
+	plugin.Log.Debug("stnRuleChange ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.stnConfigurator.Delete(prevValue)
+	} else if diff {
+		return plugin.stnConfigurator.Modify(value, prevValue)
+	}
+	return plugin.stnConfigurator.Add(value)
 }

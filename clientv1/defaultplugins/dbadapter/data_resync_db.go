@@ -25,6 +25,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -122,6 +123,15 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins
 // ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyncDSL {
 	key := acl.Key(val.AclName)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// ACL adds Access Control List to the RESYNC request.
+func (dsl *DataResyncDSL) StnRules(val *stn.StnRule) defaultplugins.DataResyncDSL {
+	key := stn.Key(val.RuleName)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

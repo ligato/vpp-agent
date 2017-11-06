@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
@@ -50,7 +51,8 @@ type DataResyncDSL interface {
 	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
 	ACL(acl *acl.AccessLists_Acl) DataResyncDSL
-
+	// StnRules adds Stn sules to the RESYNC request.
+	StnRules(stn *stn.StnRule) DataResyncDSL
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply
 }

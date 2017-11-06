@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
@@ -49,6 +50,8 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
+	StnRules []*stn.StnRule
 }
 
 // NewDataResyncReq is a constructor
@@ -62,7 +65,8 @@ func NewDataResyncReq() *DataResyncReq {
 		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
 		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
-		StaticRoutes:        []*l3.StaticRoutes_Route{}}
+		StaticRoutes:        []*l3.StaticRoutes_Route{},
+		StnRules:            []*stn.StnRule{}}
 }
 
 // delegates full resync request
@@ -127,6 +131,9 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 		return err
 	}
+	if err = plugin.stnConfigurator.Resync(req.StnRules); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -162,6 +169,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+			numStns := appendResyncStnRules(resyncData, req)
+			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -345,6 +355,22 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 	return num
 }
 
+func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if stnData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &stn.StnRule{}
+			err := stnData.GetValue(value)
+			if err == nil {
+				req.StnRules = append(req.StnRules, value)
+				num++
+			}
+		}
+	}
+}
+
 // put here all registration for above channel select (it ensures proper order during initialization
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
@@ -364,6 +390,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.SessionKeyPrefix(),
 			bfd.AuthKeysKeyPrefix(),
 			bfd.EchoFunctionKeyPrefix(),
+			stn.KeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
 			l3.VrfKeyPrefix())

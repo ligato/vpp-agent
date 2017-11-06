@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"net"
 )
 
@@ -73,6 +74,8 @@ type PutDSL interface {
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
+	// StnRules adds a request to create or update Stn rule to the RESYNC request.
+	StnRules(stn *stn.StnRule) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -107,6 +110,8 @@ type DeleteDSL interface {
 	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// StnRules adds a request to delete an existing Stn rule to the RESYNC request.
+	StnRules(stn *stn.StnRule) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
