@@ -33,8 +33,8 @@ import (
 // Protocol types that can occur in ACLs
 const (
 	Icmpv4Proto = 1
-	TcpProto    = 6
-	UdpProto    = 17
+	TCPProto    = 6
+	UDPProto    = 17
 	Icmpv6Proto = 58
 )
 

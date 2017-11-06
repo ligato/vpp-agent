@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-// DumpInterface finds interface in VPP and returns its ACL configuration
+// DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
 func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.Channel,
 	timeLog measure.StopWatchEntry) (acl.AccessLists, error) {
 
@@ -52,12 +52,12 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	}
 
 	if res.SwIfIndex != swIndex {
-		return alAcls, errors.New(fmt.Sprintf("Returned interface index %d does not match request",
+		return alAcls, fmt.Errorf(fmt.Sprintf("Returned interface index %d does not match request",
 			res.SwIfIndex))
 	}
 
 	for aidx := range res.Acls {
-		acl, err := getIpAclDetails(vppChannel, aidx)
+		acl, err := getIPACLDetails(vppChannel, aidx)
 		if err != nil {
 			log.Error(err)
 		} else {
@@ -154,9 +154,9 @@ func DumpInterfaces(swIndexes idxvpp.NameToIdxRW, log logging.Logger, vppChannel
 	return nil
 }
 
-// getIpAclDetails gets details for a given IP ACL from VPP and translates
+// getIPACLDetails gets details for a given IP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
-func getIpAclDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Acl, error) {
+func getIPACLDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Acl, error) {
 	req := &acl_api.ACLDump{}
 	req.ACLIndex = uint32(idx)
 
@@ -171,7 +171,7 @@ func getIpAclDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Ac
 		rule := acl.AccessLists_Acl_Rule{}
 
 		matches := acl.AccessLists_Acl_Rule_Matches{
-			IpRule: getIpRule(r),
+			IpRule: getIPRule(r),
 		}
 
 		actions := acl.AccessLists_Acl_Rule_Actions{}
@@ -193,25 +193,25 @@ func getIpAclDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Ac
 	return &acl, nil
 }
 
-// getIpRule translates an IP rule from the binary VPP API format into the
+// getIPRule translates an IP rule from the binary VPP API format into the
 // ACL Plugin's NB format
-func getIpRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
+func getIPRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
 	ipRule := acl.AccessLists_Acl_Rule_Matches_IpRule{}
 
-	saddr := net.IPNet{r.SrcIPAddr, []byte{}}
-	daddr := net.IPNet{r.DstIPAddr, []byte{}}
+	saddr := net.IPNet{IP: r.SrcIPAddr, Mask: []byte{}}
+	daddr := net.IPNet{IP: r.DstIPAddr, Mask: []byte{}}
 	ip := acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
-		SourceNetwork:      fmt.Sprint("%s/%d", saddr.String(), r.SrcIPPrefixLen),
+		SourceNetwork:      fmt.Sprintf("%s/%d", saddr.String(), r.SrcIPPrefixLen),
 		DestinationNetwork: fmt.Sprintf("%s/%d", daddr.String(), r.DstIPPrefixLen),
 	}
 	ipRule.Ip = &ip
 
 	switch r.Proto {
-	case vppcalls.TcpProto:
-		ipRule.Tcp = getTcpMatchRule(r)
+	case vppcalls.TCPProto:
+		ipRule.Tcp = getTCPMatchRule(r)
 		break
-	case vppcalls.UdpProto:
-		ipRule.Udp = getUdpMatchRule(r)
+	case vppcalls.UDPProto:
+		ipRule.Udp = getUDPMatchRule(r)
 		break
 	case vppcalls.Icmpv4Proto:
 	case vppcalls.Icmpv6Proto:
@@ -225,9 +225,9 @@ func getIpRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
 	return &ipRule
 }
 
-// getTcpMatchRule translates a TCP match rule from the binary VPP API format
+// getTCPMatchRule translates a TCP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func getTcpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp {
+func getTCPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp {
 	dstPortRange := acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
@@ -245,9 +245,9 @@ func getTcpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule
 	return &tcp
 }
 
-// getUdpMatchRule translates a UDP match rule from the binary VPP API format
+// getUDPMatchRule translates a UDP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func getUdpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp {
+func getUDPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp {
 	dstPortRange := acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_DestinationPortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
