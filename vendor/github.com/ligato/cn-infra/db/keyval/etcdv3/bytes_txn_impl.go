@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Txn allows to group operations into the transaction. Transaction executes
+// Txn allows grouping operations into the transaction. Transaction executes
 // multiple operations in a more efficient way in contrast to executing
 // them one by one.
 type bytesTxn struct {
@@ -40,7 +40,7 @@ func (tx *bytesTxn) Put(key string, value []byte) keyval.BytesTxn {
 
 // Delete adds a new 'delete' operation to a previously created
 // transaction. If <key> exists in the data store, the associated value
-// will get removed.
+// will be removed.
 func (tx *bytesTxn) Delete(key string) keyval.BytesTxn {
 	tx.ops = append(tx.ops, clientv3.OpDelete(key))
 	return tx

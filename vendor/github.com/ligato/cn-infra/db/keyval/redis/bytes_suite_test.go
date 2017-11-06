@@ -95,7 +95,7 @@ func createMiniRedisConnection() {
 		// Enables read only queries on slave nodes.
 		ReadOnly: nodeConfig.EnableReadQueryOnSlave,
 
-		// TLS Config to use. When set TLS will be negotiated.
+		// TLS Config to use. When set, TLS will be negotiated.
 		TLSConfig: nil,
 
 		// Optional password. Must match the password specified in the requirepass server configuration option.
@@ -114,7 +114,7 @@ func createMiniRedisConnection() {
 		PoolTimeout: nodeConfig.Pool.PoolTimeout,
 		// Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
 		IdleTimeout: nodeConfig.Pool.IdleTimeout,
-		// Frequency of idle checks. Default is 1 minute. When minus value is set, then idle check is disabled.
+		// Frequency of idle checks. Default is 1 minute. When negative value is set, then idle check is disabled.
 		IdleCheckFrequency: nodeConfig.Pool.IdleCheckFrequency,
 
 		// Dialer creates new network connection and has priority over Network and Addr options.
@@ -352,7 +352,7 @@ func TestKeyIterator(t *testing.T) {
 	gomega.Expect(err).To(gomega.BeNil())
 	it = iterator.(*bytesKeyIterator)
 	it.index = max
-	it.cursor = 1 // This only meant to trigger scan.  miniRedis, however, will not accept non 0 cursor.
+	it.cursor = 1 // This only meant to trigger scan.  miniRedis, however, will not accept nonzero cursor.
 	_, _, _ = it.GetNext()
 }
 
@@ -391,7 +391,7 @@ func TestKeyValIterator(t *testing.T) {
 	gomega.Expect(err).To(gomega.BeNil())
 	it = iterator.(*bytesKeyValIterator)
 	it.index = max
-	it.cursor = 1 // This only meant to trigger scan.  miniRedis, however, will not accept non 0 cursor.
+	it.cursor = 1 // This only meant to trigger scan.  miniRedis, however, will not accept nonzero cursor.
 	_, _ = it.GetNext()
 }
 

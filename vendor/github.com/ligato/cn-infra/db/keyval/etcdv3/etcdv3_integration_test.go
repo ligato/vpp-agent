@@ -73,7 +73,7 @@ func testPutGetValuePrefixed(t *testing.T) {
 
 	data := []byte{1, 2, 3}
 
-	// insert key-value pair using databroker
+	// Insert key-value pair using databroker.
 	err := broker.Put(prefix+key, data)
 	gomega.Expect(err).To(gomega.BeNil())
 
@@ -103,10 +103,10 @@ func testPrefixedWatcher(t *testing.T) {
 	wg.Add(1)
 	go expectWatchEvent(t, &wg, watchCh, watchKey+"val1")
 
-	// insert kv that doesn't match the watcher subscription
+	// Insert kv that doesn't match the watcher subscription.
 	broker.Put(prefix+"/something/else/val1", []byte{0, 0, 7})
 
-	// insert kv for watcher
+	// Insert kv for watcher.
 	broker.Put(prefix+watchKey+"val1", []byte{0, 0, 7})
 
 	wg.Wait()
@@ -142,7 +142,7 @@ func testPrefixedListValues(t *testing.T) {
 	defer teardownBrokers()
 
 	var err error
-	// insert values using databroker
+	// Insert values using databroker.
 	err = broker.Put(prefix+"a/val1", []byte{0, 0, 7})
 	gomega.Expect(err).To(gomega.BeNil())
 	err = broker.Put(prefix+"a/val2", []byte{0, 0, 7})
@@ -150,7 +150,7 @@ func testPrefixedListValues(t *testing.T) {
 	err = broker.Put(prefix+"a/val3", []byte{0, 0, 7})
 	gomega.Expect(err).To(gomega.BeNil())
 
-	// list values using pluginDatabroker
+	// List values using pluginDatabroker.
 	kvi, err := prefixedBroker.ListValues("a")
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(kvi).NotTo(gomega.BeNil())
@@ -272,7 +272,7 @@ func setupBrokers(t *testing.T) {
 
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(broker).NotTo(gomega.BeNil())
-	// create BytesBrokerWatcherEtcd with prefix
+	// Create BytesBrokerWatcherEtcd with prefix.
 	prefixedBroker = broker.NewBroker(prefix)
 	prefixedWatcher = broker.NewWatcher(prefix)
 	gomega.Expect(prefixedBroker).NotTo(gomega.BeNil())

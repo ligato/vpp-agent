@@ -39,7 +39,7 @@ type KvProtoPlugin interface {
 type KvBytesPlugin interface {
 	// NewBroker returns a BytesBroker instance that prepends given
 	// <keyPrefix> to all keys in its calls.
-	// To avoid using a prefix pass keyval.Root constant as argument.
+	// To avoid using a prefix, pass keyval.Root constant as argument.
 	NewBroker(keyPrefix string) BytesBroker
 	// NewWatcher returns a BytesWatcher instance. Given <keyPrefix> is
 	// prepended to keys during watch subscribe phase.

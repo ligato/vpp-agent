@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// healthCheckProbeKey is a key used to probe Redis state
+	// healthCheckProbeKey is a key used to probe Redis state.
 	healthCheckProbeKey string = "probe-redis-connection"
 )
 
@@ -43,7 +43,7 @@ type Deps struct {
 // Init retrieves redis configuration and establishes a new connection
 // with the redis data store.
 // If the configuration file doesn't exist or cannot be read, the returned error
-// will be of type os.PathError. An untyped error is returned in case the file
+// will be of os.PathError type. An untyped error is returned in case the file
 // doesn't contain a valid YAML configuration.
 func (p *Plugin) Init() error {
 	cfg, err := p.retrieveConfig()
@@ -118,7 +118,7 @@ func (p *Plugin) retrieveConfig() (cfg interface{}, err error) {
 	return cfg, nil
 }
 
-// String returns if set Deps.PluginName or "redis-client" otherwise
+// String returns Deps.PluginName if set, "redis-client" otherwise.
 func (p *Plugin) String() string {
 	if len(p.Deps.PluginName) == 0 {
 		return "redis-client"

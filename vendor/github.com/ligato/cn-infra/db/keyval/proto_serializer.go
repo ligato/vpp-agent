@@ -45,7 +45,7 @@ func (sp *SerializerProto) Marshal(message proto.Message) ([]byte, error) {
 	return proto.Marshal(message)
 }
 
-// Unmarshal deserialize data from slice of bytes into the provided protobuf
+// Unmarshal deserializes data from slice of bytes into the provided protobuf
 // message using JSON marshaller.
 func (sj *SerializerJSON) Unmarshal(data []byte, protoData proto.Message) error {
 	return json.Unmarshal(data, protoData)

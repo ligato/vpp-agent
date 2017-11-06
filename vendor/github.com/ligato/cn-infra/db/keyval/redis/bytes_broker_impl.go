@@ -33,15 +33,15 @@ type BytesConnectionRedis struct {
 	logging.Logger
 	client Client
 
-	// closeCh will be closed when this connection is closed -- i.e., by the Close() method.
+	// closeCh will be closed when this connection is closed, i.e. by the Close() method.
 	// It is used to give go routines a signal to stop.
 	closeCh chan string
 
-	// Flag to indicate whether this connection is closed
+	// Flag to indicate whether this connection is closed.
 	closed bool
 }
 
-// bytesKeyIterator is an iterator returned by ListKeys call
+// bytesKeyIterator is an iterator returned by ListKeys call.
 type bytesKeyIterator struct {
 	index      int
 	keys       []string
@@ -52,13 +52,13 @@ type bytesKeyIterator struct {
 	err        error
 }
 
-// bytesKeyValIterator is an iterator returned by ListValues call
+// bytesKeyValIterator is an iterator returned by ListValues call.
 type bytesKeyValIterator struct {
 	values [][]byte
 	bytesKeyIterator
 }
 
-// bytesKeyVal represents a single key-value pair
+// bytesKeyVal represents a single key-value pair.
 type bytesKeyVal struct {
 	key       string
 	value     []byte
@@ -66,7 +66,7 @@ type bytesKeyVal struct {
 }
 
 // NewBytesConnection creates a new instance of BytesConnectionRedis using the provided
-// Client (be it node, cluster, or sentinel client)
+// Client (be it node, or cluster, or sentinel client).
 func NewBytesConnection(client Client, log logging.Logger) (*BytesConnectionRedis, error) {
 	return &BytesConnectionRedis{log, client, make(chan string), false}, nil
 }
@@ -198,13 +198,13 @@ func (db *BytesConnectionRedis) Delete(key string, opts ...datasync.DelOption) (
 	return (intCmd.Val() != 0), nil
 }
 
-// Close closes the iterator.  Returns error, if any.  Otherwise, nil.
+// Close closes the iterator. It returns either an error (if any occurs), or nil.
 func (it *bytesKeyIterator) Close() error {
 	return it.err
 }
 
 // GetNext returns the next item from the iterator.
-// If the iterator encounters error or has reached the last item previously, lastReceived is set to true.
+// If the iterator encounters an error or has reached the last item previously, lastReceived is set to true.
 func (it *bytesKeyIterator) GetNext() (key string, rev int64, lastReceived bool) {
 	if it.err != nil {
 		return "", 0, true
@@ -235,13 +235,13 @@ func (it *bytesKeyIterator) GetNext() (key string, rev int64, lastReceived bool)
 	return key, 0, false
 }
 
-// Close closes the iterator.  Returns error, if any.  Otherwise, nil.
+// Close closes the iterator. It returns either an error (if it occurs), or nil.
 func (it *bytesKeyValIterator) Close() error {
 	return it.err
 }
 
 // GetNext returns the next item from the iterator.
-// If the iterator encounters error or has reached the last item previously, lastReceived is set to true.
+// If the iterator encounters an error or has reached the last item previously, lastReceived is set to true.
 func (it *bytesKeyValIterator) GetNext() (kv keyval.BytesKeyVal, lastReceived bool) {
 	if it.err != nil {
 		return nil, true
@@ -286,22 +286,22 @@ func (it *bytesKeyValIterator) GetNext() (kv keyval.BytesKeyVal, lastReceived bo
 	return kv, false
 }
 
-// GetValue returns the value of the pair
+// GetValue returns the value of the pair.
 func (kv *bytesKeyVal) GetValue() []byte {
 	return kv.value
 }
 
-// GetPrevValue returns the previous value of the pair
+// GetPrevValue returns the previous value of the pair.
 func (kv *bytesKeyVal) GetPrevValue() []byte {
 	return kv.prevValue
 }
 
-// GetKey returns the key of the pair
+// GetKey returns the key of the pair.
 func (kv *bytesKeyVal) GetKey() string {
 	return kv.key
 }
 
-// GetRevision returns the revision associated with the pair
+// GetRevision returns the revision associated with the pair.
 func (kv *bytesKeyVal) GetRevision() int64 {
 	return 0
 }
@@ -415,21 +415,21 @@ type BytesBrokerWatcherRedis struct {
 	closeCh chan string
 }
 
-// NewBrokerWatcher creates a new CRUD + KeyValProtoWatcher proxy instance to redis using through BytesConnectionRedis.
+// NewBrokerWatcher creates a new CRUD + KeyValProtoWatcher proxy instance to redis using BytesConnectionRedis.
 // The given prefix will be prepended to key argument in all calls.
 // Specify empty string ("") if not wanting to use prefix.
 func (db *BytesConnectionRedis) NewBrokerWatcher(prefix string) *BytesBrokerWatcherRedis {
 	return &BytesBrokerWatcherRedis{db.Logger, prefix, db, db.closeCh}
 }
 
-// NewBroker creates a new CRUD proxy instance to redis using through BytesConnectionRedis.
+// NewBroker creates a new CRUD proxy instance to redis using BytesConnectionRedis.
 // The given prefix will be prepended to key argument in all calls.
 // Specify empty string ("") if not wanting to use prefix.
 func (db *BytesConnectionRedis) NewBroker(prefix string) keyval.BytesBroker {
 	return db.NewBrokerWatcher(prefix)
 }
 
-// NewWatcher creates a new KeyValProtoWatcher proxy instance to redis using through BytesConnectionRedis.
+// NewWatcher creates a new KeyValProtoWatcher proxy instance to redis using BytesConnectionRedis.
 // The given prefix will be prepended to key argument in all calls.
 // Specify empty string ("") if not wanting to use prefix.
 func (db *BytesConnectionRedis) NewWatcher(prefix string) keyval.BytesWatcher {
@@ -449,7 +449,7 @@ func (pdb *BytesBrokerWatcherRedis) GetPrefix() string {
 	return pdb.prefix
 }
 
-// NewTxn creates new transaction. Prefix will be prepended to key argument.
+// NewTxn creates new transaction. Prefix will be prepended to the key argument.
 func (pdb *BytesBrokerWatcherRedis) NewTxn() keyval.BytesTxn {
 	if pdb.delegate.closed {
 		pdb.Error("NewTxn() called on a closed connection")
@@ -460,7 +460,7 @@ func (pdb *BytesBrokerWatcherRedis) NewTxn() keyval.BytesTxn {
 	return &Txn{db: pdb.delegate, ops: []op{}, addPrefix: pdb.addPrefix}
 }
 
-// Put calls Put function of BytesConnectionRedis. Prefix will be prepended to key argument.
+// Put calls Put function of BytesConnectionRedis. Prefix will be prepended to the key argument.
 func (pdb *BytesBrokerWatcherRedis) Put(key string, data []byte, opts ...datasync.PutOption) error {
 	if pdb.delegate.closed {
 		return fmt.Errorf("Put(%s) called on a closed connection", key)
@@ -470,8 +470,8 @@ func (pdb *BytesBrokerWatcherRedis) Put(key string, data []byte, opts ...datasyn
 	return pdb.delegate.Put(pdb.addPrefix(key), data, opts...)
 }
 
-// GetValue call GetValue function of BytesConnectionRedis.
-// Prefix will be prepended to key argument when searching.
+// GetValue calls GetValue function of BytesConnectionRedis.
+// Prefix will be prepended to the key argument when searching.
 func (pdb *BytesBrokerWatcherRedis) GetValue(key string) (data []byte, found bool, revision int64, err error) {
 	if pdb.delegate.closed {
 		return nil, false, 0, fmt.Errorf("GetValue(%s) called on a closed connection", key)

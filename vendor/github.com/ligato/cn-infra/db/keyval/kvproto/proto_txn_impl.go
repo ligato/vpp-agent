@@ -36,7 +36,7 @@ func (tx *protoTxn) Put(key string, value proto.Message) keyval.ProtoTxn {
 		return tx
 	}
 
-	// Marshal value to protobuf
+	// Marshal value to protobuf.
 	binData, err := tx.serializer.Marshal(value)
 	if err != nil {
 		tx.err = err

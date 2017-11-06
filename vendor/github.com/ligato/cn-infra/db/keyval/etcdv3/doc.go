@@ -22,7 +22,7 @@
 //      |  BytesConnectionEtcd  |          ---->          | ETCD |
 //      +-----------------------+        []byte           +------+
 //
-// To create a BytesConnectionEtcd use the following function
+// To create a BytesConnectionEtcd, use the following function
 //
 //   import  "github.com/ligato/cn-infra/db/keyval/etcd"
 //
@@ -107,7 +107,7 @@
 //       }
 //    }
 //
-// To list keys without fetching the values
+// To list keys without fetching the values:
 //    itr, err := db.ListKeys(prefix)
 //    if err != nil {
 //       for {
@@ -143,8 +143,8 @@
 // BytesConnectionEtcd also allows to create proxy instances
 // (BytesBrokerWatcherEtcd) using NewBroker and NewWatcher methods. Both of
 // them accept the prefix argument. The prefix will be automatically
-// prepended to all keys in put/delete requests made from the proxy instances. I
-// n case of get-like calls (GetValue, ListValues, ...) the prefix is trimmed
+// prepended to all keys in put/delete requests made from the proxy instances.
+// In case of get-like calls (GetValue, ListValues, ...) the prefix is trimmed
 // from the key of the returned values. They contain only the part following the
 // prefix in the key field. The created proxy instances share the connection of
 // the BytesConnectionEtcd.
@@ -189,7 +189,7 @@
 //    // conn is BytesConnectionEtcd initialized as shown at the top of the page
 //    protoBroker := etcd.NewProtoWrapperEtcd(conn)
 //
-// The only difference in Put/Delete functions is the type of the argument,
+// The only difference in Put/Delete functions is the type of the argument;
 // apart from that the usage is the same as described above.
 //
 // Example of retrieving single key-value pair using proto decorator:

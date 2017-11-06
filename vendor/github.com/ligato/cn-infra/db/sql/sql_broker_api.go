@@ -21,7 +21,7 @@ import (
 // Broker executes SQL statements in the data store.
 // It marshals/un-marshals go structures.
 type Broker interface {
-	// Put puts single value <inBinding> into the data store
+	// Put puts single value <inBinding> into the data store.
 	// Example usage:
 	//
 	//    err = db.Put("ID='James Bond'", &User{"James Bond", "James", "Bond"})
@@ -48,13 +48,13 @@ type Broker interface {
 	//
 	GetValue(query Expression, outBinding interface{}) (found bool, err error)
 
-	// ListValues returns an iterator that enables to traverse all items
+	// ListValues returns an iterator that enables traversing all items
 	// returned by the <query>.
 	// Use utilities to:
 	// - generate query string
 	// - fill slice by values from iterator (SliceIt).
 	//
-	// Example usage 1 (fill slice by values from iterator):
+	// Example usage 1 (fill slice with values from iterator):
 	//
 	//    query := sql.FROM(UserTable, sql.WHERE(sql.Field(&UserTable.LastName, sql.EQ("Bond")))
 	//    iterator := db.ListValues(query)
@@ -76,7 +76,7 @@ type Broker interface {
 	//
 	ListValues(query Expression) ValIterator
 
-	// Delete removes data from the data store
+	// Delete removes data from the data store.
 	// Example usage 1:
 	//
 	//    query := sql.FROM(JamesBond, sql.WHERE(sql.PK(&JamesBond.ID))
@@ -93,7 +93,7 @@ type Broker interface {
 	//
 	Delete(fromWhere Expression) error
 
-	// Executes the SQL statement (can be used for example to create
+	// Executes the SQL statement (can be used, for example, to create
 	// "table/type" if not exits...)
 	// Example usage:
 	//
@@ -105,12 +105,12 @@ type Broker interface {
 type ValIterator interface {
 	// GetNext retrieves the current "row" from query result.
 	// GetValue is un-marshaled into the provided argument.
-	// The stop=true will be returned if there is no more record or if error
+	// The stop=true will be returned if there is no more record or if an error
 	// occurred (to get the error call Close()).
-	// When the stop=true is returned the outBinding was not updated.
+	// When the stop=true is returned, the outBinding was not updated.
 	GetNext(outBinding interface{}) (stop bool)
 
-	// Closer is used to retrieve error (if occurred) & releases the cursor
+	// Closer retrieves an error (if occurred) and releases the cursor.
 	io.Closer
 }
 
