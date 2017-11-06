@@ -26,6 +26,7 @@ ${IP_TAP1_2}=        21.20.1.1
 ${IP_TAP2}=          20.20.1.2
 ${PREFIX}=           24
 ${MTU}=              4800
+${UP_STATE}=         up
 
 *** Test Cases ***
 Configure Environment
@@ -43,7 +44,7 @@ Check TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
     Log                  ${interfaces}
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    up    ${MAC_TAP1}    ${IP_TAP1}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Add TAP2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP2}
@@ -51,20 +52,20 @@ Add TAP2 Interface
 
 Check TAP2 Interface Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    up     ${MAC_TAP2}    ${IP_TAP2}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv4=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Check TAP1 Interface Is Still Configured
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    up    ${MAC_TAP1}    ${IP_TAP1}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Update TAP1 Interface
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1_2}    ip=${IP_TAP1_2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1_2 Interface Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1_2}
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    up    ${MAC_TAP1_2}    ${IP_TAP1_2}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1_2}    ipv4=${IP_TAP1_2}/${PREFIX}    state=${UP_STATE}
 
 Check TAP2 Interface Has Not Changed
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    up     ${MAC_TAP2}    ${IP_TAP2}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv4=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Delete TAP1_2 Interface
     vpp_ctl: Delete VPP Interface    agent_vpp_1    ${NAME_TAP1}
@@ -73,7 +74,7 @@ Check TAP1_2 Interface Has Been Deleted
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1_2}
 
 Check TAP2 Interface Is Still Configured
-    ${actual_state}=    Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    up     ${MAC_TAP2}    ${IP_TAP2}/${PREFIX}
+    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv4=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1
@@ -94,22 +95,4 @@ TestSetup
 TestTeardown
     Make Datastore Snapshots    ${TEST_NAME}_test_teardown
 
-Check TAP interface State
-    [Arguments]          ${node}    ${name}    ${state}    ${mac}    ${ipv4}
-    Log Many             ${node}    ${name}    ${state}    ${mac}    ${ipv4}
-    @{desired_ipv4}=     Create List    ${ipv4}
-    Log                  @{desired_ipv4}
-    @{desired_state}=    Create List    mac=${mac}    ipv4=@{desired_ipv4}
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
-    Log                  ${internal_name}
-    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
-    Log                  ${interface}
-    Should Contain       ${interface}    ${state}
-    ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
-    Log                  ${ipv4}
-    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
-    Log                  ${mac}
-    ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4}
-    Log List             ${actual_state}
-    List Should Contain Sub List    ${actual_state}    ${desired_state}
-    [Return]             ${actual_state}
+
