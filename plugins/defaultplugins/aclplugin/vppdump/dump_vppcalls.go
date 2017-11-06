@@ -56,11 +56,11 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	}
 
 	for aidx := range res.Acls {
-		ipAcl, err := getIPACLDetails(vppChannel, aidx)
+		ipACL, err := getIPACLDetails(vppChannel, aidx)
 		if err != nil {
 			log.Error(err)
 		} else {
-			alAcls.Acl = append(alAcls.Acl, ipAcl)
+			alAcls.Acl = append(alAcls.Acl, ipACL)
 		}
 	}
 	return alAcls, nil
