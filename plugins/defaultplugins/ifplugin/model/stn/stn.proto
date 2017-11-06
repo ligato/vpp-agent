@@ -4,7 +4,7 @@ package stn;
 
 message StnRule {
 
-    string ip_adress = 1;
+    string ip_address = 1;
     string interface = 2;
     string rule_name = 3;
 

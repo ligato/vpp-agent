@@ -71,7 +71,7 @@ func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging
 		log.Infof("STN input does not contain interface")
 		return nil, nil
 	}
-	if stnInput.IpAdress == "" {
+	if stnInput.IpAddress == "" {
 		log.Infof("STN input does not contain IP")
 		return nil, nil
 	}
@@ -82,7 +82,7 @@ func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging
 		return nil, fmt.Errorf("STN entry interface %v not found", ifName)
 	}
 
-	parsedIP, _, err := addrs.ParseIPWithPrefix(stnInput.IpAdress)
+	parsedIP, _, err := addrs.ParseIPWithPrefix(stnInput.IpAddress)
 	if err != nil {
 		return nil, err
 	}
