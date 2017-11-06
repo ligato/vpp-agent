@@ -36,6 +36,7 @@ func main() {
 		Flavor:               &vppFlavor, // inject VPP flavor
 	}
 	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
