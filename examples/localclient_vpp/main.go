@@ -23,7 +23,6 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/core"
-	agent "github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
@@ -49,17 +48,16 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := local.FlavorVppLocal{}
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
+		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
 
-	// Example plugin
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-	// Create new agent
-	agentVar := agent.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	}))
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)
 
-	agent.EventLoopWithInterrupt(agentVar, closeChannel)
+	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
 // Stop the agent with desired info message
@@ -138,7 +136,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			Interface(&memif2).            /* newly added memif interface */
 			Interface(&tap1Enabled).       /* enable tap1 interface */
 			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
-			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
+			//ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
