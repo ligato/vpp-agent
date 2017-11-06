@@ -282,7 +282,7 @@ vat_term: ACL Dump
     Log Many           ${node}
     ${out}=            vat_term: Issue Command  ${node}  acl_dump
     ${out_data_vat}=   Strip String     ${out}
-    ${out_data}=       Remove String     ${out_data_vat}      vat#
+    ${out_data}=       Remove String     ${out_data_vat}    vat#${SPACE}   vat#
     Log                ${out_data}
     OperatingSystem.Create File    ${REPLY_DATA_FOLDER}/reply_${acl_name}_term.json    ${out_data}
     [Return]           ${out_data}
@@ -293,7 +293,7 @@ vat_term: ACL All Dump
     Log Many           ${node}
     ${out}=            vat_term: Issue Command  ${node}  acl_dump
     ${out_data_vat}=   Strip String     ${out}
-    ${out_data}=       Remove String     ${out_data_vat}      vat#
+    ${out_data}=       Remove String     ${out_data_vat}      vat#${SPACE}   vat#
     Log                ${out_data}
     OperatingSystem.Create File    ${REPLY_DATA_FOLDER}/reply_acl_all_term.json     ${out_data}
     [Return]           ${out_data}
