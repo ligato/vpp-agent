@@ -47,6 +47,8 @@ ${2DEST_PORT_U}=     2200
 ${2SRC_PORT_L}=      20010
 ${2SRC_PORT_U}=      20020
 ${SYNC_SLEEP}=      1s
+${NO_ACL}=
+
 
 
 *** Test Cases ***
@@ -55,8 +57,7 @@ Configure Environment
     Configure Environment 2
 
 Show ACL Before Setup
-    ${data}=       vat_term: ACL Dump    agent_vpp_1    ${ACL1_NAME}
-    Should Be Equal     ${data}   vat#
+    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
 
 Add ACL1_TCP
     vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
