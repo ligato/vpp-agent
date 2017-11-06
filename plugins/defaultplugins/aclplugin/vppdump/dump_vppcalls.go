@@ -15,7 +15,6 @@
 package vppdump
 
 import (
-	"errors"
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
@@ -57,11 +56,11 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	}
 
 	for aidx := range res.Acls {
-		acl, err := getIPACLDetails(vppChannel, aidx)
+		ipAcl, err := getIPACLDetails(vppChannel, aidx)
 		if err != nil {
 			log.Error(err)
 		} else {
-			alAcls.Acl = append(alAcls.Acl, acl)
+			alAcls.Acl = append(alAcls.Acl, ipAcl)
 		}
 	}
 	return alAcls, nil
@@ -186,11 +185,7 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Ac
 		rules = append(rules, &rule)
 	}
 
-	acl := acl.AccessLists_Acl{
-		Rules:   rules,
-		AclName: string(reply.Tag),
-	}
-	return &acl, nil
+	return &acl.AccessLists_Acl{Rules: rules, AclName: string(reply.Tag)}, nil
 }
 
 // getIPRule translates an IP rule from the binary VPP API format into the
