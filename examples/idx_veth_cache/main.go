@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -78,7 +77,6 @@ type ExamplePlugin struct {
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
 	linuxIfIdxAgent2 linux_if.LinuxIfIndex
 	wg               sync.WaitGroup
-	cancel           context.CancelFunc
 
 	// Fields below are used to properly finish the example
 	closeChannel *chan struct{}
@@ -136,7 +134,6 @@ func (plugin *ExamplePlugin) AfterInit() error {
 
 // Close cleans up the resources
 func (plugin *ExamplePlugin) Close() error {
-	plugin.cancel()
 	plugin.wg.Wait()
 
 	var wasErr error
@@ -230,7 +227,7 @@ func (plugin *ExamplePlugin) lookup() bool {
 		log.DefaultLogger().Warn("Interface not found: loopback")
 	}
 	// Look for VETH 11 default namespace interface on agent1
-	for i := 0; i <= 3; i++ {
+	for i := 0; i <= 10; i++ {
 		if _, _, veth11 = plugin.linuxIfIdxAgent1.LookupIdx(veth11DefaultNs.Name); veth11 {
 			log.DefaultLogger().Info("Interface found on agent1: veth11Def")
 			break
