@@ -128,5 +128,18 @@ func (plugin *VrfConfigurator) DeleteTable(table *l3.VRFTable) error {
 	plugin.TableIndexes.UnregisterName(table.Name)
 	l.Infof("VRF table unregistered.")
 
+	// Set interfaces to VRF
+	for _, iface := range table.Interfaces {
+		ifaceIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			log.Infof("Interface %v not found", iface.Name)
+			continue
+		}
+		if err := vppcalls.VppSetInterfaceToVRF(0, ifaceIdx, plugin.Log, plugin.vppChan); err != nil {
+			log.Error("Set interface to VRF failed:", err)
+			continue
+		}
+	}
+
 	return nil
 }
