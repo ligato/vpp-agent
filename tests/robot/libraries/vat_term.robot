@@ -275,3 +275,40 @@ vat_term: Check BD Presence
     ${result}=         Check BD Presence    ${bd_dump}    ${indexes}
     Should Be Equal    ${result}    ${status}
 
+
+vat_term: ACL Dump
+    [Arguments]        ${node}   ${acl_name}
+    [Documentation]    Executing command acl_dump
+    Log Many           ${node}
+    ${out}=            vat_term: Issue Command  ${node}  acl_dump
+    ${out_data_vat}=   Strip String     ${out}
+    ${out_data}=       Remove String     ${out_data_vat}    vat#${SPACE}   vat#
+    Log                ${out_data}
+    OperatingSystem.Create File    ${REPLY_DATA_FOLDER}/reply_${acl_name}_term.json    ${out_data}
+    [Return]           ${out_data}
+
+vat_term: ACL All Dump
+    [Arguments]        ${node}
+    [Documentation]    Executing command acl_dump
+    Log Many           ${node}
+    ${out}=            vat_term: Issue Command  ${node}  acl_dump
+    ${out_data_vat}=   Strip String     ${out}
+    ${out_data}=       Remove String     ${out_data_vat}      vat#${SPACE}   vat#
+    Log                ${out_data}
+    OperatingSystem.Create File    ${REPLY_DATA_FOLDER}/reply_acl_all_term.json     ${out_data}
+    [Return]           ${out_data}
+
+
+vat_term: Check All ACL
+    [Arguments]        ${node}
+    Log Many           ${node}
+    ${acl_list}=       vat_term: ACL All Dump    ${node}
+    Log                ${acl_list}
+    [Return]           ${acl_list}
+
+vat_term: Check ACL
+    [Arguments]        ${node}    ${acl_name}
+    Log Many           ${node}    ${acl_name}
+    ${acl_list}=       vat_term: ACL Dump    ${node}    ${acl_name}
+    Log                ${acl_list}
+    [Return]           ${acl_list}

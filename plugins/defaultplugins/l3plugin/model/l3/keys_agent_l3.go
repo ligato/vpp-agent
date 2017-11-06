@@ -15,6 +15,7 @@
 package l3
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -26,8 +27,10 @@ const (
 	VrfPrefix = "vpp/config/v1/vrf/"
 	// RoutesPrefix is the relative key prefix for routes.
 	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
-	// ARPPrefix is the relative key prefix for ARP table entries.
-	ARPPrefix = "vpp/config/v1/arp/{if}/{ip}"
+	// ArpPrefix is the relative key prefix for ARP.
+	ArpPrefix = "vpp/config/v1/arp/"
+	// ArpEntryPrefix is the relative key prefix for ARP table entries.
+	ArpKey = ArpPrefix + "{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
@@ -48,6 +51,11 @@ func RouteKeyPrefix() string {
 	return RoutesPrefix
 }
 
+// ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance
+func ArpKeyPrefix() string {
+	return ArpPrefix
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
 func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	dstNetAddr := dstAddr.IP.String()
@@ -60,7 +68,7 @@ func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
 	return key
 }
 
-// ParseRouteKey parses VRF label and route address from a route key.
+// ParseRouteKey parses VRF label and route address from a route key
 func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string) {
 	if strings.HasPrefix(key, VrfKeyPrefix()) {
 		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())
@@ -72,4 +80,25 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 		}
 	}
 	return false, "", "", 0, ""
+}
+
+// ArpEntryKey returns the key to store ARP entry
+func ArpEntryKey(iface, ipAddr string) string {
+	key := ArpKey
+	key = strings.Replace(key, "{if}", iface, 1)
+	key = strings.Replace(key, "{ip}", ipAddr, 1)
+	//key = strings.Replace(key, "{mac}", macAddr, 1)
+	return key
+}
+
+// ParseArpKey parses ARP entry from a key
+func ParseArpKey(key string) (iface string, ipAddr string, err error) {
+	if strings.HasPrefix(key, ArpPrefix) {
+		arpSuffix := strings.TrimPrefix(key, ArpPrefix)
+		arpComps := strings.Split(arpSuffix, "/")
+		if len(arpComps) == 2 {
+			return arpComps[0], arpComps[1], nil
+		}
+	}
+	return "", "", fmt.Errorf("invalid ARP key")
 }

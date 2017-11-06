@@ -23,7 +23,9 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"net"
+	"strconv"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -125,6 +127,26 @@ func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 	return dsl
 }
 
+// L4Features create or update request for the L4Features
+func (dsl *PutDSL) L4Features(val *l4.L4Features) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l4.FeatureKey(), val)
+
+	return dsl
+}
+
+// AppNamespace create or update request for the Application Namespaces List
+func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l4.AppNamespacesKey(val.NamespaceId), val)
+
+	return dsl
+}
+
+// Arp adds a request to create or update VPP L3 ARP entry.
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.ArpEntryKey(arp.Interface, arp.IpAddress), arp)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -150,8 +172,8 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.Dele
 
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyName string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.AuthKeysKey(bfdKeyName))
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKey uint32) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(bfd.AuthKeysKey(strconv.Itoa(int(bfdKey))))
 	return dsl
 }
 
@@ -181,7 +203,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 	return dsl
 }
 
-// StaticRoute adds a request to delete an existing VPP L3 Static Route..
+// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
 	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String()))
@@ -191,6 +213,26 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAd
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP entry.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.DeleteDSL {
+	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
+	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr.String()))
+	return dsl
+}
+
+// L4Features delete request for the L4Features
+func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l4.FeatureKey())
+
+	return dsl
+}
+
+// AppNamespace adds a request to delete an existing VPP Application Namespace.
+func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l4.AppNamespacesKey(id))
 	return dsl
 }
 

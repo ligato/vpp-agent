@@ -3,10 +3,10 @@
   "type": 2,
   "enabled": ${enabled},
   "phys_address": "${mac}",
+  "mtu": ${mtu},
   "memif": {
     "master": ${master},
     "id": ${id},
     "socket_filename": "${socket}"
   }
 }
-

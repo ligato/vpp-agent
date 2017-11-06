@@ -195,8 +195,8 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linux.DeleteDSL {
 
 // BfdAuthKeys adds a request to delete an existing VPP bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyName string) linux.DeleteDSL {
-	dsl.vppDelete.BfdAuthKeys(bfdKeyName)
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKey uint32) linux.DeleteDSL {
+	dsl.vppDelete.BfdAuthKeys(bfdKey)
 	return dsl
 }
 

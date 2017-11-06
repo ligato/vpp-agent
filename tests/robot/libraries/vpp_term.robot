@@ -1,6 +1,7 @@
 [Documentation]     Keywords for working with VPP terminal
 
 *** Settings ***
+Library      Collections
 Library      vpp_term.py
 
 *** Variables ***
@@ -65,6 +66,13 @@ vpp_term: Show IP Fib
     [Documentation]    Show IP fib output
     Log Many           ${node}    ${ip}
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib ${ip}
+    [Return]           ${out}
+
+vpp_term: Show IP Fib Table
+    [Arguments]        ${node}    ${id}
+    [Documentation]    Show IP fib output for VRF table defined in input
+    Log Many           ${node}    ${id}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip fib table ${id}
     [Return]           ${out}
 
 vpp_term: Show L2fib
@@ -174,3 +182,23 @@ vpp_term: Show Memif
     ${out}=            vpp_term: Issue Command  ${node}   sh memif ${interface}
     [Return]           ${out}
 
+vpp_term: Check TAP Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    Log Many             ${node}    ${name}    @{desired_state}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    Log                  ${tap_int_state}
+    ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
+    ${ipv4_string}=      Get From List    ${ipv4}    0
+    Log                  ${ipv4}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}

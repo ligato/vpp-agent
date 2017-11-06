@@ -16,13 +16,13 @@ package core
 
 // Plugin interface defines plugin's basic life-cycle methods.
 type Plugin interface {
-	// Init is called in the agent startup phase.
+	// Init is called in the agent`s startup phase.
 	Init() error
-	// Close is called in the agent cleanup phase.
+	// Close is called in the agent`s cleanup phase.
 	Close() error
 }
 
-// PostInit interface defines optional method for plugins with complex initialization.
+// PostInit interface defines an optional method for plugins with complex initialization.
 type PostInit interface {
 	// AfterInit is called once Init() of all plugins have returned without error.
 	AfterInit() error

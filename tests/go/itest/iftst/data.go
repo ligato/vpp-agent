@@ -1,4 +1,4 @@
-// Package testing provides tools and input data for unit testing of ifplugin.
+// Package iftst provides tools and input data for unit testing of ifplugin.
 // What remains to be defined are scenarios.
 package iftst
 

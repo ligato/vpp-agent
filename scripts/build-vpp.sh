@@ -2,11 +2,18 @@
 set -e
 
 VPP_CACHE_DIR=$HOME/build-cache/vpp
-VPP_COMMIT="92b0275a364022af6ab828dfac83e38c0117cfe6"
-VPP_IMG_TAG="92b0275"
+
+VPP_COMMIT="fc1c612d856cdab519d11edb1b317ca188b31ce6"
+VPP_IMG_TAG=`echo ${VPP_COMMIT} | cut -c1-7`
+
+# check if cache folder contains same version
+if [ -d "$VPP_CACHE_DIR" ] && [ ! -f ${VPP_CACHE_DIR}/vpp_*${VPP_IMG_TAG}*.deb ]; then
+    echo "Removing cached VPP folder with different version"
+    rm -rf "$VPP_CACHE_DIR"
+fi
 
 if [ ! -d "$VPP_CACHE_DIR" ]; then
-    echo "Building VPP binaries."
+    echo "Pulling VPP binaries (commit ${VPP_IMG_TAG})"
 
     IMG_NAME=ligato/vppdeb:${VPP_IMG_TAG}
     docker pull ${IMG_NAME}
@@ -43,7 +50,7 @@ if [ ! -d "$VPP_CACHE_DIR" ]; then
 #    mkdir $VPP_CACHE_DIR
 #    cp /tmp/vpp/build-root/*.deb $VPP_CACHE_DIR
 else
-    echo "Using cached VPP binaries from $VPP_CACHE_DIR"
+    echo "Using cached VPP binaries (commit ${VPP_IMG_TAG})"
 fi
 
 # install VPP
