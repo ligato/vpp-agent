@@ -21,8 +21,8 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// Test01NoPluginsInFlavor checks that flavor that contains no fields
-// that would implement Plugin interface (here we are missing Close())
+// Test01NoPluginsInFlavor checks that the flavor containing no fields
+// that would implement Plugin interface (here we miss Close())
 // returns empty slice.
 func TestListPlugins01NoPluginsInFlavor(t *testing.T) {
 	gomega.RegisterTestingT(t)
@@ -33,8 +33,8 @@ func TestListPlugins01NoPluginsInFlavor(t *testing.T) {
 	gomega.Expect(plugs).To(gomega.BeNil())
 }
 
-// Test02OnePluginInFlavor checks that flavor that contains multiple fields
-// but only one implements Plugin interface (another field is missing Close())
+// Test02OnePluginInFlavor checks that the flavor containing multiple fields
+// but only one of them implementing Plugin interface (other fields miss Close())
 // returns slice with one particular plugin.
 func TestListPlugins02OnePluginInFlavor(t *testing.T) {
 	gomega.RegisterTestingT(t)
@@ -46,7 +46,7 @@ func TestListPlugins02OnePluginInFlavor(t *testing.T) {
 		PluginName("Plugin2"), &flavor.Plugin2}}))
 }
 
-// FlavorNoPlugin contains no plugins
+// FlavorNoPlugin contains no plugins.
 type FlavorNoPlugin struct {
 	Plugin1 MissignCloseMethod
 	Plugin2 struct {
@@ -54,92 +54,92 @@ type FlavorNoPlugin struct {
 	}
 }
 
-// FlavorOnePlugin contains one plugin (another is missing Close method)
+// FlavorOnePlugin contains one plugin (another is missing Close method).
 type FlavorOnePlugin struct {
 	Plugin1 MissignCloseMethod
 	Plugin2 DummyPlugin
 }
 
-// MissignCloseMethod implements just Init() but not Close() method
+// MissignCloseMethod implements only Init() but not Close() method.
 type MissignCloseMethod struct {
 }
 
-// Init does nothing
+// Init does nothing.
 func (*MissignCloseMethod) Init() error {
 	return nil
 }
 
-// DummyPlugin just defines Init() Close() with empty method bodies
+// DummyPlugin only defines Init() and Close() with empty method bodies.
 type DummyPlugin struct {
 	internalFlag bool
 }
 
-// Init does nothing
+// Init does nothing.
 func (*DummyPlugin) Init() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (*DummyPlugin) Close() error {
 	return nil
 }
 
-// DummyPlugin just defines Init() Close() with empty method bodies
+// DummyPlugin only defines Init() and Close() with empty method bodies.
 type DummyPluginDep2 struct {
 	internalFlag bool
 }
 
-// Init does nothing
+// Init does nothing.
 func (*DummyPluginDep2) Init() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (*DummyPluginDep2) Close() error {
 	return nil
 }
 
-// DummyPluginDep1 just defines Init() Close() with empty method bodies
+// DummyPluginDep1 only defines Init() and Close() with empty method bodies.
 type DummyPluginDep1 struct {
 	internalFlag bool
 }
 
-// Init does nothing
+// Init does nothing.
 func (*DummyPluginDep1) Init() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (*DummyPluginDep1) Close() error {
 	return nil
 }
 
-// Inject does nothing
+// Inject does nothing.
 func (f *FlavorNoPlugin) Inject() bool {
 	return false
 }
 
-// LogRegistry is mock implementation - returns nil
+// LogRegistry is mock implementation - returns nil.
 func (f *FlavorNoPlugin) LogRegistry() logging.Registry {
 	return nil
 }
 
-// Plugins list plugins in this flavor
+// Plugins lists plugins in this flavor.
 func (f *FlavorNoPlugin) Plugins() []*NamedPlugin {
 	return ListPluginsInFlavor(f)
 }
 
-// Plugins list plugins in this flavor
+// Plugins lists plugins in this flavor.
 func (f *FlavorOnePlugin) Plugins() []*NamedPlugin {
 	return ListPluginsInFlavor(f)
 }
 
-// Inject does nothing
+// Inject does nothing.
 func (f *FlavorOnePlugin) Inject() bool {
 	return false
 }
 
-// LogRegistry is mock implementation - returns nil
+// LogRegistry is mock implementation - returns nil.
 func (f *FlavorOnePlugin) LogRegistry() logging.Registry {
 	return nil
 }

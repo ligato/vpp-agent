@@ -2,11 +2,11 @@
 Resource                          common_variables.robot
 
 *** Variables ***
-${DOCKER_HOST_IP}                 192.168.200.11
-${DOCKER_HOST_USER}               robot
-${DOCKER_HOST_PSWD}               robot
+${DOCKER_HOST_IP}                 192.168.100.20
+${DOCKER_HOST_USER}               msestak
+${DOCKER_HOST_PSWD}               Heslo9999
 
-${AGENT_VPP_IMAGE_NAME}           containers.cisco.com/odpm_jenkins_gen/prod_vpp_agent:pt-dev
+${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent:latest
 
 ${vpp1_DOCKER_IMAGE}              ${AGENT_VPP_IMAGE_NAME}
 ${vpp1_VPP_PORT}                  5002

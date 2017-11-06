@@ -3,6 +3,8 @@ sudo: required
 language: go
 
 go_import_path: github.com/ligato/vpp-agent
+git:
+    depth: 5
 
 go:
   - 1.9.x
@@ -12,7 +14,8 @@ cache:
     - $HOME/build-cache
 
 before_install:
-  - go get -v github.com/golang/lint/golint
+  - go get -u -f "github.com/alecthomas/gometalinter"
+  - gometalinter --install
   - go get github.com/mattn/goveralls
   - sudo ./scripts/build-vpp.sh
   - sudo apt-get update

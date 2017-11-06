@@ -64,7 +64,7 @@ type BridgeDomain struct {
 
 // BridgeDomainInterface is the wrapper structure for the bridge domain interface northbound API structure.
 type BridgeDomainInterface struct {
-	SwIfIndex uint32
+	SwIfIndex uint32 `json:"sw_if_index"`
 	l2nb.BridgeDomains_BridgeDomain_Interfaces
 }
 

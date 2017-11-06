@@ -41,6 +41,27 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 	return wasError
 }
 
+// Resync confgures the empty VPP (overwrites the arp entries)
+func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpTableEntry) error {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp begin. ")
+	// Calculate and log arp resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
+
+	var wasError error
+	if len(arpEntries) > 0 {
+		for _, entry := range arpEntries {
+			wasError = plugin.AddArp(entry)
+		}
+	}
+
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp end. ", wasError)
+	return nil
+}
+
 // Resync configures the empty VPP - overwrites all VRF tables
 func (plugin *VrfConfigurator) Resync(vrfTables []*l3.VRFTable) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC VRF tables begin. ")

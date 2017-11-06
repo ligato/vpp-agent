@@ -1,4 +1,3 @@
 #!/bin/bash
 
-source $(dirname "$0")/static_analysis.sh
-SELECTOR="" static_analysis gofmt -w -s
+find $(pwd) -mount -name "*.go" -type f -not -path $(pwd)"/vendor/*" -exec gofmt -w -s {} +

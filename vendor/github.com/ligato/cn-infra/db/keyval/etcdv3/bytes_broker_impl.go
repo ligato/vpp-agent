@@ -275,6 +275,20 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 	return nil
 }
 
+// PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
+// succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
+func (db *BytesConnectionEtcd) PutIfNotExists(key string, binData []byte) (succeeded bool, err error) {
+	// if key doesn't exist its version is equal to 0
+	response, err := db.etcdClient.Txn(context.Background()).
+		If(clientv3.Compare(clientv3.Version(key), "=", 0)).
+		Then(clientv3.OpPut(key, string(binData))).
+		Commit()
+	if err != nil {
+		return false, err
+	}
+	return response.Succeeded, nil
+}
+
 // Delete removes data identified by the <key>.
 func (db *BytesConnectionEtcd) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return deleteInternal(db.Logger, db.etcdClient, db.opTimeout, key, opts...)

@@ -29,8 +29,10 @@ const (
 	TablePrefix = VrfPrefix + "{vrf}"
 	// RoutesPrefix is the relative key prefix for routes.
 	RoutesPrefix = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
-	// ARPPrefix is the relative key prefix for ARP table entries.
-	ARPPrefix = "vpp/config/v1/arp/{if}/{ip}"
+	// ArpPrefix is the relative key prefix for ARP.
+	ArpPrefix = "vpp/config/v1/arp/"
+	// ArpEntryPrefix is the relative key prefix for ARP table entries.
+	ArpKey = ArpPrefix + "{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
@@ -56,6 +58,11 @@ func TableKey(vrf uint32) string {
 	key := TablePrefix
 	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
 	return key
+}
+
+// ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance
+func ArpKeyPrefix() string {
+	return ArpPrefix
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance
@@ -94,6 +101,7 @@ func ParseVrfKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr strin
 		dstNetAddr = routeComps[2]
 		nextHopAddr = routeComps[4]
 		if dstNetMask, err = strconv.Atoi(routeComps[3]); err != nil {
+			err = fmt.Errorf("invalid format in key: %q", key)
 			return
 		}
 	} else {
@@ -101,4 +109,25 @@ func ParseVrfKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr strin
 		return
 	}
 	return isRouteKey, vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, nil
+}
+
+// ArpEntryKey returns the key to store ARP entry
+func ArpEntryKey(iface, ipAddr string) string {
+	key := ArpKey
+	key = strings.Replace(key, "{if}", iface, 1)
+	key = strings.Replace(key, "{ip}", ipAddr, 1)
+	//key = strings.Replace(key, "{mac}", macAddr, 1)
+	return key
+}
+
+// ParseArpKey parses ARP entry from a key
+func ParseArpKey(key string) (iface string, ipAddr string, err error) {
+	if strings.HasPrefix(key, ArpPrefix) {
+		arpSuffix := strings.TrimPrefix(key, ArpPrefix)
+		arpComps := strings.Split(arpSuffix, "/")
+		if len(arpComps) == 2 {
+			return arpComps[0], arpComps[1], nil
+		}
+	}
+	return "", "", fmt.Errorf("invalid ARP key")
 }

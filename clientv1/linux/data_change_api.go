@@ -112,7 +112,7 @@ type DeleteDSL interface {
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing VPP bidirectional
 	// forwarding detection key.
-	BfdAuthKeys(bfdKeyName string) DeleteDSL
+	BfdAuthKeys(bfdKey uint32) DeleteDSL
 	// BfdEchoFunction adds a request to delete an existing VPP bidirectional
 	// forwarding detection echo function.
 	BfdEchoFunction(bfdEchoName string) DeleteDSL
