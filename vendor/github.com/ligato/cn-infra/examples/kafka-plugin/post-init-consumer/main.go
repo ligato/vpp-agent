@@ -5,7 +5,9 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/examples/model"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
@@ -18,11 +20,19 @@ func main() {
 	// Init close channel used to stop the example
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor
-	// (combination of ExamplePlugin & reused cn-infra plugins).
-	flavor := ExampleFlavor{closeChan: &exampleFinished}
-	plugins := flavor.Plugins()
-	agent := core.NewAgent(flavor.LogRegistry().NewLogger("core"), 15*time.Second, plugins...)
+	// Start Agent with ExamplePlugin, KafkaPlugin & FlavorLocal (reused cn-infra plugins).
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+		kafkaPlug := &kafka.Plugin{}
+		kafkaPlug.Deps.PluginInfraDeps = *flavor.InfraDeps("kafka", local.WithConf())
+
+		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
+		examplePlug.Deps.PluginLogDeps = *flavor.LogDeps("kafka-example")
+		examplePlug.Deps.Kafka = kafkaPlug // Inject kafka to example plugin.
+
+		return []*core.NamedPlugin{
+			{kafkaPlug.PluginName, kafkaPlug},
+			{examplePlug.PluginName, examplePlug}}
+	}))
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 

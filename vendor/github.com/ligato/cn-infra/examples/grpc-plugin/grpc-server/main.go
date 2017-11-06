@@ -1,12 +1,10 @@
 package main
 
 import (
-	"time"
-
 	"errors"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/flavors/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
@@ -20,10 +18,16 @@ func main() {
 	// Init close channel to stop the example after everything was logged
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor
-	// (combination of ExamplePlugin & reused cn-infra plugins).
-	flavor := ExampleFlavor{ExamplePlugin: ExamplePlugin{exampleFinished: exampleFinished}}
-	agent := core.NewAgent(logroot.StandardLogger(), 15*time.Second, flavor.Plugins()...)
+	// Start Agent with ExamplePlugin & FlavorRPC (reused cn-infra plugins).
+	agent := rpc.NewAgent(rpc.WithPlugins(func(flavor *rpc.FlavorRPC) []*core.NamedPlugin {
+
+		examplePlug := &ExamplePlugin{exampleFinished: exampleFinished, Deps: Deps{
+			PluginLogDeps: *flavor.LogDeps("example"),
+			GRPC:          &flavor.GRPC,
+		}}
+
+		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	}))
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
