@@ -37,10 +37,6 @@ import (
 // structure is used (bridge domains).
 // ************************************************************************/
 
-/********
- * Main *
- ********/
-
 // Main allows running Example Plugin as a statically linked binary with Agent Core Plugins. Close channel and plugins
 // required for the example are initialized. Agent is instantiated with generic plugins (ETCD, Kafka, Status check,
 // HTTP and Log), GOVPP, resync plugin and example plugin which demonstrates GOVPP call functionality.
@@ -58,14 +54,6 @@ func main() {
 
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
-
-/**********
- * Flavor *
- **********/
-
-/******************
- * Example plugin *
- ******************/
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
