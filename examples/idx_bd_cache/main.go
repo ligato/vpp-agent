@@ -51,6 +51,7 @@ type ExampleFlavor struct {
 	*vpp.Flavor
 	// Example plugin
 	IdxBdCacheExample ExamplePlugin
+	BadPlugin         BadPlugin
 	// Mark flavor as injected after Inject()
 	injected bool
 }
@@ -87,6 +88,12 @@ func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
 /******************
  * Example plugin *
  ******************/
+
+type BadPlugin struct {
+	bdIdxLocal  bdidx.BDIndex
+	bdIdxAgent1 bdidx.BDIndex
+	bdIdxAgent2 bdidx.BDIndex
+}
 
 // ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init()
 type ExamplePlugin struct {
