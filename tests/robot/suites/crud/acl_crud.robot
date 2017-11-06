@@ -179,7 +179,7 @@ Check ACL Reply
     ${data}=            OperatingSystem.Get File    ${reply_term}
     ${t_data_lines}=    Split To Lines    ${data}
     Log                 ${t_data_lines}
-    Lists Should Be Equal     ${t_data_lines}   ${term_d_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 Check ACL All Reply
     [Arguments]         ${node}    ${reply_json}     ${reply_term}
@@ -193,7 +193,7 @@ Check ACL All Reply
     ${data}=            OperatingSystem.Get File    ${reply_term}
     ${t_data_lines}=    Split To Lines    ${data}
     Log                 ${t_data_lines}
-    Lists Should Be Equal     ${t_data_lines}   ${term_d_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 
 TestSetup
