@@ -195,6 +195,7 @@ vpp_ctl: Get Interface Internal Name
     [Arguments]    ${node}    ${interface}
     Log Many    ${node}    ${interface}
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
+    Log         ${state}
     ${name}=    Set Variable    ${state["internal_name"]}
     Log    ${name}
     [Return]    ${name}
