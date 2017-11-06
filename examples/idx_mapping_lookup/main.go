@@ -37,7 +37,6 @@ func main() {
 
 	// Start Agent
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-
 		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
 		examplePlug.PluginLogDeps = *flavor.LogDeps("idx-mapping-lookup")
 
