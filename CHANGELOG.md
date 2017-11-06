@@ -43,7 +43,7 @@ VPP version v17.10-rc0~334-gce41a5c
     - updated to version 1.0.4
 - [GoVppMux](plugins/govppmux)
     - configuration file for govpp added
-- [Kafka Partitions](messaging/kafka)
+- [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
     - Changes in offset handling, only automatically partitioned messages (hash, random)
       have their offset marked. Manually partitioned messages are not marked.
     - Implemented post-init consumer (for manual partitioner only) which allows to start
@@ -54,13 +54,13 @@ VPP version v17.10-rc0~334-gce41a5c
 
 ## Major Themes
 
-- [Kafka Partitions](messaging/kafka)
+- [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
     - Implemented new methods that allow to specificy partitions & offset parameters:
       * publish: Mux.NewSyncPublisherToPartition() & Mux.NewAsyncPublisherToPartition()
       * watch: ProtoWatcher.WatchPartition()
     - Minimalistic examples & documentation for Kafka API will be improved in a later release.
 - [Flavors](flavors)
-    - reduced to only [local.FlavorVppLocal](flavors/linuxlocal/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
+    - reduced to only [local.FlavorVppLocal](flavors/local/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
 - [goVpp]
     - updated version waits until vpp is ready to accept a new connection
 
@@ -118,7 +118,7 @@ Miscellaneous:
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
-[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifaceidx)
+[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
