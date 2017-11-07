@@ -15,7 +15,6 @@
 package vppdump
 
 import (
-	"encoding/binary"
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -158,7 +157,7 @@ func DumpFIBTableEntries(log logging.Logger, vppChan *govppapi.Channel, timeLog 
 			return nil, err
 		}
 
-		mac := uint64ToMACAddrString(fibDetails.Mac)
+		mac := net.HardwareAddr(fibDetails.Mac).String()
 		var action l2nb.FibTableEntries_FibTableEntry_Action
 		if fibDetails.FilterMac > 0 {
 			action = l2nb.FibTableEntries_FibTableEntry_DROP
@@ -220,11 +219,4 @@ func DumpXConnectPairs(log logging.Logger, vppChan *govppapi.Channel, timeLog me
 	}
 
 	return nil, nil
-}
-
-// uint64ToMACAddrString converts MAC address in uint64 number as received from VPP to MAC address string.
-func uint64ToMACAddrString(macUint uint64) string {
-	mac := make([]byte, 8)
-	binary.BigEndian.PutUint64(mac, macUint)
-	return net.HardwareAddr(mac[2:]).String()
 }

@@ -6,7 +6,7 @@ package interfaces
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x7e70e757
+const VlAPIVersion = 0xbebe2e3d
 
 // VlibCounter represents the VPP binary API data type 'vlib_counter'.
 // Generated from '/usr/share/vpp/api/interface.api.json', line 3:
@@ -932,7 +932,7 @@ func NewSwInterfaceSetMacAddress() api.Message {
 //            ["u32", "context"],
 //            ["i32", "retval"],
 //            {"crc" : "0x9dc8a452"}
-//        ]
+//        ],
 //
 type SwInterfaceSetMacAddressReply struct {
 	Retval int32
@@ -949,4 +949,65 @@ func (*SwInterfaceSetMacAddressReply) GetCrcString() string {
 }
 func NewSwInterfaceSetMacAddressReply() api.Message {
 	return &SwInterfaceSetMacAddressReply{}
+}
+
+// SwInterfaceSetRxMode represents the VPP binary API message 'sw_interface_set_rx_mode'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 261:
+//
+//        ["sw_interface_set_rx_mode",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u8", "queue_id_valid"],
+//            ["u32", "queue_id"],
+//            ["u8", "mode"],
+//            {"crc" : "0xc5aa8dda"}
+//        ],
+//
+type SwInterfaceSetRxMode struct {
+	SwIfIndex    uint32
+	QueueIDValid uint8
+	QueueID      uint32
+	Mode         uint8
+}
+
+func (*SwInterfaceSetRxMode) GetMessageName() string {
+	return "sw_interface_set_rx_mode"
+}
+func (*SwInterfaceSetRxMode) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SwInterfaceSetRxMode) GetCrcString() string {
+	return "c5aa8dda"
+}
+func NewSwInterfaceSetRxMode() api.Message {
+	return &SwInterfaceSetRxMode{}
+}
+
+// SwInterfaceSetRxModeReply represents the VPP binary API message 'sw_interface_set_rx_mode_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 271:
+//
+//        ["sw_interface_set_rx_mode_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x5fc3e318"}
+//        ]
+//
+type SwInterfaceSetRxModeReply struct {
+	Retval int32
+}
+
+func (*SwInterfaceSetRxModeReply) GetMessageName() string {
+	return "sw_interface_set_rx_mode_reply"
+}
+func (*SwInterfaceSetRxModeReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SwInterfaceSetRxModeReply) GetCrcString() string {
+	return "5fc3e318"
+}
+func NewSwInterfaceSetRxModeReply() api.Message {
+	return &SwInterfaceSetRxModeReply{}
 }
