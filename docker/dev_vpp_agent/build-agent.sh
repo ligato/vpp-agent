@@ -11,7 +11,9 @@ echo "export GOPATH=$GOPATH" >> ~/.bashrc
 echo "export PATH=$PATH" >> ~/.bashrc
 mkdir $GOPATH
 
-# install golint, gvt & Glide
+# install gometalinter, golint, gvt & Glide
+go get -u github.com/alecthomas/gometalinter
+gometalinter --install
 go get -u github.com/golang/lint/golint
 go get -u github.com/FiloSottile/gvt
 curl https://glide.sh/get | sh

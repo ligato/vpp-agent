@@ -126,12 +126,12 @@ func (m *FibTableEntries) GetFibTableEntry() []*FibTableEntries_FibTableEntry {
 }
 
 type FibTableEntries_FibTableEntry struct {
-	PhysAddress             string                               `protobuf:"bytes,1,opt,name=phys_address,proto3" json:"phys_address,omitempty" json:"phys_address"`
-	BridgeDomain            string                               `protobuf:"bytes,2,opt,name=bridge_domain,proto3" json:"bridge_domain,omitempty" json:"bridge_domain"`
-	Action                  FibTableEntries_FibTableEntry_Action `protobuf:"varint,3,opt,name=action,proto3,enum=l2.FibTableEntries_FibTableEntry_Action" json:"action,omitempty" json:"action"`
-	OutgoingInterface       string                               `protobuf:"bytes,4,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty" json:"outgoing_interface"`
-	StaticConfig            bool                                 `protobuf:"varint,5,opt,name=static_config,proto3" json:"static_config,omitempty" json:"static_config"`
-	BridgedVirtualInterface bool                                 `protobuf:"varint,6,opt,name=bridged_virtual_interface,proto3" json:"bridged_virtual_interface,omitempty" json:"bridged_virtual_interface"`
+	PhysAddress             string                               `protobuf:"bytes,1,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
+	BridgeDomain            string                               `protobuf:"bytes,2,opt,name=bridge_domain,proto3" json:"bridge_domain,omitempty"`
+	Action                  FibTableEntries_FibTableEntry_Action `protobuf:"varint,3,opt,name=action,proto3,enum=l2.FibTableEntries_FibTableEntry_Action" json:"action,omitempty"`
+	OutgoingInterface       string                               `protobuf:"bytes,4,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
+	StaticConfig            bool                                 `protobuf:"varint,5,opt,name=static_config,proto3" json:"static_config,omitempty"`
+	BridgedVirtualInterface bool                                 `protobuf:"varint,6,opt,name=bridged_virtual_interface,proto3" json:"bridged_virtual_interface,omitempty"`
 }
 
 func (m *FibTableEntries_FibTableEntry) Reset()         { *m = FibTableEntries_FibTableEntry{} }
