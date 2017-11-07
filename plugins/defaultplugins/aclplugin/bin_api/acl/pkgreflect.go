@@ -40,11 +40,6 @@ var Types = map[string]reflect.Type{
 }
 
 var Functions = map[string]reflect.Value{
-	"ConfigACL":                       reflect.ValueOf(ConfigACL),
-	"ConfigIfACL":                     reflect.ValueOf(ConfigIfACL),
-	"DelACL":                          reflect.ValueOf(DelACL),
-	"DelIfACL":                        reflect.ValueOf(DelIfACL),
-	"DumpACL":                         reflect.ValueOf(DumpACL),
 	"NewACLAddReplace":                reflect.ValueOf(NewACLAddReplace),
 	"NewACLAddReplaceReply":           reflect.ValueOf(NewACLAddReplaceReply),
 	"NewACLDel":                       reflect.ValueOf(NewACLDel),
