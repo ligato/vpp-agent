@@ -6,7 +6,7 @@ package l2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xb87a28c6
+const VlAPIVersion = 0x7e015b4a
 
 // MacEntry represents the VPP binary API data type 'mac_entry'.
 // Generated from '/usr/share/vpp/api/l2.api.json', line 3:
@@ -118,17 +118,17 @@ func NewL2XconnectDump() api.Message {
 //            ["u16", "_vl_msg_id"],
 //            ["u32", "context"],
 //            ["u32", "bd_id"],
-//            ["u64", "mac"],
+//            ["u8", "mac", 6],
 //            ["u32", "sw_if_index"],
 //            ["u8", "static_mac"],
 //            ["u8", "filter_mac"],
 //            ["u8", "bvi_mac"],
-//            {"crc" : "0x07426ad7"}
+//            {"crc" : "0x584508c6"}
 //        ],
 //
 type L2FibTableDetails struct {
 	BdID      uint32
-	Mac       uint64
+	Mac       []byte `struc:"[6]byte"`
 	SwIfIndex uint32
 	StaticMac uint8
 	FilterMac uint8
@@ -142,7 +142,7 @@ func (*L2FibTableDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2FibTableDetails) GetCrcString() string {
-	return "07426ad7"
+	return "584508c6"
 }
 func NewL2FibTableDetails() api.Message {
 	return &L2FibTableDetails{}
@@ -399,18 +399,18 @@ func NewL2fibFlushIntReply() api.Message {
 //            ["u16", "_vl_msg_id"],
 //            ["u32", "client_index"],
 //            ["u32", "context"],
-//            ["u64", "mac"],
+//            ["u8", "mac", 6],
 //            ["u32", "bd_id"],
 //            ["u32", "sw_if_index"],
 //            ["u8", "is_add"],
 //            ["u8", "static_mac"],
 //            ["u8", "filter_mac"],
 //            ["u8", "bvi_mac"],
-//            {"crc" : "0x604cc582"}
+//            {"crc" : "0x9aa5be9e"}
 //        ],
 //
 type L2fibAddDel struct {
-	Mac       uint64
+	Mac       []byte `struc:"[6]byte"`
 	BdID      uint32
 	SwIfIndex uint32
 	IsAdd     uint8
@@ -426,7 +426,7 @@ func (*L2fibAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibAddDel) GetCrcString() string {
-	return "604cc582"
+	return "9aa5be9e"
 }
 func NewL2fibAddDel() api.Message {
 	return &L2fibAddDel{}
