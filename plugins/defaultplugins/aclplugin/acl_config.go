@@ -46,7 +46,10 @@ type ACLConfigurator struct {
 	ACLL2Indexes   idxvpp.NameToIdxRW // mapping for L2 ACLs
 	SwIfIndexes    ifaceidx.SwIfIndex
 	Stopwatch      *measure.Stopwatch // timer used to measure and store time
+
+	vppcalls       *vppcalls.ACLInterfacesVppCalls
 	vppChannel     *api.Channel
+	asyncVppChannel     *api.Channel
 }
 
 // Init goroutines, channels and mappings
@@ -58,10 +61,18 @@ func (plugin *ACLConfigurator) Init() (err error) {
 	if err != nil {
 		return err
 	}
+	// Init VPP API channel for asynchronous calls
+	plugin.asyncVppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
 
 	err = vppcalls.CheckMsgCompatibilityForACL(plugin.Log, plugin.vppChannel)
 
 	// todo possibly check acl plugin version on vpp using bin api acl_plugin_get_version
+
+	plugin.vppcalls = vppcalls.NewACLInterfacesVppCalls(plugin.asyncVppChannel, plugin.SwIfIndexes, plugin.Stopwatch)
+	go plugin.vppcalls.WatchACLInterfacesReplies(plugin.Log)
 
 	return err
 }
@@ -72,7 +83,7 @@ func (plugin *ACLConfigurator) Close() {
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface
-func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
+func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Configuring new ACL %v", acl.AclName)
 
 	if acl.Rules != nil && len(acl.Rules) > 0 {
@@ -112,14 +123,13 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 					return err
 				}
 			} else {
-				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
-				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
+				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, acl.Interfaces.Ingress, func(err error) {
+					callback(err)
+				}, plugin.Log)
+
+				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, acl.Interfaces.Egress, func(err error) {
+					callback(err)
+				}, plugin.Log)
 			}
 		} else {
 			plugin.Log.Infof("No interface configured for ACL %v", acl.AclName)
@@ -131,9 +141,10 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 
 // ModifyACL modifies previously created access list. L2 access list is removed and recreated, L3/L4 access list is
 // modified directly. List of interfaces is refreshed as well
-func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *acl.AccessLists_Acl) error {
+func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Modifying ACL %v", oldACL.AclName)
 
+	var err error
 	if newACL.Rules != nil {
 		// Validate rules
 		rules, isL2MacIP := plugin.validateRules(newACL.AclName, newACL.Rules)
@@ -201,39 +212,35 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		} else {
 			// Remove L3/L4 ACL from old interfaces
 			if oldACL.Interfaces != nil {
-				err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes,
-					plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
-				err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log,
-					plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
+				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, func(err error) {
+					callback(err)
+				}, plugin.Log)
+
+				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Egress, func(err error) {
+					callback(err)
+				}, plugin.Log)
 			}
 			// Put L3/L4 ACL to new interfaces
 			if newACL.Interfaces != nil {
-				err := vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
-					plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
-				err = vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.SwIfIndexes,
-					plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-				if err != nil {
-					return err
-				}
+				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, func(err error) {
+					callback(err)
+				}, plugin.Log)
+
+				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, func(err error) {
+					callback(err)
+				}, plugin.Log)
 			}
 		}
 	}
 
-	return nil
+	return err
 }
 
 // DeleteACL removes existing ACL. To detach ACL from interfaces, list of interfaces has to be provided
-func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
+func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Deleting ACL %v", acl.AclName)
+
+	var err error
 	// Get ACL index. Keep in mind that all ACL Indices were incremented by 1
 	agentL2AclIndex, _, l2AclFound := plugin.ACLL2Indexes.LookupIdx(acl.AclName)
 	agentL3L4AclIndex, _, l3l4AclFound := plugin.ACLL3L4Indexes.LookupIdx(acl.AclName)
@@ -262,15 +269,14 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		// Remove interfaces
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
-			err := vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
-				plugin.vppChannel, plugin.Stopwatch)
-			if err != nil {
-				return err
-			}
-			err = vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, plugin.SwIfIndexes, plugin.Log,
-				plugin.vppChannel, plugin.Stopwatch)
-			if err != nil {
-				return err
+			if acl.Interfaces != nil {
+				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, func(err error) {
+					callback(err)
+				}, plugin.Log)
+
+				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, func(err error) {
+					callback(err)
+				}, plugin.Log)
 			}
 		}
 		// Remove ACL L3/L4
@@ -282,7 +288,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		plugin.ACLL3L4Indexes.UnregisterName(acl.AclName)
 	}
 
-	return nil
+	return err
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
