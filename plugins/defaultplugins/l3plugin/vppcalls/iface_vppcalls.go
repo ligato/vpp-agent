@@ -22,10 +22,19 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/interfaces"
 )
 
+/*
+// VppUnsetAllInterfacesFromVRF removes all interfaces from VRF (set them to default VRF 0)
+func VppUnsetAllInterfacesFromVRF(vrfIndex uint32, log logging.Logger,
+	vppChan *govppapi.Channel) error {
+	log.Debugf("Unsetting all interfaces from VRF %v", vrfIndex)
+
+	return nil
+}*/
+
 // VppSetInterfaceToVRF assigns VRF table to interface
 func VppSetInterfaceToVRF(vrfIndex, ifaceIndex uint32, log logging.Logger,
 	vppChan *govppapi.Channel) error {
-	log.Debugf("Setting up interface %v to VRF %v ", ifaceIndex, vrfIndex)
+	log.Debugf("Setting up interface %v to VRF %v", ifaceIndex, vrfIndex)
 
 	req := &interfaces.SwInterfaceSetTable{
 		VrfID:     vrfIndex,

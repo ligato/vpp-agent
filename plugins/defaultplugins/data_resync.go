@@ -73,7 +73,7 @@ func NewDataResyncReq() *DataResyncReq {
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
 		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
-		VrfTables: []*l3.VRFTable{},
+		VrfTables:           []*l3.VRFTable{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
 	}
