@@ -95,6 +95,13 @@ vpp_term: Check Ping
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
+vpp_term: Check Ping Within Interface
+    [Arguments]        ${node}    ${ip}    ${source}
+    Log Many           ${node}    ${ip}    ${source}
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} source ${source}    delay=10s
+    Should Contain     ${out}    from ${ip}
+    Should Not Contain    ${out}    100% packet loss
+
 vpp_term: Check Interface Presence
     [Arguments]        ${node}     ${mac}    ${status}=${TRUE}
     [Documentation]    Checking if specified interface with mac exists in VPP
@@ -102,7 +109,7 @@ vpp_term: Check Interface Presence
     ${ints}=           vpp_term: Show Hardware    ${node}
     ${result}=         Run Keyword And Return Status    Should Contain    ${ints}    ${mac}
     Should Be Equal    ${result}    ${status}
-    
+
 vpp_term: Interface Is Created
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
@@ -117,7 +124,7 @@ vpp_term: Interface Exists
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
     vpp_term: Check Interface Presence    ${node}    ${mac}
-    
+
 vpp_term: Interface Not Exists
     [Arguments]    ${node}    ${mac}
     Log Many       ${node}    ${mac}
@@ -137,7 +144,7 @@ vpp_term: Check Interface UpDown Status
     Should Be Equal As Integers    ${enabled}    ${status}
 
 vpp_term: Get Interface IPs
-    [Arguments]          ${node}     ${interface} 
+    [Arguments]          ${node}     ${interface}
     Log Many             ${node}     ${interface}
     ${int_addr}=         vpp_term: Show Interfaces Address    ${node}    ${interface}
     Log                  ${int_addr}
@@ -180,4 +187,3 @@ vpp_term: Show Memif
     Log Many           ${node}    ${interface}
     ${out}=            vpp_term: Issue Command  ${node}   sh memif ${interface}
     [Return]           ${out}
-

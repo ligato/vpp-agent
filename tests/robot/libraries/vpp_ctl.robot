@@ -8,7 +8,7 @@ Library        String
 
 *** Keywords ***
 
-vpp_ctl: Put Json 
+vpp_ctl: Put Json
     [Arguments]        ${key}    ${json}    ${container}=vpp_agent_ctl
     Log Many           ${key}    ${json}    ${container}
     ${command}=        Set Variable    echo '${json}' | vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -put ${key} -
@@ -24,8 +24,8 @@ vpp_ctl: Read Key
     [Return]           ${out}
 
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${enabled}
     ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
@@ -101,6 +101,16 @@ vpp_ctl: Put Bridge Domain
     Log                   ${interfaces}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bridge_domain.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bd/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Loopback Interface
+    [Arguments]    ${node}    ${name}    ${mac}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/loopback_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
@@ -258,3 +268,23 @@ vpp_ctl: Delete Routes
     ${out}=         vpp_ctl: Delete key  ${uri}
     Log Many        ${out}
     [Return]       ${out}
+
+vpp_ctl: Put Vrf Table
+    [Arguments]    ${node}    ${name}    ${ints}
+    Log Many    ${node}    ${name}    ${ints}
+    ${interfaces}=        Create Interfaces Json From List    ${ints}
+    Log                   ${interfaces}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/vrf_table.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/vrf/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Vrf Table
+    [Arguments]    ${node}    ${name}
+    Log Many     ${node}    ${name}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/vrf/${name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
