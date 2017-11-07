@@ -47,6 +47,8 @@ ${2DEST_PORT_U}=     2200
 ${2SRC_PORT_L}=      20010
 ${2SRC_PORT_U}=      20020
 ${SYNC_SLEEP}=      1s
+${NO_ACL}=
+
 
 
 *** Test Cases ***
@@ -55,8 +57,7 @@ Configure Environment
     Configure Environment 2
 
 Show ACL Before Setup
-    ${data}=       vat_term: ACL Dump    agent_vpp_1    ${ACL1_NAME}
-    Should Be Equal     ${data}   vat#
+    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
 
 Add ACL1_TCP
     vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
@@ -168,28 +169,32 @@ Check All 6 ACLs Added
 *** Keywords ***
 
 Check ACL Reply
-    [Arguments]        ${node}    ${acl_name}   ${reply_json}     ${reply_term}
-    Log Many           ${node}    ${acl_name}   ${reply_json}     ${reply_term}
+    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}
     ${acl_d}=           vpp_ctl: Get ACL As Json    ${node}    ${acl_name}
     ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
     ${term_d_lines}=    Split To Lines    ${term_d}
+    Log                 ${term_d_lines}
     ${data}=            OperatingSystem.Get File    ${reply_json}
     Should Be Equal     ${data}   ${acl_d}
-    ${data}=           OperatingSystem.Get File    ${reply_term}
-    ${data_lines}=      Split To Lines    ${data}
-    Lists Should Be Equal     ${data_lines}   ${term_d_lines}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${t_data_lines}=    Split To Lines    ${data}
+    Log                 ${t_data_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 Check ACL All Reply
-    [Arguments]        ${node}    ${reply_json}     ${reply_term}
-    Log Many           ${node}    ${reply_json}     ${reply_term}
+    [Arguments]         ${node}    ${reply_json}     ${reply_term}
+    Log Many            ${node}    ${reply_json}     ${reply_term}
     ${acl_d}=           vpp_ctl: Get All ACL As Json    ${node}
     ${term_d}=          vat_term: Check All ACL     ${node}
     ${term_d_lines}=    Split To Lines    ${term_d}
+    Log                 ${term_d_lines}
     ${data}=            OperatingSystem.Get File    ${reply_json}
     Should Be Equal     ${data}   ${acl_d}
-    ${data}=           OperatingSystem.Get File    ${reply_term}
-    ${data_lines}=      Split To Lines    ${data}
-    Lists Should Be Equal     ${data_lines}   ${term_d_lines}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${t_data_lines}=    Split To Lines    ${data}
+    Log                 ${t_data_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 
 TestSetup
