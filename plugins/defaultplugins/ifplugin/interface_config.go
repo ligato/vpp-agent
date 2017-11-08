@@ -32,6 +32,8 @@ import (
 	"bytes"
 	"errors"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -47,7 +49,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"time"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -186,6 +187,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	if iface.PhysAddress != "" {
 		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceSetMacAddress{}, plugin.Stopwatch))
+		if err != nil {
+			wasError = err
+		}
+	}
+
+	// configure optional vrf
+	if iface.Vrf > 0 {
+		err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}

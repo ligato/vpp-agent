@@ -146,6 +146,7 @@ type Interfaces_Interface struct {
 	Enabled     bool          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	PhysAddress string        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
 	Mtu         uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	Vrf         uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses []string                       `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	Memif       *Interfaces_Interface_Memif    `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`

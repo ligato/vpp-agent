@@ -28,7 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/prometheus/common/log"
 )
 
 var msgCompatiblityVRF = []govppapi.Message{
@@ -90,7 +89,7 @@ func (plugin *VrfConfigurator) AddTable(table *l3.VRFTable) error {
 	l.Infof("VRF table registered")
 
 	// Set interfaces to VRF
-	for _, iface := range table.Interfaces {
+	/*for _, iface := range table.Interfaces {
 		ifaceIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !found {
 			log.Infof("Interface %v not found", iface.Name)
@@ -100,7 +99,7 @@ func (plugin *VrfConfigurator) AddTable(table *l3.VRFTable) error {
 			log.Error("Set interface to VRF failed:", err)
 			continue
 		}
-	}
+	}*/
 
 	return nil
 }
@@ -129,7 +128,7 @@ func (plugin *VrfConfigurator) DeleteTable(table *l3.VRFTable) error {
 	l.Infof("VRF table unregistered.")
 
 	// Set interfaces to VRF
-	for _, iface := range table.Interfaces {
+	/*for _, iface := range table.Interfaces {
 		ifaceIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !found {
 			log.Infof("Interface %v not found", iface.Name)
@@ -139,7 +138,7 @@ func (plugin *VrfConfigurator) DeleteTable(table *l3.VRFTable) error {
 			log.Error("Set interface to VRF failed:", err)
 			continue
 		}
-	}
+	}*/
 
 	return nil
 }

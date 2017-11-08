@@ -31,10 +31,36 @@ func VppUnsetAllInterfacesFromVRF(vrfIndex uint32, log logging.Logger,
 	return nil
 }*/
 
-// VppSetInterfaceToVRF assigns VRF table to interface
-func VppSetInterfaceToVRF(vrfIndex, ifaceIndex uint32, log logging.Logger,
+// GetInterfaceVRF assigns VRF table to interface
+func GetInterfaceVRF(ifaceIndex uint32, log logging.Logger,
+	vppChan *govppapi.Channel) (uint32, error) {
+	log.Debugf("Getting VRF for interface %v", ifaceIndex)
+
+	req := &interfaces.SwInterfaceGetTable{
+		SwIfIndex: ifaceIndex,
+	}
+	/*if table.IsIPv6 {
+		req.IsIpv6 = 1
+	} else {
+		req.IsIpv6 = 0
+	}*/
+
+	// Send message
+	reply := new(interfaces.SwInterfaceGetTableReply)
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return 0, err
+	}
+	if reply.Retval != 0 {
+		return 0, fmt.Errorf("SwInterfaceGetTableReply returned %d", reply.Retval)
+	}
+
+	return reply.VrfID, nil
+}
+
+// SetInterfaceVRF assigns VRF table to interface
+func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger,
 	vppChan *govppapi.Channel) error {
-	log.Debugf("Setting up interface %v to VRF %v", ifaceIndex, vrfIndex)
+	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfIndex)
 
 	req := &interfaces.SwInterfaceSetTable{
 		VrfID:     vrfIndex,
