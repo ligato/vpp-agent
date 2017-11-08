@@ -7,7 +7,7 @@ ARG VPP_COMMIT="xxx"
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
-    default-jre default-jdk telnet
+    default-jre default-jdk telnet netcat
 
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
