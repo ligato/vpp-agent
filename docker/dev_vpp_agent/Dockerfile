@@ -25,6 +25,7 @@ RUN /bin/bash -c "if [ '${VPP_URL}' == 'xxx' ]; then \
         yes | make install-dep && \
         make bootstrap && \
         make dpdk-install-dev && \
+        make build && \
         make pkg-deb && \
         cd build-root && \
         dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb ; \
