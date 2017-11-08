@@ -39,7 +39,7 @@ type BytesBroker interface {
 type BytesKvPair interface {
 	// GetValue returns the value of the pair.
 	GetValue() []byte
-	// GetValue returns the previous value of the pair.
+	// GetPrevValue returns the previous value of the pair.
 	GetPrevValue() []byte
 
 	datasync.WithKey
