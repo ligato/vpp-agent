@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
-// SliceIt reads everything from the ValIterator & stores it to pointerToASlice
-// It closes the iterator (since nothing left in the iterator)
+// SliceIt reads everything from the ValIterator and stores it to pointerToASlice.
+// It closes the iterator (since nothing left in the iterator).
 func SliceIt(pointerToASlice interface{}, it ValIterator) error {
 	/* TODO defer func() {
 		if exp := recover(); exp != nil && it != nil {

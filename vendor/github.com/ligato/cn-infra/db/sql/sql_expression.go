@@ -20,9 +20,9 @@ import (
 	"strings"
 )
 
-// Expression represents part of SQL statement and optional binding ("?")
+// Expression represents part of SQL statement and optional binding ("?").
 type Expression interface {
-	// Stringer prints default representation of SQL to String
+	// Stringer prints default representation of SQL to String.
 	// Different implementations can override this using package specific
 	// func ExpToString().
 	String() string
@@ -34,7 +34,7 @@ type Expression interface {
 	Accept(Visitor)
 }
 
-// Visitor is used for traversing expression tree.
+// Visitor is used for traversing an expression tree.
 type Visitor interface {
 	VisitPrefixedExp(*PrefixedExp)
 	VisitFieldExpression(*FieldExpression)
@@ -63,7 +63,7 @@ func (exp *PrefixedExp) String() string {
 	return exp.Prefix + " " + ExpsToString(exp.AfterPrefix)
 }
 
-// ExpsToString joins (without separator) individual expression string representations
+// ExpsToString joins (without separator) individual expression string representations.
 func ExpsToString(exps []Expression) string {
 	if exps != nil {
 		if len(exps) == 1 {
@@ -80,17 +80,17 @@ func ExpsToString(exps []Expression) string {
 	return ""
 }
 
-// GetBinding is a getter...
+// GetBinding is a getter.
 func (exp *PrefixedExp) GetBinding() []interface{} {
 	return exp.Binding
 }
 
-// Accept calls VisitPrefixedExp(...) & Accept(AfterPrefix)
+// Accept calls VisitPrefixedExp(...) & Accept(AfterPrefix).
 func (exp *PrefixedExp) Accept(visitor Visitor) {
 	visitor.VisitPrefixedExp(exp)
 }
 
-// FieldExpression for addressing field of an entity in SQL expression.
+// FieldExpression is used for addressing field of an entity in an SQL expression.
 type FieldExpression struct {
 	PointerToAField interface{}
 	AfterField      Expression
@@ -105,42 +105,42 @@ func (exp *FieldExpression) String() string {
 	return prefix + " " + exp.AfterField.String()
 }
 
-// GetBinding is a getter...
+// GetBinding is a getter.
 func (exp *FieldExpression) GetBinding() []interface{} {
 	return nil
 }
 
-// Accept calls VisitFieldExpression(...) & Accept(AfterField)
+// Accept calls VisitFieldExpression(...) & Accept(AfterField).
 func (exp *FieldExpression) Accept(visitor Visitor) {
 	visitor.VisitFieldExpression(exp)
 }
 
-// SELECT keyword of SQL expression.
+// SELECT keyword of an SQL expression.
 func SELECT(entity interface{}, afterKeyword Expression, binding ...interface{}) Expression {
 	return &PrefixedExp{"SELECT", []Expression{FROM(entity, afterKeyword)}, "", binding}
 }
 
-// FROM keyword of SQL expression
+// FROM keyword of an SQL expression.
 // Note, pointerToAStruct is assigned to Expression.binding.
-// The implementation is supposed try to cast to the sql.TableName & sql.SchemaName.
+// The implementation is supposed to try to cast to the sql.TableName & sql.SchemaName.
 func FROM(pointerToAStruct interface{}, afterKeyword Expression) Expression {
 	return &PrefixedExp{"FROM", []Expression{afterKeyword}, "", []interface{}{pointerToAStruct}}
 }
 
-// WHERE keyword of SQL statement
+// WHERE keyword of an SQL statement.
 func WHERE(afterKeyword ...Expression) Expression {
 	return &PrefixedExp{" WHERE ", afterKeyword, "", nil}
 }
 
-// DELETE keyword of SQL statement
+// DELETE keyword of an SQL statement.
 func DELETE(entity interface{}, afterKeyword Expression) Expression {
 	return &PrefixedExp{"DELETE", []Expression{afterKeyword}, "", nil}
 }
 
 // Exp function creates instance of sql.Expression from string statement & optional binding.
 // Useful for:
-// - rarely used parts of SQL statements
-// - create if not exists... statements
+// - rarely used parts of an SQL statements
+// - CREATE IF NOT EXISTS statements
 func Exp(statement string, binding ...interface{}) Expression {
 	return &PrefixedExp{statement, nil, "", binding}
 }
@@ -164,11 +164,11 @@ var emptyOR = &PrefixedExp{" OR ", nil, "", nil}
 
 // OR keyword of SQL expression
 //
-// Example usage 1 (generated string does not contains parenthesis surrounding OR):
+// Example usage 1 (generated string does not contain parenthesis surrounding OR):
 //
 // 		WHERE(FieldEQ(&PeterBond.FirstName), OR(), FieldEQ(&JamesBond.FirstName))
 //
-// Example usage 2 (generated string does not contains parenthesis surrounding OR):
+// Example usage 2 (generated string does not contain parenthesis surrounding OR):
 //
 // 		WHERE(FieldEQ(&PeterBond.LastName), OR(FieldEQ(&PeterBond.FirstName), FieldEQ(&JamesBond.FirstName)))
 //
@@ -196,11 +196,11 @@ func intelligentOperator(emptyOperator *PrefixedExp, inside ...Expression) Expre
 	return Parenthesis(inside2...)
 }
 
-// Field is a helper function to address field of a structure
+// Field is a helper function to address field of a structure.
 //
 // Example usage:
 //   Where(Field(&UsersTable.LastName, UsersTable, EQ('Bond'))
-//   // generates for example "WHERE last_name='Bond'"
+//   // generates, for example, "WHERE last_name='Bond'"
 func Field(pointerToAField interface{}, rigthOperand ...Expression) (exp Expression) {
 	if len(rigthOperand) == 0 {
 		return &FieldExpression{pointerToAField, nil}
@@ -208,11 +208,11 @@ func Field(pointerToAField interface{}, rigthOperand ...Expression) (exp Express
 	return &FieldExpression{pointerToAField, rigthOperand[0]}
 }
 
-// FieldEQ is combination of Field & EQ on same pointerToAField
+// FieldEQ is combination of Field & EQ on the same pointerToAField.
 //
 // Example usage:
 //   FROM(JamesBond, Where(FieldEQ(&JamesBond.LastName))
-//   // generates for example "WHERE last_name='Bond'"
+//   // generates, for example, "WHERE last_name='Bond'"
 //   // because JamesBond is a pointer to an instance of a structure that in field LastName contains "Bond"
 func FieldEQ(pointerToAField interface{}) (exp Expression) {
 	return &FieldExpression{pointerToAField, EQ(pointerToAField)}
@@ -222,7 +222,7 @@ func FieldEQ(pointerToAField interface{}) (exp Expression) {
 //
 // Example usage:
 //   FROM(JamesBond, Where(PK(&JamesBond.LastName))
-//   // generates for example "WHERE last_name='Bond'"
+//   // generates, for example, "WHERE last_name='Bond'"
 //   // because JamesBond is a pointer to an instance of a structure that in field LastName contains "Bond"
 func PK(pointerToAField interface{}) (exp Expression) {
 	return FieldEQ(pointerToAField)

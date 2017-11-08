@@ -25,16 +25,38 @@ import (
 	"github.com/namsral/flag"
 )
 
-// LogsFlag used as flag name (see implementation in declareFlags())
-// It is used to define default directory where config files reside.
-// This flag name is calculated from the name of the plugin.
-const LogsFlag = "logs-config"
-
 // LogsFlagDefault - default file name
 const LogsFlagDefault = "logs.conf"
 
 // LogsFlagUsage used as flag usage (see implementation in declareFlags())
 const LogsFlagUsage = "Location of the configuration files; also set via 'LOGS_CONFIG' env variable."
+
+// NewAgent returns a new instance of the Agent with plugins.
+// It is an alias for core.NewAgent() to implicit use of the FlavorLocal.
+//
+// Example:
+//
+//    local.NewAgent(local.WithPlugins(func(flavor *FlavorLocal) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.StatusCheck}}}
+//    }))
+func NewAgent(opts ...core.Option) *core.Agent {
+	return core.NewAgent(&FlavorLocal{}, opts...)
+}
+
+// WithPlugins for adding custom plugins to SFC Controller
+// <listPlugins> is a callback that uses flavor input to
+// inject dependencies for custom plugins that are in output.
+//
+// Use this option either for core.NewAgent() or local.NewAgent()
+//
+// Example:
+//
+//    NewAgent(local.WithPlugins(func(flavor) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.StatusCheck}}}
+//    }))
+func WithPlugins(listPlugins func(local *FlavorLocal) []*core.NamedPlugin) core.WithPluginsOpt {
+	return &withPluginsOpt{listPlugins}
+}
 
 // FlavorLocal glues together very minimal subset of cn-infra plugins
 // that can be embedded inside different projects without running
@@ -63,7 +85,7 @@ func (f *FlavorLocal) Inject() bool {
 	f.Logs.Deps.LogRegistry = f.LogRegistry()
 	f.Logs.Deps.Log = f.LoggerFor("logs")
 	f.Logs.Deps.PluginName = core.PluginName("logs")
-	f.Logs.Deps.PluginConfig = config.ForPlugin("logs")
+	f.Logs.Deps.PluginConfig = config.ForPlugin("logs", LogsFlagDefault, LogsFlagUsage)
 
 	f.StatusCheck.Deps.Log = f.LoggerFor("status-check")
 	f.StatusCheck.Deps.PluginName = core.PluginName("status-check")
@@ -165,7 +187,26 @@ func declareFlags() {
 	if flag.Lookup(config.DirFlag) == nil {
 		flag.String(config.DirFlag, config.DirDefault, config.DirUsage)
 	}
-	if flag.Lookup(LogsFlag) == nil {
-		flag.String(LogsFlag, LogsFlagDefault, LogsFlagUsage)
+}
+
+// withPluginsOpt is return value of local.WithPlugins() utility
+// to easily define new plugins for the agent based on LocalFlavor.
+type withPluginsOpt struct {
+	callback func(local *FlavorLocal) []*core.NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginsOpt) OptionMarkerCore() {}
+
+// Plugins methods is here to implement core.WithPluginsOpt go interface
+// <flavor> is a callback that uses flavor input for dependency injection
+// for custom plugins (returned as NamedPlugin)
+func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
+	for _, flavor := range flavors {
+		if f, ok := flavor.(*FlavorLocal); ok {
+			return opt.callback(f)
+		}
 	}
+
+	panic("wrong usage of local.WithPlugin() for other than FlavorLocal")
 }

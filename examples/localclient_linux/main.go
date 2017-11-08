@@ -48,16 +48,16 @@ func main() {
 	// Init close channel to stop the example
 	closeChannel := make(chan struct{}, 1)
 
-	flavor := local.FlavorVppLocal{}
-	// Example plugin and dependencies
-	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-	// Create new agent
-	agentVar := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins(), examplePlugin)...)
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
+		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+
+		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	}))
 
 	// End when the localhost example is finished
 	go closeExample("localhost example finished", closeChannel)
 
-	core.EventLoopWithInterrupt(agentVar, closeChannel)
+	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
 // Stop the agent with desired info message

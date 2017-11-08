@@ -22,6 +22,25 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
+// NewAgent returns a new instance of the Agent with plugins.
+// It is an alias for core.NewAgent() to implicit use of the FlavorRPC
+func NewAgent(opts ...core.Option) *core.Agent {
+	return core.NewAgent(&FlavorRPC{}, opts...)
+}
+
+// WithPlugins for adding custom plugins to SFC Controller
+// <listPlugins> is a callback that uses flavor input to
+// inject dependencies for custom plugins that are in output
+//
+// Example:
+//
+//    NewAgent(rpc.WithPlugins(func(flavor) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.GRPC}}}
+//    }))
+func WithPlugins(listPlugins func(local *FlavorRPC) []*core.NamedPlugin) core.WithPluginsOpt {
+	return &withPluginsOpt{listPlugins}
+}
+
 // FlavorRPC glues together multiple plugins that provide RPC-like access.
 // They are typically used to enable remote management for other plugins.
 type FlavorRPC struct {
@@ -89,4 +108,26 @@ func (f *FlavorRPC) Inject() bool {
 func (f *FlavorRPC) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
+}
+
+// withPluginsOpt is return value of rpc.WithPlugins() utility
+// to easily define new plugins for the agent based on LocalFlavor.
+type withPluginsOpt struct {
+	callback func(local *FlavorRPC) []*core.NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginsOpt) OptionMarkerCore() {}
+
+// Plugins methods is here to implement core.WithPluginsOpt go interface
+// <flavor> is a callback that uses flavor input for dependency injection
+// for custom plugins (returned as NamedPlugin)
+func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
+	for _, flavor := range flavors {
+		if f, ok := flavor.(*FlavorRPC); ok {
+			return opt.callback(f)
+		}
+	}
+
+	panic("wrong usage of rpc.WithPlugin() for other than FlavorRPC")
 }

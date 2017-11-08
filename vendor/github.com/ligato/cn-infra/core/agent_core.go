@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
 )
@@ -75,7 +76,82 @@ const (
 	timeout = "timeout"
 )
 
-// NewAgent returns a new instance of the Agent with plugins.
+// NewAgent returns a new instance of the Agent with plugins. Use options if needed:
+// <WithLogger() option> will be used to log messages related to the agent life-cycle,
+// but not for the plugins themselves.
+// <WithTimeout() option> puts a time limit on initialization of all provided plugins.
+// Agent.Start() returns ErrPluginsInitTimeout error if one or more plugins fail
+// to initialize inside the specified time limit.
+// <WithPlugins() option> is a variable list of plugins to load. ListPluginsInFlavor() helper
+// method can be used to obtain the list from a given flavor.
+//
+// Example 1 (existing flavor - or use alias rpc.NewAgent()):
+//
+//    core.NewAgent(&FlavorRPC{}, core.WithTimeout(5 * time.Second), rpc.WithPlugins(func(flavor *FlavorRPC) []*core.NamedPlugins {
+//		return []*core.NamedPlugins{{"customization": &CustomPlugin{DependencyXY: &flavor.GRPC}}}
+//    })
+//
+// Example 2 (custom flavor):
+//
+//    core.NewAgent(&MyFlavor{}, core.WithTimeout(5 * time.Second), my.WithPlugins(func(flavor *MyFlavor) []*core.NamedPlugins {
+//		return []*core.NamedPlugins{{"customization": &CustomPlugin{DependencyXY: &flavor.XY}}}
+//    })
+func NewAgent(flavor Flavor, opts ...Option) *Agent {
+	plugins := flavor.Plugins()
+
+	var agentCoreLogger logging.Logger
+	maxStartup := 15 * time.Second
+
+	var flavors []Flavor
+	if fs, ok := flavor.(flavorAggregator); ok {
+		flavors = fs.fs
+	} else {
+		flavors = []Flavor{flavor}
+	}
+
+	flavor.Inject()
+
+	for _, opt := range opts {
+		switch opt.(type) {
+		case WithPluginsOpt:
+			plugins = append(plugins, opt.(WithPluginsOpt).Plugins(flavors...)...)
+		case *WithTimeoutOpt:
+			ms := opt.(*WithTimeoutOpt).Timeout
+			if ms > 0 {
+				maxStartup = ms
+			}
+		case *WithLoggerOpt:
+			agentCoreLogger = opt.(*WithLoggerOpt).Logger
+		}
+	}
+
+	if logRegGet, ok := flavor.(logRegistryGetter); ok && logRegGet != nil {
+		logReg := logRegGet.LogRegistry()
+
+		if logReg != nil {
+			agentCoreLogger = logReg.NewLogger("agentcore")
+		} else {
+			agentCoreLogger = logroot.StandardLogger()
+		}
+	} else {
+		agentCoreLogger = logroot.StandardLogger()
+	}
+
+	a := Agent{
+		plugins,
+		agentCoreLogger,
+		"",
+		Timer{
+			MaxStartupTime: maxStartup,
+			init:           defaultTimerValue,
+			afterInit:      defaultTimerValue,
+		},
+	}
+	return &a
+}
+
+// NewAgentDeprecated older & deprecated version of a constructor
+// Function returns a new instance of the Agent with plugins.
 // <logger> will be used to log messages related to the agent life-cycle,
 // but not for the plugins themselves.
 // <maxStartup> sets a time limit for initialization of all provided plugins.
@@ -83,7 +159,7 @@ const (
 // to initialize in the specified time limit.
 // <plugins> is a variable that holds a list of plugins to load. ListPluginsInFlavor() helper
 // method can be used to obtain the list from a given flavor.
-func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*NamedPlugin) *Agent {
+func NewAgentDeprecated(logger logging.Logger, maxStartup time.Duration, plugins ...*NamedPlugin) *Agent {
 	a := Agent{
 		plugins,
 		logger,
@@ -95,6 +171,11 @@ func NewAgent(logger logging.Logger, maxStartup time.Duration, plugins ...*Named
 		},
 	}
 	return &a
+}
+
+type logRegistryGetter interface {
+	// LogRegistry is a getter for log registry instance
+	LogRegistry() logging.Registry
 }
 
 // Start starts/initializes all selected plugins.

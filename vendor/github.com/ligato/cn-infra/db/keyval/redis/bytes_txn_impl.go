@@ -39,7 +39,7 @@ type Txn struct {
 
 // Put adds a new 'put' operation to a previously created transaction.
 // If the key does not exist in the data store, a new key-value item
-// will be added to the data store. If key exists in the data store,
+// will be added to the data store. If the key exists in the data store,
 // the existing value will be overwritten with the value from this
 // operation.
 func (tx *Txn) Put(key string, value []byte) keyval.BytesTxn {

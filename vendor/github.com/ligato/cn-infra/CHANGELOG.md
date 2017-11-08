@@ -1,3 +1,33 @@
+# Release v1.0.7 (NOT RELEASED)
+
+## Agent, Flavors
+Input arguments of `core.NewAgent()` has been changed:
+  * it can be called without any options like this: `core.NewAgent(flavor)`
+  * you can pass options like this: `core.NewAgent(flavor, core.WithTimeout(1* time.Second))`
+  * there is `core.NewAgentDeprecated()` for backward compatibility
+
+This release contains utilities/options to avoid writing new flavor go structures (Inject, Plugins methods)
+for simple customizations:
+* if you just expose the RPCs you can write
+  ```
+  rpc.NewAgent(rpc.WithPlugins(func(flavor *rpc.FlavorRPC) []*core.NamedPlugin {
+    return []*core.NamedPlugin{{"myplugin1", &MyPlugin{&flavor.GRPC},
+                               {"myplugin2", &MyPlugin{&flavor.GRPC},}
+  }))
+  ```
+* if you just want to use one simple plugin (without any client or server) you can write:
+  ```
+  flavor := &local.FlavorLocal{}
+  core.NewAgent(core.Inject(flavor), core.WithPlugin("myplugin1", &MyPlugin{Deps: flavor.PluginInfraDeps("myplugin1")}))
+  ```
+* sometimes you want to combine multiple flavors to inject their plugins to new MyPlugin
+  ```
+  loc := &local.FlavorLocal{}
+  rpcs := &rpc.FlavorRPC{FlavorLocal: loc}
+  cons := &connectors.AllConnectorsFlavor{FlavorLocal: loc}
+  core.NewAgent(core.Inject(rpcs, cons), core.WithPlugin("myplugin", &MyPlugin{Deps: Deps{&rpcs.GRPC, &cons.ETCD}}))
+  ```
+
 # Release v1.0.6 (2017-10-30)
 
 ## ETCD/Datasync
