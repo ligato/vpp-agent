@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-// ACLLogicalReq groups multiple fields to not enumerate all of them in one function call
+// ACLInterfaceLogicalReq groups multiple fields to not enumerate all of them in one function call
 type ACLInterfaceLogicalReq struct {
 	aclIndex   uint32
 	interfaces []string
@@ -56,11 +56,11 @@ func NewACLInterfacesVppCalls(asyncVppChan *govppapi.Channel, vppChan *govppapi.
 }
 
 // SetACLToInterfacesAsIngress sets ACL to all provided interfaces as ingress
-func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsIngress(removedAclIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
+func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsIngress(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Setting up IP ingress ACL from interfaces: %v ", interfaces)
 
 	return acl.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
-		aclIndex:   removedAclIndex,
+		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    true,
 		callback:   callback,
@@ -68,11 +68,11 @@ func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsIngress(removedAclIndex ui
 }
 
 // RemoveIPIngressACLFromInterfaces removes ACL from interfaces
-func (acl *ACLInterfacesVppCalls) RemoveIPIngressACLFromInterfaces(removedAclIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
+func (acl *ACLInterfacesVppCalls) RemoveIPIngressACLFromInterfaces(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Removing IP ingress ACL from interfaces: %v ", interfaces)
 
 	return acl.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
-		aclIndex:   removedAclIndex,
+		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    true,
 		callback:   callback,
@@ -80,11 +80,11 @@ func (acl *ACLInterfacesVppCalls) RemoveIPIngressACLFromInterfaces(removedAclInd
 }
 
 // SetACLToInterfacesAsEgress sets ACL to all provided interfaces as egress
-func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsEgress(removedAclIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
+func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsEgress(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Setting up IP egress ACL from interfaces: %v ", interfaces)
 
 	return acl.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
-		aclIndex:   removedAclIndex,
+		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    false,
 		callback:   callback,
@@ -92,11 +92,11 @@ func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsEgress(removedAclIndex uin
 }
 
 // RemoveIPEgressACLFromInterfaces removes ACL from interfaces
-func (acl *ACLInterfacesVppCalls) RemoveIPEgressACLFromInterfaces(removedAclIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
+func (acl *ACLInterfacesVppCalls) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Removing IP egress ACL from interfaces: %v ", interfaces)
 
 	return acl.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
-		aclIndex:   removedAclIndex,
+		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    false,
 		callback:   callback,
@@ -220,7 +220,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 	return nil
 }
 
-// WatchFIBReplies is meant to be used in go routine
+// WatchACLInterfacesReplies is meant to be used in go routine
 func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) {
 	for {
 		vppReply := <-acl.asyncVppChan.ReplyChan
@@ -244,7 +244,7 @@ func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) 
 			reply := &acl_api.ACLInterfaceSetACLListReply{}
 			err := acl.asyncVppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
 			if err != nil {
-				err = fmt.Errorf("adding/replacing Static fib entry returned index %d", reply.Retval)
+				err = fmt.Errorf("setting ACL ti interface entry returned index %d", reply.Retval)
 				logicalReq.callback(err)
 			} else {
 				logicalReq.callback(nil)
