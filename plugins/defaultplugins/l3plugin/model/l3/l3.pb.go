@@ -25,29 +25,13 @@ var _ = proto.Marshal
 
 // VRF table
 type VRFTable struct {
-	// uint32 vrf_id = 1;    /* VRF table ID */
-	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Interfaces []*VRFTable_Interfaces `protobuf:"bytes,100,rep,name=interfaces" json:"interfaces,omitempty"`
+	// uint32 vrf_id = 1;      /* VRF table ID */
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
 func (m *VRFTable) Reset()         { *m = VRFTable{} }
 func (m *VRFTable) String() string { return proto.CompactTextString(m) }
 func (*VRFTable) ProtoMessage()    {}
-
-func (m *VRFTable) GetInterfaces() []*VRFTable_Interfaces {
-	if m != nil {
-		return m.Interfaces
-	}
-	return nil
-}
-
-type VRFTable_Interfaces struct {
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-}
-
-func (m *VRFTable_Interfaces) Reset()         { *m = VRFTable_Interfaces{} }
-func (m *VRFTable_Interfaces) String() string { return proto.CompactTextString(m) }
-func (*VRFTable_Interfaces) ProtoMessage()    {}
 
 // Static IPv4 / IPv6 routes
 type StaticRoutes struct {
