@@ -35,6 +35,25 @@ import (
 // uses reflection rather than enumerating all field again.
 var checkImplemensPlugin core.Plugin
 
+// NewAgent returns a new instance of the Agent with plugins.
+// It is an alias for core.NewAgent() to implicit use of the FlavorVppLocal
+func NewAgent(opts ...core.Option) *core.Agent {
+	return core.NewAgent(&FlavorVppRPC{}, opts...)
+}
+
+// WithPlugins for adding custom plugins to SFC Controller
+// <listPlugins> is a callback that uses flavor input to
+// inject dependencies for custom plugins that are in output
+//
+// Example:
+//
+//    NewAgent(vppFlavor.WithPlugins(func(flavor) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.FlavorXY}}}
+//    }))
+func WithPlugins(listPlugins func(local *FlavorVppRPC) []*core.NamedPlugin) core.WithPluginsOpt {
+	return &withPluginsOpt{listPlugins}
+}
+
 // FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using
 // GRPC service
 type FlavorVppRPC struct {
@@ -85,4 +104,26 @@ func (f *FlavorVppRPC) Inject() bool {
 func (f *FlavorVppRPC) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
+}
+
+// withPluginsOpt is return value of vppLocal.WithPlugins() utility
+// to easily define new plugins for the agent based on FlavorVppRPC.
+type withPluginsOpt struct {
+	callback func(local *FlavorVppRPC) []*core.NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginsOpt) OptionMarkerCore() {}
+
+// Plugins methods is here to implement core.WithPluginsOpt go interface
+// <flavor> is a callback that uses flavor input for dependency injection
+// for custom plugins (returned as NamedPlugin)
+func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
+	for _, flavor := range flavors {
+		if f, ok := flavor.(*FlavorVppRPC); ok {
+			return opt.callback(f)
+		}
+	}
+
+	panic("wrong usage of vppRpc.WithPlugin() for other than FlavorVppRPC")
 }

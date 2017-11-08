@@ -16,13 +16,13 @@ package sql
 
 import "reflect"
 
-// TableName interface is used to specify custom table name for SQL statements.
+// TableName interface specifies custom table name for SQL statements.
 type TableName interface {
 	// TableName returns sql table name.
 	TableName() string
 }
 
-// SchemaName interface is used to specify custom schema name for SQL statements
+// SchemaName interface specifies custom schema name for SQL statements.
 type SchemaName interface {
 	// SchemaName returns sql schema name where the table resides
 	SchemaName() string

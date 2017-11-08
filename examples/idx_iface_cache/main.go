@@ -15,13 +15,7 @@
 package main
 
 import (
-	"time"
-
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
-	"github.com/ligato/cn-infra/flavors/local"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
@@ -35,58 +29,16 @@ func main() {
 	// Init close channel to stop the example
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished}}
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	// Start Agent with ExampleFlavor
+	vppFlavor := vpp.Flavor{}
+	exampleFlavor := ExampleFlavor{
+		IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
+		Flavor:               &vppFlavor, // inject VPP flavor
+	}
+	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
-
-/**********
- * Flavor *
- **********/
-
-// ExampleFlavor is a set of plugins required for the datasync example.
-type ExampleFlavor struct {
-	// Local flavor to access to Infra (logger, service label, status check)
-	*vpp.Flavor
-	// Example plugin
-	IdxIfaceCacheExample ExamplePlugin
-	// Mark flavor as injected after Inject()
-	injected bool
-}
-
-// Inject sets object references
-func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
-	// Every flavor should be injected only once
-	if ef.injected {
-		return false
-	}
-	ef.injected = true
-
-	// Init local flavor
-	if ef.Flavor == nil {
-		ef.Flavor = &vpp.Flavor{}
-	}
-	ef.Flavor.Inject()
-
-	// Inject infra + transport (publisher, watcher) to example plugin
-	ef.IdxIfaceCacheExample.PluginInfraDeps = *ef.Flavor.InfraDeps("idx-iface-cache-example")
-	ef.IdxIfaceCacheExample.Publisher = &ef.ETCDDataSync
-	ef.IdxIfaceCacheExample.Agent1 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent1", ef)
-	ef.IdxIfaceCacheExample.Agent2 = ef.Flavor.ETCDDataSync.OfDifferentAgent("agent2", ef)
-
-	return true
-}
-
-// Plugins combines all Plugins in flavor to the list
-func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
-	ef.Inject()
-	return core.ListPluginsInFlavor(ef)
-}
-
-/******************
- * Example plugin *
- ******************/
 
 // ExamplePlugin used for demonstration of SwIfIndexes - see Init()
 type ExamplePlugin struct {
@@ -98,14 +50,6 @@ type ExamplePlugin struct {
 
 	// Fields below are used to properly finish the example
 	closeChannel *chan struct{}
-}
-
-// Deps is a helper struct which is grouping all dependencies injected to the plugin
-type Deps struct {
-	Publisher                 datasync.KeyProtoValWriter // injected
-	Agent1                    *kvdbsync.Plugin           // injected
-	Agent2                    *kvdbsync.Plugin           // injected
-	local.PluginInfraDeps                            // injected
 }
 
 // Init initializes transport & SwIfIndexes then watch, publish & lookup
@@ -122,7 +66,6 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// get access to local interface indexes
 	plugin.swIfIdxLocal = defaultplugins.GetSwIfIndexes()
-
 
 	// Run consumer
 	go plugin.consume()

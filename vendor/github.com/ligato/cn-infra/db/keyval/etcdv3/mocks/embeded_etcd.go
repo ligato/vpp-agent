@@ -15,14 +15,14 @@ import (
 
 const etcdStartTimeout = 30
 
-// Embedded ETCD instance with tmp directory for serialized key&vals and etcdv3 client
+// Embedded ETCD instance with tmp directory for serialized key&vals and etcdv3 client.
 type Embedded struct {
 	tmpDir string
 	ETCD   *embed.Etcd
 	client *clientv3.Client
 }
 
-// Start starts embedded ETCD
+// Start starts embedded ETCD.
 func (embd *Embedded) Start(t *testing.T) {
 	dir, err := ioutil.TempDir("", "ETCD")
 	if err != nil {
@@ -50,20 +50,20 @@ func (embd *Embedded) Start(t *testing.T) {
 	embd.client = v3client.New(embd.ETCD.Server)
 }
 
-// Stop stops the ebeded ETCD & cleanups the tmp dir
+// Stop stops the embedded ETCD & cleanups the tmp dir.
 func (embd *Embedded) Stop() {
 	embd.ETCD.Close()
 	os.RemoveAll(embd.tmpDir)
 }
 
-// CleanDs deletes all key-value pair stored
+// CleanDs deletes all stored key-value pairs.
 func (embd *Embedded) CleanDs() {
 	if embd.client != nil {
 		embd.client.Delete(context.Background(), "", clientv3.WithPrefix())
 	}
 }
 
-// Client is a getter for embedded etcd client
+// Client is a getter for embedded ETCD client.
 func (embd *Embedded) Client() *clientv3.Client {
 	return embd.client
 }

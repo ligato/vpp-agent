@@ -1,18 +1,16 @@
 package itest
 
 import (
-	"time"
+	"testing"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 // AgentT is similar to what testing.T is in golang packages.
 type AgentT struct {
 	agent *core.Agent
-	t *testing.T
+	t     *testing.T
 }
 
 // Given is composition of multiple test step methods (see BDD Given keyword)
@@ -32,7 +30,7 @@ func (t *AgentT) Setup(flavor core.Flavor, golangT *testing.T) {
 	gomega.RegisterTestingT(golangT)
 	t.t = golangT
 
-	t.agent = core.NewAgent(logroot.StandardLogger(), 2000*time.Second, flavor.Plugins()...)
+	t.agent = core.NewAgent(flavor)
 	err := t.agent.Start()
 	if err != nil {
 		golangT.Fatal("error starting agent ", err)

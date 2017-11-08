@@ -46,11 +46,11 @@ type Deps struct {
 // Init retrieves etcd configuration and establishes a new connection
 // with the etcd data store.
 // If the configuration file doesn't exist or cannot be read, the returned error
-// will be of type os.PathError. An untyped error is returned in case the file
+// will be of os.PathError type. An untyped error is returned in case the file
 // doesn't contain a valid YAML configuration.
 // The function may also return error if TLS connection is selected and the
 // CA or client certificate is not accessible(os.PathError)/valid(untyped).
-// Check clientv3.New from coreos/etcd for possible errors returned when
+// Check clientv3.New from coreos/etcd for possible errors returned in case
 // the connection cannot be established.
 func (p *Plugin) Init() (err error) {
 	// Init connection
@@ -86,7 +86,7 @@ func (p *Plugin) Init() (err error) {
 		return err
 	}
 
-	// Register for providing status reports (polling mode)
+	// Register for providing status reports (polling mode).
 	if p.StatusCheck != nil {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
 			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
@@ -112,8 +112,8 @@ func (p *Plugin) AfterInit() error {
 	return nil
 }
 
-// FromExistingConnection is used mainly for testing to inject existing
-// connection into the plugin.
+// FromExistingConnection is used mainly for testing of existing connection
+// injection into the plugin.
 // Note, need to set Deps for returned value!
 func FromExistingConnection(connection *BytesConnectionEtcd, sl servicelabel.ReaderAPI) *Plugin {
 	skel := plugin.NewSkeleton("testing", sl, connection)

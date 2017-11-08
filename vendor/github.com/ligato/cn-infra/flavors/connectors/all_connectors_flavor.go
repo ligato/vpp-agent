@@ -25,6 +25,25 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 )
 
+// NewAgent returns a new instance of the Agent with plugins.
+// It is an alias for core.NewAgent() to implicit use of the FlavorLocal.
+func NewAgent(opts ...core.Option) *core.Agent {
+	return core.NewAgent(&AllConnectorsFlavor{}, opts...)
+}
+
+// WithPlugins for adding custom plugins to SFC Controller
+// <listPlugins> is a callback that uses flavor input to
+// inject dependencies for custom plugins that are in output
+//
+// Example:
+//
+//    NewAgent(connectors.WithPlugins(func(flavor) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.ETCD}}}
+//    }))
+func WithPlugins(listPlugins func(local *AllConnectorsFlavor) []*core.NamedPlugin) core.WithPluginsOpt {
+	return &withPluginsOpt{listPlugins}
+}
+
 // AllConnectorsFlavor is a combination of all plugins that allow
 // connectivity to external database/messaging...
 // Effectively it is combination of ETCD, Kafka, Redis, Cassandra
@@ -81,4 +100,26 @@ func (f *AllConnectorsFlavor) Inject() bool {
 func (f *AllConnectorsFlavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
+}
+
+// withPluginsOpt is return value of connectors.WithPlugins() utility
+// to easily define new plugins for the agent based on LocalFlavor.
+type withPluginsOpt struct {
+	callback func(local *AllConnectorsFlavor) []*core.NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginsOpt) OptionMarkerCore() {}
+
+// Plugins methods is here to implement core.WithPluginsOpt go interface
+// <flavor> is a callback that uses flavor input for dependency injection
+// for custom plugins (returned as NamedPlugin)
+func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
+	for _, flavor := range flavors {
+		if f, ok := flavor.(*AllConnectorsFlavor); ok {
+			return opt.callback(f)
+		}
+	}
+
+	panic("wrong usage of connectors.WithPlugin() for other than AllConnectorsFlavor")
 }

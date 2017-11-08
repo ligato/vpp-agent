@@ -8,7 +8,8 @@ go:
   - 1.9.x
 
 before_install:
-  - go get -v github.com/golang/lint/golint
+  - go get -u -f "github.com/alecthomas/gometalinter"
+  - gometalinter --install
   - go get github.com/mattn/goveralls
   - sudo apt-get install npm && npm install -g markdown-link-check
 

@@ -15,12 +15,9 @@
 package main
 
 import (
-	"time"
-
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
@@ -31,10 +28,6 @@ import (
 // and how these values can be read.
 // ************************************************************************/
 
-/********
- * Main *
- ********/
-
 // Main allows running Example Plugin as a statically linked binary with Agent Core Plugins. Close channel and plugins
 // required for the example are initialized. Agent is instantiated with generic plugins (ETCD, Kafka, Status check,
 // HTTP and Log), and example plugin which demonstrates index mapping lookup functionality.
@@ -42,51 +35,16 @@ func main() {
 	// Init close channel to stop the example
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{IdxLookupExample: ExamplePlugin{closeChannel: &exampleFinished}}
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	// Start Agent
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
+		examplePlug.PluginLogDeps = *flavor.LogDeps("idx-mapping-lookup")
+
+		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	}))
+
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
-
-/**********
- * Flavor *
- **********/
-
-// ExampleFlavor is a set of plugins required for the datasync example.
-type ExampleFlavor struct {
-	*local.FlavorLocal
-	IdxLookupExample ExamplePlugin
-	// Mark flavor as injected after Inject()
-	injected bool
-}
-
-// Inject sets object references
-func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
-	// Every flavor should be injected only once
-	if ef.injected {
-		return false
-	}
-	ef.injected = true
-
-	if ef.FlavorLocal == nil {
-		ef.FlavorLocal = &local.FlavorLocal{}
-	}
-	ef.FlavorLocal.Inject()
-
-	ef.IdxLookupExample.PluginLogDeps = *ef.LogDeps("idx-mapping-lookup")
-
-	return true
-}
-
-// Plugins combines all Plugins in flavor to the list
-func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
-	ef.Inject()
-	return core.ListPluginsInFlavor(ef)
-}
-
-/******************
- * Example plugin *
- ******************/
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
@@ -96,11 +54,6 @@ type ExamplePlugin struct {
 	exampleIDSeq uint32             // Provides unique ID for every item stored in mapping
 	// Fields below are used to properly finish the example
 	closeChannel *chan struct{}
-}
-
-// Deps is a helper struct which is grouping all dependencies injected to the plugin
-type Deps struct {
-	local.PluginLogDeps // injected
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.

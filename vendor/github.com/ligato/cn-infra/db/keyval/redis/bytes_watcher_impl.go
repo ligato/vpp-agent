@@ -27,7 +27,7 @@ import (
 
 const keySpaceEventPrefix = "__keyspace@*__:"
 
-// BytesWatchPutResp is sent when new key-value pair has been inserted or the value is updated
+// BytesWatchPutResp is sent when new key-value pair has been inserted or the value is updated.
 type BytesWatchPutResp struct {
 	key       string
 	value     []byte
@@ -35,58 +35,58 @@ type BytesWatchPutResp struct {
 	rev       int64 // TODO Does Redis data have revision?
 }
 
-// NewBytesWatchPutResp creates an instance of BytesWatchPutResp
+// NewBytesWatchPutResp creates an instance of BytesWatchPutResp.
 func NewBytesWatchPutResp(key string, value []byte, prevValue []byte, revision int64) *BytesWatchPutResp {
 	return &BytesWatchPutResp{key: key, value: value, prevValue: prevValue, rev: revision}
 }
 
-// GetChangeType returns "Put" for BytesWatchPutResp
+// GetChangeType returns "Put" for BytesWatchPutResp.
 func (resp *BytesWatchPutResp) GetChangeType() datasync.PutDel {
 	return datasync.Put
 }
 
-// GetKey returns the key that has been inserted
+// GetKey returns the key that has been inserted.
 func (resp *BytesWatchPutResp) GetKey() string {
 	return resp.key
 }
 
-// GetValue returns the value that has been inserted
+// GetValue returns the value that has been inserted.
 func (resp *BytesWatchPutResp) GetValue() []byte {
 	return resp.value
 }
 
-// GetPrevValue returns the value that has been inserted
+// GetPrevValue returns the value that has been inserted.
 func (resp *BytesWatchPutResp) GetPrevValue() []byte {
 	return resp.prevValue
 }
 
-// GetRevision returns the revision associated with create action
+// GetRevision returns the revision associated with create action.
 func (resp *BytesWatchPutResp) GetRevision() int64 {
 	return resp.rev
 }
 
-// BytesWatchDelResp is sent when a key-value pair has been removed
+// BytesWatchDelResp is sent when a key-value pair has been removed.
 type BytesWatchDelResp struct {
 	key string
 	rev int64 // TODO Does Redis data have revision?
 }
 
-// NewBytesWatchDelResp creates an instance of BytesWatchDelResp
+// NewBytesWatchDelResp creates an instance of BytesWatchDelResp.
 func NewBytesWatchDelResp(key string, revision int64) *BytesWatchDelResp {
 	return &BytesWatchDelResp{key: key, rev: revision}
 }
 
-// GetChangeType returns "Delete" for BytesWatchPutResp
+// GetChangeType returns "Delete" for BytesWatchPutResp.
 func (resp *BytesWatchDelResp) GetChangeType() datasync.PutDel {
 	return datasync.Delete
 }
 
-// GetKey returns the key that has been deleted
+// GetKey returns the key that has been deleted.
 func (resp *BytesWatchDelResp) GetKey() string {
 	return resp.key
 }
 
-// GetValue returns nil for BytesWatchDelResp
+// GetValue returns nil for BytesWatchDelResp.
 func (resp *BytesWatchDelResp) GetValue() []byte {
 	return nil
 }
@@ -96,7 +96,7 @@ func (resp *BytesWatchDelResp) GetPrevValue() []byte {
 	return nil
 }
 
-// GetRevision returns the revision associated with the delete operation
+// GetRevision returns the revision associated with the delete operation.
 func (resp *BytesWatchDelResp) GetRevision() int64 {
 	return resp.rev
 }

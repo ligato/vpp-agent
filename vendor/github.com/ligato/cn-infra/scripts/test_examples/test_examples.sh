@@ -181,7 +181,7 @@ startCustomizedKafka examples/kafka-plugin/manual-partitioner/server.properties
 
 # Let us test the running with non-existant offset parameter
 expected=("Offset: 18, message count: 0
-Error loading core: plugin Kafka: AfterInit error 'kafka server: The requested offset is outside the range of offsets maintained by the server for the given topic/partition.'
+Error loading core: plugin kafka: AfterInit error 'kafka server: The requested offset is outside the range of offsets maintained by the server for the given topic/partition.'
 ")
 
 unexpected=("Error while stopping watcher
@@ -322,7 +322,7 @@ testOutput "${cmd}" "${expected}" $RUNTIME_LIMIT "${unexpected}"
 
 # Let us test - in example no new messages generated - wrong value of parameter offsetMsg
 expected=("
-Error loading core: plugin KafkaExample: Init error 'incorrect sync offset value wronginput
+Error loading core: plugin kafka-example: Init error 'incorrect sync offset value wronginput
 ")
 
 unexpected=("Error while stopping watcher
