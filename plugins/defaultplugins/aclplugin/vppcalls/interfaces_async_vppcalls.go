@@ -33,6 +33,7 @@ type ACLInterfaceLogicalReq struct {
 	callback   func(error)
 }
 
+// ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
 	vppChan         *govppapi.Channel
 	swIfIndexes     ifaceidx.SwIfIndex
@@ -41,6 +42,7 @@ type ACLInterfacesVppCalls struct {
 	waitingForReply *list.List
 }
 
+// NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
 func NewACLInterfacesVppCalls(vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
 		vppChan:         vppChan,
@@ -228,7 +230,7 @@ func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) 
 		}
 
 		if acl.waitingForReply.Len() == 0 {
-			log.WithField("MessageID", vppReply.MessageID).Error("Unexpected message ", vppReply)
+			log.WithField("MessageID", vppReply.MessageID).Error("Unexpected message ", vppReply.Error)
 			continue
 		}
 

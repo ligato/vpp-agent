@@ -22,8 +22,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 )
 
 // Start Agent plugins selected for this example
