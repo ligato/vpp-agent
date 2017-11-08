@@ -83,8 +83,8 @@ vpp_ctl: Put Veth Interface With IP
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Afpacket Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${host_int}    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${host_int}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${host_int}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${host_int}    ${mtu}    ${enabled}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/afpacket_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -454,4 +454,3 @@ vpp_ctl: Delete Vrf Table
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
-

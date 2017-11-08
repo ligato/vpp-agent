@@ -3,6 +3,7 @@
   "type": 4,
   "enabled": ${enabled},
   "phys_address": "${mac}",
+  "mtu": ${mtu},
   "afpacket": {
     "host_if_name": "${host_int}"
   }
