@@ -64,8 +64,8 @@ func (f *Flavor) Inject() bool {
 
 	f.injectEmbedded()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
