@@ -35,7 +35,8 @@ type ACLInterfaceLogicalReq struct {
 
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
-	vppChan         *govppapi.Channel
+	vppChan			*govppapi.Channel
+	asyncVppChan    *govppapi.Channel
 	swIfIndexes     ifaceidx.SwIfIndex
 	dumpIfaces      measure.StopWatchEntry
 	ifaceSetACLList measure.StopWatchEntry
@@ -43,9 +44,10 @@ type ACLInterfacesVppCalls struct {
 }
 
 // NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
-func NewACLInterfacesVppCalls(vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
+func NewACLInterfacesVppCalls(asyncVppChan *govppapi.Channel, vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
 		vppChan:         vppChan,
+		asyncVppChan:    asyncVppChan,
 		swIfIndexes:     swIfIndexes,
 		dumpIfaces:      measure.GetTimeLog(acl_api.ACLInterfaceListDump{}, stopwatch),
 		ifaceSetACLList: measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, stopwatch),
@@ -148,7 +150,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 		msg.NInput = nInput
 
 		acl.waitingForReply.PushFront(logicalReq)
-		acl.vppChan.ReqChan <- &govppapi.VppRequest{
+		acl.asyncVppChan.ReqChan <- &govppapi.VppRequest{
 			Message: msg,
 		}
 
@@ -203,7 +205,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		msg.NInput = nInput
 
 		acl.waitingForReply.PushFront(logicalReq)
-		acl.vppChan.ReqChan <- &govppapi.VppRequest{
+		acl.asyncVppChan.ReqChan <- &govppapi.VppRequest{
 			Message: msg,
 		}
 
@@ -221,7 +223,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 // WatchFIBReplies is meant to be used in go routine
 func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) {
 	for {
-		vppReply := <-acl.vppChan.ReplyChan
+		vppReply := <-acl.asyncVppChan.ReplyChan
 		log.Debug("VPP ACL Reply ", vppReply)
 
 		if vppReply.LastReplyReceived {
@@ -240,7 +242,7 @@ func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) 
 			logicalReq.callback(vppReply.Error)
 		} else {
 			reply := &acl_api.ACLInterfaceSetACLListReply{}
-			err := acl.vppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
+			err := acl.asyncVppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
 			if err != nil {
 				err = fmt.Errorf("adding/replacing Static fib entry returned index %d", reply.Retval)
 				logicalReq.callback(err)

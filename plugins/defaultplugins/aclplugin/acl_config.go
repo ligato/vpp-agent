@@ -71,7 +71,7 @@ func (plugin *ACLConfigurator) Init() (err error) {
 
 	// todo possibly check acl plugin version on vpp using bin api acl_plugin_get_version
 
-	plugin.vppcalls = vppcalls.NewACLInterfacesVppCalls(plugin.asyncVppChannel, plugin.SwIfIndexes, plugin.Stopwatch)
+	plugin.vppcalls = vppcalls.NewACLInterfacesVppCalls(plugin.asyncVppChannel, plugin.vppChannel, plugin.SwIfIndexes, plugin.Stopwatch)
 	go plugin.vppcalls.WatchACLInterfacesReplies(plugin.Log)
 
 	return err
