@@ -97,12 +97,14 @@ type Plugin struct {
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
+	vrfConfigurator   *l3plugin.VrfConfigurator
 	bdIndexes         bdidx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
+	vrfIndexes        idxvpp.NameToIdxRW
 	bdIdxWatchCh      chan bdidx.ChangeDto
 
 	// Bidirectional forwarding detection fields
@@ -540,12 +542,11 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
-	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
-
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("RouteConfigurator", routeLogger)
 	}
+	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
 		Log:           routeLogger,
 		GoVppmux:      plugin.GoVppmux,
@@ -554,13 +555,16 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		SwIfIndexes:   plugin.swIfIndexes,
 		Stopwatch:     stopwatch,
 	}
+	if err := plugin.routeConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("routeConfigurator Initialized")
 
 	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
-	plugin.arpIndexes = nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil)
-
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
 	}
+	plugin.arpIndexes = nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil)
 	plugin.arpConfigurator = &l3plugin.ArpConfigurator{
 		Log:         arpLogger,
 		GoVppmux:    plugin.GoVppmux,
@@ -570,15 +574,31 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		Stopwatch:   stopwatch,
 	}
 
+	vrfLogger := plugin.Log.NewLogger("-l3-vrf-conf")
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("VrfConfigurator", vrfLogger)
+	}
+	plugin.vrfIndexes = nametoidx.NewNameToIdx(vrfLogger, plugin.PluginName, "vrf_indexes", nil)
+	plugin.vrfConfigurator = &l3plugin.VrfConfigurator{
+		Log:           vrfLogger,
+		GoVppmux:      plugin.GoVppmux,
+		TableIndexes:  plugin.vrfIndexes,
+		TableIndexSeq: 1,
+		SwIfIndexes:   plugin.swIfIndexes,
+	}
+
 	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
 	plugin.Log.Debug("routeConfigurator Initialized")
-
 	if err := plugin.arpConfigurator.Init(); err != nil {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
+	if err := plugin.vrfConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("vrfConfigurator Initialized")
 
 	return nil
 }
@@ -609,7 +629,6 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	}
 
 	plugin.Log.Debug("l4Configurator Initialized")
-
 	return nil
 }
 
@@ -659,7 +678,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.vrfConfigurator)
 
 	return err
 }

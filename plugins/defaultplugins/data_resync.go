@@ -52,6 +52,8 @@ type DataResyncReq struct {
 	StaticRoutes []*l3.StaticRoutes_Route
 	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC
 	ArpEntries []*l3.ArpTable_ArpTableEntry
+	// VrfTables is a list of all VRF tables
+	VrfTables []*l3.VRFTable
 	// L4Features is a bool flag that is expected to be set in VPP after RESYNC
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC
@@ -71,6 +73,7 @@ func NewDataResyncReq() *DataResyncReq {
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
 		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
+		VrfTables:           []*l3.VRFTable{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
 	}
@@ -216,8 +219,7 @@ func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 
 func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
 	route := &l3.StaticRoutes_Route{}
-	err := fibData.GetValue(route)
-	if err != nil {
+	if err := fibData.GetValue(route); err != nil {
 		return err
 	}
 	// Ensure every route has the corresponding VRF index
@@ -243,8 +245,12 @@ func resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 			break
 		} else {
 			key := vrfData.GetKey()
-			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
-			if fib {
+			isRoute, vrfIndex, _, _, _, err := l3.ParseVrfKey(key)
+			if err != nil {
+				log.Warn("parsing VRF key failed:", err)
+				continue
+			}
+			if isRoute {
 				err := resyncAppendL3FIB(vrfData, vrfIndex, req, log)
 				if err == nil {
 					numL3FIBs++
@@ -440,13 +446,13 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.watchConfigReg, err = plugin.Watch.
 		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
 			acl.KeyPrefix(),
+			l3.VrfKeyPrefix(),
 			interfaces.InterfaceKeyPrefix(),
 			bfd.SessionKeyPrefix(),
 			bfd.AuthKeysKeyPrefix(),
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.VrfKeyPrefix(),
 			l3.ArpKeyPrefix(),
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),

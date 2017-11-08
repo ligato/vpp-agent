@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"git.fd.io/govpp.git"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 func TestDumpInterfaces(t *testing.T) {
@@ -39,6 +40,14 @@ func TestDumpInterfaces(t *testing.T) {
 	}
 	defer ch.Close()
 
-	res, _ := DumpInterfaces(ch)
-	fmt.Println(res)
+	res, err := DumpInterfaces(logrus.DefaultLogger(), ch, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("%+v\n", res)
+	for key, iface := range res {
+		fmt.Printf(" %v %+v\n", key, *iface)
+	}
 }

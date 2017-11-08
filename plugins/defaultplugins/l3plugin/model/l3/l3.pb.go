@@ -9,6 +9,7 @@ It is generated from these files:
 	l3.proto
 
 It has these top-level messages:
+	VRFTable
 	StaticRoutes
 	ArpTable
 	ProxyArpRanges
@@ -21,6 +22,16 @@ import proto "github.com/gogo/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+
+// VRF table
+type VRFTable struct {
+	// uint32 vrf_id = 1;      /* VRF table ID */
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (m *VRFTable) Reset()         { *m = VRFTable{} }
+func (m *VRFTable) String() string { return proto.CompactTextString(m) }
+func (*VRFTable) ProtoMessage()    {}
 
 // Static IPv4 / IPv6 routes
 type StaticRoutes struct {

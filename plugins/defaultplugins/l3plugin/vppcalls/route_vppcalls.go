@@ -30,6 +30,7 @@ import (
 // when a given routing table entry is applied.
 type Route struct {
 	VrfID       uint32    `json:"vrf_id"`
+	TableName   string    `json:"table_name"`
 	DstAddr     net.IPNet `json:"dst_addr"`
 	NextHopAddr net.IP    `json:"next_hop_addr"`
 	OutIface    uint32    `json:"out_iface"`

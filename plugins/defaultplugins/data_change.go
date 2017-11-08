@@ -15,6 +15,7 @@
 package defaultplugins
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
@@ -137,7 +138,10 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
-		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
+		isRoute, vrfFromKey, _, _, _, err := l3.ParseVrfKey(key)
+		if err != nil {
+			return false, err
+		}
 		if isRoute {
 			// Route
 			var value, prevValue l3.StaticRoutes_Route
@@ -152,9 +156,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return false, err
 			}
 		} else {
-			// Vrf
-			// TODO vrf not implemented yet
-			plugin.Log.Warn("VRFs are not supported yet")
+			var value, prevValue l3.VRFTable
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			diff, err := dataChng.GetPrevValue(&prevValue)
+			if err != nil {
+				return false, err
+			}
+
+			if err := plugin.dataChangeVrfTable(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
 		}
 	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
 		_, _, err := l3.ParseArpKey(key)
@@ -331,6 +344,19 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry,
 		return plugin.arpConfigurator.ChangeArp(value, prevValue)
 	}
 	return plugin.arpConfigurator.AddArp(value)
+}
+
+// dataChangeVrfTable propagates data change to the vrfConfigurator
+func (plugin *Plugin) dataChangeVrfTable(diff bool, value *l3.VRFTable, prevValue *l3.VRFTable,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeVrfTable ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.vrfConfigurator.DeleteTable(prevValue)
+	} else if diff {
+		return fmt.Errorf("MODIFY VRF TABLE NOT IMPLEMENTED")
+	}
+	return plugin.vrfConfigurator.AddTable(value)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator
