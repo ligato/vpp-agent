@@ -53,27 +53,19 @@ func (plugin *StnConfigurator) Init() (err error) {
 		return err
 	}
 
-	err = plugin.checkMsgCompatibility()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return plugin.checkMsgCompatibility()
 }
 
 // Check STN rule raw data
 func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.StnRule, error) {
 	if stnInput == nil {
-		log.Infof("STN input is empty")
-		return nil, nil
+		return nil, fmt.Errorf("STN input is empty")
 	}
 	if stnInput.Interface == "" {
-		log.Infof("STN input does not contain interface")
-		return nil, nil
+		return nil, fmt.Errorf("STN input does not contain interface")
 	}
 	if stnInput.IpAddress == "" {
-		log.Infof("STN input does not contain IP")
-		return nil, nil
+		return nil, fmt.Errorf("STN input does not contain IP")
 	}
 
 	ifName := stnInput.Interface
@@ -87,11 +79,11 @@ func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging
 		return nil, err
 	}
 
-	stn_rule := &vppcalls.StnRule{
+	stnRule := &vppcalls.StnRule{
 		IpAddress: *parsedIP,
 		IfaceIdx:  ifIndex,
 	}
-	return stn_rule, nil
+	return stnRule, nil
 }
 
 func (plugin *StnConfigurator) Add(rule *model_stn.StnRule) error {
@@ -117,7 +109,7 @@ func (plugin *StnConfigurator) Add(rule *model_stn.StnRule) error {
 }
 
 func (plugin *StnConfigurator) Delete(rule *model_stn.StnRule) error {
-	plugin.Log.Infof("Removing rule on if: %v with IP: %v", rule.Interface, rule.IpAdress)
+	plugin.Log.Infof("Removing rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
 	stnRule, err := CheckStn(rule, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
@@ -169,23 +161,4 @@ func (plugin *StnConfigurator) checkMsgCompatibility() error {
 		plugin.Log.Error(err)
 	}
 	return err
-}
-
-func (plugin *StnConfigurator) Resync(stnRules []*model_stn.StnRule) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
-	// Calculate and log stn rules resync
-	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
-		}
-	}()
-
-	var wasError error
-	if len(stnRules) > 0 {
-		for _, rule := range stnRules {
-			wasError = plugin.Add(rule)
-		}
-	}
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules end. ", wasError)
-	return wasError
 }
