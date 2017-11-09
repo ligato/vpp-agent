@@ -35,6 +35,7 @@ type ProtoWatcher interface {
 // It is sent through the respChan callback.
 type ProtoWatchResp interface {
 	datasync.ChangeValue
+	datasync.WithPrevValue
 	datasync.WithKey
 }
 

@@ -64,8 +64,8 @@ func (f *Flavor) Inject() bool {
 
 	f.injectEmbedded()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
@@ -85,7 +85,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
-	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")

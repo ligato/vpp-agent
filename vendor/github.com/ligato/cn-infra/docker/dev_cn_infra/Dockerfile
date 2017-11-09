@@ -4,7 +4,7 @@ ARG AGENT_COMMIT="xxx"
 
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
-    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor
+    iproute2 iputils-ping inetutils-traceroute libapr1 supervisor telnet
 
 RUN mkdir /opt/agent
 RUN mkdir /opt/agent/dev
@@ -13,10 +13,10 @@ WORKDIR /opt/agent/dev
 
 
 # install Go & Glide
-RUN wget https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz && \
-    tar -xvf go1.8.3.linux-amd64.tar.gz && \
+RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
+    tar -xvf go1.9.2.linux-amd64.tar.gz && \
     mv go /usr/local && \
-    rm -f go1.8.3.linux-amd64.tar.gz
+    rm -f go1.9.2.linux-amd64.tar.gz
 
 # build & install Protobuf & gogo protobuf compiler
 RUN apt-get install -y make && \
