@@ -57,7 +57,7 @@ func GetInterfaceVRF(ifaceIndex uint32, log logging.Logger,
 	return reply.VrfID, nil
 }
 
-// SetInterfaceVRF assigns VRF table to interface
+// SetInterfaceVRF retrieves VRF table from interface
 func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger,
 	vppChan *govppapi.Channel) error {
 	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfIndex)
