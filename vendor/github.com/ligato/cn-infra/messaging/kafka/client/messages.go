@@ -65,7 +65,7 @@ func (cm *ConsumerMessage) GetValue() []byte {
 
 // GetPrevValue returns the previous value associated with the message.
 func (cm *ConsumerMessage) GetPrevValue() []byte {
-	return cm.Value
+	return cm.PrevValue
 }
 
 // ProtoConsumerMessage encapsulates a Kafka message returned by the consumer and provides means

@@ -40,6 +40,10 @@ func printContact(c *phonebook.Contact) {
 	fmt.Printf("\t%s\n\t\t%s\n\t\t%s\n", c.Name, c.Company, c.Phonenumber)
 }
 
+func printPrevContact(c *phonebook.Contact) {
+	fmt.Printf("Previous: \t%s\n\t\t%s\n\t\t%s\n", c.Name, c.Company, c.Phonenumber)
+}
+
 func main() {
 	cfg, err := processArgs()
 	if err != nil {
@@ -78,9 +82,19 @@ watcherLoop:
 			switch resp.GetChangeType() {
 			case datasync.Put:
 				contact := &phonebook.Contact{}
+				prevContact := &phonebook.Contact{}
 				fmt.Println("Creating ", resp.GetKey())
 				resp.GetValue(contact)
+				exists, err := resp.GetPrevValue(prevContact)
+				if err != nil {
+					logroot.StandardLogger().Errorf("err: %v", err)
+				}
 				printContact(contact)
+				if exists {
+					printPrevContact(prevContact)
+				} else {
+					fmt.Printf("Previous value does not exist\n")
+				}
 			case datasync.Delete:
 				fmt.Println("Removing ", resp.GetKey())
 			}
