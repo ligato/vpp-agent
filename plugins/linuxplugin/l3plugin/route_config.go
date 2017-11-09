@@ -37,9 +37,10 @@ import (
 type LinuxRouteConfigurator struct {
 	Log logging.Logger
 
-	LinuxIfIdx  ifaceidx.LinuxIfIndexRW
-	RouteIdxSeq uint32
-	rtIndexes   l3idx.LinuxRouteIndexRW
+	LinuxIfIdx      ifaceidx.LinuxIfIndexRW
+	RouteIdxSeq     uint32
+	rtIndexes       l3idx.LinuxRouteIndexRW
+	rtCachedIndexes l3idx.LinuxRouteIndexRW
 
 	// Time measurement
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
@@ -47,9 +48,10 @@ type LinuxRouteConfigurator struct {
 }
 
 // Init initializes static route configurator and starts goroutines
-func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW) error {
+func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW, rtCachedIndexes l3idx.LinuxRouteIndexRW) error {
 	plugin.Log.Debug("Initializing LinuxRouteConfigurator")
 	plugin.rtIndexes = rtIndexes
+	plugin.rtCachedIndexes = rtCachedIndexes
 
 	return nil
 }
@@ -71,7 +73,10 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	// Find interface
 	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
 	if !foundIface {
-		return fmt.Errorf("cannot create static route %v, interface %v not found", route.Name, route.Interface)
+		plugin.Log.Infof("Static route %v requires non-existing interface %v, moving to cache", route.Name, route.Interface)
+		plugin.rtCachedIndexes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
+		plugin.RouteIdxSeq++
+		return nil
 	}
 	netLinkRoute.LinkIndex = int(idx)
 
@@ -102,7 +107,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	err = linuxcalls.AddStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch))
 
-	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.RouteIdxSeq, nil)
+	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.RouteIdxSeq, route)
 	plugin.RouteIdxSeq++
 	plugin.Log.Debugf("Route %v registered", route.Name)
 
@@ -121,7 +126,10 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	// Find interface
 	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(newRoute.Interface)
 	if !foundIface {
-		return fmt.Errorf("cannot update static route %v, interface %v not found", newRoute.Name, newRoute.Interface)
+		plugin.Log.Infof("Modified static route %v requires non-existing interface %v, moving to cache", newRoute.Name, newRoute.Interface)
+		plugin.rtCachedIndexes.RegisterName(newRoute.Name, plugin.RouteIdxSeq, newRoute)
+		plugin.RouteIdxSeq++
+		return nil
 	}
 	netLinkRoute.LinkIndex = int(idx)
 
@@ -173,10 +181,10 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	defer revertNs()
 
 	// Remove old route and create a new one
-	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err != nil {
+	if err = plugin.DeleteLinuxStaticRoute(oldRoute); err != nil {
 		return err
 	}
-	return plugin.DeleteLinuxStaticRoute(oldRoute)
+	return linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch))
 }
 
 // DeleteLinuxStaticRoute reacts to a removed NB configuration of a Linux static route entry.
@@ -207,8 +215,15 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 			return fmt.Errorf("cannot remove static route %v, dst address net mask not set", route.Name)
 		}
 		netLinkRoute.Dst = dstIPAddr
+	} else if route.GwAddr != "" {
+		gateway := net.ParseIP(route.GwAddr)
+		if gateway == nil {
+			return fmt.Errorf("cannot remove static route %v, gateway address has incorrect format: %v",
+				route.Name, route.GwAddr)
+		}
+		netLinkRoute.Gw = gateway
 	} else {
-		return fmt.Errorf("cannot remove static route %v, destination addres not set", route.Name)
+		return fmt.Errorf("cannot remove static route %v, destination/gateway address not available", route.Name)
 	}
 
 	// Scope
@@ -245,13 +260,68 @@ func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
 	if err != nil {
 		return err
 	}
-	for _, route := range routes {
-		plugin.Log.WithField("interface", route.LinkIndex).Debugf("Found new static linux route")
-		_, _, found := plugin.rtIndexes.LookupIdx(routeIdentifier(&route))
+	for _, rt := range routes {
+		plugin.Log.WithField("interface", rt.LinkIndex).Debugf("Found new static linux route")
+		_, _, found := plugin.rtIndexes.LookupIdx(routeIdentifier(&rt))
 		if !found {
-			plugin.rtIndexes.RegisterName(routeIdentifier(&route), plugin.RouteIdxSeq, nil)
+			plugin.rtIndexes.RegisterName(routeIdentifier(&rt), plugin.RouteIdxSeq, nil)
 			plugin.RouteIdxSeq++
-			plugin.Log.Debug("route registered as %v", routeIdentifier(&route))
+			plugin.Log.Debug("route registered as %v", routeIdentifier(&rt))
+		}
+	}
+
+	return nil
+}
+
+// ResolveCreatedInterface manages cached static routes for new interface
+func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index uint32) error {
+	plugin.Log.Infof("Linux static routes: resolve new interface %v", name)
+
+	// Search mapping for cached routes using the new interface
+	cachedRoutes := plugin.rtCachedIndexes.LookupNamesByInterface(name)
+	if len(cachedRoutes) > 0 {
+		plugin.Log.Debugf("Found %v cached routes for interface %v", len(cachedRoutes), name)
+		// store default routes, they have to be configured as the last ones
+		var defRoutes []*l3.LinuxStaticRoutes_Route
+		// static routes
+		for _, cachedRoute := range cachedRoutes {
+			if cachedRoute.Default {
+				defRoutes = append(defRoutes, cachedRoute)
+				continue
+			}
+			if err := plugin.ConfigureLinuxStaticRoute(cachedRoute); err != nil {
+				plugin.Log.Warn(err)
+				return err
+			}
+			// Remove from cache
+			plugin.rtCachedIndexes.UnregisterName(cachedRoute.Name)
+		}
+		// default routes
+		for _, cachedDefaultRoute := range defRoutes {
+			if err := plugin.ConfigureLinuxStaticRoute(cachedDefaultRoute); err != nil {
+				plugin.Log.Warn(err)
+				return err
+			}
+			// Remove from cache
+			plugin.rtCachedIndexes.UnregisterName(cachedDefaultRoute.Name)
+		}
+	}
+
+	return nil
+}
+
+// ResolveDeletedInterface manages static routes for removed interface
+func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index uint32) error {
+	plugin.Log.Infof("Linux static routes: resolve deleted interface %v", name)
+
+	// Search mapping for configured application namespaces using the new interface
+	confRoutes := plugin.rtIndexes.LookupNamesByInterface(name)
+	if len(confRoutes) > 0 {
+		plugin.Log.Debugf("Found %v routes belonging to the removed interface %v", len(confRoutes), name)
+		for _, rt := range confRoutes {
+			// Add to un-configured. If the interface will be recreated, all routes are configured back
+			plugin.rtCachedIndexes.RegisterName(rt.Name, plugin.RouteIdxSeq, rt)
+			plugin.RouteIdxSeq++
 		}
 	}
 

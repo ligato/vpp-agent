@@ -26,7 +26,7 @@ type Watcher interface {
 // WatchResp represents a notification about change.
 // It is passed to the Watch callback.
 type WatchResp interface {
-	// GetChangeType return the type of the change.
+	// GetChangeType returns the type of the change.
 	GetChangeType() datasync.PutDel
 
 	// GetValue returns the changed value.

@@ -45,9 +45,11 @@ func main() {
 
 	// Start Agent with ExampleFlavor
 	// (combination of ExamplePlugin & Local flavor)
-	flavor := ExampleFlavor{ExamplePlugin: ExamplePlugin{exampleFinished: exampleFinished}}
-	plugins := flavor.Plugins()
-	agent := core.NewAgent(flavor.LogRegistry().NewLogger("core"), 15*time.Second, plugins...)
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+		examplePlug := &ExamplePlugin{exampleFinished: exampleFinished,
+			PluginInfraDeps: *flavor.InfraDeps(PluginName, local.WithConf())}
+		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	}))
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
@@ -55,7 +57,7 @@ func main() {
 type ExamplePlugin struct {
 	local.PluginInfraDeps // this field is usually injected in flavor
 	*Conf                 // it is possible to set config value programmatically (can be overridden)
-	exampleFinished       chan struct{}
+	exampleFinished chan struct{}
 }
 
 // Conf - example config binding

@@ -51,3 +51,37 @@ func (marker *WithTimeoutOpt) OptionMarkerCore() {}
 
 // OptionMarkerCore is just for marking implementation that implements this interface.
 func (marker *WithLoggerOpt) OptionMarkerCore() {}
+
+// WithPluginsOpt is used in NewAgent()
+type WithPluginsOpt interface {
+	Option
+
+	// return list named plugins with injected dependencies
+	// the order in list impacts the order of Init(), AfterInit(), Close() sequence
+	Plugins(...Flavor) []*NamedPlugin
+}
+
+// WithPlugin for adding a custom plugins to the Agent
+//
+// Example:
+//
+//    flavor := &MyFlavor{}
+//	  flavor.Inject()
+//    NewAgent(myFlavor, WithPlugin("my-plugin", &MyPlugin{DependencyXY: &flavor.ETCD}))
+//    }))
+func WithPlugin(pluginName string, plugin Plugin) WithPluginsOpt {
+	return &withPluginOpt{&NamedPlugin{PluginName(pluginName), plugin}}
+}
+
+// WithPlugin
+type withPluginOpt struct {
+	plugin *NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginOpt) OptionMarkerCore() {}
+
+// Plugins is just for marking implementation that it implements this interface
+func (opt *withPluginOpt) Plugins(...Flavor) []*NamedPlugin {
+	return []*NamedPlugin{opt.plugin}
+}

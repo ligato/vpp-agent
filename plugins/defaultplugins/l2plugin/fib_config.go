@@ -21,7 +21,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -31,6 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"net"
 	"time"
 )
 
@@ -250,7 +250,7 @@ func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
 			break
 		}
 		// Store name if missing
-		macStr := addrs.MacIntToString(msg.Mac)
+		macStr := net.HardwareAddr(msg.Mac).String()
 		_, _, found := plugin.FibIndexes.LookupIdx(macStr)
 		if !found {
 			// Metadata resolution

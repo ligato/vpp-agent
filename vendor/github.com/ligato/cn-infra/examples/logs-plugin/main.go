@@ -1,11 +1,9 @@
 package main
 
 import (
-	"time"
-
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 // *************************************************************************
@@ -26,16 +24,18 @@ func main() {
 	// Init close channel to stop the example after everything was logged
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor
-	// (combination of ExamplePlugin & reused cn-infra plugins).
-	flavor := ExampleFlavor{ExamplePlugin: ExamplePlugin{exampleFinished: exampleFinished}}
-	agent := core.NewAgent(logroot.StandardLogger(), 15*time.Second, flavor.Plugins()...)
+	// Start Agent with ExamplePlugin & LocalFlavor (reused cn-infra plugins).
+	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+		examplePlug := &ExamplePlugin{exampleFinished: exampleFinished,
+			PluginLogDeps: *flavor.LogDeps("logs-example")}
+		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	}))
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
 // ExamplePlugin presents the PluginLogger API.
 type ExamplePlugin struct {
-	Deps
+	local.PluginLogDeps
 	exampleFinished chan struct{}
 }
 

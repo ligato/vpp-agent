@@ -31,13 +31,20 @@ type Flavor interface {
 
 	// Inject method is supposed to be implemented by each Flavor
 	// to inject dependencies between the plugins.
-	// When this method is called for the first time, it returns true
-	// (meaning the dependency injection ran that first time).
+	Injector
+
+	// LogRegistry is a getter for accessing log registry (that allows to create new loggers)
+	LogRegistry() logging.Registry
+}
+
+// Injector is simple interface reused at least on two places:
+// - Flavor
+// - NewAgent constructor WithPlugins() option
+type Injector interface {
+	// When this method is called for the first time it returns true
+	// (meaning the dependency injection ran at the first time).
 	// It is possible to call this method repeatedly (then it will return false).
 	Inject() (firstRun bool)
-
-	// LogRegistry is a getter for accessing log registry (that allows to create new loggers).
-	LogRegistry() logging.Registry
 }
 
 // ListPluginsInFlavor lists plugins in a Flavor.
@@ -52,10 +59,10 @@ func ListPluginsInFlavor(flavor Flavor) (plugins []*NamedPlugin) {
 }
 
 // listPluginsInFlavor lists all plugins in a Flavor. A Flavor is composed
-// of one or more Plugins and (optionally) multiple Flavors. The composition
+// of one or more Plugins and (optionally) multiple Inject. The composition
 // is recursive: a component Flavor contains Plugin components and may
 // contain Flavor components as well. The function recursively lists
-// plugins included in component Flavors.
+// plugins included in component Inject.
 //
 // The function returns an error if the flavorValue argument does not
 // satisfy the Flavor interface. All components in the argument flavorValue
@@ -162,4 +169,66 @@ func fieldPlugin(field reflect.StructField, fieldVal reflect.Value, pluginType r
 
 	}
 	return nil, false
+}
+
+// Inject is a utility if you need to combine multiple flavorAggregator for in first parameter of NewAgent()
+// It calls Inject() on every plugin.
+//
+// Example:
+//
+//   NewAgent(Inject(&Flavor1{}, &Flavor2{}))
+//
+func Inject(fs ...Flavor) Flavor {
+	ret := flavorAggregator{fs}
+	ret.Inject()
+	return ret
+}
+
+type flavorAggregator struct {
+	fs []Flavor
+}
+
+// Plugins returns list of plugins af all flavorAggregator
+func (flavors flavorAggregator) Plugins() []*NamedPlugin {
+	ret := []*NamedPlugin{}
+	for _, f := range flavors.fs {
+		ret = appendDiff(ret, f.Plugins()...)
+	}
+	return ret
+}
+
+// Inject returns true if at least one returned true
+func (flavors flavorAggregator) Inject() (firstRun bool) {
+	ret := false
+	for _, f := range flavors.fs {
+		ret = ret || f.Inject()
+	}
+	return ret
+}
+
+// LogRegistry is a getter for accessing log registry of first flavor
+func (flavors flavorAggregator) LogRegistry() logging.Registry {
+	if len(flavors.fs) > 0 {
+		flavors.fs[0].LogRegistry()
+	}
+
+	return nil
+}
+
+// Do not append plugins contained in multiple flavors
+func appendDiff(existing []*NamedPlugin, new ...*NamedPlugin) []*NamedPlugin {
+	for _, newPlugin := range new {
+		exists := false
+		for _, existingPlugin := range existing {
+			if newPlugin.PluginName == existingPlugin.PluginName {
+				logroot.StandardLogger().Debugf("duplicate of plugin skipped %v", newPlugin.PluginName)
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			existing = append(existing, newPlugin)
+		}
+	}
+	return existing
 }

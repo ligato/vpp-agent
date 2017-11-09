@@ -31,7 +31,7 @@ type protoWatchResp struct {
 	keyval.BytesWatchResp
 }
 
-// Watch for changes in datastore.
+// Watch watches for changes in datastore.
 // <resp> callback is used for delivery of watch events.
 func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), closeChan chan string, keys ...string) error {
 	err := pdb.watcher.Watch(func(msg keyval.BytesWatchResp) {
@@ -43,7 +43,7 @@ func (pdb *protoWatcher) Watch(resp func(keyval.ProtoWatchResp), closeChan chan 
 	return nil
 }
 
-// NewWatchResp initialize proto watch response from raw WatchResponse <resp>.
+// NewWatchResp initializes proto watch response from raw WatchResponse <resp>.
 func NewWatchResp(serializer keyval.Serializer, resp keyval.BytesWatchResp) keyval.ProtoWatchResp {
 	return &protoWatchResp{serializer, resp}
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 )
 
-// ProtoBroker is decorator that allows to read/write proto file modelled data.
+// ProtoBroker is a decorator that allows to read/write proto file modelled data.
 // It marshals/unmarshals go structures to slice of bytes and vice versa behind
 // the scenes.
 type ProtoBroker interface {
@@ -36,20 +36,20 @@ type ProtoBroker interface {
 	// under the provided <key>.
 	ListValues(key string) (ProtoKeyValIterator, error)
 	// ListKeys returns an iterator that allows to traverse all keys from data
-	// store that share the given <prefix>
+	// store that share the given <prefix>.
 	ListKeys(prefix string) (ProtoKeyIterator, error)
 	// Delete removes data stored under the <key>.
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 
-// ProtoKvPair group getter for single key-value pair
+// ProtoKvPair groups getter for single key-value pair.
 type ProtoKvPair interface {
 	datasync.LazyValue
 	datasync.WithPrevValue
 	datasync.WithKey
 }
 
-// ProtoKeyIterator is an iterator returned by ListKeys call
+// ProtoKeyIterator is an iterator returned by ListKeys call.
 type ProtoKeyIterator interface {
 	// GetNext retrieves the following item from the context.
 	GetNext() (key string, rev int64, stop bool)
@@ -57,7 +57,7 @@ type ProtoKeyIterator interface {
 	io.Closer
 }
 
-// ProtoKeyVal represents a single key-value pair
+// ProtoKeyVal represents a single key-value pair.
 type ProtoKeyVal interface {
 	ProtoKvPair
 	datasync.WithRevision
@@ -67,6 +67,6 @@ type ProtoKeyVal interface {
 type ProtoKeyValIterator interface {
 	// GetNext retrieves the following value from the context. GetValue is unmarshaled into the provided argument.
 	GetNext() (kv ProtoKeyVal, stop bool)
-	// Closer is needed for closing the iterator (please check error returned by Close method)
+	// Closer is needed for closing the iterator (please check error returned by Close method).
 	io.Closer
 }

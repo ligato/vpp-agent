@@ -21,8 +21,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"strconv"
-	"strings"
+	"net"
+
 	"time"
 )
 
@@ -96,15 +96,17 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 
 func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger) error {
 	// Convert MAC address
-	macHex := strings.Replace(logicalReq.MAC, ":", "", -1)
-	macHex = macHex + "0000" // EUI-48 correction
-	macInt, errMac := strconv.ParseUint(macHex, 16, 64)
-	if errMac != nil {
-		log.Debug(errMac)
+	var mac []byte
+	var err error
+	if logicalReq.MAC != "" {
+		mac, err = net.ParseMAC(logicalReq.MAC)
+	}
+	if err != nil {
+		return err
 	}
 
 	req := &l2ba.L2fibAddDel{}
-	req.Mac = macInt
+	req.Mac = mac
 	req.BdID = logicalReq.BDIdx
 	req.SwIfIndex = logicalReq.SwIfIdx
 	req.BviMac = parseBoolToUint8(logicalReq.BVI)
