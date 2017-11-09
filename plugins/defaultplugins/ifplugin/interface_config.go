@@ -32,6 +32,8 @@ import (
 	"bytes"
 	"errors"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -47,7 +49,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"time"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -186,6 +187,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	if iface.PhysAddress != "" {
 		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceSetMacAddress{}, plugin.Stopwatch))
+		if err != nil {
+			wasError = err
+		}
+	}
+
+	// configure optional vrf
+	if iface.Vrf > 0 {
+		err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh)
 		if err != nil {
 			wasError = err
 		}
@@ -339,24 +348,53 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		return err
 	}
 
-	del, add := addrs.DiffAddr(newAddrs, oldAddrs)
+	// configure VRF if it was changed
+	if oldConfig.Vrf != newConfig.Vrf {
+		plugin.Log.Debugf("VRF changed: %v -> %v", oldConfig.Vrf, newConfig.Vrf)
 
-	plugin.Log.Debug("del ip addrs: ", del)
-	plugin.Log.Debug("add ip addrs: ", add)
+		// interface must not have IP when setting VRF
+		for _, addr := range oldAddrs {
+			err := vppcalls.DelInterfaceIP(ifIdx, addr, plugin.Log, plugin.vppCh, nil)
+			plugin.Log.Debug("del ip addr ", ifIdx, " ", addr, " ", err)
+			if nil != err {
+				wasError = err
+			}
+		}
 
-	for i := range del {
-		err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Log, plugin.vppCh, nil)
-		plugin.Log.Debug("del ip addr ", ifIdx, " ", del[i], " ", err)
-		if nil != err {
+		err := vppcalls.SetInterfaceVRF(ifIdx, newConfig.Vrf, plugin.Log, plugin.vppCh)
+		if err != nil {
 			wasError = err
 		}
-	}
 
-	for i := range add {
-		err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Log, plugin.vppCh, nil)
-		plugin.Log.Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
-		if nil != err {
-			wasError = err
+		// set new IP addresses
+		for _, addr := range newAddrs {
+			err := vppcalls.AddInterfaceIP(ifIdx, addr, plugin.Log, plugin.vppCh, nil)
+			plugin.Log.Debug("add ip addr ", ifIdx, " ", addr, " ", err)
+			if nil != err {
+				wasError = err
+			}
+		}
+	} else {
+		// if VRF is not changed, try to add/del only differences
+		del, add := addrs.DiffAddr(newAddrs, oldAddrs)
+
+		plugin.Log.Debug("del ip addrs: ", del)
+		plugin.Log.Debug("add ip addrs: ", add)
+
+		for i := range del {
+			err := vppcalls.DelInterfaceIP(ifIdx, del[i], plugin.Log, plugin.vppCh, nil)
+			plugin.Log.Debug("del ip addr ", ifIdx, " ", del[i], " ", err)
+			if nil != err {
+				wasError = err
+			}
+		}
+
+		for i := range add {
+			err := vppcalls.AddInterfaceIP(ifIdx, add[i], plugin.Log, plugin.vppCh, nil)
+			plugin.Log.Debug("add ip addr ", ifIdx, " ", add[i], " ", err)
+			if nil != err {
+				wasError = err
+			}
 		}
 	}
 
