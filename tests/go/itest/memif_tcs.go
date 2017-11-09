@@ -2,9 +2,9 @@ package itest
 
 import (
 	//test_if "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/testing"
-	"testing"
-	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
+	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
+	"testing"
 )
 
 type suiteMemif struct {

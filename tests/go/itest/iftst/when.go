@@ -1,11 +1,11 @@
 package iftst
 
 import (
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/cn-infra/core"
-	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/cn-infra/logging"
+	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
 const pluginName = core.PluginName("when_iface")

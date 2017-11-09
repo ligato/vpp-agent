@@ -15,17 +15,17 @@
 package rpc
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"golang.org/x/net/context"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"net"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
+	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"golang.org/x/net/context"
+	"net"
 )
 
 // GRPCSvcPlugin registers VPP GRPC services in *grpc.Server
@@ -87,7 +87,7 @@ func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelInterfaces one or multiple interfaces by their unique names 
+// DelInterfaces one or multiple interfaces by their unique names
 // (forwards the input to localclient)
 func (svc *ChangeVppSvc) DelInterfaces(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -141,7 +141,7 @@ func (svc *ChangeVppSvc) PutXCons(ctx context.Context, request *l2.XConnectPairs
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelXCons one or multiple Cross Connects by their unique names 
+// DelXCons one or multiple Cross Connects by their unique names
 // (forwards the input to localclient)
 func (svc *ChangeVppSvc) DelXCons(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")

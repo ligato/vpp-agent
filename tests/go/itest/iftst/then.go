@@ -1,18 +1,18 @@
 package iftst
 
 import (
-	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"time"
 
-	. "github.com/onsi/gomega"
-	idx "github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/cn-infra/core"
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
+	idx "github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	. "github.com/onsi/gomega"
 )
 
 // ThenIface is a collection of test step methods (see Behavior Driven Development)

@@ -52,7 +52,7 @@ type Plugin struct {
 
 	// static routes
 	rtIndexes         l3idx.LinuxRouteIndexRW
-	rtCachedIndexes         l3idx.LinuxRouteIndexRW
+	rtCachedIndexes   l3idx.LinuxRouteIndexRW
 	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
 	resyncChan chan datasync.ResyncEvent

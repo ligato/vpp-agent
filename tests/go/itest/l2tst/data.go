@@ -19,10 +19,10 @@ var (
 		MacAge:              0, /*means disable aging*/
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "memif1",
+				Name: "memif1",
 				BridgedVirtualInterface: true,
 			}, {
-				Name:                    "memif4",
+				Name: "memif4",
 				BridgedVirtualInterface: false,
 			},
 		},
@@ -39,10 +39,10 @@ var (
 		MacAge:              0, /*means disable aging*/
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    iftst.VxlanVni5.Name,
+				Name: iftst.VxlanVni5.Name,
 				BridgedVirtualInterface: false,
 			}, {
-				Name:                    iftst.AfPacketVeth1.Name,
+				Name: iftst.AfPacketVeth1.Name,
 				BridgedVirtualInterface: false,
 			},
 		},
@@ -67,7 +67,7 @@ func SimpleBridgeDomain1XIfaceBuilder(name string, iface1 string, bvi1 bool) l2.
 		MacAge:              0,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    iface1,
+				Name: iface1,
 				BridgedVirtualInterface: bvi1,
 			},
 		},
@@ -86,10 +86,10 @@ func SimpleBridgeDomain2XIfaceBuilder(name string, iface1 string, iface2 string,
 		MacAge:              0,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    iface1,
+				Name: iface1,
 				BridgedVirtualInterface: bvi1,
 			}, {
-				Name:                    iface2,
+				Name: iface2,
 				BridgedVirtualInterface: bvi2,
 			},
 		},
