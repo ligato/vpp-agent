@@ -85,7 +85,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
-	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
