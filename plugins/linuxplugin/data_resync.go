@@ -67,12 +67,11 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
-	} else {
-		for _, err := range resyncErrs {
-			plugin.Log.Error(err)
-		}
-		return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 	}
+	for _, err := range resyncErrs {
+		plugin.Log.Error(err)
+	}
+	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 
 func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {

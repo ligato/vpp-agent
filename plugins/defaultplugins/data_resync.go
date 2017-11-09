@@ -154,12 +154,11 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
-	} else {
-		for _, err := range resyncErrs {
-			plugin.Log.Error(err)
-		}
-		return fmt.Errorf("%v errors occured during defaultplugins resync", len(resyncErrs))
 	}
+	for _, err := range resyncErrs {
+		plugin.Log.Error(err)
+	}
+	return fmt.Errorf("%v errors occured during defaultplugins resync", len(resyncErrs))
 }
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
