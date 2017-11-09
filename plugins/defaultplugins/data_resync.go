@@ -20,6 +20,7 @@ import (
 
 	"time"
 
+	"fmt"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -110,44 +111,54 @@ func (plugin *Plugin) resyncConfigPropageOptimizedRequest(req *DataResyncReq) er
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
 func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
-	var err error
-	if err = plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
-		return err
+	// store all resync errors
+	var resyncErrs []error
+
+	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
-		return err
+	if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-		return err
+	if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
-		return err
+	if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-		return err
+	if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-		return err
+	if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
-		return err
+	if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
-		return err
+	if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
-		return err
+	if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	return err
+
+	// log errors if any
+	if len(resyncErrs) == 0 {
+		return nil
+	}
+	for _, err := range resyncErrs {
+		plugin.Log.Error(err)
+	}
+	return fmt.Errorf("%v errors occured during defaultplugins resync", len(resyncErrs))
 }
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
