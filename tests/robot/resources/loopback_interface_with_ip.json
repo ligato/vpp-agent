@@ -4,6 +4,7 @@
   "enabled": ${enabled},
   "phys_address": "${mac}",
   "mtu": ${mtu},
+  "vrf": ${vrf},
   "ip_addresses": [
     "${ip}/${prefix}"
   ]
