@@ -164,13 +164,13 @@ func (dsl *PutDSL) Send() defaultplugins.Reply {
 	return dsl.parent.Send()
 }
 
-// Interface adds a request to delete an existing VPP network interface. CHECK
+// Interface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) Interface(interfaceName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(intf.InterfaceKey(interfaceName))
 	return dsl
 }
 
-// BfdSession adds a request to delete an existing bidirectional forwarding CHECK
+// BfdSession adds a request to delete an existing bidirectional forwarding
 // detection session.
 func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(bfd.SessionKey(bfdSessionIfaceName))
