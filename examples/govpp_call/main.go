@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
@@ -59,6 +60,8 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
+	VPP defaultplugins.API
+
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example
@@ -73,9 +76,10 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	plugin.Log.Info("Default plugin plugin ready")
 
+	//plugin.VPP.DisableResync(l2.BridgeDomainKeyPrefix())
+
 	// Make VPP call
 	go plugin.VppCall()
-	// Make VPP call
 
 	return err
 }

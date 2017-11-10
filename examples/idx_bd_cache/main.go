@@ -44,6 +44,9 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
+	// Linux plugin dependency
+	VPP defaultplugins.API
+
 	bdIdxLocal  bdidx.BDIndex
 	bdIdxAgent1 bdidx.BDIndex
 	bdIdxAgent2 bdidx.BDIndex
@@ -65,7 +68,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// get access to local bridge domain indexes
-	plugin.bdIdxLocal = defaultplugins.GetBDIndexes()
+	plugin.bdIdxLocal = plugin.VPP.GetBDIndexes()
 
 	// Run consumer
 	go plugin.consume()

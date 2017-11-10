@@ -21,17 +21,20 @@ var _ = proto.Marshal
 type AclAction int32
 
 const (
-	AclAction_DENY   AclAction = 0
-	AclAction_PERMIT AclAction = 1
+	AclAction_DENY    AclAction = 0
+	AclAction_PERMIT  AclAction = 1
+	AclAction_REFLECT AclAction = 2
 )
 
 var AclAction_name = map[int32]string{
 	0: "DENY",
 	1: "PERMIT",
+	2: "REFLECT",
 }
 var AclAction_value = map[string]int32{
-	"DENY":   0,
-	"PERMIT": 1,
+	"DENY":    0,
+	"PERMIT":  1,
+	"REFLECT": 2,
 }
 
 func (x AclAction) String() string {

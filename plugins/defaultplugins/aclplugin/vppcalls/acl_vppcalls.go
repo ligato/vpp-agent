@@ -228,6 +228,38 @@ func DumpInterface(swIndex uint32, vppChannel *api.Channel, timeLog measure.Stop
 	return msg, nil
 }
 
+// DumpInterfaces finds  all interfaces in VPP and returns their ACL configurations
+func DumpInterfaces(vppChannel *api.Channel, timeLog measure.StopWatchEntry) ([]*acl_api.ACLInterfaceListDetails, error) {
+	// ACLInterfaceListDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	msg := &acl_api.ACLInterfaceListDump{}
+	msg.SwIfIndex = 0 // dump all
+
+	req := vppChannel.SendMultiRequest(msg)
+
+	var aclInterfaces []*acl_api.ACLInterfaceListDetails
+	for {
+		reply := &acl_api.ACLInterfaceListDetails{}
+		stop, err := req.ReceiveReply(reply)
+		if stop {
+			break
+		}
+		if err != nil {
+			logrus.DefaultLogger().Error(err)
+			return nil, err
+		}
+		aclInterfaces = append(aclInterfaces, reply)
+	}
+
+	return aclInterfaces, nil
+}
+
 // Method transforms provided set of IP proto ACL rules to binapi ACL rules.
 func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) ([]acl_api.ACLRule, error) {
 	var aclIPRules []acl_api.ACLRule

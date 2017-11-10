@@ -144,6 +144,7 @@ type Plugin struct {
 	changeChan       chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	watchConfigReg   datasync.WatchRegistration
 	watchStatusReg   datasync.WatchRegistration
+	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
 	ifMtu          uint32
@@ -182,17 +183,46 @@ type DPConfig struct {
 	Strategy  string `json:"strategy"`
 }
 
-var (
-	// gPlugin holds the global instance of the Plugin
-	gPlugin *Plugin
-)
+// DisableResync can be used to disable resync for one or more key prefixes
+func (plugin *Plugin) DisableResync(keyPrefix ...string) {
+	plugin.Log.Infof("Keys with prefixes %v will be skipped", keyPrefix)
+	plugin.omittedPrefixes = keyPrefix
+}
 
-// plugin function is used in api to access the plugin instance. It panics if the plugin instance is not initialized.
-func plugin() *Plugin {
-	if gPlugin == nil {
-		panic("Trying to access the Interface Plugin but it is still not initialized")
-	}
-	return gPlugin
+// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
+// This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
+func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
+	return plugin.swIfIndexes
+}
+
+// GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
+func (plugin *Plugin) GetBfdSessionIndexes() idxvpp.NameToIdx {
+	return plugin.bfdSessionIndexes
+}
+
+// GetBfdAuthKeyIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_auth_keys.
+func (plugin *Plugin) GetBfdAuthKeyIndexes() idxvpp.NameToIdx {
+	return plugin.bfdAuthKeysIndexes
+}
+
+// GetBfdEchoFunctionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_echo_function
+func (plugin *Plugin) GetBfdEchoFunctionIndexes() idxvpp.NameToIdx {
+	return plugin.bfdEchoFunctionIndex
+}
+
+// GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes.
+func (plugin *Plugin) GetBDIndexes() bdidx.BDIndex {
+	return plugin.bdIndexes
+}
+
+// GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
+func (plugin *Plugin) GetFIBIndexes() idxvpp.NameToIdx {
+	return plugin.fibIndexes
+}
+
+// GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
+func (plugin *Plugin) GetXConnectIndexes() idxvpp.NameToIdx {
+	return plugin.xcIndexes
 }
 
 // Init gets handlers for ETCD, Messaging and delegates them to ifConfigurator & ifStateUpdater
@@ -283,8 +313,6 @@ func (plugin *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
-
-	gPlugin = plugin
 
 	return nil
 }

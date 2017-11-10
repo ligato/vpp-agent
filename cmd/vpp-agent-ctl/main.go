@@ -736,7 +736,7 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 	bd.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 1)
 
 	bd.BridgeDomains[0] = new(l2.BridgeDomains_BridgeDomain)
-	bd.BridgeDomains[0].Name = "bd1"
+	bd.BridgeDomains[0].Name = "bd2"
 	bd.BridgeDomains[0].Learn = true
 	bd.BridgeDomains[0].ArpTermination = true
 	bd.BridgeDomains[0].Flood = true
@@ -745,7 +745,7 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	bd.BridgeDomains[0].Interfaces = make([]*l2.BridgeDomains_BridgeDomain_Interfaces, 1)
 	bd.BridgeDomains[0].Interfaces[0] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
-	bd.BridgeDomains[0].Interfaces[0].Name = "tap1"
+	bd.BridgeDomains[0].Interfaces[0].Name = "tap2"
 	bd.BridgeDomains[0].Interfaces[0].BridgedVirtualInterface = false
 
 	//bd.BridgeDomains[0].Interfaces[1] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
