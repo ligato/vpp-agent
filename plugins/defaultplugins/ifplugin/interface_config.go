@@ -194,8 +194,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional vrf
 	if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
-			wasError = err
-		}
+		wasError = err
+	}
 
 	// configure optional ip address
 	newAddrs, err := addrs.StrAddrsToStruct(iface.IpAddresses)
@@ -533,7 +533,7 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 		newConfig.RingSize != oldConfig.RingSize || newConfig.Master != oldConfig.Master || newConfig.SocketFilename != oldConfig.SocketFilename ||
 		newConfig.RxQueues != oldConfig.RxQueues || newConfig.TxQueues != oldConfig.TxQueues {
 
-		plugin.Log.Warn("Difference between new & old config causing recreation of memif ", oldConfig)
+		plugin.Log.Warnf("Difference between new & old config causing recreation of memif, old: '%+v' new: '%+v'", oldConfig, newConfig)
 
 		return false
 	}
