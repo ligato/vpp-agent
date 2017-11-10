@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // defaultpluigns specific flags
@@ -187,6 +188,14 @@ type DPConfig struct {
 func (plugin *Plugin) DisableResync(keyPrefix... string) {
 	plugin.Log.Infof("Keys with prefixes %v will be skipped", keyPrefix)
 	plugin.omittedPrefixes = keyPrefix
+}
+
+// DumpACL returns all configured ACLs
+func (plugin *Plugin) DumpACL() []*acl.AccessLists_Acl {
+	if plugin.aclConfigurator != nil {
+		return plugin.aclConfigurator.DumpACL()
+	}
+	return nil
 }
 
 // GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.

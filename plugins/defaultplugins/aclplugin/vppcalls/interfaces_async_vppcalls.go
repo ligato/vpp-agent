@@ -138,6 +138,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 				}
 				ACLs = append(ACLs, logicalReq.aclIndex)
 			}
+			nInput = aclInterface.NInput // Remains the same
 		}
 
 		// Measure ACLInterfaceSetACLList time
@@ -192,7 +193,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		if logicalReq.ingress {
 			nInput = aclInterface.NInput - 1 // Decrease NInput
 		} else {
-			nInput = aclInterface.NInput //NInput remains the same
+			nInput = aclInterface.NInput // NInput remains the same
 		}
 
 		// Measure ACLInterfaceSetACLList time
