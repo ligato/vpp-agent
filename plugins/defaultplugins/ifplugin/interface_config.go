@@ -193,12 +193,9 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// configure optional vrf
-	if iface.Vrf > 0 {
-		err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh)
-		if err != nil {
+	if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
 			wasError = err
 		}
-	}
 
 	// configure optional ip address
 	newAddrs, err := addrs.StrAddrsToStruct(iface.IpAddresses)
