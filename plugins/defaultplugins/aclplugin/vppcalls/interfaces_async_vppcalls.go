@@ -35,7 +35,7 @@ type ACLInterfaceLogicalReq struct {
 
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
-	vppChan			*govppapi.Channel
+	vppChan         *govppapi.Channel
 	asyncVppChan    *govppapi.Channel
 	swIfIndexes     ifaceidx.SwIfIndex
 	dumpIfaces      measure.StopWatchEntry

@@ -243,7 +243,6 @@ func DumpInterfaces(vppChannel *api.Channel, timeLog measure.StopWatchEntry) ([]
 
 	req := vppChannel.SendMultiRequest(msg)
 
-
 	var aclInterfaces []*acl_api.ACLInterfaceListDetails
 	for {
 		reply := &acl_api.ACLInterfaceListDetails{}

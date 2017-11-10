@@ -18,14 +18,14 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"net"
 	"time"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
@@ -306,7 +306,7 @@ func getInterfaces(providedACLIdx uint32, interfaceMap map[uint32]*vppdump.Inter
 	}
 
 	for _, aclIfaceDetail := range aclIface {
-		aclLoop:
+	aclLoop:
 		for index, aclIdx := range aclIfaceDetail.Acls {
 			if aclIdx == providedACLIdx {
 				iface, found := interfaceMap[aclIfaceDetail.SwIfIndex]
@@ -328,7 +328,6 @@ func getInterfaces(providedACLIdx uint32, interfaceMap map[uint32]*vppdump.Inter
 
 	return &acl.AccessLists_Acl_Interfaces{
 		Ingress: ingress,
-		Egress: egress,
+		Egress:  egress,
 	}, nil
 }
-

@@ -33,7 +33,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 )
 
 // ACLConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -48,9 +47,9 @@ type ACLConfigurator struct {
 	SwIfIndexes    ifaceidx.SwIfIndex
 	Stopwatch      *measure.Stopwatch // timer used to measure and store time
 
-	vppcalls       *vppcalls.ACLInterfacesVppCalls
-	vppChannel     *api.Channel
-	asyncVppChannel     *api.Channel
+	vppcalls        *vppcalls.ACLInterfacesVppCalls
+	vppChannel      *api.Channel
+	asyncVppChannel *api.Channel
 }
 
 // Init goroutines, channels and mappings
@@ -270,15 +269,13 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 		// Remove interfaces
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
-			if acl.Interfaces != nil {
-				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, func(err error) {
-					callback(err)
-				}, plugin.Log)
+			err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, func(err error) {
+				callback(err)
+			}, plugin.Log)
 
-				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, func(err error) {
-					callback(err)
-				}, plugin.Log)
-			}
+			err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, func(err error) {
+				callback(err)
+			}, plugin.Log)
 		}
 		// Remove ACL L3/L4
 		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDel{}, plugin.Stopwatch))
@@ -293,13 +290,15 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 }
 
 // DumpACL returns all configured ACLs in proto format
+// todo ACLDump/ACLDetails error invalid message ID 924, expected 922
 func (plugin *ACLConfigurator) DumpACL() []*acl.AccessLists_Acl {
-	acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
-	if err != nil {
-		plugin.Log.Error(err)
-		return nil
-	}
-	return acls
+	//acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	//if err != nil {
+	//	plugin.Log.Error(err)
+	//	return nil
+	//}
+	//return acls
+	return nil
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.

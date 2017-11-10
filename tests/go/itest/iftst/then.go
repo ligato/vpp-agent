@@ -11,8 +11,8 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	idx "github.com/ligato/vpp-agent/idxvpp"
-	. "github.com/onsi/gomega"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	. "github.com/onsi/gomega"
 )
 
 // ThenIface is a collection of test step methods (see Behavior Driven Development)
