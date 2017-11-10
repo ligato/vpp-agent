@@ -1,14 +1,14 @@
 package itest
 
 import (
+	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
+	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
+	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
+	"os"
+	"os/signal"
 	"reflect"
 	"strings"
 	"testing"
-	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
-	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
-	"os"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"os/signal"
 )
 
 // Test runs all TC methods of multiple test suites in sequence
@@ -20,13 +20,12 @@ func Test(t *testing.T) {
 			When: testutil.When{
 				WhenIface: iftst.WhenIface{
 					Log:       testutil.NewLogger("WhenIface", t),
-					NewChange: localclient.DataChangeRequest,},
+					NewChange: localclient.DataChangeRequest},
 			},
-			Then:
-			testutil.Then{
+			Then: testutil.Then{
 				ThenIface: iftst.ThenIface{
 					Log:       testutil.NewLogger("ThenIface", t),
-					NewChange: localclient.DataChangeRequest,},
+					NewChange: localclient.DataChangeRequest},
 				/*TODO OperState
 				k := intf.InterfaceKey(data.Name)
 				found, _, err = etcdmux.NewRootBroker().GetValue(servicelabel.GetAgentPrefix()+k, ifState)*/

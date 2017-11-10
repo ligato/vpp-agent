@@ -22,10 +22,10 @@ import (
 	"strings"
 
 	"github.com/buger/goterm"
+	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
-	"github.com/ligato/cn-infra/logging/logroot"
 )
 
 var watchCommand = &cobra.Command{

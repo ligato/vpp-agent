@@ -15,17 +15,17 @@
 package restplugin
 
 import (
-	"github.com/gorilla/mux"
 	"encoding/json"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
-	"github.com/unrolled/render"
-	"io/ioutil"
-	"net/http"
-	"strconv"
+	"github.com/gorilla/mux"
 	acldump "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
+	"github.com/unrolled/render"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 )
 
 //interfacesGetHandler - used to get list of all interfaces
@@ -216,7 +216,7 @@ func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) ht
 			return
 		}
 
-		res, err := acldump.DumpInterfaceAcls(plugin.Deps.Log,  swIndex, ch, nil)
+		res, err := acldump.DumpInterfaceAcls(plugin.Deps.Log, swIndex, ch, nil)
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

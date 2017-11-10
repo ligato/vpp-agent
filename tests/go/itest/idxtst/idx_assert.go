@@ -3,8 +3,8 @@ package idxtst
 import (
 	"time"
 
-	. "github.com/onsi/gomega"
 	idx "github.com/ligato/vpp-agent/idxvpp"
+	. "github.com/onsi/gomega"
 )
 
 func lookupIdx(mapping idx.NameToIdx, lookupName string) func() uint32 {

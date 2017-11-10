@@ -213,7 +213,7 @@ func getIPRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
 		ipRule.Icmp = getIcmpMatchRule(r)
 		break
 	default:
-		ipRule.Other = &acl.AccessLists_Acl_Rule_Matches_IpRule_Other {
+		ipRule.Other = &acl.AccessLists_Acl_Rule_Matches_IpRule_Other{
 			Protocol: uint32(r.Proto),
 		}
 	}
@@ -233,9 +233,9 @@ func getTCPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule
 	}
 	tcp := acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
 		DestinationPortRange: &dstPortRange,
-		SourcePortRange: &srcPortRange,
-		TcpFlagsMask: uint32(r.TCPFlagsMask),
-		TcpFlagsValue: uint32(r.TCPFlagsValue),
+		SourcePortRange:      &srcPortRange,
+		TcpFlagsMask:         uint32(r.TCPFlagsMask),
+		TcpFlagsValue:        uint32(r.TCPFlagsValue),
 	}
 	return &tcp
 }
@@ -253,7 +253,7 @@ func getUDPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule
 	}
 	udp := acl.AccessLists_Acl_Rule_Matches_IpRule_Udp{
 		DestinationPortRange: &dstPortRange,
-		SourcePortRange: &srcPortRange,
+		SourcePortRange:      &srcPortRange,
 	}
 	return &udp
 }
@@ -262,14 +262,12 @@ func getUDPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule
 // format into the ACL Plugin's NB format
 func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp {
 	codeRange := acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange{}
-	typeRange := acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange{
-	}
+	typeRange := acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange{}
 
 	icmp := acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp{
-		Icmpv6: r.IsIpv6 > 0,
+		Icmpv6:        r.IsIpv6 > 0,
 		IcmpCodeRange: &codeRange,
 		IcmpTypeRange: &typeRange,
 	}
 	return &icmp
 }
-

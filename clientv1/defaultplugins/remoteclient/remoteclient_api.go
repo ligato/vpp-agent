@@ -18,8 +18,8 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/grpcadapter"
+	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 )
 
 // DataResyncRequestDB allows to create a RESYNC request using convenient RESYNC

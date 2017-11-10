@@ -44,7 +44,6 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			}
 			linuxIdxEv.Done()
 
-
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
 			return

@@ -15,10 +15,10 @@
 package restplugin
 
 import (
+	"fmt"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"fmt"
 )
 
 const (

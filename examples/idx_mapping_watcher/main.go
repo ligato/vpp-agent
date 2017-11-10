@@ -69,8 +69,6 @@ type ExamplePlugin struct {
 	closeChannel *chan struct{}
 }
 
-
-
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {

@@ -2,16 +2,16 @@ package testutil
 
 import (
 	"git.fd.io/govpp.git/adapter/mock"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/cn-infra/core"
-	"testing"
-	"github.com/onsi/gomega"
-	"github.com/ligato/cn-infra/logging/logroot"
 	localsync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"time"
-	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
+	"github.com/onsi/gomega"
+	"testing"
+	"time"
 )
 
 // VppAgentT is simmilar to what testing.T is in golang packages.
@@ -109,7 +109,7 @@ func (t *VppAgentT) Teardown() {
 }
 
 // VppMock allows to flavors the Vpp Mock
-func VppMock(vppMockSetups ... func(adapter *mock.VppAdapter)) *govppmux.GOVPPPlugin {
+func VppMock(vppMockSetups ...func(adapter *mock.VppAdapter)) *govppmux.GOVPPPlugin {
 	vppMock := &mock.VppAdapter{}
 	for _, vppMockSetup := range vppMockSetups {
 		vppMockSetup(vppMock)
