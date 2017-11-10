@@ -42,6 +42,7 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
@@ -49,6 +50,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"net"
 )
 
 const dummyMode = -1
@@ -214,6 +216,17 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		if nil != err {
 			wasError = err
 		}
+	}
+
+	//configure container IP address
+	addr, isIpv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
+	if err != nil {
+		return err
+	}
+	err = vppcalls.AddContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
+	if nil != err {
+		wasError = err
 	}
 
 	// configure mtu
@@ -447,6 +460,13 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		}
 	}
 
+	//container ip address
+	severity, err := plugin.modifyContainerIPAddress(newConfig, oldConfig, ifIdx)
+	if (err != nil && severity == 1) {
+		return err
+	}
+	wasError = err
+
 	// mtu
 	if newConfig.Mtu == 0 {
 		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh, nil)
@@ -520,6 +540,42 @@ func (plugin *InterfaceConfigurator) modifyRxMode(ifIdx uint32, newIntf *intf.In
 		logging.Fields{"ifName": newIntf.Name, "rxMode old": oldRxMode, "rxMode new": newRxMode.RxMode}).
 		Debug("RX-mode modification for ", newIntf.Type, ".")
 	return err
+func (plugin *InterfaceConfigurator) modifyContainerIPAddress(newConfig *intf.Interfaces_Interface, oldConfig *intf.Interfaces_Interface, ifIdx uint32) (int8, error) {
+	oldAddr, _, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
+	if err != nil {
+		return 1, err
+	}
+	newAddr, _, err := addrs.ParseIPWithPrefix(newConfig.ContainerIpAddress)
+	if err != nil {
+		return 1, err
+	}
+	toBeDeleted, toBeAdded := addrs.DiffAddr([]*net.IPNet{newAddr}, []*net.IPNet{oldAddr})
+
+	plugin.Log.Debug("Container IP address modification (delete): ", toBeDeleted)
+	plugin.Log.Debug("Container IP address modification (add): ", toBeAdded)
+
+	var wasError error
+	for i := range toBeDeleted {
+		isIpv6, _ := addrs.IsIPv6(toBeDeleted[i].IP.String())
+		err := vppcalls.DelContainerIP(ifIdx, toBeDeleted[i], isIpv6, plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
+		plugin.Log.Debug("Container IP address modification (delete) ", ifIdx, " ", toBeDeleted[i], " ", err)
+		if nil != err {
+			wasError = err
+		}
+	}
+
+	for i := range toBeAdded {
+		isIpv6, _ := addrs.IsIPv6(toBeAdded[i].IP.String())
+		err := vppcalls.AddContainerIP(ifIdx, toBeAdded[i], isIpv6, plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
+		plugin.Log.Debug("Container IP address modification (add) ", ifIdx, " ", toBeAdded[i], " ", err)
+		if nil != err {
+			wasError = err
+		}
+	}
+
+	return 2, wasError
 }
 
 // recreateVPPInterface removes and creates an interface from scratch.
@@ -567,6 +623,15 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	if nil != err {
 		wasError = err
 
+	}
+
+	// let's try to do following even if previously error occurred
+	addr, isIpv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
+	if err != nil {
+		wasError = err
+	} else {
+		wasError = vppcalls.DelContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch) )
 	}
 
 	// let's try to do following even if previously error occurred
