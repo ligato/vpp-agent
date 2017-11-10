@@ -234,6 +234,7 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(bfds []*bfd.SingleHopBFD_EchoF
 	return nil
 }
 
+// Resync writes stn rule to the the empty VPP
 func (plugin *StnConfigurator) Resync(stnRules []*stn.StnRule) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync

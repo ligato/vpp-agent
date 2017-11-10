@@ -148,7 +148,7 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
-// ACL adds a request to create or update VPP Access Control List.
+// StnRules adds a request to create or update VPP Access Control List.
 func (dsl *PutDSL) StnRules(val *stn.StnRule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
 	return dsl

@@ -26,8 +26,9 @@ import (
 	"time"
 )
 
+// StnRule represents stn rule entry
 type StnRule struct {
-	IpAddress net.IPNet
+	IPAddress net.IPNet
 	IfaceIdx  uint32
 }
 

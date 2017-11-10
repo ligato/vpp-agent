@@ -30,6 +30,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+// StnConfigurator runs in the background in its own goroutine where it watches for any changes
+// in the configuration of interfaces as modelled by the proto file "../model/stn/stn.proto"
+// and stored in ETCD under the key "vpp/config/v1/stn/rules/".
 type StnConfigurator struct {
 	Log logging.Logger
 
@@ -55,7 +58,7 @@ func (plugin *StnConfigurator) Init() (err error) {
 	return plugin.checkMsgCompatibility()
 }
 
-// Check STN rule raw data
+// CheckStn rule raw data
 func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.StnRule, error) {
 	if stnInput == nil {
 		return nil, fmt.Errorf("STN input is empty")
@@ -79,12 +82,13 @@ func CheckStn(stnInput *model_stn.StnRule, index ifaceidx.SwIfIndex, log logging
 	}
 
 	stnRule := &vppcalls.StnRule{
-		IpAddress: *parsedIP,
+		IPAddress: *parsedIP,
 		IfaceIdx:  ifIndex,
 	}
 	return stnRule, nil
 }
 
+// Add create a new STN rule
 func (plugin *StnConfigurator) Add(rule *model_stn.StnRule) error {
 	plugin.Log.Infof("Creating new STN rule %v", rule)
 
@@ -95,11 +99,11 @@ func (plugin *StnConfigurator) Add(rule *model_stn.StnRule) error {
 	}
 	plugin.Log.Debugf("adding STN rule: %+v", stnRule)
 	// Create and register new stn
-	errVppCall := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IpAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
+	errVppCall := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
 	if errVppCall != nil {
 		return errVppCall
 	}
-	stnID := stnIdentifier(stnRule.IfaceIdx, stnRule.IpAddress.String())
+	stnID := stnIdentifier(stnRule.IfaceIdx, stnRule.IPAddress.String())
 	plugin.StnIndexes.RegisterName(stnID, plugin.StnIndexSeq, nil)
 	plugin.StnIndexSeq++
 	plugin.Log.Infof("STN entry %v registered", stnID)
@@ -107,6 +111,7 @@ func (plugin *StnConfigurator) Add(rule *model_stn.StnRule) error {
 	return nil
 }
 
+// Delete removes STN rule
 func (plugin *StnConfigurator) Delete(rule *model_stn.StnRule) error {
 	plugin.Log.Infof("Removing rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
@@ -119,11 +124,11 @@ func (plugin *StnConfigurator) Delete(rule *model_stn.StnRule) error {
 	}
 	plugin.Log.Debugf("deleting stn rule: %+v", stnRule)
 	// Remove and unregister route
-	err = vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IpAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
+	err = vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
-	stnID := stnIdentifier(stnRule.IfaceIdx, stnRule.IpAddress.String())
+	stnID := stnIdentifier(stnRule.IfaceIdx, stnRule.IPAddress.String())
 	_, _, found := plugin.StnIndexes.UnregisterName(stnID)
 	if found {
 		plugin.Log.Infof("STN rule %v unregistered", stnID)
@@ -134,6 +139,7 @@ func (plugin *StnConfigurator) Delete(rule *model_stn.StnRule) error {
 	return nil
 }
 
+// Modify changes the stored rules
 func (plugin *StnConfigurator) Modify(rule *model_stn.StnRule, rule2 *model_stn.StnRule) error {
 	//TODO: Need to be implemented
 	return nil
