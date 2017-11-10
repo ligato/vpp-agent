@@ -163,10 +163,13 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx int) (*acl.AccessLists_Ac
 		}
 
 		actions := acl.AccessLists_Acl_Rule_Actions{}
-		if r.IsPermit > 0 {
-			actions.AclAction = acl.AclAction_PERMIT
-		} else {
+		switch r.IsPermit {
+		case 0:
 			actions.AclAction = acl.AclAction_DENY
+		case 1:
+			actions.AclAction = acl.AclAction_PERMIT
+		case 2:
+			actions.AclAction = acl.AclAction_REFLECT
 		}
 
 		rule.Matches = &matches
@@ -184,10 +187,13 @@ func getMatchRules(r []acl_api.ACLRule) []*acl.AccessLists_Acl_Rule {
 		aclRule := &acl.AccessLists_Acl_Rule{}
 		// resolve actions
 		aclRuleActions := &acl.AccessLists_Acl_Rule_Actions{}
-		if rule.IsPermit > 0 {
-			aclRuleActions.AclAction = acl.AclAction_PERMIT
-		} else {
+		switch rule.IsPermit {
+		case 0:
 			aclRuleActions.AclAction = acl.AclAction_DENY
+		case 1:
+			aclRuleActions.AclAction = acl.AclAction_PERMIT
+		case 2:
+			aclRuleActions.AclAction = acl.AclAction_REFLECT
 		}
 
 		// resolve matches (IP rules only)
@@ -289,7 +295,7 @@ func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 }
 
 // getInterfaces returns list of created interfaces assigned to the provided acl index
-func getInterfaces(providedAclIdx uint32, interfaceMap map[uint32]*vppdump.Interface, vppChannel *govppapi.Channel) (*acl.AccessLists_Acl_Interfaces, error) {
+func getInterfaces(providedACLIdx uint32, interfaceMap map[uint32]*vppdump.Interface, vppChannel *govppapi.Channel) (*acl.AccessLists_Acl_Interfaces, error) {
 	var egress []string
 	var ingress []string
 
@@ -302,7 +308,7 @@ func getInterfaces(providedAclIdx uint32, interfaceMap map[uint32]*vppdump.Inter
 	for _, aclIfaceDetail := range aclIface {
 		aclLoop:
 		for index, aclIdx := range aclIfaceDetail.Acls {
-			if aclIdx == providedAclIdx {
+			if aclIdx == providedACLIdx {
 				iface, found := interfaceMap[aclIfaceDetail.SwIfIndex]
 				if !found {
 					continue
@@ -318,7 +324,7 @@ func getInterfaces(providedAclIdx uint32, interfaceMap map[uint32]*vppdump.Inter
 		}
 	}
 
-	logrus.DefaultLogger().WithFields(logrus.Fields{"aclIdx": providedAclIdx, "ingress": ingress, "egress": egress}).Debug("ACL interface list created")
+	logrus.DefaultLogger().WithFields(logrus.Fields{"aclIdx": providedACLIdx, "ingress": ingress, "egress": egress}).Debug("ACL interface list created")
 
 	return &acl.AccessLists_Acl_Interfaces{
 		Ingress: ingress,

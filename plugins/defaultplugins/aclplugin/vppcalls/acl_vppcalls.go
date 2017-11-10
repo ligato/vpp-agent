@@ -228,7 +228,7 @@ func DumpInterface(swIndex uint32, vppChannel *api.Channel, timeLog measure.Stop
 	return msg, nil
 }
 
-// DumpInterface finds interface in VPP and returns its ACL configuration
+// DumpInterfaces finds  all interfaces in VPP and returns their ACL configurations
 func DumpInterfaces(vppChannel *api.Channel, timeLog measure.StopWatchEntry) ([]*acl_api.ACLInterfaceListDetails, error) {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
