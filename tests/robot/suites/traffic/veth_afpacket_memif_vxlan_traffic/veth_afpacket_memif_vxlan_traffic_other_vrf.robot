@@ -36,12 +36,12 @@ Setup Interfaces
     vpp_ctl: Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=12:12:12:12:12:12    peer=vpp1_veth1
     vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2    vrf=1
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=1
-    # temporarily START to replace bad implemented vrf for vxlan
-    ${int3}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_vxlan1
-    vpp_term: Issue Command    node=agent_vpp_1    command=create vxlan tunnel src 192.168.1.1 dst 192.168.1.2 vni 5 del
-    vpp_term: Issue Command    node=agent_vpp_1    command=create vxlan tunnel src 192.168.1.1 dst 192.168.1.2 vni 5 encap-vrf-id 1 decap-next l2
-    sleep    2
-    # temporarily END
+    # # temporarily START to replace bad implemented vrf for vxlan
+    # ${int3}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_vxlan1
+    # vpp_term: Issue Command    node=agent_vpp_1    command=create vxlan tunnel src 192.168.1.1 dst 192.168.1.2 vni 5 del
+    # vpp_term: Issue Command    node=agent_vpp_1    command=create vxlan tunnel src 192.168.1.1 dst 192.168.1.2 vni 5 encap-vrf-id 1 decap-next l2
+    # sleep    2
+    # # temporarily END
     @{ints}=    Create List    vpp1_vxlan1    vpp1_afpacket1
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}
 
