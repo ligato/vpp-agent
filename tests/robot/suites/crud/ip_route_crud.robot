@@ -77,11 +77,11 @@ Add VRF Table In Background While Creating Interface Memif
     Then IP Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
     # this will transfer interface to default vrf table
     Then Create Master memif0 on agent_vpp_1 with IP 192.168.1.1, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    # 10 nov 2017 this will fail for memif
-    Run Keyword And Ignore Error    Then IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP 192.168.1.1/32
+    # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
+    Then IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP 192.168.1.1/32
     Then IP Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
-    # 10 nov 2017 this will fail for memif
-    Run Keyword And Ignore Error    Then IP Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
+    # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
+    Then IP Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
 
 Add VRF Table In Background While Creating Interface Tap
     [Setup]      Test Setup
@@ -116,11 +116,6 @@ Add VRF Table In Background While Creating Interface Tap
     Then IP Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
 
 *** Keywords ***
-Show IP Fib On ${node}
-    Log Many    ${node}
-    ${out}=     vpp_term: Show IP Fib    ${node}
-    Log Many    ${out}
-
 IP Fib On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     Log many    ${node}
     ${out}=    vpp_term: Show IP Fib    ${node}

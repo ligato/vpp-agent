@@ -118,13 +118,15 @@ Start Three Agents, Then Configure With Interfaces Assigned To Non Default VRF
     Create loopback interface bvi_loop0 on agent_vpp_2 with VRF 2, ip 10.1.1.2/24 and mac 8a:f1:be:90:00:02
     Create Slave memif0 on agent_vpp_2 with MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
-    Show Interfaces On agent_vpp_2
+    Show Interfaces Address On agent_vpp_2
+    Show IP Fib On agent_vpp_2
 
     # prepare third agent
     Create loopback interface bvi_loop0 on agent_vpp_3 with VRF 3, ip 20.1.1.2/24 and mac 8a:f1:be:90:00:03
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0
-    Show Interfaces On agent_vpp_3
+    Show Interfaces Address On agent_vpp_3
+    Show IP Fib On agent_vpp_3
 
     # setup routes
     Create Route On agent_vpp_2 With IP 20.1.1.0/24 With Next Hop 10.1.1.1 And Vrf Id 2
@@ -136,12 +138,11 @@ Start Three Agents, Then Configure With Interfaces Assigned To Non Default VRF
     Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_1 To 20.1.1.2
     #Ping From agent_vpp_2 To 20.1.1.2
-    # this does not work ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    bvi_loop0
-    Ping On agent_vpp_2 With IP 20.1.1.2, Source loop0
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    bvi_loop0
+    Ping On agent_vpp_2 With IP 20.1.1.2, Source ${int}
     #Ping From agent_vpp_3 To 10.1.1.2
-    # this does not work ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_3    bvi_loop0
-    Ping On agent_vpp_3 With IP 10.1.1.2, Source loop0
-
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_3    bvi_loop0
+    Ping On agent_vpp_3 With IP 10.1.1.2, Source ${int}
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}

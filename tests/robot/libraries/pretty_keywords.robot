@@ -116,6 +116,15 @@ IP Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     log many    ${out}
     Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
+Show IP Fib On ${node}
+    Log Many    ${node}
+    ${out}=     vpp_term: Show IP Fib    ${node}
+    Log Many    ${out}
+
 Show Interfaces On ${node}
     ${out}=   vpp_term: Show Interfaces    ${node}
+    Log Many  ${out}
+
+Show Interfaces Address On ${node}
+    ${out}=   vpp_term: Show Interfaces Address    ${node}
     Log Many  ${out}
