@@ -148,7 +148,7 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
-// StnRules adds a request to create or update VPP Access Control List.
+// StnRules adds a request to create or update STN rule.
 func (dsl *PutDSL) StnRules(val *stn.StnRule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
 	return dsl
@@ -222,7 +222,7 @@ func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	return dsl
 }
 
-// StnRules adds Stn sules to the RESYNC request.
+// StnRules adds Stn rules to the RESYNC request.
 func (dsl *DeleteDSL) StnRules(ruleName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(stn.Key(ruleName))
 	return dsl
