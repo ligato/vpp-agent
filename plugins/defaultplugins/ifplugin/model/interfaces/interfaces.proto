@@ -29,7 +29,6 @@ message Interfaces {
         string phys_address = 5;
         uint32 mtu = 6;
         uint32 vrf = 7;
-        RxModeType rx_mode = 8;
 
         // Required format is "ipAddress/ipPrefix"
         repeated string ip_addresses = 10;
@@ -75,7 +74,6 @@ message Interfaces {
             string host_if_name = 1; /* name of the tap interface in the host OS */
         }
         Tap tap = 104;
-
     };
     repeated Interface interface = 1;
 };
