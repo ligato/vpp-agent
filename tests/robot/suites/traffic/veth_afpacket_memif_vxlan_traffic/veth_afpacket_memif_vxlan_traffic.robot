@@ -16,6 +16,7 @@ ${VARIABLES}=          common
 ${ENV}=                common
 ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
+${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
 
@@ -50,7 +51,8 @@ Setup Interfaces
     vpp_ctl: Put Bridge Domain    node=agent_vpp_2    name=vpp2_bd1    ints=${ints}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_2    name=vpp2_loop1    mac=22:21:21:11:11:11    ip=20.20.1.2
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_2    name=vpp2_tap1    mac=32:22:22:11:11:11    ip=30.30.1.2    host_if_name=linux_vpp2_tap1
- 
+    Sleep    ${SYNC_SLEEP}
+
 Check Linux Interfaces On VPP1
     ${out}=    Execute In Container    agent_vpp_1    ip a
     Log    ${out}
