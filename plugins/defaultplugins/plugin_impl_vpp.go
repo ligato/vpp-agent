@@ -443,7 +443,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		StnIndexSeq: 1,
 		Stopwatch:   stopwatch,
 	}
-	plugin.stnConfigurator.Init()
+	plugin.stnConfigurator.Init(ctx)
 
 	plugin.Log.Debug("stnConfigurator Initialized")
 

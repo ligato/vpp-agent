@@ -378,7 +378,7 @@ func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue
 	if datasync.Delete == changeType {
 		return plugin.stnConfigurator.Delete(prevValue)
 	} else if diff {
-		return plugin.stnConfigurator.Modify(value, prevValue)
+		return plugin.stnConfigurator.Modify(prevValue, value)
 	}
 	return plugin.stnConfigurator.Add(value)
 }
