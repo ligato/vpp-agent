@@ -1730,7 +1730,7 @@ func (*IP4ArpEvent) GetMessageName() string {
 	return "ip4_arp_event"
 }
 func (*IP4ArpEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.EventMessage
 }
 func (*IP4ArpEvent) GetCrcString() string {
 	return "79b2d94d"
@@ -1824,7 +1824,7 @@ func (*IP6NdEvent) GetMessageName() string {
 	return "ip6_nd_event"
 }
 func (*IP6NdEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.EventMessage
 }
 func (*IP6NdEvent) GetCrcString() string {
 	return "b9c7870c"

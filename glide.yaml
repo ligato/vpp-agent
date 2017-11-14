@@ -7,7 +7,7 @@ import:
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: git.fd.io/govpp.git
-  version: 03bc1c23595e998e8fa75a65e23bedfbec115643
+  version: 3f1edad4e6ba0a7876750aea55507fae14d8badf
   repo: https://git.fd.io/govpp.git
   subpackages:
   - adapter
