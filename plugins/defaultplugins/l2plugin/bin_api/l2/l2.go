@@ -44,7 +44,7 @@ func (*MacEntry) GetCrcString() string {
 //        ]
 //
 type BridgeDomainSwIf struct {
-	Context   uint32 // TODO temporary fix, need to modify the generator
+	Context   uint32
 	SwIfIndex uint32
 	Shg       uint8
 }
@@ -544,7 +544,7 @@ func (*L2MacsEvent) GetMessageName() string {
 	return "l2_macs_event"
 }
 func (*L2MacsEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.EventMessage
 }
 func (*L2MacsEvent) GetCrcString() string {
 	return "2a1cc4f5"

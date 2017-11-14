@@ -145,7 +145,6 @@ func (plugin *StnConfigurator) Modify(rule *model_stn.StnRule, rule2 *model_stn.
 	return nil
 }
 
-
 // Close GOVPP channel
 func (plugin *StnConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
@@ -167,4 +166,3 @@ func (plugin *StnConfigurator) checkMsgCompatibility() error {
 	}
 	return err
 }
-
