@@ -291,7 +291,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 			return err
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		if !plugin.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) {
+		if !plugin.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) ||
+			oldConfig.Vrf != newConfig.Vrf {
 			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
 				Debug("modifyVPPInterface end. ", err)
