@@ -50,6 +50,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+const dummyMode = -1
+
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of interfaces as modelled by the proto file "../model/interfaces/interfaces.proto"
 // and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1interface".
@@ -107,7 +109,6 @@ func (plugin *InterfaceConfigurator) Close() error {
 // LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
 func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 	start := time.Now()
-	plugin.Log.Debug("Starting lookup of VPP interfaces")
 	req := &interfaces.SwInterfaceDump{}
 	reqCtx := plugin.vppCh.SendMultiRequest(req)
 
@@ -172,6 +173,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface)
 	}
 
+	var wasError error
+
 	if nil != err {
 		return err
 	}
@@ -180,7 +183,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		return nil
 	}
 
-	var wasError error
+	//rx mode
+	wasError = plugin.configRxModeForInterface(iface, ifIdx)
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
@@ -243,6 +247,49 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	return wasError
 }
+
+/**
+	Set rx-mode on specified VPP interface
+
+	Legend:
+	P - polling
+	I - interrupt
+	A - adaptive
+
+	Interfaces - supported modes:
+	* tap interface - PIA
+	* memory interface - PIA
+	* vxlan tunnel - PIA
+	* software loopback - PIA
+	* ethernet csmad - P
+	* af packet - PIA
+ */
+func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interfaces_Interface, ifIdx uint32) error {
+	rxModeSettings := iface.RxModeSettings
+	if rxModeSettings != nil {
+		switch iface.Type {
+		case intf.InterfaceType_ETHERNET_CSMACD:
+			if rxModeSettings.RxMode == intf.RxModeType_POLLING {
+				return plugin.configRxMode(iface, ifIdx, *rxModeSettings)
+			}
+		default:
+			return plugin.configRxMode(iface, ifIdx, *rxModeSettings)
+		}
+	}
+	return nil
+}
+
+/**
+	Call concrete vpp API method for setting rx-mode
+ */
+func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings) error {
+	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.Log, plugin.vppCh,
+		measure.GetTimeLog(interfaces.SwInterfaceSetRxMode{}, plugin.Stopwatch))
+	plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "rxMode": rxModeSettings.RxMode}).
+		Debug("RX-mode configuration for ", iface.Type, ".")
+	return err
+}
+
 
 // ModifyVPPInterface applies changes in the NB configuration of a VPP interface into the running VPP
 // through the VPP binary API.
@@ -312,6 +359,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	var wasError error
+	//rx mode
+	wasError = plugin.modifyRxModeForInterfaces(oldConfig, newConfig, ifIdx)
 
 	// admin status
 	if newConfig.Enabled != oldConfig.Enabled {
@@ -412,6 +461,63 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	return wasError
 }
 
+/**
+	Modify rx-mode on specified VPP interface
+ */
+func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Interfaces_Interface, newIntf *intf.Interfaces_Interface,
+	ifIdx uint32) error {
+	oldRxSettings := oldIntf.RxModeSettings
+	newRxSettings := newIntf.RxModeSettings
+	if oldRxSettings != newRxSettings {
+		var oldRxMode intf.RxModeType
+		if oldRxSettings == nil {
+			oldRxMode = dummyMode
+		} else {
+			oldRxMode = oldRxSettings.RxMode
+		}
+
+		if newRxSettings != nil {
+			switch newIntf.Type {
+			case intf.InterfaceType_ETHERNET_CSMACD:
+				if newRxSettings.RxMode == intf.RxModeType_POLLING {
+					return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+				}
+				plugin.Log.WithFields(logging.Fields{"rx-mode":newRxSettings.RxMode}).
+					Warn("Attempt to set unsupported rx-mode on Ethernet interface.")
+			default:
+				return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+			}
+		} else {
+			//reset rx-mode to default value
+			newRxSettings = &intf.Interfaces_Interface_RxModeSettings{}
+			switch newIntf.Type {
+			case intf.InterfaceType_ETHERNET_CSMACD:
+				newRxSettings.RxMode = intf.RxModeType_POLLING
+			case intf.InterfaceType_AF_PACKET_INTERFACE:
+				newRxSettings.RxMode = intf.RxModeType_INTERRUPT
+			default:
+				newRxSettings.RxMode = intf.RxModeType_DEFAULT
+			}
+			newIntf.RxModeSettings = newRxSettings
+			return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+		}
+	}
+	return nil
+}
+
+/**
+	Direct call of vpp api to change rx-mode of specified interface
+ */
+func (plugin *InterfaceConfigurator) modifyRxMode(ifIdx uint32, newIntf *intf.Interfaces_Interface,
+	oldRxMode intf.RxModeType, newRxMode intf.Interfaces_Interface_RxModeSettings) error {
+	err := vppcalls.SetRxMode(ifIdx, *newIntf.RxModeSettings, plugin.Log, plugin.vppCh,
+		measure.GetTimeLog(interfaces.SwInterfaceSetRxMode{}, plugin.Stopwatch))
+	plugin.Log.WithFields(
+		logging.Fields{"ifName": newIntf.Name, "rxMode old": oldRxMode, "rxMode new": newRxMode.RxMode}).
+		Debug("RX-mode modification for ", newIntf.Type, ".")
+	return err
+}
+
 // recreateVPPInterface removes and creates an interface from scratch.
 func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interfaces_Interface,
 	oldConfig *intf.Interfaces_Interface, ifIdx uint32) (wasError error) {
@@ -456,6 +562,8 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetFlags{}, plugin.Stopwatch))
 	if nil != err {
 		wasError = err
+
+
 	}
 
 	// let's try to do following even if previously error occurred

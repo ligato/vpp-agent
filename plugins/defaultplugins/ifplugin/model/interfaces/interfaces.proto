@@ -11,6 +11,15 @@ enum InterfaceType {
     VXLAN_TUNNEL = 5;
 };
 
+//from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
+enum RxModeType {
+  UNKNOWN = 0;
+  POLLING = 1;
+  INTERRUPT = 2;
+  ADAPTIVE = 3;
+  DEFAULT = 4;
+};
+
 message Interfaces {
     message Interface {
         string name = 1;
@@ -23,6 +32,13 @@ message Interfaces {
 
         // Required format is "ipAddress/ipPrefix"
         repeated string ip_addresses = 10;
+
+        message RxModeSettings {
+            RxModeType rx_mode = 1;
+            uint32 QueueID  = 2;
+            uint32 QueueIDValid  = 3;
+        }
+        RxModeSettings rxModeSettings = 11;
 
         message Memif {
             enum MemifMode {
