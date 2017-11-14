@@ -229,15 +229,6 @@ func (plugin *Plugin) droppedFromResync(key string) bool {
 	return false
 }
 
-func (plugin *Plugin) droppedFromResync(key string) bool {
-	for _, prefix := range plugin.omittedPrefixes {
-		if strings.HasPrefix(key, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
 func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
 	num := 0
 	for {
