@@ -24,6 +24,8 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {
@@ -40,7 +42,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
 				return false, err
 			}
 		} else {
@@ -155,6 +157,58 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			// TODO vrf not implemented yet
 			plugin.Log.Warn("VRFs are not supported yet")
 		}
+	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+		_, _, err := l3.ParseArpKey(key)
+		if err != nil {
+			return false, err
+		}
+		var value, prevValue l3.ArpTable_ArpTableEntry
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeARP(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+		var value, prevValue l4.AppNamespaces_AppNamespace
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeAppNamespace(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+		var value, prevValue l4.L4Features
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if _, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeL4Features(&value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+		var value, prevValue stn.StnRule
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeStnRule(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -163,15 +217,15 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 
 // dataChangeACL propagates to the particular aclConfigurator
 func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevValue *acl.AccessLists_Acl,
-	changeType datasync.PutDel) error {
+	changeType datasync.PutDel, callback func(error)) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.aclConfigurator.DeleteACL(prevValue)
+		return plugin.aclConfigurator.DeleteACL(prevValue, callback)
 	} else if diff {
-		return plugin.aclConfigurator.ModifyACL(prevValue, value)
+		return plugin.aclConfigurator.ModifyACL(prevValue, value, callback)
 	}
-	return plugin.aclConfigurator.ConfigureACL(value)
+	return plugin.aclConfigurator.ConfigureACL(value, callback)
 }
 
 // DataChangeIface propagates data change to the ifConfigurator
@@ -277,4 +331,54 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
 	}
 	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+}
+
+// dataChangeARP propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.arpConfigurator.DeleteArp(prevValue)
+	} else if diff {
+		return plugin.arpConfigurator.ChangeArp(value, prevValue)
+	}
+	return plugin.arpConfigurator.AddArp(value)
+}
+
+// DataChangeStaticRoute propagates data change to the l4Configurator
+func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_AppNamespace, prevValue *l4.AppNamespaces_AppNamespace,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.l4Configurator.DeleteAppNamespace(prevValue)
+	} else if diff {
+		return plugin.l4Configurator.ModifyAppNamespace(value, prevValue)
+	}
+	return plugin.l4Configurator.ConfigureAppNamespace(value)
+}
+
+// DataChangeL4Features propagates data change to the l4Configurator
+func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L4Features,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeL4Feature ", changeType, " ", value, " ", prevValue)
+
+	// diff and previous value is not important, features flag can be either set or not.
+	// If removed, it is always set to false
+	if datasync.Delete == changeType {
+		return plugin.l4Configurator.DeleteL4FeatureFlag()
+	}
+	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
+}
+
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
+	plugin.Log.Debug("stnRuleChange ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.stnConfigurator.Delete(prevValue)
+	} else if diff {
+		return plugin.stnConfigurator.Modify(value, prevValue)
+	}
+	return plugin.stnConfigurator.Add(value)
 }

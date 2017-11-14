@@ -47,7 +47,7 @@ type Config struct {
 type ClientConfig struct {
 	*clientv3.Config
 
-	// OpTimeout is the maximum amount of time the client will wait on a pending
+	// OpTimeout is the maximum amount of time the client will wait for a pending
 	// operation before timing out.
 	OpTimeout time.Duration
 }
@@ -64,7 +64,7 @@ const defaultOpTimeout = 3 * time.Second
 // package.
 // If the etcd endpoint addresses are not specified in the configuration,
 // the function will query the ETCDV3_ENDPOINTS environment variable
-// for a non-empty value. In neither the config nor the environment specify the
+// for a non-empty value. If neither the config nor the environment specify the
 // endpoint location, a default address "127.0.0.1:2379" is assumed.
 // The function may return error only if TLS connection is selected and the
 // CA or client certificate is not accessible/valid.

@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -29,7 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	ifnb "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"time"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
 
 // Interface is the wrapper structure for the interface northbound API structure.
@@ -86,6 +88,14 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, stopwatch)
 	if timeLog != nil {
 		timeLog.LogTimeEntry(time.Since(start))
+	}
+
+	for idx := range ifs {
+		vrfID, err := vppcalls.GetInterfaceVRF(idx, log, vppChan)
+		if err != nil {
+			return nil, err
+		}
+		ifs[idx].Vrf = vrfID
 	}
 
 	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, stopwatch)

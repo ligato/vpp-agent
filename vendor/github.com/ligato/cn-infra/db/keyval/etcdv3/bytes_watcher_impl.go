@@ -53,7 +53,7 @@ func (resp *BytesWatchPutResp) GetChangeType() datasync.PutDel {
 	return datasync.Put
 }
 
-// GetKey returns the key that tha value has been inserted under.
+// GetKey returns the key that the value has been inserted under.
 func (resp *BytesWatchPutResp) GetKey() string {
 	return resp.key
 }

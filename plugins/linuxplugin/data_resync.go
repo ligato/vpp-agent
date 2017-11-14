@@ -17,6 +17,7 @@ package linuxplugin
 import (
 	"strings"
 
+	"fmt"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
@@ -48,16 +49,29 @@ func NewDataResyncReq() *DataResyncReq {
 // DataResync delegates resync request linuxplugin configurators.
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	plugin.Log.Info("resync the Linux Configuration")
+	// store all resync errors
+	var resyncErrs []error
 
 	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
-		return err
+		resyncErrs = append(resyncErrs, err)
 	}
 
 	if err := plugin.arpConfigurator.Resync(req.ARPs); err != nil {
-		return err
+		resyncErrs = append(resyncErrs, err)
 	}
 
-	return plugin.routeConfigurator.Resync(req.Routes)
+	if err := plugin.routeConfigurator.Resync(req.Routes); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+
+	// log errors if any
+	if len(resyncErrs) == 0 {
+		return nil
+	}
+	for _, err := range resyncErrs {
+		plugin.Log.Error(err)
+	}
+	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 
 func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {
@@ -135,7 +149,7 @@ func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) 
 
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
-
+	plugin.ifIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIndexesWatchChan)
 	plugin.watchDataReg, err = plugin.Watcher.
 		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan,
 			interfaces.InterfaceKeyPrefix(),

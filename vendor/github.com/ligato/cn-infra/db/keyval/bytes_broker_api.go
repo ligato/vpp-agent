@@ -16,7 +16,7 @@ package keyval
 
 import "github.com/ligato/cn-infra/datasync"
 
-// BytesBroker allows to store, retrieve and remove data in a key-value form.
+// BytesBroker allows storing, retrieving and removing data in a key-value form.
 type BytesBroker interface {
 	// Put puts single key-value pair into etcd.
 	// The behavior of put can be adjusted using PutOptions.
@@ -29,9 +29,9 @@ type BytesBroker interface {
 	// under the provided <key>.
 	ListValues(key string) (BytesKeyValIterator, error)
 	// ListKeys returns an iterator that allows to traverse all keys from data
-	// store that share the given <prefix>
+	// store that share the given <prefix>.
 	ListKeys(prefix string) (BytesKeyIterator, error)
-	// Delete removes data stored under the <key>
+	// Delete removes data stored under the <key>.
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 
@@ -39,7 +39,7 @@ type BytesBroker interface {
 type BytesKvPair interface {
 	// GetValue returns the value of the pair.
 	GetValue() []byte
-	// GetValue returns the previous value of the pair.
+	// GetPrevValue returns the previous value of the pair.
 	GetPrevValue() []byte
 
 	datasync.WithKey

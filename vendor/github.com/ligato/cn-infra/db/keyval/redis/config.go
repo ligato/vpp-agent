@@ -77,7 +77,7 @@ const GoRedisNil = goredis.Nil
 
 // Client is common interface used to adapt all types of Redis clients.
 type Client interface {
-	// The easiest way to adapt Cmdable interface is to just embed it.
+	// The easiest way to adapt Cmdable interface is just to embed it.
 	goredis.Cmdable
 	/*
 		But that means we'll have to mock each and every method in Cmdable for
@@ -99,7 +99,7 @@ type Client interface {
 	PSubscribe(channels ...string) *goredis.PubSub
 }
 
-// ClientConfig is configuration common to all types of Redis clients.
+// ClientConfig is a configuration common to all types of Redis clients.
 type ClientConfig struct {
 	// Password for authentication, if required.
 	Password string `json:"password"`
@@ -127,7 +127,7 @@ type NodeConfig struct {
 	// Database to be selected after connecting to the server.
 	DB int `json:"db"`
 
-	// Enables read only queries on slave nodes.
+	// Enables read-only queries on slave nodes.
 	EnableReadQueryOnSlave bool `json:"enable-query-on-slave"`
 
 	// TLS configuration -- only applies to node client.
@@ -142,7 +142,7 @@ type ClusterConfig struct {
 	// A seed list of host:port addresses of cluster nodes.
 	Endpoints []string `json:"endpoints"`
 
-	// Enables read only queries on slave nodes.
+	// Enables read-only queries on slave nodes.
 	EnableReadQueryOnSlave bool `json:"enable-query-on-slave"`
 
 	// The maximum number of redirects before giving up.
@@ -173,17 +173,17 @@ type PoolConfig struct {
 	// Maximum number of socket connections.
 	// Default is 10 connections per every CPU as reported by runtime.NumCPU.
 	PoolSize int `json:"max-connections"`
-	// Amount of time, in seconds, client waits for connection if all connections
+	// Amount of time, in seconds, a client waits for connection if all connections
 	// are busy before returning an error.
 	// Default is ReadTimeout + 1 second.
 	PoolTimeout time.Duration `json:"busy-timeout"`
-	// Amount of time, in seconds, after which client closes idle connections.
+	// Amount of time, in seconds, after which a client closes idle connections.
 	// Should be less than server's timeout.
 	// Default is 5 minutes.
 	IdleTimeout time.Duration `json:"idle-timeout"`
 	// Frequency of idle checks.
 	// Default is 1 minute.
-	// When minus value is set, then idle check is disabled.
+	// When negative value is set, then idle check is disabled.
 	IdleCheckFrequency time.Duration `json:"idle-check-frequency"`
 }
 
@@ -239,11 +239,11 @@ func CreateNodeClient(config NodeConfig) (Client, error) {
 
 		// Maximum number of socket connections. Default is 10 connections per every CPU as reported by runtime.NumCPU.
 		PoolSize: config.Pool.PoolSize,
-		// Amount of time client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
+		// Amount of time a client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
 		PoolTimeout: config.Pool.PoolTimeout,
-		// Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
+		// Amount of time after which a client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
 		IdleTimeout: config.Pool.IdleTimeout,
-		// Frequency of idle checks. Default is 1 minute. When minus value is set, then idle check is disabled.
+		// Frequency of idle checks. Default is 1 minute. When negative value is set, then idle check is disabled.
 		IdleCheckFrequency: config.Pool.IdleCheckFrequency,
 
 		// Dialer creates new network connection and has priority over Network and Addr options.
@@ -283,11 +283,11 @@ func CreateClusterClient(config ClusterConfig) (Client, error) {
 
 		// Maximum number of socket connections. Default is 10 connections per every CPU as reported by runtime.NumCPU.
 		PoolSize: config.Pool.PoolSize,
-		// Amount of time client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
+		// Amount of time a client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
 		PoolTimeout: config.Pool.PoolTimeout,
-		// Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
+		// Amount of time after which a client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
 		IdleTimeout: config.Pool.IdleTimeout,
-		// Frequency of idle checks. Default is 1 minute. When minus value is set, then idle check is disabled.
+		// Frequency of idle checks. Default is 1 minute. When negative value is set, then idle check is disabled.
 		IdleCheckFrequency: config.Pool.IdleCheckFrequency,
 
 		// Maximum number of retries before giving up. Default is to not retry failed commands.
@@ -323,11 +323,11 @@ func CreateSentinelClient(config SentinelConfig) (Client, error) {
 
 		// Maximum number of socket connections. Default is 10 connections per every CPU as reported by runtime.NumCPU.
 		PoolSize: config.Pool.PoolSize,
-		// Amount of time client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
+		// Amount of time a client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
 		PoolTimeout: config.Pool.PoolTimeout,
-		// Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
+		// Amount of time after which a client closes idle connections. Should be less than server's timeout. Default is 5 minutes.
 		IdleTimeout: config.Pool.IdleTimeout,
-		// Frequency of idle checks. Default is 1 minute. When minus value is set, then idle check is disabled.
+		// Frequency of idle checks. Default is 1 minute. When negative value is set, then idle check is disabled.
 		IdleCheckFrequency: config.Pool.IdleCheckFrequency,
 
 		// Maximum number of retries before giving up. Default is to not retry failed commands.

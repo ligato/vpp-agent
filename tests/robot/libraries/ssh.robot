@@ -52,7 +52,7 @@ Write To Machine Until String
                        [Documentation]          *Write Machine ${machine} ${command}*
                        ...                      Writing ${command} to connection with name ${machine} and reading until specified string
                        ...                      Output log is added to machine output log
-                       Log Many                 ${machine}    ${command}    ${string     ${delay}
+                       Log Many                 ${machine}    ${command}    ${string}     ${delay}
                        Switch Connection        ${machine}
                        Write                    ${command}
                        ${out}=                  Read Until               ${string}

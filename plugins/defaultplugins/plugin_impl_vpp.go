@@ -34,6 +34,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
@@ -92,6 +94,8 @@ type Plugin struct {
 	ifStateNotifications messaging.ProtoPublisher
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
+	stnConfigurator      *ifplugin.StnConfigurator
+	stnIndexes           idxvpp.NameToIdxRW
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -122,6 +126,15 @@ type Plugin struct {
 	routeConfigurator *l3plugin.RouteConfigurator
 	routeIndexes      idxvpp.NameToIdxRW
 
+	// L3 arp fields
+	arpConfigurator *l3plugin.ArpConfigurator
+	arpIndexes      idxvpp.NameToIdxRW
+
+	// L4 fields
+	l4Configurator      *l4plugin.L4Configurator
+	namespaceIndexes    nsidx.AppNsIndexRW
+	notConfAppNsIndexes nsidx.AppNsIndexRW
+
 	// Error handler
 	errorIndexes idxvpp.NameToIdxRW
 	errorChannel chan ErrCtx
@@ -133,6 +146,7 @@ type Plugin struct {
 	changeChan       chan datasync.ChangeEvent //TODO dedicated type abstracted from ETCD
 	watchConfigReg   datasync.WatchRegistration
 	watchStatusReg   datasync.WatchRegistration
+	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
 	ifMtu          uint32
@@ -171,17 +185,46 @@ type DPConfig struct {
 	Strategy  string `json:"strategy"`
 }
 
-var (
-	// gPlugin holds the global instance of the Plugin
-	gPlugin *Plugin
-)
+// DisableResync can be used to disable resync for one or more key prefixes
+func (plugin *Plugin) DisableResync(keyPrefix ...string) {
+	plugin.Log.Infof("Keys with prefixes %v will be skipped", keyPrefix)
+	plugin.omittedPrefixes = keyPrefix
+}
 
-// plugin function is used in api to access the plugin instance. It panics if the plugin instance is not initialized.
-func plugin() *Plugin {
-	if gPlugin == nil {
-		panic("Trying to access the Interface Plugin but it is still not initialized")
-	}
-	return gPlugin
+// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
+// This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
+func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
+	return plugin.swIfIndexes
+}
+
+// GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
+func (plugin *Plugin) GetBfdSessionIndexes() idxvpp.NameToIdx {
+	return plugin.bfdSessionIndexes
+}
+
+// GetBfdAuthKeyIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_auth_keys.
+func (plugin *Plugin) GetBfdAuthKeyIndexes() idxvpp.NameToIdx {
+	return plugin.bfdAuthKeysIndexes
+}
+
+// GetBfdEchoFunctionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_echo_function
+func (plugin *Plugin) GetBfdEchoFunctionIndexes() idxvpp.NameToIdx {
+	return plugin.bfdEchoFunctionIndex
+}
+
+// GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes.
+func (plugin *Plugin) GetBDIndexes() bdidx.BDIndex {
+	return plugin.bdIndexes
+}
+
+// GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
+func (plugin *Plugin) GetFIBIndexes() idxvpp.NameToIdx {
+	return plugin.fibIndexes
+}
+
+// GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
+func (plugin *Plugin) GetXConnectIndexes() idxvpp.NameToIdx {
+	return plugin.xcIndexes
 }
 
 // Init gets handlers for ETCD, Messaging and delegates them to ifConfigurator & ifStateUpdater
@@ -258,6 +301,10 @@ func (plugin *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
+	err = plugin.initL4(ctx)
+	if err != nil {
+		return err
+	}
 
 	err = plugin.initErrorHandler()
 	if err != nil {
@@ -268,8 +315,6 @@ func (plugin *Plugin) Init() error {
 	if err != nil {
 		return err
 	}
-
-	gPlugin = plugin
 
 	return nil
 }
@@ -320,6 +365,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
+	stnLogger := plugin.Log.NewLogger("-stn-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -385,6 +431,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
 
 	plugin.Log.Debug("bfdConfigurator Initialized")
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("stnConfigurator", stnLogger)
+	}
+	plugin.stnConfigurator = &ifplugin.StnConfigurator{
+		Log:         bfdLogger,
+		GoVppmux:    plugin.GoVppmux,
+		SwIfIndexes: plugin.swIfIndexes,
+		StnIndexes:  plugin.stnIndexes,
+		StnIndexSeq: 1,
+		Stopwatch:   stopwatch,
+	}
+	plugin.stnConfigurator.Init()
+
+	plugin.Log.Debug("stnConfigurator Initialized")
 
 	return nil
 }
@@ -524,27 +585,77 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
-	l3Logger := plugin.Log.NewLogger("-l3-plugin")
-	plugin.routeIndexes = nametoidx.NewNameToIdx(l3Logger, plugin.PluginName, "route_indexes", nil)
+	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
+	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("RouteConfigurator", l3Logger)
+		stopwatch = measure.NewStopwatch("RouteConfigurator", routeLogger)
 	}
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		Log:           l3Logger,
+		Log:           routeLogger,
 		GoVppmux:      plugin.GoVppmux,
 		RouteIndexes:  plugin.routeIndexes,
 		RouteIndexSeq: 1,
 		SwIfIndexes:   plugin.swIfIndexes,
 		Stopwatch:     stopwatch,
 	}
-	err := plugin.routeConfigurator.Init()
-	if err != nil {
+
+	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
+	plugin.arpIndexes = nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil)
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
+	}
+	plugin.arpConfigurator = &l3plugin.ArpConfigurator{
+		Log:         arpLogger,
+		GoVppmux:    plugin.GoVppmux,
+		ArpIndexes:  plugin.arpIndexes,
+		ArpIndexSeq: 1,
+		SwIfIndexes: plugin.swIfIndexes,
+		Stopwatch:   stopwatch,
+	}
+
+	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
 
 	plugin.Log.Debug("routeConfigurator Initialized")
+
+	if err := plugin.arpConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("arpConfigurator Initialized")
+
+	return nil
+}
+
+func (plugin *Plugin) initL4(ctx context.Context) error {
+	l4Logger := plugin.Log.NewLogger("-l4-plugin")
+	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+		"namespace_indexes", nil))
+	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+		"not_configured_namespace_indexes", nil))
+
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
+	}
+	plugin.l4Configurator = &l4plugin.L4Configurator{
+		Log:                l4Logger,
+		GoVppmux:           plugin.GoVppmux,
+		AppNsIndexes:       plugin.namespaceIndexes,
+		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
+		AppNsIdxSeq:        1,
+		SwIfIndexes:        plugin.swIfIndexes,
+		Stopwatch:          stopwatch,
+	}
+	err := plugin.l4Configurator.Init()
+	if err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("l4Configurator Initialized")
 
 	return nil
 }
@@ -595,7 +706,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
 
 	return err
 }

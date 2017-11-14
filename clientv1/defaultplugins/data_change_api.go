@@ -16,10 +16,12 @@ package defaultplugins
 
 import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"net"
 )
 
@@ -73,6 +75,14 @@ type PutDSL interface {
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
+	// Arp adds a request to create or update VPP L3 ARP.
+	Arp(arp *l3.ArpTable_ArpTableEntry) PutDSL
+	// L4Features adds a request to enable or disable L4 features
+	L4Features(val *l4.L4Features) PutDSL
+	// AppNamespace adds a request to create or update VPP Application namespace
+	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) PutDSL
+	// StnRules adds a request to create or update Stn rule to the RESYNC request.
+	StnRules(stn *stn.StnRule) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -92,7 +102,7 @@ type DeleteDSL interface {
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 	// detection key.
-	BfdAuthKeys(bfdKeyName string) DeleteDSL
+	BfdAuthKeys(bfdKey uint32) DeleteDSL
 	// BfdEchoFunction adds a request to delete an existing bidirectional
 	// forwarding detection echo function.
 	BfdEchoFunction(bfdEchoName string) DeleteDSL
@@ -107,6 +117,15 @@ type DeleteDSL interface {
 	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// L4Features adds a request to enable or disable L4 features
+	L4Features() DeleteDSL
+	// AppNamespace adds a request to delete VPP Application namespace
+	// Note: current version does not support application namespace deletion
+	AppNamespace(id string) DeleteDSL
+	// Arp adds a request to delete an existing VPP L3 ARP.
+	Arp(ifaceName string, ipAddr net.IP) DeleteDSL
+	// StnRules adds a request to delete an existing Stn rule to the RESYNC request.
+	StnRules(ruleName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

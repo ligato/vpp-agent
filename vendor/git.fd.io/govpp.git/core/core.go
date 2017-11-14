@@ -29,18 +29,12 @@ import (
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/fsnotify/fsnotify"
-	"github.com/namsral/flag"
 )
 
 const (
 	requestChannelBufSize      = 100 // default size of the request channel buffers
 	replyChannelBufSize        = 100 // default size of the reply channel buffers
 	notificationChannelBufSize = 100 // default size of the notification channel buffers
-)
-
-var (
-	// Configurable delay between VPP readiness and actual connection
-	delay = flag.Int("delay", 0, "VPP connection delay time in [ms].")
 )
 
 var (
@@ -283,10 +277,6 @@ func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
 		waitForVpp()
-		// Delay after watched file was crated
-		log.Infof("Sleeping %v [ms] while VPP will be ready", *delay)
-		time.Sleep(time.Duration(*delay) * time.Millisecond)
-		log.Info("VPP is ready to connect")
 		err := c.connectVPP()
 		if err == nil {
 			// signal connected event

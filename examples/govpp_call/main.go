@@ -19,13 +19,11 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // *************************************************************************
@@ -40,10 +38,6 @@ import (
 // structure is used (bridge domains).
 // ************************************************************************/
 
-/********
- * Main *
- ********/
-
 // Main allows running Example Plugin as a statically linked binary with Agent Core Plugins. Close channel and plugins
 // required for the example are initialized. Agent is instantiated with generic plugins (ETCD, Kafka, Status check,
 // HTTP and Log), GOVPP, resync plugin and example plugin which demonstrates GOVPP call functionality.
@@ -51,70 +45,27 @@ func main() {
 	// Init close channel to stop the example
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with ExampleFlavor (combinatioplugin.GoVppmux, n of ExamplePlugin & reused cn-infra plugins)
-	flavor := ExampleFlavor{GovppExample: ExamplePlugin{closeChannel: &exampleFinished}}
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, append(flavor.Plugins())...)
+	// Start Agent with ExampleFlavor
+	vppFlavor := vpp.Flavor{}
+	exampleFlavor := ExampleFlavor{
+		GovppExample: ExamplePlugin{closeChannel: &exampleFinished},
+		Flavor:       &vppFlavor, // inject VPP flavor
+	}
+	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
-
-/**********
- * Flavor *
- **********/
-
-// ExampleFlavor is a set of plugins required for the datasync example.
-type ExampleFlavor struct {
-	// Local flavor to access to Infra (logger, service label, status check)
-	*vpp.Flavor
-	// Example plugin
-	GovppExample ExamplePlugin
-	// Mark flavor as injected after Inject()
-	injected bool
-}
-
-// Inject sets object references
-func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
-	// Every flavor should be injected only once
-	if ef.injected {
-		return false
-	}
-	ef.injected = true
-
-	// Init local flavor
-	if ef.Flavor == nil {
-		ef.Flavor = &vpp.Flavor{}
-	}
-	ef.Flavor.Inject()
-
-	ef.GovppExample.PluginInfraDeps = *ef.Flavor.InfraDeps("govpp-example")
-	ef.GovppExample.GoVppmux = &ef.GoVPP
-
-	return true
-}
-
-// Plugins combines all Plugins in flavor to the list
-func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
-	ef.Inject()
-	return core.ListPluginsInFlavor(ef)
-}
-
-/******************
- * Example plugin *
- ******************/
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
 type ExamplePlugin struct {
 	Deps
 
+	VPP defaultplugins.API
+
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example
 	closeChannel *chan struct{}
-}
-
-// Deps is a helper struct which is grouping all dependencies injected to the plugin
-type Deps struct {
-	GoVppmux                  govppmux.API
-	local.PluginInfraDeps // injected
 }
 
 // Init members of plugin
@@ -125,9 +76,10 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	plugin.Log.Info("Default plugin plugin ready")
 
+	//plugin.VPP.DisableResync(l2.BridgeDomainKeyPrefix())
+
 	// Make VPP call
 	go plugin.VppCall()
-	// Make VPP call
 
 	return err
 }

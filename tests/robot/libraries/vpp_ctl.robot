@@ -8,7 +8,7 @@ Library        String
 
 *** Keywords ***
 
-vpp_ctl: Put Json 
+vpp_ctl: Put Json
     [Arguments]        ${key}    ${json}    ${container}=vpp_agent_ctl
     Log Many           ${key}    ${json}    ${container}
     ${command}=        Set Variable    echo '${json}' | vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -put ${key} -
@@ -23,9 +23,17 @@ vpp_ctl: Read Key
     ${out}=            Execute In Container    ${container}    ${command}
     [Return]           ${out}
 
+vpp_ctl: Read Key With Prefix
+    [Arguments]        ${key}    ${container}=vpp_agent_ctl
+    Log Many           ${key}    ${container}
+    ${command}=        Set Variable    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -get ${key}
+#    ${out}=            Write To Container Until Prompt    ${container}    ${command}
+    ${out}=            Execute In Container    ${container}    ${command}
+    [Return]           ${out}
+
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${enabled}
     ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
@@ -187,6 +195,7 @@ vpp_ctl: Get Interface Internal Name
     [Arguments]    ${node}    ${interface}
     Log Many    ${node}    ${interface}
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
+    Log         ${state}
     ${name}=    Set Variable    ${state["internal_name"]}
     Log    ${name}
     [Return]    ${name}
@@ -258,3 +267,162 @@ vpp_ctl: Delete Routes
     ${out}=         vpp_ctl: Delete key  ${uri}
     Log Many        ${out}
     [Return]       ${out}
+
+vpp_ctl: Put BFD Session
+    [Arguments]    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}=0    ${BFD_auth_key_id}=0
+    Log Many    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}    ${BFD_auth_key_id}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_session.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bfd/session/${session_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put BFD Authentication Key
+    [Arguments]    ${node}    ${key_name}    ${auth_type}    ${id}    ${secret}
+    Log Many    ${node}    ${key_name}    ${auth_type}    ${id}    ${secret}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_key.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bfd/auth-key/${key_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put BFD Echo Function
+    [Arguments]    ${node}    ${echo_func_name}    ${source_intf}
+    Log Many    ${node}    ${echo_func_name}    ${source_intf}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/bfd_echo_function.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/bfd/echo-function
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Get BFD Session As Json
+    [Arguments]    ${node}    ${session_name}
+    Log Many    ${node}    ${session_name}
+    ${key}=               Set Variable            /vnf-agent/${node}/vpp/config/v1/bfd/session/${session_name}
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    Log                   ${output}
+    [Return]              ${output}
+
+vpp_ctl: Get BFD Authentication Key As Json
+    [Arguments]    ${node}    ${key_name}
+    Log Many    ${node}    ${key_name}
+    ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/bfd/auth-key/${key_name}
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
+vpp_ctl: Get BFD Echo Function As Json
+    [Arguments]    ${node}
+    Log Many    ${node}
+    ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/bfd/echo-function
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
+vpp_ctl: Put ACL TCP
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}   ${rule_nm}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}   ${rule_nm}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_TCP.json
+    ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put ACL UDP
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}    ${rule_nm}   ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${egr_intf2}    ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}      ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_UDP.json
+    ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put ACL MACIP
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${rule_nm}   ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${rule_nm}   ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_MACIP.json
+    ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put ACL ICMP
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_ICMP.json
+    ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply.json     ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Get ACL As Json
+    [Arguments]           ${node}  ${acl_name}
+    Log Many              ${node}     ${acl_name}
+    ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    #${output}=            Evaluate             json.loads('''${data}''')     json
+    #log                   ${output}
+    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_${acl_name}.json    ${data}
+    #[Return]              ${output}
+    [Return]              ${data}
+
+vpp_ctl: Get All ACL As Json
+    [Arguments]           ${node}
+    Log Many              ${node}
+    ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl
+    Log                   ${key}
+    ${data}=              etcd: Get ETCD Tree    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    #${output}=            Evaluate             json.loads('''${data}''')     json
+    #log                   ${output}
+    OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_acl_all.json    ${data}
+    #[Return]              ${output}
+    [Return]              ${data}
+
+etcd: Get ETCD Tree
+    [Arguments]           ${key}
+    Log Many              ${key}
+    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get --prefix="true" ${key}
+    ${out}=             Execute On Machine    docker    ${command}    log=false
+    [Return]            ${out}
+
+
+vpp_ctl: Delete ACL
+    [Arguments]    ${node}    ${name}
+    Log Many     ${node}    ${name}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/acl/${name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+

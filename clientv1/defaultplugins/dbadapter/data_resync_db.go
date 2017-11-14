@@ -25,6 +25,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -128,6 +129,33 @@ func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyn
 	return dsl
 }
 
+// L4Features adds L4Features to the RESYNC request
+func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResyncDSL {
+	key := l4.FeatureKey()
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// AppNamespace adds Application Namespace to the RESYNC request
+func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
+	key := l4.AppNamespacesKey(val.NamespaceId)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// Arp adds L3 ARP entry to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
@@ -170,6 +198,11 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 		}
 		appendKeys(&toBeDeleted, keys)
 		keys, err = dsl.listKeys(l3.RouteKeyPrefix())
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l3.ArpKeyPrefix())
 		if err != nil {
 			break
 		}

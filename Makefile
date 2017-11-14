@@ -21,6 +21,7 @@ define generate_sources
 	@cd plugins/defaultplugins/ifplugin && go generate
 	@cd plugins/defaultplugins/l2plugin && go generate
 	@cd plugins/defaultplugins/l3plugin && go generate
+	@cd plugins/defaultplugins/l4plugin && go generate
 	@cd plugins/defaultplugins/aclplugin/bin_api/acl && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/af_packet && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/bfd && pkgreflect
@@ -33,6 +34,7 @@ define generate_sources
 	@cd plugins/defaultplugins/l2plugin/bin_api/l2 && pkgreflect
 	@cd plugins/defaultplugins/l2plugin/bin_api/vpe && pkgreflect
 	@cd plugins/defaultplugins/l3plugin/bin_api/ip && pkgreflect
+	@cd plugins/defaultplugins/l4plugin/bin_api/session && pkgreflect
 	@echo "# done"
 endef
 

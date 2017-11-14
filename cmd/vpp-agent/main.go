@@ -18,7 +18,6 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
@@ -35,7 +34,7 @@ import (
 func main() {
 
 	f := vpp_flavor.Flavor{}
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, f.Plugins()...)
+	agent := core.NewAgent(&f)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
 	if err != nil {

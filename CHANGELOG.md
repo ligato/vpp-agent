@@ -1,3 +1,51 @@
+# Release v1.0.8 (2017-11-14)
+
+## Compatibility
+VP version v18.01-rc0~289-g227867f
+
+## Major Themes
+
+- [cn-infra]
+    - updated to version 1.0.7
+    
+# New Features
+- [ifplugin](plugins/defaultplugins/ifplugin)
+   - ability to configure STN rules.  See respective
+   [readme](plugins/defaultplugins/ifplugin/README.md) in interface plugin for more details.
+   - rx-mode settings can be set on interface. Ethernet-type interface can be set to POLLING mode, 
+   other types of interfaces supports also INTERRUPT and ADAPTIVE. Fields to set QueueID/QueueIDValid
+   are also available
+- [l4plugin](plugins/defaultplugins/l4plugin)
+   - added new l4 plugin to the VPP plugins. It can be used to enable/disable L4 features 
+   and configure application namespaces. See respective
+    [readme](plugins/defaultplugins/l4plugin/README.md) in L4 plugin for more details.
+   - support for VPP plugins/l3plugin ARP configuration. The configurator can perform the
+   basic CRUD operation with ARP config.
+   
+# Defaultplugins
+- [ifplugin](plugins/defaultplugins/ifplugin)
+  - added possibility to add interface to any VRF table.
+- [resync](plugins/defaultplugins/data_resync.go)
+  - resync error propagation improved. If any resynced configuration fails, rest of the resync
+  completes and will not be interrupted. All errors which appears during resync are logged after. 
+- added defaultpligins API.
+- API contains new Method `DisableResync(keyPrefix ...string)`. One or more ETCD key prefixes 
+  can be used as a parameter to disable resync for that specific key(s).
+     
+   
+# Linuxplugin
+- [l3plugin](plugins/linuxplugin/l3plugin)
+  - route configuration do not return error if required interface is missing. Instead, the 
+  route data are internally stored and configured when the interface appears.      
+    
+    
+## GOVPP
+- delay flag removed from GoVPP plugin    
+
+## Minor fixes/improvements
+- removed deadlinks from README files
+
+
 # Release v1.0.7 (2017-10-30)
 
 ## Compatibility
@@ -43,7 +91,7 @@ VPP version v17.10-rc0~334-gce41a5c
     - updated to version 1.0.4
 - [GoVppMux](plugins/govppmux)
     - configuration file for govpp added
-- [Kafka Partitions](messaging/kafka)
+- [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
     - Changes in offset handling, only automatically partitioned messages (hash, random)
       have their offset marked. Manually partitioned messages are not marked.
     - Implemented post-init consumer (for manual partitioner only) which allows to start
@@ -54,13 +102,13 @@ VPP version v17.10-rc0~334-gce41a5c
 
 ## Major Themes
 
-- [Kafka Partitions](messaging/kafka)
+- [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
     - Implemented new methods that allow to specificy partitions & offset parameters:
       * publish: Mux.NewSyncPublisherToPartition() & Mux.NewAsyncPublisherToPartition()
       * watch: ProtoWatcher.WatchPartition()
     - Minimalistic examples & documentation for Kafka API will be improved in a later release.
 - [Flavors](flavors)
-    - reduced to only [local.FlavorVppLocal](flavors/linuxlocal/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
+    - reduced to only [local.FlavorVppLocal](flavors/local/local_flavor.go) & [vpp.Flavor](flavors/vpp/vpp_flavor.go)
 - [goVpp]
     - updated version waits until vpp is ready to accept a new connection
 
@@ -118,7 +166,7 @@ Miscellaneous:
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
-[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifaceidx)
+[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 

@@ -22,10 +22,10 @@ import (
 	"github.com/ligato/cn-infra/logging/logroot"
 )
 
-// ProtoWatcher define API for monitoring changes in datastore.
+// ProtoWatcher defines API for monitoring changes in datastore.
 // Changes are returned as protobuf/JSON-formatted data.
 type ProtoWatcher interface {
-	// Watch starts to monitor changes associated with the keys.
+	// Watch starts monitoring changes associated with the keys.
 	// Watch events will be delivered to callback (not channel) <respChan>.
 	// Channel <closeChan> can be used to close watching on respective key
 	Watch(respChan func(ProtoWatchResp), closeChan chan string, key ...string) error
@@ -35,12 +35,13 @@ type ProtoWatcher interface {
 // It is sent through the respChan callback.
 type ProtoWatchResp interface {
 	datasync.ChangeValue
+	datasync.WithPrevValue
 	datasync.WithKey
 }
 
 // ToChanProto creates a callback that can be passed to the Watch function
 // in order to receive JSON/protobuf-formatted notifications through a channel.
-// If the notification can not be delivered until timeout, it is dropped.
+// If the notification cannot be delivered until timeout, it is dropped.
 func ToChanProto(ch chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatchResp) {
 
 	timeout := datasync.DefaultNotifTimeout

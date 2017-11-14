@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sync"
 
-	"regexp"
 	"github.com/ligato/cn-infra/logging"
+	"regexp"
 	"testing"
 )
 

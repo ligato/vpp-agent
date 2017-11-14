@@ -1,18 +1,18 @@
 package iftst
 
 import (
-	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 	//"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"time"
 
-	. "github.com/onsi/gomega"
-	idx "github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/cn-infra/core"
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
+	idx "github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	. "github.com/onsi/gomega"
 )
 
 // ThenIface is a collection of test step methods (see Behavior Driven Development)
@@ -22,17 +22,13 @@ type ThenIface struct {
 	OperState ifstateGetter
 
 	Log logging.Logger
-	VPP defaultpluginsAPI
+	VPP defaultplugins.API
 }
 
 type ifstateGetter interface {
 	// InterfaceState reads operational state of network interface
 	// and fills it to ifState input parameter
 	InterfaceState(ifaceName string, ifState *intf.InterfacesState_Interface) (found bool, err error)
-}
-
-type defaultpluginsAPI interface {
-	GetSwIfIndexes() ifaceidx.SwIfIndex
 }
 
 // SwIfIndexes is a constructor for interfaces
@@ -47,7 +43,7 @@ func (step *ThenIface) BfdIndexes() *BfdIndexesAssertions {
 
 // SwIfIndexesAssertions helper struct for fluent DSL in tests for interfaces
 type SwIfIndexesAssertions struct {
-	VPP defaultpluginsAPI
+	VPP defaultplugins.API
 }
 
 // BfdIndexesAssertions helper struct for fluent DSL in tests for bfd

@@ -12,52 +12,29 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
-	"github.com/namsral/flag"
 )
 
 // kafkaIfStateTopic is the topic where interface state changes are published.
 const kafkaIfStateTopic = "if_state"
 
-// DefaultPluginsConfFlag used as a flag name.
-// It is used to load configuration of MTU for defaultplugins.
-const DefaultPluginsConfFlag = "default-plugins-config"
+// NewAgent returns a new instance of the Agent with plugins.
+// It is an alias for core.NewAgent() to implicit use of the FlavorVppLocal
+func NewAgent(opts ...core.Option) *core.Agent {
+	return core.NewAgent(&Flavor{}, opts...)
+}
 
-// DefaultPluginsConf is default (flag value) - filename for the configuration
-// of defaultplugins.
-const DefaultPluginsConf = "defaultplugins.conf"
-
-// DefaultPluginsConfUsage used as flag usage for DefaultPluginsConfFlag.
-const DefaultPluginsConfUsage = "Location of the MTU configuration file; also set via 'MTU_CONFIG' env variable."
-
-// IfStatePubConfFlag used as a flag name.
-// It is used to load configuration related to the state data publishing.
-const IfStatePubConfFlag = "ifstate_pub-config"
-
-// IfStatePubConf is default (flag value) - filename for the configuration.
-const IfStatePubConf = "ifstate-pub.conf"
-
-// IfStatePubConfUsage used as flag usage.
-const IfStatePubConfUsage = "Location of the interface state publish configuration file; also set via 'IFSTATE_PUB_CONFIG' env variable."
-
-// GoVPPConfFlag used as flag name (see implementation in declareFlags())
-// It is used to load configuration of GoVPP client plugin.
-const GoVPPConfFlag = "govpp-config"
-
-// GoVPPConf is default (flag value) - filename for the GoVPP configuration.
-const GoVPPConf = "govpp.conf"
-
-// GoVPPConfUsage used as flag usage for GoVPPConfFlag.
-const GoVPPConfUsage = "Location of the GoVPP configuration file; also set via 'GOVPP_CONFIG' env variable."
-
-// LinuxPluginConfFlag used as flag name (see implementation in declareFlags())
-// It is used to load configuration of the linuxplugin.
-const LinuxPluginConfFlag = "linuxplugin-config"
-
-// LinuxPluginConf is default (flag value) - filename for the linuxplugin configuration.
-const LinuxPluginConf = "linuxplugin.conf"
-
-// LinuxPluginConfUsage used as flag usage for LinuxPluginConfFlag.
-const LinuxPluginConfUsage = "Location of the linuxplugin configuration file; also set via 'LINUX_PLUGIN_CONFIG' env variable."
+// WithPlugins for adding custom plugins to SFC Controller
+// <listPlugins> is a callback that uses flavor input to
+// inject dependencies for custom plugins that are in output
+//
+// Example:
+//
+//    NewAgent(vppFlavor.WithPlugins(func(flavor) {
+// 	       return []*core.NamedPlugin{{"my-plugin", &MyPlugin{DependencyXY: &flavor.FlavorXY}}}
+//    }))
+func WithPlugins(listPlugins func(local *Flavor) []*core.NamedPlugin) core.WithPluginsOpt {
+	return &withPluginsOpt{listPlugins}
+}
 
 // Flavor glues together multiple plugins to build a full-featured VPP agent.
 type Flavor struct {
@@ -85,11 +62,10 @@ func (f *Flavor) Inject() bool {
 	}
 	f.injected = true
 
-	declareFlags()
 	f.injectEmbedded()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
@@ -109,7 +85,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
 	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
 
-	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin")
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
@@ -140,9 +116,24 @@ func (f *Flavor) Plugins() []*core.NamedPlugin {
 	return core.ListPluginsInFlavor(f)
 }
 
-func declareFlags() {
-	flag.String(DefaultPluginsConfFlag, DefaultPluginsConf, DefaultPluginsConfUsage)
-	flag.String(IfStatePubConfFlag, IfStatePubConf, IfStatePubConfUsage)
-	flag.String(GoVPPConfFlag, GoVPPConf, GoVPPConfUsage)
-	flag.String(LinuxPluginConfFlag, LinuxPluginConf, LinuxPluginConfUsage)
+// withPluginsOpt is return value of vppLocal.WithPlugins() utility
+// to easily define new plugins for the agent based on Flavor.
+type withPluginsOpt struct {
+	callback func(local *Flavor) []*core.NamedPlugin
+}
+
+// OptionMarkerCore is just for marking implementation that it implements this interface
+func (opt *withPluginsOpt) OptionMarkerCore() {}
+
+// Plugins methods is here to implement core.WithPluginsOpt go interface
+// <flavor> is a callback that uses flavor input for dependency injection
+// for custom plugins (returned as NamedPlugin)
+func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
+	for _, flavor := range flavors {
+		if f, ok := flavor.(*Flavor); ok {
+			return opt.callback(f)
+		}
+	}
+
+	panic("wrong usage of vpp.WithPlugin() for other than Flavor")
 }

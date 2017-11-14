@@ -41,29 +41,29 @@ func NewSkeleton(name string, serviceLabel servicelabel.ReaderAPI,
 	return &Skeleton{serviceLabel: serviceLabel, name: name, connection: connection}
 }
 
-// Init is called on plugin startup
+// Init is called on plugin startup.
 func (plugin *Skeleton) Init() (err error) {
 	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.connection, &keyval.SerializerJSON{})
 	return err
 }
 
-// AfterInit is called once all plugin have been initialized. The connection to datastore
+// AfterInit is called once all plugins have been initialized. The connection to datastore
 // is established in this phase.
 func (plugin *Skeleton) AfterInit() (err error) {
 	return nil
 }
 
-// Close cleans up the resources
+// Close cleans up the resources.
 func (plugin *Skeleton) Close() error {
 	return safeclose.Close(plugin.connection)
 }
 
-// NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message
+// NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message.
 func (plugin *Skeleton) NewBroker(keyPrefix string) keyval.ProtoBroker {
 	return plugin.protoWrapper.NewBroker(keyPrefix)
 }
 
-// NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message
+// NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
 func (plugin *Skeleton) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
 	return plugin.protoWrapper.NewWatcher(keyPrefix)
 }

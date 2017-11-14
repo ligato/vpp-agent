@@ -38,7 +38,7 @@ type BytesConnectionEtcd struct {
 // BytesBrokerWatcherEtcd uses BytesConnectionEtcd to access the datastore.
 // The connection can be shared among multiple BytesBrokerWatcherEtcd.
 // In case of accessing a particular subtree in etcd only,
-// BytesBrokerWatcherEtcd allows to define a keyPrefix that is prepended
+// BytesBrokerWatcherEtcd allows defining a keyPrefix that is prepended
 // to all keys in its methods in order to shorten keys used in arguments.
 type BytesBrokerWatcherEtcd struct {
 	logging.Logger
@@ -113,8 +113,8 @@ func (db *BytesConnectionEtcd) Close() error {
 // NewBroker creates a new instance of a proxy that provides
 // access to etcd. The proxy will reuse the connection from BytesConnectionEtcd.
 // <prefix> will be prepended to the key argument in all calls from the created
-// BytesBrokerWatcherEtcd. To avoid using a prefix pass keyval.Root constant as
-// the argument.
+// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval.Root constant as
+// an argument.
 func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
 		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
@@ -123,15 +123,15 @@ func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
 // NewWatcher creates a new instance of a proxy that provides
 // access to etcd. The proxy will reuse the connection from BytesConnectionEtcd.
 // <prefix> will be prepended to the key argument in all calls on created
-// BytesBrokerWatcherEtcd. To avoid using a prefix pass keyval.Root constant as
-// argument.
+// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval.Root constant as
+// an argument.
 func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
 	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
 		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
 }
 
 // Put calls 'Put' function of the underlying BytesConnectionEtcd.
-// KeyPrefix defined in constructor is prepended to key argument.
+// KeyPrefix defined in constructor is prepended to the key argument.
 func (pdb *BytesBrokerWatcherEtcd) Put(key string, data []byte, opts ...datasync.PutOption) error {
 	return putInternal(pdb.Logger, pdb.kv, pdb.lessor, pdb.opTimeout, key, data, opts...)
 }
@@ -144,13 +144,13 @@ func (pdb *BytesBrokerWatcherEtcd) NewTxn() keyval.BytesTxn {
 }
 
 // GetValue calls 'GetValue' function of the underlying BytesConnectionEtcd.
-// KeyPrefix defined in constructor is prepended to key argument.
+// KeyPrefix defined in constructor is prepended to the key argument.
 func (pdb *BytesBrokerWatcherEtcd) GetValue(key string) (data []byte, found bool, revision int64, err error) {
 	return getValueInternal(pdb.Logger, pdb.kv, pdb.opTimeout, key)
 }
 
 // ListValues calls 'ListValues' function of the underlying BytesConnectionEtcd.
-// KeyPrefix defined in constructor is prepended to key argument.
+// KeyPrefix defined in constructor is prepended to the key argument.
 // The prefix is removed from the keys of the returned values.
 func (pdb *BytesBrokerWatcherEtcd) ListValues(key string) (keyval.BytesKeyValIterator, error) {
 	return listValuesInternal(pdb.Logger, pdb.kv, pdb.opTimeout, key)
@@ -220,7 +220,7 @@ func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan
 	return err
 }
 
-// watchInternal starts the watch subscription for key.
+// watchInternal starts the watch subscription for the key.
 func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan string, key string, resp func(keyval.BytesWatchResp)) error {
 	recvChan := watcher.Watch(context.Background(), key, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
@@ -232,8 +232,8 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 				for _, ev := range wresp.Events {
 					handleWatchEvent(log, resp, ev)
 				}
-			case closeVal := <-closeCh:
-				if closeVal == "" || registeredKey == closeVal {
+			case closeVal, ok := <-closeCh:
+				if !ok || registeredKey == closeVal {
 					log.WithField("key", key).Debug("Watch ended")
 					return
 				}
@@ -344,7 +344,7 @@ func getValueInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	return nil, false, 0, nil
 }
 
-// ListValues returns an iterator that enables to traverse values stored under
+// ListValues returns an iterator that enables traversing values stored under
 // the provided <key>.
 func (db *BytesConnectionEtcd) ListValues(key string) (keyval.BytesKeyValIterator, error) {
 	return listValuesInternal(db.Logger, db.etcdClient, db.opTimeout, key)
@@ -365,8 +365,8 @@ func listValuesInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Durat
 	return &bytesKeyValIterator{len: len(resp.Kvs), resp: resp}, nil
 }
 
-// ListKeys returns an iterator that allows to traverse all keys from data
-// store that share the given <prefix>
+// ListKeys returns an iterator that allows traversing all keys from data
+// store that share the given <prefix>.
 func (db *BytesConnectionEtcd) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
 	return listKeysInternal(db.Logger, db.etcdClient, db.opTimeout, prefix)
 }
@@ -386,7 +386,7 @@ func listKeysInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	return &bytesKeyIterator{len: len(resp.Kvs), resp: resp}, nil
 }
 
-// ListValuesRange returns an iterator that enables to traverse values stored
+// ListValuesRange returns an iterator that enables traversing values stored
 // under the keys from a given range.
 func (db *BytesConnectionEtcd) ListValuesRange(fromPrefix string, toPrefix string) (keyval.BytesKeyValIterator, error) {
 	return listValuesRangeInternal(db.Logger, db.etcdClient, db.opTimeout, fromPrefix, toPrefix)
@@ -431,7 +431,7 @@ func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
 
 // GetNext returns the following key (+ revision) from the result set.
 // When there are no more keys to get, <stop> is returned as *true*
-// and <key>, <rev> are default values.
+// and <key> and <rev> are default values.
 func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 
 	if ctx.index >= ctx.len {
@@ -445,13 +445,13 @@ func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 }
 
 // Close does nothing since db cursors are not needed.
-// The method needs to be here to implement Iterator API.
+// The method is required by the code since it implements Iterator API.
 func (ctx *bytesKeyIterator) Close() error {
 	return nil
 }
 
 // Close does nothing since db cursors are not needed.
-// The method needs to be here to implement Iterator API.
+// The method is required by the code since it implements Iterator API.
 func (kv *bytesKeyVal) Close() error {
 	return nil
 }

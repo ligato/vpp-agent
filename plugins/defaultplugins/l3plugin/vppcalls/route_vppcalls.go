@@ -18,17 +18,19 @@ import (
 	"fmt"
 	"net"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
-	"time"
 )
 
 // Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
 // when a given routing table entry is applied.
 type Route struct {
 	VrfID       uint32    `json:"vrf_id"`
+	TableName   string    `json:"table_name"`
 	DstAddr     net.IPNet `json:"dst_addr"`
 	NextHopAddr net.IP    `json:"next_hop_addr"`
 	OutIface    uint32    `json:"out_iface"`
@@ -59,6 +61,7 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
+
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0

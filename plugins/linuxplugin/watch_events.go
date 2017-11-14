@@ -36,6 +36,14 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 			dataChng.Done(err)
 
+		case linuxIdxEv := <-plugin.ifIndexesWatchChan:
+			if linuxIdxEv.IsDelete() {
+				plugin.routeConfigurator.ResolveDeletedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
+			} else {
+				plugin.routeConfigurator.ResolveCreatedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
+			}
+			linuxIdxEv.Done()
+
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
 			return

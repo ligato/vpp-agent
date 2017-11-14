@@ -6,7 +6,7 @@ package l2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xb87a28c6
+const VlAPIVersion = 0xdbcb1039
 
 // MacEntry represents the VPP binary API data type 'mac_entry'.
 // Generated from '/usr/share/vpp/api/l2.api.json', line 3:
@@ -44,7 +44,7 @@ func (*MacEntry) GetCrcString() string {
 //        ]
 //
 type BridgeDomainSwIf struct {
-	Context   uint32 // TODO temporary fix, need to modify the generator
+	Context   uint32
 	SwIfIndex uint32
 	Shg       uint8
 }
@@ -118,17 +118,17 @@ func NewL2XconnectDump() api.Message {
 //            ["u16", "_vl_msg_id"],
 //            ["u32", "context"],
 //            ["u32", "bd_id"],
-//            ["u64", "mac"],
+//            ["u8", "mac", 6],
 //            ["u32", "sw_if_index"],
 //            ["u8", "static_mac"],
 //            ["u8", "filter_mac"],
 //            ["u8", "bvi_mac"],
-//            {"crc" : "0x07426ad7"}
+//            {"crc" : "0x584508c6"}
 //        ],
 //
 type L2FibTableDetails struct {
 	BdID      uint32
-	Mac       uint64
+	Mac       []byte `struc:"[6]byte"`
 	SwIfIndex uint32
 	StaticMac uint8
 	FilterMac uint8
@@ -142,7 +142,7 @@ func (*L2FibTableDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2FibTableDetails) GetCrcString() string {
-	return "07426ad7"
+	return "584508c6"
 }
 func NewL2FibTableDetails() api.Message {
 	return &L2FibTableDetails{}
@@ -399,18 +399,18 @@ func NewL2fibFlushIntReply() api.Message {
 //            ["u16", "_vl_msg_id"],
 //            ["u32", "client_index"],
 //            ["u32", "context"],
-//            ["u64", "mac"],
+//            ["u8", "mac", 6],
 //            ["u32", "bd_id"],
 //            ["u32", "sw_if_index"],
 //            ["u8", "is_add"],
 //            ["u8", "static_mac"],
 //            ["u8", "filter_mac"],
 //            ["u8", "bvi_mac"],
-//            {"crc" : "0x604cc582"}
+//            {"crc" : "0x9aa5be9e"}
 //        ],
 //
 type L2fibAddDel struct {
-	Mac       uint64
+	Mac       []byte `struc:"[6]byte"`
 	BdID      uint32
 	SwIfIndex uint32
 	IsAdd     uint8
@@ -426,7 +426,7 @@ func (*L2fibAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibAddDel) GetCrcString() string {
-	return "604cc582"
+	return "9aa5be9e"
 }
 func NewL2fibAddDel() api.Message {
 	return &L2fibAddDel{}
@@ -544,7 +544,7 @@ func (*L2MacsEvent) GetMessageName() string {
 	return "l2_macs_event"
 }
 func (*L2MacsEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.EventMessage
 }
 func (*L2MacsEvent) GetCrcString() string {
 	return "2a1cc4f5"
@@ -989,7 +989,7 @@ func NewL2InterfacePbbTagRewrite() api.Message {
 //            ["u32", "context"],
 //            ["i32", "retval"],
 //            {"crc" : "0x2d083312"}
-//        ]
+//        ],
 //
 type L2InterfacePbbTagRewriteReply struct {
 	Retval int32
@@ -1006,4 +1006,362 @@ func (*L2InterfacePbbTagRewriteReply) GetCrcString() string {
 }
 func NewL2InterfacePbbTagRewriteReply() api.Message {
 	return &L2InterfacePbbTagRewriteReply{}
+}
+
+// L2PatchAddDel represents the VPP binary API message 'l2_patch_add_del'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 269:
+//
+//        ["l2_patch_add_del",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "rx_sw_if_index"],
+//            ["u32", "tx_sw_if_index"],
+//            ["u8", "is_add"],
+//            {"crc" : "0x9b10029a"}
+//        ],
+//
+type L2PatchAddDel struct {
+	RxSwIfIndex uint32
+	TxSwIfIndex uint32
+	IsAdd       uint8
+}
+
+func (*L2PatchAddDel) GetMessageName() string {
+	return "l2_patch_add_del"
+}
+func (*L2PatchAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*L2PatchAddDel) GetCrcString() string {
+	return "9b10029a"
+}
+func NewL2PatchAddDel() api.Message {
+	return &L2PatchAddDel{}
+}
+
+// L2PatchAddDelReply represents the VPP binary API message 'l2_patch_add_del_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 278:
+//
+//        ["l2_patch_add_del_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0xa85e37be"}
+//        ],
+//
+type L2PatchAddDelReply struct {
+	Retval int32
+}
+
+func (*L2PatchAddDelReply) GetMessageName() string {
+	return "l2_patch_add_del_reply"
+}
+func (*L2PatchAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*L2PatchAddDelReply) GetCrcString() string {
+	return "a85e37be"
+}
+func NewL2PatchAddDelReply() api.Message {
+	return &L2PatchAddDelReply{}
+}
+
+// SwInterfaceSetL2Xconnect represents the VPP binary API message 'sw_interface_set_l2_xconnect'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 284:
+//
+//        ["sw_interface_set_l2_xconnect",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "rx_sw_if_index"],
+//            ["u32", "tx_sw_if_index"],
+//            ["u8", "enable"],
+//            {"crc" : "0x48a4c4c8"}
+//        ],
+//
+type SwInterfaceSetL2Xconnect struct {
+	RxSwIfIndex uint32
+	TxSwIfIndex uint32
+	Enable      uint8
+}
+
+func (*SwInterfaceSetL2Xconnect) GetMessageName() string {
+	return "sw_interface_set_l2_xconnect"
+}
+func (*SwInterfaceSetL2Xconnect) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SwInterfaceSetL2Xconnect) GetCrcString() string {
+	return "48a4c4c8"
+}
+func NewSwInterfaceSetL2Xconnect() api.Message {
+	return &SwInterfaceSetL2Xconnect{}
+}
+
+// SwInterfaceSetL2XconnectReply represents the VPP binary API message 'sw_interface_set_l2_xconnect_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 293:
+//
+//        ["sw_interface_set_l2_xconnect_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x6e45eed4"}
+//        ],
+//
+type SwInterfaceSetL2XconnectReply struct {
+	Retval int32
+}
+
+func (*SwInterfaceSetL2XconnectReply) GetMessageName() string {
+	return "sw_interface_set_l2_xconnect_reply"
+}
+func (*SwInterfaceSetL2XconnectReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SwInterfaceSetL2XconnectReply) GetCrcString() string {
+	return "6e45eed4"
+}
+func NewSwInterfaceSetL2XconnectReply() api.Message {
+	return &SwInterfaceSetL2XconnectReply{}
+}
+
+// SwInterfaceSetL2Bridge represents the VPP binary API message 'sw_interface_set_l2_bridge'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 299:
+//
+//        ["sw_interface_set_l2_bridge",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "rx_sw_if_index"],
+//            ["u32", "bd_id"],
+//            ["u8", "shg"],
+//            ["u8", "bvi"],
+//            ["u8", "enable"],
+//            {"crc" : "0x36c739e8"}
+//        ],
+//
+type SwInterfaceSetL2Bridge struct {
+	RxSwIfIndex uint32
+	BdID        uint32
+	Shg         uint8
+	Bvi         uint8
+	Enable      uint8
+}
+
+func (*SwInterfaceSetL2Bridge) GetMessageName() string {
+	return "sw_interface_set_l2_bridge"
+}
+func (*SwInterfaceSetL2Bridge) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SwInterfaceSetL2Bridge) GetCrcString() string {
+	return "36c739e8"
+}
+func NewSwInterfaceSetL2Bridge() api.Message {
+	return &SwInterfaceSetL2Bridge{}
+}
+
+// SwInterfaceSetL2BridgeReply represents the VPP binary API message 'sw_interface_set_l2_bridge_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 310:
+//
+//        ["sw_interface_set_l2_bridge_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x347e08d9"}
+//        ],
+//
+type SwInterfaceSetL2BridgeReply struct {
+	Retval int32
+}
+
+func (*SwInterfaceSetL2BridgeReply) GetMessageName() string {
+	return "sw_interface_set_l2_bridge_reply"
+}
+func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SwInterfaceSetL2BridgeReply) GetCrcString() string {
+	return "347e08d9"
+}
+func NewSwInterfaceSetL2BridgeReply() api.Message {
+	return &SwInterfaceSetL2BridgeReply{}
+}
+
+// BdIPMacAddDel represents the VPP binary API message 'bd_ip_mac_add_del'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 316:
+//
+//        ["bd_ip_mac_add_del",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "bd_id"],
+//            ["u8", "is_add"],
+//            ["u8", "is_ipv6"],
+//            ["u8", "ip_address", 16],
+//            ["u8", "mac_address", 6],
+//            {"crc" : "0xad819817"}
+//        ],
+//
+type BdIPMacAddDel struct {
+	BdID       uint32
+	IsAdd      uint8
+	IsIpv6     uint8
+	IPAddress  []byte `struc:"[16]byte"`
+	MacAddress []byte `struc:"[6]byte"`
+}
+
+func (*BdIPMacAddDel) GetMessageName() string {
+	return "bd_ip_mac_add_del"
+}
+func (*BdIPMacAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*BdIPMacAddDel) GetCrcString() string {
+	return "ad819817"
+}
+func NewBdIPMacAddDel() api.Message {
+	return &BdIPMacAddDel{}
+}
+
+// BdIPMacAddDelReply represents the VPP binary API message 'bd_ip_mac_add_del_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 327:
+//
+//        ["bd_ip_mac_add_del_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x55bab3b4"}
+//        ],
+//
+type BdIPMacAddDelReply struct {
+	Retval int32
+}
+
+func (*BdIPMacAddDelReply) GetMessageName() string {
+	return "bd_ip_mac_add_del_reply"
+}
+func (*BdIPMacAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*BdIPMacAddDelReply) GetCrcString() string {
+	return "55bab3b4"
+}
+func NewBdIPMacAddDelReply() api.Message {
+	return &BdIPMacAddDelReply{}
+}
+
+// L2InterfaceEfpFilter represents the VPP binary API message 'l2_interface_efp_filter'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 333:
+//
+//        ["l2_interface_efp_filter",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u32", "enable_disable"],
+//            {"crc" : "0x07c9d601"}
+//        ],
+//
+type L2InterfaceEfpFilter struct {
+	SwIfIndex     uint32
+	EnableDisable uint32
+}
+
+func (*L2InterfaceEfpFilter) GetMessageName() string {
+	return "l2_interface_efp_filter"
+}
+func (*L2InterfaceEfpFilter) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*L2InterfaceEfpFilter) GetCrcString() string {
+	return "07c9d601"
+}
+func NewL2InterfaceEfpFilter() api.Message {
+	return &L2InterfaceEfpFilter{}
+}
+
+// L2InterfaceEfpFilterReply represents the VPP binary API message 'l2_interface_efp_filter_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 341:
+//
+//        ["l2_interface_efp_filter_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x0f4bb0c0"}
+//        ],
+//
+type L2InterfaceEfpFilterReply struct {
+	Retval int32
+}
+
+func (*L2InterfaceEfpFilterReply) GetMessageName() string {
+	return "l2_interface_efp_filter_reply"
+}
+func (*L2InterfaceEfpFilterReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*L2InterfaceEfpFilterReply) GetCrcString() string {
+	return "0f4bb0c0"
+}
+func NewL2InterfaceEfpFilterReply() api.Message {
+	return &L2InterfaceEfpFilterReply{}
+}
+
+// SwInterfaceSetVpath represents the VPP binary API message 'sw_interface_set_vpath'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 347:
+//
+//        ["sw_interface_set_vpath",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u8", "enable"],
+//            {"crc" : "0x1bc2fd5e"}
+//        ],
+//
+type SwInterfaceSetVpath struct {
+	SwIfIndex uint32
+	Enable    uint8
+}
+
+func (*SwInterfaceSetVpath) GetMessageName() string {
+	return "sw_interface_set_vpath"
+}
+func (*SwInterfaceSetVpath) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SwInterfaceSetVpath) GetCrcString() string {
+	return "1bc2fd5e"
+}
+func NewSwInterfaceSetVpath() api.Message {
+	return &SwInterfaceSetVpath{}
+}
+
+// SwInterfaceSetVpathReply represents the VPP binary API message 'sw_interface_set_vpath_reply'.
+// Generated from '/usr/share/vpp/api/l2.api.json', line 355:
+//
+//        ["sw_interface_set_vpath_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x828dbe62"}
+//        ]
+//
+type SwInterfaceSetVpathReply struct {
+	Retval int32
+}
+
+func (*SwInterfaceSetVpathReply) GetMessageName() string {
+	return "sw_interface_set_vpath_reply"
+}
+func (*SwInterfaceSetVpathReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SwInterfaceSetVpathReply) GetCrcString() string {
+	return "828dbe62"
+}
+func NewSwInterfaceSetVpathReply() api.Message {
+	return &SwInterfaceSetVpathReply{}
 }

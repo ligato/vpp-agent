@@ -20,13 +20,16 @@ import (
 
 	"time"
 
+	"fmt"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins
@@ -49,6 +52,14 @@ type DataResyncReq struct {
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC
 	StaticRoutes []*l3.StaticRoutes_Route
+	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC
+	ArpEntries []*l3.ArpTable_ArpTableEntry
+	// L4Features is a bool flag that is expected to be set in VPP after RESYNC
+	L4Features *l4.L4Features
+	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC
+	AppNamespaces []*l4.AppNamespaces_AppNamespace
+	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
+	StnRules []*stn.StnRule
 }
 
 // NewDataResyncReq is a constructor
@@ -62,7 +73,12 @@ func NewDataResyncReq() *DataResyncReq {
 		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
 		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
-		StaticRoutes:        []*l3.StaticRoutes_Route{}}
+		StaticRoutes:        []*l3.StaticRoutes_Route{},
+		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
+		L4Features:          &l4.L4Features{},
+		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
+		StnRules:            []*stn.StnRule{},
+	}
 }
 
 // delegates full resync request
@@ -99,35 +115,56 @@ func (plugin *Plugin) resyncConfigPropageOptimizedRequest(req *DataResyncReq) er
 
 // delegates resync request to ifplugin/l2plugin/l3plugin resync requests (in this particular order)
 func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
-	var err error
-	if err = plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
-		return err
+	// store all resync errors
+	var resyncErrs []error
+
+	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
-		return err
+	if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-		return err
+	if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-		return err
+	if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
-		return err
+	if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-		return err
+	if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	if err = plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-		return err
+	if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+		resyncErrs = append(resyncErrs, err)
 	}
-	return err
+	if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	// log errors if any
+	if len(resyncErrs) == 0 {
+		return nil
+	}
+	for _, err := range resyncErrs {
+		plugin.Log.Error(err)
+	}
+	return fmt.Errorf("%v errors occured during defaultplugins resync", len(resyncErrs))
 }
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
@@ -136,6 +173,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		plugin.Log.Debug("Received RESYNC key ", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
+		if plugin.droppedFromResync(key) {
+			continue
+		}
 		if strings.HasPrefix(key, acl.KeyPrefix()) {
 			numAcls := appendACLInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
@@ -162,11 +202,47 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
+		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+			resyncFeatures(resyncData, req)
+			plugin.Log.Debug("Received RESYNC AppNs feature flag")
+		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+			numAppNs := resyncAppendAppNs(resyncData, req)
+			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
+		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+			numStns := appendResyncStnRules(resyncData, req)
+			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
 	}
 	return req
+}
+func (plugin *Plugin) droppedFromResync(key string) bool {
+	for _, prefix := range plugin.omittedPrefixes {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			entry := &l3.ArpTable_ArpTableEntry{}
+			if err := arpData.GetValue(entry); err == nil {
+				req.ArpEntries = append(req.ArpEntries, entry)
+				num++
+			}
+		}
+	}
+	return num
 }
 
 func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
@@ -280,6 +356,7 @@ func resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq)
 	}
 	return num
 }
+
 func resyncAppendBfdAuthKeys(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	value := &bfd.SingleHopBFD_Key{}
 	num := 0
@@ -296,6 +373,7 @@ func resyncAppendBfdAuthKeys(resyncData datasync.KeyValIterator, req *DataResync
 	}
 	return num
 }
+
 func resyncAppendBfdSession(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	value := &bfd.SingleHopBFD_Session{}
 	num := 0
@@ -312,6 +390,7 @@ func resyncAppendBfdSession(resyncData datasync.KeyValIterator, req *DataResyncR
 	}
 	return num
 }
+
 func appendACLInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
 	for {
@@ -328,6 +407,7 @@ func appendACLInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) 
 	}
 	return num
 }
+
 func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
 	num := 0
 	for {
@@ -338,6 +418,54 @@ func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncRe
 			err := interfaceData.GetValue(value)
 			if err == nil {
 				req.Interfaces = append(req.Interfaces, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func resyncFeatures(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	for {
+		appResyncData, stop := resyncData.GetNext()
+		if stop {
+			break
+		}
+		value := &l4.L4Features{}
+		err := appResyncData.GetValue(value)
+		if err == nil {
+			req.L4Features = value
+		}
+	}
+}
+
+func resyncAppendAppNs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if appResyncData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &l4.AppNamespaces_AppNamespace{}
+			err := appResyncData.GetValue(value)
+			if err == nil {
+				req.AppNamespaces = append(req.AppNamespaces, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if stnData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &stn.StnRule{}
+			err := stnData.GetValue(value)
+			if err == nil {
+				req.StnRules = append(req.StnRules, value)
 				num++
 			}
 		}
@@ -366,7 +494,11 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionKeyPrefix(),
 			l2.BridgeDomainKeyPrefix(),
 			l2.XConnectKeyPrefix(),
-			l3.VrfKeyPrefix())
+			l3.VrfKeyPrefix(),
+			l3.ArpKeyPrefix(),
+			l4.FeatureKeyPrefix(),
+			l4.AppNamespacesKeyPrefix(),
+		)
 	if err != nil {
 		return err
 	}

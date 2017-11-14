@@ -114,8 +114,8 @@ application built on the CN-Infra platform. The code for this example
 can be found [here](examples/simple-agent/agent.go).
 ```
 func main() {
-	flavor := rpc.FlavorRPC{}
-	agent := core.NewAgent(logroot.Logger(), 15*time.Second, flavor.Plugins()...)
+	flavor := &rpc.FlavorRPC{}
+	agent := core.NewAgent(flavor)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
 	if err != nil {

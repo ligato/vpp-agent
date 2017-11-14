@@ -61,9 +61,17 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&interfaces.SwInterfaceSetMacAddress{},
 		&interfaces.SwInterfaceSetMacAddressReply{},
 		&interfaces.SwInterfaceDetails{},
+		&interfaces.SwInterfaceSetTable{},
+		&interfaces.SwInterfaceSetTableReply{},
+		&interfaces.SwInterfaceGetTable{},
+		&interfaces.SwInterfaceGetTableReply{},
 
 		&ip.IPAddressDump{},
 		&ip.IPAddressDetails{},
+		&ip.IPFibDump{},
+		&ip.IPFibDetails{},
+		&ip.IPTableAddDel{},
+		&ip.IPTableAddDelReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {

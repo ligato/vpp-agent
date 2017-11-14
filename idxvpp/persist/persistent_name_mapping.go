@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package persist asynchronously writes changes in the map (name->idx) to 
+// Package persist asynchronously writes changes in the map (name->idx) to
 // file.
 package persist
 

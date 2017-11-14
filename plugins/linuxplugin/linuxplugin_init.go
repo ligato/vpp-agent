@@ -42,8 +42,9 @@ type Plugin struct {
 	Deps
 
 	// interfaces
-	ifIndexes      ifaceidx.LinuxIfIndexRW
-	ifConfigurator *ifplugin.LinuxInterfaceConfigurator
+	ifIndexes          ifaceidx.LinuxIfIndexRW
+	ifConfigurator     *ifplugin.LinuxInterfaceConfigurator
+	ifIndexesWatchChan chan ifaceidx.LinuxIfIndexDto
 
 	// ARPs
 	arpIndexes      l3idx.LinuxARPIndexRW
@@ -51,6 +52,7 @@ type Plugin struct {
 
 	// static routes
 	rtIndexes         l3idx.LinuxRouteIndexRW
+	rtCachedIndexes   l3idx.LinuxRouteIndexRW
 	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
 	resyncChan chan datasync.ResyncEvent
@@ -77,10 +79,21 @@ type LinuxConfig struct {
 }
 
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
-// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-// Linux interfaces.
+// interface indexes.
 func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return plugin.ifIndexes
+}
+
+// GetLinuxARPIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// ARP entry indexes.
+func (plugin *Plugin) GetLinuxARPIndexes() l3idx.LinuxARPIndex {
+	return plugin.arpIndexes
+}
+
+// GetLinuxRouteIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// route indexes.
+func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
+	return plugin.rtIndexes
 }
 
 // Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
@@ -104,6 +117,7 @@ func (plugin *Plugin) Init() error {
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
+	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
 
 	// create plugin context, save cancel function into the plugin handle
 	var ctx context.Context
@@ -171,6 +185,8 @@ func (plugin *Plugin) initRoutes() error {
 	// Route indexes
 	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
 		"linux_route_indexes", nil))
+	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+		"linux_cached_route_indexes", nil))
 
 	// Linux Route configurator
 	linuxLogger := plugin.Log.NewLogger("-route-conf")
@@ -183,7 +199,7 @@ func (plugin *Plugin) initRoutes() error {
 		LinuxIfIdx:  plugin.ifIndexes,
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}
-	return plugin.routeConfigurator.Init(plugin.rtIndexes)
+	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtCachedIndexes)
 }
 
 // AfterInit runs subscribeWatcher
