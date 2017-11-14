@@ -130,6 +130,9 @@ func vppAddDelIPTable(tableID uint32, vppChan *govppapi.Channel, delete bool) er
 }
 
 func createVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
+	if vrf == 0 {
+		return nil
+	}
 	tables, err := dumpVrfTables(vppChan)
 	if err != nil {
 		return err
