@@ -12,7 +12,7 @@ RUN wget http://www.nasm.us/pub/nasm/releasebuilds/2.12.01/nasm-2.12.01.tar.bz2 
 
 COPY travis.patch .
 
-ENV VPP_COMMIT="4c9f2a805038a2d4f663b05a3d08ac4ee1eec3da"
+ENV VPP_COMMIT="227867f5d3fb1b1dacbaf2f426812417b72ef03a"
 
 RUN git clone https://gerrit.fd.io/r/vpp
 WORKDIR vpp

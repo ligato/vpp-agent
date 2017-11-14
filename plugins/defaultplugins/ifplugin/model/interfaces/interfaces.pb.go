@@ -4,10 +4,8 @@
 
 /*
 Package interfaces is a generated protocol buffer package.
-
 It is generated from these files:
 	interfaces.proto
-
 It has these top-level messages:
 	Interfaces
 	InterfacesState
@@ -50,6 +48,36 @@ var InterfaceType_value = map[string]int32{
 
 func (x InterfaceType) String() string {
 	return proto.EnumName(InterfaceType_name, int32(x))
+}
+
+// from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
+type RxModeType int32
+
+const (
+	RxModeType_UNKNOWN   RxModeType = 0
+	RxModeType_POLLING   RxModeType = 1
+	RxModeType_INTERRUPT RxModeType = 2
+	RxModeType_ADAPTIVE  RxModeType = 3
+	RxModeType_DEFAULT   RxModeType = 4
+)
+
+var RxModeType_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "POLLING",
+	2: "INTERRUPT",
+	3: "ADAPTIVE",
+	4: "DEFAULT",
+}
+var RxModeType_value = map[string]int32{
+	"UNKNOWN":   0,
+	"POLLING":   1,
+	"INTERRUPT": 2,
+	"ADAPTIVE":  3,
+	"DEFAULT":   4,
+}
+
+func (x RxModeType) String() string {
+	return proto.EnumName(RxModeType_name, int32(x))
 }
 
 type Interfaces_Interface_Memif_MemifMode int32
@@ -148,16 +176,24 @@ type Interfaces_Interface struct {
 	Mtu         uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	Vrf         uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
-	IpAddresses []string                       `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
-	Memif       *Interfaces_Interface_Memif    `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`
-	Vxlan       *Interfaces_Interface_Vxlan    `protobuf:"bytes,102,opt,name=vxlan" json:"vxlan,omitempty"`
-	Afpacket    *Interfaces_Interface_Afpacket `protobuf:"bytes,103,opt,name=afpacket" json:"afpacket,omitempty"`
-	Tap         *Interfaces_Interface_Tap      `protobuf:"bytes,104,opt,name=tap" json:"tap,omitempty"`
+	IpAddresses    []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
+	RxModeSettings *Interfaces_Interface_RxModeSettings `protobuf:"bytes,11,opt,name=rxModeSettings" json:"rxModeSettings,omitempty"`
+	Memif          *Interfaces_Interface_Memif          `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`
+	Vxlan          *Interfaces_Interface_Vxlan          `protobuf:"bytes,102,opt,name=vxlan" json:"vxlan,omitempty"`
+	Afpacket       *Interfaces_Interface_Afpacket       `protobuf:"bytes,103,opt,name=afpacket" json:"afpacket,omitempty"`
+	Tap            *Interfaces_Interface_Tap            `protobuf:"bytes,104,opt,name=tap" json:"tap,omitempty"`
 }
 
 func (m *Interfaces_Interface) Reset()         { *m = Interfaces_Interface{} }
 func (m *Interfaces_Interface) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface) ProtoMessage()    {}
+
+func (m *Interfaces_Interface) GetRxModeSettings() *Interfaces_Interface_RxModeSettings {
+	if m != nil {
+		return m.RxModeSettings
+	}
+	return nil
+}
 
 func (m *Interfaces_Interface) GetMemif() *Interfaces_Interface_Memif {
 	if m != nil {
@@ -186,6 +222,16 @@ func (m *Interfaces_Interface) GetTap() *Interfaces_Interface_Tap {
 	}
 	return nil
 }
+
+type Interfaces_Interface_RxModeSettings struct {
+	RxMode       RxModeType `protobuf:"varint,1,opt,name=rx_mode,proto3,enum=interfaces.RxModeType" json:"rx_mode,omitempty"`
+	QueueID      uint32     `protobuf:"varint,2,opt,proto3" json:"QueueID,omitempty"`
+	QueueIDValid uint32     `protobuf:"varint,3,opt,proto3" json:"QueueIDValid,omitempty"`
+}
+
+func (m *Interfaces_Interface_RxModeSettings) Reset()         { *m = Interfaces_Interface_RxModeSettings{} }
+func (m *Interfaces_Interface_RxModeSettings) String() string { return proto.CompactTextString(m) }
+func (*Interfaces_Interface_RxModeSettings) ProtoMessage()    {}
 
 type Interfaces_Interface_Memif struct {
 	Master         bool                                 `protobuf:"varint,1,opt,name=master,proto3" json:"master,omitempty"`
@@ -332,6 +378,7 @@ func (*InterfaceErrors_Interface_ErrorData) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("interfaces.InterfaceType", InterfaceType_name, InterfaceType_value)
+	proto.RegisterEnum("interfaces.RxModeType", RxModeType_name, RxModeType_value)
 	proto.RegisterEnum("interfaces.Interfaces_Interface_Memif_MemifMode", Interfaces_Interface_Memif_MemifMode_name, Interfaces_Interface_Memif_MemifMode_value)
 	proto.RegisterEnum("interfaces.InterfacesState_Interface_Status", InterfacesState_Interface_Status_name, InterfacesState_Interface_Status_value)
 	proto.RegisterEnum("interfaces.InterfacesState_Interface_Duplex", InterfacesState_Interface_Duplex_name, InterfacesState_Interface_Duplex_value)

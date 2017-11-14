@@ -1,6 +1,5 @@
 package stn
 
-
 // StnRulesPrefix stn key/
 const StnRulesPrefix = "vpp/config/v1/stn/rules/"
 

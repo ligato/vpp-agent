@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 )
 
 // CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime
@@ -28,10 +27,10 @@ func CheckMsgCompatibilityForBridgeDomains(log logging.Logger, vppChan *govppapi
 		&l2ba.BridgeDomainAddDelReply{},
 		&l2ba.L2fibAddDel{},
 		&l2ba.L2fibAddDelReply{},
-		&vpe.BdIPMacAddDel{},
-		&vpe.BdIPMacAddDelReply{},
-		&vpe.SwInterfaceSetL2Bridge{},
-		&vpe.SwInterfaceSetL2BridgeReply{},
+		&l2ba.BdIPMacAddDel{},
+		&l2ba.BdIPMacAddDelReply{},
+		&l2ba.SwInterfaceSetL2Bridge{},
+		&l2ba.SwInterfaceSetL2BridgeReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
@@ -62,8 +61,8 @@ func CheckMsgCompatibilityForL2XConnect(log logging.Logger, vppChan *govppapi.Ch
 	msgs := []govppapi.Message{
 		&l2ba.L2XconnectDump{},
 		&l2ba.L2XconnectDetails{},
-		&vpe.SwInterfaceSetL2Xconnect{},
-		&vpe.SwInterfaceSetL2XconnectReply{},
+		&l2ba.SwInterfaceSetL2Xconnect{},
+		&l2ba.SwInterfaceSetL2XconnectReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
