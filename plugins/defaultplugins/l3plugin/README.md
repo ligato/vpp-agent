@@ -16,7 +16,7 @@ Note: Value `0` in vrfID field denotes default VRF in vpp. Since it is default v
 To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
 We assume that we want to configure vpp with label `vpp1` and config is stored in the `routes.json` file
 ```
-vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" routes.json
+vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" json/routes.json
 ```
 
 The vpp-agent-ctl contains a simple predefined route config also. It can be used for testing purposes.
