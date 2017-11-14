@@ -192,8 +192,10 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// configure optional vrf
-	if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
-		wasError = err
+	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
+		if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
+			wasError = err
+		}
 	}
 
 	// configure optional ip address
@@ -346,7 +348,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	// configure VRF if it was changed
-	if oldConfig.Vrf != newConfig.Vrf {
+	if oldConfig.Vrf != newConfig.Vrf &&
+		ifaceType != intf.InterfaceType_VXLAN_TUNNEL {
 		plugin.Log.Debugf("VRF changed: %v -> %v", oldConfig.Vrf, newConfig.Vrf)
 
 		// interface must not have IP when setting VRF
