@@ -52,11 +52,11 @@ type ACLConfigurator struct {
 	asyncVppChannel *api.Channel
 }
 
-// Init goroutines, channels and mappings
+// Init goroutines, channels and mappings.
 func (plugin *ACLConfigurator) Init() (err error) {
 	plugin.Log.Infof("Initializing plugin ACL plugin")
 
-	// Init VPP API channel
+	// Init VPP API channel.
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
@@ -77,19 +77,19 @@ func (plugin *ACLConfigurator) Init() (err error) {
 	return err
 }
 
-// Close GOVPP channel
+// Close GOVPP channel.
 func (plugin *ACLConfigurator) Close() {
 	safeclose.Close(plugin.vppChannel)
 }
 
-// ConfigureACL creates access list with provided rules and sets this list to every relevant interface
+// ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
 func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Configuring new ACL %v", acl.AclName)
 
 	if acl.Rules != nil && len(acl.Rules) > 0 {
-		// Validate rules
+		// Validate rules.
 		rules, isL2MacIP := plugin.validateRules(acl.AclName, acl.Rules)
-		// Configure ACL rules
+		// Configure ACL rules.
 		var vppACLIndex uint32
 		var err error
 		if isL2MacIP {
@@ -98,7 +98,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl, callback f
 			if err != nil {
 				return err
 			}
-			// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0)
+			// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0).
 			agentACLIndex := vppACLIndex + 1
 			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, nil)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
@@ -108,13 +108,13 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl, callback f
 			if err != nil {
 				return err
 			}
-			// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0)
+			// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0).
 			agentACLIndex := vppACLIndex + 1
 			plugin.ACLL3L4Indexes.RegisterName(acl.AclName, agentACLIndex, nil)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 		}
 
-		// Set ACL to interfaces
+		// Set ACL to interfaces.
 		if acl.Interfaces != nil {
 			if isL2MacIP {
 				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel,
@@ -139,14 +139,14 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl, callback f
 	return nil
 }
 
-// ModifyACL modifies previously created access list. L2 access list is removed and recreated, L3/L4 access list is
-// modified directly. List of interfaces is refreshed as well
+// ModifyACL modifies previously created access list. L2 access list is removed and recreated,
+// L3/L4 access list is modified directly. List of interfaces is refreshed as well.
 func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Modifying ACL %v", oldACL.AclName)
 
 	var err error
 	if newACL.Rules != nil {
-		// Validate rules
+		// Validate rules.
 		rules, isL2MacIP := plugin.validateRules(newACL.AclName, newACL.Rules)
 		var vppACLIndex uint32
 		if isL2MacIP {
@@ -177,22 +177,22 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			if err != nil {
 				return err
 			}
-			// Create agent index by incrementing vpp one
+			// Create agent index by incrementing the vpp one.
 			newAgentACLIndex := newVppACLIndex + 1
 			plugin.ACLL2Indexes.RegisterName(newACL.AclName, newAgentACLIndex, nil)
 		} else {
-			// L3/L4 ACL can be modified directly
+			// L3/L4 ACL can be modified directly.
 			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.Log, plugin.vppChannel,
 				measure.GetTimeLog(acl_api.ACLAddReplace{}, plugin.Stopwatch))
 			if err != nil {
 				return err
 			}
-			// There is no need to update index because modified ACL keeps the old one
+			// There is no need to update index because modified ACL keeps the old one.
 		}
 
-		// Update interfaces
+		// Update interfaces.
 		if isL2MacIP {
-			// Remove L2 ACL from old interfaces
+			// Remove L2 ACL from old interfaces.
 			if oldACL.Interfaces != nil {
 				err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.SwIfIndexes,
 					plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.MacipACLInterfaceAddDel{}, plugin.Stopwatch))
@@ -200,7 +200,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 					return err
 				}
 			}
-			// Put L2 ACL to new interfaces
+			// Put L2 ACL to new interfaces.
 			if newACL.Interfaces != nil {
 				err := vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
 					plugin.vppChannel, measure.GetTimeLog(acl_api.MacipACLInterfaceAddDel{}, plugin.Stopwatch))
@@ -210,7 +210,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			}
 
 		} else {
-			// Remove L3/L4 ACL from old interfaces
+			// Remove L3/L4 ACL from old interfaces.
 			if oldACL.Interfaces != nil {
 				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, func(err error) {
 					callback(err)
@@ -220,7 +220,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 					callback(err)
 				}, plugin.Log)
 			}
-			// Put L3/L4 ACL to new interfaces
+			// Put L3/L4 ACL to new interfaces.
 			if newACL.Interfaces != nil {
 				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, func(err error) {
 					callback(err)
@@ -236,19 +236,19 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 	return err
 }
 
-// DeleteACL removes existing ACL. To detach ACL from interfaces, list of interfaces has to be provided
+// DeleteACL removes existing ACL. To detach ACL from interfaces, list of interfaces has to be provided.
 func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func(error)) error {
 	plugin.Log.Infof("Deleting ACL %v", acl.AclName)
 
 	var err error
-	// Get ACL index. Keep in mind that all ACL Indices were incremented by 1
+	// Get ACL index. Keep in mind that all ACL Indices were incremented by 1.
 	agentL2AclIndex, _, l2AclFound := plugin.ACLL2Indexes.LookupIdx(acl.AclName)
 	agentL3L4AclIndex, _, l3l4AclFound := plugin.ACLL3L4Indexes.LookupIdx(acl.AclName)
 	if !l2AclFound && !l3l4AclFound {
 		return fmt.Errorf("ACL %v not found, cannot be removed", acl.AclName)
 	}
 	if l2AclFound {
-		// Remove interfaces from L2 ACL
+		// Remove interfaces from L2 ACL.
 		vppACLIndex := agentL2AclIndex - 1
 		if acl.Interfaces != nil {
 			err := vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.SwIfIndexes, plugin.Log,
@@ -257,16 +257,16 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 				return err
 			}
 		}
-		// Remove ACL L2
+		// Remove ACL L2.
 		err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.MacipACLDel{}, plugin.Stopwatch))
 		if err != nil {
 			return err
 		}
-		// Unregister
+		// Unregister.
 		plugin.ACLL2Indexes.UnregisterName(acl.AclName)
 	}
 	if l3l4AclFound {
-		// Remove interfaces
+		// Remove interfaces.
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
 			err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, func(err error) {
@@ -277,12 +277,12 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 				callback(err)
 			}, plugin.Log)
 		}
-		// Remove ACL L3/L4
+		// Remove ACL L3/L4.
 		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDel{}, plugin.Stopwatch))
 		if err != nil {
 			return err
 		}
-		// Unregister
+		// Unregister.
 		plugin.ACLL3L4Indexes.UnregisterName(acl.AclName)
 	}
 
@@ -302,8 +302,8 @@ func (plugin *ACLConfigurator) DumpACL() []*acl.AccessLists_Acl {
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
-// Current limitation: L2 and L3/4 have to be split to different ACLs, there cannot be L2 rules and L3/4 rules in the
-// same ACL
+// Current limitation: L2 and L3/4 have to be split to different ACLs and
+// there cannot be L2 rules and L3/4 rules in the same ACL.
 func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.AccessLists_Acl_Rule) ([]*acl.AccessLists_Acl_Rule, bool) {
 	var validL3L4Rules []*acl.AccessLists_Acl_Rule
 	var validL2Rules []*acl.AccessLists_Acl_Rule

@@ -1,2 +1,2 @@
-// Package vppdump provides helpers to dump all interfaces configured in VPP.
+// Package vppdump provides helpers for dumping all interfaces configured in VPP.
 package vppdump

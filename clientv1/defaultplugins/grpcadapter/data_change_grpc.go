@@ -58,7 +58,7 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
-// This is implementation of Domain Specific Language (DSL) for change of the VPP configuration.
+// This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
 	client            vppsvc.ChangeConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
@@ -86,62 +86,62 @@ type DataChangeDSL struct {
 	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 }
 
-// PutDSL is here to put here most recent and previous value with revisions
+// PutDSL allows to add or edit the configuration of delault plugins based on grpc requests.
 type PutDSL struct {
 	parent *DataChangeDSL
 }
 
-// DeleteDSL is here to put here most recent and previous value with revisions
+// DeleteDSL allows to remove the configuration of delault plugins based on grpc requests.
 type DeleteDSL struct {
 	parent *DataChangeDSL
 }
 
-// Interface create or update the network interface
+// Interface creates or updates the network interface.
 func (dsl *PutDSL) Interface(val *interfaces.Interfaces_Interface) defaultplugins.PutDSL {
 	dsl.parent.txnPutIntf[val.Name] = val
 	return dsl
 }
 
-// BfdSession create or update the bidirectional forwarding detection session
+// BfdSession creates or updates the bidirectional forwarding detection session.
 func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugins.PutDSL {
 	dsl.parent.txnPutBfdSession[val.Interface] = val
 	return dsl
 }
 
-// BfdAuthKeys create or update the bidirectional forwarding detection key
+// BfdAuthKeys creates or updates the bidirectional forwarding detection key.
 func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.PutDSL {
 	dsl.parent.txnPutBfdAuthKey[val.Id] = val
 	return dsl
 }
 
-// BfdEchoFunction create or update the bidirectional forwarding detection echod function
+// BfdEchoFunction creates or updates the bidirectional forwarding detection echo function.
 func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) defaultplugins.PutDSL {
 	dsl.parent.txnPutBfdEcho[val.EchoSourceInterface] = val
 	return dsl
 }
 
-// BD create or update the Bridge Domain
+// BD creates or updates the Bridge Domain.
 func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.PutDSL {
 	dsl.parent.txnPutBD[val.Name] = val
 
 	return dsl
 }
 
-// BDFIB delete request for the L2 Forwarding Information Base
+// BDFIB deletes request for the L2 Forwarding Information Base.
 func (dsl *PutDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.PutDSL {
 	dsl.parent.txnPutBDFIB[l2.FibKey(val.BridgeDomain, val.PhysAddress)] = val
 
 	return dsl
 }
 
-// XConnect create or update the Cross Connect
+// XConnect creates or updates the Cross Connect.
 func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.PutDSL {
 	dsl.parent.txnPutXCon[val.ReceiveInterface] = val
 
 	return dsl
 }
 
-// StaticRoute create or update the L3 Static Route
+// StaticRoute creates or updates the L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
 	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
 	dsl.parent.txnPutStaticRoute[l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)] = val
@@ -149,48 +149,48 @@ func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL
 	return dsl
 }
 
-// ACL create or update request for the Access Control List
+// ACL creates or updates request for the Access Control List.
 func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.PutDSL {
 	dsl.parent.txnPutACL[val.AclName] = val
 
 	return dsl
 }
 
-// L4Features create or update request for the L4Features
+// L4Features creates or updates the request for the L4Features.
 func (dsl *PutDSL) L4Features(val *l4.L4Features) defaultplugins.PutDSL {
 	dsl.parent.txnPutL4Features[strconv.FormatBool(val.Enabled)] = val
 
 	return dsl
 }
 
-// AppNamespace create or update request for the Application Namespaces List
+// AppNamespace creates or updates the request for the Application Namespaces List.
 func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.PutDSL {
 	dsl.parent.txnPutAppNs[val.NamespaceId] = val
 
 	return dsl
 }
 
-// Put gives you the ability to create Interface/BD...
+// Put enables creating Interface/BD...
 func (dsl *DataChangeDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl}
 }
 
-// Delete gives you the ability to delete Interface/BD...
+// Delete enables deleting Interface/BD...
 func (dsl *DataChangeDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl}
 }
 
-// Delete gives you the ability to delete Interface/BD...
+// Delete enables deleting Interface/BD...
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
 }
 
-// Send will propagate changes to the channels
+// Send propagates changes to the channels.
 func (dsl *PutDSL) Send() defaultplugins.Reply {
 	return dsl.parent.Send()
 }
 
-// Interface delete request for the network interface
+// Interface deletes request for the network interface.
 func (dsl *DeleteDSL) Interface(interfaceName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelIntf[interfaceName] = nil
 
@@ -218,28 +218,28 @@ func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) defaultplugins.DeleteD
 	return dsl
 }
 
-// BD delete request for the Bridge Domain
+// BD deletes request for the Bridge Domain.
 func (dsl *DeleteDSL) BD(bdName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelBD[bdName] = nil
 
 	return dsl
 }
 
-// BDFIB delete request for the L2 Forwarding Information Base
+// BDFIB deletes request for the L2 Forwarding Information Base.
 func (dsl *DeleteDSL) BDFIB(bdName string, mac string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelBDFIB[l2.FibKey(bdName, mac)] = nil
 
 	return dsl
 }
 
-// XConnect delete the Cross Connect
+// XConnect deletes the Cross Connect.
 func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelXCon[rxIfName] = nil
 
 	return dsl
 }
 
-// StaticRoute deletee the L3 Static Route
+// StaticRoute deletes the L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
 	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txnDelStaticRoute[l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String())] =
@@ -248,38 +248,38 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAd
 	return dsl
 }
 
-// ACL delete request for Access Control List
+// ACL deletes request for Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelACL[aclName] = nil
 
 	return dsl
 }
 
-// L4Features delete request for the L4Features
+// L4Features deletes request for the L4Features.
 func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
 	dsl.parent.txnPutL4Features["l4"] = nil
 
 	return dsl
 }
 
-// AppNamespace delete request for the Application Namespaces List
+// AppNamespace delets request for the Application Namespaces List.
 func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 	dsl.parent.txnPutAppNs[id] = nil
 
 	return dsl
 }
 
-// Put gives you the ability to create Interface/BD...
+// Put enables creating Interface/BD...
 func (dsl *DeleteDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl.parent}
 }
 
-// Send will propagate changes to the channels
+// Send propagates changes to the channels.
 func (dsl *DeleteDSL) Send() defaultplugins.Reply {
 	return dsl.parent.Send()
 }
 
-// Send will propagate changes to the channels
+// Send propagates changes to the channels.
 func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	var wasErr error
 
@@ -388,12 +388,12 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	return &Reply{wasErr}
 }
 
-// Reply is here to gives you the ability to wait for the reply and get result (success/error)
+// Reply enables waiting for the reply and getting result (success/error).
 type Reply struct {
 	err error
 }
 
-// ReceiveReply return error or nil
+// ReceiveReply returns error or nil.
 func (dsl Reply) ReceiveReply() error {
 	return dsl.err
 }

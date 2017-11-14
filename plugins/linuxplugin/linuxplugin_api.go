@@ -21,9 +21,9 @@ import (
 
 // API of Linux Plugin
 type API interface {
-	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
-	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-	// Linux interfaces.
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
+	// to corresponding Linux interface indexes. This mapping is especially helpful
+	// for plugins that need to watch for newly added or deleted Linux interfaces.
 	GetLinuxIfIndexes() ifaceidx.LinuxIfIndex
 
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux

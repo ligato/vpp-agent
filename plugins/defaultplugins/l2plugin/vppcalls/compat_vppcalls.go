@@ -20,7 +20,7 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 )
 
-// CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForBridgeDomains(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&l2ba.BridgeDomainAddDel{},
@@ -39,7 +39,7 @@ func CheckMsgCompatibilityForBridgeDomains(log logging.Logger, vppChan *govppapi
 	return err
 }
 
-// CheckMsgCompatibilityForL2FIB checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForL2FIB checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForL2FIB(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&l2ba.BridgeDomainDump{},
@@ -56,7 +56,7 @@ func CheckMsgCompatibilityForL2FIB(log logging.Logger, vppChan *govppapi.Channel
 	return err
 }
 
-// CheckMsgCompatibilityForL2XConnect checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForL2XConnect checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForL2XConnect(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&l2ba.L2XconnectDump{},

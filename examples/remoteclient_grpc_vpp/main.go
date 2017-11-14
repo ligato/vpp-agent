@@ -52,9 +52,9 @@ func init() {
  * Main *
  ********/
 
-// Start Agent plugins selected for this example
+// Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example
+	// Init close channel to stop the example.
 	closeChannel := make(chan struct{}, 1)
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
@@ -66,13 +66,13 @@ func main() {
 		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
 	}))
 
-	// End when the localhost example is finished
+	// End when the localhost example is finished.
 	go closeExample("localhost example finished", closeChannel)
 
 	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
-// Stop the agent with desired info message
+// Stop the agent with desired info message.
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
 	log.DefaultLogger().Info(message)
@@ -95,16 +95,16 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
-	// Set up a connection to the server.
+	// Set up connection to the server.
 	plugin.conn, err = grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
 
-	// apply initial VPP configuration
+	// Apply initial VPP configuration.
 	plugin.resyncVPP()
 
-	// schedule reconfiguration
+	// Schedule reconfiguration.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	plugin.wg.Add(1)
@@ -153,7 +153,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 
 	select {
 	case <-time.After(15 * time.Second):
-		// simulate configuration change exactly 15seconds after resync
+		// Simulate configuration change exactly 15seconds after resync.
 		err := remoteclient.DataChangeRequestGRPC(vppsvc.NewChangeConfigServiceClient(plugin.conn)).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
@@ -172,7 +172,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			log.DefaultLogger().Info("Successfully reconfigured VPP")
 		}
 	case <-ctx.Done():
-		// cancel the scheduled re-configuration
+		// Cancel the scheduled re-configuration.
 		log.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
@@ -260,7 +260,7 @@ var (
 		},
 		Mtu: 1500,
 	}
-	// XConMemif1ToMemif2 defines xconnect between memifs
+	// XConMemif1ToMemif2 defines xconnect between memifs.
 	XConMemif1ToMemif2 = l2.XConnectPairs_XConnectPair{
 		ReceiveInterface:  memif1AsSlave.Name,
 		TransmitInterface: memif2.Name,

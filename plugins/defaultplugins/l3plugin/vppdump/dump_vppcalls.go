@@ -40,13 +40,13 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, timeLog mea
 
 	var routes []*vppcalls.Route
 
-	// dump IPv4 l3 FIB
+	// Dump IPv4 l3 FIB.
 	reqCtx := vppChan.SendMultiRequest(&l3ba.IPFibDump{})
 	for {
 		fibDetails := &l3ba.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)
@@ -60,7 +60,7 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, timeLog mea
 		routes = append(routes, ipv4Route)
 	}
 
-	// dump IPv6 l3 FIB
+	// Dump IPv6 l3 FIB.
 	reqCtx = vppChan.SendMultiRequest(&l3ba.IP6FibDump{})
 	for {
 		fibDetails := &l3ba.IP6FibDetails{}

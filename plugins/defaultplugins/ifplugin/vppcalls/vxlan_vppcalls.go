@@ -26,7 +26,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
-// AddDelVxlanTunnelReq prepare the request for bin API calls
+// AddDelVxlanTunnelReq prepares the request for bin API calls.
 func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8) (req *vxlan.VxlanAddDelTunnel, err error) {
 	req = &vxlan.VxlanAddDelTunnel{}
 	var address net.IP
@@ -60,7 +60,7 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 	return req, nil
 }
 
-// AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1
+// AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
 func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
@@ -94,7 +94,7 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32,
 	return reply.SwIfIndex, nil
 }
 
-// DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0
+// DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
 func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()

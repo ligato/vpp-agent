@@ -123,7 +123,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 			return err
 		}
 
-		// store the name to index mapping if it does not exist yet
+		// store the name-to-index mapping if it does not exist yet
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			ifName := string(bytes.Trim(msg.InterfaceName, "\x00"))

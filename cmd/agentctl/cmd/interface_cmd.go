@@ -21,8 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// 'put interface' command can be used to add interface configuration to ETCD. It uses
-// several following commands (according to interface type)
+// 'put interface' command can be used to add interface configuration to etcd. It uses
+// several following commands (according to interface type).
 var putInterfaceCommand = &cobra.Command{
 	Use:        "interface [command] -l <agent-label> -n <if-name>",
 	Aliases:    []string{"i", "in", "int", "if"},
@@ -52,7 +52,7 @@ $ agentctl p i -l <agent-label> -n <interface-name>
 `,
 }
 
-// 'delete interface' command can be used to remove interface configuration from ETCD
+// 'delete interface' command can be used to remove interface configuration from etcd.
 var delInterfaceCommand = &cobra.Command{
 	Use:        "interface -l <agent-label> -n <if-name>",
 	Aliases:    []string{"i", "in", "int", "if"},
@@ -171,12 +171,12 @@ var (
 )
 
 func init() {
-	// Add interface command to 'put'
+	// Add interface command to 'put'.
 	putCommand.AddCommand(putInterfaceCommand)
 	putInterfaceCommand.Flags().StringVarP(&interfaceCmdFlags, "file", "f", "",
 		"get configuration from file")
 
-	// Attach all interface type sub-commands with initialized command-specific flags
+	// Attach all interface type sub-commands with initialized command-specific flags.
 	initAfPktCmd()
 	initEthernetCmd()
 	initLoopbackCmd()
@@ -185,7 +185,7 @@ func init() {
 	initVxLanCmd()
 	initIfJSONCmd()
 
-	// Add interface command to 'delete'
+	// Add interface command to 'delete'.
 	deleteCommand.AddCommand(delInterfaceCommand)
 	impl.AddInterfaceNameFlag(delInterfaceCommand)
 }

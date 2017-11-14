@@ -19,6 +19,8 @@ import (
 	"errors"
 	"sync"
 
+	"time"
+
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 	"git.fd.io/govpp.git/api"
@@ -27,28 +29,27 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"time"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
-	Deps // inject
+	Deps // Inject.
 
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
 
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups injected dependencies of plugin
+// so that they do not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps // inject
 }
 
-// Config groups the configurable parameter of GoVpp
+// Config groups the configurable parameter of GoVpp.
 type Config struct {
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
@@ -92,7 +93,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	if plugin.vppAdapter == nil {
 		plugin.vppAdapter = vppapiclient.NewVppAdapter()
 	} else {
-		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing
+		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}
 
 	startTime := time.Now()
@@ -101,8 +102,8 @@ func (plugin *GOVPPPlugin) Init() error {
 		return err
 	}
 
-	// TODO: async connect & automatic reconnect support is not yet implemented in the agent,
-	// so synchronously wait until connected to VPP
+	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
+	// so synchronously wait until connected to VPP.
 	status := <-plugin.vppConChan
 	if status.State != govpp.Connected {
 		return errors.New("unable to connect to VPP")
@@ -110,7 +111,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	vppConnectTime := time.Since(startTime)
 	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
 
-	// register for providing status reports (push mode)
+	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
 	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
@@ -156,7 +157,7 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 	return plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 }
 
-// handleVPPConnectionEvents handles VPP connection events
+// handleVPPConnectionEvents handles VPP connection events.
 func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()

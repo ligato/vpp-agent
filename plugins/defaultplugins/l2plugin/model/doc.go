@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model defines the l2lugin's northbound API. The API is defined
+// Package model defines the l2plugin's northbound API. The API is defined
 // in a protobuf data model. The Golang declaration of the API (i.e. the
 // methods and data structures that implement the API's functionality) is
 // generated from the protobuf data model.
