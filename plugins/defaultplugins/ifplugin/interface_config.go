@@ -524,9 +524,6 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if newConfig.RingSize == 0 {
-		newConfig.RingSize = 1 // default
-	}
 
 	if newConfig.BufferSize != oldConfig.BufferSize || newConfig.Id != oldConfig.Id || newConfig.Secret != oldConfig.Secret ||
 		newConfig.RingSize != oldConfig.RingSize || newConfig.Master != oldConfig.Master || newConfig.SocketFilename != oldConfig.SocketFilename ||
