@@ -22,7 +22,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 )
 
 // VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain
@@ -76,7 +76,7 @@ func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string,
 		return fmt.Errorf("invalid IP address: %q", ipAddr)
 	}
 
-	req := &vpe.BdIPMacAddDel{
+	req := &l2.BdIPMacAddDel{
 		BdID:       bdID,
 		IPAddress:  ipAddr,
 		MacAddress: macAddr,
@@ -88,7 +88,7 @@ func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string,
 		req.IsAdd = 0
 	}
 
-	reply := &vpe.BdIPMacAddDelReply{}
+	reply := &l2.BdIPMacAddDelReply{}
 
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

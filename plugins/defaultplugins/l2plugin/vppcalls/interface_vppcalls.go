@@ -15,13 +15,14 @@
 package vppcalls
 
 import (
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"time"
 )
 
 // VppSetAllInterfacesToBridgeDomain does lookup all interfaces which belongs to bridge domain, and bvi interface
@@ -59,7 +60,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 			allBdInterfaces = append(allBdInterfaces, bdInterface.Name)
 			continue
 		}
-		req := &vpe.SwInterfaceSetL2Bridge{}
+		req := &l2ba.SwInterfaceSetL2Bridge{}
 		req.BdID = bridgeDomainIndex
 		req.RxSwIfIndex = interfaceIndex
 		req.Enable = 1
@@ -68,7 +69,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 			req.Bvi = 1
 			log.Debugf("Interface %v set as BVI", bdInterface.Name)
 		}
-		reply := &vpe.SwInterfaceSetL2BridgeReply{}
+		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 		err := vppChan.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
 			log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while assigning interface to bridge domain")
@@ -116,12 +117,12 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 			log.Debugf("Interface %v not found, no need to unset", bdInterface.Name)
 			continue
 		}
-		req := &vpe.SwInterfaceSetL2Bridge{}
+		req := &l2ba.SwInterfaceSetL2Bridge{}
 		req.BdID = bridgeDomainIndex
 		req.RxSwIfIndex = interfaceIndex
 		req.Enable = 0
 
-		reply := &vpe.SwInterfaceSetL2BridgeReply{}
+		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 		err := vppChan.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
 			log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomain.Name}).Error("Error while setting up interface as L3")
@@ -149,7 +150,7 @@ func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint
 		}
 	}()
 
-	req := &vpe.SwInterfaceSetL2Bridge{}
+	req := &l2ba.SwInterfaceSetL2Bridge{}
 	req.BdID = bridgeDomainIndex
 	req.RxSwIfIndex = interfaceIndex
 	req.Enable = 1
@@ -159,7 +160,7 @@ func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint
 		req.Bvi = 0
 	}
 
-	reply := &vpe.SwInterfaceSetL2BridgeReply{}
+	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
