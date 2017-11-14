@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 
@@ -196,6 +197,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+		var value, prevValue stn.StnRule
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeStnRule(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -357,4 +370,15 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 		return plugin.l4Configurator.DeleteL4FeatureFlag()
 	}
 	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
+}
+
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
+	plugin.Log.Debug("stnRuleChange ", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.stnConfigurator.Delete(prevValue)
+	} else if diff {
+		return plugin.stnConfigurator.Modify(value, prevValue)
+	}
+	return plugin.stnConfigurator.Add(value)
 }

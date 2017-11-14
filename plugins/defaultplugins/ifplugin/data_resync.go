@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 )
 
 // Resync writes interfaces to the empty VPP
@@ -231,4 +232,24 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 // ResyncEchoFunction writes BFD echo function to the empty VPP
 func (plugin *BFDConfigurator) ResyncEchoFunction(bfds []*bfd.SingleHopBFD_EchoFunction) error {
 	return nil
+}
+
+// Resync writes stn rule to the the empty VPP
+func (plugin *StnConfigurator) Resync(stnRules []*stn.StnRule) error {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
+	// Calculate and log stn rules resync
+	defer func() {
+		if plugin.Stopwatch != nil {
+			plugin.Stopwatch.PrintLog()
+		}
+	}()
+
+	var wasError error
+	if len(stnRules) > 0 {
+		for _, rule := range stnRules {
+			wasError = plugin.Add(rule)
+		}
+	}
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules end. ", wasError)
+	return wasError
 }

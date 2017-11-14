@@ -94,6 +94,8 @@ type Plugin struct {
 	ifStateNotifications messaging.ProtoPublisher
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
+	stnConfigurator      *ifplugin.StnConfigurator
+	stnIndexes           idxvpp.NameToIdxRW
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -363,6 +365,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
+	stnLogger := plugin.Log.NewLogger("-stn-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -428,6 +431,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
 
 	plugin.Log.Debug("bfdConfigurator Initialized")
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("stnConfigurator", stnLogger)
+	}
+	plugin.stnConfigurator = &ifplugin.StnConfigurator{
+		Log:         bfdLogger,
+		GoVppmux:    plugin.GoVppmux,
+		SwIfIndexes: plugin.swIfIndexes,
+		StnIndexes:  plugin.stnIndexes,
+		StnIndexSeq: 1,
+		Stopwatch:   stopwatch,
+	}
+	plugin.stnConfigurator.Init()
+
+	plugin.Log.Debug("stnConfigurator Initialized")
 
 	return nil
 }
@@ -601,6 +619,7 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
+
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	if err := plugin.arpConfigurator.Init(); err != nil {

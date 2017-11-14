@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -147,6 +148,12 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
+// StnRules adds a request to create or update STN rule.
+func (dsl *PutDSL) StnRules(val *stn.StnRule) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -205,7 +212,6 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
-	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String()))
 	return dsl
 }
@@ -216,9 +222,14 @@ func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	return dsl
 }
 
+// StnRules adds Stn rules to the RESYNC request.
+func (dsl *DeleteDSL) StnRules(ruleName string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(stn.Key(ruleName))
+	return dsl
+}
+
 // Arp adds a request to delete an existing VPP L3 ARP entry.
 func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.DeleteDSL {
-	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
 	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr.String()))
 	return dsl
 }
@@ -226,7 +237,6 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.Delete
 // L4Features delete request for the L4Features
 func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(l4.FeatureKey())
-
 	return dsl
 }
 

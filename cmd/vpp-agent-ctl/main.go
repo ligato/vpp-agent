@@ -42,6 +42,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -198,6 +199,10 @@ func main() {
 			disableL4Features(db)
 		case "-dlrt":
 			delete(db, l32.StaticRouteKey("route1"))
+		case "-stna":
+			createStnRule(db, ifName1, "10.1.1.3/32")
+		case "-stnd":
+			delete(db, stn.Key("rule1"))
 		default:
 			usage()
 		}
@@ -205,9 +210,10 @@ func main() {
 		usage()
 	}
 }
+
 func usage() {
 	fmt.Println(os.Args[0], ": [etcd-config-file] <command>")
-	fmt.Println("\tcommands: -ct -mt -dt -ce -me -cl -ml -dl -cmm -dmm -cms -dms -cvx -dvx -cr -dr")
+	fmt.Println("\tcommands: -ct -mt -dt -ce -me -cl -ml -dl -cmm -dmm -cms -dms -cvx -dvx -cr -dr -stna -stnd")
 	fmt.Println(os.Args[0], ": [etcd-config-file] -put <etc_key> <json-file>")
 	fmt.Println(os.Args[0], ": [etcd-config-file] -get <etc_key>")
 }
@@ -1044,4 +1050,16 @@ func disableL4Features(db keyval.ProtoBroker) {
 	log.Println(l4Fatures)
 
 	db.Put(l4.FeatureKey(), l4Fatures)
+}
+
+func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
+	stnRule := stn.StnRule{
+		RuleName:  "rule1",
+		IpAddress: ipAddress,
+		Interface: ifName,
+	}
+
+	log.Println(stnRule)
+
+	db.Put(stn.Key(stnRule.RuleName), &stnRule)
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -57,6 +58,8 @@ type DataResyncReq struct {
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC
 	AppNamespaces []*l4.AppNamespaces_AppNamespace
+	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
+	StnRules []*stn.StnRule
 }
 
 // NewDataResyncReq is a constructor
@@ -74,6 +77,7 @@ func NewDataResyncReq() *DataResyncReq {
 		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
+		StnRules:            []*stn.StnRule{},
 	}
 }
 
@@ -150,7 +154,9 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
 		resyncErrs = append(resyncErrs, err)
 	}
-
+	if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
@@ -205,6 +211,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 			numAppNs := resyncAppendAppNs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
+		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+			numStns := appendResyncStnRules(resyncData, req)
+			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -440,6 +449,23 @@ func resyncAppendAppNs(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 			err := appResyncData.GetValue(value)
 			if err == nil {
 				req.AppNamespaces = append(req.AppNamespaces, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if stnData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &stn.StnRule{}
+			err := stnData.GetValue(value)
+			if err == nil {
+				req.StnRules = append(req.StnRules, value)
 				num++
 			}
 		}
