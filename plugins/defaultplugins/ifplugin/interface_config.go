@@ -81,7 +81,6 @@ type InterfaceConfigurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
-	plugin.Log.SetLevel(logging.DebugLevel)
 	plugin.Log.Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
@@ -483,6 +482,8 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 				if newRxSettings.RxMode == intf.RxModeType_POLLING {
 					return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
 				}
+				plugin.Log.WithFields(logging.Fields{"rx-mode":newRxSettings.RxMode}).
+					Warn("Attempt to set unsupported rx-mode on Ethernet interface.")
 			default:
 				return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
 			}
