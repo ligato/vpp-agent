@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"time"
 )
 
 // AddDelVxlanTunnelReq prepare the request for bin API calls
@@ -60,7 +61,7 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1
-func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
 	defer func() {
@@ -73,6 +74,7 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppap
 	if err != nil {
 		return 0, err
 	}
+	req.EncapVrfID = encapVrf
 
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
