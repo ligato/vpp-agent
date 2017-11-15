@@ -4,8 +4,10 @@
 
 /*
 Package interfaces is a generated protocol buffer package.
+
 It is generated from these files:
 	interfaces.proto
+
 It has these top-level messages:
 	Interfaces
 	InterfacesState

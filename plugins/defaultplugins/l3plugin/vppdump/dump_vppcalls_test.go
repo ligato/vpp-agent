@@ -16,9 +16,9 @@ package vppdump
 
 import (
 	"fmt"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"os"
 	"testing"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 func TestDumpL3(t *testing.T) {
