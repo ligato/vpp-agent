@@ -120,3 +120,66 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 
 	return nil
 }
+
+// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
+func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// SwInterfaceAddDelAddress time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	// Prepare the message.
+	req := &interfaces.SwInterfaceSetUnnumbered{}
+	req.SwIfIndex = ifIdxWithIP
+	req.UnnumberedSwIfIndex = uIfIdx
+	req.IsAdd = 1
+
+	log.Debug("set interface %v as un-numbered, with IP address from interface %v", uIfIdx, ifIdxWithIP)
+
+	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
+	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("setting un-numbered interfaces returned %d", reply.Retval)
+	}
+	log.WithFields(logging.Fields{"un-numberedIface": uIfIdx, "IfaceWithIP": ifIdxWithIP}).Debug("Interface set as un-numbered")
+
+	return nil
+}
+
+// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
+func UnsetUnnumberedIP(uIfIdx uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// SwInterfaceAddDelAddress time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	// Prepare the message.
+	req := &interfaces.SwInterfaceSetUnnumbered{}
+	req.UnnumberedSwIfIndex = uIfIdx
+	req.IsAdd = 0
+
+	log.Debug("unset un-numbered interface %v ", uIfIdx)
+
+	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
+	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("unsetting un-numbered interfaces returned %d", reply.Retval)
+	}
+	log.WithFields(logging.Fields{"un-numberedIface": uIfIdx}).Debug("Un-numbered interface unset")
+
+	return nil
+}

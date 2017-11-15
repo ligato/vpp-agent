@@ -65,6 +65,8 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&interfaces.SwInterfaceSetTableReply{},
 		&interfaces.SwInterfaceGetTable{},
 		&interfaces.SwInterfaceGetTableReply{},
+		&interfaces.SwInterfaceSetUnnumbered{},
+		&interfaces.SwInterfaceSetUnnumberedReply{},
 
 		&ip.IPAddressDump{},
 		&ip.IPAddressDetails{},

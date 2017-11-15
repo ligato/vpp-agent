@@ -49,6 +49,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"fmt"
 )
 
 const dummyMode = -1
@@ -203,18 +204,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// configure optional ip address
-	newAddrs, err := addrs.StrAddrsToStruct(iface.IpAddresses)
-	if err != nil {
-		return err
-	}
-	for i := range newAddrs {
-		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddress{}, plugin.Stopwatch))
-		if nil != err {
-			wasError = err
-		}
-	}
+	wasError = plugin.configureIPAddresses(iface.Name, ifIdx, iface.IpAddresses, iface.Unnumbered)
 
 	// configure mtu
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
@@ -294,6 +284,48 @@ func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interfa
 		Debug("RX-mode configuration for ", iface.Type, ".")
 	return err
 }
+
+func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx uint32, addresses []string, unnumbered *intf.Interfaces_Interface_Unnumbered) error {
+	if unnumbered != nil && unnumbered.IsUnnumbered {
+		uIfName := unnumbered.InterfaceWithIP
+		if uIfName == "" {
+			return fmt.Errorf("unnubered interface %s has no interface with IP address set", uIfName)
+		}
+		ifIdxIP, _, found := plugin.swIfIndexes.LookupIdx(unnumbered.InterfaceWithIP)
+		if !found {
+			// todo cache and configure later
+			return fmt.Errorf("unnubered interface %s requires IP address from non-existing %v", uIfName, unnumbered.InterfaceWithIP)
+		}
+		// Set interface as un-numbered
+		err := vppcalls.SetUnnumberedIP(ifIdx, ifIdxIP, plugin.Log, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetUnnumbered{}, plugin.Stopwatch))
+		if err != nil {
+			return err
+		}
+		// just log
+		if len(addresses) != 0 {
+			plugin.Log.Warnf("Interface %v set as un-numbered contains IP address(es) which will be ignored", uIfName, addresses)
+		}
+
+		return nil
+	}
+
+	// configure optional ip address
+	newAddrs, err := addrs.StrAddrsToStruct(addresses)
+	if err != nil {
+		return err
+	}
+	var wasErr error
+	for i := range newAddrs {
+		err := vppcalls.AddInterfaceIP(ifIdx, newAddrs[i], plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddress{}, plugin.Stopwatch))
+		if nil != err {
+			wasErr = err
+		}
+	}
+
+	return wasErr
+}
+
 
 // ModifyVPPInterface applies changes in the NB configuration of a VPP interface into the running VPP
 // through the VPP binary API.
