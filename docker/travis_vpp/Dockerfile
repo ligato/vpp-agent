@@ -12,12 +12,13 @@ RUN wget http://www.nasm.us/pub/nasm/releasebuilds/2.12.01/nasm-2.12.01.tar.bz2 
 
 COPY travis.patch .
 
-ENV VPP_COMMIT="227867f5d3fb1b1dacbaf2f426812417b72ef03a"
+ARG VPP_COMMIT
+RUN test -n "$VPP_COMMIT"
 
 RUN git clone https://gerrit.fd.io/r/vpp
+
 WORKDIR vpp
 RUN git checkout $VPP_COMMIT
-
 RUN git apply ../travis.patch
 
 RUN (yes | make install-dep) && make bootstrap

@@ -33,7 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
-// init sets the default logging level
+// init sets the default logging level.
 func init() {
 	log.DefaultLogger().SetOutput(os.Stdout)
 	log.DefaultLogger().SetLevel(logging.DebugLevel)
@@ -43,9 +43,9 @@ func init() {
  * Main *
  ********/
 
-// Start Agent plugins selected for this example
+// Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example
+	// Init close channel to stop the example.
 	closeChannel := make(chan struct{}, 1)
 
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
@@ -54,13 +54,13 @@ func main() {
 		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
 	}))
 
-	// End when the localhost example is finished
+	// End when the localhost example is finished.
 	go closeExample("localhost example finished", closeChannel)
 
 	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
-// Stop the agent with desired info message
+// Stop the agent with desired info message.
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
 	log.DefaultLogger().Info(message)
@@ -82,10 +82,10 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() error {
-	// apply initial VPP configuration
+	// Apply initial VPP configuration.
 	plugin.resyncVPP()
 
-	// schedule reconfiguration
+	// Schedule reconfiguration.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	plugin.wg.Add(1)
@@ -129,7 +129,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 
 	select {
 	case <-time.After(15 * time.Second):
-		// simulate configuration change exactly 15seconds after resync
+		// Simulate configuration change exactly 15seconds after resync.
 		err := localclient.DataChangeRequest(PluginID).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
@@ -236,7 +236,7 @@ var (
 		},
 		Mtu: 1500,
 	}
-	// XConMemif1ToMemif2 defines xconnect between memifs
+	// XConMemif1ToMemif2 defines xconnect between memifs.
 	XConMemif1ToMemif2 = l2.XConnectPairs_XConnectPair{
 		ReceiveInterface:  memif1AsSlave.Name,
 		TransmitInterface: memif2.Name,
@@ -335,7 +335,7 @@ var (
 		},
 	}
 
-	// routeThroughMemif1 is an example route configuration, with memif1 being the next hop.
+	// routeThroughMemif1 is an example route configuration with memif1 being the next hop.
 	routeThroughMemif1 = l3.StaticRoutes_Route{
 		Description: "Description",
 		VrfId:       0,

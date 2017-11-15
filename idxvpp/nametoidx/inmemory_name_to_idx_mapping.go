@@ -15,14 +15,15 @@
 package nametoidx
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/vpp-agent/idxvpp"
-	"strconv"
-	"time"
 )
 
 const idxKey = "idxKey"
@@ -39,8 +40,8 @@ type nameToIdxMem struct {
 	internal idxmap.NamedMappingRW
 }
 
-// NewNameToIdx creates new instance implementing NameToIdxRW. Argument indexFunction might
-// be nil if you do not want to use secondary indexes.
+// NewNameToIdx creates a new instance implementing NameToIdxRW.
+// Argument indexFunction may be nil if you do not want to use secondary indexes.
 func NewNameToIdx(logger logging.Logger, owner core.PluginName, title string,
 	indexFunction func(interface{}) map[string][]string) idxvpp.NameToIdxRW {
 	m := nameToIdxMem{}
@@ -120,13 +121,13 @@ func (mem *nameToIdxMem) LookupNameByMetadata(key string, value string) []string
 	return mem.internal.ListNames(key, value)
 }
 
-// ListNames returns all names in the mapping
+// ListNames returns all names in the mapping.
 func (mem *nameToIdxMem) ListNames() (names []string) {
 	return mem.internal.ListAllNames()
 }
 
-// Watch start monitoring of change in the mapping. When a change occurs the callback is called.
-// To receive changes through channel ToChan utility can be used.
+// Watch starts monitoring a change in the mapping. When yhe change occurs, the callback is called.
+// ToChan utility can be used to receive changes through channel.
 func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.NameToIdxDto)) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		internalMeta, ok := dto.Value.(*nameToIdxMeta)
@@ -144,7 +145,7 @@ func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.
 	mem.internal.Watch(subscriber, watcher)
 }
 
-// ToChan is an utility that allows to received notification through a channel.
+// ToChan is an utility that allows to receive notification through a channel.
 // If a notification can not be delivered until timeout, it is dropped.
 func ToChan(ch chan idxvpp.NameToIdxDto) func(dto idxvpp.NameToIdxDto) {
 	return func(dto idxvpp.NameToIdxDto) {

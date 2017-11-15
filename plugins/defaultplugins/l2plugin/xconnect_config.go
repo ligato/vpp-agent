@@ -20,6 +20,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -36,7 +37,7 @@ const (
 	transmitInterfaceKey = "TransmitInterface"
 )
 
-// XConnectConfigurator implements PluginHandlerVPP
+// XConnectConfigurator implements PluginHandlerVPP.
 type XConnectConfigurator struct {
 	Log         logging.Logger
 	GoVppmux    govppmux.API
@@ -47,23 +48,23 @@ type XConnectConfigurator struct {
 	Stopwatch   *measure.Stopwatch // timer used to measure and store time
 }
 
-// XConnectMeta meta hold info about transmit interface
+// XConnectMeta meta holds info about transmit interface.
 type XConnectMeta struct {
 	TransmitInterface string
 	configured        bool // true if already configured on VPP, false if still waiting for creation of the rx or tx interface
 }
 
-// Init members (channels...) and start go routines
+// Init members (channels...) and start go routines.
 func (plugin *XConnectConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 xConnect")
 
-	// Init VPP API channel
+	// Init VPP API channel.
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
 
-	// check bin api message compatibility
+	// Check bin api message compatibility.
 	err = vppcalls.CheckMsgCompatibilityForL2XConnect(plugin.Log, plugin.vppChan)
 	if err != nil {
 		return err
@@ -80,16 +81,16 @@ func (plugin *XConnectConfigurator) Init() (err error) {
 	return nil
 }
 
-// Close GOVPP channel
+// Close GOVPP channel.
 func (plugin *XConnectConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// ConfigureXConnectPair process the NB config and propagates it to bin api calls
+// ConfigureXConnectPair processes the NB config and propagates it to bin api calls.
 func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.Infof("Configuring L2 xConnect pair %v", xConnectPairInput.ReceiveInterface)
 
-	// Find interfaces
+	// Find interfaces.
 	receiveInterfaceIndex, _, rxFound := plugin.SwIfIndexes.LookupIdx(xConnectPairInput.ReceiveInterface)
 	if !rxFound {
 		plugin.Log.WithField("Interface", xConnectPairInput.ReceiveInterface).Warn("Receive interface not found.")
@@ -102,7 +103,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 	if rxFound && txFound {
 		// can be configured now
 		err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-			measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if err != nil {
 			plugin.Log.WithField("Error", err).Error("Failed to create l2xConnect")
 			return err
@@ -111,20 +112,20 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 		plugin.Log.Warn("rx or tx interface not found, l2xconnect postponed")
 	}
 
-	// Prepare meta
+	// Prepare meta.
 	meta := XConnectMeta{
 		TransmitInterface: xConnectPairInput.TransmitInterface,
 		configured:        rxFound && txFound,
 	}
 
-	// Register
+	// Register.
 	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, &meta)
 	plugin.XcIndexSeq++
 
 	return nil
 }
 
-// ModifyXConnectPair processes the NB config and propagates it to bin api calls
+// ModifyXConnectPair processes the NB config and propagates it to bin api calls.
 func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPairs_XConnectPair, oldConfig *l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.Infof("Modifying L2 xConnect pair %v %v", oldConfig)
 
@@ -149,22 +150,22 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 		// nothing to update
 		return nil
 	} else if oldTransmitInterfaceIndex == 0 {
-		// create new xConnect only
+		// Create new xConnect only.
 		err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, newTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if err != nil {
 			plugin.Log.WithField("Error", err).Error("Failed to set l2xConnect")
 			return err
 		}
 	} else {
 		errDel := vppcalls.VppUnsetL2XConnect(receiveInterfaceIndex, oldTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if errDel != nil {
 			plugin.Log.WithField("Error", errDel).Error("Failed to remove l2xConnect")
 			return errDel
 		}
 		errCreate := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, newTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if errCreate != nil {
 			plugin.Log.WithField("Error", errCreate).Error("Failed to set l2xConnect")
 			return errCreate
@@ -180,12 +181,12 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 	return nil
 }
 
-// DeleteXConnectPair process the NB config and propagates it to bin api calls
+// DeleteXConnectPair processes the NB config and propagates it to bin api calls.
 func (plugin *XConnectConfigurator) DeleteXConnectPair(xConnectPairInput *l2.XConnectPairs_XConnectPair) error {
 	return plugin.deleteL2XConnectPair(xConnectPairInput.ReceiveInterface, xConnectPairInput.TransmitInterface)
 }
 
-// LookupXConnectPairs registers missing l2 xConnect pairs
+// LookupXConnectPairs registers missing l2 xConnect pairs.
 func (plugin *XConnectConfigurator) LookupXConnectPairs() error {
 	// L2XconnectDump time measurement
 	start := time.Now()
@@ -211,7 +212,7 @@ func (plugin *XConnectConfigurator) LookupXConnectPairs() error {
 		if stop {
 			break
 		}
-		// Store name if missing
+		// Store name if missing.
 		_, _, found := plugin.XcIndexes.LookupName(index)
 		xcIdentifier := string(msg.RxSwIfIndex)
 		if !found {
@@ -226,15 +227,15 @@ func (plugin *XConnectConfigurator) LookupXConnectPairs() error {
 	return nil
 }
 
-// ResolveCreatedInterface configures xconnect pairs that use the interface as rx or tx and have not been configured yet
+// ResolveCreatedInterface configures xconnect pairs that use the interface as rx or tx and have not been configured yet.
 func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
 	plugin.Log.Infof("Resolving L2 xConnect pairs for created interface %v", interfaceName)
 	var err error
 
-	// lookup for the interface in rx interfaces
+	// Lookup for the interface in rx interfaces.
 	err = plugin.resolveRxInterface(interfaceName, true)
 
-	// lookup for the interface in tx interfaces
+	// Lookup for the interface in tx interfaces.
 	rxIfs := plugin.XcIndexes.LookupNameByMetadata(transmitInterfaceKey, interfaceName)
 	for _, rxIf := range rxIfs {
 		err = plugin.resolveRxInterface(rxIf, true)
@@ -243,16 +244,16 @@ func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string
 	return err
 }
 
-// ResolveDeletedInterface deltes xconnect pairs that have not been deleted yet and use the interface as rx or tx
+// ResolveDeletedInterface deletes xconnect pairs that have not been deleted yet and use the interface as rx or tx.
 func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string) error {
 	plugin.Log.Infof("Resolving L2 xConnect pairs for deleted interface %v", interfaceName)
 
 	var err error
 
-	// lookup for the interface in rx interfaces
+	// Lookup for the interface in rx interfaces.
 	err = plugin.resolveRxInterface(interfaceName, false)
 
-	// lookup for the interface in tx interfaces
+	// Lookup for the interface in tx interfaces.
 	rxIfs := plugin.XcIndexes.LookupNameByMetadata(transmitInterfaceKey, interfaceName)
 	for _, rxIf := range rxIfs {
 		err = plugin.resolveRxInterface(rxIf, false)
@@ -262,7 +263,7 @@ func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string
 }
 
 // resolveRxInterface creates/deletes 2sxconnect in XcIndexes that has not been created yet/need to be deleted
-// and have the rx interface name matching with the provided argument
+// and have the rx interface name matching with the provided argument.
 func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create bool) error {
 	var err error
 
@@ -270,7 +271,7 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 	if exists {
 		meta := meta.(*XConnectMeta)
 		if create {
-			// the l2xconn needs to be created
+			// The l2xconn needs to be created.
 			if !meta.configured {
 				// not yet configured, try to configure now
 				err = plugin.configureL2XConnectPair(rxIfName, meta.TransmitInterface)
@@ -281,7 +282,7 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 				}
 			}
 		} else {
-			// the l2xconn needs to be delted
+			// The l2xconn needs to be deleted.
 			err = plugin.deleteL2XConnectPair(rxIfName, meta.TransmitInterface)
 			// meta deleted in deleteL2XConnectPair
 		}
@@ -293,7 +294,7 @@ func (plugin *XConnectConfigurator) resolveRxInterface(rxIfName string, create b
 func (plugin *XConnectConfigurator) configureL2XConnectPair(rxIf, txIf string) error {
 	plugin.Log.Infof("Configuring L2 xConnect pair %v %v", rxIf, txIf)
 
-	// find interface idx-es
+	// Find interface idx-es.
 	receiveInterfaceIndex, _, found := plugin.SwIfIndexes.LookupIdx(rxIf)
 	if !found {
 		plugin.Log.WithField("Interface", rxIf).Warn("Receive interface not found.")
@@ -305,9 +306,9 @@ func (plugin *XConnectConfigurator) configureL2XConnectPair(rxIf, txIf string) e
 		return fmt.Errorf("transmit interface '%s' not found", txIf)
 	}
 
-	// configure l2xconnect
+	// Configure l2xconnect.
 	err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+		measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.WithField("Error", err).Error("Failed to create l2xConnect")
 		return err
@@ -319,7 +320,7 @@ func (plugin *XConnectConfigurator) configureL2XConnectPair(rxIf, txIf string) e
 func (plugin *XConnectConfigurator) deleteL2XConnectPair(rxIf, txIf string) error {
 	plugin.Log.Infof("Deleting L2 xConnect pair %v %v", rxIf, txIf)
 
-	// find interface idx-es
+	// Find interface idx-es.
 	receiveInterfaceIndex, _, found := plugin.SwIfIndexes.LookupIdx(rxIf)
 	if !found {
 		plugin.Log.WithField("Interface", rxIf).Warn("Receive interface not found.")
@@ -332,13 +333,13 @@ func (plugin *XConnectConfigurator) deleteL2XConnectPair(rxIf, txIf string) erro
 	}
 
 	err := vppcalls.VppUnsetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+		measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.WithField("Error", err).Error("Failed to remove l2xConnect")
 		return err
 	}
 
-	// unregister
+	// Unregister.
 	plugin.XcIndexes.UnregisterName(rxIf)
 	plugin.Log.WithFields(logging.Fields{"RecIface": rxIf, "Idex": receiveInterfaceIndex}).Debug("XConnect pair unregistered.")
 

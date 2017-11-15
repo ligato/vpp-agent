@@ -169,7 +169,7 @@ func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	}
 }
 
-// KeySet is a helper type that reuses map keys to store vales as a set.
+// KeySet is a helper type that reuses map keys to store values as a set.
 // The values of the map are nil.
 type keySet map[string] /*key*/ interface{} /*nil*/
 

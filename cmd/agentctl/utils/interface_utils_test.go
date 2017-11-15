@@ -21,7 +21,7 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// Test01UpdateIpv4Address tests correct function of UpdateIpv4Address()
+// Test01UpdateIpv4Address tests correct functioning of UpdateIpv4Address().
 func Test01UpdateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -37,7 +37,7 @@ func Test01UpdateIpv4Address(t *testing.T) {
 	gomega.Expect(isContained(update[1], newIps)).To(gomega.BeTrue())
 }
 
-// Test02UpdateIpv6Address tests correct function of UpdateIpv6Address()
+// Test02UpdateIpv6Address tests correct functioning of UpdateIpv6Address().
 func Test02UpdateIpv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -51,33 +51,33 @@ func Test02UpdateIpv6Address(t *testing.T) {
 	gomega.Expect(isContained(update[0], newIps)).To(gomega.BeTrue())
 }
 
-// Test03ValidateIpv4Address tests correct function of ValidateIpv4Addr()
+// Test03ValidateIpv4Address tests correct functioning of ValidateIpv4Addr().
 func Test03ValidateIpv4Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidateIpv4Addr("192.168.1.1/24")
 
-	// Program is closed if IPv4 address is not valid
+	// Program is closed if IPv4 address is not valid.
 	gomega.Succeed()
 }
 
-// Test04ValidateIPv6Address tests correct function of ValidateIpv6Addr()
+// Test04ValidateIPv6Address tests correct functioning of ValidateIpv6Addr().
 func Test04ValidateIPv6Address(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidateIpv6Addr("2001:db8:0:1:1:1:1:1/64")
 
-	// Program is closed if IPv6 address is not valid
+	// Program is closed if IPv6 address is not valid.
 	gomega.Succeed()
 }
 
-// Test05ValidatePhysAddress tests correct function of ValidatePhyAddr()
+// Test05ValidatePhysAddress tests correct functioning of ValidatePhyAddr().
 func Test05ValidatePhysAddress(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
 	utils.ValidatePhyAddr("F8:CF:E6:E8:CC:2F")
 
-	// Program is closed if MAC address is not valid
+	// Program is closed if MAC address is not valid.
 	gomega.Succeed()
 
 }

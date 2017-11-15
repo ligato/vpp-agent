@@ -17,20 +17,21 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 )
 
-// CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForBridgeDomains(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
-		&l2ba.BridgeDomainAddDel{},
-		&l2ba.BridgeDomainAddDelReply{},
-		&l2ba.L2fibAddDel{},
-		&l2ba.L2fibAddDelReply{},
-		&l2ba.BdIPMacAddDel{},
-		&l2ba.BdIPMacAddDelReply{},
-		&l2ba.SwInterfaceSetL2Bridge{},
-		&l2ba.SwInterfaceSetL2BridgeReply{},
+		&l2.BridgeDomainAddDel{},
+		&l2.BridgeDomainAddDelReply{},
+		&l2.L2fibAddDel{},
+		&l2.L2fibAddDelReply{},
+		&vpe.BdIPMacAddDel{},
+		&vpe.BdIPMacAddDelReply{},
+		&vpe.SwInterfaceSetL2Bridge{},
+		&vpe.SwInterfaceSetL2BridgeReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
@@ -39,15 +40,15 @@ func CheckMsgCompatibilityForBridgeDomains(log logging.Logger, vppChan *govppapi
 	return err
 }
 
-// CheckMsgCompatibilityForL2FIB checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForL2FIB checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForL2FIB(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
-		&l2ba.BridgeDomainDump{},
-		&l2ba.BridgeDomainDetails{},
-		&l2ba.L2FibTableDump{},
-		&l2ba.L2FibTableDetails{},
-		&l2ba.L2fibAddDel{},
-		&l2ba.L2fibAddDelReply{},
+		&l2.BridgeDomainDump{},
+		&l2.BridgeDomainDetails{},
+		&l2.L2FibTableDump{},
+		&l2.L2FibTableDetails{},
+		&l2.L2fibAddDel{},
+		&l2.L2fibAddDelReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
@@ -56,13 +57,13 @@ func CheckMsgCompatibilityForL2FIB(log logging.Logger, vppChan *govppapi.Channel
 	return err
 }
 
-// CheckMsgCompatibilityForL2XConnect checks if CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForL2XConnect checks if CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForL2XConnect(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
-		&l2ba.L2XconnectDump{},
-		&l2ba.L2XconnectDetails{},
-		&l2ba.SwInterfaceSetL2Xconnect{},
-		&l2ba.SwInterfaceSetL2XconnectReply{},
+		&l2.L2XconnectDump{},
+		&l2.L2XconnectDetails{},
+		&vpe.SwInterfaceSetL2Xconnect{},
+		&vpe.SwInterfaceSetL2XconnectReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {

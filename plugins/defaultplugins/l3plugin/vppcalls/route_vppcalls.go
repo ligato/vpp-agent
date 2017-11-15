@@ -26,8 +26,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 )
 
-// Route represents a forward IP route entry with the parameters of gateway to which packets should be forwarded
-// when a given routing table entry is applied.
+// Route represents a forward IP route entry with the parameters of gateway
+// to which packets should be forwarded when a given routing table entry is applied.
 type Route struct {
 	VrfID       uint32    `json:"vrf_id"`
 	TableName   string    `json:"table_name"`
@@ -39,20 +39,20 @@ type Route struct {
 }
 
 const (
-	// NextHopViaLabelUnset constant has to be assigned into the field next hop via label in ip_add_del_route binary message
-	// if next hop via label is not defined.
-	// equals to MPLS_LABEL_INVALID defined in VPP
+	// NextHopViaLabelUnset constant has to be assigned into the field next hop
+	// via label in ip_add_del_route binary message if next hop via label is not defined.
+	// Equals to MPLS_LABEL_INVALID defined in VPP
 	NextHopViaLabelUnset uint32 = 0xfffff + 1
 
-	// ClassifyTableIndexUnset is a default value for field classify_table_index in ip_add_del_route binary message
+	// ClassifyTableIndexUnset is a default value for field classify_table_index in ip_add_del_route binary message.
 	ClassifyTableIndexUnset uint32 = ^uint32(0)
 
-	// NextHopOutgoingIfUnset constant has to be assigned into the field next_hop_outgoing_interface in ip_add_del_route binary message
-	// if outgoing interface for next hop is not defined.
+	// NextHopOutgoingIfUnset constant has to be assigned into the field next_hop_outgoing_interface
+	// in ip_add_del_route binary message if outgoing interface for next hop is not defined.
 	NextHopOutgoingIfUnset uint32 = ^uint32(0)
 )
 
-// vppAddDelRoute adds or removes route according to provided input. Every route has to contain VRF ID (default is 0)
+// vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
 func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLog measure.StopWatchEntry) error {
 	// IPAddDelRoute time measurement
 	start := time.Now()
@@ -117,12 +117,12 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 	return nil
 }
 
-// VppAddRoute adds new route according to provided input. Every route has to contain VRF ID (default is 0)
+// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppAddRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	return vppAddDelRoute(route, vppChan, false, timeLog)
 }
 
-// VppDelRoute removes old route according to provided input. Every route has to contain VRF ID (default is 0)
+// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppDelRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	return vppAddDelRoute(route, vppChan, true, timeLog)
 }

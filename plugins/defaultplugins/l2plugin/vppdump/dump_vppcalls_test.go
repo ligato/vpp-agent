@@ -18,12 +18,10 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
-	"git.fd.io/govpp.git"
 )
 
 func TestDumpL2(t *testing.T) {
-	// connect to VPP
+	// Connect to VPP.
 	conn, err := govpp.Connect()
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -31,7 +29,7 @@ func TestDumpL2(t *testing.T) {
 	}
 	defer conn.Disconnect()
 
-	// create an API channel that will be used in the examples
+	// Create an API channel that will be used in the examples.
 	ch, err := conn.NewAPIChannel()
 	if err != nil {
 		fmt.Println("Error:", err)

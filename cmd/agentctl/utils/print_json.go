@@ -46,7 +46,7 @@ const (
 	emptyJSON = "{}"
 )
 
-// PrintDataAsJSON prints ETCD data in JSON format
+// PrintDataAsJSON prints etcd data in JSON format.
 func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	keys := ed.getSortedKeys()
@@ -64,7 +64,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		}
 
 		vd, _ := ed[key]
-		// Obtain raw data
+		// Obtain raw data.
 		ifaceConfDataRoot, ifaceConfKeys := getInterfaceConfigData(vd.Interfaces)
 		ifaceStateDataRoot, ifaceStateKeys := getInterfaceStateData(vd.Interfaces)
 		l2ConfigDataRoot, l2Keys := getL2ConfigData(vd.BridgeDomains)
@@ -103,7 +103,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			wasError = err
 		}
 
-		// Add data to buffer
+		// Add data to buffer.
 		if string(jsConfData) != emptyJSON {
 			printLabel(buffer, key+": - "+IfConfig+"\n", indent, ifaceConfKeys)
 			fmt.Fprintf(buffer, "%s\n", jsConfData)
@@ -134,19 +134,20 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 	return buffer, wasError
 }
 
-// Function returns a list of VPPs which will be shown according to provided filter. If the filter is empty, all VPPs
-// will be shown. If there is nothing to show because of filter, isData flag is returned as false
+// 'processFilter' function returns a list of VPPs that satisfy the provided filter.
+// If the filter is empty, all VPPs will be shown.
+// If no data satisfy the filter, isData flag is returned as false.
 func processFilter(keys []string, filter []string) ([]string, bool) {
 	var vpps []string
 	if len(filter) > 0 {
-		// Ignore all parameters but first
+		// Ignore all parameters but first.
 		vpps = strings.Split(filter[0], ",")
 	} else {
-		// Show all if there is no filter
+		// Show all if there is no filter.
 		vpps = keys
 	}
 	var isData bool
-	// Find at leas one match
+	// Find at least one match.
 	for _, key := range keys {
 		for _, vpp := range vpps {
 			if key == vpp {
@@ -158,7 +159,7 @@ func processFilter(keys []string, filter []string) ([]string, bool) {
 	return vpps, isData
 }
 
-// Returns true if provided key is present in filter, false otherwise
+// Returns true if provided key is present in filter, false otherwise.
 func isNotInFilter(key string, filter []string) bool {
 	for _, itemInFilter := range filter {
 		if itemInFilter == key {
@@ -168,7 +169,7 @@ func isNotInFilter(key string, filter []string) bool {
 	return true
 }
 
-// Get interface config data and create full interface config proto structure
+// Get interface config data and create full interface config proto structure.
 func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfaces.Interfaces, []string) {
 	// Config data
 	ifaceRoot := interfaces.Interfaces{}
@@ -187,7 +188,7 @@ func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfac
 	return &ifaceRoot, keyset
 }
 
-// Get interface state data and create full interface state proto structure
+// Get interface state data and create full interface state proto structure.
 func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interfaces.InterfacesState, []string) {
 	// Status data
 	ifaceStateRoot := interfaces.InterfacesState{}
@@ -206,7 +207,7 @@ func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interface
 	return &ifaceStateRoot, keyset
 }
 
-// Get l2 config data and create full l2 bridge domains proto structure
+// Get l2 config data and create full l2 bridge domains proto structure.
 func getL2ConfigData(l2Data map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	l2Root := l2.BridgeDomains{}
 	l2s := []*l2.BridgeDomains_BridgeDomain{}
@@ -224,7 +225,7 @@ func getL2ConfigData(l2Data map[string]BdWithMD) (*l2.BridgeDomains, []string) {
 	return &l2Root, keyset
 }
 
-// Get l2 state data and create full l2 bridge domains proto structure
+// Get l2 state data and create full l2 bridge domains proto structure.
 func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string) {
 	l2StateRoot := l2.BridgeDomainState{}
 	l2States := []*l2.BridgeDomainState_BridgeDomain{}
@@ -242,7 +243,7 @@ func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string
 	return &l2StateRoot, keyset
 }
 
-// Get L2 FIB data and create full L2 FIB proto structure
+// Get L2 FIB data and create full L2 FIB proto structure.
 func getL2FIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
 	fibRoot := l2.FibTableEntries{}
 	fibRoot.FibTableEntry = fibData.FibTable
@@ -255,7 +256,7 @@ func getL2FIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
 	return &fibRoot, keyset
 }
 
-// Get L3 FIB data and create full L3 FIB proto structure
+// Get L3 FIB data and create full L3 FIB proto structure.
 func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	fibRoot := l3.StaticRoutes{}
 	fibRoot.Route = fibData.Routes
@@ -271,7 +272,7 @@ func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	return &fibRoot, keyset
 }
 
-// Print label before every data structure including used keys
+// Print label before printing every data structure, including used keys.
 func printLabel(buffer *bytes.Buffer, label string, prefix string, keyset []string) {
 	// Format output - find longest string in label to make label nicer
 	labelLength := len(label)
@@ -282,7 +283,7 @@ func printLabel(buffer *bytes.Buffer, label string, prefix string, keyset []stri
 	}
 	ub := prefix + strings.Repeat("-", labelLength) + "\n"
 
-	// Print label
+	// Print label.
 	fmt.Fprintf(buffer, ub)
 	fmt.Fprintf(buffer, "%s%s\n", prefix, aurora.Bold(label))
 	fmt.Fprintf(buffer, "%s%s\n", prefix, "Keys:")

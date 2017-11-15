@@ -26,14 +26,15 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
-	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 	"net"
+
+	"github.com/ligato/cn-infra/db/keyval"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
 // the data change DSL for both Linux and VPP config (inherits dbadapter
-// from defaultplugins)
+// from defaultplugins).
 // Transaction <txn> is used to propagate changes to plugins.
 func NewDataChangeDSL(txn keyval.ProtoTxn) *DataChangeDSL {
 	vppDbAdapter := vpp_dbadapter.NewDataChangeDSL(txn)
@@ -59,8 +60,8 @@ type DeleteDSL struct {
 	vppDelete vpp_clientv1.DeleteDSL
 }
 
-// Put initiates a chained sequence of data change DSL statements declaring
-// new or changing existing configurable objects.
+// Put initiates a chained sequence of data change DSL statements and declares
+// new configurable objects or changes existing ones.
 func (dsl *DataChangeDSL) Put() linux.PutDSL {
 	return &PutDSL{dsl, dsl.vppDataChange.Put()}
 }

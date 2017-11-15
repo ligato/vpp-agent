@@ -21,10 +21,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
 )
 
-// VppSetL2XConnect creates xConnect between two existing interfaces
+// VppSetL2XConnect creates xConnect between two existing interfaces.
 func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
@@ -35,12 +35,12 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 		}
 	}()
 
-	req := &l2ba.SwInterfaceSetL2Xconnect{}
+	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.TxSwIfIndex = transmitIfaceIndex
 	req.RxSwIfIndex = receiveIfaceIndex
 	req.Enable = 1
 
-	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
+	reply := &vpe.SwInterfaceSetL2XconnectReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 	return nil
 }
 
-// VppUnsetL2XConnect removes xConnect between two interfaces
+// VppUnsetL2XConnect removes xConnect between two interfaces.
 func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
 	// SwInterfaceSetL2Xconnect time measurement
@@ -64,12 +64,12 @@ func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log
 		}
 	}()
 
-	req := &l2ba.SwInterfaceSetL2Xconnect{}
+	req := &vpe.SwInterfaceSetL2Xconnect{}
 	req.RxSwIfIndex = receiveIfaceIndex
 	req.TxSwIfIndex = transmitIfaceIndex
 	req.Enable = 0
 
-	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
+	reply := &vpe.SwInterfaceSetL2XconnectReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
