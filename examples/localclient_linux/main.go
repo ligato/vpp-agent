@@ -33,7 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/flavors/local"
 )
 
-// init sets the default logging level
+// init sets the default logging level.
 func init() {
 	log.DefaultLogger().SetOutput(os.Stdout)
 	log.DefaultLogger().SetLevel(logging.DebugLevel)
@@ -43,9 +43,9 @@ func init() {
  * Main *
  ********/
 
-// Start Agent plugins selected for this example
+// Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example
+	// Init close channel to stop the example.
 	closeChannel := make(chan struct{}, 1)
 
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
@@ -54,13 +54,13 @@ func main() {
 		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
 	}))
 
-	// End when the localhost example is finished
+	// End when the localhost example is finished.
 	go closeExample("localhost example finished", closeChannel)
 
 	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
-// Stop the agent with desired info message
+// Stop the agent with desired info message.
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(40 * time.Second)
 	log.DefaultLogger().Info(message)
@@ -71,11 +71,11 @@ func closeExample(message string, closeChannel chan struct{}) {
  * Example plugin *
  ******************/
 
-// PluginID of example plugin
+// PluginID of an example plugin.
 const PluginID core.PluginName = "example-plugin"
 
-// ExamplePlugin demonstrates the use of the localclient to locally transport example configuration
-// into linuxplugin and default VPP plugins.
+// ExamplePlugin demonstrates the use of the localclient to locally transport
+// example configuration into linuxplugin and default VPP plugins.
 type ExamplePlugin struct {
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
@@ -83,10 +83,10 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() error {
-	// apply initial VPP configuration
+	// Apply initial VPP configuration.
 	plugin.resyncLinuxAndVpp()
 
-	// schedule reconfiguration
+	// Schedule reconfiguration.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	plugin.wg.Add(1)
@@ -124,7 +124,7 @@ func (plugin *ExamplePlugin) resyncLinuxAndVpp() {
 func (plugin *ExamplePlugin) reconfigureLinuxAndVPP(ctx context.Context) {
 	select {
 	case <-time.After(20 * time.Second):
-		// simulate configuration change exactly 20seconds after resync
+		// Simulate configuration change exactly 20seconds after resync.
 		err := localclient.DataChangeRequest(PluginID).
 			Put().
 			LinuxInterface(&veth11Ns1).     /* move veth11 into the namespace "ns1" */
@@ -142,7 +142,7 @@ func (plugin *ExamplePlugin) reconfigureLinuxAndVPP(ctx context.Context) {
 			log.DefaultLogger().Info("Successfully reconfigured Linux&VPP")
 		}
 	case <-ctx.Done():
-		// cancel the scheduled re-configuration
+		// Cancel the scheduled re-configuration.
 		log.DefaultLogger().Info("Planned Linux&VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
@@ -213,7 +213,7 @@ var (
 		Mtu: 1500,
 	}
 
-	// veth11DefaultNs is one end of the veth11-veth12 VETH pair, put into the default namespace and NOT attached to VPP
+	// veth11DefaultNs is one member of the veth11-veth12 VETH pair, put into the default namespace and NOT attached to VPP.
 	veth11DefaultNs = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth11",
 		HostIfName: "veth11",
@@ -225,7 +225,7 @@ var (
 		IpAddresses: []string{"10.0.0.1/24"},
 	}
 
-	// veth11Ns1 is veth11DefaultNs moved to the namespace "ns1"
+	// veth11Ns1 is veth11DefaultNs moved to the namespace "ns1".
 	veth11Ns1 = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth11",
 		HostIfName: "veth11",
@@ -241,7 +241,7 @@ var (
 		},
 	}
 
-	// veth12 is one end of the veth11-veth12 VETH pair, put into the default namespace and attached to VPP
+	// veth12 is one memeber of the veth11-veth12 VETH pair, put into the default namespace and attached to VPP.
 	veth12 = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth12",
 		HostIfName: "veth12",
@@ -252,7 +252,7 @@ var (
 		},
 	}
 
-	// veth12WithMtu is like veth12, but MTU is reconfigured
+	// veth12WithMtu is like veth12, but MTU is reconfigured.
 	veth12WithMtu = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth12",
 		HostIfName: "veth12",
@@ -264,7 +264,7 @@ var (
 		Mtu: 1000,
 	}
 
-	// veth21Ns2 is one end of the veth21-veth22 VETH pair, put into the namespace "ns2" and NOT attached to VPP
+	// veth21Ns2 is one member of the veth21-veth22 VETH pair, put into the namespace "ns2" and NOT attached to VPP.
 	veth21Ns2 = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth21",
 		HostIfName: "veth21",
@@ -280,7 +280,7 @@ var (
 		},
 	}
 
-	// veth22 is one end of the veth21-veth22 VETH pair, put into the default namespace and attached to VPP
+	// veth22 is one member of the veth21-veth22 VETH pair, put into the default namespace and attached to VPP.
 	veth22 = linux_intf.LinuxInterfaces_Interface{
 		Name:       "veth22",
 		HostIfName: "veth22",

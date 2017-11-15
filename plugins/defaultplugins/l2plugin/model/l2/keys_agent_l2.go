@@ -21,11 +21,11 @@ import (
 
 // Prefixes
 const (
-	// BdPrefix is the relative key prefix for bridge domains
+	// BdPrefix is the relative key prefix for bridge domains.
 	BdPrefix = "vpp/config/v1/bd/"
-	// BdStatePrefix is the relative key prefix for bridge domain state
+	// BdStatePrefix is the relative key prefix for bridge domain state.
 	BdStatePrefix = "vpp/status/v1/bd/"
-	// BdErrPrefix is the relative key prefix for the bridge domain error
+	// BdErrPrefix is the relative key prefix for the bridge domain error.
 	BdErrPrefix = "vpp/status/v1/bd/error/"
 	// FIBPrefix is the relative key prefix for FIB table entries.
 	FIBPrefix = "vpp/config/v1/bd/{bd}/fib/"
@@ -33,39 +33,39 @@ const (
 	XconnectPrefix = "vpp/config/v1/xconnect/"
 )
 
-// BridgeDomainKeyPrefix returns the prefix used in ETCD to store vpp bridge domain config
+// BridgeDomainKeyPrefix returns the prefix used in ETCD to store vpp bridge domain config.
 func BridgeDomainKeyPrefix() string {
 	return BdPrefix
 }
 
 // BridgeDomainKey returns the prefix used in ETCD to store vpp bridge domain config
-// of particular bridge domain in selected vpp instance
+// of a particular bridge domain in selected vpp instance.
 func BridgeDomainKey(bdName string) string {
 	return BdPrefix + bdName
 }
 
-// BridgeDomainStateKeyPrefix returns the prefix used in ETCD to store vpp bridge domain state data
+// BridgeDomainStateKeyPrefix returns the prefix used in ETCD to store vpp bridge domain state data.
 func BridgeDomainStateKeyPrefix() string {
 	return BdStatePrefix
 }
 
 // BridgeDomainStateKey returns the prefix used in ETCD to store vpp bridge domain state data
-// of particular bridge domain in selected vpp instance
+// of a particular bridge domain in selected vpp instance.
 func BridgeDomainStateKey(ifaceLabel string) string {
 	return BdStatePrefix + ifaceLabel
 }
 
-// BridgeDomainErrorPrefix returns the prefix used in ETCD to store bridge domain errors
+// BridgeDomainErrorPrefix returns the prefix used in ETCD to store bridge domain errors.
 func BridgeDomainErrorPrefix() string {
 	return BdErrPrefix
 }
 
-// BridgeDomainErrorKey returns the key used in ETCD to store bridge domain errors
+// BridgeDomainErrorKey returns the key used in ETCD to store bridge domain errors.
 func BridgeDomainErrorKey(bdLabel string) string {
 	return BdErrPrefix + bdLabel
 }
 
-// ParseBDNameFromKey returns suffix of the ky
+// ParseBDNameFromKey returns suffix of the key.
 func ParseBDNameFromKey(key string) (name string, err error) {
 	lastSlashPos := strings.LastIndex(key, "/")
 	if lastSlashPos > 0 && lastSlashPos < len(key)-1 {
@@ -75,13 +75,13 @@ func ParseBDNameFromKey(key string) (name string, err error) {
 	return key, fmt.Errorf("wrong format of the key %s", key)
 }
 
-// FibKeyPrefix returns the prefix used in ETCD to store vpp fib table entry config
+// FibKeyPrefix returns the prefix used in ETCD to store vpp fib table entry config.
 func FibKeyPrefix() string {
 	return FIBPrefix
 }
 
 // FibKey returns the prefix used in ETCD to store vpp fib table entry config
-// of particular fib in selected vpp instance
+// of a particular fib in selected vpp instance.
 func FibKey(bdLabel string, fibMac string) string {
 	return strings.Replace(FIBPrefix, "{bd}", bdLabel, 1) + fibMac
 }
@@ -98,13 +98,13 @@ func ParseFibKey(key string) (isFibKey bool, bdName string, fibMac string) {
 	return false, "", ""
 }
 
-// XConnectKeyPrefix returns the prefix used in ETCD to store vpp xConnect pair config
+// XConnectKeyPrefix returns the prefix used in ETCD to store vpp xConnect pair config.
 func XConnectKeyPrefix() string {
 	return XconnectPrefix
 }
 
 // XConnectKey returns the prefix used in ETCD to store vpp xConnect pair config
-// of particular xConnect pair in selected vpp instance
+// of particular xConnect pair in selected vpp instance.
 func XConnectKey(rxIface string) string {
 	return XconnectPrefix + rxIface
 }

@@ -126,36 +126,36 @@ func watchFunc(cmd *cobra.Command, args []string) {
 
 		goterm.Println(table)
 
-		// Fill the output buffer and ensure that it will not overflow the screen
+		// Fill the output buffer and ensure that it will not overflow the screen.
 		for idx, str := range strings.Split(goterm.Screen.String(), "\n") {
 			if idx > goterm.Height() {
 				break
 			}
 			goterm.Output.WriteString(str + "\n")
 		}
-		// Write (flush) buffered data
+		// Write (flush) buffered data.
 		err := goterm.Output.Flush()
 		if err != nil {
 			logroot.StandardLogger().Errorf("%v", err)
 		}
-		// Reset the screen buffer
+		// Reset the screen buffer.
 		goterm.Screen.Reset()
 
 		fmt.Println("Press Ctrl-C to exit watcher ...")
 
-		// ETCD interface statistics are updated every 10 seconds (interval set directly in VPP)
+		// etcd interface statistics are updated every 10 seconds (interval set directly in VPP).
 		time.Sleep(time.Second)
 	}
 }
 
-// Read latest ETCD data to keep counters updated
+// Read latest etcd data to keep counters updated.
 func getLatestEtcdData() utils.EtcdDump {
 	// Get data broker
 	dataBroker, err := utils.GetDbForAllAgents(globalFlags.Endpoints)
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to connect to Etcd - "+err.Error()))
 	}
-	// Read agent prefixes
+	// Read agent prefixes.
 	keyIter, err := dataBroker.ListKeys(servicelabel.GetAllAgentsPrefix())
 	if err != nil {
 		utils.ExitWithError(utils.ExitError, errors.New("Failed to get keys - "+err.Error()))

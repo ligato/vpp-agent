@@ -24,12 +24,12 @@ import (
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 
-// Start Agent plugins selected for this example
+// Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example
+	// Init close channel to stop the example.
 	exampleFinished := make(chan struct{}, 1)
 
-	// Start Agent with VPP Flavor and ExampleFlavor
+	// Start Agent with VPP Flavor and ExampleFlavor.
 	vppFlavor := vpp.Flavor{}
 	exampleFlavor := ExampleFlavor{
 		IdxBdCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
@@ -40,7 +40,7 @@ func main() {
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init()
+// ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init().
 type ExamplePlugin struct {
 	Deps
 
@@ -51,13 +51,13 @@ type ExamplePlugin struct {
 	bdIdxAgent1 bdidx.BDIndex
 	bdIdxAgent2 bdidx.BDIndex
 
-	// Fields below are used to properly finish the example
+	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
 }
 
-// Init transport & bdIndexes then watch, publish & lookup
+// Init transport & bdIndexes, then watch, publish & lookup
 func (plugin *ExamplePlugin) Init() (err error) {
-	// manually initialize 'other' agents (for example purpose only)
+	// Manually initialize 'other' agents (for example purpose only).
 	err = plugin.Agent1.Init()
 	if err != nil {
 		return err
@@ -67,13 +67,13 @@ func (plugin *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	// get access to local bridge domain indexes
+	// Get access to local bridge domain indexes.
 	plugin.bdIdxLocal = plugin.VPP.GetBDIndexes()
 
-	// Run consumer
+	// Run consumer.
 	go plugin.consume()
 
-	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name
+	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name.
 	// /vnf-agent/agent1/vpp/config/v1/bd/
 	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
 	// /vnf-agent/agent2/vpp/config/v1/bd/
@@ -84,7 +84,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 // AfterInit - call Cache()
 func (plugin *ExamplePlugin) AfterInit() error {
-	// manually run AfterInit() on 'other' agents (for example purpose only)
+	// Manually run AfterInit() on 'other' agents (for example purpose only).
 	err := plugin.Agent1.AfterInit()
 	if err != nil {
 		return err
@@ -100,8 +100,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	return nil
 }
 
-// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
-// allocated by the plugin during its lifetime
+// Close is called by Agent Core when the Agent is shutting down. It is supposed
+// to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
 	var wasErr error
 	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
@@ -109,9 +109,9 @@ func (plugin *ExamplePlugin) Close() error {
 	return wasErr
 }
 
-// Test data are published to different agents (including local)
+// Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
-	// Create bridge domain in local agent
+	// Create bridge domain in local agent.
 	br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
 	err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
 	if err != nil {
@@ -129,11 +129,11 @@ func (plugin *ExamplePlugin) publish() (err error) {
 	return err
 }
 
-// uses the NameToIndexMapping to watch changes
+// Use the NameToIndexMapping to watch changes.
 func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
 	bdIdxChan := make(chan bdidx.ChangeDto)
-	// Subscribe local bd-idx-mapping and both of cache mapping
+	// Subscribe local bd-idx-mapping and both of cache mapping.
 	plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
 	plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)
 	plugin.bdIdxAgent2.WatchNameToIdx(plugin.PluginName, bdIdxChan)
@@ -147,17 +147,17 @@ func (plugin *ExamplePlugin) consume() {
 			plugin.Log.Info("Event received: bridge domain ", bdIdxEvent.Name, " of ", bdIdxEvent.RegistryTitle)
 			counter++
 		}
-		// Example is expecting 3 events
+		// Example is expecting 3 events.
 		if counter == 3 {
 			watching = false
 		}
 	}
 
-	// Do a lookup whether all mappings were registered
+	// Do a lookup whether all mappings were registered.
 	plugin.lookup()
 }
 
-// use the NameToIndexMapping to lookup local mapping + external cached mappings
+// Use the NameToIndexMapping to lookup local mapping and external cached mappings.
 func (plugin *ExamplePlugin) lookup() {
 	plugin.Log.Info("Lookup in progress")
 
@@ -173,7 +173,7 @@ func (plugin *ExamplePlugin) lookup() {
 		plugin.Log.Infof("Bridge domain bd2 (index %v) found in local mapping", index)
 	}
 
-	// End the example
+	// End the example.
 	plugin.Log.Infof("idx-bd-cache example finished, sending shutdown ...")
 	*plugin.closeChannel <- struct{}{}
 }

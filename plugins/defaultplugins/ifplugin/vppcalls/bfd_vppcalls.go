@@ -16,6 +16,9 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -24,11 +27,9 @@ import (
 	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	"net"
-	"time"
 )
 
-// AddBfdUDPSession adds new BFD session with authentication if available
+// AddBfdUDPSession adds new BFD session with authentication if available.
 func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx,
 	log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
@@ -39,13 +40,13 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 		}
 	}()
 
-	// Verify interface presence
+	// Verify the interface presence.
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
 	if !found {
 		return fmt.Errorf("interface %v does not exist", bfdSession.Interface)
 	}
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPAdd{}
 
 	// Base fields
@@ -104,7 +105,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	return nil
 }
 
-// AddBfdUDPSessionFromDetails adds new BFD session with authentication if available
+// AddBfdUDPSessionFromDetails adds new BFD session with authentication if available.
 func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
 	vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
@@ -115,7 +116,7 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 		}
 	}()
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPAdd{}
 
 	// Base fields
@@ -156,7 +157,7 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 	return nil
 }
 
-// ModifyBfdUDPSession modifies existing BFD session excluding authentication which cannot be changed this way
+// ModifyBfdUDPSession modifies existing BFD session excluding authentication which cannot be changed this way.
 func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPMod time measurement
 	start := time.Now()
@@ -166,13 +167,13 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 		}
 	}()
 
-	// Find interface
+	// Find the interface.
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
 	if !found {
 		return fmt.Errorf("interface %v does not exist", bfdSession.Interface)
 	}
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPMod{}
 
 	// Base fields
@@ -214,7 +215,7 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	return nil
 }
 
-// DeleteBfdUDPSession removes existing BFD session
+// DeleteBfdUDPSession removes an existing BFD session.
 func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPDel time measurement
 	start := time.Now()
@@ -224,7 +225,7 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 		}
 	}()
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPDel{}
 	req.SwIfIndex = ifIndex
 	req.LocalAddr = net.ParseIP(sourceAddres).To4()
@@ -255,7 +256,7 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 		}
 	}()
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := vppChannel.SendMultiRequest(req)
 	var sessionIfacesWithID []*bfd_api.BfdUDPSessionDetails
@@ -272,12 +273,12 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 		if msg.IsAuthenticated == 0 {
 			continue
 		}
-		// Get interface name used in session
+		// Get the interface name used in session.
 		ifName, _, found := swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			continue
 		}
-		// Verify session exists
+		// Verify the session exists.
 		_, _, found = bfdSessionIndexes.LookupIdx(ifName)
 		if !found {
 			continue
@@ -290,9 +291,9 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 	return sessionIfacesWithID, nil
 }
 
-// SetBfdUDPAuthenticationKey creates configures new authentication key
+// SetBfdUDPAuthenticationKey creates new authentication key.
 func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
-	// BfdAuthSetKey time measurement
+	// BfdAuthSetKey time measurement.
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -300,7 +301,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 		}
 	}()
 
-	// Convert authentication according to RFC5880
+	// Convert authentication according to RFC5880.
 	var authentication uint8
 	if bfdKey.AuthenticationType == 0 {
 		authentication = 4 // Keyed SHA1
@@ -311,7 +312,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 		authentication = 4
 	}
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdAuthSetKey{}
 	req.ConfKeyID = bfdKey.Id
 	req.AuthType = authentication
@@ -331,7 +332,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	return nil
 }
 
-// DeleteBfdUDPAuthenticationKey removes authentication key
+// DeleteBfdUDPAuthenticationKey removes the authentication key.
 func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdAuthDelKey time measurement
 	start := time.Now()
@@ -341,7 +342,7 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 		}
 	}()
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdAuthDelKey{}
 	req.ConfKeyID = bfdKey.Id
 
@@ -358,7 +359,7 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	return nil
 }
 
-// AddBfdEchoFunction sets up echo function  for interface
+// AddBfdEchoFunction sets up an echo function for the interface.
 func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPSetEchoSource time measurement
 	start := time.Now()
@@ -368,13 +369,13 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 		}
 	}()
 
-	// Verify interface presence
+	// Verify the interface presence.
 	ifIdx, _, found := swIfIndexes.LookupIdx(bfdInput.EchoSourceInterface)
 	if !found {
 		return fmt.Errorf("interface %v does not exist", bfdInput.EchoSourceInterface)
 	}
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPSetEchoSource{}
 	req.SwIfIndex = ifIdx
 
@@ -390,7 +391,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	return nil
 }
 
-// DeleteBfdEchoFunction removes echo function
+// DeleteBfdEchoFunction removes an echo function.
 func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPDelEchoSource time measurement
 	start := time.Now()
@@ -400,7 +401,7 @@ func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, timeLog measure.StopWat
 		}
 	}()
 
-	// Prepare the message
+	// Prepare the message.
 	req := &bfd_api.BfdUDPDelEchoSource{}
 
 	reply := &bfd_api.BfdUDPDelEchoSourceReply{}

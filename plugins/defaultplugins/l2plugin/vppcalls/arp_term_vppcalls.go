@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 )
 
-// VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain
+// VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain.
 func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string,
 	log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	log.Info("Adding ARP termination entry")

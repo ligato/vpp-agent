@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
-// TableData with 3x VPP, every with 3 interfaces. With such a data, all filtering options can be tested
+// TableData with 3x VPP, each with 3 interfaces. With such a data, all filtering options can be tested.
 func TableData() utils.EtcdDump {
 	// Non-zero statistics
 	statistics := &interfaces.InterfacesState_Interface_Statistics{
@@ -61,7 +61,7 @@ func TableData() utils.EtcdDump {
 		State: zeroIfStateWithMD,
 	}
 
-	// Prepare test table with a values and several full-zero columns and full-zero rows
+	// Prepare the test table with values and several full-zero columns and full-zero rows.
 	etcdDump := make(map[string]*utils.VppData)
 	for i := 1; i <= 3; i++ {
 		vppName := "vpp-" + strconv.Itoa(i)
@@ -155,11 +155,11 @@ func JSONData() utils.EtcdDump {
 	interfaceMap := make(map[string]utils.InterfaceWithMD)
 	bridgeDomainMap := make(map[string]utils.BdWithMD)
 
-	// Fill maps
+	// Fill maps.
 	interfaceMap["test-interface"] = interfaceData
 	bridgeDomainMap["test-bd"] = bdData
 
-	// Add the same data twice under different VPPs
+	// Add the same data twice under different VPPs.
 	etcdDump["vpp1"] = &utils.VppData{
 		Interfaces:      interfaceMap,
 		BridgeDomains:   bridgeDomainMap,

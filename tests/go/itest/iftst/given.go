@@ -20,7 +20,7 @@ import (
 
 var swIfIndexSeq uint32
 
-// RepliesSuccess replies with success binary API message
+// RepliesSuccess replies with success binary API message.
 func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 	vppMock.RegisterBinAPITypes(interfaces_bin.Types)
 	vppMock.RegisterBinAPITypes(memif.Types)
@@ -40,7 +40,7 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 
 		//TODO refactor this to several funcs
 		if strings.HasSuffix(reqName, "_dump") {
-			//do nothing and let reply next time for control_ping
+			// Do not reply to the dump message and reply to the following control_ping.
 		} else {
 			if replyMsg, msgID, ok := vppMock.ReplyFor(reqName); ok {
 				val := reflect.ValueOf(replyMsg)

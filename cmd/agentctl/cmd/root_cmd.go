@@ -26,7 +26,7 @@ type GlobalFlags struct {
 
 var globalFlags GlobalFlags
 
-// RootCmd represents the base command when called without any subcommands
+// RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "agentctl",
 	Short: "A CLI tool for the vnf-agent",

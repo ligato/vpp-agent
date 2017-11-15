@@ -17,32 +17,33 @@ package l3plugin
 import (
 	"bytes"
 	"fmt"
+	"net"
+	"sort"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
-	"net"
-	"sort"
 )
 
-// SortedRoutes type is used to implement sort interface for slice of Route
+// SortedRoutes type is used to implement sort interface for slice of Route.
 type SortedRoutes []*vppcalls.Route
 
-// Returns length of slice
+// Return length of slice.
 // Implements sort.Interface
 func (arr SortedRoutes) Len() int {
 	return len(arr)
 }
 
-// Swap swaps two items in slice identified by indexes
+// Swap swaps two items in slice identified by indices.
 // Implements sort.Interface
 func (arr SortedRoutes) Swap(i, j int) {
 	arr[i], arr[j] = arr[j], arr[i]
 }
 
-// Less returns true if the item in slice at index i in slice
-// should be sorted before the element with index j
+// Less returns true if the item at index i in slice
+// should be sorted before the element with index j.
 // Implements sort.Interface
 func (arr SortedRoutes) Less(i, j int) bool {
 	return lessRoute(arr[i], arr[j])
@@ -81,7 +82,7 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 
 }
 
-// TransformRoute converts raw route data to Route object
+// TransformRoute converts raw route data to Route object.
 func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.Route, error) {
 	if routeInput == nil {
 		log.Infof("Route input is empty")
@@ -131,7 +132,7 @@ func (plugin *RouteConfigurator) diffRoutes(new []*vppcalls.Route, old []*vppcal
 	sort.Sort(newSorted)
 	sort.Sort(oldSorted)
 
-	//compare
+	// Compare.
 	i := 0
 	j := 0
 	for i < len(newSorted) && j < len(oldSorted) {

@@ -24,24 +24,24 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
-// DataResyncReq is used to transfer expected configuration of the Linux network stack to the plugins
+// DataResyncReq is used to transfer expected configuration of the Linux network stack to the plugins.
 type DataResyncReq struct {
-	// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC
+	// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC.
 	Interfaces []*interfaces.LinuxInterfaces_Interface
-	// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC
+	// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC.
 	ARPs []*l3.LinuxStaticArpEntries_ArpEntry
-	// Routes is a list af all routes that are expected to be in Linux after RESYNC
+	// Routes is a list af all routes that are expected to be in Linux after RESYNC.
 	Routes []*l3.LinuxStaticRoutes_Route
 }
 
-// NewDataResyncReq is a constructor of object requirements which are expected to be re-synced
+// NewDataResyncReq is a constructor of object requirements which are expected to be re-synced.
 func NewDataResyncReq() *DataResyncReq {
 	return &DataResyncReq{
-		// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC
+		// Interfaces is a list af all interfaces that are expected to be in Linux after RESYNC.
 		Interfaces: []*interfaces.LinuxInterfaces_Interface{},
-		// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC
+		// ARPs is a list af all arp entries that are expected to be in Linux after RESYNC.
 		ARPs: []*l3.LinuxStaticArpEntries_ArpEntry{},
-		// Routes is a list af all routes that are expected to be in Linux after RESYNC
+		// Routes is a list af all routes that are expected to be in Linux after RESYNC.
 		Routes: []*l3.LinuxStaticRoutes_Route{},
 	}
 }

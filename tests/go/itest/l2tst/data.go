@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	// BDMemif100011ToMemif100012 is an example bridge domain configuration
+	// BDMemif100011ToMemif100012 is an example bridge domain configuration.
 	BDMemif100011ToMemif100012 = l2.BridgeDomains_BridgeDomain{
 		Name:                "br2",
 		Flood:               false,
@@ -28,7 +28,7 @@ var (
 		},
 	}
 
-	// BDAfPacketVeth1VxlanVni5 is an example bridge domain configuration
+	// BDAfPacketVeth1VxlanVni5 is an example bridge domain configuration.
 	BDAfPacketVeth1VxlanVni5 = l2.BridgeDomains_BridgeDomain{
 		Name:                "br1",
 		Flood:               false,
@@ -48,14 +48,14 @@ var (
 		},
 	}
 
-	// XConMemif100011ToMemif100012 is an example of cross connect configuration
+	// XConMemif100011ToMemif100012 is an example of cross connect configuration.
 	XConMemif100011ToMemif100012 = l2.XConnectPairs_XConnectPair{
 		ReceiveInterface:  iftst.Memif100011Master.Name,
 		TransmitInterface: iftst.Memif100011Master.Name,
 	}
 )
 
-// SimpleBridgeDomain1XIfaceBuilder creates simple bridge domain with defined name and one interface
+// SimpleBridgeDomain1XIfaceBuilder creates a simple bridge domain with defined name and one interface.
 func SimpleBridgeDomain1XIfaceBuilder(name string, iface1 string, bvi1 bool) l2.BridgeDomains_BridgeDomain {
 	return l2.BridgeDomains_BridgeDomain{
 		Name:                name,
@@ -74,7 +74,7 @@ func SimpleBridgeDomain1XIfaceBuilder(name string, iface1 string, bvi1 bool) l2.
 	}
 }
 
-// SimpleBridgeDomain2XIfaceBuilder creates simple bridge domain with defined name and two interfaces
+// SimpleBridgeDomain2XIfaceBuilder creates a simple bridge domain with defined name and two interfaces.
 func SimpleBridgeDomain2XIfaceBuilder(name string, iface1 string, iface2 string, bvi1 bool, bvi2 bool) l2.BridgeDomains_BridgeDomain {
 	return l2.BridgeDomains_BridgeDomain{
 		Name:                name,
@@ -96,7 +96,7 @@ func SimpleBridgeDomain2XIfaceBuilder(name string, iface1 string, iface2 string,
 	}
 }
 
-// FIBBuilder builds FIB table entry
+// FIBBuilder builds FIB table entry.
 func FIBBuilder(mac string, bdName string, iface string, bvi bool) l2.FibTableEntries_FibTableEntry {
 	return l2.FibTableEntries_FibTableEntry{
 		PhysAddress:             mac,
@@ -107,7 +107,7 @@ func FIBBuilder(mac string, bdName string, iface string, bvi bool) l2.FibTableEn
 	}
 }
 
-// XconnectBuilder prepares xConnect interface pair
+// XconnectBuilder prepares xConnect interface pair.
 func XconnectBuilder(rIface string, tIface string) l2.XConnectPairs_XConnectPair {
 	return l2.XConnectPairs_XConnectPair{
 		ReceiveInterface:  rIface,
