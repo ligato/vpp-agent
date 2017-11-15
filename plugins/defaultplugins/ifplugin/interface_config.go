@@ -540,6 +540,8 @@ func (plugin *InterfaceConfigurator) modifyRxMode(ifIdx uint32, newIntf *intf.In
 		logging.Fields{"ifName": newIntf.Name, "rxMode old": oldRxMode, "rxMode new": newRxMode.RxMode}).
 		Debug("RX-mode modification for ", newIntf.Type, ".")
 	return err
+}
+
 func (plugin *InterfaceConfigurator) modifyContainerIPAddress(newConfig *intf.Interfaces_Interface, oldConfig *intf.Interfaces_Interface, ifIdx uint32) (int8, error) {
 	oldAddr, _, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
 	if err != nil {
