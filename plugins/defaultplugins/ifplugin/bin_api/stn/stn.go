@@ -2,11 +2,11 @@
 // Package stn represents the VPP binary API of the 'stn' VPP module.
 // Generated from '/usr/share/vpp/api/stn.api.json'
 package stn
+
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion =  0xe5fdd9f7
-
+const VlAPIVersion = 0xe5fdd9f7
 
 // StnAddDelRule represents the VPP binary API message 'stn_add_del_rule'.
 // Generated from '/usr/share/vpp/api/stn.api.json', line 6:
@@ -23,11 +23,12 @@ const VlAPIVersion =  0xe5fdd9f7
 //        ],
 //
 type StnAddDelRule struct {
-	IsIP4 uint8
-	IPAddress []byte	`struc:"[16]byte"`
+	IsIP4     uint8
+	IPAddress []byte `struc:"[16]byte"`
 	SwIfIndex uint32
-	IsAdd uint8
+	IsAdd     uint8
 }
+
 func (*StnAddDelRule) GetMessageName() string {
 	return "stn_add_del_rule"
 }
@@ -54,6 +55,7 @@ func NewStnAddDelRule() api.Message {
 type StnAddDelRuleReply struct {
 	Retval int32
 }
+
 func (*StnAddDelRuleReply) GetMessageName() string {
 	return "stn_add_del_rule_reply"
 }
@@ -79,6 +81,7 @@ func NewStnAddDelRuleReply() api.Message {
 //
 type StnRulesDump struct {
 }
+
 func (*StnRulesDump) GetMessageName() string {
 	return "stn_rules_dump"
 }
@@ -105,10 +108,11 @@ func NewStnRulesDump() api.Message {
 //        ]
 //
 type StnRuleDetails struct {
-	IsIP4 uint8
-	IPAddress []byte	`struc:"[16]byte"`
+	IsIP4     uint8
+	IPAddress []byte `struc:"[16]byte"`
 	SwIfIndex uint32
 }
+
 func (*StnRuleDetails) GetMessageName() string {
 	return "stn_rule_details"
 }

@@ -16,16 +16,18 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
-
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"time"
 )
 
-// AddLoopbackInterface calls CreateLoopback bin API
-func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
-	// CreateLoopback time measurement
+// SetRxMode calls SwInterfaceSetRxMode bin
+func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings,
+	log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// SwInterfaceSetRxMode time measurement
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -33,44 +35,26 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEn
 		}
 	}()
 
-	req := &interfaces.CreateLoopback{}
-	reply := &interfaces.CreateLoopbackReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
+	 //prepare the message
+	req := &interfaces.SwInterfaceSetRxMode{}
+	req.SwIfIndex = ifIdx
+	req.Mode = uint8 (rxModeSettings.RxMode)
+	req.QueueID = rxModeSettings.QueueID
+	req.QueueIDValid = uint8 (rxModeSettings.QueueIDValid)
 
-	if err != nil {
-		return 0, err
-	}
+	log.Debug("set rxModeSettings: ", rxModeSettings)
 
-	if 0 != reply.Retval {
-		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
-	}
-
-	return reply.SwIfIndex, nil
-}
-
-// DeleteLoopbackInterface calls DeleteLoopback bin API
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// DeleteLoopback time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	// prepare the message
-	req := &interfaces.DeleteLoopback{}
-	req.SwIfIndex = idx
-
-	reply := &interfaces.DeleteLoopbackReply{}
+	reply := &interfaces.SwInterfaceSetRxModeReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
+		return fmt.Errorf("setting rxModeSettings returned %d", reply.Retval)
 	}
+	log.WithFields(logging.Fields{"RxModeType": rxModeSettings}).Debug("RxModeType ", rxModeSettings, "for interface ", ifIdx, " was set.")
 
 	return nil
+
 }
