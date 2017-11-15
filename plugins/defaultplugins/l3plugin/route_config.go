@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/errors"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -44,13 +45,18 @@ type RouteConfigurator struct {
 	RouteIndexes  idxvpp.NameToIdxRW
 	RouteIndexSeq uint32
 	SwIfIndexes   ifaceidx.SwIfIndex
-	vppChan       *govppapi.Channel
-	Stopwatch     *measure.Stopwatch // timer used to measure and store time
+	RouteCachedIndex idxvpp.NameToIdxRW
+	vppChan          *govppapi.Channel
+	Stopwatch        *measure.Stopwatch // timer used to measure and store time
+
 }
 
 // Init members (channels...) and start go routines.
 func (plugin *RouteConfigurator) Init() (err error) {
+	plugin.Log.SetLevel(logging.DebugLevel)
 	plugin.Log.Debug("Initializing L3 plugin")
+
+
 
 	// Init VPP API channel.
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -76,6 +82,13 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 	// Transform route data.
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
+		_, castOk := err.(errors.SwIndexNotFound)
+		if castOk {
+			routeIdentifier := routeIdentifier(route.VrfID, route.DstAddr.String(), route.NextHopAddr.String())
+			plugin.RouteCachedIndex.RegisterName(routeIdentifier, plugin.RouteIndexSeq, config)
+			plugin.RouteIndexSeq++
+			plugin.Log.Debugf("Route %v registered to cache", routeIdentifier)
+		}
 		return err
 	}
 	plugin.Log.Debugf("adding route: %+v", route)
@@ -96,14 +109,31 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 // ModifyRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-	// Validate old route data Vrf.
-	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
-		return err
-	}
+	plugin.Log.Infof("Modifying cachedRoute %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	//is it only cached cachedRoute?
 	// Transform old route data.
 	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
+		_, castOK := err.(errors.SwIndexNotFound)
+		if castOK {
+			routeId := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
+			oldIdx, cachedMetadata, idxExists := plugin.RouteCachedIndex.LookupIdx(routeId)
+			if idxExists {
+				plugin.RouteCachedIndex.RegisterName(routeId, oldIdx, newConfig)
+				plugin.Log.WithFields(logging.Fields{"cached data":cachedMetadata, "old config data":oldConfig,
+					"new config data":newConfig}).Debug("Modification of cached route - equal old data")
+			} else {
+				//this possibility shouldn't occure. if route is modified and outgoing interface doesn't exist it
+				//should be in RouteCachedIndex
+			}
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	// Validate old cachedRoute data Vrf.
+	if err := plugin.validateVrfFromKey(oldConfig, vrfFromKey); err != nil {
 		return err
 	}
 	// Remove and unregister old route.
@@ -151,6 +181,14 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	// Transform route data.
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
+		switch t := err.(type) {
+		case errors.SwIndexNotFound:
+			plugin.RouteCachedIndex.UnregisterName(config.OutgoingInterface)
+			plugin.Log.Debugf("Route %v unregistered from cache", routeIdentifier)
+		default:
+			_ = t
+		}
+		return err
 		return err
 	}
 	if route == nil {
@@ -210,4 +248,41 @@ func (plugin *RouteConfigurator) Close() error {
 // Create unique identifier which serves as a name in name-to-index mapping.
 func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
+}
+
+// Used for associating route with route name in func return value
+type StaticRoutesRouteAndIdx struct {
+	route   *l3.StaticRoutes_Route
+	routeId string
+}
+
+func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
+	routesWithIndex := plugin.findCachedRoutesByOutgoingInterface(ifName)
+	for _, routeWithIndex := range routesWithIndex {
+		route := routeWithIndex.route
+		plugin.Log.WithFields(
+				logging.Fields{
+				"interface ifName":         ifName,
+				"interface software index": swIdx,
+				"vrf":                      route.VrfId,
+				"destination ip":           route.DstIpAddr}).
+			Debug("Resolving cached route - outgoing interface now exists.")
+		plugin.ConfigureRoute(route, strconv.FormatUint(uint64(route.VrfId), 10))
+		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.routeId)
+	}
+}
+
+func (plugin *RouteConfigurator) findCachedRoutesByOutgoingInterface(ifName string ) []StaticRoutesRouteAndIdx {
+	var result []StaticRoutesRouteAndIdx
+	for _, name := range plugin.RouteCachedIndex.ListNames() {
+		_, meta, found := plugin.RouteCachedIndex.LookupIdx(name)
+		if found && meta != nil {
+			route, castOk := meta.(*l3.StaticRoutes_Route)
+
+			if castOk && route.OutgoingInterface == ifName {
+				result = append(result, StaticRoutesRouteAndIdx{route, name})
+			}
+		}
+	}
+	return result
 }

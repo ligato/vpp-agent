@@ -104,6 +104,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.l4Configurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.stnConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
+				plugin.routeConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			} else {
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
