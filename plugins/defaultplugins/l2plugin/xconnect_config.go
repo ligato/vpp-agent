@@ -20,6 +20,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -102,7 +103,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 	if rxFound && txFound {
 		// can be configured now
 		err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-			measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if err != nil {
 			plugin.Log.WithField("Error", err).Error("Failed to create l2xConnect")
 			return err
@@ -151,20 +152,20 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 	} else if oldTransmitInterfaceIndex == 0 {
 		// Create new xConnect only.
 		err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, newTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if err != nil {
 			plugin.Log.WithField("Error", err).Error("Failed to set l2xConnect")
 			return err
 		}
 	} else {
 		errDel := vppcalls.VppUnsetL2XConnect(receiveInterfaceIndex, oldTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if errDel != nil {
 			plugin.Log.WithField("Error", errDel).Error("Failed to remove l2xConnect")
 			return errDel
 		}
 		errCreate := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, newTransmitInterfaceIndex, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 		if errCreate != nil {
 			plugin.Log.WithField("Error", errCreate).Error("Failed to set l2xConnect")
 			return errCreate
@@ -307,7 +308,7 @@ func (plugin *XConnectConfigurator) configureL2XConnectPair(rxIf, txIf string) e
 
 	// Configure l2xconnect.
 	err := vppcalls.VppSetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+		measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.WithField("Error", err).Error("Failed to create l2xConnect")
 		return err
@@ -332,7 +333,7 @@ func (plugin *XConnectConfigurator) deleteL2XConnectPair(rxIf, txIf string) erro
 	}
 
 	err := vppcalls.VppUnsetL2XConnect(receiveInterfaceIndex, transmitInterfaceIndex, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
+		measure.GetTimeLog(vpe.SwInterfaceSetL2Xconnect{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.WithField("Error", err).Error("Failed to remove l2xConnect")
 		return err

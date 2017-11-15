@@ -46,7 +46,7 @@ type ExamplePlugin struct {
 
 	// Linux plugin dependency
 	VPP defaultplugins.API
-	
+
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
 	swIfIdxAgent2 ifaceidx.SwIfIndex

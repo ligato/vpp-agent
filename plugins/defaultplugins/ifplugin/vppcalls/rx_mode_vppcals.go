@@ -35,12 +35,12 @@ func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSett
 		}
 	}()
 
-	 //prepare the message
+	//prepare the message
 	req := &interfaces.SwInterfaceSetRxMode{}
 	req.SwIfIndex = ifIdx
-	req.Mode = uint8 (rxModeSettings.RxMode)
+	req.Mode = uint8(rxModeSettings.RxMode)
 	req.QueueID = rxModeSettings.QueueID
-	req.QueueIDValid = uint8 (rxModeSettings.QueueIDValid)
+	req.QueueIDValid = uint8(rxModeSettings.QueueIDValid)
 
 	log.Debug("set rxModeSettings: ", rxModeSettings)
 
