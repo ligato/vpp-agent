@@ -25,7 +25,7 @@ import (
 	"net"
 )
 
-// DataChangeDSL defines the Domain Specific Language (DSL) for data change
+// DataChangeDSL defines Domain Specific Language (DSL) for data change.
 // of the VPP configuration.
 // Use this interface to make your implementation independent of the local
 // and any remote client.
@@ -33,26 +33,24 @@ import (
 // to change the scope of DSL), allowing the calls to be chained together
 // conveniently in a single statement.
 type DataChangeDSL interface {
-	// Put initiates a chained sequence of data change DSL statements declaring
-	// new or changing existing configurable objects, e.g:
+	// Put initiates a chained sequence of data change DSL statements, declaring
+	// new or changing existing configurable objects, e.g.:
 	//     Put().Interface(&memif).XConnect(&xconnect).BD(&BD) ... Send()
-	// The set of available objects to create or change is defined by PutDSL
-	// interface which the returned object implements.
+	// The set of available objects to be created or changed is defined by PutDSL.
 	Put() PutDSL
 
-	// Delete initiates a chained sequence of data change DSL statements
-	// removing existing configurable objects (by name), e.g:
+	// Delete initiates a chained sequence of data change DSL statements,
+	// removing existing configurable objects (by name), e.g.:
 	//     Delete().Interface(memifName).XConnect(xconnectName).BD(BDName) ... Send()
-	// The set of available objects to remove is defined by DeleteDSL
-	// interface which the returned object implements.
+	// The set of available objects to be removed is defined by DeleteDSL.
 	Delete() DeleteDSL
 
 	// Send propagates requested changes to the plugins.
 	Send() Reply
 }
 
-// PutDSL is a subset of data change DSL statements used to declare new
-// or change existing VPP configuration.
+// PutDSL is a subset of data change DSL statements, used to declare new
+// VPP configuration or to change an existing one.
 type PutDSL interface {
 	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interfaces_Interface) PutDSL
@@ -92,8 +90,8 @@ type PutDSL interface {
 	Send() Reply
 }
 
-// DeleteDSL is a subset of data change DSL statements used to remove
-// existing VPP configuration.
+// DeleteDSL is a subset of data change DSL statements, used to remove
+// an existing VPP configuration.
 type DeleteDSL interface {
 	// Interface adds a request to delete an existing VPP network interface.
 	Interface(ifaceName string) DeleteDSL

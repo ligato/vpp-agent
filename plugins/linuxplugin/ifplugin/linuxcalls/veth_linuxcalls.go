@@ -19,10 +19,11 @@ package linuxcalls
 import (
 	"fmt"
 
+	"time"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
-	"time"
 )
 
 // AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
@@ -44,7 +45,7 @@ func AddVethInterface(ifName, peerIfName string, log logging.Logger, timeLog mea
 		PeerName: peerIfName,
 	}
 
-	// Create the veth pair
+	// Create the veth pair.
 	err := netlink.LinkAdd(veth)
 	return err
 }
@@ -59,7 +60,7 @@ func DelVethInterface(ifName, peerIfName string, log logging.Logger, timeLog mea
 		}
 	}()
 
-	// Veth pair params
+	// Veth pair params.
 	veth := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{
 			Name:   ifName,
@@ -68,7 +69,7 @@ func DelVethInterface(ifName, peerIfName string, log logging.Logger, timeLog mea
 		PeerName: peerIfName,
 	}
 
-	// Create the veth pair
+	// Create the veth pair.
 	err := netlink.LinkDel(veth)
 	return err
 }

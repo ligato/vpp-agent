@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// Test runs all TC methods of multiple test suites in sequence
+// Test runs all TC methods of multiple test suites in a sequence.
 func Test(t *testing.T) {
 	doneChan := make(chan struct{}, 1)
 
@@ -50,9 +50,9 @@ func Test(t *testing.T) {
 	}
 }
 
-// RunTestSuite use reflection to run each method prefixed with "TC"
+// RunTestSuite uses reflection to run each method prefixed with "TC".
 func RunTestSuite(testSuite interface{}, t *testing.T, teardowns ...func()) {
-	vppInstanceCounter := 0 //each test uses different ETCD subtree
+	vppInstanceCounter := 0 // Each test uses different ETCD subtree.
 
 	suite := reflect.ValueOf(testSuite)
 

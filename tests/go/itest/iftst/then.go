@@ -16,7 +16,7 @@ import (
 )
 
 // ThenIface is a collection of test step methods (see Behavior Driven Development)
-// (methods that will be called from test scenarios)
+// (methods that will be called from test scenarios).
 type ThenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
 	OperState ifstateGetter
@@ -27,50 +27,50 @@ type ThenIface struct {
 
 type ifstateGetter interface {
 	// InterfaceState reads operational state of network interface
-	// and fills it to ifState input parameter
+	// and fills it to ifState input parameter.
 	InterfaceState(ifaceName string, ifState *intf.InterfacesState_Interface) (found bool, err error)
 }
 
-// SwIfIndexes is a constructor for interfaces
+// SwIfIndexes is a constructor for interfaces.
 func (step *ThenIface) SwIfIndexes() *SwIfIndexesAssertions {
 	return &SwIfIndexesAssertions{VPP: step.VPP}
 }
 
-// BfdIndexes is a constructor for interfaces
+// BfdIndexes is a constructor for interfaces.
 func (step *ThenIface) BfdIndexes() *BfdIndexesAssertions {
 	return &BfdIndexesAssertions{}
 }
 
-// SwIfIndexesAssertions helper struct for fluent DSL in tests for interfaces
+// SwIfIndexesAssertions is a helper struct for fluent DSL in tests for interfaces.
 type SwIfIndexesAssertions struct {
 	VPP defaultplugins.API
 }
 
-// BfdIndexesAssertions helper struct for fluent DSL in tests for bfd
+// BfdIndexesAssertions is a helper struct for fluent DSL in tests for bfd.
 type BfdIndexesAssertions struct {
 }
 
-// ContainsName it checks several times if sw_if_index - ifName mapping ....
+// ContainsName checks several times if sw_if_index - ifName mapping exists.
 func (a *SwIfIndexesAssertions) ContainsName(ifName string) {
 	idxtst.ContainsName(a.VPP.GetSwIfIndexes().GetMapping(), ifName)
 }
 
-// ContainsName it checks several times if bfd_index
+// ContainsName checks several times if there is an entry with the given name in bfd_index.
 func (a *BfdIndexesAssertions) ContainsName(mapping idx.NameToIdx, bfdIface string) {
 	idxtst.ContainsName(mapping, bfdIface)
 }
 
-// NotContainsName it checks several times the sw_if_index - ifName mapping ....
+// NotContainsName checks several times the sw_if_index - ifName mapping does not exist.
 func (a *SwIfIndexesAssertions) NotContainsName(ifName string) {
 	idxtst.NotContainsNameAfter(a.VPP.GetSwIfIndexes().GetMapping(), ifName)
 }
 
-// NotContainsName it checks several times the bfd_index
+// NotContainsName checks several times if there is no entry with the given name in bfd_index.
 func (a *BfdIndexesAssertions) NotContainsName(mapping idx.NameToIdx, bfdInterface string) {
 	idxtst.NotContainsNameAfter(mapping, bfdInterface)
 }
 
-// IfStateInDB asserts that there is InterfacesState_Interface_DOWN in ETCD for particular Interfaces_Interface
+// IfStateInDB asserts that there is InterfacesState_Interface_DOWN in ETCD for particular Interfaces_Interface.
 func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status, data *intf.Interfaces_Interface) {
 	logroot.StandardLogger().Debug("IfStateDownInDB begin")
 
@@ -90,7 +90,7 @@ func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status,
 	}
 	Expect(found).Should(BeTrue(),
 		"not found operational state "+data.Name)
-	//Expect(ifState.OperStatus).Should(BeEquivalentTo(status),
+	// Expect(ifState.OperStatus).Should(BeEquivalentTo(status),
 	//	"Status needs to be down for " + data.Name) // TODO
 
 	logroot.StandardLogger().Debug("IfStateDownInDB end")

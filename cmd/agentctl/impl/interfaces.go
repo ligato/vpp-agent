@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// IfaceCommonFields are fields common for interface of any type
+// IfaceCommonFields are fields common for interfaces of any type.
 type IfaceCommonFields struct {
 	Name      string
 	Desc      string
@@ -40,12 +40,12 @@ type IfaceCommonFields struct {
 
 var ifCommonFields IfaceCommonFields
 
-// PutAfPkt creates Af-packet type interface
+// PutAfPkt creates an Af-packet type interface.
 func PutAfPkt(endpoints []string, label string, flags *interfaces.Interfaces_Interface_Afpacket) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_AF_PACKET_INTERFACE, ifc)
 
-	// Process Af-Packet specific flags
+	// Process Af-Packet specific flags.
 	if flags.HostIfName != "" {
 		if ifc.Afpacket == nil {
 			ifc.Afpacket = &interfaces.Interfaces_Interface_Afpacket{}
@@ -55,26 +55,26 @@ func PutAfPkt(endpoints []string, label string, flags *interfaces.Interfaces_Int
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// PutEthernet creates ethernet type interface
+// PutEthernet creates an ethernet type interface.
 func PutEthernet(endpoints []string, label string) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_ETHERNET_CSMACD, ifc)
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// PutLoopback creates loopback type interface
+// PutLoopback creates a loopback type interface.
 func PutLoopback(endpoints []string, label string) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_TAP_INTERFACE, ifc)
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// PutMemif creates memif type interface
+// PutMemif creates a memif type interface.
 func PutMemif(endpoints []string, label string, flags *interfaces.Interfaces_Interface_Memif) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_MEMORY_INTERFACE, ifc)
 
-	// Process MEMIF-specific flags
+	// Process MEMIF-specific flags.
 	if utils.IsFlagPresent(utils.MemifMaster) {
 		if ifc.Memif == nil {
 			ifc.Memif = &interfaces.Interfaces_Interface_Memif{}
@@ -132,19 +132,19 @@ func PutMemif(endpoints []string, label string, flags *interfaces.Interfaces_Int
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// PutTap creates tap type interface
+// PutTap creates a tap type interface.
 func PutTap(endpoints []string, label string) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_TAP_INTERFACE, ifc)
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// PutVxLan creates vxlan type interface
+// PutVxLan creates a vxlan type interface.
 func PutVxLan(endpoints []string, label string, flags *interfaces.Interfaces_Interface_Vxlan) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	processCommonIfFlags(found, interfaces.InterfaceType_VXLAN_TUNNEL, ifc)
 
-	// Process VXLAN-specific flags
+	// Process VXLAN-specific flags.
 	if flags.SrcAddress != "" {
 		if ifc.Vxlan == nil {
 			ifc.Vxlan = &interfaces.Interfaces_Interface_Vxlan{}
@@ -174,7 +174,7 @@ func PutVxLan(endpoints []string, label string, flags *interfaces.Interfaces_Int
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// IfJSONPut creates interface according to json configuration
+// IfJSONPut creates an interface according to json configuration.
 func IfJSONPut(endpoints []string, label string) {
 	bio := bufio.NewReader(os.Stdin)
 	buf := new(bytes.Buffer)
@@ -195,7 +195,7 @@ func IfJSONPut(endpoints []string, label string) {
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
-// InterfaceDel removes interface with defined name
+// InterfaceDel removes the interface with defined name.
 func InterfaceDel(endpoints []string, label string) {
 	found, key, _, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
 	if found {
@@ -203,12 +203,12 @@ func InterfaceDel(endpoints []string, label string) {
 	}
 }
 
-// AddInterfaceNameFlag adds name flag to interface flags
+// AddInterfaceNameFlag adds a name flag to interface flags.
 func AddInterfaceNameFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&ifCommonFields.Name, "name", "n", "", "Interface name")
 }
 
-// AddCommonIfPutFlags adds flags common for all interface types
+// AddCommonIfPutFlags adds flags common for all interface types.
 func AddCommonIfPutFlags(cmd *cobra.Command) {
 	AddInterfaceNameFlag(cmd)
 	cmd.Flags().StringVarP(&ifCommonFields.Desc, "description", "d", "", "Interface description (ascii text)")
@@ -230,7 +230,7 @@ func processCommonIfFlags(found bool, ifType interfaces.InterfaceType, ifc *inte
 		ifc.Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifCommonFields.Name}
 	}
 
-	// Set in case interface is empty
+	// Set in case interface is empty.
 	ifc.Name = ifCommonFields.Name
 	ifc.Type = ifType
 	ifc.Enabled = ifCommonFields.Enabled

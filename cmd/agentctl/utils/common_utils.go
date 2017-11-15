@@ -43,10 +43,10 @@ const (
 
 // ParseKey parses the etcd Key for the microservice label and the
 // data type encoded in the Key. The function returns the microservice
-// label, the data type and a list of parameters that contains path
+// label, the data type and the list of parameters, that contains path
 // segments that follow the data path segment in the Key URL. The
 // parameter list is empty if data path is the Last segment in the
-// Key ..
+// Key.
 //
 // URI Examples:
 // * /vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}
@@ -87,9 +87,10 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 		dataType += "/" + localDataType
 	}
 
-	// In case localDataType is equal to 'bd', 'interface' or 'vrf', verify next item to identify error/fib key
+	// In case localDataType is equal to 'bd', or 'interface', or 'vrf', verify
+	// next item to identify error/fib key.
 	if len(ps) > 5 {
-		// Recognize interface error key
+		// Recognize interface error key.
 		if ps[4] == "interface" && ps[5] == "error" {
 			ifaceErrorDataType := ps[5]
 			dataType += "/" + ifaceErrorDataType
@@ -102,7 +103,7 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 
 			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
-		// Recognize bridge domain error key
+		// Recognize bridge domain error key.
 		if ps[4] == "bd" && ps[5] == "error" {
 			bdErrorDataType := ps[5]
 			dataType += "/" + bdErrorDataType
@@ -114,7 +115,7 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			}
 			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
-		// Recognize FIB key
+		// Recognize FIB key.
 		if len(ps) > 6 && ps[4] == "bd" && ps[6] == "fib" {
 			fibDataType := ps[6]
 			dataType += "/{bd}/" + fibDataType
@@ -127,7 +128,7 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 			}
 			return label, dataType, rebuildName(params), plugStatCfgRev
 		}
-		// Recognize static route
+		// Recognize static route.
 		if len(ps) > 6 && ps[4] == "vrf" && ps[6] == "fib" {
 			dataType += "/" + strings.TrimPrefix(l3.RoutesPrefix, l3.VrfPrefix)
 
@@ -145,14 +146,14 @@ func ParseKey(key string) (label string, dataType string, name string, plugStatC
 	return label, dataType, rebuildName(params), plugStatCfgRev
 }
 
-// Reconstruct item name in case it contains slashes
+// Reconstruct item name in case it contains slashes.
 func rebuildName(params []string) string {
 	var itemName string
 	if len(params) > 1 {
 		for _, param := range params {
 			itemName = itemName + "/" + param
 		}
-		// remove first slash
+		// Remove the first slash.
 		return itemName[1:]
 	} else if len(params) == 1 {
 		itemName = params[0]
@@ -161,8 +162,8 @@ func rebuildName(params []string) string {
 	return itemName
 }
 
-// GetDbForAllAgents opens a connection to Etcd specified in the command line
-// or the "ETCDV3_ENDPOINTS" environment variable
+// GetDbForAllAgents opens a connection to etcd, specified in the command line
+// or the "ETCDV3_ENDPOINTS" environment variable.
 func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
@@ -172,7 +173,7 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	// Log warnings and errors only
+	// Log warnings and errors only.
 	log := logroot.StandardLogger()
 	log.SetLevel(logging.WarnLevel)
 	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
@@ -184,8 +185,8 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 
 }
 
-// GetDbForOneAgent opens a connection to Etcd specified in the command line
-// or the "ETCDV3_ENDPOINTS" environment variable
+// GetDbForOneAgent opens a connection to etcd, specified in the command line
+// or the "ETCDV3_ENDPOINTS" environment variable.
 func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
@@ -195,7 +196,7 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 	cfg := &etcdv3.Config{}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 
-	// Log warnings and errors only
+	// Log warnings and errors only.
 	log := logroot.StandardLogger()
 	log.SetLevel(logging.WarnLevel)
 	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)

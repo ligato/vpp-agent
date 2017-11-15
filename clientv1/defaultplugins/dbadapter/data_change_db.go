@@ -15,6 +15,8 @@
 package dbadapter
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -25,7 +27,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
-	"net"
 	"strconv"
 )
 
@@ -53,7 +54,7 @@ type DeleteDSL struct {
 }
 
 // Put initiates a chained sequence of data change DSL statements declaring
-// new or changing existing configurable objects.
+// new configurable objects or changing existing ones.
 func (dsl *DataChangeDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl}
 }

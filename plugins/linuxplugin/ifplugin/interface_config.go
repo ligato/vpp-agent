@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+        "github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netlink"
 
 	log "github.com/ligato/cn-infra/logging/logrus"
@@ -94,8 +94,8 @@ type LinuxInterfaceConfigurator struct {
 
 	/* management of go routines */
 	ctx    context.Context    // Context within which all goroutines are running
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 
 	/* veth pre-configure namespace */
 	vethCfgNamespace *intf.LinuxInterfaces_Interface_Namespace
@@ -109,12 +109,12 @@ type LinuxInterfaceConfigurator struct {
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
 }
 
-// Init linuxplugin and start go routines
+// Init linuxplugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	plugin.Log.Debug("Initializing LinuxInterfaceConfigurator")
 	plugin.ifIndexes = ifIndexes
 
-	// allocate caches
+	// Allocate caches.
 	plugin.intfByName = make(map[string]*LinuxInterfaceConfig)
 	plugin.intfsByMicroservice = make(map[string][]*LinuxInterfaceConfig)
 	plugin.microserviceByLabel = make(map[string]*Microservice)
@@ -203,7 +203,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	peer := plugin.getInterfaceConfig(iface.Veth.PeerIfName)
 	config := plugin.addToCache(iface, peer)
 
-	// create only after both ends are configured and target namespaces are available
+	// Create after both ends are configured and target namespaces are available.
 	if !plugin.isNamespaceAvailable(iface.Namespace) || peer == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
 		plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "host-if-name": iface.HostIfName}).Debug("VETH interface is not ready to be configured")
 		return nil
@@ -241,7 +241,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		return fmt.Errorf("failed to get index of the VETH interface %s", iface.config.HostIfName)
 	}
 
-	// move interface to the proper namespace
+	// Move interface to the proper namespace.
 	ns := iface.config.Namespace
 	if ns != nil && ns.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
 		ns = plugin.convertMicroserviceNsToPidNs(ns.Microservice)
@@ -254,14 +254,14 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		return fmt.Errorf("failed to move interface across namespaces: %v", err)
 	}
 
-	// continue configuring interface in its namespace
+	// Continue configuring interface in its namespace.
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, iface.config.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
 	defer revertNs()
 
-	// set interface up
+	// Set interface up.
 	if iface.config.Enabled {
 		err := linuxcalls.InterfaceAdminUp(iface.config.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.Stopwatch))
 		if nil != err {
@@ -271,7 +271,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 
 	var wasError error
 
-	// configure optional mac address
+	// Configure optional mac address.
 	if iface.config.PhysAddress != "" {
 		plugin.Log.WithFields(log.Fields{"PhysAddress": iface.config.PhysAddress, "ifName": iface.config.Name}).Debug("MAC address configured.")
 		err := linuxcalls.SetInterfaceMac(iface.config.HostIfName, iface.config.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.Stopwatch))
@@ -280,7 +280,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		}
 	}
 
-	// configure all the ip addresses
+	// Configure all the ip addresses.
 	newAddrs, err := addrs.StrAddrsToStruct(iface.config.IpAddresses)
 	if err != nil {
 		return err
@@ -293,7 +293,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		}
 	}
 
-	// configure MTU
+	// Configure MTU.
 	mtu := iface.config.Mtu
 	if mtu > 0 {
 		plugin.Log.WithFields(log.Fields{"MTU": mtu, "ifName": iface.config.Name}).Debug("MTU configured.")
@@ -336,7 +336,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	if newConfig.Veth.PeerIfName != oldConfig.Veth.PeerIfName ||
 		newConfig.HostIfName != oldConfig.HostIfName ||
 		newIfaceNs.CompareNamespaces(oldIfaceNs) != 0 {
-		// change of the peer interface or the namespace requires to create the interface from the scratch
+		// Change of the peer interface or the namespace requires to create the interface from the scratch.
 		err := plugin.DeleteLinuxInterface(oldConfig)
 		if err == nil {
 			err = plugin.ConfigureLinuxInterface(newConfig)
@@ -347,18 +347,18 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	// update the cached configuration
+	// Update the cached configuration.
 	plugin.removeFromCache(oldConfig)
 	peer := plugin.getInterfaceConfig(newConfig.Veth.PeerIfName)
 	plugin.addToCache(newConfig, peer)
 
 	if !plugin.isNamespaceAvailable(newConfig.Namespace) || peer == nil || !plugin.isNamespaceAvailable(peer.config.Namespace) {
-		// interface doesn't actually exist physically
+		// Interface doesn't actually exist physically.
 		plugin.Log.WithField("ifName", ifName).Debug("VETH interface is not ready to be re-configured")
 		return nil
 	}
 
-	// reconfigure interface in its namespace
+	// Reconfigure interface in its namespace.
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, oldConfig.Namespace)
 	if err != nil {
@@ -366,7 +366,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 	}
 	defer revertNs()
 
-	// verify that the interface exists in the Linux namespace
+	// Verify that the interface exists in the Linux namespace.
 	idx := GetLinuxInterfaceIndex(ifName)
 	if idx < 0 {
 		plugin.Log.WithFields(log.Fields{"ifName": ifName}).Debug("Linux interface not found.")
@@ -387,7 +387,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 		}
 	}
 
-	// configure new mac address if set
+	// Configure new mac address if set.
 	if newConfig.PhysAddress != "" && newConfig.PhysAddress != oldConfig.PhysAddress {
 		plugin.Log.WithFields(log.Fields{"PhysAddress": newConfig.PhysAddress, "ifName": ifName}).Debug("MAC address re-configured.")
 		err := linuxcalls.SetInterfaceMac(ifName, newConfig.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.Stopwatch))
@@ -494,7 +494,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ns)
 	defer revertNs()
 	if err != nil {
-		// already removed as namespace no longer exists
+		// Already removed as namespace no longer exists.
 		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
@@ -617,7 +617,7 @@ func (plugin *LinuxInterfaceConfigurator) removeFromCache(iface *intf.LinuxInter
 	return nil
 }
 
-// isNamespaceAvailable return true if the destination namespace is available.
+// isNamespaceAvailable returns true if the destination namespace is available.
 func (plugin *LinuxInterfaceConfigurator) isNamespaceAvailable(ns *intf.LinuxInterfaces_Interface_Namespace) bool {
 
 	if ns != nil && ns.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
@@ -685,7 +685,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 		}
 
-		// first check if any microservice has terminated
+		// First check if any microservice has terminated.
 		plugin.cfgLock.Lock()
 		for container := range plugin.microserviceByID {
 			details, err := plugin.dockerClient.InspectContainer(container)
@@ -695,7 +695,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		}
 		plugin.cfgLock.Unlock()
 
-		// now check if previously created containers have transitioned to the state "running"
+		// Now check if previously created containers have transitioned to the state "running".
 		for _, container := range created {
 			details, err := plugin.dockerClient.InspectContainer(container)
 			if err == nil {
@@ -708,7 +708,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		}
 		created = nextCreated
 
-		// finally inspect newly created containers
+		// Finally inspect newly created containers.
 		listOpts = docker.ListContainersOptions{}
 		listOpts.All = true
 		listOpts.Filters = map[string][]string{}
@@ -726,7 +726,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 
 		for _, container := range containers {
 			if container.State == "running" && container.Created > lastInspected {
-				// inspect the container to get the list of defined environment variables
+				// Inspect the container to get the list of defined environment variables.
 				details, err := plugin.dockerClient.InspectContainer(container.ID)
 				if err != nil {
 					continue
@@ -747,7 +747,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		}
 
 	nextRefresh:
-		// sleep before another refresh
+		// Sleep before another refresh.
 		select {
 		case <-time.After(dockerRefreshPeriod):
 			continue
@@ -760,7 +760,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
 func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, container *docker.Container) {
-	// search for the microservice label
+	// Search for the microservice label.
 	var label string
 	for _, env := range container.Config.Env {
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
@@ -798,7 +798,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 			}
 			peer := intf.vethPeer
 			if peer != nil {
-				// peer will be processed in this iteration and skipped in the subsequent ones
+				// Peer will be processed in this iteration and skipped in the subsequent ones.
 				skip[peer.config.Name] = struct{}{}
 			}
 			if peer != nil && plugin.isNamespaceAvailable(peer.config.Namespace) {
@@ -880,7 +880,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	// register newly added interface only if it is not already managed by this plugin
+	// Register newly added interface only if it is not already managed by this plugin.
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
 	if !known {
 		plugin.Log.WithFields(log.Fields{"name": linkAttrs.Name, "idx": linkAttrs.Index}).
@@ -891,21 +891,21 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	// TODO: process state data
 }
 
-// if hostIfName is not set, symbolic name will be used
+// If hostIfName is not set, symbolic name will be used.
 func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *intf.LinuxInterfaces_Interface) {
 	if config.HostIfName == "" {
 		config.HostIfName = config.Name
 	}
 }
 
-// Create named namespace used for veth interface creation instead of the default one
+// Create named namespace used for veth interface creation instead of the default one.
 func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
-	// Check if namespace exists
+	// Check if namespace exists.
 	found, err := linuxcalls.NamedNetNsExists(vethConfigNamespace, plugin.Log)
 	if err != nil {
 		return err
 	}
-	// Remove namespace if exists
+	// Remove namespace if exists.
 	if found {
 		err := linuxcalls.DeleteNamedNetNs(vethConfigNamespace, plugin.Log)
 		if err != nil {

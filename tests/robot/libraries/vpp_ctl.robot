@@ -32,8 +32,8 @@ vpp_ctl: Read Key With Prefix
     [Return]           ${out}
 
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${vrf}    ${enabled}
     ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
@@ -44,8 +44,8 @@ vpp_ctl: Put Memif Interface
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Memif Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=default.sock    ${mtu}=1500    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}    ${socket}    ${mtu}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}    ${socket}    ${mtu}    ${vrf}    ${enabled}
     ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface_with_ip.json
@@ -73,8 +73,8 @@ vpp_ctl: Put Veth Interface
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Veth Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${peer}    ${ip}    ${prefix}    ${mtu}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${peer}    ${ip}    ${prefix}    ${mtu}    ${vrf}    ${enabled}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/veth_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -83,8 +83,8 @@ vpp_ctl: Put Veth Interface With IP
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Afpacket Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${host_int}    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${host_int}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${host_int}    ${mtu}=1500    ${enabled}=true    ${vrf}=0
+    Log Many    ${node}    ${name}    ${mac}    ${host_int}    ${mtu}    ${vrf}    ${enabled}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/afpacket_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -93,8 +93,8 @@ vpp_ctl: Put Afpacket Interface
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put VXLan Interface
-    [Arguments]    ${node}    ${name}    ${src}    ${dst}    ${vni}    ${enabled}=true
-    Log Many    ${node}    ${name}    ${src}    ${dst}    ${vni}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${src}    ${dst}    ${vni}    ${enabled}=true    ${vrf}=0
+    Log Many    ${node}    ${name}    ${src}    ${dst}    ${vni}    ${enabled}    ${vrf}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/vxlan_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -114,9 +114,19 @@ vpp_ctl: Put Bridge Domain
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Put Loopback Interface
+    [Arguments]    ${node}    ${name}    ${mac}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/loopback_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
 vpp_ctl: Put Loopback Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${ip}    ${prefix}    ${mtu}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${prefix}=24    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${ip}    ${prefix}    ${mtu}    ${vrf}    ${enabled}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/loopback_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -217,8 +227,8 @@ vpp_ctl: Get Bridge Domain ID
     [Return]    ${bd_id}
 
 vpp_ctl: Put TAP Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
-    Log Many    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}    ${mtu}    ${enabled}
+    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true    ${vrf}=0
+    Log Many    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}    ${mtu}    ${enabled}    ${vrf}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tap_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
     Log Many              ${data}                       ${uri}
@@ -424,5 +434,3 @@ vpp_ctl: Delete ACL
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
-
-

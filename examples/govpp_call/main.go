@@ -28,21 +28,21 @@ import (
 
 // *************************************************************************
 // This file contains examples of GOVPP operations, conversion of a proto
-// data to a binary api message and demonstration of how to send the message
+// data to a binary api message and demonstration of sending the message
 // to the VPP with:
 //
 // requestContext = goVppChannel.SendRequest(requestMessage)
 // requestContext.ReceiveReply(replyMessage)
 //
-// Note: this example shows how to work with VPP, so a real proto message
+// Note: this example shows how to work with VPP, so real proto message
 // structure is used (bridge domains).
 // ************************************************************************/
 
 // Main allows running Example Plugin as a statically linked binary with Agent Core Plugins. Close channel and plugins
-// required for the example are initialized. Agent is instantiated with generic plugins (ETCD, Kafka, Status check,
-// HTTP and Log), GOVPP, resync plugin and example plugin which demonstrates GOVPP call functionality.
+// required for the example are initialized. Agent is instantiated with generic plugins (etcd, Kafka, Status check,
+// HTTP and Log), and GOVPP, and resync plugin, and example plugin which demonstrates GOVPP call functionality.
 func main() {
-	// Init close channel to stop the example
+	// Init closes channel to stop the example.
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor
@@ -56,7 +56,7 @@ func main() {
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
 
-// ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the agent
+// ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
 type ExamplePlugin struct {
 	Deps
 
@@ -64,14 +64,14 @@ type ExamplePlugin struct {
 
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
-	// Fields below are used to properly finish the example
+	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
 }
 
-// Init members of plugin
+// Init members of plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
-	// NewAPIChannel returns a new API channel for communication with VPP via govpp core. It uses default buffer
-	// sizes for the request and reply Go channels
+	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
+	// It uses default buffer sizes for the request and reply Go channels.
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 
 	plugin.Log.Info("Default plugin plugin ready")
@@ -84,8 +84,8 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	return err
 }
 
-// Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
-// allocated by the plugin during its lifetime
+// Close is called by Agent Core when the Agent is shutting down. It is supposed
+// to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
 	safeclose.CloseAll(plugin.GoVppmux, plugin.vppChannel)
 	return nil
@@ -95,20 +95,21 @@ func (plugin *ExamplePlugin) Close() error {
  * VPPCall *
  ***********/
 
-// VppCall uses created data to convert it to the binary api call. In the example, a bridge domain data are built and
-// transformed to the BridgeDomainAddDel binary api call which is then sent to the VPP
+// VppCall uses created data to convert it to the binary api call. In the example,
+// a bridge domain data are built and transformed to the BridgeDomainAddDel binary api call
+// which is then sent to the VPP.
 func (plugin *ExamplePlugin) VppCall() {
 	time.Sleep(3 * time.Second)
 
-	// Prepare a simple data
+	// Prepare a simple data.
 	plugin.Log.Info("Preparing data ...")
 	bds1 := buildData("br1")
 	bds2 := buildData("br2")
 	bds3 := buildData("br3")
 
-	// Prepare binary api message from the data
+	// Prepare binary api message from the data.
 	req1 := buildBinapiMessage(bds1, plugin.exampleIDSeq)
-	plugin.exampleIDSeq++ // Change (raise) index to ensure every message uses unique ID
+	plugin.exampleIDSeq++ // Change (raise) index to ensure every message uses unique ID.
 	req2 := buildBinapiMessage(bds2, plugin.exampleIDSeq)
 	plugin.exampleIDSeq++
 	req3 := buildBinapiMessage(bds3, plugin.exampleIDSeq)
@@ -119,18 +120,18 @@ func (plugin *ExamplePlugin) VppCall() {
 
 	plugin.Log.Info("Sending data to VPP ...")
 
-	// 1. Send the request and receive a reply directly (in one line)
+	// 1. Send the request and receive a reply directly (in one line).
 	plugin.vppChannel.SendRequest(req1).ReceiveReply(reply)
 
-	// 2. Send multiple different requests. Every request returns it's own request context
+	// 2. Send multiple different requests. Every request returns it's own request context.
 	reqCtx2 := plugin.vppChannel.SendRequest(req2)
 	reqCtx3 := plugin.vppChannel.SendRequest(req3)
-	// The context can be used later to get reply
+	// The context can be used later to get reply.
 	reqCtx2.ReceiveReply(reply)
 	reqCtx3.ReceiveReply(reply)
 
 	plugin.Log.Info("Data successfully sent to VPP")
-	// End the example
+	// End the example.
 	plugin.Log.Infof("etcd/datasync example finished, sending shutdown ...")
 	*plugin.closeChannel <- struct{}{}
 }

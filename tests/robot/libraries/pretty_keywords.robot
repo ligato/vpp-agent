@@ -2,9 +2,20 @@
 Ping From ${node} To ${ip}
     vpp_term: Check Ping    ${node}    ${ip}
 
+Ping On ${node} With IP ${ip}, Source ${source}
+    vpp_term: Check Ping Within Interface    ${node}    ${ip}    ${source}
+
 Create Loopback Interface ${name} On ${node} With Ip ${ip}/${prefix} And Mac ${mac}
     Log Many    ${name}    ${node}    ${ip}    ${prefix}    ${mac}
     vpp_ctl: Put Loopback Interface With IP    ${node}    ${name}   ${mac}   ${ip}   ${prefix}
+
+Create Loopback Interface ${name} On ${node} With Mac ${mac}
+    Log Many    ${name}    ${node}    ${mac}
+    vpp_ctl: Put Loopback Interface    ${node}    ${name}   ${mac}
+
+Create Loopback Interface ${name} On ${node} With VRF ${vrf}, Ip ${ip}/${prefix} And Mac ${mac}
+    Log Many    ${name}    ${node}    ${ip}    ${prefix}    ${mac}    ${vrf}
+    vpp_ctl: Put Loopback Interface With IP    ${node}    ${name}   ${mac}   ${ip}   ${prefix}    vrf=${vrf}
 
 Create ${type} ${name} On ${node} With MAC ${mac}, Key ${key} And ${sock} Socket
     Log Many    ${type}    ${name}    ${node}    ${mac}    ${key}    ${sock}
@@ -17,6 +28,18 @@ Create ${type} ${name} On ${node} With IP ${ip}, MAC ${mac}, Key ${key} And ${so
     ${type}=   Set Variable if    "${type}"=="Master"    true    false
     Log Many   ${type}
     ${out}=    vpp_ctl: Put Memif Interface With IP    ${node}    ${name}   ${mac}    ${type}   ${key}    ${ip}    socket=${socket}
+    Log Many   ${out}
+
+Create ${type} ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac}, Key ${key} And ${socket} Socket
+    Log Many   ${type}    ${name}    ${node}    ${ip}    ${key}    ${vrf}    ${socket}
+    ${type}=   Set Variable if    "${type}"=="Master"    true    false
+    Log Many   ${type}
+    ${out}=    vpp_ctl: Put Memif Interface With IP    ${node}    ${name}   ${mac}    ${type}   ${key}    ${ip}    socket=${socket}    vrf=${vrf}
+    Log Many   ${out}
+
+Create Tap Interface ${name} On ${node} With Vrf ${vrf}, IP ${ip}, MAC ${mac} And HostIfName ${host_if_name}
+    Log Many   ${name}    ${node}    ${ip}    ${vrf}
+    ${out}=    vpp_ctl: Put TAP Interface With IP    ${node}    ${name}   ${mac}    ${ip}    ${host_if_name}    vrf=${vrf}
     Log Many   ${out}
 
 Create Bridge Domain ${name} with Autolearn On ${node} With Interfaces ${interfaces}
@@ -68,3 +91,40 @@ Command: ${cmd} should ${expected}
     Log Many    @{out}
     Should Be Equal    @{out}[0]    ${expected}    ignore_case=True
     [Return]     ${out}
+
+IP Fib Table ${id} On ${node} Should Be Empty
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Be Equal    ${out}   vpp#${SPACE}
+
+IP Fib Table ${id} On ${node} Should Not Be Empty
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Not Be Equal    ${out}   vpp#${SPACE}
+
+IP Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+
+IP Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+
+Show IP Fib On ${node}
+    Log Many    ${node}
+    ${out}=     vpp_term: Show IP Fib    ${node}
+    Log Many    ${out}
+
+Show Interfaces On ${node}
+    ${out}=   vpp_term: Show Interfaces    ${node}
+    Log Many  ${out}
+
+Show Interfaces Address On ${node}
+    ${out}=   vpp_term: Show Interfaces Address    ${node}
+    Log Many  ${out}

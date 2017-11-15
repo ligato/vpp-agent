@@ -17,9 +17,10 @@ package nametoidx
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
 
-	. "github.com/onsi/gomega"
 	"testing"
 	"time"
+
+	. "github.com/onsi/gomega"
 )
 
 // Factory defines type of a function used to create new instances of a name-to-index mapping.
@@ -38,7 +39,7 @@ type GivenKW struct {
 	plug1NameIdxChan chan idxvpp.NameToIdxDto
 }
 
-// When defines actions/changes done to the tested registry.
+// When defines the actions/changes done to the tested registry.
 type When struct {
 	given *GivenKW
 }
@@ -48,7 +49,7 @@ type Then struct {
 	when *When
 }
 
-// WhenName defines actions/changes done to a registry for a given name.
+// WhenName defines the actions/changes done to a registry for a given name.
 type WhenName struct {
 	when *When
 	name MappingName
@@ -67,7 +68,7 @@ func Given(t *testing.T) *GivenKW {
 	return &GivenKW{}
 }
 
-// When starts a when-clause.
+// When starts when-clause.
 func (given *GivenKW) When() *When {
 	return &When{given: given}
 }
@@ -86,7 +87,7 @@ func (given *GivenKW) NameToIdx(idxMapFactory Factory, reg map[MappingName]Mappi
 		given.plug1NameIdx.RegisterName(n, uint32(idx), nil)
 	}
 
-	//register of given mappings is done before watch (therefore there will be no notifications)
+	// Registration of given mappings is done before watch (therefore there will be no notifications).
 	given.watchNameIdx()
 	return given
 }
@@ -99,7 +100,7 @@ func (given *GivenKW) watchNameIdx() {
 		for {
 			v := <-plug1NameIdxChan
 			given.plug1NameIdxChan <- v
-			v.Done() //we can do that we are just buffering in given.plug1NameIdxChan (because of assertions)
+			v.Done() // We can mark event as processed by calling Done() because we want to have events buffered in given.plug1NameIdxChan (because of assertions).
 		}
 	}()
 
@@ -158,7 +159,7 @@ func (then *Then) Name(name MappingName) *ThenName {
 	return &ThenName{then: then, name: name}
 }
 
-// MapsToNothing verifies that a given name indeed maps to nothing.
+// MapsToNothing verifies that a given name really maps to nothing.
 func (thenName *ThenName) MapsToNothing() *ThenName {
 	name := string(thenName.name)
 	_, _, exist := thenName.then.when.given.plug1NameIdx.LookupIdx(name)
@@ -167,7 +168,7 @@ func (thenName *ThenName) MapsToNothing() *ThenName {
 	return thenName
 }
 
-//MapsTo asserts the response of LookupIdx, LookupName and also message in the channel
+//MapsTo asserts the response of LookupIdx, LookupName and message in the channel.
 func (thenName *ThenName) MapsTo(expectedIdx MappingIdx) *ThenName {
 	name := string(thenName.name)
 	retIdx, _, exist := thenName.then.when.given.plug1NameIdx.LookupIdx(name)
@@ -225,7 +226,7 @@ func (thenNotif *ThenNotification) IsNotExpected() *ThenNotification {
 	return thenNotif
 }
 
-// IsExpectedFor verifies that a given notification was indeed received.
+// IsExpectedFor verifies that a given notification was really received.
 func (thenNotif *ThenNotification) IsExpectedFor(idx MappingIdx) *ThenNotification {
 	notif, exist := thenNotif.receiveChan()
 	Expect(exist).Should(BeTrue())

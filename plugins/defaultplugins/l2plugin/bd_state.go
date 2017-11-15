@@ -16,6 +16,9 @@ package l2plugin
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
@@ -24,11 +27,9 @@ import (
 	l2_api "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"sync"
-	"time"
 )
 
-// BridgeDomainStateUpdater holds all data required to handle bridge domain state
+// BridgeDomainStateUpdater holds all data required to handle bridge domain state.
 type BridgeDomainStateUpdater struct {
 	Log         logging.Logger
 	GoVppmux    govppmux.API
@@ -50,12 +51,12 @@ type BridgeDomainStateUpdater struct {
 	wg     sync.WaitGroup
 }
 
-// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD
+// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD.
 type BridgeDomainStateNotification struct {
 	State *l2.BridgeDomainState_BridgeDomain
 }
 
-// Init bridge domain state updater
+// Init bridge domain state updater.
 func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
@@ -115,7 +116,7 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 			bdIdxDto.Done()
 
 		case <-ctx.Done():
-			// stop watching for notifications
+			// Stop watching for notifications.
 			return
 		}
 	}
@@ -123,9 +124,9 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 
 func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails, name string) *l2.BridgeDomainState_BridgeDomain {
 	bdState := &l2.BridgeDomainState_BridgeDomain{}
-	// Delete case
+	// Delete case.
 	if msg.BdID == 0 && name != "" {
-		// Mark index to 0 to be removed, but pass name so key can be constructed
+		// Mark index to 0 to be removed, but pass name so that the key can be constructed.
 		bdState.Index = 0
 		bdState.InternalName = name
 		return bdState
