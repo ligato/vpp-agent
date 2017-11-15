@@ -32,13 +32,18 @@ message Interfaces {
 
         // Required format is "ipAddress/ipPrefix"
         repeated string ip_addresses = 10;
+        message Unnumbered {
+            bool isUnnumbered = 1;
+            string interfaceWithIP = 2;
+        }
+        Unnumbered unnumbered = 11;
 
         message RxModeSettings {
             RxModeType rx_mode = 1;
             uint32 QueueID  = 2;
             uint32 QueueIDValid  = 3;
         }
-        RxModeSettings rxModeSettings = 11;
+        RxModeSettings rxModeSettings = 12;
 
         message Memif {
             enum MemifMode {

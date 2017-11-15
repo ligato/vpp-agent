@@ -179,7 +179,8 @@ type Interfaces_Interface struct {
 	Vrf         uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses    []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
-	RxModeSettings *Interfaces_Interface_RxModeSettings `protobuf:"bytes,11,opt,name=rxModeSettings" json:"rxModeSettings,omitempty"`
+	Unnumbered     *Interfaces_Interface_Unnumbered     `protobuf:"bytes,11,opt,name=unnumbered" json:"unnumbered,omitempty"`
+	RxModeSettings *Interfaces_Interface_RxModeSettings `protobuf:"bytes,12,opt,name=rxModeSettings" json:"rxModeSettings,omitempty"`
 	Memif          *Interfaces_Interface_Memif          `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`
 	Vxlan          *Interfaces_Interface_Vxlan          `protobuf:"bytes,102,opt,name=vxlan" json:"vxlan,omitempty"`
 	Afpacket       *Interfaces_Interface_Afpacket       `protobuf:"bytes,103,opt,name=afpacket" json:"afpacket,omitempty"`
@@ -189,6 +190,13 @@ type Interfaces_Interface struct {
 func (m *Interfaces_Interface) Reset()         { *m = Interfaces_Interface{} }
 func (m *Interfaces_Interface) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface) ProtoMessage()    {}
+
+func (m *Interfaces_Interface) GetUnnumbered() *Interfaces_Interface_Unnumbered {
+	if m != nil {
+		return m.Unnumbered
+	}
+	return nil
+}
 
 func (m *Interfaces_Interface) GetRxModeSettings() *Interfaces_Interface_RxModeSettings {
 	if m != nil {
@@ -224,6 +232,15 @@ func (m *Interfaces_Interface) GetTap() *Interfaces_Interface_Tap {
 	}
 	return nil
 }
+
+type Interfaces_Interface_Unnumbered struct {
+	IsUnnumbered    bool   `protobuf:"varint,1,opt,name=isUnnumbered,proto3" json:"isUnnumbered,omitempty"`
+	InterfaceWithIP string `protobuf:"bytes,2,opt,name=interfaceWithIP,proto3" json:"interfaceWithIP,omitempty"`
+}
+
+func (m *Interfaces_Interface_Unnumbered) Reset()         { *m = Interfaces_Interface_Unnumbered{} }
+func (m *Interfaces_Interface_Unnumbered) String() string { return proto.CompactTextString(m) }
+func (*Interfaces_Interface_Unnumbered) ProtoMessage()    {}
 
 type Interfaces_Interface_RxModeSettings struct {
 	RxMode       RxModeType `protobuf:"varint,1,opt,name=rx_mode,proto3,enum=interfaces.RxModeType" json:"rx_mode,omitempty"`
