@@ -121,7 +121,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	return nil
 }
 
-// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
+// SetUnnumberedIP sets interface as un-numbered, linking IP address of the another interface (ifIdxWithIP)
 func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
@@ -153,7 +153,7 @@ func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, log logging.Logger, vppC
 	return nil
 }
 
-// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
+// UnsetUnnumberedIP unset provided interface as un-numbered. IP address of the linked interface is removed
 func UnsetUnnumberedIP(uIfIdx uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
