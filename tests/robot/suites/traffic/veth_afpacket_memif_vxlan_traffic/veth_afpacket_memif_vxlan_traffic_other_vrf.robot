@@ -53,6 +53,8 @@ Setup Interfaces
     @{ints}=    Create List    vpp2_vxlan1    vpp2_afpacket1
     vpp_ctl: Put Bridge Domain    node=agent_vpp_2    name=vpp2_bd1    ints=${ints}
 
+    Sleep    10
+
 Check Linux Interfaces On VPP1
     ${out}=    Execute In Container    agent_vpp_1    ip a
     Log    ${out}

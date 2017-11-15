@@ -41,6 +41,9 @@ Start Three Agents And Then Configure
     # setup routes
     Create Route On agent_vpp_2 With IP 20.1.1.0/24 With Next Hop 10.1.1.1 And Vrf Id 0
     Create Route On agent_vpp_3 With IP 10.1.1.0/24 With Next Hop 20.1.1.1 And Vrf Id 0
+
+    Sleep    10
+
     # try ping
     Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_1 To 20.1.1.2
@@ -72,6 +75,9 @@ First Configure Three Agents And Then Start Agents
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
+
+    Sleep    10
+
     #check ping
     Ping From agent_vpp_1 To 10.1.1.2
     Ping From agent_vpp_1 To 20.1.1.2
@@ -85,8 +91,11 @@ Start Two Agents And Then Configure One With Non Default VRF
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Create Master memif0 on agent_vpp_1 with IP 10.1.1.1, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    List of interfaces On agent_vpp_1 Should Contain Interface memif0
     Create Slave memif0 on agent_vpp_2 with VRF 2, IP 10.1.1.2, MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
+
+    Sleep    10
+
+    List of interfaces On agent_vpp_1 Should Contain Interface memif0
     List of interfaces On agent_vpp_2 Should Contain Interface memif0
     IP Fib Table 2 On agent_vpp_2 Should Contain Route With IP 10.1.1.2/32
 
@@ -112,26 +121,29 @@ Start Three Agents, Then Configure With Interfaces Assigned To Non Default VRF
     Create loopback interface bvi_loop1 on agent_vpp_1 with ip 20.1.1.1/24 and mac 8a:f1:be:90:02:00
     Create Master memif1 on agent_vpp_1 with MAC 02:f1:be:90:02:00, key 2 and m1.sock socket
     Create bridge domain bd2 With Autolearn on agent_vpp_1 with interfaces bvi_loop1, memif1
-    Show Interfaces On agent_vpp_1
 
     # prepare second agent
     Create loopback interface bvi_loop0 on agent_vpp_2 with VRF 2, ip 10.1.1.2/24 and mac 8a:f1:be:90:00:02
     Create Slave memif0 on agent_vpp_2 with MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
-    Show Interfaces Address On agent_vpp_2
-    Show IP Fib On agent_vpp_2
 
     # prepare third agent
     Create loopback interface bvi_loop0 on agent_vpp_3 with VRF 3, ip 20.1.1.2/24 and mac 8a:f1:be:90:00:03
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0
-    Show Interfaces Address On agent_vpp_3
-    Show IP Fib On agent_vpp_3
 
     # setup routes
     Create Route On agent_vpp_2 With IP 20.1.1.0/24 With Next Hop 10.1.1.1 And Vrf Id 2
     Create Route On agent_vpp_3 With IP 10.1.1.0/24 With Next Hop 20.1.1.1 And Vrf Id 3
+
+    Sleep    10
+
+    Show Interfaces On agent_vpp_1
+    Show Interfaces Address On agent_vpp_2
+    Show IP Fib On agent_vpp_2
     IP Fib Table 2 On agent_vpp_2 Should Contain Route With IP 20.1.1.0/24
+    Show Interfaces Address On agent_vpp_3
+    Show IP Fib On agent_vpp_3
     IP Fib Table 3 On agent_vpp_3 Should Contain Route With IP 10.1.1.0/24
 
     # try ping
