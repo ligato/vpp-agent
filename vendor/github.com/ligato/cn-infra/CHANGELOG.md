@@ -1,4 +1,4 @@
-# Release v1.0.7 (2013-11-14)
+# Release v1.0.7 (2017-11-14)
 
 ## Agent, Flavors
 Input arguments of `core.NewAgent()` were changed:
