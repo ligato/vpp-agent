@@ -1,7 +1,7 @@
-# Release v1.0.8 (2017-11-14)
+# Release v1.0.8 (2017-11-16)
 
 ## Compatibility
-VP version v18.01-rc0~289-g227867f
+VPP version v18.01-rc0-241-g4c9f2a8
 
 ## Major Themes
 
@@ -32,19 +32,19 @@ VP version v18.01-rc0~289-g227867f
 - API contains new Method `DisableResync(keyPrefix ...string)`. One or more ETCD key prefixes 
   can be used as a parameter to disable resync for that specific key(s).
      
-   
 # Linuxplugin
 - [l3plugin](plugins/linuxplugin/l3plugin)
   - route configuration do not return error if required interface is missing. Instead, the 
   route data are internally stored and configured when the interface appears.      
-    
-    
+     
 ## GOVPP
 - delay flag removed from GoVPP plugin    
 
+## Documentation
+- improved in multiple vpp-agent packages
+
 ## Minor fixes/improvements
 - removed deadlinks from README files
-
 
 # Release v1.0.7 (2017-10-30)
 
