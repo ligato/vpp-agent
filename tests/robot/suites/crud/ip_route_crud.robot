@@ -115,6 +115,43 @@ Add VRF Table In Background While Creating Interface Tap
     Then IP Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
     Then IP Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP 192.168.1.1/32
 
+Add VRF Table In Background While Creating Interface VXLAN
+    [Setup]      Test Setup
+    [Teardown]   Test Teardown
+
+    Add Agent VPP Node                 agent_vpp_1
+    Sleep    10
+    # create VXLan interface in default vrf
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=0
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Show IP Fib On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP 192.168.1.2/32
+    # this will transfer interface to newly-in-background-created non default vrf table
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=2
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Show IP Fib On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    IP Fib Table 2 On agent_vpp_1 Should Contain Route With IP 192.168.1.2/32
+    # this will transfer interface to other newly-in-background-created non default vrf table
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=1
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Show IP Fib On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    IP Fib Table 1 On agent_vpp_1 Should Contain Route With IP 192.168.1.2/32
+    # this will transfer interface to existing non default vrf table
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=2
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Show IP Fib On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    IP Fib Table 2 On agent_vpp_1 Should Contain Route With IP 192.168.1.2/32
+    # this will transfer interface to default vrf table
+    vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5    vrf=0
+    Write To Machine    agent_vpp_1_term    show vxlan tunnel
+    Show IP Fib On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP 192.168.1.2/32
+
 *** Keywords ***
 IP Fib On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     Log many    ${node}
