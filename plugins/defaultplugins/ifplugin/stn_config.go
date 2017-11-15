@@ -48,7 +48,6 @@ type StnConfigurator struct {
 	StnUnstoredIndexes  idxvpp.NameToIdxRW
 	StnUnstoredIndexSeq uint32
 	vppChan             *govppapi.Channel
-	swIdxChan           chan ifaceidx.SwIfIdxDto
 
 	cancel    context.CancelFunc
 	Stopwatch *measure.Stopwatch
