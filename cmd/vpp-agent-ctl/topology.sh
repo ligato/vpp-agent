@@ -15,7 +15,7 @@ VNF_NAME="vnf-vpp"
 # This works for my VirtualBox ethernet interface:
 # modprobe igb_uio
 # vpp unix { interactive } dpdk { dev 0000:00:08.0 uio-driver igb_uio }
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/GigabitEthernet0/8/0 - << EOF
+./vpp-agent-ctl -put /vnf-agent/vpp1/vpp/config/v1/interface/GigabitEthernet0/8/0 - << EOF
 {
   "name": "GigabitEthernet0/8/0",
   "type": 1,

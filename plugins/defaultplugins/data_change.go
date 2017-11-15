@@ -373,7 +373,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 }
 
 func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
-	plugin.Log.Debug("stnRuleChange ", diff, " ", changeType, " ", value, " ", prevValue)
+	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.stnConfigurator.Delete(prevValue)
