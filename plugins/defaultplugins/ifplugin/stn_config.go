@@ -54,7 +54,7 @@ type StnConfigurator struct {
 }
 
 // Init initializes ARP configurator
-func (plugin *StnConfigurator) Init(ctx context.Context) (err error) {
+func (plugin *StnConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing StnConfigurator")
 
 	// Init VPP API channel

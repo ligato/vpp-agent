@@ -448,7 +448,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		StnAllIndexSeq:      1,
 		Stopwatch:           stopwatch,
 	}
-	plugin.stnConfigurator.Init(ctx)
+	plugin.stnConfigurator.Init()
 
 	plugin.Log.Debug("stnConfigurator Initialized")
 
