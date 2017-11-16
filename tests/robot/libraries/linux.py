@@ -33,12 +33,25 @@ def Pick_Linux_Interface(ints, name):
 # output - true if interface exist, false if not
 def Check_Linux_Interface_Presence(data, mac):
     present = False
-    if_index = -1
     for iface in data:
         if data[iface]["mac"] == mac:
             present = True
     return present
 
+# input - json output from Parse_Linux_Interfaces
+# output - true if interface exist, false if not
+def Check_Linux_Interface_IP_Presence(data, mac, ip):
+    present_mac = False
+    present_ip = False
+    for iface in data:
+        if data[iface]["mac"] == mac:
+            present_mac = True
+        if data[iface]["ipv4"] == ip:
+            present_ip = True
+    if present_mac == True and present_ip == True:
+        return True
+    else:
+        return False
 
 x='''1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
