@@ -134,11 +134,11 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 
 	if withoutIf {
 		return nil
-	} else {
-		plugin.Log.Debugf("deleting stn rule: %+v", stnRule)
-		// Remove rule
-		return vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
 	}
+	plugin.Log.Debugf("deleting stn rule: %+v", stnRule)
+	// Remove rule
+	return vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
+
 }
 
 // Modify changes the stored rules.
