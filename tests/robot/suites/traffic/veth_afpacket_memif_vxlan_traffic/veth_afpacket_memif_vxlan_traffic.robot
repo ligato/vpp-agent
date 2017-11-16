@@ -16,6 +16,7 @@ ${VARIABLES}=          common
 ${ENV}=                common
 ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
+${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
 
@@ -50,7 +51,8 @@ Setup Interfaces
     vpp_ctl: Put Bridge Domain    node=agent_vpp_2    name=vpp2_bd1    ints=${ints}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_2    name=vpp2_loop1    mac=22:21:21:11:11:11    ip=20.20.1.2
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_2    name=vpp2_tap1    mac=32:22:22:11:11:11    ip=30.30.1.2    host_if_name=linux_vpp2_tap1
- 
+    Sleep    ${SYNC_SLEEP}
+
 Check Linux Interfaces On VPP1
     ${out}=    Execute In Container    agent_vpp_1    ip a
     Log    ${out}
@@ -93,6 +95,12 @@ Check Interfaces On VPP2
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_tap1
     Should Contain    ${out}    ${int}
 
+Check Bridge Domain On VPP1 Is Created
+    vat_term: BD Is Created    agent_vpp_1    vpp1_vxlan1    vpp1_afpacket1
+
+Check Bridge Domain On VPP2 Is Created
+    vat_term: BD Is Created    agent_vpp_2    vpp2_vxlan1    vpp2_afpacket1
+
 Show Interfaces And Other Objects After Config
     vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_2            
@@ -123,8 +131,6 @@ Check Ping From VPP2 to VPP1
 Config Done
     No Operation
 
-Final Sleep After Config For Manual Checking
-    Sleep   ${CONFIG_SLEEP}
 
 Remove VPP Nodes
     Remove All Nodes
@@ -133,6 +139,54 @@ Start VPP1 And VPP2 Again
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Sleep    ${RESYNC_WAIT}
+
+Check Linux Interfaces On VPP1 After Resync
+    ${out}=    Execute In Container    agent_vpp_1    ip a
+    Log    ${out}
+    Should Contain    ${out}    vpp1_veth2@vpp1_veth1
+    Should Contain    ${out}    vpp1_veth1@vpp1_veth2
+    Should Contain    ${out}    linux_vpp1_tap1
+
+Check Interfaces On VPP1 After Resync
+    ${out}=    vpp_term: Show Interfaces    agent_vpp_1
+    Log    ${out}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_memif1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_afpacket1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_vxlan1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_loop1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_tap1
+    Should Contain    ${out}    ${int}
+
+Check Linux Interfaces On VPP2 After Resync
+    ${out}=    Execute In Container    agent_vpp_2    ip a
+    Log    ${out}
+    Should Contain    ${out}    vpp2_veth2@vpp2_veth1
+    Should Contain    ${out}    vpp2_veth1@vpp2_veth2
+    Should Contain    ${out}    linux_vpp2_tap1
+
+Check Interfaces On VPP2 After Resync
+    ${out}=    vpp_term: Show Interfaces    agent_vpp_2
+    Log    ${out}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_memif1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_afpacket1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_vxlan1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_loop1
+    Should Contain    ${out}    ${int}
+    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_tap1
+    Should Contain    ${out}    ${int}
+
+Check Bridge Domain On VPP1 Is Created After Resync
+    vat_term: BD Is Created    agent_vpp_1    vpp1_vxlan1    vpp1_afpacket1
+
+Check Bridge Domain On VPP2 Is Created After Resync
+    vat_term: BD Is Created    agent_vpp_2    vpp2_vxlan1    vpp2_afpacket1
 
 Show Interfaces And Other Objects After Resync
     vpp_term: Show Interfaces    agent_vpp_1
@@ -154,11 +208,11 @@ Show Interfaces And Other Objects After Resync
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
     Execute In Container    agent_vpp_2    ip a
-
-Check Ping After Resync From VPP1 to VPP2
+    Sleep    ${SYNC_SLEEP}
+Check Ping From VPP1 to VPP2 After Resync
     linux: Check Ping    agent_vpp_1    10.10.1.2
 
-Check Ping After Resync From VPP2 to VPP1
+Check Ping From VPP2 to VPP1 After Resync
     linux: Check Ping    agent_vpp_2    10.10.1.1
 
 Resync Done

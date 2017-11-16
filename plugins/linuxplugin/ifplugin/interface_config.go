@@ -111,6 +111,7 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linuxplugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
+	plugin.Log.SetLevel(logging.DebugLevel)
 	plugin.Log.Debug("Initializing LinuxInterfaceConfigurator")
 	plugin.ifIndexes = ifIndexes
 
