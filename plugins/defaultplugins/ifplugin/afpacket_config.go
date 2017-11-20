@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 )
 
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.
@@ -31,6 +32,7 @@ type AFPacketConfigurator struct {
 	logging.Logger
 	Linux     interface{}        //just flag if nil
 	Stopwatch *measure.Stopwatch // from InterfaceConfigurator
+	SwIfIndexes ifaceidx.SwIfIndexRW
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
@@ -108,6 +110,8 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 	config, found := plugin.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
 		err = vppcalls.DeleteAfPacketInterface(afpacket.GetAfpacket(), plugin.vppCh, measure.GetTimeLog(af_packet.AfPacketDelete{}, plugin.Stopwatch))
+		// unregister interface to let other plugins know that it is removed from the vpp
+		plugin.SwIfIndexes.UnregisterName(afpacket.Name)
 	}
 	plugin.removeFromCache(afpacket)
 	return err
