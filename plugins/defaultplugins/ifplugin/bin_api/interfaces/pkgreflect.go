@@ -5,6 +5,20 @@ package interfaces
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"CreateLoopback":                   reflect.TypeOf((*CreateLoopback)(nil)).Elem(),
+	"CreateLoopbackInstance":           reflect.TypeOf((*CreateLoopbackInstance)(nil)).Elem(),
+	"CreateLoopbackInstanceReply":      reflect.TypeOf((*CreateLoopbackInstanceReply)(nil)).Elem(),
+	"CreateLoopbackReply":              reflect.TypeOf((*CreateLoopbackReply)(nil)).Elem(),
+	"CreateSubif":                      reflect.TypeOf((*CreateSubif)(nil)).Elem(),
+	"CreateSubifReply":                 reflect.TypeOf((*CreateSubifReply)(nil)).Elem(),
+	"CreateVlanSubif":                  reflect.TypeOf((*CreateVlanSubif)(nil)).Elem(),
+	"CreateVlanSubifReply":             reflect.TypeOf((*CreateVlanSubifReply)(nil)).Elem(),
+	"DeleteLoopback":                   reflect.TypeOf((*DeleteLoopback)(nil)).Elem(),
+	"DeleteLoopbackReply":              reflect.TypeOf((*DeleteLoopbackReply)(nil)).Elem(),
+	"DeleteSubif":                      reflect.TypeOf((*DeleteSubif)(nil)).Elem(),
+	"DeleteSubifReply":                 reflect.TypeOf((*DeleteSubifReply)(nil)).Elem(),
+	"InterfaceNameRenumber":            reflect.TypeOf((*InterfaceNameRenumber)(nil)).Elem(),
+	"InterfaceNameRenumberReply":       reflect.TypeOf((*InterfaceNameRenumberReply)(nil)).Elem(),
 	"SwInterfaceAddDelAddress":         reflect.TypeOf((*SwInterfaceAddDelAddress)(nil)).Elem(),
 	"SwInterfaceAddDelAddressReply":    reflect.TypeOf((*SwInterfaceAddDelAddressReply)(nil)).Elem(),
 	"SwInterfaceClearStats":            reflect.TypeOf((*SwInterfaceClearStats)(nil)).Elem(),
@@ -40,6 +54,20 @@ var Types = map[string]reflect.Type{
 }
 
 var Functions = map[string]reflect.Value{
+	"NewCreateLoopback":                   reflect.ValueOf(NewCreateLoopback),
+	"NewCreateLoopbackInstance":           reflect.ValueOf(NewCreateLoopbackInstance),
+	"NewCreateLoopbackInstanceReply":      reflect.ValueOf(NewCreateLoopbackInstanceReply),
+	"NewCreateLoopbackReply":              reflect.ValueOf(NewCreateLoopbackReply),
+	"NewCreateSubif":                      reflect.ValueOf(NewCreateSubif),
+	"NewCreateSubifReply":                 reflect.ValueOf(NewCreateSubifReply),
+	"NewCreateVlanSubif":                  reflect.ValueOf(NewCreateVlanSubif),
+	"NewCreateVlanSubifReply":             reflect.ValueOf(NewCreateVlanSubifReply),
+	"NewDeleteLoopback":                   reflect.ValueOf(NewDeleteLoopback),
+	"NewDeleteLoopbackReply":              reflect.ValueOf(NewDeleteLoopbackReply),
+	"NewDeleteSubif":                      reflect.ValueOf(NewDeleteSubif),
+	"NewDeleteSubifReply":                 reflect.ValueOf(NewDeleteSubifReply),
+	"NewInterfaceNameRenumber":            reflect.ValueOf(NewInterfaceNameRenumber),
+	"NewInterfaceNameRenumberReply":       reflect.ValueOf(NewInterfaceNameRenumberReply),
 	"NewSwInterfaceAddDelAddress":         reflect.ValueOf(NewSwInterfaceAddDelAddress),
 	"NewSwInterfaceAddDelAddressReply":    reflect.ValueOf(NewSwInterfaceAddDelAddressReply),
 	"NewSwInterfaceClearStats":            reflect.ValueOf(NewSwInterfaceClearStats),
