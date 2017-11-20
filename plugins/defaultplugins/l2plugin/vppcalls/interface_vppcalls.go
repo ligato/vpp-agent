@@ -168,5 +168,5 @@ func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint
 	if 0 != reply.Retval {
 		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 	}
-	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain.")
+	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Info("Interface set to bridge domain.")
 }
