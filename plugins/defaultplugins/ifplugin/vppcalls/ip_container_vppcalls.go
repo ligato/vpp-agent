@@ -25,6 +25,11 @@ import (
 	"time"
 )
 
+const (
+	addContainerIP uint8 = 1
+	removeContainerIP uint8 = 0
+)
+
 // AddContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=1
 func AddContainerIP(ifIdx uint32, addr *net.IPNet, isIpv6 bool, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// IPContainerProxyAddDelReply time measurement
@@ -35,7 +40,7 @@ func AddContainerIP(ifIdx uint32, addr *net.IPNet, isIpv6 bool, log logging.Logg
 		}
 	}()
 
-	req := prepareMessageForVpp(ifIdx, addr, isIpv6, 1)
+	req := prepareMessageForVpp(ifIdx, addr, isIpv6, addContainerIP)
 	return sendAndLogMessageForVpp(ifIdx, req, "creat", log, vppChan)
 }
 
@@ -49,7 +54,7 @@ func DelContainerIP(ifIdx uint32, addr *net.IPNet, isIpv6 bool, log logging.Logg
 		}
 	}()
 
-	req := prepareMessageForVpp(ifIdx, addr, isIpv6, 0)
+	req := prepareMessageForVpp(ifIdx, addr, isIpv6, removeContainerIP)
 	return sendAndLogMessageForVpp(ifIdx, req, "delet", log, vppChan)
 }
 
