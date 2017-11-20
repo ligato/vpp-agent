@@ -79,7 +79,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 			log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 			continue
 		}
-		log.WithFields(logging.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Debug("Interface set to bridge domain.")
+		log.WithFields(logging.Fields{"Interface": bdInterface.Name, "BD": bridgeDomain.Name}).Info("Interface set to bridge domain.")
 		allBdInterfaces = append(allBdInterfaces, bdInterface.Name)
 		configuredBdInterfaces = append(configuredBdInterfaces, bdInterface.Name)
 	}
