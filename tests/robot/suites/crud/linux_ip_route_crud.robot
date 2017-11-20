@@ -46,48 +46,48 @@ Setup Interfaces
 Create Linux Routes
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pingingveth2    ip=192.168.22.2    prefix=32    next_hop=192.168.22.1
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pingingveth1    ip=192.168.22.1    prefix=32    next_hop=192.168.22.2
-#     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=8.8.8.8    prefix=32    next_hop=192.168.22.1
-#     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
-#
-#     Sleep    10
-#
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=192.168.22.2
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=192.168.22.1
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
-#
-#     # # created routes should not exist in other namespace
-#     # Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=192.168.22.2 - su obsihnute v gateway
-#     # Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=192.168.22.1 - su obsihnute v gateway
-#     # Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=8.8.8.8
-#     # Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9
-#
-# Change Linux Routes Without Deleting Key (Changing Gateway)
-#     # changing of gateway
-#     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=8.8.8.8    prefix=32    next_hop=192.168.22.55
-#     Sleep    10
-#
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8
-#     # testing if there is the new gateway
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=192.168.22.55
-#
-# Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting Key Then Putting It To Other Namespace
-#     vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
-#     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
-#     # we create exactly the same as deleted route
-#     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
-#     Sleep    10
-#
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
-#     # delete again
-#     vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
-#     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
-#     # we try to transfer route to other namespace
-#     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
-#     Sleep    10
-#
-#     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
-#     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=8.8.8.8    prefix=32    next_hop=192.168.22.1
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
+
+    Sleep    10
+
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=192.168.22.2
+    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=192.168.22.1
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8
+    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
+
+    # # created routes should not exist in other namespace
+    # Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=192.168.22.2 - su obsihnute v gateway
+    # Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=192.168.22.1 - su obsihnute v gateway
+    # Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=8.8.8.8
+    # Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9
+
+Change Linux Routes Without Deleting Key (Changing Gateway)
+    # changing of gateway
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=8.8.8.8    prefix=32    next_hop=192.168.22.55
+    Sleep    10
+
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8
+    # testing if there is the new gateway
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=192.168.22.55
+
+Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting Key Then Putting It To Other Namespace
+    vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
+    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
+    # we create exactly the same as deleted route
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
+    Sleep    10
+
+    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
+    # delete again
+    vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
+    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
+    # we try to transfer route to other namespace
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinging9    ip=9.9.9.9    prefix=32    next_hop=192.168.22.2
+    Sleep    10
+
+    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=9.9.9.9
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9
 
 At first create route and after that create inteface in namespace 3
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth3    ip=192.169.22.22    prefix=32    next_hop=192.169.22.3
