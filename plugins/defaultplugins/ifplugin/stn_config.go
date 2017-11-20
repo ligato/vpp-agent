@@ -33,6 +33,7 @@ import (
 	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/prometheus/common/log"
 )
 
 // StnConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -103,7 +104,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 	}
 	if !doVPPCall {
 		plugin.Log.Warnf("There is no interface for rule: %+v. Waiting for interface.", rule.Interface)
-		plugin.storeRuleToIndex(rule, true)
+		plugin.indexSTNRule(rule, true)
 	} else {
 		plugin.Log.Debugf("adding STN rule: %+v", rule)
 		// Create and register new stn
@@ -111,7 +112,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 		if errVppCall != nil {
 			return errVppCall
 		}
-		plugin.storeRuleToIndex(rule, false)
+		plugin.indexSTNRule(rule, false)
 	}
 
 	return nil
@@ -133,15 +134,16 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 	withoutIf, _ := plugin.removeRuleFromIndex(rule.Interface)
 
 	if withoutIf {
+		log.Debug("STN rule was not stored into VPP, removed only from indexes.")
 		return nil
 	}
-	plugin.Log.Debugf("deleting stn rule: %+v", stnRule)
+	plugin.Log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
 	// Remove rule
 	return vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
 
 }
 
-// Modify changes the stored rules.
+// Modify configured rule.
 func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelStn.StnRule) error {
 
 	if ruleOld == nil {
@@ -208,7 +210,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 	return
 }
 
-func (plugin *StnConfigurator) storeRuleToIndex(rule *modelStn.StnRule, withoutIface bool) {
+func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface bool) {
 	idx := stnIdentifier(rule.Interface)
 	if withoutIface {
 		plugin.StnUnstoredIndexes.RegisterName(idx, plugin.StnUnstoredIndexSeq, rule)
@@ -223,6 +225,7 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 	rule = nil
 	withoutIface = false
 
+	//Removing rule from main index
 	_, ruleIface, exists := plugin.StnAllIndexes.LookupIdx(idx)
 	if exists {
 		plugin.StnAllIndexes.UnregisterName(idx)
@@ -232,6 +235,7 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 		}
 	}
 
+	//Removing rule from not stored rules index
 	_, _, existsWithout := plugin.StnUnstoredIndexes.LookupIdx(idx)
 	if existsWithout {
 		withoutIface = true
