@@ -434,3 +434,31 @@ vpp_ctl: Delete ACL
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
+
+vpp_ctl: Put Veth Interface Via Linux Plugin
+    [Arguments]    ${node}    ${namespace}    ${name}    ${host_if_name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${namespace}    ${name}    ${host_if_name}    ${mac}    ${peer}    ${ip}    ${prefix}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_veth_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Linux Route
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
+    Log Many    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${prefix}    ${next_hop}    ${metric}    ${isdefault}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Linux Route
+    [Arguments]    ${node}    ${routename}
+    Log Many    ${node}    ${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
