@@ -231,8 +231,10 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// register name to idx mapping
-	plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
+	// register name to idx mapping if it is not an af_packet interface type (it is registered in ConfigureAfPacketInterface if needed)
+	if iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
+		plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
+	}
 	plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
 
 	// set interface up if enabled

@@ -77,6 +77,8 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 		return 0, true, err
 	}
 	plugin.addToCache(afpacket, false)
+	// If the interface is not in pending state, register it
+	plugin.SwIfIndexes.RegisterName(afpacket.Name, swIdx, afpacket)
 	return swIdx, false, nil
 }
 
