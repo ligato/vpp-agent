@@ -1,7 +1,7 @@
-# Release v1.0.8 (2017-11-16)
+# Release v1.0.8 (2017-11-21)
 
 ## Compatibility
-VPP version v18.01-rc0-241-g4c9f2a8
+VPP version v18.01-rc0-309-g70bfcaf
 
 ## Major Themes
 
