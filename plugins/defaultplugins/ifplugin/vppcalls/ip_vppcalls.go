@@ -137,7 +137,7 @@ func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, log logging.Logger, vppC
 	req.UnnumberedSwIfIndex = uIfIdx
 	req.IsAdd = 1
 
-	log.Debug("set interface %v as un-numbered, with IP address from interface %v", uIfIdx, ifIdxWithIP)
+	log.Debugf("set interface %v as un-numbered, with IP address from interface %v", uIfIdx, ifIdxWithIP)
 
 	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
