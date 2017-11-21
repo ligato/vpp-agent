@@ -14,6 +14,8 @@
 
 package errors
 
+//SwIndexNotFound is specific error type used to differentiate state when software index associated with name
+// wasn't found in register
 type SwIndexNotFound struct {
 	error
 	OriginalError error

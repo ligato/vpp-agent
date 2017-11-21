@@ -53,7 +53,6 @@ type RouteConfigurator struct {
 
 // Init members (channels...) and start go routines.
 func (plugin *RouteConfigurator) Init() (err error) {
-	plugin.Log.SetLevel(logging.DebugLevel)
 	plugin.Log.Debug("Initializing L3 plugin")
 
 
@@ -116,10 +115,10 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	if err != nil {
 		_, castOK := err.(errors.SwIndexNotFound)
 		if castOK {
-			routeId := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
-			oldIdx, cachedMetadata, idxExists := plugin.RouteCachedIndex.LookupIdx(routeId)
+			routeID := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
+			oldIdx, cachedMetadata, idxExists := plugin.RouteCachedIndex.LookupIdx(routeID)
 			if idxExists {
-				plugin.RouteCachedIndex.RegisterName(routeId, oldIdx, newConfig)
+				plugin.RouteCachedIndex.RegisterName(routeID, oldIdx, newConfig)
 				plugin.Log.WithFields(logging.Fields{"cached data":cachedMetadata, "old config data":oldConfig,
 					"new config data":newConfig}).Debug("Modification of cached route - equal old data")
 			} else {
@@ -127,9 +126,8 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 				//should be in RouteCachedIndex
 			}
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 
 	// Validate old cachedRoute data Vrf.
@@ -181,14 +179,6 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	// Transform route data.
 	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
 	if err != nil {
-		switch t := err.(type) {
-		case errors.SwIndexNotFound:
-			plugin.RouteCachedIndex.UnregisterName(config.OutgoingInterface)
-			plugin.Log.Debugf("Route %v unregistered from cache", routeIdentifier)
-		default:
-			_ = t
-		}
-		return err
 		return err
 	}
 	if route == nil {
@@ -250,12 +240,15 @@ func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
 }
 
-// Used for associating route with route name in func return value
+// StaticRoutesRouteAndIdx is used for associating route with route name in func return value
+// It is used as container to return more values
 type StaticRoutesRouteAndIdx struct {
 	route   *l3.StaticRoutes_Route
-	routeId string
+	routeID string
 }
 
+//ResolveCreatedInterface is responsible for reconfiguring cached routes and then from removing
+//them from route cache
 func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
 	routesWithIndex := plugin.findCachedRoutesByOutgoingInterface(ifName)
 	for _, routeWithIndex := range routesWithIndex {
@@ -268,7 +261,7 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 				"destination ip":           route.DstIpAddr}).
 			Debug("Resolving cached route - outgoing interface now exists.")
 		plugin.ConfigureRoute(route, strconv.FormatUint(uint64(route.VrfId), 10))
-		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.routeId)
+		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.routeID)
 	}
 }
 
