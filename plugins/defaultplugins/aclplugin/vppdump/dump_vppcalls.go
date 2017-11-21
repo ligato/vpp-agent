@@ -67,7 +67,7 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	return alAcls, nil
 }
 
-// DumpIPAcl test function
+// DumpIPAcl get all configured ACLs
 func DumpIPAcl(log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*acl.AccessLists_Acl, error) {
 	// ACLDump time measurement
 	start := time.Now()
