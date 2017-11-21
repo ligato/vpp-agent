@@ -19,7 +19,7 @@ RUN git clone https://gerrit.fd.io/r/vpp
 
 WORKDIR vpp
 RUN git checkout $VPP_COMMIT
-RUN git apply ../travis.patch
+RUN git apply -C1 ../travis.patch
 
 RUN (yes | make install-dep) && make bootstrap
 RUN make pkg-deb

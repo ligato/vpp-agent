@@ -20,7 +20,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API.
@@ -33,8 +33,8 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEn
 		}
 	}()
 
-	req := &vpe.CreateLoopback{}
-	reply := &vpe.CreateLoopbackReply{}
+	req := &interfaces.CreateLoopback{}
+	reply := &interfaces.CreateLoopbackReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
 
 	if err != nil {
@@ -59,10 +59,10 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog meas
 	}()
 
 	// Prepare the message.
-	req := &vpe.DeleteLoopback{}
+	req := &interfaces.DeleteLoopback{}
 	req.SwIfIndex = idx
 
-	reply := &vpe.DeleteLoopbackReply{}
+	reply := &interfaces.DeleteLoopbackReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
