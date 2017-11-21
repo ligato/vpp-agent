@@ -42,14 +42,14 @@ const (
 	VxLanVni         = "vni"
 )
 
-// WriteInterfaceToDb validates and writes interface to the ETCD
+// WriteInterfaceToDb validates and writes interface to the etcd.
 func WriteInterfaceToDb(db keyval.ProtoBroker, key string, ifc *interfaces.Interfaces_Interface) {
 	validateInterface(ifc)
 	db.Put(key, ifc)
 }
 
-// GetInterfaceKeyAndValue returns true if an interface with the specified name was found together with the interface key,
-// data and data broker
+// GetInterfaceKeyAndValue returns true if an interface with the specified name
+// was found together with the interface key, and data, and data broker.
 func GetInterfaceKeyAndValue(endpoints []string, label string, ifName string) (bool, string, *interfaces.Interfaces_Interface, keyval.ProtoBroker) {
 	validateIfIdentifiers(label, ifName)
 	db, err := GetDbForOneAgent(endpoints, label)
@@ -68,7 +68,7 @@ func GetInterfaceKeyAndValue(endpoints []string, label string, ifName string) (b
 	return found, key, ifc, db
 }
 
-// IsFlagPresent verifies flag presence in the OS args
+// IsFlagPresent verifies flag presence in the OS args.
 func IsFlagPresent(flag string) bool {
 	arg := "--" + flag
 	for _, b := range os.Args {
@@ -79,7 +79,7 @@ func IsFlagPresent(flag string) bool {
 	return false
 }
 
-// UpdateIpv4Address updates interface's IPv4 address
+// UpdateIpv4Address updates interface's IPv4 address.
 func UpdateIpv4Address(old []string, updates []string) []string {
 Loop:
 	for i := range updates {
@@ -96,7 +96,7 @@ Loop:
 	return old
 }
 
-// UpdateIpv6Address updates interface's IPv6 address
+// UpdateIpv6Address updates interface's IPv6 address.
 func UpdateIpv6Address(old []string, updates []string) []string {
 Loop:
 	for i := range updates {
@@ -114,7 +114,7 @@ Loop:
 	return old
 }
 
-// ValidatePhyAddr validates string representation of MAC address
+// ValidatePhyAddr validates string representation of MAC address.
 func ValidatePhyAddr(pAddr string) {
 	match, err := regexp.MatchString("^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$", pAddr)
 	if err != nil {
@@ -125,7 +125,7 @@ func ValidatePhyAddr(pAddr string) {
 	}
 }
 
-// ValidateIpv4Addr validates string representation of IPv4 address
+// ValidateIpv4Addr validates string representation of IPv4 address.
 func ValidateIpv4Addr(ipv4Addr string) bool {
 	match, err := regexp.MatchString("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$", ipv4Addr)
 	if err != nil {
@@ -134,7 +134,7 @@ func ValidateIpv4Addr(ipv4Addr string) bool {
 	return match
 }
 
-// ValidateIpv6Addr validates string representation of IPv6 address
+// ValidateIpv6Addr validates string representation of IPv6 address.
 func ValidateIpv6Addr(ipv6Addr string) bool {
 	match, err := regexp.MatchString("^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*$", ipv6Addr)
 	if err != nil {

@@ -22,8 +22,8 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 )
 
-// SwIfIndex provides read-only access to mapping between software interface indexes (used internally in VPP)
-// and interface names.
+// SwIfIndex provides read-only access to mapping between software interface indices
+// (used internally in VPP) and interface names.
 type SwIfIndex interface {
 	// GetMapping returns internal read-only mapping with metadata of type interface{}.
 	GetMapping() idxvpp.NameToIdxRW
@@ -34,33 +34,33 @@ type SwIfIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *intf.Interfaces_Interface, exists bool)
 
-	// LookupNameByIP returns name of items that contains given IP address in metadata
+	// LookupNameByIP returns name of items, that contains given IP address in metadata.
 	LookupNameByIP(ip string) []string
 
-	// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping
+	// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan SwIfIdxDto)
 }
 
-// SwIfIndexRW is mapping between software interface indexes (used internally in VPP)
-// and interface names.
+// SwIfIndexRW is mapping between software interface indices
+// (used internally in VPP) and interface names.
 type SwIfIndexRW interface {
 	SwIfIndex
 
-	// RegisterName adds new item into name-to-index mapping.
+	// RegisterName adds a new item into name-to-index mapping.
 	RegisterName(name string, idx uint32, ifMeta *intf.Interfaces_Interface)
 
-	// UnregisterName removes an item identified by name from mapping
+	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *intf.Interfaces_Interface, exists bool)
 }
 
 // swIfIndex is type-safe implementation of mapping between Software interface index
-// and interface name. It holds as well metadata of type *InterfaceMeta.
+// and interface name. It holds metadata of type *InterfaceMeta as well.
 type swIfIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
 
 // SwIfIdxDto represents an item sent through watch channel in swIfIndex.
-// In contrast to NameToIdxDto it contains typed metadata.
+// In contrast to NameToIdxDto, it contains typed metadata.
 type SwIfIdxDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *intf.Interfaces_Interface
@@ -85,7 +85,7 @@ func (swi *swIfIndex) RegisterName(name string, idx uint32, ifMeta *intf.Interfa
 	swi.mapping.RegisterName(name, idx, ifMeta)
 }
 
-// IndexMetadata creates indexes for metadata. Index for IPAddress will be created
+// IndexMetadata creates indexes for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
 	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 
@@ -102,7 +102,7 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 	return indexes
 }
 
-// UnregisterName removes an item identified by name from mapping
+// UnregisterName removes an item identified by name from mapping.
 func (swi *swIfIndex) UnregisterName(name string) (idx uint32, metadata *intf.Interfaces_Interface, exists bool) {
 	idx, meta, exists := swi.mapping.UnregisterName(name)
 	return idx, swi.castMetadata(meta), exists
@@ -126,7 +126,7 @@ func (swi *swIfIndex) LookupName(idx uint32) (name string, metadata *intf.Interf
 	return name, metadata, exists
 }
 
-// LookupNameByIP returns names of items that contains given IP address in metadata
+// LookupNameByIP returns names of items that contain given IP address in metadata.
 func (swi *swIfIndex) LookupNameByIP(ip string) []string {
 	return swi.mapping.LookupNameByMetadata(ipAddressIndexKey, ip)
 }
@@ -139,7 +139,7 @@ func (swi *swIfIndex) castMetadata(meta interface{}) *intf.Interfaces_Interface 
 	return nil
 }
 
-// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping
+// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
 func (swi *swIfIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan SwIfIdxDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	swi.mapping.Watch(subscriber, nametoidx.ToChan(ch))

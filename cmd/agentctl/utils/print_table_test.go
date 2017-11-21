@@ -24,7 +24,7 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// Test01TableWithoutData tests basic output without any data (no data message)
+// Test01TableWithoutData tests basic output without any data (no data message).
 func Test01TableWithoutData(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	table := goterm.NewTable(0, 0, 0, ' ', 0)
@@ -35,7 +35,7 @@ func Test01TableWithoutData(t *testing.T) {
 	gomega.Expect(table.String()).To(gomega.BeEquivalentTo(utils.NoData))
 }
 
-// Test02TableIncorrectFilter tests filtering which is not permitted
+// Test02TableIncorrectFilter tests filtering which is not permitted.
 func Test02TableIncorrectFilter(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	table := goterm.NewTable(0, 0, 0, ' ', 0)
@@ -45,8 +45,8 @@ func Test02TableIncorrectFilter(t *testing.T) {
 	gomega.Expect(err).ToNot(gomega.BeNil())
 }
 
-// Test03TableHeaderData tests that default output contains all required headers and does not contain ones that should
-// be missing
+// Test03TableHeaderData tests that the default output contains all required headers
+// and does not contain those that should be missing.
 func Test03TableHeaderData(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -55,14 +55,14 @@ func Test03TableHeaderData(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, nil, false, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Test flags which should be part of the output
+	// Test flags which should be a part of the output.
 	then.ContainsItems(table.String(), utils.InPkt, utils.InBytes, utils.InErrPkt, utils.OutPkt, utils.OutBytes,
 		utils.OutErrPkt, utils.Drop, utils.Punt)
-	// Test flags which should NOT be part of the output
+	// Test flags which should NOT be a part of the output.
 	then.DoesNotContainItems(table.String(), utils.InNoBuf, utils.Ipv4Pkt, utils.Ipv6Pkt)
 }
 
-// Test04TableVppData verifies that the table output contains all agent labels
+// Test04TableVppData verifies that the table output contains all agent labels.
 func Test04TableVppData(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -75,7 +75,7 @@ func Test04TableVppData(t *testing.T) {
 	then.ContainsItems(table.String(), "vpp-1", "vpp-2", "vpp-3")
 }
 
-// Test05TableInterfaceData verifies that the table output contains all interfaces
+// Test05TableInterfaceData verifies that the table output contains all interfaces.
 func Test05TableInterfaceData(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -89,8 +89,8 @@ func Test05TableInterfaceData(t *testing.T) {
 		"vpp-2-interface-2", "vpp-2-interface-3", "vpp-3-interface-1", "vpp-3-interface-2", "vpp-3-interface-3")
 }
 
-// Test06TableShortFormat tests that 'short' output contains all required headers and does not contain ones that should
-// be missing
+// Test06TableShortFormat tests that 'short' output contains all required
+// headers and does not contain those that should be missing.
 func Test06TableShortFormat(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -99,13 +99,13 @@ func Test06TableShortFormat(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, nil, true, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Short format contains only InPackets, OutPackets and Drop
+	// Short format contains only InPackets, and OutPackets, and Drop.
 	then.ContainsItems(table.String(), utils.InPkt, utils.OutPkt, utils.Drop)
 	then.DoesNotContainItems(table.String(), utils.InBytes, utils.InErrPkt, utils.InNoBuf, utils.OutBytes,
 		utils.OutErrPkt, utils.Ipv4Pkt, utils.Ipv6Pkt, utils.Punt)
 }
 
-// Test07TableSingleVppFilterFormat tests correct vpp filtering
+// Test07TableSingleVppFilterFormat tests correct vpp filtering.
 func Test07TableSingleVppFilterFormat(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -115,12 +115,12 @@ func Test07TableSingleVppFilterFormat(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, filter, false, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Verify that only the filtered VPP is present in the table
+	// Verify that only filtered VPP is present in the table.
 	then.ContainsItems(table.String(), "vpp-1")
 	then.DoesNotContainItems(table.String(), "vpp-2", "vpp-3")
 }
 
-// Test08TableMultipleVppFilterFormat tests correct vpp filtering (multiple values)
+// Test08TableMultipleVppFilterFormat tests correct vpp filtering (multiple values).
 func Test08TableMultipleVppFilterFormat(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -130,12 +130,12 @@ func Test08TableMultipleVppFilterFormat(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, filter, false, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Verify that only the filtered VPPs are present in the table
+	// Verify that only filtered VPPs are present in the table.
 	then.ContainsItems(table.String(), "vpp-1", "vpp-2")
 	then.DoesNotContainItems(table.String(), "vpp-3")
 }
 
-// Test09TableSingleInterfaceFilterFormat tests correct interface filtering
+// Test09TableSingleInterfaceFilterFormat tests correct interface filtering.
 func Test09TableSingleInterfaceFilterFormat(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -145,12 +145,12 @@ func Test09TableSingleInterfaceFilterFormat(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, filter, false, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Verify that only the filtered interface in particular VPP is present in the table
+	// Verify that only filtered interface in particular VPP is present in the table.
 	then.ContainsItems(table.String(), "vpp-1", "vpp-1-interface-2")
 	then.DoesNotContainItems(table.String(), "vpp-2", "vpp-3", "vpp-1-interface-1", "vpp-1-interface-3")
 }
 
-// Test10TableMultipleInterfacesFilterFormat tests correct vpp filtering (multiple values)
+// Test10TableMultipleInterfacesFilterFormat tests correct vpp filtering (multiple values).
 func Test10TableMultipleInterfacesFilterFormat(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -160,12 +160,12 @@ func Test10TableMultipleInterfacesFilterFormat(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, filter, false, false)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Verify that only the filtered interfaces in particular VPP are present in the table
+	// Verify that only filtered interfaces in particular VPP are present in the table.
 	then.ContainsItems(table.String(), "vpp-1", "vpp-1-interface-2", "vpp-1-interface-3")
 	then.DoesNotContainItems(table.String(), "vpp-2", "vpp-3", "vpp-1-interface-1")
 }
 
-// Test11TableActiveFlag test correct functionality of 'active' flag
+// Test11TableActiveFlag tests correct functionality of 'active' flag.
 func Test11TableActiveFlag(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -174,14 +174,14 @@ func Test11TableActiveFlag(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, nil, false, true)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Active flag - only non-zero columns and rows should be in the table
+	// Active flag - only non-zero columns and rows should be in the table.
 	then.ContainsItems(table.String(), utils.InPkt, utils.InMissPkt, utils.OutPkt)
 	then.DoesNotContainItems(table.String(), utils.InBytes, utils.InErrPkt, utils.InNoBuf, utils.OutBytes,
 		utils.OutErrPkt, utils.Drop, utils.Ipv4Pkt, utils.Ipv6Pkt, utils.Punt)
 	then.DoesNotContainItems(table.String(), "vpp-1-interface-2", "vpp-2-interface-2", "vpp-3-interface-2")
 }
 
-// Test12TableActiveShortFlag  test correct functionality of 'active' and 'short' flags together
+// Test12TableActiveShortFlag tests correct functionality of 'active' and 'short' flags together.
 func Test12TableActiveShortFlag(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -190,14 +190,15 @@ func Test12TableActiveShortFlag(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, nil, true, true)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Active + short flags
+	// Active and short flags
 	then.ContainsItems(table.String(), utils.InPkt, utils.OutPkt)
 	then.DoesNotContainItems(table.String(), utils.InBytes, utils.InErrPkt, utils.InMissPkt, utils.InNoBuf, utils.OutBytes,
 		utils.OutErrPkt, utils.Drop, utils.Ipv4Pkt, utils.Ipv6Pkt, utils.Punt)
 	then.DoesNotContainItems(table.String(), "vpp-1-interface-2", "vpp-2-interface-2", "vpp-3-interface-2")
 }
 
-// Test13TableActiveShortFlagWithFilter test correct functionality of 'active' and 'short' flags together + filtering
+// Test13TableActiveShortFlagWithFilter tests correct functionality of 'active'
+// and 'short' flags together and filtering.
 func Test13TableActiveShortFlagWithFilter(t *testing.T) {
 	etcdDump := utils.NewEtcdDump()
 	etcdDump = data.TableData()
@@ -207,7 +208,7 @@ func Test13TableActiveShortFlagWithFilter(t *testing.T) {
 	table, err := etcdDump.PrintDataAsTable(table, filter, true, true)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(table).ToNot(gomega.BeNil())
-	// Active + short + filter vpp and interface
+	// Active and short and filter vpp and interface
 	then.ContainsItems(table.String(), utils.InPkt, utils.OutPkt)
 	then.DoesNotContainItems(table.String(), utils.InBytes, utils.InErrPkt, utils.InMissPkt, utils.InNoBuf, utils.OutBytes,
 		utils.OutErrPkt, utils.Drop, utils.Ipv4Pkt, utils.Ipv6Pkt, utils.Punt)

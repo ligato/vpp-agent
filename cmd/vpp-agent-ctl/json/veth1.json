@@ -5,7 +5,7 @@
         "192.168.22.1/24",
         "2001:db8:0:0:0:ff00:89e3:bb42/48"
     ],
-    "linux_namespace": {
+    "namespace": {
         "name": "ns1",
         "type": 2
     },

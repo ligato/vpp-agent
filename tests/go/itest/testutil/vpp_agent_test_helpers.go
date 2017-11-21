@@ -1,6 +1,9 @@
 package testutil
 
 import (
+	"testing"
+	"time"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/core"
 	localsync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -14,24 +17,24 @@ import (
 	"time"
 )
 
-// VppAgentT is simmilar to what testing.T is in golang packages.
+// VppAgentT is similar to testing.T in golang packages.
 type VppAgentT struct {
 	*testing.T
 	agent *core.Agent
 }
 
-// Given is composition of multiple test step methods (see BDD Given keyword)
+// Given is a composition of multiple test step methods (see BDD Given keyword).
 type Given struct {
 }
 
-// When is composition of multiple test step methods (see BDD When keyword)
+// When is a composition of multiple test step methods (see BDD When keyword).
 type When struct {
 	iftst.WhenIface
 	//when_l2.WhenL2
 	//when_l3.WhenL3
 }
 
-// Then is composition of multiple test step methods (see BDD Then keyword)
+// Then is a composition of multiple test step methods (see BDD Then keyword).
 type Then struct {
 	iftst.ThenIface
 	//then_l2.ThenL2
@@ -46,7 +49,7 @@ type VppOnlyTestingFlavor struct {
 	injected bool
 }
 
-// Inject sets object references
+// Inject sets object references.
 func (f *VppOnlyTestingFlavor) Inject() bool {
 	if f.injected {
 		return true
@@ -70,13 +73,13 @@ func (f *VppOnlyTestingFlavor) Inject() bool {
 	return false
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins
+// Plugins combines Generic Plugins and Standard VPP Plugins.
 func (f *VppOnlyTestingFlavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
 }
 
-// SetupDefault setups default behaviour of mocks and delegates to Setup(Flavor)
+// SetupDefault setups default behaviour of mocks and delegates to Setup(Flavor).
 func (t *VppAgentT) SetupDefault() (flavor *VppOnlyTestingFlavor) {
 	flavor = &VppOnlyTestingFlavor{
 		GoVPP: *VppMock(iftst.RepliesSuccess /*, given_l3.RepliesSuccess*/),
@@ -87,7 +90,7 @@ func (t *VppAgentT) SetupDefault() (flavor *VppOnlyTestingFlavor) {
 	return flavor
 }
 
-// Setup registers gomega and starts the agent with the flavor argument
+// Setup registers gomega and starts the agent with the flavor argument.
 func (t *VppAgentT) Setup(flavor core.Flavor) {
 	gomega.RegisterTestingT(t.T)
 
@@ -98,7 +101,7 @@ func (t *VppAgentT) Setup(flavor core.Flavor) {
 	}
 }
 
-// Teardown stops the agent
+// Teardown stops the agent.
 func (t *VppAgentT) Teardown() {
 	if t.agent != nil {
 		err := t.agent.Stop()
@@ -108,7 +111,7 @@ func (t *VppAgentT) Teardown() {
 	}
 }
 
-// VppMock allows to flavors the Vpp Mock
+// VppMock allows to mock go VPP plugin in a flavor.
 func VppMock(vppMockSetups ...func(adapter *mock.VppAdapter)) *govppmux.GOVPPPlugin {
 	vppMock := &mock.VppAdapter{}
 	for _, vppMockSetup := range vppMockSetups {

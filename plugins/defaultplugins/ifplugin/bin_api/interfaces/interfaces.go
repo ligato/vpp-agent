@@ -6,7 +6,7 @@ package interfaces
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xbebe2e3d
+const VlAPIVersion = 0x2a74f256
 
 // VlibCounter represents the VPP binary API data type 'vlib_counter'.
 // Generated from '/usr/share/vpp/api/interface.api.json', line 3:
@@ -233,7 +233,7 @@ func (*SwInterfaceEvent) GetMessageName() string {
 	return "sw_interface_event"
 }
 func (*SwInterfaceEvent) GetMessageType() api.MessageType {
-	return api.ReplyMessage // TODO: govpp needs to be fixed to guess the type of this message correctly
+	return api.EventMessage
 }
 func (*SwInterfaceEvent) GetCrcString() string {
 	return "bf7f46f2"
@@ -993,7 +993,7 @@ func NewSwInterfaceSetRxMode() api.Message {
 //            ["u32", "context"],
 //            ["i32", "retval"],
 //            {"crc" : "0x5fc3e318"}
-//        ]
+//        ],
 //
 type SwInterfaceSetRxModeReply struct {
 	Retval int32
@@ -1010,4 +1010,427 @@ func (*SwInterfaceSetRxModeReply) GetCrcString() string {
 }
 func NewSwInterfaceSetRxModeReply() api.Message {
 	return &SwInterfaceSetRxModeReply{}
+}
+
+// InterfaceNameRenumber represents the VPP binary API message 'interface_name_renumber'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 277:
+//
+//        ["interface_name_renumber",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u32", "new_show_dev_instance"],
+//            {"crc" : "0x11b7bcec"}
+//        ],
+//
+type InterfaceNameRenumber struct {
+	SwIfIndex          uint32
+	NewShowDevInstance uint32
+}
+
+func (*InterfaceNameRenumber) GetMessageName() string {
+	return "interface_name_renumber"
+}
+func (*InterfaceNameRenumber) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*InterfaceNameRenumber) GetCrcString() string {
+	return "11b7bcec"
+}
+func NewInterfaceNameRenumber() api.Message {
+	return &InterfaceNameRenumber{}
+}
+
+// InterfaceNameRenumberReply represents the VPP binary API message 'interface_name_renumber_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 285:
+//
+//        ["interface_name_renumber_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x31594963"}
+//        ],
+//
+type InterfaceNameRenumberReply struct {
+	Retval int32
+}
+
+func (*InterfaceNameRenumberReply) GetMessageName() string {
+	return "interface_name_renumber_reply"
+}
+func (*InterfaceNameRenumberReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*InterfaceNameRenumberReply) GetCrcString() string {
+	return "31594963"
+}
+func NewInterfaceNameRenumberReply() api.Message {
+	return &InterfaceNameRenumberReply{}
+}
+
+// CreateSubif represents the VPP binary API message 'create_subif'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 291:
+//
+//        ["create_subif",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u32", "sub_id"],
+//            ["u8", "no_tags"],
+//            ["u8", "one_tag"],
+//            ["u8", "two_tags"],
+//            ["u8", "dot1ad"],
+//            ["u8", "exact_match"],
+//            ["u8", "default_sub"],
+//            ["u8", "outer_vlan_id_any"],
+//            ["u8", "inner_vlan_id_any"],
+//            ["u16", "outer_vlan_id"],
+//            ["u16", "inner_vlan_id"],
+//            {"crc" : "0x150e6757"}
+//        ],
+//
+type CreateSubif struct {
+	SwIfIndex      uint32
+	SubID          uint32
+	NoTags         uint8
+	OneTag         uint8
+	TwoTags        uint8
+	Dot1ad         uint8
+	ExactMatch     uint8
+	DefaultSub     uint8
+	OuterVlanIDAny uint8
+	InnerVlanIDAny uint8
+	OuterVlanID    uint16
+	InnerVlanID    uint16
+}
+
+func (*CreateSubif) GetMessageName() string {
+	return "create_subif"
+}
+func (*CreateSubif) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*CreateSubif) GetCrcString() string {
+	return "150e6757"
+}
+func NewCreateSubif() api.Message {
+	return &CreateSubif{}
+}
+
+// CreateSubifReply represents the VPP binary API message 'create_subif_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 309:
+//
+//        ["create_subif_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0x92272bcb"}
+//        ],
+//
+type CreateSubifReply struct {
+	Retval    int32
+	SwIfIndex uint32
+}
+
+func (*CreateSubifReply) GetMessageName() string {
+	return "create_subif_reply"
+}
+func (*CreateSubifReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*CreateSubifReply) GetCrcString() string {
+	return "92272bcb"
+}
+func NewCreateSubifReply() api.Message {
+	return &CreateSubifReply{}
+}
+
+// CreateVlanSubif represents the VPP binary API message 'create_vlan_subif'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 316:
+//
+//        ["create_vlan_subif",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            ["u32", "vlan_id"],
+//            {"crc" : "0xaf9ae1e9"}
+//        ],
+//
+type CreateVlanSubif struct {
+	SwIfIndex uint32
+	VlanID    uint32
+}
+
+func (*CreateVlanSubif) GetMessageName() string {
+	return "create_vlan_subif"
+}
+func (*CreateVlanSubif) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*CreateVlanSubif) GetCrcString() string {
+	return "af9ae1e9"
+}
+func NewCreateVlanSubif() api.Message {
+	return &CreateVlanSubif{}
+}
+
+// CreateVlanSubifReply represents the VPP binary API message 'create_vlan_subif_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 324:
+//
+//        ["create_vlan_subif_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0x8f36b888"}
+//        ],
+//
+type CreateVlanSubifReply struct {
+	Retval    int32
+	SwIfIndex uint32
+}
+
+func (*CreateVlanSubifReply) GetMessageName() string {
+	return "create_vlan_subif_reply"
+}
+func (*CreateVlanSubifReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*CreateVlanSubifReply) GetCrcString() string {
+	return "8f36b888"
+}
+func NewCreateVlanSubifReply() api.Message {
+	return &CreateVlanSubifReply{}
+}
+
+// DeleteSubif represents the VPP binary API message 'delete_subif'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 331:
+//
+//        ["delete_subif",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0x6038f848"}
+//        ],
+//
+type DeleteSubif struct {
+	SwIfIndex uint32
+}
+
+func (*DeleteSubif) GetMessageName() string {
+	return "delete_subif"
+}
+func (*DeleteSubif) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*DeleteSubif) GetCrcString() string {
+	return "6038f848"
+}
+func NewDeleteSubif() api.Message {
+	return &DeleteSubif{}
+}
+
+// DeleteSubifReply represents the VPP binary API message 'delete_subif_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 338:
+//
+//        ["delete_subif_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x9d6015dc"}
+//        ],
+//
+type DeleteSubifReply struct {
+	Retval int32
+}
+
+func (*DeleteSubifReply) GetMessageName() string {
+	return "delete_subif_reply"
+}
+func (*DeleteSubifReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*DeleteSubifReply) GetCrcString() string {
+	return "9d6015dc"
+}
+func NewDeleteSubifReply() api.Message {
+	return &DeleteSubifReply{}
+}
+
+// CreateLoopback represents the VPP binary API message 'create_loopback'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 344:
+//
+//        ["create_loopback",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u8", "mac_address", 6],
+//            {"crc" : "0xb2602de5"}
+//        ],
+//
+type CreateLoopback struct {
+	MacAddress []byte `struc:"[6]byte"`
+}
+
+func (*CreateLoopback) GetMessageName() string {
+	return "create_loopback"
+}
+func (*CreateLoopback) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*CreateLoopback) GetCrcString() string {
+	return "b2602de5"
+}
+func NewCreateLoopback() api.Message {
+	return &CreateLoopback{}
+}
+
+// CreateLoopbackReply represents the VPP binary API message 'create_loopback_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 351:
+//
+//        ["create_loopback_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0x9520f804"}
+//        ],
+//
+type CreateLoopbackReply struct {
+	Retval    int32
+	SwIfIndex uint32
+}
+
+func (*CreateLoopbackReply) GetMessageName() string {
+	return "create_loopback_reply"
+}
+func (*CreateLoopbackReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*CreateLoopbackReply) GetCrcString() string {
+	return "9520f804"
+}
+func NewCreateLoopbackReply() api.Message {
+	return &CreateLoopbackReply{}
+}
+
+// CreateLoopbackInstance represents the VPP binary API message 'create_loopback_instance'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 358:
+//
+//        ["create_loopback_instance",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u8", "mac_address", 6],
+//            ["u8", "is_specified"],
+//            ["u32", "user_instance"],
+//            {"crc" : "0x967694f1"}
+//        ],
+//
+type CreateLoopbackInstance struct {
+	MacAddress   []byte `struc:"[6]byte"`
+	IsSpecified  uint8
+	UserInstance uint32
+}
+
+func (*CreateLoopbackInstance) GetMessageName() string {
+	return "create_loopback_instance"
+}
+func (*CreateLoopbackInstance) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*CreateLoopbackInstance) GetCrcString() string {
+	return "967694f1"
+}
+func NewCreateLoopbackInstance() api.Message {
+	return &CreateLoopbackInstance{}
+}
+
+// CreateLoopbackInstanceReply represents the VPP binary API message 'create_loopback_instance_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 367:
+//
+//        ["create_loopback_instance_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0xd52c63b6"}
+//        ],
+//
+type CreateLoopbackInstanceReply struct {
+	Retval    int32
+	SwIfIndex uint32
+}
+
+func (*CreateLoopbackInstanceReply) GetMessageName() string {
+	return "create_loopback_instance_reply"
+}
+func (*CreateLoopbackInstanceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*CreateLoopbackInstanceReply) GetCrcString() string {
+	return "d52c63b6"
+}
+func NewCreateLoopbackInstanceReply() api.Message {
+	return &CreateLoopbackInstanceReply{}
+}
+
+// DeleteLoopback represents the VPP binary API message 'delete_loopback'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 374:
+//
+//        ["delete_loopback",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "sw_if_index"],
+//            {"crc" : "0xded428b0"}
+//        ],
+//
+type DeleteLoopback struct {
+	SwIfIndex uint32
+}
+
+func (*DeleteLoopback) GetMessageName() string {
+	return "delete_loopback"
+}
+func (*DeleteLoopback) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*DeleteLoopback) GetCrcString() string {
+	return "ded428b0"
+}
+func NewDeleteLoopback() api.Message {
+	return &DeleteLoopback{}
+}
+
+// DeleteLoopbackReply represents the VPP binary API message 'delete_loopback_reply'.
+// Generated from '/usr/share/vpp/api/interface.api.json', line 381:
+//
+//        ["delete_loopback_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0xc91dafa5"}
+//        ]
+//
+type DeleteLoopbackReply struct {
+	Retval int32
+}
+
+func (*DeleteLoopbackReply) GetMessageName() string {
+	return "delete_loopback_reply"
+}
+func (*DeleteLoopbackReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*DeleteLoopbackReply) GetCrcString() string {
+	return "c91dafa5"
+}
+func NewDeleteLoopbackReply() api.Message {
+	return &DeleteLoopbackReply{}
 }

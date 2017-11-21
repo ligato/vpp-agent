@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
-// DataChangeIface propagates data change to the ifConfigurator
+// DataChangeIface propagates data change to the ifConfigurator.
 func (plugin *Plugin) dataChangeIface(diff bool, value *intf.LinuxInterfaces_Interface, prevValue *intf.LinuxInterfaces_Interface,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)

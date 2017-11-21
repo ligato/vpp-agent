@@ -31,7 +31,7 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// Reference imports to suppress errors if they are not otherwise used.
+// Reference imports to suppress errors if they are not used in any other way.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
@@ -191,7 +191,7 @@ func init() {
 	proto.RegisterType((*ResyncConfigRequest)(nil), "vppsvc.ResyncConfigRequest")
 }
 
-// Reference imports to suppress errors if they are not otherwise used.
+// Reference imports to suppress errors if they are not used in any other way.
 var _ context.Context
 var _ grpc.ClientConn
 
@@ -202,25 +202,25 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for ChangeConfigService service
 
 type ChangeConfigServiceClient interface {
-	// PutInterfaces creates or updates one or multiple interfaces
+	// PutInterfaces creates or updates one or multiple interfaces.
 	PutInterfaces(ctx context.Context, in *interfaces.Interfaces, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelInterfaces one or multiple interfaces by their unique names
+	// DelInterfaces removes one or multiple interfaces by their unique names.
 	DelInterfaces(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutBDs creates or updates one or multiple BDs
+	// PutBDs creates or updates one or multiple BDs.
 	PutBDs(ctx context.Context, in *l2.BridgeDomains, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelBDs one or multiple BDs by their unique names
+	// DelBDs deletes one or multiple BDs by their unique names.
 	DelBDs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutXCons creates or updates one or multiple Cross Connects
+	// PutXCons creates or updates one or multiple Cross Connects.
 	PutXCons(ctx context.Context, in *l2.XConnectPairs, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelXCons one or multiple Cross Connects by their unique names
+	// DelXCons deletes one or multiple Cross Connects by their unique names.
 	DelXCons(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutACLs creates or updates one or multiple ACLs
+	// PutACLs creates or updates one or multiple ACLs.
 	PutACLs(ctx context.Context, in *acl.AccessLists, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelACLs one or multiple ACLs by their unique names
+	// DelACLs deletes one or multiple ACLs by their unique names.
 	DelACLs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutStaticRoutes creates or updates one or multiple ACLs
+	// PutStaticRoutes creates or updates one or multiple ACLs.
 	PutStaticRoutes(ctx context.Context, in *l3.StaticRoutes, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelStaticRoutes one or multiple ACLs by their unique names
+	// DelStaticRoutes deletes one or multiple ACLs by their unique names.
 	DelStaticRoutes(ctx context.Context, in *DelStaticRoutesRequest, opts ...grpc.CallOption) (*DelResponse, error)
 }
 
@@ -325,25 +325,25 @@ func (c *changeConfigServiceClient) DelStaticRoutes(ctx context.Context, in *Del
 // Server API for ChangeConfigService service
 
 type ChangeConfigServiceServer interface {
-	// PutInterfaces creates or updates one or multiple interfaces
+	// PutInterfaces creates or updates one or multiple interfaces.
 	PutInterfaces(context.Context, *interfaces.Interfaces) (*PutResponse, error)
-	// DelInterfaces one or multiple interfaces by their unique names
+	// DelInterfaces deletes one or multiple interfaces by their unique names.
 	DelInterfaces(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutBDs creates or updates one or multiple BDs
+	// PutBDs creates or updates one or multiple BDs.
 	PutBDs(context.Context, *l2.BridgeDomains) (*PutResponse, error)
-	// DelBDs one or multiple BDs by their unique names
+	// DelBDs deletes one or multiple BDs by their unique names.
 	DelBDs(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutXCons creates or updates one or multiple Cross Connects
+	// PutXCons creates or updates one or multiple Cross Connects.
 	PutXCons(context.Context, *l2.XConnectPairs) (*PutResponse, error)
-	// DelXCons one or multiple Cross Connects by their unique names
+	// DelXCons deletes one or multiple Cross Connects by their unique names
 	DelXCons(context.Context, *DelNamesRequest) (*DelResponse, error)
 	// PutACLs creates or updates one or multiple ACLs
 	PutACLs(context.Context, *acl.AccessLists) (*PutResponse, error)
-	// DelACLs one or multiple ACLs by their unique names
+	// DelACLs deletes one or multiple ACLs by their unique names.
 	DelACLs(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutStaticRoutes creates or updates one or multiple ACLs
+	// PutStaticRoutes creates or updates one or multiple ACLs.
 	PutStaticRoutes(context.Context, *l3.StaticRoutes) (*PutResponse, error)
-	// DelStaticRoutes one or multiple ACLs by their unique names
+	// DelStaticRoutes deletes one or multiple ACLs by their unique names.
 	DelStaticRoutes(context.Context, *DelStaticRoutesRequest) (*DelResponse, error)
 }
 

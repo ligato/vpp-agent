@@ -14,7 +14,7 @@
 
 package localclient
 
-// Plugin allows to load VPP localclient as a plugin
+// Plugin allows loading VPP localclient as a plugin
 // (even though the Init() method does not really do anything).
 type Plugin struct {
 }
@@ -24,7 +24,7 @@ func (plugin *Plugin) Init() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (plugin *Plugin) Close() error {
 	return nil
 }

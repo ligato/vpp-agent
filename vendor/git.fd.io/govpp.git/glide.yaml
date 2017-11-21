@@ -8,6 +8,8 @@ import:
   version: ef56447db6a068ad9e52bc54a1aff5fb9e1ed2dd
 - package: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+- package: github.com/google/gopacket
+  version: 8e484f31b1237166f00e4896d27ddde259540632
 testImport:
 - package: github.com/onsi/gomega
   version: v1.1.0

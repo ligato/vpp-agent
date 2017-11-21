@@ -52,14 +52,14 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*Interface)
 
-	// first, dump all interfaces to create initial data
+	// First, dump all interfaces to create initial data.
 	reqCtx := vppChan.SendMultiRequest(&interfaces.SwInterfaceDump{})
 
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)
@@ -132,7 +132,7 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 	notifChan := make(chan govppapi.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
 
-	// dump IP addresses of each interface
+	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		// IPAddressDetails time measurement
 		start := time.Now()
@@ -142,7 +142,7 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 			ipDetails := &ip.IPAddressDetails{}
 			stop, err := reqCtx.ReceiveReply(ipDetails)
 			if stop {
-				break // break out of the loop
+				break // Break from the loop.
 			}
 			if err != nil {
 				log.Error(err)
@@ -207,7 +207,7 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		memifDetails := &memif.MemifDetails{}
 		stop, err := reqCtx.ReceiveReply(memifDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)
@@ -244,7 +244,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		tapDetails := &tap.SwInterfaceTapDetails{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)
@@ -274,7 +274,7 @@ func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
 		stop, err := reqCtx.ReceiveReply(vxlanDetails)
 		if stop {
-			break // break out of the loop
+			break // Break from the loop.
 		}
 		if err != nil {
 			log.Error(err)

@@ -9,8 +9,8 @@
     "socket_filename": "${socket}"
   },
   "mtu": ${mtu},
+  "vrf": ${vrf},
   "ip_addresses": [
     "${ip}/${prefix}"
   ]
 }
-

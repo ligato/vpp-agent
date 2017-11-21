@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 )
 
-// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&memif.MemifCreate{},
@@ -61,9 +61,17 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&interfaces.SwInterfaceSetMacAddress{},
 		&interfaces.SwInterfaceSetMacAddressReply{},
 		&interfaces.SwInterfaceDetails{},
+		&interfaces.SwInterfaceSetTable{},
+		&interfaces.SwInterfaceSetTableReply{},
+		&interfaces.SwInterfaceGetTable{},
+		&interfaces.SwInterfaceGetTableReply{},
 
 		&ip.IPAddressDump{},
 		&ip.IPAddressDetails{},
+		&ip.IPFibDump{},
+		&ip.IPFibDetails{},
+		&ip.IPTableAddDel{},
+		&ip.IPTableAddDelReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
@@ -72,7 +80,7 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 	return err
 }
 
-// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime
+// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},

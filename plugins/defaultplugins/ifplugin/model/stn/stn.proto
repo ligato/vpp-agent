@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package stn;
+
+message StnRule {
+
+    string ip_address = 1;
+    string interface = 2;
+    string rule_name = 3;
+
+}

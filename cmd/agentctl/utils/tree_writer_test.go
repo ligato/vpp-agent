@@ -24,8 +24,9 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// Test01TreeWriter Tests functionality of FlushTree() called with tree writer. If the provided template is processed
-// without any failures and FlushTree() won't throw an error, the test is successful
+// Test01TreeWriter tests functionality of FlushTree() called with tree writer.
+// If the provided template is processed without any failures and
+// FlushTree() doesn't throw an error, the test is successful.
 func Test01TreeWriter(t *testing.T) {
 	gomega.RegisterTestingT(t)
 
@@ -38,7 +39,7 @@ func Test01TreeWriter(t *testing.T) {
 
 	treeWriter.FlushTree()
 
-	// Succeed if test was not exited
+	// Succeed if test was not exited.
 	gomega.Succeed()
 }
 

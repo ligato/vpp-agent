@@ -14,15 +14,15 @@ func lookupIdx(mapping idx.NameToIdx, lookupName string) func() uint32 {
 	}
 }
 
-// ContainsName verifies lookup name presence in provided mapping
+// ContainsName verifies lookup name presence in provided mapping.
 func ContainsName(mapping idx.NameToIdx, lookupName string) uint32 {
 	Eventually(lookupIdx(mapping, lookupName), 100*time.Millisecond, 10*time.Millisecond).ShouldNot(BeZero())
-	// block until Eventually's timeout elapses
+	// Block until Eventually's timeout elapses.
 	time.Sleep(1 * time.Second)
 	return lookupIdx(mapping, lookupName)()
 }
 
-// ContainsMeta verifies lookup meta presence in provided mapping
+// ContainsMeta verifies lookup meta presence in provided mapping.
 func ContainsMeta(mapping idx.NameToIdx, lookupName string) interface{} {
 	var exists bool
 	var meta interface{}
@@ -40,7 +40,7 @@ func ContainsMeta(mapping idx.NameToIdx, lookupName string) interface{} {
 	return nil
 }
 
-// NotContainsNameAfter verifies that name is not present in mapping after specified time
+// NotContainsNameAfter verifies that name is not present in mapping after specified time.
 func NotContainsNameAfter(mapping idx.NameToIdx, lookupName string) {
 	time.Sleep(100 * time.Millisecond)
 	swIdx := lookupIdx(mapping, lookupName)()
