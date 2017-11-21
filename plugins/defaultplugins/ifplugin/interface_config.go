@@ -34,6 +34,7 @@ import (
 
 	"time"
 
+	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/logging"
@@ -49,7 +50,6 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"fmt"
 	"net"
 )
 
@@ -71,9 +71,9 @@ type InterfaceConfigurator struct {
 
 	swIfIndexes ifaceidx.SwIfIndexRW
 
-	unnumberedIfaces map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
-	// MTU value is either read from config or set to default
-	mtu uint32
+	uIfaceCache map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+
+	mtu uint32 // MTU value is either read from config or set to default
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -86,7 +86,6 @@ type InterfaceConfigurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
-	plugin.Log.SetLevel(logging.DebugLevel)
 	plugin.Log.Debug("Initializing InterfaceConfigurator")
 	plugin.swIfIndexes = swIfIndexes
 	plugin.notifChan = notifChan
@@ -104,7 +103,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, SwIfIndexes: plugin.swIfIndexes, Stopwatch: plugin.Stopwatch}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
-	plugin.unnumberedIfaces = make(map[string]string)
+	plugin.uIfaceCache = make(map[string]string)
 
 	return nil
 }
@@ -298,15 +297,15 @@ func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interfa
 
 func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx uint32, addresses []*net.IPNet, unnumbered *intf.Interfaces_Interface_Unnumbered) error {
 	if unnumbered != nil && unnumbered.IsUnnumbered {
-		ifNameIP := unnumbered.InterfaceWithIP
-		if ifNameIP == "" {
+		ifWithIP := unnumbered.InterfaceWithIP
+		if ifWithIP == "" {
 			return fmt.Errorf("unnubered interface %s has no interface with IP address set", ifName)
 		}
-		ifIdxIP, _, found := plugin.swIfIndexes.LookupIdx(ifNameIP)
+		ifIdxIP, _, found := plugin.swIfIndexes.LookupIdx(ifWithIP)
 		if !found {
 			// cache not-configurable interface
-			plugin.unnumberedIfaces[ifName] = ifNameIP
-			plugin.Log.Debugf("unnubered interface %s requires IP address from non-existing %v, moved to cache", ifName, ifNameIP)
+			plugin.uIfaceCache[ifName] = ifWithIP
+			plugin.Log.Debugf("unnubered interface %s requires IP address from non-existing %v, moved to cache", ifName, ifWithIP)
 			return nil
 		}
 		// Set interface as un-numbered
@@ -322,8 +321,8 @@ func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx u
 
 	// configure optional ip address
 	var wasErr error
-	for i := range addresses {
-		err := vppcalls.AddInterfaceIP(ifIdx, addresses[i], plugin.Log, plugin.vppCh,
+	for _, address := range addresses {
+		err := vppcalls.AddInterfaceIP(ifIdx, address, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddress{}, plugin.Stopwatch))
 		if nil != err {
 			wasErr = err
@@ -365,17 +364,17 @@ func (plugin *InterfaceConfigurator) removeIPAddresses(ifIdx uint32, addresses [
 func (plugin *InterfaceConfigurator) resolveDependentUnnumberedInterfaces(ifNameIP string, ifIdxIP uint32) error {
 	plugin.Log.Debugf("Looking up unnumbered interfaces dependent on %v", ifNameIP)
 	var wasErr error
-	for uIface, ifaceWithIP := range plugin.unnumberedIfaces {
-		if ifaceWithIP == ifNameIP {
-			// find dependent interface
+	for uIface, ifWithIP := range plugin.uIfaceCache {
+		if ifWithIP == ifNameIP {
+			// find index of the dependent interface
 			uIdx, _, found := plugin.swIfIndexes.LookupIdx(uIface)
 			if !found {
 				plugin.Log.Debugf("Unnumbered interface %v not found, removing from cache", uIface)
-				delete(plugin.unnumberedIfaces, uIface)
+				delete(plugin.uIfaceCache, uIface)
 				continue
 			}
 			err := vppcalls.SetUnnumberedIP(uIdx, ifIdxIP, plugin.Log, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetUnnumbered{}, plugin.Stopwatch))
-			delete(plugin.unnumberedIfaces, uIface)
+			delete(plugin.uIfaceCache, uIface)
 			if err != nil {
 				wasErr = err
 			}
@@ -384,7 +383,6 @@ func (plugin *InterfaceConfigurator) resolveDependentUnnumberedInterfaces(ifName
 
 	return wasErr
 }
-
 
 // ModifyVPPInterface applies changes in the NB configuration of a VPP interface into the running VPP
 // through the VPP binary API.
@@ -504,7 +502,6 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		if err != nil {
 			wasError = err
 		}
-
 
 		err = plugin.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered)
 		if err != nil {
@@ -637,6 +634,9 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 		return nil
 	}
 
+	// delete from unnumbered map (if the interface is present)
+	delete(plugin.uIfaceCache, iface.Name)
+
 	return plugin.deleteVPPInterface(prev, ifIdx)
 }
 
@@ -659,9 +659,9 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 			Debug("deleteVPPInterface end ", err)
 		return err
 	}
-	for i := range oldAddrs {
-		plugin.Log.WithField("addr", oldAddrs[i]).Info("Ip removed")
-		err := vppcalls.DelInterfaceIP(ifIdx, oldAddrs[i], plugin.Log, plugin.vppCh,
+	for _, oldAddr := range oldAddrs {
+		plugin.Log.WithField("addr", oldAddr).Info("Ip removed")
+		err := vppcalls.DelInterfaceIP(ifIdx, oldAddr, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddressReply{}, plugin.Stopwatch))
 		if nil != err {
 			plugin.Log.Error(err)
