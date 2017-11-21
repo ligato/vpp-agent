@@ -18,7 +18,7 @@ ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
 ${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
-${RESYNC_WAIT}=        30s
+${RESYNC_WAIT}=        50s
 
 *** Test Cases ***
 Configure Environment
@@ -134,6 +134,7 @@ Config Done
 
 Remove VPP Nodes
     Remove All Nodes
+    Sleep    ${SYNC_WAIT}
 
 Start VPP1 And VPP2 Again
     Add Agent VPP Node    agent_vpp_1
