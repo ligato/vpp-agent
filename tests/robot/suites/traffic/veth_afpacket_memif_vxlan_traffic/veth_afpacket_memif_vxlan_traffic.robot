@@ -134,7 +134,7 @@ Config Done
 
 Remove VPP Nodes
     Remove All Nodes
-    Sleep    ${SYNC_WAIT}
+    Sleep    ${SYNC_SLEEP}
 
 Start VPP1 And VPP2 Again
     Add Agent VPP Node    agent_vpp_1
