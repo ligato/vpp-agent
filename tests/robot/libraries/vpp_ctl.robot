@@ -462,3 +462,15 @@ vpp_ctl: Delete Linux Route
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
+
+vpp_ctl: Get Linux Route As Json
+    [Arguments]    ${node}    ${routename}
+    Log Many    ${node}    ${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log                   ${uri}
+    ${data}=              vpp_ctl: Read Key    ${uri}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
