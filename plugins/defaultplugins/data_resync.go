@@ -498,6 +498,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l3.ArpKeyPrefix(),
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),
+			stn.KeyPrefix(),
 		)
 	if err != nil {
 		return err

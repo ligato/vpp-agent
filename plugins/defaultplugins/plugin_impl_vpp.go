@@ -93,7 +93,8 @@ type Plugin struct {
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
 	stnConfigurator      *ifplugin.StnConfigurator
-	stnIndexes           idxvpp.NameToIdxRW
+	stnAllIndexes        idxvpp.NameToIdxRW
+	stnUnstoredIndexes   idxvpp.NameToIdxRW
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -433,13 +434,19 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("stnConfigurator", stnLogger)
 	}
+
+	plugin.stnAllIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-all-indexes", nil)
+	plugin.stnUnstoredIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-unstored-indexes", nil)
+
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{
-		Log:         bfdLogger,
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
-		StnIndexes:  plugin.stnIndexes,
-		StnIndexSeq: 1,
-		Stopwatch:   stopwatch,
+		Log:                 bfdLogger,
+		GoVppmux:            plugin.GoVppmux,
+		SwIfIndexes:         plugin.swIfIndexes,
+		StnUnstoredIndexes:  plugin.stnUnstoredIndexes,
+		StnAllIndexes:       plugin.stnAllIndexes,
+		StnUnstoredIndexSeq: 1,
+		StnAllIndexSeq:      1,
+		Stopwatch:           stopwatch,
 	}
 	plugin.stnConfigurator.Init()
 
