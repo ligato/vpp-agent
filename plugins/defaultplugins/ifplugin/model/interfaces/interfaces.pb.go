@@ -170,13 +170,14 @@ func (m *Interfaces) GetInterface() []*Interfaces_Interface {
 }
 
 type Interfaces_Interface struct {
-	Name        string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description string        `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Type        InterfaceType `protobuf:"varint,3,opt,name=type,proto3,enum=interfaces.InterfaceType" json:"type,omitempty"`
-	Enabled     bool          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	PhysAddress string        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
-	Mtu         uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
-	Vrf         uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
+	Name               string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description        string        `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Type               InterfaceType `protobuf:"varint,3,opt,name=type,proto3,enum=interfaces.InterfaceType" json:"type,omitempty"`
+	Enabled            bool          `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PhysAddress        string        `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
+	Mtu                uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	Vrf                uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
+	ContainerIpAddress string        `protobuf:"bytes,8,opt,name=container_ip_address,proto3" json:"container_ip_address,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses    []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	RxModeSettings *Interfaces_Interface_RxModeSettings `protobuf:"bytes,11,opt,name=rxModeSettings" json:"rxModeSettings,omitempty"`
