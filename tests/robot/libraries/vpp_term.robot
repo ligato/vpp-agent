@@ -209,3 +209,10 @@ vpp_term: Check TAP Interface State
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
+
+vpp_term: Show ACL
+    [Arguments]        ${node}
+    [Documentation]    Show ACLs through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
+    [Return]           ${out}
