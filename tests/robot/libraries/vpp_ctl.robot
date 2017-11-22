@@ -34,7 +34,7 @@ vpp_ctl: Read Key With Prefix
 vpp_ctl: Put Memif Interface
     [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  /run/vpp/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -46,7 +46,7 @@ vpp_ctl: Put Memif Interface
 vpp_ctl: Put Memif Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  /run/vpp/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
