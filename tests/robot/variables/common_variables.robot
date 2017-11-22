@@ -81,6 +81,7 @@ ${AGENT_2_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
 ${AGENT_2_REST_API_PORT}           9191
 ${AGENT_2_REST_API_HOST_PORT}      9196
 
+
 # Other variables
 ${VAT_START_COMMAND}               vpp_api_test json
 ${RESULTS_FOLDER}                  results

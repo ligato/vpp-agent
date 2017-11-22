@@ -434,3 +434,18 @@ vpp_ctl: Delete ACL
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
+
+
+vpp_ctl: Check ACL Reply
+    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    ${acl_d}=           vpp_ctl: Get ACL As Json    ${node}    ${acl_name}
+    ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
+    ${term_d_lines}=    Split To Lines    ${term_d}
+    Log                 ${term_d_lines}
+    ${data}=            OperatingSystem.Get File    ${reply_json}
+    Should Be Equal     ${data}   ${acl_d}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${t_data_lines}=    Split To Lines    ${data}
+    Log                 ${t_data_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}

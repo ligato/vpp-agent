@@ -14,6 +14,7 @@ Add Agent Node
     Log Many       ${node}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
+    #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
@@ -126,6 +127,18 @@ Execute In Container
     Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Command: ${command}${\n}${out}${\n}*** Error: ${stderr}${\n}
     [Return]                 ${out}
 
+Execute In Container Background
+    [Arguments]              ${container}       ${command}
+    Log Many                 ${container}       ${command}
+    Switch Connection        docker
+    ${out}   ${stderr}=      Execute Command    ${DOCKER_COMMAND} exec -d ${container} ${command}    return_stderr=True
+    Log                      ${out}
+    Log                      ${stderr}
+    ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
+    Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
+    Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Command: ${command}${\n}${out}${\n}*** Error: ${stderr}${\n}
+    [Return]                 ${out}
+
 Write To Container Until Prompt
                        [Arguments]              ${container}               ${command}               ${prompt}=root@    ${delay}=${SSH_READ_DELAY}
                        [Documentation]          *Write Container ${container} ${command}*
@@ -140,6 +153,23 @@ Write To Container Until Prompt
                        Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Command: ${command}${\n}${out}${out2}${\n}
                        [Return]                 ${out}${out2}
+
+Write Command to Container
+                       [Arguments]              ${container}      ${command}       ${delay}=${SSH_READ_DELAY}
+                       [Documentation]          *Write Container ${container} ${command}*
+                       ...                      Writing ${command} to connection with name ${container} and reading output
+                       ...                      Output log is added to container output log
+                       Log Many                 ${container}      ${command}     ${delay}
+                       Switch Connection        ${container}
+                       ${written}=              Write        ${command}
+                       Log                      ${written}
+                       ${out}=                  Read        delay=${delay}
+                       Should Not Contain       ${out}     ${written}               # Was consumed from the output
+                       ${out2}=                 Read        delay=${delay}
+                       Log                      ${out2}
+                       Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Command: ${command}${\n}${out}${out2}${\n}
+                       [Return]                 ${out}${out2}
+
 
 Start Dev Container
     [Arguments]            ${command}=bash
