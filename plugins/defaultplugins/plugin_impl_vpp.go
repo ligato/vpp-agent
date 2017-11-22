@@ -249,13 +249,15 @@ func (plugin *Plugin) Init() error {
 		} else {
 			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
+		// return skip (if set) or value from config
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
 		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
-		plugin.resyncStrategy = fullResync
+		// return skip (if set) or full
+		plugin.resyncStrategy = plugin.resolveResyncStrategy(fullResync)
 		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
 
@@ -318,6 +320,8 @@ func (plugin *Plugin) Init() error {
 	return nil
 }
 
+// Resolves resync strategy. Skip resync flag is also evaluated here and it has priority regardless
+// the resync strategy parameter.
 func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	// first check skip resync flag
 	if *skipResyncFlag {
