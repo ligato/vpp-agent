@@ -8,7 +8,7 @@ import (
 
 	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/adapter/mock/binapi"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	interfaces_bin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
@@ -33,10 +33,10 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 	vppMock.MockReplyHandler(func(request govppmock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
 		reqName, found := vppMock.GetMsgNameByID(request.MsgID)
 		if !found {
-			logroot.StandardLogger().Error("Not existing req msg name for MsgID=", request.MsgID)
+			logrus.DefaultLogger().Error("Not existing req msg name for MsgID=", request.MsgID)
 			return reply, 0, false
 		}
-		logroot.StandardLogger().Debug("MockReplyHandler ", request.MsgID, " ", reqName)
+		logrus.DefaultLogger().Debug("MockReplyHandler ", request.MsgID, " ", reqName)
 
 		//TODO refactor this to several funcs
 		if strings.HasSuffix(reqName, "_dump") {
@@ -47,19 +47,19 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 				valType := val.Type()
 				if binapi.HasSwIfIdx(valType) {
 					swIfIndexSeq++
-					logroot.StandardLogger().Debug("Succ default reply for ", reqName, " ", msgID, " sw_if_idx=", swIfIndexSeq)
+					logrus.DefaultLogger().Debug("Succ default reply for ", reqName, " ", msgID, " sw_if_idx=", swIfIndexSeq)
 					binapi.SetSwIfIdx(val, swIfIndexSeq)
 				} else {
-					logroot.StandardLogger().Debug("Succ default reply for ", reqName, " ", msgID)
+					logrus.DefaultLogger().Debug("Succ default reply for ", reqName, " ", msgID)
 				}
 
 				reply, err := vppMock.ReplyBytes(request, replyMsg)
 				if err == nil {
 					return reply, msgID, true
 				}
-				logroot.StandardLogger().Error("Error creating bytes ", err)
+				logrus.DefaultLogger().Error("Error creating bytes ", err)
 			} else {
-				logroot.StandardLogger().Info("No default reply for ", reqName, ", ", request.MsgID)
+				logrus.DefaultLogger().Info("No default reply for ", reqName, ", ", request.MsgID)
 			}
 		}
 

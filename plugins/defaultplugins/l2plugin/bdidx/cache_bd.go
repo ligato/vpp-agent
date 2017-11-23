@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
@@ -28,7 +28,7 @@ import (
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport).
 func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) BDIndex {
 	resyncName := fmt.Sprintf("bd-cache-%s", watcher)
-	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
+	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        l2.BridgeDomainKeyPrefix(),

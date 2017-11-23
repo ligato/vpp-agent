@@ -36,7 +36,6 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -56,7 +55,7 @@ var (
 )
 
 func main() {
-	log = logroot.StandardLogger()
+	log = logrus.DefaultLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 

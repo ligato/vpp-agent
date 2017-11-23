@@ -18,7 +18,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/Shopify/sarama/mocks"
 	"github.com/bsm/sarama-cluster"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 type clusterConsumerMock struct {
@@ -38,10 +38,10 @@ func GetAsyncProducerMock(t mocks.ErrorReporter) (*AsyncProducer, *mocks.AsyncPr
 	saramaCfg.Producer.Return.Successes = true
 	mock := mocks.NewAsyncProducer(t, saramaCfg)
 
-	cfg := NewConfig(logroot.StandardLogger())
+	cfg := NewConfig(logrus.DefaultLogger())
 	cfg.SetSendSuccess(true)
 	cfg.SetSuccessChan(make(chan *ProducerMessage, 1))
-	ap := AsyncProducer{Logger: logroot.StandardLogger(), Config: cfg, Producer: mock, closeChannel: make(chan struct{}), Client: &saramaClientMock{}}
+	ap := AsyncProducer{Logger: logrus.DefaultLogger(), Config: cfg, Producer: mock, closeChannel: make(chan struct{}), Client: &saramaClientMock{}}
 	go ap.successHandler(mock.Successes())
 
 	return &ap, mock
@@ -54,8 +54,8 @@ func GetSyncProducerMock(t mocks.ErrorReporter) (*SyncProducer, *mocks.SyncProdu
 	saramaCfg.Producer.Return.Successes = true
 	mock := mocks.NewSyncProducer(t, saramaCfg)
 
-	cfg := NewConfig(logroot.StandardLogger())
-	ap := SyncProducer{Logger: logroot.StandardLogger(), Config: cfg, Producer: mock, closeChannel: make(chan struct{}), Client: &saramaClientMock{}}
+	cfg := NewConfig(logrus.DefaultLogger())
+	ap := SyncProducer{Logger: logrus.DefaultLogger(), Config: cfg, Producer: mock, closeChannel: make(chan struct{}), Client: &saramaClientMock{}}
 
 	return &ap, mock
 }
@@ -63,9 +63,9 @@ func GetSyncProducerMock(t mocks.ErrorReporter) (*SyncProducer, *mocks.SyncProdu
 // GetConsumerMock returns mocked implementation of consumer that doesn't need connection
 // to kafka cluster.
 func GetConsumerMock(t mocks.ErrorReporter) *Consumer {
-	cfg := NewConfig(logroot.StandardLogger())
+	cfg := NewConfig(logrus.DefaultLogger())
 	ap := Consumer{
-		Logger:       logroot.StandardLogger(),
+		Logger:       logrus.DefaultLogger(),
 		Config:       cfg,
 		Consumer:     newClusterConsumerMock(t),
 		closeChannel: make(chan struct{}),

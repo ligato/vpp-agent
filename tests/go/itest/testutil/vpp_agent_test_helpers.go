@@ -4,17 +4,18 @@ import (
 	"testing"
 	"time"
 
+	"testing"
+	"time"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/core"
 	localsync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/onsi/gomega"
-	"testing"
-	"time"
 )
 
 // VppAgentT is similar to testing.T in golang packages.
@@ -94,10 +95,10 @@ func (t *VppAgentT) SetupDefault() (flavor *VppOnlyTestingFlavor) {
 func (t *VppAgentT) Setup(flavor core.Flavor) {
 	gomega.RegisterTestingT(t.T)
 
-	agent := core.NewAgent(logroot.StandardLogger(), 2000*time.Second, flavor.Plugins()...)
+	agent := core.NewAgent(logrus.DefaultLogger(), 2000*time.Second, flavor.Plugins()...)
 	err := agent.Start()
 	if err != nil {
-		logroot.StandardLogger().Panic(err)
+		logrus.DefaultLogger().Panic(err)
 	}
 }
 
@@ -106,7 +107,7 @@ func (t *VppAgentT) Teardown() {
 	if t.agent != nil {
 		err := t.agent.Stop()
 		if err != nil {
-			logroot.StandardLogger().Panic(err)
+			logrus.DefaultLogger().Panic(err)
 		}
 	}
 }

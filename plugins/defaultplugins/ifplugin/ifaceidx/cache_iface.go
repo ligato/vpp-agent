@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
@@ -29,7 +29,7 @@ import (
 // Beware: the indices in cache do not correspond with the real indices.
 func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) SwIfIndex {
 	resyncName := fmt.Sprintf("iface-cache-%s-%s", caller, watcher)
-	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
+	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        interfaces.InterfaceKeyPrefix(),

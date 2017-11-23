@@ -17,9 +17,12 @@ package l2plugin
 import (
 	"fmt"
 
+	"net"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -30,8 +33,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"net"
-	"time"
 )
 
 // FIBConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -67,7 +68,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 Bridge domains")
 
 	// Init local mapping.
-	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logroot.StandardLogger(), "l2plugin", "fib_des_indexes", nil)
+	plugin.FibDesIndexes = nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", "fib_des_indexes", nil)
 
 	// Init 2 VPP API channels to separate synchronous and asynchronous communication.
 	plugin.syncVppChannel, err = plugin.GoVppmux.NewAPIChannel()

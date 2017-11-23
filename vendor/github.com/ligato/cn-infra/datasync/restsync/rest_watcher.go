@@ -16,11 +16,11 @@ package restsync
 
 import (
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/logrus"
 
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/unrolled/render"
 )
@@ -50,7 +50,7 @@ func (adapter *Adapter) RegisterTestHandler() {
 func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
-	logroot.StandardLogger().Debug("REST KeyValProtoWatcher WatchData ", resyncName, " ", keyPrefixes)
+	logrus.DefaultLogger().Debug("REST KeyValProtoWatcher WatchData ", resyncName, " ", keyPrefixes)
 
 	for _, keyPrefix := range keyPrefixes {
 		adapter.registerHTTPHandler(keyPrefix+"{suffix}", adapter.putMessage, "PUT")

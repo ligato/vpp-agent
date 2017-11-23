@@ -25,7 +25,7 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
@@ -147,7 +147,7 @@ func (plugin *Plugin) Init() error {
 // Initialize linux interface plugin
 func (plugin *Plugin) initIF() error {
 	// Interface indexes
-	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_if_indexes", nil))
 
 	// Linux interface configurator
@@ -163,7 +163,7 @@ func (plugin *Plugin) initIF() error {
 // Initialize linux static ARP plugin
 func (plugin *Plugin) initARP() error {
 	// ARP indexes
-	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_arp_indexes", nil))
 
 	// Linux ARP configurator
@@ -183,9 +183,9 @@ func (plugin *Plugin) initARP() error {
 // Initialize linux static route plugin
 func (plugin *Plugin) initRoutes() error {
 	// Route indexes
-	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_route_indexes", nil))
-	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_cached_route_indexes", nil))
 
 	// Linux Route configurator
