@@ -455,6 +455,26 @@ vpp_ctl: Put Linux Route
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Put Default Linux Route
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}=100    ${isdefault}=true
+    Log Many    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}    ${isdefault}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_default_static_route.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Linux Route Without Interface
+    [Arguments]    ${node}    ${namespace}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
+    Log Many    ${node}    ${namespace}    ${routename}    ${ip}    ${prefix}    ${next_hop}    ${metric}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route_without_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
 vpp_ctl: Delete Linux Route
     [Arguments]    ${node}    ${routename}
     Log Many    ${node}    ${routename}
