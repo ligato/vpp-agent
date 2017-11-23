@@ -26,7 +26,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
@@ -42,7 +41,7 @@ import (
 type RouteConfigurator struct {
 	Log              logging.Logger
 	GoVppmux         govppmux.API
-	RouteIndexes     idxvpp.NameToIdxRW
+	RouteIndexes     l3idx.RouteIndexRW
 	RouteIndexSeq    uint32
 	SwIfIndexes      ifaceidx.SwIfIndex
 	RouteCachedIndex l3idx.RouteIndexRW
@@ -54,8 +53,6 @@ type RouteConfigurator struct {
 // Init members (channels...) and start go routines.
 func (plugin *RouteConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L3 plugin")
-
-
 
 	// Init VPP API channel.
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -93,7 +90,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 	_,_,routeExists := plugin.RouteIndexes.LookupIdx(routeId)
 	if !routeExists {
-		plugin.RouteIndexes.RegisterName(routeId, plugin.RouteIndexSeq, nil)
+		plugin.RouteIndexes.RegisterName(routeId, plugin.RouteIndexSeq, config)
 		plugin.RouteIndexSeq++
 		plugin.Log.Infof("Route %v registered", routeId)
 	}
@@ -103,7 +100,6 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 	if err != nil {
 		return err
 	}
-
 	plugin.Log.Debugf("adding route: %+v", route)
 	// Create and register new route.
 	if route != nil {
@@ -194,39 +190,35 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 		return err
 	}
 	newRouteIdentifier := routeIdentifier(newConfig.VrfId, newConfig.DstIpAddr, newConfig.NextHopAddr)
-	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, nil)
+	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, newConfig)
 	plugin.RouteIndexSeq++
 	plugin.Log.Infof("New route %v registered", newRouteIdentifier)
+
 	return nil
 }
 
 // DeleteRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
-
-	routeIdentifier := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
-	_,_,routeExists := plugin.RouteCachedIndex.UnregisterName(routeIdentifier)
-	if !routeExists {
-		// Validate VRF index from key and it's value in data.
-		if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
-			return err
-		}
-		// Transform route data.
-		route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
-		if err != nil {
-			return err
-		}
-		if route == nil {
-			return nil
-		}
-		plugin.Log.Debugf("deleting route: %+v", route)
-		// Remove and unregister route.
-		err = vppcalls.VppDelRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
-		if err != nil {
-			return err
-		}
+	// Validate VRF index from key and it's value in data.
+	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
+		return err
 	}
-
+	// Transform route data.
+	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
+	if err != nil {
+		return err
+	}
+	if route == nil {
+		return nil
+	}
+	plugin.Log.Debugf("deleting route: %+v", route)
+	// Remove and unregister route.
+	err = vppcalls.VppDelRoute(route, plugin.vppChan, measure.GetTimeLog(ip.IPAddDelRoute{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+	routeIdentifier := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
 	_, _, found := plugin.RouteIndexes.UnregisterName(routeIdentifier)
 	if found {
 		plugin.Log.Infof("Route %v unregistered", routeIdentifier)
@@ -280,6 +272,7 @@ func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 //them from route cache
 func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
 	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIdByOutgoingIfc(ifName)
+	plugin.Log.Infof("Resolving L3 routes for created %s interface.", ifName)
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
 		plugin.Log.WithFields(
@@ -288,15 +281,33 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 				"interface software index": swIdx,
 				"vrf":                      route.VrfId,
 				"destination ip":           route.DstIpAddr}).
-			Debug("Remove routes from cache - outgoing interface was added.")
-		plugin.ConfigureRoute(route, strconv.FormatUint(uint64(route.VrfId), 10))
+			Debug("Remove routes from route cache - outgoing interface was added.")
+		vrf := strconv.FormatUint(uint64(route.VrfId), 10)
+		plugin.recreateRoute(route, vrf)
 		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.RouteID)
 	}
 }
 
+/**
+	recreateRoute calls delete and configure route.
+
+	This is type of workaround because when outgoing interface is deleted then it isn't possible to remove
+	associated routes. they stay in following state:
+	- oper-flags:drop
+	- routing section: unrosolved
+	It is neither possible to recreate interface and then create route.
+	It is only possible to recreate interface, delete old associated routes (like clean old mess)
+	and then add them again.
+ */
+func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf string) {
+	plugin.DeleteRoute(route, vrf)
+	plugin.ConfigureRoute(route, vrf)
+}
+
 //ResolveDeletedInterface is responsible for moving routes of deleted interface to cache
 func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
-	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIdByOutgoingIfc(ifName)
+	routesWithIndex := plugin.RouteIndexes.LookupRouteAndIdByOutgoingIfc(ifName)
+	plugin.Log.Infof("Resolving L3 routes for created %s interface.", ifName)
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
 		plugin.Log.WithFields(
@@ -305,9 +316,23 @@ func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx ui
 				"interface software index": swIdx,
 				"vrf":                      route.VrfId,
 				"destination ip":           route.DstIpAddr}).
-			Debug("Add routes to cache - outgoing interface was deleted.")
-		plugin.DeleteRoute(route, strconv.FormatUint(uint64(route.VrfId), 10))
-		plugin.RouteCachedIndex.RegisterName(routeWithIndex.RouteID, plugin.RouteIndexSeq, route)
-		plugin.RouteIndexSeq++
+			Debug("Add routes to route cache - outgoing interface was deleted.")
+		plugin.moveRouteToCache(route)
 	}
+}
+
+func (plugin *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {
+	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
+	_, _, found := plugin.RouteIndexes.UnregisterName(routeID)
+	if found {
+		plugin.Log.Infof("Route %v unregistered", routeID)
+	} else {
+		plugin.Log.Warnf("Unregister failed, route %v not found", routeID)
+	}
+
+	plugin.Log.Infof("Route %s registrated in cache", routeID)
+	plugin.RouteCachedIndex.RegisterName(routeID, plugin.RouteIndexSeq, config)
+	plugin.RouteIndexSeq++
+
+	return nil
 }
