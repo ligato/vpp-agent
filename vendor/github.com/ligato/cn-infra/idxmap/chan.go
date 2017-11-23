@@ -18,7 +18,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // DefaultNotifTimeout for delivery of notification
@@ -30,7 +31,7 @@ const DefaultNotifTimeout = 2 * time.Second
 func ToChan(ch chan NamedMappingGenericEvent, opts ...interface{}) func(dto NamedMappingGenericEvent) {
 
 	timeout := DefaultNotifTimeout
-	logger := logroot.StandardLogger()
+	var logger logging.Logger = logrus.DefaultLogger()
 
 	for _, opt := range opts {
 		switch opt.(type) {

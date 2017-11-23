@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // WatchBrokerKeys implements go routines on top of Change & Resync channels.
@@ -77,8 +77,8 @@ func (keys *watchBrokerKeys) watchChanges(x keyval.ProtoWatchResp) {
 
 	ch := NewChangeWatchResp(x, prev)
 
-	logroot.StandardLogger().Debug("dbAdapter x:", x)
-	logroot.StandardLogger().Debug("dbAdapter ch:", *ch)
+	logrus.DefaultLogger().Debug("dbAdapter x:", x)
+	logrus.DefaultLogger().Debug("dbAdapter ch:", *ch)
 
 	keys.changeChan <- ch
 	// TODO NICE-to-HAVE publish the err using the transport asynchronously
@@ -90,7 +90,7 @@ func (keys *watchBrokerKeys) watchResync(resyncReg resync.Registration) {
 		if resyncStatus.ResyncStatus() == resync.Started {
 			err := keys.resync()
 			if err != nil {
-				logroot.StandardLogger().Error("error getting resync data ", err) // We are not able to propagate it somewhere else.
+				logrus.DefaultLogger().Error("error getting resync data ", err) // We are not able to propagate it somewhere else.
 				// TODO NICE-to-HAVE publish the err using the transport asynchronously
 			}
 		}
@@ -111,7 +111,7 @@ func (keys *watchBrokerKeys) resyncRev() error {
 			if stop {
 				break
 			}
-			logroot.StandardLogger().Debugf("registering key found in etcd %v", data.GetKey())
+			logrus.DefaultLogger().Debugf("registering key found in etcd %v", data.GetKey())
 			keys.adapter.base.LastRev().PutWithRevision(data.GetKey(), syncbase.NewKeyVal(data.GetKey(), data, data.GetRevision()))
 		}
 	}
@@ -139,7 +139,7 @@ func (keys *watchBrokerKeys) resync() error {
 			return err
 		}
 	case <-time.After(4 * time.Second):
-		logroot.StandardLogger().Warn("Timeout of resync callback")
+		logrus.DefaultLogger().Warn("Timeout of resync callback")
 	}
 	return nil
 }

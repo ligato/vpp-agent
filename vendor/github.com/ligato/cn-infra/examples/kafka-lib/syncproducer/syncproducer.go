@@ -23,8 +23,7 @@ import (
 
 	"github.com/ligato/cn-infra/examples/kafka-lib/utils"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
@@ -38,7 +37,7 @@ var (
 )
 
 func main() {
-	log.StandardLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 	flag.Parse()
 
 	if *brokerList == "" {
@@ -46,7 +45,7 @@ func main() {
 	}
 
 	// init config
-	config := client.NewConfig(logroot.StandardLogger())
+	config := client.NewConfig(logrus.DefaultLogger())
 	config.SetDebug(*debug)
 	config.SetPartition(int32(*partition))
 	config.SetBrokers(strings.Split(*brokerList, ",")...)
@@ -105,7 +104,7 @@ func sendMessage(producer *client.SyncProducer, msg utils.Message) error {
 	// The function doesn't return until the delivery status is known.
 	_, err := producer.SendMsgByte(msg.Topic, msgKey, msgValue)
 	if err != nil {
-		log.StandardLogger().Errorf("SendMsg Error: %v", err)
+		logrus.DefaultLogger().Errorf("SendMsg Error: %v", err)
 		return err
 	}
 	fmt.Println("message sent")
@@ -118,7 +117,7 @@ func closeProducer(producer *client.SyncProducer) error {
 	err := producer.Close()
 	if err != nil {
 		fmt.Printf("SyncProducer close errored: %v\n", err)
-		log.StandardLogger().Errorf("SyncProducer close errored: %v", err)
+		logrus.DefaultLogger().Errorf("SyncProducer close errored: %v", err)
 		return err
 	}
 	return nil

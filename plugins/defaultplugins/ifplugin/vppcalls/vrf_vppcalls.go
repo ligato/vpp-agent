@@ -19,7 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 )
@@ -138,7 +138,7 @@ func createVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
 		return err
 	}
 	if _, ok := tables[vrf]; !ok {
-		logroot.StandardLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
+		logrus.DefaultLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
 		return vppAddDelIPTable(vrf, vppChan, false)
 	}
 	return nil

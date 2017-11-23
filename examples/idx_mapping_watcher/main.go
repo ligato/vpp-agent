@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
@@ -73,7 +73,7 @@ type ExamplePlugin struct {
 // The Go native plugin mechanism was introduced in Go 1.8.
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Init new name-to-index mapping
-	plugin.exampleIdx = nametoidx.NewNameToIdx(logroot.StandardLogger(), plugin.PluginName, "example_index", nil)
+	plugin.exampleIdx = nametoidx.NewNameToIdx(logrus.DefaultLogger(), plugin.PluginName, "example_index", nil)
 
 	// Mapping channel is used to notify about changes in the mapping registry.
 	plugin.exIdxWatchChannel = make(chan idxvpp.NameToIdxDto, 100)

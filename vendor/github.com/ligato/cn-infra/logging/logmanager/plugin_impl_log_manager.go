@@ -19,11 +19,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/unrolled/render"
+
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/unrolled/render"
 )
 
 // LoggerData encapsulates parameters of a logger represented as strings.
@@ -47,9 +48,9 @@ type Plugin struct {
 // Deps groups dependencies injected into the plugin so that they are
 // logically separated from other plugin fields.
 type Deps struct {
-	Log        logging.PluginLogger //inject
-	PluginName core.PluginName      //inject
-	config.PluginConfig             //inject
+	Log                 logging.PluginLogger //inject
+	PluginName          core.PluginName      //inject
+	config.PluginConfig                      //inject
 
 	LogRegistry logging.Registry  // inject
 	HTTP        rest.HTTPHandlers // inject
@@ -58,13 +59,16 @@ type Deps struct {
 // NewConf creates default configuration with InfoLevel & empty loggers.
 // Suitable also for usage in flavor to programmatically specify default behavior.
 func NewConf() *Conf {
-	return &Conf{Loggers: []ConfLogger{}}
+	return &Conf{
+		DefaultLevel: "",
+		Loggers:      []ConfLogger{},
+	}
 }
 
 // Conf is a binding that supports to define default log levels for multiple loggers
 type Conf struct {
-	//TODO Default ConfDefault
-	Loggers []ConfLogger
+	DefaultLevel string
+	Loggers      []ConfLogger
 }
 
 // ConfLogger is configuration of a particular logger.
@@ -85,20 +89,21 @@ func (lm *Plugin) Init() error {
 		if err != nil {
 			return err
 		}
+		lm.Log.Debugf("logs config: %+v", lm.Conf)
+
+		if lm.Conf.DefaultLevel != "" {
+			if err := lm.LogRegistry.SetLevel("default", lm.Conf.DefaultLevel); err != nil {
+				lm.Log.Warn("setting default log level failed:", err)
+			} else {
+				lm.Log.Debugf("default log level to %q", lm.Conf.DefaultLevel)
+			}
+		}
 
 		// try to set log levels (note, not all of them might exist yet)
 		for _, cfgLogger := range lm.Conf.Loggers {
-			if _, found := lm.LogRegistry.Lookup(cfgLogger.Name); !found {
-				continue
-			}
-
-			lm.Log.WithFields(map[string]interface{}{"logger": cfgLogger.Name, "level": cfgLogger.Level}).
-				Debug("setting log level from config", cfgLogger.Name, " ", cfgLogger.Level)
-			lm.LogRegistry.SetLevel(cfgLogger.Name, cfgLogger.Level)
-			if err != nil {
+			if err := lm.LogRegistry.SetLevel(cfgLogger.Name, cfgLogger.Level); err != nil {
 				//intentionally just log warn & not propagate the error (it is minor thing to interrupt startup)
-				lm.Log.WithFields(map[string]interface{}{"logger": cfgLogger.Name, "level": cfgLogger.Level}).
-					Warn("log registry set lever failed ", err)
+				lm.Log.Warn("setting level failed:", err)
 			}
 		}
 
@@ -113,36 +118,11 @@ func (lm *Plugin) Init() error {
 // - Set log level for a registered logger:
 //   > curl -X PUT http://localhost:<port>/log/<logger-name>/<log-level>
 func (lm *Plugin) AfterInit() error {
-	if lm.Conf != nil && lm.LogRegistry != nil {
-		for logger, level := range lm.LogRegistry.ListLoggers() {
-			lm.Log.WithFields(map[string]interface{}{"logger": logger, "level": level}).
-				Debug("AfterInit - begin ", logger, " ", level)
-		}
-
-		for _, cfgLogger := range lm.Conf.Loggers {
-			lm.Log.WithFields(map[string]interface{}{"logger": cfgLogger.Name, "level": cfgLogger.Level}).
-				Debug("setting log level from config", cfgLogger.Name, " ", cfgLogger.Level)
-			err := lm.LogRegistry.SetLevel(cfgLogger.Name, cfgLogger.Level)
-			//TODO move code to Init() + logRegistry default log levels => we would support Log.Debug() in Init()
-			if err != nil {
-				//intentionally just log warn & not propagate the error (it is minor thing to interrupt startup)
-				lm.Log.WithFields(map[string]interface{}{"logger": cfgLogger.Name, "level": cfgLogger.Level}).
-					Warn("log registry set lever failed ", err)
-			}
-		}
-
-		for logger, level := range lm.LogRegistry.ListLoggers() {
-			lm.Log.WithFields(map[string]interface{}{"logger": logger, "level": level}).
-				Debug("AfterInit - end ", logger, " ", level)
-		}
-	}
-
 	if lm.HTTP != nil {
 		lm.HTTP.RegisterHTTPHandler(fmt.Sprintf("/log/{%s}/{%s:debug|info|warning|error|fatal|panic}",
 			loggerVarName, levelVarName), lm.logLevelHandler, "PUT")
 		lm.HTTP.RegisterHTTPHandler("/log/list", lm.listLoggersHandler, "GET")
 	}
-
 	return nil
 }
 

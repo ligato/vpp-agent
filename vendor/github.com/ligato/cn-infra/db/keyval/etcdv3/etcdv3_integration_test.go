@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3/mocks"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/onsi/gomega"
 )
 
@@ -207,7 +207,7 @@ func testDelWithPrefix(t *testing.T) {
 
 func testPutIfNotExists(t *testing.T) {
 
-	conn, err := NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logroot.StandardLogger())
+	conn, err := NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logrus.DefaultLogger())
 
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(conn).NotTo(gomega.BeNil())
@@ -268,7 +268,7 @@ func expectWatchEvent(t *testing.T, wg *sync.WaitGroup, watchCh chan keyval.Byte
 
 func setupBrokers(t *testing.T) {
 	var err error
-	broker, err = NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logroot.StandardLogger())
+	broker, err = NewEtcdConnectionUsingClient(v3client.New(embd.ETCD.Server), logrus.DefaultLogger())
 
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(broker).NotTo(gomega.BeNil())

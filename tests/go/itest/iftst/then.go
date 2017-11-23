@@ -8,7 +8,7 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	idx "github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
@@ -72,7 +72,7 @@ func (a *BfdIndexesAssertions) NotContainsName(mapping idx.NameToIdx, bfdInterfa
 
 // IfStateInDB asserts that there is InterfacesState_Interface_DOWN in ETCD for particular Interfaces_Interface.
 func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status, data *intf.Interfaces_Interface) {
-	logroot.StandardLogger().Debug("IfStateDownInDB begin")
+	logrus.DefaultLogger().Debug("IfStateDownInDB begin")
 
 	ifState := &intf.InterfacesState_Interface{}
 	var found bool
@@ -81,7 +81,7 @@ func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status,
 		step.OperState.InterfaceState(data.Name, ifState)
 
 		if err != nil {
-			logroot.StandardLogger().Panic(err)
+			logrus.DefaultLogger().Panic(err)
 		}
 		if found {
 			break
@@ -93,5 +93,5 @@ func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status,
 	// Expect(ifState.OperStatus).Should(BeEquivalentTo(status),
 	//	"Status needs to be down for " + data.Name) // TODO
 
-	logroot.StandardLogger().Debug("IfStateDownInDB end")
+	logrus.DefaultLogger().Debug("IfStateDownInDB end")
 }

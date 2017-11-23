@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/onsi/gomega"
 )
 
@@ -50,7 +50,7 @@ func TestEventLoopWithInterrupt(t *testing.T) {
 		gomega.Expect(p.Closed()).To(gomega.BeFalse())
 	}
 
-	agent := NewAgentDeprecated(logroot.StandardLogger(), 100*time.Millisecond, namedPlugins...)
+	agent := NewAgentDeprecated(logrus.DefaultLogger(), 100*time.Millisecond, namedPlugins...)
 	closeCh := make(chan struct{})
 	errCh := make(chan error)
 	go func() {
@@ -92,7 +92,7 @@ func TestEventLoopFailInit(t *testing.T) {
 		gomega.Expect(p.Closed()).To(gomega.BeFalse())
 	}
 
-	agent := NewAgentDeprecated(logroot.StandardLogger(), 100*time.Millisecond, namedPlugins...)
+	agent := NewAgentDeprecated(logrus.DefaultLogger(), 100*time.Millisecond, namedPlugins...)
 	closeCh := make(chan struct{})
 	errCh := make(chan error)
 	go func() {
@@ -131,7 +131,7 @@ func TestEventLoopAfterInitFailed(t *testing.T) {
 		gomega.Expect(p.Closed()).To(gomega.BeFalse())
 	}
 
-	agent := NewAgentDeprecated(logroot.StandardLogger(), 100*time.Millisecond, namedPlugins...)
+	agent := NewAgentDeprecated(logrus.DefaultLogger(), 100*time.Millisecond, namedPlugins...)
 	closeCh := make(chan struct{})
 	errCh := make(chan error)
 	go func() {
@@ -173,7 +173,7 @@ func TestEventLoopCloseFailed(t *testing.T) {
 		gomega.Expect(p.Closed()).To(gomega.BeFalse())
 	}
 
-	agent := NewAgentDeprecated(logroot.StandardLogger(), 100*time.Millisecond, namedPlugins...)
+	agent := NewAgentDeprecated(logrus.DefaultLogger(), 100*time.Millisecond, namedPlugins...)
 	closeCh := make(chan struct{})
 	errCh := make(chan error)
 	go func() {

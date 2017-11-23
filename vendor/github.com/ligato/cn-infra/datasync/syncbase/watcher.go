@@ -22,8 +22,9 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
@@ -75,7 +76,7 @@ func (reg *WatchDataReg) Unregister(keyPrefix string) error {
 	// verify if key is registered for change events
 	if subs.ChangeChan == nil {
 		// not an error
-		logroot.StandardLogger().Infof("key %v not registered for change events", keyPrefix)
+		logrus.DefaultLogger().Infof("key %v not registered for change events", keyPrefix)
 		return nil
 	}
 	if subs.CloseChan == nil {
@@ -88,7 +89,7 @@ func (reg *WatchDataReg) Unregister(keyPrefix string) error {
 
 			subs.KeyPrefixes = append(subs.KeyPrefixes[:index], subs.KeyPrefixes[index+1:]...)
 			subs.CloseChan <- keyPrefix
-			logroot.StandardLogger().WithField("resyncName", reg.ResyncName).Infof("Key %v removed from subscription", keyPrefix)
+			logrus.DefaultLogger().WithField("resyncName", reg.ResyncName).Infof("Key %v removed from subscription", keyPrefix)
 			return nil
 		}
 	}
@@ -188,7 +189,7 @@ func (adapter *Registry) PropagateChanges(txData map[string] /*key*/ datasync.Ch
 			return err
 		}
 	case <-time.After(5 * time.Second):
-		logroot.StandardLogger().Warn("Timeout of aggregated change callback")
+		logrus.DefaultLogger().Warn("Timeout of aggregated change callback")
 	}
 
 	return nil

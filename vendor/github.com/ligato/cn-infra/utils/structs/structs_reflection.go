@@ -33,7 +33,7 @@ func FindField(pointerToAField interface{}, pointerToAStruct interface{}) (field
 	for i := 0; i < numField; i++ {
 		sf := strct.Field(i)
 
-		//logroot.StandardLogger().Info("xxxxxxxxxxx ", sf.Kind().String(), " ", sf.String())
+		//logrus.DefaultLogger().Info("xxxxxxxxxxx ", sf.Kind().String(), " ", sf.String())
 
 		if sf.Kind() == reflect.Ptr || sf.Kind() == reflect.Interface {
 			if fieldVal.Interface() == sf {
