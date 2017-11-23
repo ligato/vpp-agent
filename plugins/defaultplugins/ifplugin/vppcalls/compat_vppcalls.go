@@ -81,7 +81,7 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 }
 
 // CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) error {
+func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
@@ -94,9 +94,5 @@ func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) 
 		&bfd.BfdAuthDelKey{},
 		&bfd.BfdAuthDelKeyReply{},
 	}
-	err := vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		log.Error(err)
-	}
-	return err
+	return vppChan.CheckMessageCompatibility(msgs...)
 }

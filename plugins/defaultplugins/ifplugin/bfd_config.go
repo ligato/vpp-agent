@@ -70,8 +70,9 @@ func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKey
 	if err != nil {
 		return err
 	}
-	err = vppcalls.CheckMsgCompatibilityForBfd(plugin.Log, plugin.vppChannel)
+	err = vppcalls.CheckMsgCompatibilityForBfd(plugin.vppChannel)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
