@@ -2,10 +2,6 @@ package testutil
 
 import (
 	"testing"
-	"time"
-
-	"testing"
-	"time"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/core"
@@ -95,7 +91,7 @@ func (t *VppAgentT) SetupDefault() (flavor *VppOnlyTestingFlavor) {
 func (t *VppAgentT) Setup(flavor core.Flavor) {
 	gomega.RegisterTestingT(t.T)
 
-	agent := core.NewAgent(logrus.DefaultLogger(), 2000*time.Second, flavor.Plugins()...)
+	agent := core.NewAgent(flavor)
 	err := agent.Start()
 	if err != nil {
 		logrus.DefaultLogger().Panic(err)
