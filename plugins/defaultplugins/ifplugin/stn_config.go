@@ -33,7 +33,6 @@ import (
 	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/prometheus/common/log"
 )
 
 // StnConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -134,7 +133,7 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 	withoutIf, _ := plugin.removeRuleFromIndex(rule.Interface)
 
 	if withoutIf {
-		log.Debug("STN rule was not stored into VPP, removed only from indexes.")
+		plugin.Log.Debug("STN rule was not stored into VPP, removed only from indexes.")
 		return nil
 	}
 	plugin.Log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
