@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 )
 
 // ACLConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -290,15 +291,13 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 }
 
 // DumpACL returns all configured ACLs in proto format
-// todo ACLDump/ACLDetails error invalid message ID 924, expected 922
 func (plugin *ACLConfigurator) DumpACL() []*acl.AccessLists_Acl {
-	//acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
-	//if err != nil {
-	//	plugin.Log.Error(err)
-	//	return nil
-	//}
-	//return acls
-	return nil
+	acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Error(err)
+		return nil
+	}
+	return acls
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
