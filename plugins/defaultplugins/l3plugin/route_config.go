@@ -32,9 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/errors"
-	"github.com/gogo/protobuf/test/indeximport-issue72/index"
-	"github.com/prometheus/common/route"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 )
 
