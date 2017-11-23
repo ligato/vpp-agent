@@ -25,7 +25,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/errors"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route.
@@ -99,7 +98,16 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex,
 	}
 	vrfID := routeInput.VrfId
 
+	ifName := routeInput.OutgoingInterface
+
 	ifIndex := vppcalls.NextHopOutgoingIfUnset
+	if ifName != "" {
+		var exists bool
+		ifIndex, _, exists = index.LookupIdx(ifName)
+		if !exists {
+			return nil, fmt.Errorf("route outgoing interface %v not found", ifName)
+		}
+	}
 
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
@@ -111,23 +119,10 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex,
 		VrfID:       vrfID,
 		DstAddr:     *parsedDestIP,
 		NextHopAddr: nextHopIP,
+		OutIface:    ifIndex,
 		Weight:      routeInput.Weight,
 		Preference:  routeInput.Preference,
 	}
-
-	ifName := routeInput.OutgoingInterface
-	if ifName != "" {
-		var exists bool
-		ifIndex, _, exists = index.LookupIdx(ifName)
-		if !exists {
-			var err error
-			err = errors.SwIndexNotFound{OriginalError:fmt.Errorf("route outgoing interface %v not found", ifName)}
-			return route, err
-		}
-	}
-
-	route.OutIface = ifIndex
-
 	return route, nil
 }
 

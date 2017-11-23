@@ -116,6 +116,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				plugin.l4Configurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.stnConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
+				plugin.routeConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			}
 			ifIdxEv.Done()

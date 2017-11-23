@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 )
 
 // defaultpluigns specific flags
@@ -596,7 +597,8 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
 	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
-	routeCachedIndexes := nametoidx.NewNameToIdx(plugin.Log, plugin.PluginName, "route_cached_indexes", nil)
+	routeCachedIndexes := l3idx.NewRouteIndex(
+		nametoidx.NewNameToIdx(plugin.Log, plugin.PluginName, "route_cached_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
