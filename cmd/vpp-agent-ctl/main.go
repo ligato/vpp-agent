@@ -140,6 +140,10 @@ func main() {
 			addStaticFibTableEntry(db, bridgeDomain1, ifName1)
 		case "-dft":
 			deleteStaticFibTableEntry(db, bridgeDomain1)
+		case "-aae":
+			addArpEntry(db, ifName1)
+		case "-dae":
+			deleteArpEntry(db, ifName1)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -763,6 +767,32 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	log.Println(bd)
 	db.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
+}
+
+func addArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Put(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress), arpTable.ArpTableEntries[0])
+}
+
+func deleteArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {
