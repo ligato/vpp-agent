@@ -76,27 +76,25 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 		return err
 	}
 
-	outgoingIfName := config.OutgoingInterface
-	routeId := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
 
-	if outgoingIfName != "" {
-		_, _, exists := plugin.SwIfIndexes.LookupIdx(outgoingIfName)
-		if !exists {
-			plugin.RouteCachedIndex.RegisterName(routeId, plugin.RouteIndexSeq, config)
-			plugin.RouteIndexSeq++
-			plugin.Log.Debugf("Route %v registered to cache", routeId)
-		}
+	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
+	_,_,routeExists := plugin.RouteIndexes.LookupIdx(routeID)
+	if !routeExists {
+		plugin.RouteIndexes.RegisterName(routeID, plugin.RouteIndexSeq, config)
+		plugin.RouteIndexSeq++
+		plugin.Log.Infof("Route %v registered", routeID)
 	}
 
-	_,_,routeExists := plugin.RouteIndexes.LookupIdx(routeId)
-	if !routeExists {
-		plugin.RouteIndexes.RegisterName(routeId, plugin.RouteIndexSeq, config)
+	swIdx, error := resolveInterfaceSwIndex(config.OutgoingInterface, plugin.SwIfIndexes)
+	if error != nil {
+		plugin.RouteCachedIndex.RegisterName(routeID, plugin.RouteIndexSeq, config)
 		plugin.RouteIndexSeq++
-		plugin.Log.Infof("Route %v registered", routeId)
+		plugin.Log.Debugf("Route %v registered to cache", routeID)
+		return nil
 	}
 
 	// Transform route data.
-	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
+	route, err := TransformRoute(config, swIdx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -119,16 +117,16 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	outgoingIfName := newConfig.OutgoingInterface
 	if outgoingIfName != "" {
 		_, _, existsNewOutgoing := plugin.SwIfIndexes.LookupIdx(outgoingIfName)
-		routeId := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+		routeID := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 		if existsNewOutgoing {
-			plugin.Log.Debugf("Route %s unregistered from cache.", routeId)
-			plugin.RouteCachedIndex.UnregisterName(routeId)
+			plugin.Log.Debugf("Route %s unregistered from cache.", routeID)
+			plugin.RouteCachedIndex.UnregisterName(routeID)
 		} else {
-			routeIdx,_, isRouteCached := plugin.RouteCachedIndex.LookupIdx(routeId)
+			routeIdx,_, isRouteCached := plugin.RouteCachedIndex.LookupIdx(routeID)
 			if isRouteCached {
-				plugin.RouteCachedIndex.RegisterName(routeId, routeIdx, newConfig)
+				plugin.RouteCachedIndex.RegisterName(routeID, routeIdx, newConfig)
 			} else {
-				plugin.RouteCachedIndex.RegisterName(routeId, plugin.RouteIndexSeq, newConfig)
+				plugin.RouteCachedIndex.RegisterName(routeID, plugin.RouteIndexSeq, newConfig)
 				plugin.RouteIndexSeq++
 			}
 		}
@@ -149,8 +147,13 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 }
 
 func (plugin *RouteConfigurator) deleteOldRoute(oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
+	swIdx, error := resolveInterfaceSwIndex(oldConfig.OutgoingInterface, plugin.SwIfIndexes)
+	if error != nil {
+		return error
+	}
+
 	// Transform old route data.
-	oldRoute, err := TransformRoute(oldConfig, plugin.SwIfIndexes, plugin.Log)
+	oldRoute, err := TransformRoute(oldConfig, swIdx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -179,8 +182,14 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 	if err := plugin.validateVrfFromKey(newConfig, vrfFromKey); err != nil {
 		return err
 	}
+
+	swIdx, error := resolveInterfaceSwIndex(newConfig.OutgoingInterface, plugin.SwIfIndexes)
+	if error != nil {
+		return error
+	}
+
 	// Transform new route data.
-	newRoute, err := TransformRoute(newConfig, plugin.SwIfIndexes, plugin.Log)
+	newRoute, err := TransformRoute(newConfig, swIdx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -204,8 +213,14 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
+
+	swIdx, error := resolveInterfaceSwIndex(config.OutgoingInterface, plugin.SwIfIndexes)
+	if error != nil {
+		return error
+	}
+
 	// Transform route data.
-	route, err := TransformRoute(config, plugin.SwIfIndexes, plugin.Log)
+	route, err := TransformRoute(config, swIdx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -271,7 +286,7 @@ func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 //ResolveCreatedInterface is responsible for reconfiguring cached routes and then from removing
 //them from route cache
 func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
-	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIdByOutgoingIfc(ifName)
+	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIDByOutgoingIfc(ifName)
 	plugin.Log.Infof("Resolving L3 routes for created %s interface.", ifName)
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
@@ -294,7 +309,7 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 	This is type of workaround because when outgoing interface is deleted then it isn't possible to remove
 	associated routes. they stay in following state:
 	- oper-flags:drop
-	- routing section: unrosolved
+	- routing section: unresolved
 	It is neither possible to recreate interface and then create route.
 	It is only possible to recreate interface, delete old associated routes (like clean old mess)
 	and then add them again.
@@ -306,7 +321,7 @@ func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf
 
 //ResolveDeletedInterface is responsible for moving routes of deleted interface to cache
 func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
-	routesWithIndex := plugin.RouteIndexes.LookupRouteAndIdByOutgoingIfc(ifName)
+	routesWithIndex := plugin.RouteIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
 	plugin.Log.Infof("Resolving L3 routes for created %s interface.", ifName)
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route

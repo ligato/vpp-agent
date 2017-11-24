@@ -30,9 +30,9 @@ type RouteIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *l3.StaticRoutes_Route, exists bool)
 
-	// LookupRouteAndIdByOutgoingIfc returns structure with route name and data which contains specified ifName
+	// LookupRouteAndIDByOutgoingIfc returns structure with route name and data which contains specified ifName
 	// in metadata as outgoing interface
-	LookupRouteAndIdByOutgoingIfc(ifName string) []StaticRoutesRouteAndIdx
+	LookupRouteAndIDByOutgoingIfc(ifName string) []StaticRoutesRouteAndIdx
 }
 
 // RouteIndexRW is mapping between routes data (metadata) and routes entry names.
@@ -86,13 +86,13 @@ type StaticRoutesRouteAndIdx struct {
 	RouteID string
 }
 
-// LookupRouteAndIdByOutgoingIfc returns all names related to the provided interface
-func (routeIndex *routeIndex) LookupRouteAndIdByOutgoingIfc(outgoingIfName string) []StaticRoutesRouteAndIdx {
+// LookupRouteAndIDByOutgoingIfc returns all names related to the provided interface
+func (routeIndex *routeIndex) LookupRouteAndIDByOutgoingIfc(outgoingIfName string) []StaticRoutesRouteAndIdx {
 	var result []StaticRoutesRouteAndIdx
-	for _, routeId := range routeIndex.mapping.ListNames() {
-		_, route, found := routeIndex.LookupIdx(routeId)
+	for _, routeID := range routeIndex.mapping.ListNames() {
+		_, route, found := routeIndex.LookupIdx(routeID)
 		if found && route != nil && route.OutgoingInterface == outgoingIfName {
-			result = append(result, StaticRoutesRouteAndIdx{route, routeId})
+			result = append(result, StaticRoutesRouteAndIdx{route, routeID})
 		}
 	}
 	return result
