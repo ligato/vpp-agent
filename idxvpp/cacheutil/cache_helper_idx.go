@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 )
 
-// CacheHelper is a helper which implementation is reused among multiple typesafe Caches.
+// CacheHelper is a helper the implementation of which is reused among multiple typesafe Caches.
 // Beware: index stored in cached mapping is not valid. The meaningful values are the name and metadata.
 type CacheHelper struct {
 	IDX           idxvpp.NameToIdxRW
@@ -31,7 +31,7 @@ type CacheHelper struct {
 
 const placeHolderIndex uint32 = 0
 
-// DoWatching is supposed to be used as a go routine. It select the data from channels in arguments.
+// DoWatching is supposed to be used as a go routine. It selects the data from the channels in arguments.
 func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.KeyValProtoWatcher) {
 	changeChan := make(chan datasync.ChangeEvent, 100)
 	resyncChan := make(chan datasync.ResyncEvent, 100)
@@ -72,15 +72,15 @@ func (helper *CacheHelper) DoChange(dataChng datasync.ChangeEvent) error {
 	return err
 }
 
-// DoResync list keys&values in ResyncEvent and then:
-// - RegisterName (for names that are part of ResyncEvent)
-// - UnregisterName (for names that are not part of ResyncEvent)
+// DoResync lists keys&values in ResyncEvent and then:
+// - RegisterName (for names that are a part of ResyncEvent)
+// - UnregisterName (for names that are not a part of ResyncEvent)
 func (helper *CacheHelper) DoResync(resyncEv datasync.ResyncEvent) error {
 	var wasError error
-	//idx.RegisterName()
+
 	ifaces, found := resyncEv.GetValues()[helper.Prefix]
 	if found {
-		// Step 1: fill the existing things
+		// Step 1: fill the existing items.
 		resyncNames := map[string]interface{}{}
 		for {
 			item, stop := ifaces.GetNext()

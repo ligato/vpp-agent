@@ -13,3 +13,5 @@ examples/localclient_linux/localclient_linux
 examples/localclient_vpp/localclient_vpp
 tests/perf/log
 tests/perf/logresult.zip
+tests/robot/variables/jozo_local_variables.robot
+*.pyc

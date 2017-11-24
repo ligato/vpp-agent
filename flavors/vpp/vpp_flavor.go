@@ -23,9 +23,9 @@ func NewAgent(opts ...core.Option) *core.Agent {
 	return core.NewAgent(&Flavor{}, opts...)
 }
 
-// WithPlugins for adding custom plugins to SFC Controller
+// WithPlugins for adding custom plugins to SFC Controller.
 // <listPlugins> is a callback that uses flavor input to
-// inject dependencies for custom plugins that are in output
+// inject dependencies for custom plugins that are in output.
 //
 // Example:
 //
@@ -55,7 +55,7 @@ type Flavor struct {
 	injected bool
 }
 
-// Inject sets inter-plugin references
+// Inject sets inter-plugin references.
 func (f *Flavor) Inject() bool {
 	if f.injected {
 		return false
@@ -77,7 +77,7 @@ func (f *Flavor) Inject() bool {
 	f.IfStatePub.Messaging = &f.Kafka
 	f.IfStatePub.PluginInfraDeps = *f.InfraDeps("ifstate-pub")
 	// If needed, provide configuration using ifstate-pub-config.
-	// Set default configuration, it is overridable using ifstate-pub-config.
+	// Set default configuration; it is overridable using ifstate-pub-config.
 	// Intent of not putting this configuration into the vpp plugin is that
 	// this way it is reusable even for the Linux plugin.
 	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
@@ -110,7 +110,7 @@ func (f *Flavor) injectEmbedded() {
 	f.AllConnectorsFlavor.Inject()
 }
 
-// Plugins combines all Plugins in the flavor to a list.
+// Plugins combine all Plugins in the flavor to a list.
 func (f *Flavor) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)

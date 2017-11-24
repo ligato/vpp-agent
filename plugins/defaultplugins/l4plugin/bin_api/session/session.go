@@ -6,7 +6,7 @@ package session
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x25ac83e4
+const VlAPIVersion = 0xa719a431
 
 // ApplicationAttach represents the VPP binary API message 'application_attach'.
 // Generated from '/usr/share/vpp/api/session.api.json', line 6:
@@ -915,11 +915,13 @@ func NewAppNamespaceAddDel() api.Message {
 //            ["u16", "_vl_msg_id"],
 //            ["u32", "context"],
 //            ["i32", "retval"],
-//            {"crc" : "0x7c9b7424"}
+//            ["u32", "appns_index"],
+//            {"crc" : "0x8a5cd4ac"}
 //        ],
 //
 type AppNamespaceAddDelReply struct {
-	Retval int32
+	Retval     int32
+	AppnsIndex uint32
 }
 
 func (*AppNamespaceAddDelReply) GetMessageName() string {
@@ -929,14 +931,14 @@ func (*AppNamespaceAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AppNamespaceAddDelReply) GetCrcString() string {
-	return "7c9b7424"
+	return "8a5cd4ac"
 }
 func NewAppNamespaceAddDelReply() api.Message {
 	return &AppNamespaceAddDelReply{}
 }
 
 // SessionRuleAddDel represents the VPP binary API message 'session_rule_add_del'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 253:
+// Generated from '/usr/share/vpp/api/session.api.json', line 254:
 //
 //        ["session_rule_add_del",
 //            ["u16", "_vl_msg_id"],
@@ -988,7 +990,7 @@ func NewSessionRuleAddDel() api.Message {
 }
 
 // SessionRuleAddDelReply represents the VPP binary API message 'session_rule_add_del_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 272:
+// Generated from '/usr/share/vpp/api/session.api.json', line 273:
 //
 //        ["session_rule_add_del_reply",
 //            ["u16", "_vl_msg_id"],
@@ -1015,7 +1017,7 @@ func NewSessionRuleAddDelReply() api.Message {
 }
 
 // SessionRulesDump represents the VPP binary API message 'session_rules_dump'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 278:
+// Generated from '/usr/share/vpp/api/session.api.json', line 279:
 //
 //        ["session_rules_dump",
 //            ["u16", "_vl_msg_id"],
@@ -1041,7 +1043,7 @@ func NewSessionRulesDump() api.Message {
 }
 
 // SessionRulesDetails represents the VPP binary API message 'session_rules_details'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 284:
+// Generated from '/usr/share/vpp/api/session.api.json', line 285:
 //
 //        ["session_rules_details",
 //            ["u16", "_vl_msg_id"],

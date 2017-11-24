@@ -17,6 +17,8 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 
+${SYNC_SLEEP}=         2s
+
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
@@ -29,12 +31,14 @@ Add First VXLan Interface
     vxlan: Tunnel Not Exists    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=15
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=15
     vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=15
+    Sleep    ${SYNC_SLEEP}
     vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=192.168.1.1    dst=192.168.1.2    vni=15
 
 Add Second VXLan Interface
     vxlan: Tunnel Not Exists    node=agent_vpp_1    src=192.168.2.1    dst=192.168.2.2    vni=25
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan2    src=192.168.2.1    dst=192.168.2.2    vni=25
     vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.2.1    dst=192.168.2.2    vni=25
+    Sleep    ${SYNC_SLEEP}
     vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan2    enabled=1    src=192.168.2.1    dst=192.168.2.2    vni=25
 
 Check That First VXLan Interface Is Still Configured
@@ -44,6 +48,7 @@ Update First VXLan Interface
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.10    dst=192.168.1.20    vni=150
     vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=15
     vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.10    dst=192.168.1.20    vni=150
+    Sleep    ${SYNC_SLEEP}
     vat_term: Check VXLan Interface State    agent_vpp_1    vpp1_vxlan1    enabled=1    src=192.168.1.10    dst=192.168.1.20    vni=150
 
 Check That Second VXLan Interface Is Not Changed
@@ -51,6 +56,7 @@ Check That Second VXLan Interface Is Not Changed
 
 Delete First VXLan Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_vxlan1
+    Sleep    ${SYNC_SLEEP}
     vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.10    dst=192.168.1.20    vni=150
 
 Check That Second VXLan Interface Is Still Configured

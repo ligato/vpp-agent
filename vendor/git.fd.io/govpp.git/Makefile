@@ -12,11 +12,17 @@ test:
 install:
 	@cd cmd/binapi-generator && go install -v
 
+extras:
+	@cd extras/libmemif/examples/raw-data && go build -v
+	@cd extras/libmemif/examples/icmp-responder && go build -v
+
 clean:
 	@rm -f cmd/binapi-generator/binapi-generator
 	@rm -f examples/cmd/simple-client/simple-client
 	@rm -f examples/cmd/stats-client/stats-client
 	@rm -f examples/cmd/perf-bench/perf-bench
+	@rm -f extras/libmemif/examples/raw-data/raw-data
+	@rm -f extras/libmemif/examples/icmp-responder/icmp-responder
 
 generate:
 	@cd core && go generate ./...
@@ -25,4 +31,4 @@ generate:
 lint:
 	@golint ./... | grep -v vendor | grep -v bin_api || true
 
-.PHONY: build test install clean generate
+.PHONY: build test install extras clean generate

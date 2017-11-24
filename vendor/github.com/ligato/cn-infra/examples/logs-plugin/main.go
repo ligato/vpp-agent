@@ -70,6 +70,10 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	childLogger := plugin.Log.NewLogger("childLogger")
 	// Usage of custom loggers
 	childLogger.Infof("Log using named logger with name: %v", childLogger.GetName())
+	childLogger.Debug("Debug log using childLogger!")
+
+	childLogger2 := plugin.Log.NewLogger("childLogger2")
+	childLogger2.Debug("Debug log using childLogger2!")
 
 	// End the example
 	plugin.Log.Info("logs in plugin example finished, sending shutdown ...")

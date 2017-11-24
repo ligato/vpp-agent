@@ -20,7 +20,7 @@ import (
 	"strconv"
 )
 
-// PrintLine represents one line in the tree output
+// PrintLine represents one line in the tree output.
 type PrintLine struct {
 	line    string
 	lnLevel int
@@ -43,7 +43,7 @@ type TreeWriter struct {
 
 // NewTreeWriter returns a reference to a newly created TreeWriter
 // instance. Parameters passed into this function determine the visual
-// appearance of the tree in which data is printed. A typical usage
+// appearance of the tree in which the data is printed. A typical usage
 // would be:
 //   p := NewTreeWriter(1, "├─", "│ ", "└─")
 func NewTreeWriter(spaces int, first string, middle string, last string) *TreeWriter {
@@ -57,8 +57,8 @@ func NewTreeWriter(spaces int, first string, middle string, last string) *TreeWr
 	}
 }
 
-// FlushTree takes the content of the finalize buffer formats it
-// into a tree and prints it out to stdout.
+// FlushTree takes the content of the finalized buffer, and formats it
+// into a tree, and prints it out to stdout.
 func (p *TreeWriter) FlushTree() {
 
 	p.lineBuf = createPrintLineBuf(p.writeBuf)
@@ -112,7 +112,7 @@ func createPrintLineBuf(byteBuf []byte) []PrintLine {
 	return printLineBuf
 }
 
-// renderSubtree is used to recursively render the tree
+// renderSubtree is used to recursively render the tree.
 func (p *TreeWriter) renderSubtree(tree []PrintLine, stack *PfxStack) {
 	for i, pl := range tree {
 		if i == len(tree)-1 {
@@ -169,7 +169,7 @@ Loop:
 	return res, processed
 }
 
-// Write is an override of io.Write - it just collects the data
+// Write is an override of io.Write - it only collects the data
 // to be written in a holding buffer for later printing in the
 // FlushTable() function.
 func (p *TreeWriter) Write(b []byte) (n int, err error) {

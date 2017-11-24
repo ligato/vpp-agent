@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-// FibLogicalReq groups multiple fields to not enumerate all of them in one function call (request, reply/callback)
+// FibLogicalReq groups multiple fields so that all of them do not enumerate in one function call (request, reply/callback).
 type FibLogicalReq struct {
 	MAC      string
 	BDIdx    uint32
@@ -37,22 +37,19 @@ type FibLogicalReq struct {
 	callback func(error)
 }
 
-// NewL2FibVppCalls is a constructor
+// NewL2FibVppCalls is a constructor.
 func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
 	return &L2FibVppCalls{vppChan, measure.GetTimeLog(l2ba.L2fibAddDel{}, stopwatch), list.New()}
 }
 
-// L2FibVppCalls aggregates vpp calls related to l2 fib
+// L2FibVppCalls aggregates vpp calls related to l2 fib.
 type L2FibVppCalls struct {
 	vppChan         *govppapi.Channel
 	timeLog         measure.StopWatchEntry
 	waitingForReply *list.List
 }
 
-// Add creates L2 FIB table entry
-// Delete creates L2 FIB table entry
-
-// Add creates L2 FIB table entry
+// Add creates L2 FIB table entry.
 func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error), log logging.Logger) error {
 	log.Debug("Adding L2 FIB table entry, mac: ", mac)
 	// L2fibAddDel time measurement
@@ -74,7 +71,7 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 	}, log)
 }
 
-// Delete removes existing L2 FIB table entry
+// Delete removes existing L2 FIB table entry.
 func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error), log logging.Logger) error {
 	log.Debug("Removing L2 fib table entry, mac: ", mac)
 	// L2fibAddDel time measurement
@@ -95,7 +92,7 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 }
 
 func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger) error {
-	// Convert MAC address
+	// Convert MAC address.
 	var mac []byte
 	var err error
 	if logicalReq.MAC != "" {
@@ -126,7 +123,7 @@ func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger)
 	return nil
 }
 
-// WatchFIBReplies is meant to be used in go routine
+// WatchFIBReplies is meant to be used in go routine.
 func (fib *L2FibVppCalls) WatchFIBReplies(log logging.Logger) {
 	for {
 		vppReply := <-fib.vppChan.ReplyChan
@@ -135,7 +132,7 @@ func (fib *L2FibVppCalls) WatchFIBReplies(log logging.Logger) {
 		if vppReply.LastReplyReceived {
 			log.Debug("Ping received")
 			//TODO check with Rasto
-			//ERRO[0001] no reply received within the timeout period 1s
+			// ERRO[0001] no reply received within the timeout period 1s
 			// loc="vppcalls/dump_vppcalls.go(70)" tag=00000000 D
 			continue
 		}

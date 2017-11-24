@@ -16,12 +16,13 @@ package defaultplugins
 
 import (
 	"context"
+
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-// Resync deletes obsolete operation status of network interfaces in DB
-// Obsolete state is one that is not part of SwIfIndex
+// Resync deletes obsolete operation status of network interfaces in DB.
+// Obsolete state is one that is not part of SwIfIndex.
 func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 	for _, key := range keys {
 		ifaceName, err := intf.ParseNameFromKey(key)
@@ -44,7 +45,7 @@ func (plugin *Plugin) resyncIfStateEvents(keys []string) error {
 	return nil
 }
 
-// publishIfState goroutine is used to watch interface state notifications that are propagated to Messaging topic
+// publishIfState goroutine is used to watch interface state notifications that are propagated to Messaging topic.
 func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -63,7 +64,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 				}
 			}
 
-			// marshall data into JSON & send kafka message
+			// Marshall data into JSON & send kafka message.
 			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
@@ -74,13 +75,13 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
-			// stop watching for state data updates
+			// Stop watching for state data updates.
 			return
 		}
 	}
 }
 
-// Resync deletes old operation status of bridge domains in ETCD
+// Resync deletes old operation status of bridge domains in ETCD.
 func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 	for _, key := range keys {
 		bdName, err := intf.ParseNameFromKey(key)
@@ -102,7 +103,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 	return nil
 }
 
-// PublishBdState is used to watch bridge domain state notifications
+// PublishBdState is used to watch bridge domain state notifications.
 func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -126,7 +127,7 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				}
 			}
 		case <-ctx.Done():
-			// Stop watching for state data updates
+			// Stop watching for state data updates.
 			return
 		}
 	}

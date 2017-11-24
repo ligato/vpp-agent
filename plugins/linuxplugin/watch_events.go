@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// WatchEvents goroutine is used to watch for changes in the northbound configuration
+// WatchEvents goroutine is used to watch for changes in the northbound configuration.
 func (plugin *Plugin) watchEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()

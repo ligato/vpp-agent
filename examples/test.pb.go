@@ -8,7 +8,7 @@ Package examplemodel is a generated protocol buffer package.
 It is generated from these files:
 	test.proto
 
-It has these top-level messages:
+It contains these top-level messages:
 	SearchRequest
 	SearchResponse
 */
@@ -16,10 +16,10 @@ package examplemodel
 
 import proto "github.com/gogo/protobuf/proto"
 
-// Reference imports to suppress errors if they are not otherwise used.
+// Reference imports to suppress errors if they are not used in any way.
 var _ = proto.Marshal
 
-// instances of this type can be stored also in key val databases (such as ETCD)
+// Instances of this type can be stored also in key val databases (such as etcd).
 type SearchRequest struct {
 	StringVal string `protobuf:"bytes,1,opt,name=string_val,proto3" json:"string_val,omitempty"`
 	Uint32Val uint32 `protobuf:"varint,2,opt,name=uint32_val,proto3" json:"uint32_val,omitempty"`
@@ -39,7 +39,7 @@ func (m *SearchRequestStructExample) Reset()         { *m = SearchRequestStructE
 func (m *SearchRequestStructExample) String() string { return proto.CompactTextString(m) }
 func (*SearchRequestStructExample) ProtoMessage()    {}
 
-// instances of this type can be stored also in key val databases (such as ETCD)
+// Instances of this type can be stored also in key val databases (such as etcd).
 type SearchResponse struct {
 	StringVal string `protobuf:"bytes,1,opt,name=string_val,proto3" json:"string_val,omitempty"`
 	Uint32Val uint32 `protobuf:"varint,2,opt,name=uint32_val,proto3" json:"uint32_val,omitempty"`

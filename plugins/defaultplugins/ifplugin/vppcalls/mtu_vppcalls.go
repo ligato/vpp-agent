@@ -17,14 +17,15 @@ package vppcalls
 import (
 	"fmt"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"time"
 )
 
-// SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value
+// SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value.
 func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetMtu time measurement
 	start := time.Now()
@@ -34,7 +35,7 @@ func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govp
 		}
 	}()
 
-	// prepare the message
+	// Prepare the message.
 	req := &interfaces.SwInterfaceSetMtu{}
 	req.SwIfIndex = ifIdx
 	req.Mtu = uint16(mtu)

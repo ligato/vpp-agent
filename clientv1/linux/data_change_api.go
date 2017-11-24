@@ -36,26 +36,24 @@ import (
 // to change the scope of DSL), allowing the calls to be chained together
 // conveniently in a single statement.
 type DataChangeDSL interface {
-	// Put initiates a chained sequence of data change DSL statements declaring
-	// new or changing existing configurable objects, e.g:
+	// Put initiates a chained sequence of data change DSL statements, declaring
+	// new configurable objects or changing existing ones, e.g.:
 	//     Put().LinuxInterface(&veth).VppInterface(&afpacket).BD(&BD) ... Send()
-	// The set of available objects to create or change is defined by PutDSL
-	// interface which the returned object implements.
+	// The set of available objects to be created or changed is defined by PutDSL.
 	Put() PutDSL
 
-	// Delete initiates a chained sequence of data change DSL statements
+	// Delete initiates a chained sequence of data change DSL statements,
 	// removing existing configurable objects (by name), e.g:
 	//     Delete().LinuxInterface(vethName).VppInterface(afpacketName).BD(BDName) ... Send()
-	// The set of available objects to remove is defined by DeleteDSL
-	// interface which the returned object implements.
+	// The set of available objects to be removed is defined by DeleteDSL.
 	Delete() DeleteDSL
 
 	// Send propagates requested changes to the plugins.
 	Send() vpp_clientv1.Reply
 }
 
-// PutDSL is a subset of data change DSL statements used to declare new
-// or change existing Linux or VPP configuration.
+// PutDSL is a subset of data change DSL statements, used to declare new
+// Linux or VPP configuration or change existing one.
 type PutDSL interface {
 	// LinuxInterface adds a request to create or update Linux network interface.
 	LinuxInterface(val *interfaces.LinuxInterfaces_Interface) PutDSL
@@ -86,7 +84,7 @@ type PutDSL interface {
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
 
-	// Delete changes the DSL mode to allow removal of an existing configuration.
+	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
 	Delete() DeleteDSL
 
@@ -94,7 +92,7 @@ type PutDSL interface {
 	Send() vpp_clientv1.Reply
 }
 
-// DeleteDSL is a subset of data change DSL statements used to remove
+// DeleteDSL is a subset of data change DSL statements, used to remove
 // existing Linux or VPP configuration.
 type DeleteDSL interface {
 	// LinuxInterface adds a request to delete an existing Linux network
@@ -108,7 +106,7 @@ type DeleteDSL interface {
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
 	// BfdSession adds a request to delete an existing VPP bidirectional
-	// forwarding/ detection session.
+	// forwarding detection session.
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing VPP bidirectional
 	// forwarding detection key.

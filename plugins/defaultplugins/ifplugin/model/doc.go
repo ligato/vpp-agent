@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model is the parent for packages that define various if_plugin
+// Package model is the parent for packages that define various if plugin
 // northbound APIs generated from protobuf data models.
 package model

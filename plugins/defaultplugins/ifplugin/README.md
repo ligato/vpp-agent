@@ -1,7 +1,7 @@
 # IF Plugin
 
 The `ifplugin` is a Core Agent Plugin for configuration of NICs, memifs,
-VXLANs and loopback interfaces.
+VXLANs, loopback interfaces and STN rules.
 
 The plugin watches the northbound configuration of network interfaces,
 which is modelled by [interfaces proto file](model/interfaces/interfaces.proto)
@@ -131,7 +131,7 @@ commands. The documentation for `vpp-agent-ctl` is incomplete right now,
 and the only way to find out what a given command does is to
 [study the source code itself](../../../cmd/vpp-agent-ctl/main.go).
 
-**Bidirectional Forwarding Detection**
+### Bidirectional Forwarding Detection
 
 `iflplugin` is also able to configure BFD sessions, authentication keys
 and echo function.
@@ -191,3 +191,59 @@ vpp-agent-ctl -bfde
 To remove any part of BFD configuration, just add `d` before vpp-agent-ctl suffix (for example
 `-dbfds` to remove BFD session). Keep in mind that authentication key cannot be removed (or modified)
 if it is used in any BFD session.
+
+### STN Rules
+
+`iflplugin` is also able to configure STN rules.
+
+STN is modelled by [stn proto file](model/stn/stn.proto). Every part of STN
+is stored in ETCD under unique. Every STN rule is store under following key:
+```
+/vnf-agent/{agent-lanbel}/vpp/config/v1/stn/rules/{rule-name}
+```
+
+**JSON configuration example with vpp-agent-ctl**
+
+An example of interface configuration for STN rule in JSON format can
+be found [here](../../../cmd/vpp-agent-ctl/json/stn-rule.json).
+
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
+can be used. For example, to configure stn rule `rule1` in vpp
+labeled `vpp1`, use the configuration in the `stn-rule.json` file and
+run the following `vpp-agent-ctl` command:
+```
+vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/stn/rules/" stn-rule.json
+```
+
+**Inbuilt configuration example with vpp-agent-ctl**
+
+The `vpp-agent-ctl` binary also ships with some simple predefined
+ietf-interface configurations. This is intended solely for testing
+purposes.
+
+To create a `rule1` stn rule with IP address `10.1.1.3/32`, run:
+```
+vpp-agent-ctl -stna
+```
+
+To remove the stn rule, run:
+```
+vpp-agent-ctl -stnd
+```
+
+## State of implementation of rx-mode for various interface types
+
+| interface type | rx-modes | implemented | how to check on VPP | example of creation of interface |
+| ---- | ---- | ---- | ---- | ---- |
+| tap interface | PIA | yes  | ? | _#tap connect tap1_|
+| memory interface |  PIA | yes | both sides of memif (slave and master) has to be configured = 2 VPPs.</br>_#sh memif_ | _#create memif master_ |
+| vxlan tunnel | PIA | yes | ? | #_create vxlan tunnel src 192.168.168.168 dst 192.168.168.170 vni 40_
+| software loopback | PIA | yes | ? | _#create loopback interface_
+| ethernet csmad | P | yes | _#show interface rx-placement_ | vpp will adopt interfaces on start up
+| af packet | PIA | yes | _#show interface rx-placement_ | _#create host-interface name <ifname>_
+
+Legend:
+
+- P - polling
+- I - interrupt
+- A - adaptive

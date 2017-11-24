@@ -32,9 +32,9 @@ vpp_ctl: Read Key With Prefix
     [Return]           ${out}
 
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -44,9 +44,9 @@ vpp_ctl: Put Memif Interface
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Memif Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -235,6 +235,7 @@ vpp_ctl: Put TAP Interface With IP
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
 vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
@@ -426,7 +427,6 @@ etcd: Get ETCD Tree
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]            ${out}
 
-
 vpp_ctl: Delete ACL
     [Arguments]    ${node}    ${name}
     Log Many     ${node}    ${name}
@@ -494,3 +494,17 @@ vpp_ctl: Get Linux Route As Json
     Log                   ${data}
     ${output}=            Evaluate             json.loads('''${data}''')    json
     [Return]              ${output}
+
+vpp_ctl: Check ACL Reply
+    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    ${acl_d}=           vpp_ctl: Get ACL As Json    ${node}    ${acl_name}
+    ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
+    ${term_d_lines}=    Split To Lines    ${term_d}
+    Log                 ${term_d_lines}
+    ${data}=            OperatingSystem.Get File    ${reply_json}
+    Should Be Equal     ${data}   ${acl_d}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${t_data_lines}=    Split To Lines    ${data}
+    Log                 ${t_data_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}

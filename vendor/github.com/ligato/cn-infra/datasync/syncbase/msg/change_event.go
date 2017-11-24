@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // NewChangeWatchResp is a constructor.
@@ -70,6 +70,6 @@ func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (prevExists bool,
 func (ev *ChangeWatchResp) Done(err error) {
 	//TODO publish response to the topic
 	if err != nil {
-		logroot.StandardLogger().Error(err)
+		logrus.DefaultLogger().Error(err)
 	}
 }

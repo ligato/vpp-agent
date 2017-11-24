@@ -51,8 +51,8 @@ func (p pfx) getPrefix(level int) string {
 	return strings.Repeat(" ", level*p.perLevelSpaces)
 }
 
-// PrintDataAsText prints data from an EtcdDump repo in text format. If tree option is chosen, output is printed with
-// tree lines
+// PrintDataAsText prints data from an EtcdDump repo in the text format. If the tree option
+// is chosen, output is printed with tree lines.
 func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buffer, error) {
 	prefixer = newPrefixer(printAsTree, perLevelSpaces)
 
@@ -77,7 +77,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 	stsTemplate, err := template.New("status").Funcs(stsFuncMap).Parse(
 		"{{pfx 1}}STATUS:" +
 			"{{$etcd := .ShowEtcd}}" +
-			// Iterate over status
+			// Iterate over status.
 			"{{range $statusName, $statusData := .Status}}\n{{pfx 2}}{{$statusName}}: {{setOsColor .State}}" +
 			"{{if .LastUpdate}}, Updated: {{convertTime .LastUpdate | setBold}}{{end}}" +
 			"{{if .LastChange}}, Changed: {{convertTime .LastChange}}{{end}}" +
@@ -108,7 +108,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"{{$interfaceErrors := .InterfaceErrors}}" +
 			"{{with .Interfaces}}\n{{pfx 1}}INTERFACES:" +
 
-			// Iterate over interfaces
+			// Iterate over interfaces.
 			"{{range $ifaceName, $ifaceData := .}}\n{{pfx 2}}{{setBold $ifaceName}}" +
 
 			// Interface overall status
@@ -149,7 +149,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"{{end}}" + // Return from 'if or'
 			"{{end}}{{end}}{{end}}" +
 
-			// Etcd metadata for both the config and state records
+			// Etcd metadata for both config and state records
 			"{{if $etcd}}\n{{pfx 3}}ETCD:" +
 			"{{with .Config}}{{with .Metadata}}\n{{pfx 4}}Cfg: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
 			"{{with .State}}{{with .Metadata}}\n{{pfx 4}}Sts: Rev {{.Rev}}, Key '{{.Key}}'{{end}}{{end}}" +
@@ -157,11 +157,11 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// Interface errors (if present)
 			"{{with $interfaceErrors}}" +
-			// Iterate over interfaces (Interface_errors)
+			// Iterate over interfaces (Interface_errors).
 			"{{range .}}{{with .InterfaceErrorList}}" +
-			// Iterate over interface error list
+			// Iterate over interface error list.
 			"{{range .}}{{if eq .InterfaceName $ifaceName}}{{with .ErrorData}}{{pfx 3}}{{setRed \"Errors\"}}:" +
-			// Iterate over error data
+			// Iterate over error data.
 			"{{range $index, $error := .}}\n{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			// Iterate over error data - end of loop
 			"{{end}}{{end}}{{end}}" +
@@ -189,7 +189,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 			"{{$bridgeDomainErrors := .BridgeDomainErrors}}" +
 			"{{with .BridgeDomains}}\n{{pfx 1}}BRIDGE DOMAINS:" +
 
-			// Iterate over bridge domains
+			// Iterate over bridge domains.
 			"{{range $bdKey, $element := .}}\n{{pfx 2}}{{setBold $bdKey}}:" +
 
 			// Bridge domain config attributes
@@ -203,7 +203,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// Interface table
 			"{{with .Interfaces}}\n{{pfx 3}}Interfaces:" +
-			// Iterate over BD interfaces
+			// Iterate over BD interfaces.
 			"{{range $ifKey, $element := .}}\n{{pfx 4}}{{setBold $element.Name}} splitHorizonGrp {{.SplitHorizonGroup}}" +
 			"{{if .BridgedVirtualInterface}}, <BVI>{{end}}" +
 			// Iterate over BD interfaces - end of loop
@@ -211,7 +211,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// ARP termination table
 			"{{with .ArpTerminationTable}}\n{{pfx 3}}ARP-Table:" +
-			// Iterate over ARP table
+			// Iterate over ARP table.
 			"{{range $arpKey, $arp := .}}\n{{pfx 4}}{{$arp.IpAddress}}: {{$arp.PhysAddress}}" +
 			//Iterate over ARP table - end of loop
 			"{{end}}{{end}}" +
@@ -250,11 +250,11 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// Bridge domain errors (if present)
 			"{{with $bridgeDomainErrors}}" +
-			// Iterate over bridge domains (BridgeDomain_errors)
+			// Iterate over bridge domains (BridgeDomain_errors).
 			"{{range .}}{{with .BdErrorList}}" +
-			// Iterate ove bridge domain error list
+			// Iterate ove bridge domain error list.
 			"{{range .}}{{if eq .BdName $element.Name}}{{with .ErrorData}}\n{{pfx 3}}{{setRed \"Errors\"}}" +
-			// Iterate over error data
+			// Iterate over error data.
 			"{{range $index, $error := .}}\n{{pfx 4}}Changed: {{convertTime $error.LastChange | setBold}}, ChngType: {{$error.ChangeType}}, Msg: {{setRed $error.ErrorMessage}}" +
 			// Iterate over error data - end of loop
 			"{{end}}{{end}}{{end}}" +
@@ -265,7 +265,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 
 			// FIB table
 			"\n{{with $fibTableEntries}}{{with .FibTable}}\n{{pfx 2}}FIB-Table:" +
-			// Iterate over FIB table
+			// Iterate over FIB table.
 			"{{range $fibKey, $fib := .}}\n{{pfx 3}}{{$fib.PhysAddress}}{{with $fib.OutgoingInterface}}, {{$fib.OutgoingInterface}}{{end}}" +
 			"{{with $fib.BridgeDomain}}, {{$fib.BridgeDomain}}{{end}}" +
 			"{{if $fib.StaticConfig}}, <STATIC>{{end}}" +
@@ -286,7 +286,7 @@ func (ed EtcdDump) PrintDataAsText(showEtcd bool, printAsTree bool) (*bytes.Buff
 	return ed.textRenderer(showEtcd, templates)
 }
 
-// Render data according to templates as a tree
+// Render data according to templates as a tree.
 func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	for _, key := range ed.getSortedKeys() {
@@ -307,7 +307,7 @@ func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) (
 		var wasError error
 		for index, templateVal := range templates {
 			if index == 0 {
-				// Execute first template with standard output with key
+				// Execute first template with standard output and key.
 				wasError = templateVal.Execute(os.Stdout, key)
 			} else {
 				wasError = templateVal.Execute(treeBuffer, vd)
@@ -317,20 +317,20 @@ func (ed EtcdDump) treeRenderer(showEtcd bool, templates []*template.Template) (
 			}
 		}
 
-		// Pass bytes written for this key to tree writer
+		// Pass bytes written for this key to tree writer.
 		treeWriter.writeBuf = treeBuffer.Bytes()
-		// Render tree
+		// Render tree.
 		treeWriter.FlushTree()
 		fmt.Println("")
-		// Add bytes to cumulative buffer (the buffer is not used to render)
+		// Add bytes to cumulative buffer (the buffer is not used to render).
 		buffer.Write(treeBuffer.Bytes())
-		// Reset local buffer
+		// Reset local buffer.
 		treeBuffer.Reset()
 	}
 	return buffer, nil
 }
 
-// Render data according to templates in text form
+// Render data according to templates in text form.
 func (ed EtcdDump) textRenderer(showEtcd bool, templates []*template.Template) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	buffer.WriteTo(os.Stdout)
@@ -389,7 +389,7 @@ func setBold(attr interface{}) string {
 	return fmt.Sprintf("%s", aurora.Bold(attr))
 }
 
-// setOsColor sets the color for the Operational State
+// setOsColor sets the color for the Operational State.
 func setOsColor(arg status.OperationalState) string {
 	switch arg {
 	case status.OperationalState_OK:

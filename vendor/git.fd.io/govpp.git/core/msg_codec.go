@@ -43,6 +43,12 @@ type vppReplyHeader struct {
 	Context uint32
 }
 
+// vppEventHeader struct contains header fields implemented by all VPP events.
+type vppEventHeader struct {
+	VlMsgID uint16
+	Context uint32
+}
+
 // vppOtherHeader struct contains header fields implemented by other VPP messages (not requests nor replies).
 type vppOtherHeader struct {
 	VlMsgID uint16
@@ -51,6 +57,7 @@ type vppOtherHeader struct {
 const (
 	vppRequestHeaderSize = 10 // size of a VPP request header
 	vppReplyHeaderSize   = 6  // size of a VPP reply header
+	vppEventHeaderSize   = 6  // size of a VPP event header
 	vppOtherHeaderSize   = 2  // size of the header of other VPP messages
 )
 
@@ -68,6 +75,8 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 		header = &vppRequestHeader{VlMsgID: msgID}
 	} else if msg.GetMessageType() == api.ReplyMessage {
 		header = &vppReplyHeader{VlMsgID: msgID}
+	} else if msg.GetMessageType() == api.EventMessage {
+		header = &vppEventHeader{VlMsgID: msgID}
 	} else {
 		header = &vppOtherHeader{VlMsgID: msgID}
 	}
@@ -109,6 +118,8 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 		header = &vppRequestHeader{}
 	} else if msg.GetMessageType() == api.ReplyMessage {
 		header = &vppReplyHeader{}
+	} else if msg.GetMessageType() == api.EventMessage {
+		header = &vppEventHeader{}
 	} else {
 		header = &vppOtherHeader{}
 	}
@@ -128,6 +139,8 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 		buf = bytes.NewReader(data[vppRequestHeaderSize:])
 	} else if msg.GetMessageType() == api.ReplyMessage {
 		buf = bytes.NewReader(data[vppReplyHeaderSize:])
+	} else if msg.GetMessageType() == api.EventMessage {
+		buf = bytes.NewReader(data[vppEventHeaderSize:])
 	} else {
 		buf = bytes.NewReader(data[vppOtherHeaderSize:])
 	}

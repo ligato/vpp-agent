@@ -17,29 +17,29 @@ package l2plugin
 import (
 	"fmt"
 
+	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	l22 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/vpe"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 )
 
-// Resync writes BDs to the empty VPP
+// Resync writes BDs to the empty VPP.
 func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
-	// Calculate and log bd resync
+	// Calculate and log bd resync.
 	defer func() {
 		if plugin.Stopwatch != nil {
 			plugin.Stopwatch.PrintLog()
 		}
 	}()
 
-	// Step 0: Dump actual state of the VPP
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, measure.GetTimeLog(l22.BridgeDomainDump{}, plugin.Stopwatch))
+	// Step 0: Dump current state of the VPP.
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.BridgeDomainDump{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -48,12 +48,12 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 	var wasError error
 
-	// Step 1: delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
+	// Step 1: Delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
 	for vppIdx, vppBD := range vppBDs {
 		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.Log, pluginID,
 			"hack_sw_if_indexes", ifaceidx.IndexMetadata))
 
-		// hack to reuse existing binary call wrappers
+		// hack to reuse an existing binary call wrappers
 		hackBD := l2.BridgeDomains_BridgeDomain(vppBD.BridgeDomains_BridgeDomain)
 		for _, vppBDIface := range vppBD.Interfaces {
 			hackIfaceName := fmt.Sprintf("%d", vppBDIface.SwIfIndex)
@@ -72,7 +72,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 	}
 
-	// Step 2: create missing vpp configuration
+	// Step 2: Create missing vpp configuration.
 	for _, nbBD := range nbBDs {
 		err := plugin.ConfigureBridgeDomain(nbBD)
 		if err != nil {
@@ -85,10 +85,10 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	return wasError
 }
 
-// Resync writes FIBs to the empty VPP
+// Resync writes FIBs to the empty VPP.
 func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
-	// Calculate and log fib resync
+	// Calculate and log fib resync.
 	defer func() {
 		if plugin.Stopwatch != nil {
 			plugin.Stopwatch.PrintLog()
@@ -96,7 +96,7 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 	}()
 
 	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel,
-		measure.GetTimeLog(l22.BridgeDomainDump{}, plugin.Stopwatch))
+		measure.GetTimeLog(l2ba.BridgeDomainDump{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -117,10 +117,10 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 	return nil
 }
 
-// Resync writes XCons to the empty VPP
+// Resync writes XCons to the empty VPP.
 func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
-	// Calculate and log xConnect resync
+	// Calculate and log xConnect resync.
 	defer func() {
 		if plugin.Stopwatch != nil {
 			plugin.Stopwatch.PrintLog()

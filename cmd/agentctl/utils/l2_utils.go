@@ -35,8 +35,8 @@ const (
 	IsDelete     = "is-delete"
 )
 
-// GetBridgeDomainKeyAndValue returns true if a bridge domain with the specified name was found together with the BD key,
-// data and data broker
+// GetBridgeDomainKeyAndValue returns true if a bridge domain with the specified name
+// was found together with the BD key, and data, and data broker.
 func GetBridgeDomainKeyAndValue(endpoints []string, label string, bdName string) (bool, string, *l2.BridgeDomains_BridgeDomain, keyval.ProtoBroker) {
 	validateBdIdentifiers(label, bdName)
 
@@ -56,7 +56,7 @@ func GetBridgeDomainKeyAndValue(endpoints []string, label string, bdName string)
 	return found, key, bd, db
 }
 
-// GetFibEntry returns the FIB entry if exists
+// GetFibEntry returns the FIB entry if exists.
 func GetFibEntry(endpoints []string, label string, bdLabel string, fibMac string) (bool, string, *l2.FibTableEntries_FibTableEntry) {
 	db, err := GetDbForOneAgent(endpoints, label)
 	if err != nil {
@@ -74,18 +74,18 @@ func GetFibEntry(endpoints []string, label string, bdLabel string, fibMac string
 	return found, key, fibEntry
 }
 
-// WriteBridgeDomainToDb writes bridge domain to the ETCD
+// WriteBridgeDomainToDb writes bridge domain to the etcd.
 func WriteBridgeDomainToDb(db keyval.ProtoBroker, key string, bd *l2.BridgeDomains_BridgeDomain) {
 	validateBridgeDomain(bd)
 	db.Put(key, bd)
 }
 
-// WriteFibDataToDb writes FIB entry to the ETCD
+// WriteFibDataToDb writes FIB entry to the etcd.
 func WriteFibDataToDb(db keyval.ProtoBroker, key string, fib *l2.FibTableEntries_FibTableEntry) {
 	db.Put(key, fib)
 }
 
-// DeleteFibDataFromDb removes FIB entry from the ETCD
+// DeleteFibDataFromDb removes FIB entry from the etcd.
 func DeleteFibDataFromDb(db keyval.ProtoBroker, key string) {
 	db.Delete(key)
 }

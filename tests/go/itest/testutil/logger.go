@@ -18,16 +18,17 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ligato/cn-infra/logging"
 	"regexp"
 	"testing"
+
+	"github.com/ligato/cn-infra/logging"
 )
 
-// Logger is wrapper of Logrus logger. In addition to Logrus functionality it
-// allows to define static log fields that are added to all subsequent log entries. It also automatically
-// appends file name and line where the log is coming from. In order to distinguish logs from different
-// go routines a tag (number that is based on the stack address) is computed. To achieve better readability
-// numeric value of a tag can be replaced by a string using SetTag function.
+// Logger is a wrapper of Logrus logger. In addition to Logrus functionality,
+// it allows to define static log fields that are added to all subsequent log entries. It also automatically
+// appends file name and line from which the log comes. In order to distinguish logs from different
+// go routines, a tag (number that is based on the stack address) is computed. To achieve better readability,
+// numeric value of a tag can be replaced with a string using SetTag function.
 type Logger struct {
 	access sync.RWMutex
 	name   string
@@ -35,9 +36,9 @@ type Logger struct {
 	level  logging.LogLevel
 }
 
-// NewLogger is a constructor creates instances of named logger.
+// NewLogger is a constructor which creates instances of named logger.
 // This constructor is called from logRegistry which is useful
-// when log levels needs to be changed by management API (such as REST)
+// when log levels need to be changed by management API (such as REST).
 //
 // Example:
 //
@@ -62,7 +63,7 @@ func checkLoggerName(name string) error {
 	return nil
 }
 
-// GetName return the logger name
+// GetName returns the logger name.
 func (logger *Logger) GetName() string {
 	return logger.name
 }
@@ -83,7 +84,7 @@ func (logger *Logger) withField(key string, value interface{}) *logMsg {
 	return logger.withFields(logging.Fields{key: value})
 }
 
-// logMsg represent an item to be logged
+// logMsg represent an item to be logged.
 type logMsg struct {
 	*Logger
 	fields logging.Fields

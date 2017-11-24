@@ -20,7 +20,7 @@ For simplicity, error handling is omitted.
     import "github.com/ligato/cn-infra/db/keyval/kvproto"
     import "github.com/ligato/cn-infra/db/keyval/redis"
     import "github.com/ligato/cn-infra/utils/config"
-    import "github.com/ligato/cn-infra/logging/logroot"
+    import "github.com/ligato/cn-infra/logging/logrus"
 ```
 #### Define client configuration based on your Redis installation.
 - Single Node
@@ -44,7 +44,7 @@ You can also load any of the three configuration files using
 #### Create connection from configuration
 ```
    client, err := redis.CreateClient(cfg)
-   db, err := redis.NewBytesConnection(client, logroot.StandardLogger())
+   db, err := redis.NewBytesConnection(client, logrus.DefaultLogger())
 ```
 #### Create Brokers / Watchers from connection
 ```

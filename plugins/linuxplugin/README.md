@@ -97,7 +97,7 @@ To insert config into etcd in JSON format [vpp-agent-ctl](../../cmd/vpp-agent-ct
 can be used. For example, to configure interface `veth1`, use the configuration in the `veth1.json` file and
 run the following `vpp-agent-ctl` command:
 ```
-vpp-agent-ctl -put "/vnf-agent/my-agent/linux/config/v1/interface/veth1" veth1.json
+vpp-agent-ctl -put "/vnf-agent/my-agent/linux/config/v1/interface/veth1" json/veth1.json
 ```
 
 **Inbuilt configuration example with vpp-agent-ctl**

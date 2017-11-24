@@ -31,7 +31,7 @@ import (
 // checkImplemensPlugin is used to let compiler check if
 // a particular plugin implements go interface core.Plugin
 // (see following Inject() method).
-// It technique is done because following method Plugins()
+// This construct is used because the following method Plugins()
 // uses reflection rather than enumerating all field again.
 var checkImplemensPlugin core.Plugin
 
@@ -55,7 +55,7 @@ func WithPlugins(listPlugins func(local *FlavorVppRPC) []*core.NamedPlugin) core
 }
 
 // FlavorVppRPC glues together multiple plugins to mange VPP and linux interfaces configuration using
-// GRPC service
+// GRPC service.
 type FlavorVppRPC struct {
 	*local.FlavorLocal
 	*rpc.FlavorRPC
@@ -69,7 +69,7 @@ type FlavorVppRPC struct {
 	injected bool
 }
 
-// Inject sets object references
+// Inject sets object references.
 func (f *FlavorVppRPC) Inject() bool {
 	if f.injected {
 		return false
@@ -100,7 +100,7 @@ func (f *FlavorVppRPC) Inject() bool {
 	return true
 }
 
-// Plugins combines Generic Plugins and Standard VPP Plugins
+// Plugins combine Generic Plugins and Standard VPP Plugins.
 func (f *FlavorVppRPC) Plugins() []*core.NamedPlugin {
 	f.Inject()
 	return core.ListPluginsInFlavor(f)
@@ -112,7 +112,7 @@ type withPluginsOpt struct {
 	callback func(local *FlavorVppRPC) []*core.NamedPlugin
 }
 
-// OptionMarkerCore is just for marking implementation that it implements this interface
+// OptionMarkerCore marks that the implementation implements this interface.
 func (opt *withPluginsOpt) OptionMarkerCore() {}
 
 // Plugins methods is here to implement core.WithPluginsOpt go interface

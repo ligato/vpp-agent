@@ -19,7 +19,7 @@ const (
 	InterfacePrefix = "linux/config/v1/interface/"
 )
 
-// InterfaceKeyPrefix returns the prefix used in ETCD to store config for Linux interfaces
+// InterfaceKeyPrefix returns the prefix used in ETCD to store config for Linux interfaces.
 func InterfaceKeyPrefix() string {
 	return InterfacePrefix
 }

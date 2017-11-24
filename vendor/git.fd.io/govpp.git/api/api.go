@@ -28,6 +28,8 @@ const (
 	RequestMessage MessageType = iota
 	// ReplyMessage represents a VPP reply message
 	ReplyMessage
+	// EventMessage represents a VPP notification event message
+	EventMessage
 	// OtherMessage represents other VPP message (e.g. counters)
 	OtherMessage
 )

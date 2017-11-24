@@ -22,8 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 )
 
-// DataResyncRequestDB allows to create a RESYNC request using convenient RESYNC
-// DSL and send it through the provided <broker>.
+// DataResyncRequestDB allows creating a RESYNC request using convenient RESYNC
+// DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys
 // prior to RESYNC - it is handled by DataResyncDSL.
@@ -31,21 +31,21 @@ func DataResyncRequestDB(broker keyval.ProtoBroker) defaultplugins.DataResyncDSL
 	return dbadapter.NewDataResyncDSL(broker.NewTxn(), broker.ListKeys)
 }
 
-// DataChangeRequestDB allows to create Data Change requests using convenient
-// Data Change DSL and send it through the provided <broker>.
+// DataChangeRequestDB allows createing Data Change requests using convenient
+// Data Change DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
 func DataChangeRequestDB(broker keyval.ProtoBroker) defaultplugins.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(broker.NewTxn())
 }
 
-// DataResyncRequestGRPC allows to send RESYNC requests conveniently.
+// DataResyncRequestGRPC allows sending RESYNC requests conveniently.
 // User of the API does not need to be aware of keys.
-// User of the API does not need do by himself the delete of obsolete objects/keys during RESYNC.
+// User of the API does not need to delete the obsolete objects/keys during RESYNC.
 func DataResyncRequestGRPC(client vppsvc.ResyncConfigServiceClient) defaultplugins.DataResyncDSL {
 	return grpcadapter.NewDataResyncDSL(client)
 }
 
-// DataChangeRequestGRPC allows to send Data Change requests conveniently (even without directly using Broker)
+// DataChangeRequestGRPC allows sending Data Change requests conveniently (even without directly using Broker).
 // User of the API does not need to be aware of keys.
 func DataChangeRequestGRPC(client vppsvc.ChangeConfigServiceClient) defaultplugins.DataChangeDSL {
 	return grpcadapter.NewDataChangeDSL(client)

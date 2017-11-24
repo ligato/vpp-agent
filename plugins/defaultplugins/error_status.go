@@ -23,20 +23,20 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
 
-// ErrCtx is an error context struct which stores event change with object identifier (name, etc) and returned error (can be nil)
+// ErrCtx is an error context struct which stores an event change with object identifier (name, etc.) and returns an error (can be nil).
 type ErrCtx struct {
 	change  datasync.ChangeEvent
 	errInfo error
 }
 
-// Maximum count of entries which can be stored in error log. If this number is exceeded, the oldest log entry will be
-// removed
+// Maximum count of entries which can be stored in an error log. If this number
+// is exceeded, the oldest log entry will be removed.
 const maxErrCount = 10
 
 // Wait on ErrCtx object which is then used to handle the error log. Two cases are treated:
-// 1. If there is any error present, save it together with time stamp and change type under particular key
+// 1. If there is any error present, save it together with time stamp and change type under particular key.
 // 2. If error == nil and change type is 'Delete', it means some data were successfully removed and the whole error log
-// related to the data can be removed as well
+// related to the data can be removed as well.
 func (plugin *Plugin) changePropagateError() {
 	for {
 		select {
@@ -47,17 +47,17 @@ func (plugin *Plugin) changePropagateError() {
 			changeType := change.GetChangeType()
 
 			if errInfo == nil && change.GetChangeType() == datasync.Delete {
-				// Data were successfully removed so delete all error entries related to the data (if exists)
+				// Data were successfully removed so delete all error entries related to the data (if exists).
 				plugin.removeErrorLog(key)
 			} else if errInfo != nil {
-				// There is an error to store
+				// There is an error to store.
 				plugin.processError(errInfo, key, changeType, change)
 			}
 		}
 	}
 }
 
-// Process provided error data and add a new entry
+// Process provides error data and adds a new entry.
 func (plugin *Plugin) processError(errInfo error, key string, changeType datasync.PutDel, change datasync.ChangeEvent) {
 	// Interfaces
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
@@ -120,13 +120,13 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 	}
 }
 
-// Create a list of errors for the provided interface and register it. If the interface already has some errors logged,
-// find it and add a new error log to the list
+// Create a list of errors for the provided interface and register it. If the interface
+// already has some errors logged, find it and add a new error log to the list.
 func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.PutDel, errs ...error) *interfaces.InterfaceErrors_Interface {
-	// Read registered data
+	// Read registered data.
 	_, data, exists := plugin.errorIndexes.LookupIdx(ifName)
 
-	// Compose new data
+	// Compose new data.
 	var interfaceErrors []*interfaces.InterfaceErrors_Interface_ErrorData
 	for _, err := range errs {
 		if err == nil {
@@ -148,7 +148,7 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.PutD
 		}
 	}
 
-	// Register new data
+	// Register new data.
 	plugin.errorIndexes.RegisterName(ifName, plugin.errorIdxSeq, interfaceErrors)
 	plugin.errorIdxSeq++
 
@@ -158,13 +158,13 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.PutD
 	}
 }
 
-// Create a list of errors for the provided bridge domain and register it. If the bridge domain already has some errors
-// logged, find it and add a new error log to the list
+// Create a list of errors for the provided bridge domain and register it. If the bridge domain
+// already has any error logged, find it and add a new error log to the list.
 func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change datasync.PutDel, errs ...error) *l2.BridgeDomainErrors_BridgeDomain {
 	// Read registered data
 	_, data, exists := plugin.errorIndexes.LookupIdx(bdName)
 
-	// Compose new data
+	// Compose new data.
 	var bridgeDomainErrors []*l2.BridgeDomainErrors_BridgeDomain_ErrorData
 	for _, err := range errs {
 		if err == nil {
@@ -186,7 +186,7 @@ func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change datasync.P
 		}
 	}
 
-	// Register new data
+	// Register new data.
 	plugin.errorIndexes.RegisterName(bdName, plugin.errorIdxSeq, bridgeDomainErrors)
 	plugin.errorIdxSeq++
 
@@ -196,8 +196,8 @@ func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change datasync.P
 	}
 }
 
-// Generic method which can be used to put error object under provided key to the ETCD. If there is more items stored
-// than the defined maximal count, the first entry from the mapping is removed
+// Generic method which can be used to put an error object under provided key to the etcd. If there are more items stored
+// than the defined maximal count, the first entry from the mapping is removed.
 func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 	totalErrorCount, firstActiveIndex := plugin.calculateErrorMappingEntries()
 	name, oldErrors, found := plugin.errorIndexes.LookupName(firstActiveIndex)
@@ -218,7 +218,7 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 			plugin.removeOldestErrorLogEntry(oldEntryKey)
 		}
 	}
-	// Get errors type
+	// Get errors type.
 	if data, ok := errors.(*interfaces.InterfaceErrors_Interface); ok {
 		err := plugin.Publish.Put(key, data)
 		if err != nil {
@@ -237,13 +237,13 @@ func (plugin *Plugin) addErrorLogEntry(key string, errors interface{}) error {
 
 func (plugin *Plugin) removeErrorLog(key string) {
 	dividedKey := strings.Split(key, "/")
-	// Last part of the key is a name
+	// Last part of the key is a name.
 	name := dividedKey[len(dividedKey)-1]
-	// The rest is a prefix
+	// The rest is a prefix.
 	prefix := strings.Replace(key, name, "", 1)
 
 	if plugin.Publish == nil {
-		// if there is no publish destination set, there is nothing to be deleted
+		// If there is no publish destination set, there is nothing to be deleted.
 		return
 	}
 
@@ -260,7 +260,7 @@ func (plugin *Plugin) removeErrorLog(key string) {
 	}
 }
 
-// Generic method which can be used to remove oldest error data under provided key
+// Generic method which can be used to remove the oldest error data under provided key.
 func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	plugin.Log.Warnf("Key: %v", key)
 	var name string
@@ -286,7 +286,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	// Interfaces
 	case []*interfaces.InterfaceErrors_Interface_ErrorData:
 		key := interfaces.InterfaceErrorKey(name)
-		// If there are more than one error under the interface key, remove the oldest one
+		// If there is more than one error under the interface key, remove the oldest one.
 		if len(errData) > 1 {
 			errData = append(errData[:0], errData[1:]...)
 			plugin.Log.Infof("Error log for interface %v: oldest entry removed", name)
@@ -304,7 +304,7 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 		// Bridge domains
 	case []*l2.BridgeDomainErrors_BridgeDomain_ErrorData:
 		key := l2.BridgeDomainErrorKey(name)
-		// If there are more than one error under the bridge domain key, remove the oldest one
+		// If there is more than one error under the bridge domain key, remove the oldest one.
 		if len(errData) > 1 {
 			errData = append(errData[:0], errData[1:]...)
 			plugin.Log.Infof("Error log for bridge domain %v: oldest entry removed", name)
@@ -322,8 +322,8 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	}
 }
 
-// Auxiliary method returns the count of all error entries under every interface/bridge domain in the error mapping and
-// a index of the first element
+// Auxiliary method returns the count of all error entries under every
+// interface/bridge domain in the error mapping and an index of the first element.
 func (plugin *Plugin) calculateErrorMappingEntries() (uint32, uint32) {
 	var index uint32
 	var count int

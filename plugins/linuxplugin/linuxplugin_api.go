@@ -16,12 +16,23 @@ package linuxplugin
 
 import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 )
 
 // API of Linux Plugin
 type API interface {
-	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
-	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-	// Linux interfaces.
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
+	// to corresponding Linux interface indexes. This mapping is especially helpful
+	// for plugins that need to watch for newly added or deleted Linux interfaces.
 	GetLinuxIfIndexes() ifaceidx.LinuxIfIndex
+
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+	// ARP entry indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+	// Linux ARP entries.
+	GetLinuxARPIndexes() l3idx.LinuxARPIndex
+
+	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+	// route indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+	// Linux routes.
+	GetLinuxRouteIndexes() l3idx.LinuxRouteIndex
 }

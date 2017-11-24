@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// WatchEvents goroutine is used to watch for changes in the northbound configuration & NameToIdxMapping notifications
+// WatchEvents goroutine is used to watch for changes in the northbound configuration & NameToIdxMapping notifications.
 func (plugin *Plugin) watchEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -83,10 +83,10 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			resyncStatusEv.Done(wasError)
 
 		case dataChng := <-plugin.changeChan:
-			// For FIBs only: if changePropagateRequest ends up without errors, the dataChng.Done is called in l2fib_vppcalls,
-			// otherwise the dataChng.Done is called here
+			// For FIBs only: if changePropagateRequest ends up without errors,
+			// the dataChng.Done is called in l2fib_vppcalls, otherwise the dataChng.Done is called here.
 			callbackCalled, err := plugin.changePropagateRequest(dataChng, dataChng.Done)
-			// When the request propagation is completed, send the error context (even if the error is nil)
+			// When the request propagation is complete, send the error context (even if the error is nil).
 			plugin.errorChannel <- ErrCtx{dataChng, err}
 			if !callbackCalled {
 				dataChng.Done(err)
@@ -94,7 +94,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 		case ifIdxEv := <-plugin.ifIdxWatchCh:
 			if !ifIdxEv.IsDelete() {
-				// Keep order
+				// Keep order.
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
@@ -103,6 +103,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				})
 				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.l4Configurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.stnConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
 				// TODO propagate error
 			} else {
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
@@ -113,6 +114,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				})
 				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				plugin.l4Configurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.stnConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				// TODO propagate error
 			}
 			ifIdxEv.Done()

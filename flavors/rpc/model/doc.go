@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model is the parent for packages that define various GRPC
+// Package model is the parent for packages defining various GRPC
 // services generated from protobuf data models.
 package model
 

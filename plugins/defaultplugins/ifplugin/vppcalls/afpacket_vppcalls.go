@@ -17,11 +17,12 @@ package vppcalls
 import (
 	"fmt"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"time"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
@@ -34,7 +35,7 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 		}
 	}()
 
-	// prepare the message
+	// Prepare the message.
 	req := &af_packet.AfPacketCreate{}
 
 	req.HostIfName = []byte(afPacketIntf.HostIfName)
@@ -63,7 +64,7 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 		}
 	}()
 
-	// prepare the message
+	// Prepare the message.
 	req := &af_packet.AfPacketDelete{}
 	req.HostIfName = []byte(afPacketIntf.HostIfName)
 

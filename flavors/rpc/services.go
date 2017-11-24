@@ -28,7 +28,7 @@ import (
 	"net"
 )
 
-// GRPCSvcPlugin registers VPP GRPC services in *grpc.Server
+// GRPCSvcPlugin registers VPP GRPC services in *grpc.Server.
 type GRPCSvcPlugin struct {
 	Deps         GRPCSvcPluginDeps
 	changeVppSvc ChangeVppSvc
@@ -41,7 +41,7 @@ type GRPCSvcPluginDeps struct {
 	GRPC grpc.Server
 }
 
-// Init sets plugin child loggers for changeVppSvc & resyncVppSvc
+// Init sets plugin child loggers for changeVppSvc & resyncVppSvc.
 func (plugin *GRPCSvcPlugin) Init() error {
 	plugin.changeVppSvc.Log = plugin.Deps.Log.NewLogger("changeVppSvc")
 	plugin.resyncVppSvc.Log = plugin.Deps.Log.NewLogger("resyncVppSvc")
@@ -49,8 +49,8 @@ func (plugin *GRPCSvcPlugin) Init() error {
 	return nil
 }
 
-// AfterInit registers all GRPC servics in vppscv package
-// (be sure that defaultvppplugins are totally initialized)
+// AfterInit registers all GRPC services in vppscv package
+// (be sure that defaultvppplugins are totally initialized).
 func (plugin *GRPCSvcPlugin) AfterInit() error {
 	grpcServer := plugin.Deps.GRPC.Server()
 	vppsvc.RegisterChangeConfigServiceServer(grpcServer, &plugin.changeVppSvc)
@@ -59,22 +59,23 @@ func (plugin *GRPCSvcPlugin) AfterInit() error {
 	return nil
 }
 
-// Close does nothing
+// Close does nothing.
 func (plugin *GRPCSvcPlugin) Close() error {
 	return nil
 }
 
-// ChangeVppSvc forward GRPC request to localclient
+// ChangeVppSvc forwards GRPC request to the localclient.
 type ChangeVppSvc struct {
 	Log logging.Logger
 }
 
-// ResyncVppSvc forward GRPC request to localclient
+// ResyncVppSvc forwards GRPC request to the localclient.
 type ResyncVppSvc struct {
 	Log logging.Logger
 }
 
-// PutInterfaces creates or updates one or multiple interfaces (forwards the input to localclient)
+// PutInterfaces creates or updates one or multiple interfaces
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.Interfaces) (
 	*vppsvc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -87,8 +88,8 @@ func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelInterfaces one or multiple interfaces by their unique names
-// (forwards the input to localclient)
+// DelInterfaces deletes one or multiple interfaces by their unique names
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) DelInterfaces(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
@@ -100,8 +101,8 @@ func (svc *ChangeVppSvc) DelInterfaces(ctx context.Context, request *vppsvc.DelN
 	return &vppsvc.DelResponse{}, err
 }
 
-// PutBDs creates or updates one or multiple BDs (forwards the input to localclient)
-// (forwards the input to localclient)
+// PutBDs creates or updates one or multiple BDs
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) PutBDs(ctx context.Context, request *l2.BridgeDomains) (
 	*vppsvc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -114,8 +115,8 @@ func (svc *ChangeVppSvc) PutBDs(ctx context.Context, request *l2.BridgeDomains) 
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelBDs one or multiple BDs by their unique names (forwards the input to localclient)
-// (forwards the input to localclient)
+// DelBDs deletes one or multiple BDs by their unique names
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) DelBDs(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
@@ -127,8 +128,8 @@ func (svc *ChangeVppSvc) DelBDs(ctx context.Context, request *vppsvc.DelNamesReq
 	return &vppsvc.DelResponse{}, err
 }
 
-// PutXCons creates or updates one or multiple Cross Connects (forwards the input to localclient)
-// (forwards the input to localclient)
+// PutXCons creates or updates one or multiple Cross Connects
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) PutXCons(ctx context.Context, request *l2.XConnectPairs) (
 	*vppsvc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -141,8 +142,8 @@ func (svc *ChangeVppSvc) PutXCons(ctx context.Context, request *l2.XConnectPairs
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelXCons one or multiple Cross Connects by their unique names
-// (forwards the input to localclient)
+// DelXCons deletes one or multiple Cross Connects by their unique names
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) DelXCons(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
@@ -155,7 +156,7 @@ func (svc *ChangeVppSvc) DelXCons(ctx context.Context, request *vppsvc.DelNamesR
 }
 
 // PutACLs creates or updates one or multiple ACLs
-// (forwards the input to localclient)
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) PutACLs(ctx context.Context, request *acl.AccessLists) (
 	*vppsvc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -168,8 +169,8 @@ func (svc *ChangeVppSvc) PutACLs(ctx context.Context, request *acl.AccessLists) 
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelACLs one or multiple ACLs by their unique names
-// (forwards the input to localclient)
+// DelACLs deletes one or multiple ACLs by their unique names
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) DelACLs(ctx context.Context, request *vppsvc.DelNamesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
@@ -182,7 +183,7 @@ func (svc *ChangeVppSvc) DelACLs(ctx context.Context, request *vppsvc.DelNamesRe
 }
 
 // PutStaticRoutes creates or updates one or multiple ACLs
-// (forwards the input to localclient)
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) PutStaticRoutes(ctx context.Context, request *l3.StaticRoutes) (
 	*vppsvc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
@@ -195,8 +196,8 @@ func (svc *ChangeVppSvc) PutStaticRoutes(ctx context.Context, request *l3.Static
 	return &vppsvc.PutResponse{}, err
 }
 
-// DelStaticRoutes one or multiple ACLs by their unique names
-// (forwards the input to localclient)
+// DelStaticRoutes deletes one or multiple ACLs by their unique names
+// (forwards the input to the localclient).
 func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *vppsvc.DelStaticRoutesRequest) (*vppsvc.DelResponse, error) {
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
@@ -213,8 +214,8 @@ func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *vppsvc.De
 	return &vppsvc.DelResponse{}, err
 }
 
-// ResyncConfig full data resync request of defaultvppplugin configuration
-// (forwards the input to localclient)
+// ResyncConfig fills data resync request of defaultvppplugin configuration
+// , i.e. forwards the input to the localclient.
 func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *vppsvc.ResyncConfigRequest) (
 	*vppsvc.ResyncConfigResponse, error) {
 
