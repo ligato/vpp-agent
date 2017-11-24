@@ -83,7 +83,7 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 }
 
 // TransformRoute converts raw route data to Route object.
-func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex, log logging.Logger) (*vppcalls.Route, error) {
+func TransformRoute(routeInput *l3.StaticRoutes_Route, swIndex uint32, log logging.Logger) (*vppcalls.Route, error) {
 	if routeInput == nil {
 		log.Infof("Route input is empty")
 		return nil, nil
@@ -98,17 +98,6 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex,
 	}
 	vrfID := routeInput.VrfId
 
-	ifName := routeInput.OutgoingInterface
-
-	ifIndex := vppcalls.NextHopOutgoingIfUnset
-	if ifName != "" {
-		var exists bool
-		ifIndex, _, exists = index.LookupIdx(ifName)
-		if !exists {
-			return nil, fmt.Errorf("route outgoing interface %v not found", ifName)
-		}
-	}
-
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
 		nextHopIP = nextHopIP.To16()
@@ -119,11 +108,23 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, index ifaceidx.SwIfIndex,
 		VrfID:       vrfID,
 		DstAddr:     *parsedDestIP,
 		NextHopAddr: nextHopIP,
-		OutIface:    ifIndex,
+		OutIface:    swIndex,
 		Weight:      routeInput.Weight,
 		Preference:  routeInput.Preference,
 	}
 	return route, nil
+}
+
+func resolveInterfaceSwIndex(ifName string, index ifaceidx.SwIfIndex) (uint32, error) {
+	ifIndex := vppcalls.NextHopOutgoingIfUnset
+	if ifName != "" {
+		var exists bool
+		ifIndex, _, exists = index.LookupIdx(ifName)
+		if !exists {
+			return ifIndex, fmt.Errorf("route outgoing interface %v not found", ifName)
+		}
+	}
+	return ifIndex, nil
 }
 
 func (plugin *RouteConfigurator) diffRoutes(new []*vppcalls.Route, old []*vppcalls.Route) (toBeDeleted []*vppcalls.Route, toBeAdded []*vppcalls.Route) {

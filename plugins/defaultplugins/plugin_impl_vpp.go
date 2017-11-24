@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 )
 
 // defaultpluigns specific flags
@@ -123,7 +124,7 @@ type Plugin struct {
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
-	routeIndexes      idxvpp.NameToIdxRW
+	routeIndexes      l3idx.RouteIndexRW
 
 	// L3 arp fields
 	arpConfigurator *l3plugin.ArpConfigurator
@@ -595,19 +596,23 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
-	plugin.routeIndexes = nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil)
+	plugin.routeIndexes = l3idx.NewRouteIndex(
+		nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil))
+	routeCachedIndexes := l3idx.NewRouteIndex(
+		nametoidx.NewNameToIdx(plugin.Log, plugin.PluginName, "route_cached_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("RouteConfigurator", routeLogger)
 	}
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		Log:           routeLogger,
-		GoVppmux:      plugin.GoVppmux,
-		RouteIndexes:  plugin.routeIndexes,
-		RouteIndexSeq: 1,
-		SwIfIndexes:   plugin.swIfIndexes,
-		Stopwatch:     stopwatch,
+		Log:              routeLogger,
+		GoVppmux:         plugin.GoVppmux,
+		RouteIndexes:     plugin.routeIndexes,
+		RouteIndexSeq:    1,
+		SwIfIndexes:      plugin.swIfIndexes,
+		RouteCachedIndex: routeCachedIndexes,
+		Stopwatch:        stopwatch,
 	}
 
 	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
