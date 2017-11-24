@@ -192,6 +192,7 @@ vpp_term: Show Memif
 vpp_term: Check TAP Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
     ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
     Log                  ${internal_name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
@@ -216,3 +217,9 @@ vpp_term: Show ACL
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
     [Return]           ${out}
+
+vpp_term: Add Route
+    [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    [Documentation]    Add ip route through vpp terminal.
+    Log Many    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    vpp_term: Issue Command    ${node}    ip route add ${destination_ip}/${prefix} via ${next_hop_ip}

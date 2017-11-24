@@ -137,3 +137,22 @@ linux: Check Processes on Node
     [Arguments]        ${node}
     Log                ${node}
     ${out}=            Execute In Container    ${node}    ps aux
+
+linux: Set Host TAP Interface
+    [Arguments]    ${node}    ${host_if_name}    ${ip}    ${prefix}
+    Log Many    ${node}    ${host_if_name}    ${ip}    ${prefix}
+    ${out}=    Execute In Container    ${node}    ip link set dev ${host_if_name} up
+    Log    ${out}
+    ${out}=    Execute In Container    ${node}    ip addr add ${ip}/${prefix} dev ${host_if_name}
+    Log    ${out}
+
+linux: Add Route
+    [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    Log Many    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    Execute In Container    ${node}    ip route add ${destination_ip}/${prefix} via ${next_hop_ip}
+
+linux: Delete Route
+    [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    Log Many    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    Execute In Container    ${node}    ip route del ${destination_ip}/${prefix} via ${next_hop_ip}
+
