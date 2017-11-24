@@ -25,7 +25,7 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
@@ -37,7 +37,7 @@ import (
 // PluginID used in the Agent Core flavors
 const PluginID core.PluginName = "linuxplugin"
 
-// Plugin implements Plugin interface, therefore it can be loaded with other plugins
+// Plugin implements Plugin interface, therefore it can be loaded with other plugins.
 type Plugin struct {
 	Deps
 
@@ -62,30 +62,41 @@ type Plugin struct {
 
 	enableStopwatch bool
 
-	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg     sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
 
-// Deps is here to group injected dependencies of plugin
-// to not mix with other plugin fields.
+// Deps groups injected dependencies of plugin
+// so that they do not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
 }
 
-// LinuxConfig holds the linuxplugin configuration
+// LinuxConfig holds the linuxplugin configuration.
 type LinuxConfig struct {
 	Stopwatch bool `json:"Stopwatch"`
 }
 
-// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
-// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-// Linux interfaces.
+// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
+// interface indexes.
 func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return plugin.ifIndexes
 }
 
-// Init gets handlers for ETCD, Kafka and delegates them to ifConfigurator
+// GetLinuxARPIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// ARP entry indexes.
+func (plugin *Plugin) GetLinuxARPIndexes() l3idx.LinuxARPIndex {
+	return plugin.arpIndexes
+}
+
+// GetLinuxRouteIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
+// route indexes.
+func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
+	return plugin.rtIndexes
+}
+
+// Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing Linux interface plugin")
 
@@ -108,11 +119,11 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
 
-	// create plugin context, save cancel function into the plugin handle
+	// Create plugin context and save cancel function into the plugin handle.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 
-	// run event handler go routines
+	// Run event handler go routines
 	go plugin.watchEvents(ctx)
 
 	err = plugin.initIF()
@@ -136,7 +147,7 @@ func (plugin *Plugin) Init() error {
 // Initialize linux interface plugin
 func (plugin *Plugin) initIF() error {
 	// Interface indexes
-	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_if_indexes", nil))
 
 	// Linux interface configurator
@@ -152,7 +163,7 @@ func (plugin *Plugin) initIF() error {
 // Initialize linux static ARP plugin
 func (plugin *Plugin) initARP() error {
 	// ARP indexes
-	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_arp_indexes", nil))
 
 	// Linux ARP configurator
@@ -172,9 +183,9 @@ func (plugin *Plugin) initARP() error {
 // Initialize linux static route plugin
 func (plugin *Plugin) initRoutes() error {
 	// Route indexes
-	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_route_indexes", nil))
-	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), PluginID,
+	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_cached_route_indexes", nil))
 
 	// Linux Route configurator
@@ -196,7 +207,7 @@ func (plugin *Plugin) AfterInit() error {
 	return nil
 }
 
-// Close cleans up the resources
+// Close cleans up the resources.
 func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"flag"
+
 	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -40,7 +41,7 @@ var (
 	gConfig *nametoidx.Config
 )
 
-// init is here only for parsing program arguments
+// init serves for parsing the program's arguments.
 func init() {
 	flag.StringVar(&idxMapConfigFile, "idxmap-config", "",
 		"Location of the configuration file for index-to-name maps; also set via 'IDXMAP_CONFIG' env variable.")
@@ -80,10 +81,9 @@ func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxv
 	return nil
 }
 
-// NameToIdxPersist is a watcher for changes in index to name mapping
-// that persists changes in name to idx mapping.
+// NameToIdxPersist is a decorator for NameToIdxRW implementing persistent storage.
 type NameToIdxPersist struct {
-	// to now about registration
+	// registrations notifies about the changes made in the mapping to be persisted
 	registrations chan idxvpp.NameToIdxDto
 
 	// Configuration associated with this mapping.
@@ -97,14 +97,13 @@ type NameToIdxPersist struct {
 	fileDir  string
 	filePath string
 
-	// synchronization between the underlying registry and the persistent storage
+	// Synchronization between the underlying registry and the persistent storage.
 	syncLock  sync.Mutex
 	syncCh    chan bool
 	syncAckCh chan error
 }
 
-// NewNameToIdxPersist creates new instance of watcher of index to name mapping
-// that persists changes in name to idx mapping.
+// NewNameToIdxPersist initializes decorator for persistent storage of index-to-name mapping.
 func NewNameToIdxPersist(fileName string, config *nametoidx.Config, namespace string,
 	registrations chan idxvpp.NameToIdxDto) *NameToIdxPersist {
 
@@ -120,7 +119,7 @@ func NewNameToIdxPersist(fileName string, config *nametoidx.Config, namespace st
 	return &persist
 }
 
-// Init starts go routine that watches chan idxvpp.NameToIdxDto
+// Init starts Go routine that watches chan idxvpp.NameToIdxDto.
 func (persist *NameToIdxPersist) Init() error {
 	persist.syncCh = make(chan bool)
 	persist.syncAckCh = make(chan error)
@@ -135,7 +134,7 @@ func (persist *NameToIdxPersist) Init() error {
 func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxRW) error {
 	if _, err := os.Stat(persist.filePath); os.IsNotExist(err) {
 		log.DefaultLogger().WithFields(log.Fields{"Filepath": persist.filePath}).Debug(
-			"Persistent storage for name to index mapping doesn't exist yet")
+			"Persistent storage for name-to-index mapping doesn't exist yet")
 		return nil
 	}
 	idxMapData, err := ioutil.ReadFile(persist.filePath)
@@ -177,7 +176,7 @@ func (persist *NameToIdxPersist) periodicIdxMapSync(offset time.Duration) error 
 	}
 }
 
-// syncMapping updates the persistent  storage with the new mappings.
+// syncMapping updates the persistent storage with the new mappings.
 // Current implementation simply re-builds the file content from the scratch.
 // TODO: NICE-TO-HAVE incremental update
 func (persist *NameToIdxPersist) syncMapping() error {
@@ -205,8 +204,8 @@ func (persist *NameToIdxPersist) registerName(name string, idx uint32) {
 	persist.nameToIdx[name] = idx
 }
 
-// UnregisterName from NameToIdxPersist allows to remove mapping from both the underlying registry and the persistent
-// storage.
+// UnregisterName from NameToIdxPersist allows to remove mapping from both
+// the underlying registry and the persistent storage.
 func (persist *NameToIdxPersist) unregisterName(name string) {
 	delete(persist.nameToIdx, name)
 }

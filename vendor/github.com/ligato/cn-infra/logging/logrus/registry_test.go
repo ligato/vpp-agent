@@ -71,7 +71,7 @@ func TestGetSetLevel(t *testing.T) {
 
 	//non-existing logger
 	err = logRegistry.SetLevel("unknown", level)
-	gomega.Expect(err).NotTo(gomega.BeNil())
+	gomega.Expect(err).To(gomega.BeNil()) // will be kept in logger level map in registry
 
 	_, err = logRegistry.GetLevel("unknown")
 	gomega.Expect(err).NotTo(gomega.BeNil())

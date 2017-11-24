@@ -4,6 +4,7 @@ package acl;
 enum AclAction {
     DENY = 0;
     PERMIT = 1;
+    REFLECT = 2;
 };
 
 // This is a top level container for Access Control Lists.

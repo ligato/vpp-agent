@@ -16,13 +16,14 @@ package vppcalls
 
 import (
 	"fmt"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
-	"time"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 )
 
-// AddLoopbackInterface calls CreateLoopback bin API
+// AddLoopbackInterface calls CreateLoopback bin API.
 func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// CreateLoopback time measurement
 	start := time.Now()
@@ -32,8 +33,8 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEn
 		}
 	}()
 
-	req := &vpe.CreateLoopback{}
-	reply := &vpe.CreateLoopbackReply{}
+	req := &interfaces.CreateLoopback{}
+	reply := &interfaces.CreateLoopbackReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
 
 	if err != nil {
@@ -47,7 +48,7 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEn
 	return reply.SwIfIndex, nil
 }
 
-// DeleteLoopbackInterface calls DeleteLoopback bin API
+// DeleteLoopbackInterface calls DeleteLoopback bin API.
 func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// DeleteLoopback time measurement
 	start := time.Now()
@@ -57,11 +58,11 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog meas
 		}
 	}()
 
-	// prepare the message
-	req := &vpe.DeleteLoopback{}
+	// Prepare the message.
+	req := &interfaces.DeleteLoopback{}
 	req.SwIfIndex = idx
 
-	reply := &vpe.DeleteLoopbackReply{}
+	reply := &interfaces.DeleteLoopbackReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err

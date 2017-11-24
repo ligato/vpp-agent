@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/Shopify/sarama/mocks"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 )
 
@@ -37,7 +37,7 @@ func Mock(t *testing.T) *KafkaMock {
 	}
 
 	return &KafkaMock{
-		NewMultiplexer(getMockConsumerFactory(t), producers, &client.Config{}, "name", logroot.StandardLogger()),
+		NewMultiplexer(getMockConsumerFactory(t), producers, &client.Config{}, "name", logrus.DefaultLogger()),
 		aMock, sMock}
 }
 

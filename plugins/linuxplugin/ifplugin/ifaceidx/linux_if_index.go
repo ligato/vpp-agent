@@ -25,7 +25,7 @@ import (
 const ipAddressIndexKey = "ipAddrKey"
 const hostIfNameKey = "hostIfName"
 
-// LinuxIfIndex provides read-only access to mapping between software interface indexes and interface names
+// LinuxIfIndex provides read-only access to mapping between software interface indices and interface names.
 type LinuxIfIndex interface {
 	// GetMapping returns internal read-only mapping with metadata of type interface{}.
 	GetMapping() idxvpp.NameToIdxRW
@@ -36,14 +36,14 @@ type LinuxIfIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *interfaces.LinuxInterfaces_Interface, exists bool)
 
-	// LookupNameByHostIfName looks up the interface identified by the name used in HostOs
+	// LookupNameByHostIfName looks up the interface identified by the name used in HostOs.
 	LookupNameByHostIfName(hostIfName string) []string
 
-	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
+	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping.
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxIfIndexDto)
 }
 
-// LinuxIfIndexRW is mapping between software interface indexes (used internally in VPP)
+// LinuxIfIndexRW is mapping between software interface indices (used internally in VPP)
 // and interface names.
 type LinuxIfIndexRW interface {
 	LinuxIfIndex
@@ -51,7 +51,7 @@ type LinuxIfIndexRW interface {
 	// RegisterName adds new item into name-to-index mapping.
 	RegisterName(name string, idx uint32, ifMeta *interfaces.LinuxInterfaces_Interface)
 
-	// UnregisterName removes an item identified by name from mapping
+	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool)
 }
 
@@ -63,7 +63,7 @@ type LinuxIfIndexDto struct {
 }
 
 // linuxIfIndex is type-safe implementation of mapping between Software interface index
-// and interface name. It holds as well metadata of type *InterfaceMeta.
+// and interface name. It holds metadata of type *InterfaceMeta as well.
 type linuxIfIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
@@ -96,7 +96,7 @@ func (linuxIfIdx *linuxIfIndex) LookupName(idx uint32) (name string, metadata *i
 	return name, metadata, exists
 }
 
-// LookupNameByIP returns names of items that contains given IP address in metadata
+// LookupNameByIP returns names of items that contains given IP address in metadata.
 func (linuxIfIdx *linuxIfIndex) LookupNameByHostIfName(hostIfName string) []string {
 	return linuxIfIdx.mapping.LookupNameByMetadata(hostIfNameKey, hostIfName)
 }
@@ -106,13 +106,13 @@ func (linuxIfIdx *linuxIfIndex) RegisterName(name string, idx uint32, ifMeta *in
 	linuxIfIdx.mapping.RegisterName(name, idx, ifMeta)
 }
 
-// UnregisterName removes an item identified by name from mapping
+// UnregisterName removes an item identified by name from mapping.
 func (linuxIfIdx *linuxIfIndex) UnregisterName(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool) {
 	idx, meta, exists := linuxIfIdx.mapping.UnregisterName(name)
 	return idx, linuxIfIdx.castMetadata(meta), exists
 }
 
-// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
+// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping.
 func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxIfIndexDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	linuxIfIdx.mapping.Watch(subscriber, nametoidx.ToChan(ch))
@@ -127,7 +127,7 @@ func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber core.PluginName, plugi
 	}()
 }
 
-// IndexMetadata creates indexes for metadata. Index for IPAddress will be created
+// IndexMetadata creates indices for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
 	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 

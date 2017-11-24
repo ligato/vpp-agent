@@ -27,13 +27,14 @@ import (
 	"strings"
 
 	"errors"
+
 	"github.com/alicebob/miniredis"
 	goredis "github.com/go-redis/redis"
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/onsi/gomega"
 )
@@ -50,7 +51,7 @@ var keyValues = map[string]string{
 }
 
 func TestMain(m *testing.M) {
-	log = logroot.StandardLogger()
+	log = logrus.DefaultLogger()
 
 	var err error
 	miniRedis, err = miniredis.Run()
@@ -130,7 +131,7 @@ func createMiniRedisConnection() {
 		MaxRetryBackoff: 0,
 	})
 	// client = &MockGoredisClient{}
-	bytesConn, _ = NewBytesConnection(client, logroot.StandardLogger())
+	bytesConn, _ = NewBytesConnection(client, logrus.DefaultLogger())
 	bytesBrokerWatcher = bytesConn.NewBrokerWatcher("unit_test-")
 
 	for k, v := range keyValues {
@@ -531,7 +532,7 @@ func TestBrokerClosed(t *testing.T) {
 	txn = bytesConn.NewTxn()
 	gomega.Expect(txn).Should(gomega.BeNil())
 
-	bytesConn.Watch(keyval.ToChan(respChan), nil,"key")
+	bytesConn.Watch(keyval.ToChan(respChan), nil, "key")
 
 	// bytesBrokerWatcher
 	err = bytesBrokerWatcher.Put("any", []byte("any"))

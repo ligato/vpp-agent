@@ -16,14 +16,12 @@ package grpcsync
 
 import (
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/logrus"
 
 	//TODO "github.com/gorilla/rpc/json"
-	"fmt"
-	"net"
 
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/datasync/syncbase/msg"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"google.golang.org/grpc"
 )
 
@@ -47,7 +45,7 @@ type Adapter struct {
 func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
-	logroot.StandardLogger().Debug("GRPC KeyValProtoWatcher WatchData ", resyncName, " ", keyPrefixes)
+	logrus.DefaultLogger().Debug("GRPC KeyValProtoWatcher WatchData ", resyncName, " ", keyPrefixes)
 
 	return adapter.base.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 }

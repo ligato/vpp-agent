@@ -22,11 +22,11 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 func main() {
-	logroot.StandardLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 
 	loc := &local.FlavorLocal{}
 	connectors := connectors.AllConnectorsFlavor{FlavorLocal: loc}

@@ -18,15 +18,16 @@ import (
 	"fmt"
 	"net"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"time"
 )
 
-// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1
+// AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
 func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceAddDelAddress time measurement
 	start := time.Now()
@@ -36,7 +37,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 		}
 	}()
 
-	// prepare the message
+	// Prepare the message.
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
 	req.IsAdd = 1
@@ -73,7 +74,7 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 
 }
 
-// DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00
+// DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00.
 func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
 	// SwInterfaceAddDelAddressReply time measurement
 	start := time.Now()
@@ -83,7 +84,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 		}
 	}()
 
-	// prepare the message
+	// Prepare the message.
 	req := &interfaces.SwInterfaceAddDelAddress{}
 	req.SwIfIndex = ifIdx
 	req.IsAdd = 0
@@ -105,7 +106,7 @@ func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 
 	log.Debug("del req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
-	// send the message
+	// Send the message.
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {

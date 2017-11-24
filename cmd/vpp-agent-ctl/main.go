@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // package vpp-agent-ctl implements the vpp-agent-ctl test tool for testing
-// of VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
+// VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
 // be used to demonstrate the usage of VPP Agent plugins and their APIs.
 package main
 
@@ -36,12 +36,12 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -55,7 +55,7 @@ var (
 )
 
 func main() {
-	log = logroot.StandardLogger()
+	log = logrus.DefaultLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 
@@ -198,6 +198,10 @@ func main() {
 			disableL4Features(db)
 		case "-dlrt":
 			delete(db, l32.StaticRouteKey("route1"))
+		case "-stna":
+			createStnRule(db, ifName1, "10.1.1.3/32")
+		case "-stnd":
+			delete(db, stn.Key("rule1"))
 		default:
 			usage()
 		}
@@ -205,9 +209,10 @@ func main() {
 		usage()
 	}
 }
+
 func usage() {
 	fmt.Println(os.Args[0], ": [etcd-config-file] <command>")
-	fmt.Println("\tcommands: -ct -mt -dt -ce -me -cl -ml -dl -cmm -dmm -cms -dms -cvx -dvx -cr -dr")
+	fmt.Println("\tcommands: -ct -mt -dt -ce -me -cl -ml -dl -cmm -dmm -cms -dms -cvx -dvx -cr -dr -stna -stnd")
 	fmt.Println(os.Args[0], ": [etcd-config-file] -put <etc_key> <json-file>")
 	fmt.Println(os.Args[0], ": [etcd-config-file] -get <etc_key>")
 }
@@ -736,7 +741,7 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 	bd.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 1)
 
 	bd.BridgeDomains[0] = new(l2.BridgeDomains_BridgeDomain)
-	bd.BridgeDomains[0].Name = "bd1"
+	bd.BridgeDomains[0].Name = "bd2"
 	bd.BridgeDomains[0].Learn = true
 	bd.BridgeDomains[0].ArpTermination = true
 	bd.BridgeDomains[0].Flood = true
@@ -745,7 +750,7 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	bd.BridgeDomains[0].Interfaces = make([]*l2.BridgeDomains_BridgeDomain_Interfaces, 1)
 	bd.BridgeDomains[0].Interfaces[0] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
-	bd.BridgeDomains[0].Interfaces[0].Name = "tap1"
+	bd.BridgeDomains[0].Interfaces[0].Name = "tap2"
 	bd.BridgeDomains[0].Interfaces[0].BridgedVirtualInterface = false
 
 	//bd.BridgeDomains[0].Interfaces[1] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
@@ -1044,4 +1049,16 @@ func disableL4Features(db keyval.ProtoBroker) {
 	log.Println(l4Fatures)
 
 	db.Put(l4.FeatureKey(), l4Fatures)
+}
+
+func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
+	stnRule := stn.StnRule{
+		RuleName:  "rule1",
+		IpAddress: ipAddress,
+		Interface: ifName,
+	}
+
+	log.Println(stnRule)
+
+	db.Put(stn.Key(stnRule.RuleName), &stnRule)
 }

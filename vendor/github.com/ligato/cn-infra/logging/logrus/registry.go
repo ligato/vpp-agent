@@ -16,17 +16,33 @@ package logrus
 
 import (
 	"fmt"
+	"os"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
-	"sync"
 )
+
+var initialLogLvl = logrus.InfoLevel
+
+func init() {
+	if lvl, err := logrus.ParseLevel(os.Getenv("INITIAL_LOGLVL")); err == nil {
+		initialLogLvl = lvl
+		if err := setLevel(defaultLogger, lvl); err != nil {
+			defaultLogger.Warnf("setting initialLogLvl = %q failed: %v", lvl.String(), err)
+		} else {
+			defaultLogger.Debugf("initialLogLvl = %q", lvl.String())
+		}
+	}
+}
 
 // NewLogRegistry is a constructor
 func NewLogRegistry() logging.Registry {
-	registry := &logRegistry{}
-	// init new sync mapping in loggers
-	registry.loggers = new(sync.Map)
+	registry := &logRegistry{
+		loggers:      new(sync.Map),
+		logLevels:    make(map[string]logrus.Level),
+		defaultLevel: initialLogLvl,
+	}
 	// put default logger
 	registry.putLoggerToMapping(defaultLogger)
 	return registry
@@ -36,6 +52,10 @@ func NewLogRegistry() logging.Registry {
 type logRegistry struct {
 	// loggers holds mapping of logger instances indexed by their names
 	loggers *sync.Map
+	// logLevels store map of log levels for logger names
+	logLevels map[string]logrus.Level
+	// defaultLevel is used if logger level is not set
+	defaultLevel logrus.Level
 }
 
 // NewLogger creates new named Logger instance. Name can be subsequently used to
@@ -50,6 +70,13 @@ func (lr *logRegistry) NewLogger(name string) logging.Logger {
 	}
 
 	logger := NewLogger(name)
+
+	// set initial logger level
+	if lvl, ok := lr.logLevels[name]; ok {
+		setLevel(logger, lvl)
+	} else {
+		setLevel(logger, lr.defaultLevel)
+	}
 
 	lr.putLoggerToMapping(logger)
 	return logger
@@ -85,33 +112,43 @@ func (lr *logRegistry) ListLoggers() map[string]string {
 	return list
 }
 
+func setLevel(logVal logging.Logger, lvl logrus.Level) error {
+	if logVal == nil {
+		return fmt.Errorf("logger %q not found", logVal)
+	}
+	defaultLogger.Debugln("set logger level:", logVal.GetName(), "->", lvl.String())
+	switch lvl {
+	case logrus.DebugLevel:
+		logVal.SetLevel(logging.DebugLevel)
+	case logrus.InfoLevel:
+		logVal.SetLevel(logging.InfoLevel)
+	case logrus.WarnLevel:
+		logVal.SetLevel(logging.WarnLevel)
+	case logrus.ErrorLevel:
+		logVal.SetLevel(logging.ErrorLevel)
+	case logrus.PanicLevel:
+		logVal.SetLevel(logging.PanicLevel)
+	case logrus.FatalLevel:
+		logVal.SetLevel(logging.FatalLevel)
+	}
+	return nil
+}
+
 // SetLevel modifies log level of selected logger in the registry
 func (lr *logRegistry) SetLevel(logger, level string) error {
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
 		return err
 	}
+	if logger == "default" {
+		lr.defaultLevel = lvl
+		return nil
+	}
+	lr.logLevels[logger] = lvl
 	logVal := lr.getLoggerFromMapping(logger)
-	if logVal == nil {
-		return fmt.Errorf("logger %v not found", logger)
+	if logVal != nil {
+		return setLevel(logVal, lvl)
 	}
-	if err == nil {
-		switch lvl {
-		case logrus.DebugLevel:
-			logVal.SetLevel(logging.DebugLevel)
-		case logrus.InfoLevel:
-			logVal.SetLevel(logging.InfoLevel)
-		case logrus.WarnLevel:
-			logVal.SetLevel(logging.WarnLevel)
-		case logrus.ErrorLevel:
-			logVal.SetLevel(logging.ErrorLevel)
-		case logrus.PanicLevel:
-			logVal.SetLevel(logging.PanicLevel)
-		case logrus.FatalLevel:
-			logVal.SetLevel(logging.FatalLevel)
-		}
-	}
-
 	return nil
 }
 

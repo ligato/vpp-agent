@@ -24,15 +24,15 @@ import (
 // PluginID defines the name of VPP (defaultplugins) localclient plugin.
 const PluginID core.PluginName = "DefaultVppPlugins_LOCAL_CLIENT"
 
-// DataResyncRequest allows to create a RESYNC request using convenient RESYNC
-// DSL and send it locally through go channels (i.e. without using Data Store).
+// DataResyncRequest allows creating a RESYNC request using convenient RESYNC
+// DSL and sending it locally through go channels (i.e. without using Data Store).
 func DataResyncRequest(caller core.PluginName) defaultplugins.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync),
 		nil /*no need to list anything*/)
 }
 
-// DataChangeRequest allows to create Data Change request(s) using convenient
-// Data Change DSL and send it locally through go channels (i.e. without using
+// DataChangeRequest allows creating Data Change request(s) using convenient
+// Data Change DSL and sending it locally through go channels (i.e. without using
 // Data Store).
 func DataChangeRequest(caller core.PluginName) defaultplugins.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(local.NewProtoTxn(local.Get().PropagateChanges))

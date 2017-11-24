@@ -70,8 +70,9 @@ func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKey
 	if err != nil {
 		return err
 	}
-	err = vppcalls.CheckMsgCompatibilityForBfd(plugin.Log, plugin.vppChannel)
+	err = vppcalls.CheckMsgCompatibilityForBfd(plugin.vppChannel)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
@@ -360,7 +361,7 @@ func (plugin *BFDConfigurator) LookupBfdSessions() error {
 			return err
 		}
 
-		// Store the name to index mapping if it does not exist yet
+		// Store the name-to-index mapping if it does not exist yet
 		name, _, found := plugin.SwIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			continue
@@ -398,7 +399,7 @@ func (plugin *BFDConfigurator) LookupBfdKeys() error {
 			return err
 		}
 
-		// Store the name to index mapping if it does not exist yet
+		// Store the name-to-index mapping if it does not exist yet
 		keyID := strconv.FormatUint(uint64(msg.ConfKeyID), 10)
 		_, _, found := plugin.bfdKeysIndexes.LookupIdx(keyID)
 		if !found {

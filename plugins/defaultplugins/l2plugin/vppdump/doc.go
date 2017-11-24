@@ -1,3 +1,3 @@
-// Package vppdump provides helpers to dump all bridge-domains, L2 FIBs and
+// Package vppdump provides helpers for dumping all bridge-domains, L2 FIBs and
 // XConnect pairs configured in VPP.
 package vppdump

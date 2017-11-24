@@ -15,12 +15,12 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
 )
 
-var log = logroot.StandardLogger()
+var log = logrus.DefaultLogger()
 
 var redisConn *redis.BytesConnectionRedis
 var broker keyval.BytesBroker
@@ -379,11 +379,11 @@ func generateSampleConfigs() {
 	var cfg interface{}
 
 	cfg = redis.NodeConfig{
-		Endpoint:               "localhost:6379",
-		DB:                     0,
+		Endpoint: "localhost:6379",
+		DB:       0,
 		EnableReadQueryOnSlave: false,
-		TLS:                    redis.TLS{},
-		ClientConfig:           clientConfig,
+		TLS:          redis.TLS{},
+		ClientConfig: clientConfig,
 	}
 	config.SaveConfigToYamlFile(cfg, "./node-client.yaml", 0644, makeTypeHeader(cfg))
 

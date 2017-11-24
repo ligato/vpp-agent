@@ -22,8 +22,8 @@ var (
 		IpAddresses: []string{"10.0.0.11/24"},
 	}
 
-	// Memif100011Slave is an example of a memory interface configuration. Intentionaly similar to Memif100011.
-	// Here is only one different Master=false.
+	// Memif100011Slave is an example of a memory interface configuration. It is
+	// intentionally similar to Memif100011. The only difference is that Master=false.
 	Memif100011Slave = interfaces.Interfaces_Interface{
 		Name:    "memif1",
 		Type:    interfaces.InterfaceType_MEMORY_INTERFACE,
@@ -96,7 +96,7 @@ var (
 	}
 )
 
-// TapInterfaceBuilder serves to create test interface
+// TapInterfaceBuilder serves to create a test interface.
 func TapInterfaceBuilder(name string, ip string) interfaces.Interfaces_Interface {
 	return interfaces.Interfaces_Interface{
 		Name:        name,
@@ -108,7 +108,7 @@ func TapInterfaceBuilder(name string, ip string) interfaces.Interfaces_Interface
 	}
 }
 
-// MemifBuilder new instance for testing purposes
+// MemifBuilder creates a new instance for testing purposes.
 func MemifBuilder(ifname string, ipAddr string, master bool, id uint32) *interfaces.Interfaces_Interface {
 	return &interfaces.Interfaces_Interface{
 		Name:    ifname,
@@ -124,7 +124,7 @@ func MemifBuilder(ifname string, ipAddr string, master bool, id uint32) *interfa
 
 }
 
-// LoopbackBuilder new instance for testing purposes
+// LoopbackBuilder creates a new instance for testing purposes.
 func LoopbackBuilder(ifname string, ipAddr string) *interfaces.Interfaces_Interface {
 	return &interfaces.Interfaces_Interface{
 		Name:        ifname,
@@ -135,7 +135,7 @@ func LoopbackBuilder(ifname string, ipAddr string) *interfaces.Interfaces_Interf
 
 }
 
-// BfdSessionBuilder creates BFD session without authentication
+// BfdSessionBuilder creates BFD session without authentication.
 func BfdSessionBuilder(iface string, srcAddr string, dstAddr string, desInt uint32, reqInt uint32, multiplier uint32) bfd.SingleHopBFD_Session {
 	return bfd.SingleHopBFD_Session{
 		Interface:             iface,
@@ -147,7 +147,7 @@ func BfdSessionBuilder(iface string, srcAddr string, dstAddr string, desInt uint
 	}
 }
 
-// BfdAuthSessionBuilder creates BFD session including authentication
+// BfdAuthSessionBuilder creates BFD session including authentication.
 func BfdAuthSessionBuilder(iface string, srcAddr string, dstAddr string, desInt uint32, reqInt uint32, multiplier uint32) bfd.SingleHopBFD_Session {
 	return bfd.SingleHopBFD_Session{
 		Interface:             iface,
@@ -163,7 +163,7 @@ func BfdAuthSessionBuilder(iface string, srcAddr string, dstAddr string, desInt 
 	}
 }
 
-// BfdAuthKeyBuilder creates BFD authentication key
+// BfdAuthKeyBuilder creates BFD authentication key.
 func BfdAuthKeyBuilder(id uint32, authType bfd.SingleHopBFD_Key_AuthenticationType, secret string) bfd.SingleHopBFD_Key {
 	return bfd.SingleHopBFD_Key{
 		Id:                 id,
@@ -172,7 +172,7 @@ func BfdAuthKeyBuilder(id uint32, authType bfd.SingleHopBFD_Key_AuthenticationTy
 	}
 }
 
-// BfdEchoFunctionBuilder builds BFD echo source
+// BfdEchoFunctionBuilder builds BFD echo source.
 func BfdEchoFunctionBuilder(iface string) bfd.SingleHopBFD_EchoFunction {
 	return bfd.SingleHopBFD_EchoFunction{
 		EchoSourceInterface: iface,

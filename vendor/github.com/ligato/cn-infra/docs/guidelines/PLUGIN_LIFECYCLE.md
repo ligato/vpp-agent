@@ -57,7 +57,7 @@ type Dep struct {
 
 func (plugin * PluginXY) Init() (err error) {
     //initialize the resource
-    if plugin.resource, err = connectResouce(); err != nil {
+    if plugin.resource, err = connectResource(); err != nil {
         return err//propagate resource
     }
 
@@ -94,7 +94,7 @@ func (plugin * PluginXY) Init() (err error) {
     return nil
 }
 
-func connectResouce() (resource io.Closer, err error) {
+func connectResource() (resource io.Closer, err error) {
     // do something relevant here...
     return nil, errors.New("Not implemented")
 }
