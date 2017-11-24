@@ -39,7 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3Idx"
 )
 
 // defaultpluigns specific flags

@@ -31,7 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3Idx"
 )
 
 // RouteConfigurator runs in the background in its own goroutine where it watches for any changes
