@@ -140,6 +140,10 @@ func main() {
 			addStaticFibTableEntry(db, bridgeDomain1, ifName1)
 		case "-dft":
 			deleteStaticFibTableEntry(db, bridgeDomain1)
+		case "-aae":
+			addArpEntry(db, ifName1)
+		case "-dae":
+			deleteArpEntry(db, ifName1)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -539,11 +543,15 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface[0].Name = ifname
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
-	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
+	ifs.Interface[0].Mtu = 555
+	ifs.Interface[0].IpAddresses = make([]string, 3)
 	ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[0].IpAddresses[1] = "192.168.2.5/24"
+	ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
@@ -759,6 +767,32 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	log.Println(bd)
 	db.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
+}
+
+func addArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Put(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress), arpTable.ArpTableEntries[0])
+}
+
+func deleteArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {
