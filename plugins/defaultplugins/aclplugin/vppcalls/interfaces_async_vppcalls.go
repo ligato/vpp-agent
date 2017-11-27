@@ -59,7 +59,7 @@ func NewACLInterfacesVppCalls(asyncVppChan *govppapi.Channel, vppChan *govppapi.
 func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsIngress(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Setting up IP ingress ACL from interfaces: %v ", interfaces)
 
-	return acl.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
+	return acl.requestAsyncSetACLToInterfaces(&ACLInterfaceLogicalReq{
 		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    true,
@@ -71,7 +71,7 @@ func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsIngress(ACLIndex uint32, i
 func (acl *ACLInterfacesVppCalls) RemoveIPIngressACLFromInterfaces(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Removing IP ingress ACL from interfaces: %v ", interfaces)
 
-	return acl.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
+	return acl.requestSyncRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
 		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    true,
@@ -83,7 +83,7 @@ func (acl *ACLInterfacesVppCalls) RemoveIPIngressACLFromInterfaces(ACLIndex uint
 func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsEgress(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Setting up IP egress ACL from interfaces: %v ", interfaces)
 
-	return acl.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
+	return acl.requestAsyncSetACLToInterfaces(&ACLInterfaceLogicalReq{
 		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    false,
@@ -95,7 +95,7 @@ func (acl *ACLInterfacesVppCalls) SetACLToInterfacesAsEgress(ACLIndex uint32, in
 func (acl *ACLInterfacesVppCalls) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, interfaces []string, callback func(error), log logging.Logger) error {
 	log.Debugf("Removing IP egress ACL from interfaces: %v ", interfaces)
 
-	return acl.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
+	return acl.requestSyncRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
 		aclIndex:   ACLIndex,
 		interfaces: interfaces,
 		ingress:    false,
@@ -103,42 +103,42 @@ func (acl *ACLInterfacesVppCalls) RemoveIPEgressACLFromInterfaces(ACLIndex uint3
 	}, log)
 }
 
-func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
-	for _, ingressInterface := range logicalReq.interfaces {
+func (acl *ACLInterfacesVppCalls) requestAsyncSetACLToInterfaces(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
+	for _, aclInterface := range logicalReq.interfaces {
 		// Create acl list with new entry
 		var ACLs []uint32
-		index, _, found := acl.swIfIndexes.LookupIdx(ingressInterface)
+		index, _, found := acl.swIfIndexes.LookupIdx(aclInterface)
 		if !found {
-			log.Debugf("Set interface to ACL: Interface %v not found ", ingressInterface)
+			log.Debugf("Set interface to ACL: Interface %v not found ", aclInterface)
 			continue
 		}
 		// All previously assigned ACLs have to be dumped and added to acl list
-		aclInterface, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
+		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
 		if err != nil {
 			return err
 		}
 
-		var nInput uint8
+		nInput := aclInterfaceDetails.NInput
 		if logicalReq.ingress {
 			// Construct ACL list. ACLs within NInput are defined as ingress, so provided new aclIndex has to be
 			// added to the beginning of the list todo it would be nicer to add new acl index to newNInput index
-			if aclInterface != nil {
+			if aclInterfaceDetails != nil {
 				ACLs = append(ACLs, logicalReq.aclIndex)
-				for _, aclIndex := range aclInterface.Acls {
+				for _, aclIndex := range aclInterfaceDetails.Acls {
 					ACLs = append(ACLs, aclIndex)
 				}
 			}
-			nInput = aclInterface.NInput + 1 // Rise NInput
+			nInput++ // Rise NInput
 		} else {
 			// Construct ACL list. ACLs outside of NInput are defined as egress, so provided new aclIndex has to be
 			// added to the end of the list
-			if aclInterface != nil {
-				for _, aclIndex := range aclInterface.Acls {
+			if aclInterfaceDetails != nil {
+				for _, aclIndex := range aclInterfaceDetails.Acls {
 					ACLs = append(ACLs, aclIndex)
 				}
 				ACLs = append(ACLs, logicalReq.aclIndex)
 			}
-			nInput = aclInterface.NInput // Remains the same
+			// NInput remains the same
 		}
 
 		// Measure ACLInterfaceSetACLList time
@@ -166,34 +166,34 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 	return nil
 }
 
-func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
-	for _, ingressInterface := range logicalReq.interfaces {
+func (acl *ACLInterfacesVppCalls) requestSyncRemoveInterfacesFromACL(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
+	var wasErr error
+	for _, aclInterface := range logicalReq.interfaces {
 		// Create empty ACL list
 		var ACLs []uint32
-		index, _, found := acl.swIfIndexes.LookupIdx(ingressInterface)
+		index, _, found := acl.swIfIndexes.LookupIdx(aclInterface)
 		if !found {
-			log.Debugf("Remove interface from ACL: Interface %v not found ", ingressInterface)
+			log.Debugf("Remove interface from ACL: Interface %v not found ", aclInterface)
 			continue
 		}
 		// All assigned ACLs have to be dumped
-		aclInterface, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
+		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
 		if err != nil {
 			return err
 		}
 		// Reconstruct ACL list without removed ACL
-		if aclInterface != nil {
-			for _, aclIndex := range aclInterface.Acls {
+		if aclInterfaceDetails != nil {
+			for _, aclIndex := range aclInterfaceDetails.Acls {
 				if aclIndex != logicalReq.aclIndex {
 					ACLs = append(ACLs, aclIndex)
 				}
 			}
 		}
 
-		var nInput uint8
+		nInput := aclInterfaceDetails.NInput
+		// Decrease NInput if ingress, otherwise keep it the same
 		if logicalReq.ingress {
-			nInput = aclInterface.NInput - 1 // Decrease NInput
-		} else {
-			nInput = aclInterface.NInput // NInput remains the same
+			nInput--
 		}
 
 		// Measure ACLInterfaceSetACLList time
@@ -205,9 +205,15 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		msg.SwIfIndex = index
 		msg.NInput = nInput
 
-		acl.waitingForReply.PushFront(logicalReq)
-		acl.asyncVppChan.ReqChan <- &govppapi.VppRequest{
-			Message: msg,
+		reply := &acl_api.ACLInterfaceSetACLListReply{}
+
+		// Do not use asynchronous handling for removing ACLs from interface
+		err = acl.vppChan.SendRequest(msg).ReceiveReply(reply)
+		if err != nil {
+			wasErr = err
+		}
+		if reply.Retval != 0 {
+			log.Error("Setting up interface ACL list returned %v", reply.Retval)
 		}
 
 		log.WithFields(logging.Fields{"SwIdx index": msg.SwIfIndex, "AclIdx": logicalReq.aclIndex}).Debug("Interface removed from ACL")
@@ -218,7 +224,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		}
 	}
 
-	return nil
+	return wasErr
 }
 
 // WatchACLInterfacesReplies is meant to be used in go routine
@@ -245,7 +251,7 @@ func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) 
 			reply := &acl_api.ACLInterfaceSetACLListReply{}
 			err := acl.asyncVppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
 			if err != nil {
-				err = fmt.Errorf("setting ACL ti interface entry returned index %d", reply.Retval)
+				err = fmt.Errorf("set ACL list for interface returned %d", reply.Retval)
 				logicalReq.callback(err)
 			} else {
 				logicalReq.callback(nil)
