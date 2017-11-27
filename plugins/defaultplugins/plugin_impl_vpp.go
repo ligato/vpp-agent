@@ -71,10 +71,6 @@ const (
 	skipResync = "skip"
 )
 
-// Default MTU value. Mtu can be set via defaultplugins config or directly with interface json (higher priority). If none
-// is set, use default.
-const defaultMtu = 9000
-
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins.
 type Plugin struct {
 	Deps
@@ -249,7 +245,10 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if config != nil {
-		plugin.ifMtu = plugin.resolveMtu(config.Mtu)
+		if config.Mtu != 0 {
+			plugin.ifMtu = config.Mtu
+			plugin.Log.Info("Default MTU set to %v", plugin.ifMtu)
+		}
 		plugin.enableStopwatch = config.Stopwatch
 		if plugin.enableStopwatch {
 			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
@@ -260,8 +259,6 @@ func (plugin *Plugin) Init() error {
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
 		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
 	} else {
-		plugin.ifMtu = defaultMtu
-		plugin.Log.Infof("MTU set to default value %v", plugin.ifMtu)
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		// return skip (if set) or full
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(fullResync)
@@ -339,15 +336,6 @@ func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	}
 	plugin.Log.Warnf("Resync strategy %v is not known, setting up the full resync", strategy)
 	return fullResync
-}
-
-func (plugin *Plugin) resolveMtu(mtuFromCfg uint32) uint32 {
-	if mtuFromCfg == 0 {
-		plugin.Log.Infof("Mtu not defined in config, set to default")
-		return defaultMtu
-	}
-	plugin.Log.Infof("Mtu read from config is set to %v", plugin.ifMtu)
-	return mtuFromCfg
 }
 
 // fixNilPointers sets noopWriter & nooWatcher for nil dependencies.
