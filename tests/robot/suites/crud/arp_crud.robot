@@ -38,7 +38,7 @@ Add Interfaces For ARP
 
 Check Memif Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check Veth Interface With IP Created
     linux: Interface Is Created    node=agent_vpp_1    mac=12:11:11:11:11:11
