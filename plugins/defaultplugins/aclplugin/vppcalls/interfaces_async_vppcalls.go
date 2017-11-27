@@ -118,7 +118,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 			return err
 		}
 
-		var nInput uint8
+		nInput := aclInterface.NInput
 		if logicalReq.ingress {
 			// Construct ACL list. ACLs within NInput are defined as ingress, so provided new aclIndex has to be
 			// added to the beginning of the list todo it would be nicer to add new acl index to newNInput index
@@ -189,7 +189,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 			}
 		}
 
-		var nInput uint8
+		nInput := aclInterface.NInput
 		if logicalReq.ingress {
 			nInput = aclInterface.NInput - 1 // Decrease NInput
 		} else {
