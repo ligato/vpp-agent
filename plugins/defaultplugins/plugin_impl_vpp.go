@@ -128,7 +128,7 @@ type Plugin struct {
 
 	// L3 arp fields
 	arpConfigurator *l3plugin.ArpConfigurator
-	arpIndexes      idxvpp.NameToIdxRW
+	arpIndexes      l3idx.ARPIndexRW
 
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
@@ -616,7 +616,12 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	}
 
 	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
-	plugin.arpIndexes = nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil)
+	// ARP configuration indices
+	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil))
+	// ARP cache indices
+	arpCache := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_cache", nil))
+	// ARP deleted indices
+	arpDeleted := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_unnasigned", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
@@ -624,8 +629,10 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.arpConfigurator = &l3plugin.ArpConfigurator{
 		Log:         arpLogger,
 		GoVppmux:    plugin.GoVppmux,
-		ArpIndexes:  plugin.arpIndexes,
-		ArpIndexSeq: 1,
+		ARPIndexes:  plugin.arpIndexes,
+		ARPCache:    arpCache,
+		ARPDeleted:  arpDeleted,
+		ARPIndexSeq: 1,
 		SwIfIndexes: plugin.swIfIndexes,
 		Stopwatch:   stopwatch,
 	}
