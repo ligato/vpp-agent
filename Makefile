@@ -54,8 +54,8 @@ define test_only
 	@echo "# running unit tests"
 	@go test ./cmd/agentctl/utils
 	@go test ./idxvpp/nametoidx
-        @go test ./plugins/defaultplugins/l2plugin/bdidx
-        @go test ./plugins/defaultplugins/l2plugin/vppcalls
+    @go test ./plugins/defaultplugins/l2plugin/bdidx
+    @go test ./plugins/defaultplugins/l2plugin/vppcalls
 	@echo "# done"
 endef
 

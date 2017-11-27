@@ -1,11 +1,12 @@
 package bdidx
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"testing"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+
 	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/onsi/gomega"
 )
 
 const (
@@ -23,24 +24,26 @@ const (
 
 func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.NameToIdxRW, BDIndexRW, []*l2.BridgeDomains_BridgeDomain) {
 	//initialize index
+	gomega.RegisterTestingT(t)
 	nameToIdx := nametoidx.NewNameToIdx(nil, "testName", "bd_indexes_test", IndexMetadata)
 	bdIndex := NewBDIndex(nameToIdx)
 	names := nameToIdx.ListNames()
-	assert.Empty(t, names)
-	//data preparation
+	gomega.Expect(names).To(gomega.BeEmpty())
 
+	//data preparation
 	var bridgeDomains []*l2.BridgeDomains_BridgeDomain
 	for bdName, ifaces := range bdToIfaces {
-		bridgeDomains = append(bridgeDomains,prepareBridgeDomainData(bdName, ifaces))
+		bridgeDomains = append(bridgeDomains, prepareBridgeDomainData(bdName, ifaces))
 	}
 
 	return nameToIdx, bdIndex, bridgeDomains
 }
 
 /**
-	TestIndexMetadatat tests whether func IndexMetadata return map filled with correct values
- */
+TestIndexMetadatat tests whether func IndexMetadata return map filled with correct values
+*/
 func TestIndexMetadatat(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	//data preparation
 	bridgeDomain := prepareBridgeDomainData(bdName0, []string{ifaceAName, ifaceBName})
 
@@ -48,22 +51,23 @@ func TestIndexMetadatat(t *testing.T) {
 	result := IndexMetadata(bridgeDomain)
 
 	//evaluate result
-	assert.Len(t, result, 1)
+	gomega.Expect(result).To(gomega.HaveLen(1))
 
 	ifaceNames := result[ifaceNameIndexKey]
-	assert.Len(t, ifaceNames, 2)
+	gomega.Expect(ifaceNames).To(gomega.HaveLen(2))
 
-	assert.Contains(t, ifaceNames, ifaceAName)
-	assert.Contains(t, ifaceNames, ifaceBName)
+	gomega.Expect(ifaceNames).To(gomega.ContainElement(ifaceAName))
+	gomega.Expect(ifaceNames).To(gomega.ContainElement(ifaceBName))
 }
 
 /**
-	TestRegisterAndUnregisterName tests methods:
-	* RegisterName()
-	* UnregisterName()
- */
+TestRegisterAndUnregisterName tests methods:
+* RegisterName()
+* UnregisterName()
+*/
 func TestRegisterAndUnregisterName(t *testing.T) {
-	nameToIdx, bdIndex, bridgeDomains := testInitialization(t,map[string][]string{bdName0:{ifaceAName, ifaceBName}})
+	gomega.RegisterTestingT(t)
+	nameToIdx, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
 	//call tested func
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
@@ -71,58 +75,61 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 	var names []string
 	//evaluate result
 	names = nameToIdx.ListNames()
-	assert.Len(t, names, 1)
-	assert.Contains(t, names, bridgeDomains[0].Name)
+	gomega.Expect(names).To(gomega.HaveLen(1))
+	gomega.Expect(names).To(gomega.ContainElement(bridgeDomains[0].Name))
 
 	//call tested func
 	bdIndex.UnregisterName(bridgeDomains[0].Name)
 
 	//evaluate result
 	names = nameToIdx.ListNames()
-	assert.Empty(t, names)
+	gomega.Expect(names).To(gomega.BeEmpty())
 }
 
 /**
-	TestLookupIndex tests method:
-	* LookupIndex
- */
+TestLookupIndex tests method:
+* LookupIndex
+*/
 func TestLookupIndex(t *testing.T) {
-	_, bdIndex, bridgeDomains := testInitialization(t,map[string][]string{bdName0:{ifaceAName, ifaceBName}})
+	gomega.RegisterTestingT(t)
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
 	foundIdx, metadata, exist := bdIndex.LookupIdx(bdName0)
-	assert.True(t, exist)
-	assert.Equal(t, idx0, foundIdx)
-	assert.Equal(t, bridgeDomains[0], metadata)
+	gomega.Expect(exist).To(gomega.BeTrue())
+	gomega.Expect(foundIdx).To(gomega.Equal(idx0))
+	gomega.Expect(metadata).To(gomega.Equal(bridgeDomains[0]))
 }
 
 /**
-	TestLookupIndex tests method:
-	* LookupIndex
- */
+TestLookupIndex tests method:
+* LookupIndex
+*/
 func TestLookupName(t *testing.T) {
-	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0:{ifaceAName, ifaceBName}})
+	gomega.RegisterTestingT(t)
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
 	foundName, metadata, exist := bdIndex.LookupName(idx0)
-	assert.True(t, exist)
-	assert.Equal(t, bridgeDomains[0].Name, foundName)
-	assert.Equal(t, bridgeDomains[0], metadata)
+	gomega.Expect(exist).To(gomega.BeTrue())
+	gomega.Expect(foundName).To(gomega.Equal(bridgeDomains[0].Name))
+	gomega.Expect(metadata).To(gomega.Equal(bridgeDomains[0]))
 }
 
 /**
-	TestLookupNameByIfaceName tests method:
-	* LookupNameByIfaceName
- */
+TestLookupNameByIfaceName tests method:
+* LookupNameByIfaceName
+*/
 func TestLookupByIfaceName(t *testing.T) {
+	gomega.RegisterTestingT(t)
 	//defines 3 bridge domains
 	_, bdIndex, bridgeDomains := testInitialization(t,
 		map[string][]string{
-			bdName0:{ifaceAName, ifaceBName},
-			bdName1:{ifaceAName},
-			bdName2:{ifaceBName}})
+			bdName0: {ifaceAName, ifaceBName},
+			bdName1: {ifaceAName},
+			bdName2: {ifaceBName}})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 	bdIndex.RegisterName(bridgeDomains[1].Name, idx1, bridgeDomains[1])
@@ -130,21 +137,21 @@ func TestLookupByIfaceName(t *testing.T) {
 
 	//return all bridge domains to which ifaceAName belongs
 	foundBridgeDomains := bdIndex.LookupNameByIfaceName(ifaceAName)
-	assert.Len(t, foundBridgeDomains, 2)
-	assert.Contains(t, foundBridgeDomains, bdName0)
-	assert.Contains(t, foundBridgeDomains, bdName1)
+	gomega.Expect(foundBridgeDomains).To(gomega.HaveLen(2))
+	gomega.Expect(foundBridgeDomains).To(gomega.ContainElement(bdName0))
+	gomega.Expect(foundBridgeDomains).To(gomega.ContainElement(bdName1))
 
 	//return all bridge domains to which ifaceBName belongs
 	foundBridgeDomains = bdIndex.LookupNameByIfaceName(ifaceBName)
-	assert.Len(t, foundBridgeDomains, 2)
-	assert.Contains(t, foundBridgeDomains, bdName0)
-	assert.Contains(t, foundBridgeDomains, bdName2)
+	gomega.Expect(foundBridgeDomains).To(gomega.HaveLen(2))
+	gomega.Expect(foundBridgeDomains).To(gomega.ContainElement(bdName0))
+	gomega.Expect(foundBridgeDomains).To(gomega.ContainElement(bdName2))
 }
 
-func prepareBridgeDomainData(bdName string, ifaces []string) *l2.BridgeDomains_BridgeDomain{
+func prepareBridgeDomainData(bdName string, ifaces []string) *l2.BridgeDomains_BridgeDomain {
 	interfaces := []*l2.BridgeDomains_BridgeDomain_Interfaces{}
-	for _,iface := range ifaces {
+	for _, iface := range ifaces {
 		interfaces = append(interfaces, &l2.BridgeDomains_BridgeDomain_Interfaces{Name: iface})
 	}
-	return &l2.BridgeDomains_BridgeDomain{Interfaces:interfaces, Name:bdName}
+	return &l2.BridgeDomains_BridgeDomain{Interfaces: interfaces, Name: bdName}
 }
