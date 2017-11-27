@@ -539,11 +539,15 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface[0].Name = ifname
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
-	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
+	ifs.Interface[0].Mtu = 555
+	ifs.Interface[0].IpAddresses = make([]string, 3)
 	ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[0].IpAddresses[1] = "192.168.2.5/24"
+	ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
