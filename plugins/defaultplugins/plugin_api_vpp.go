@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // API of VPP Plugin
@@ -71,4 +72,7 @@ type API interface {
 	// uses the name and the index of receive interface (the one all packets are received on). XConnectMeta is a container
 	// for the transmit interface name.
 	GetXConnectIndexes() idxvpp.NameToIdx
+
+	// DumpACL returns a list of all configured ACLs todo currently just a mock for snk. always returns empty list
+	DumpACL() (acls []*acl.AccessLists_Acl, err error)
 }
