@@ -40,6 +40,7 @@ import (
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // defaultpluigns specific flags
@@ -225,6 +226,11 @@ func (plugin *Plugin) GetFIBIndexes() idxvpp.NameToIdx {
 // GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
 func (plugin *Plugin) GetXConnectIndexes() idxvpp.NameToIdx {
 	return plugin.xcIndexes
+}
+
+// DumpACL returns a list of all configured ACL entires
+func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
+	return plugin.aclConfigurator.DumpACL()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.

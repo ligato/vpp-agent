@@ -161,9 +161,9 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (*acl.AccessLists
 		actions := acl.AccessLists_Acl_Rule_Actions{}
 		switch r.IsPermit {
 		case 0:
-			actions.AclAction = acl.AclAction_PERMIT
-		case 1:
 			actions.AclAction = acl.AclAction_DENY
+		case 1:
+			actions.AclAction = acl.AclAction_PERMIT
 		case 2:
 			actions.AclAction = acl.AclAction_REFLECT
 		default:

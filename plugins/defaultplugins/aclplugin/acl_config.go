@@ -291,14 +291,14 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 
 // DumpACL returns all configured ACLs in proto format
 // todo ACLDump/ACLDetails error invalid message ID 924, expected 922
-func (plugin *ACLConfigurator) DumpACL() []*acl.AccessLists_Acl {
+func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	//acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
 	//if err != nil {
 	//	plugin.Log.Error(err)
 	//	return nil
 	//}
 	//return acls
-	return nil
+	return  []*acl.AccessLists_Acl{},nil
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
