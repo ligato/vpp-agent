@@ -14,7 +14,7 @@ Suite Teardown    Testsuite Teardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${SYNC_SLEEP}=         10s
+${SYNC_SLEEP}=         5s
 
 *** Test Cases ***
 Run Two Agents With L2 Memif's And Loopback Interfaces In bd1
@@ -36,8 +36,10 @@ Update bd1 On vpp1
 
 Add vpp3 To bd1
     Add Agent VPP Node    agent_vpp_3
+    Sleep    ${SYNC_SLEEP}
     Create loopback interface bvi_loop0 on agent_vpp_3 with ip 10.1.1.3/24 and mac 8a:f1:be:90:00:03
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
+    Sleep    ${SYNC_SLEEP}
     Create Bridge Domain bd1 With Autolearn On agent_vpp_3 with interfaces bvi_loop0, memif0
     Sleep    ${SYNC_SLEEP}
     Ping from agent_vpp_1 to 10.1.1.3
@@ -46,10 +48,13 @@ Add vpp3 To bd1
 Add bd2 On vpp1 And vpp4
     Create loopback interface bvi_loop1 on agent_vpp_1 with ip 20.1.1.1/24 and mac 8a:f1:be:90:00:04
     Create Master memif2 on agent_vpp_1 with MAC 02:f1:be:90:01:00, key 3 and m2.sock socket
+    Sleep    ${SYNC_SLEEP}
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces bvi_loop1, memif2
     Add Agent VPP Node    agent_vpp_4
+    Sleep    ${SYNC_SLEEP}
     Create loopback interface bvi_loop0 on agent_vpp_4 with ip 20.1.1.2/24 and mac 8a:f1:be:90:00:05
     Create Slave memif0 on agent_vpp_4 with MAC 02:f1:be:90:01:05, key 3 and m2.sock socket
+    Sleep    ${SYNC_SLEEP}
     Create Bridge Domain bd2 With Autolearn On agent_vpp_4 with interfaces bvi_loop0, memif0
     Sleep    ${SYNC_SLEEP}
     Ping From agent_vpp_1 to 20.1.1.2
@@ -57,6 +62,7 @@ Add bd2 On vpp1 And vpp4
 
 Move agent3 From bd1 To bd2
     Create loopback interface bvi_loop0 on agent_vpp_3 with ip 20.1.1.3/24 and mac 8a:f1:be:90:00:03
+    Sleep    ${SYNC_SLEEP}
     Create Bridge Domain bd1 With Autolearn On agent_vpp_1 with interfaces bvi_loop0, memif0
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces bvi_loop1, memif1, memif2
     Sleep    ${SYNC_SLEEP}
@@ -65,6 +71,7 @@ Move agent3 From bd1 To bd2
 
 Move agent3 back from bd2 to bd1
     Create loopback interface bvi_loop0 on agent_vpp_3 with ip 10.1.1.3/24 and mac 8a:f1:be:90:00:03
+    Sleep    ${SYNC_SLEEP}
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces bvi_loop1, memif2
     Create Bridge Domain bd1 With Autolearn On agent_vpp_1 with interfaces bvi_loop0, memif0, memif1
     Sleep    ${SYNC_SLEEP}

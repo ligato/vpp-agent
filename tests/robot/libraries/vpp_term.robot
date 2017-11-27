@@ -223,3 +223,10 @@ vpp_term: Add Route
     [Documentation]    Add ip route through vpp terminal.
     Log Many    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
     vpp_term: Issue Command    ${node}    ip route add ${destination_ip}/${prefix} via ${next_hop_ip}
+
+vpp_term: Show ARP
+    [Arguments]        ${node}
+    [Documentation]    Show ARPs through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh ip arp
+    [Return]           ${out}
