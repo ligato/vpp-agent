@@ -28,4 +28,8 @@ endef
 # Make all imports of sirupsen/logrus upper-case.
 define unify_sirupsen
 	@cd vendor/git.fd.io/govpp.git && find . -type f -name '*.go' -exec sed -i 's/Sirupsen\/logrus/sirupsen\/logrus/' "{}" +;
+	@cd vendor/github.com/docker && find . -type f -name '*.go' -exec sed -i 's/Sirupsen\/logrus/sirupsen\/logrus/' "{}" +;
+	@cd vendor/github.com/opencontainers && find . -type f -name '*.go' -exec sed -i 's/Sirupsen\/logrus/sirupsen\/logrus/' "{}" +;
+	@cd vendor/github.com/prometheus && find . -type f -name '*.go' -exec sed -i 's/Sirupsen\/logrus/sirupsen\/logrus/' "{}" +;
+	@cd vendor/github.com && rm -rf Sirupsen
 endef
