@@ -74,7 +74,7 @@ type InterfaceConfigurator struct {
 
 	uIfaceCache map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
 
-	mtu uint32 // MTU value is either read from config or set to default
+	mtu uint32 // default MTU value can be read from config
 
 	afPacketConfigurator *AFPacketConfigurator
 
@@ -217,21 +217,23 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 	wasError = plugin.configureIPAddresses(iface.Name, ifIdx, IPAddrs, iface.Unnumbered)
 
-	//configure container IP address
+	// configure container IP address
 	plugin.addContainerIPAddress(iface, ifIdx)
 
-	// configure mtu
+	// configure mtu. Prefer value in interface config, otherwise set default value if defined
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		var mtu uint32
 		if iface.Mtu != 0 {
-			mtu = iface.Mtu
-		} else {
-			mtu = plugin.mtu
-		}
-		err = vppcalls.SetInterfaceMtu(ifIdx, mtu, plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
-		if err != nil {
-			wasError = err
+			err = vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.Log, plugin.vppCh,
+				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
+			if err != nil {
+				wasError = err
+			}
+		} else if plugin.mtu != 0 {
+			err = vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh,
+				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
+			if err != nil {
+				wasError = err
+			}
 		}
 	}
 
@@ -515,7 +517,6 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	} else {
 		// if VRF is not changed, try to add/del only differences
 		del, add := addrs.DiffAddr(newAddrs, oldAddrs)
-		plugin.Log.Warnf("del %v add %v", del, add)
 
 		plugin.Log.Debug("del ip addrs: ", del)
 		plugin.Log.Debug("add ip addrs: ", add)
@@ -538,14 +539,14 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		"ifIdx":ifIdx}).Debug("Container IP modification problem ",err)
 	}
 
-	// mtu
-	if newConfig.Mtu == 0 {
-		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh, nil)
+	// Set MTU if changed in interface config
+	if newConfig.Mtu != 0 && newConfig.Mtu != oldConfig.Mtu {
+		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh, nil)
 		if err != nil {
 			wasError = err
 		}
-	} else if newConfig.Mtu != oldConfig.Mtu {
-		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh, nil)
+	} else if newConfig.Mtu == 0 && plugin.mtu != 0 {
+		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh, nil)
 		if err != nil {
 			wasError = err
 		}
