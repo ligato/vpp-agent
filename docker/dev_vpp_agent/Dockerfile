@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     default-jre default-jdk telnet netcat software-properties-common
 
 RUN gcc --version  
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
-    apt-get update && apt-get install -y gcc-7
+#RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
+#    apt-get update && apt-get install -y gcc-7
 
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
@@ -20,9 +20,9 @@ RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
 
-RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
+#RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
 
-RUN gcc --version 
+#RUN gcc --version 
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
