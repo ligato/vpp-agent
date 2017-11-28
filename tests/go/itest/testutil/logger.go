@@ -50,7 +50,7 @@ func NewLogger(name string, t *testing.T) *Logger {
 		std:  t,
 		name: name,
 	}
-
+	logger.SetLevel(logging.DebugLevel)
 	return logger
 }
 

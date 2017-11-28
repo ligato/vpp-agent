@@ -1,11 +1,32 @@
 package itest
 
 import (
-	//test_if "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/testing"
+	"testing"
+
+	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
-	"testing"
 )
+
+func SuiteMemif(t *testing.T) *suiteMemif {
+	return &suiteMemif{T: t,
+		When: testutil.When{
+			WhenIface: iftst.WhenIface{
+				Log:       testutil.NewLogger("WhenIface", t),
+				NewChange: localclient.DataChangeRequest,
+				NewResync: localclient.DataResyncRequest,
+			},
+		},
+		Then: testutil.Then{
+			ThenIface: iftst.ThenIface{
+				Log:       testutil.NewLogger("ThenIface", t),
+				NewChange: localclient.DataChangeRequest},
+			/*TODO OperState
+			k := intf.InterfaceKey(data.Name)
+			found, _, err = etcdmux.NewRootBroker().GetValue(servicelabel.GetAgentPrefix()+k, ifState)*/
+		},
+	}
+}
 
 type suiteMemif struct {
 	T *testing.T
@@ -15,31 +36,42 @@ type suiteMemif struct {
 	testutil.Then
 }
 
-func (t *suiteMemif) SetupTestingFlavor(flavor *testutil.VppOnlyTestingFlavor) {
-	t.Then.VPP = &flavor.VPP
+func (s *suiteMemif) SetupTestingFlavor(flavor *testutil.VppOnlyTestingFlavor) {
+	s.Then.VPP = &flavor.VPP
 }
 
 // TC01EmptyVppCrudEtcd asserts that data written to ETCD after Agent Starts are processed.
-func (t *suiteMemif) TC01EmptyVppCrudEtcd() {
-	t.SetupTestingFlavor(t.SetupDefault())
-	defer t.Teardown()
+func (s *suiteMemif) TC01EmptyVppCrudEtcd() {
+	s.SetupTestingFlavor(s.SetupDefault())
+	defer s.Teardown()
 
-	t.When.StoreIf(&iftst.Memif100011Slave)
-	t.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
+	s.When.StoreIf(&iftst.Memif100011Slave)
+	s.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
 
-	t.When.StoreIf(&iftst.Memif100012)
+	s.When.StoreIf(&iftst.Memif100012)
 
-	t.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
+	s.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
 
-	t.When.DelIf(&iftst.Memif100012)
-	t.Then.SwIfIndexes().NotContainsName(iftst.Memif100012.Name)
+	s.When.DelIf(&iftst.Memif100012)
+	s.Then.SwIfIndexes().NotContainsName(iftst.Memif100012.Name)
 
 	//TODO simulate that dump return local interface
 }
 
-/*
 // TC02EmptyVppResyncAtStartup tests that data written to ETCD before Agent Starts are processed (startup RESYNC).
-func (t *suiteMemif) TC02EmptyVppResyncAtStartup() {
+func (s *suiteMemif) TC02EmptyVppResyncAtStartup() {
+	s.SetupTestingFlavor(s.SetupDefault())
+	defer s.Teardown()
+
+	s.When.ResyncIf(&iftst.Memif100011Slave)
+	s.When.ResyncIf(&iftst.Memif100012)
+
+	s.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
+	s.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
+}
+
+// TC02EmptyVppResyncAtStartup tests that data written to ETCD before Agent Starts are processed (startup RESYNC).
+/*func (t *suiteMemif) TC02EmptyVppResyncAtStartup() {
 	t.Given(t.T).VppMock(given.RepliesSuccess).
 		And().StartedAgent(append(Plugins(), Init("ETCD before startup", func() error {
 		t.When.StoreIf(&Memif100011Slave)
@@ -50,8 +82,9 @@ func (t *suiteMemif) TC02EmptyVppResyncAtStartup() {
 
 	t.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
 	t.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
-}
+}*/
 
+/*
 //suiteMemif03VppNotificaitonIfDown test that if state down notification is handled correctly
 func (t *suiteMemif) TC03VppNotificaitonIfDown() {
 	ctx := Given(t.T).VppMock(given.RepliesSuccess).

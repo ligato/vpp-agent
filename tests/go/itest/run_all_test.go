@@ -1,14 +1,13 @@
 package itest
 
 import (
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
-	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 	"os"
 	"os/signal"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 // Test runs all TC methods of multiple test suites in a sequence.
@@ -16,21 +15,7 @@ func Test(t *testing.T) {
 	doneChan := make(chan struct{}, 1)
 
 	go func() {
-		RunTestSuite(&suiteMemif{T: t,
-			When: testutil.When{
-				WhenIface: iftst.WhenIface{
-					Log:       testutil.NewLogger("WhenIface", t),
-					NewChange: localclient.DataChangeRequest},
-			},
-			Then: testutil.Then{
-				ThenIface: iftst.ThenIface{
-					Log:       testutil.NewLogger("ThenIface", t),
-					NewChange: localclient.DataChangeRequest},
-				/*TODO OperState
-				k := intf.InterfaceKey(data.Name)
-				found, _, err = etcdmux.NewRootBroker().GetValue(servicelabel.GetAgentPrefix()+k, ifState)*/
-			},
-		}, t)
+		RunTestSuite(SuiteMemif(t), t)
 		//RunTestSuite(&suiteBD{T: t}, t)
 		//RunTestSuite(&suiteRoute{T: t}, t)
 
@@ -72,6 +57,7 @@ func RunTestSuite(testSuite interface{}, t *testing.T, teardowns ...func()) {
 
 				t.Log("tcName ", tcName)
 				ok := t.Run(tcName, func(t *testing.T) {
+					gomega.RegisterTestingT(t)
 					tc.Call([]reflect.Value{})
 
 					t.Log("Finished TC ", suiteName, " ", tcName)

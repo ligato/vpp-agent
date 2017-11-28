@@ -16,6 +16,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
 )
 
 var swIfIndexSeq uint32
@@ -29,6 +30,7 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 	vppMock.RegisterBinAPITypes(vpe.Types)
 	vppMock.RegisterBinAPITypes(vxlan.Types)
 	vppMock.RegisterBinAPITypes(bfd.Types)
+	vppMock.RegisterBinAPITypes(session.Types)
 
 	vppMock.MockReplyHandler(func(request govppmock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
 		reqName, found := vppMock.GetMsgNameByID(request.MsgID)

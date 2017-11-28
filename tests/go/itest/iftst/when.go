@@ -14,27 +14,38 @@ const pluginName = core.PluginName("when_iface")
 // (methods that will be called from test scenarios).
 type WhenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
+	NewResync func(name core.PluginName) vppclient.DataResyncDSL
 	Log       logging.Logger
 }
 
-// StoreIf stores configuration of a given interface in ETCD.
-func (step *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interface{}) {
-	step.Log.Debug("When_StoreIf begin")
-	err := step.NewChange(pluginName).Put().Interface(data).Send().ReceiveReply()
+// ResyncIf stores configuration of a given interface in ETCD.
+func (when *WhenIface) ResyncIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+	when.Log.Debug("When_ResyncIf begin")
+	err := when.NewResync(pluginName).Interface(data).Send().ReceiveReply()
 	if err != nil {
-		step.Log.Panic(err)
+		when.Log.Panic(err)
 	}
-	step.Log.Debug("When_StoreIf end")
+	when.Log.Debug("When_ResyncIf end")
+}
+
+// StoreIf stores configuration of a given interface in ETCD.
+func (when *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+	when.Log.Debug("When_StoreIf begin")
+	err := when.NewChange(pluginName).Put().Interface(data).Send().ReceiveReply()
+	if err != nil {
+		when.Log.Panic(err)
+	}
+	when.Log.Debug("When_StoreIf end")
 }
 
 // DelIf removes configuration of a given interface from ETCD.
-func (step *WhenIface) DelIf(data *intf.Interfaces_Interface) {
-	step.Log.Debug("When_StoreIf begin")
+func (when *WhenIface) DelIf(data *intf.Interfaces_Interface) {
+	when.Log.Debug("When_StoreIf begin")
 	err := localclient.DataChangeRequest(pluginName).Delete().Interface(data.Name).Send().ReceiveReply()
 	if err != nil {
-		step.Log.Panic(err)
+		when.Log.Panic(err)
 	}
-	step.Log.Debug("When_StoreIf end")
+	when.Log.Debug("When_StoreIf end")
 }
 
 /*

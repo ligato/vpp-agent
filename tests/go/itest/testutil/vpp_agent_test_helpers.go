@@ -11,7 +11,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
-	"github.com/onsi/gomega"
 )
 
 // VppAgentT is similar to testing.T in golang packages.
@@ -89,10 +88,10 @@ func (t *VppAgentT) SetupDefault() (flavor *VppOnlyTestingFlavor) {
 
 // Setup registers gomega and starts the agent with the flavor argument.
 func (t *VppAgentT) Setup(flavor core.Flavor) {
-	gomega.RegisterTestingT(t.T)
+	//gomega.RegisterTestingT(t.T)
 
-	agent := core.NewAgent(flavor)
-	err := agent.Start()
+	t.agent = core.NewAgent(flavor)
+	err := t.agent.Start()
 	if err != nil {
 		logrus.DefaultLogger().Panic(err)
 	}
