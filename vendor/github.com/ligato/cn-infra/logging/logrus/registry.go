@@ -19,7 +19,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
 )
 

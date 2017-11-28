@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	lg "github.com/Sirupsen/logrus"
+	lg "github.com/sirupsen/logrus"
 
 	"github.com/onsi/gomega"
 )

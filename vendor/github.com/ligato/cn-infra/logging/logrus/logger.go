@@ -28,7 +28,7 @@ import (
 	"regexp"
 	"sync/atomic"
 
-	lg "github.com/Sirupsen/logrus"
+	lg "github.com/sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/satori/go.uuid"
 	"unsafe"
