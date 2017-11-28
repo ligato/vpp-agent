@@ -192,8 +192,6 @@ Update Agent In Dev Container
     Write To Container Until Prompt    dev    make
     Write To Container Until Prompt    dev    make install
 
-
-
 Start Kafka Server
     Open SSH Connection    kafka    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine    kafka    ${KAFKA_SERVER_CREATE}
