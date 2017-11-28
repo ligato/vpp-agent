@@ -7,11 +7,9 @@ ARG VPP_COMMIT="xxx"
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
-    default-jre default-jdk telnet netcat software-properties-common
+    default-jre default-jdk telnet netcat
 
 RUN gcc --version  
-#RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
-#    apt-get update && apt-get install -y gcc-7
 
 RUN mkdir /opt/vpp-agent
 RUN mkdir /opt/vpp-agent/dev
@@ -19,10 +17,6 @@ RUN mkdir /opt/vpp-agent/plugin
 RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
-
-#RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
-
-#RUN gcc --version 
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
