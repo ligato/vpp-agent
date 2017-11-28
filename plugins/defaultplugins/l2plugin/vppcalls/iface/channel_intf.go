@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package intf
+package iface
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
 )
 
-//ChannelIntf is interface for send request to VPP channel
-type ChannelIntf interface {
+//VPPChannel is interface for send request to VPP channel
+type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 }
 
