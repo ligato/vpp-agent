@@ -167,6 +167,10 @@ build:
 	$(call build_vpp_agent_ctl_only)
 	$(call build_agentctl_only)
 
+# unify sirupsen
+unify:
+	$(call unify_sirupsen)
+
 # build vpp-agent
 vpp-agent:
 	$(call build_vpp_agent_only)
