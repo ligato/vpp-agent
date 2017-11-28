@@ -1,9 +1,7 @@
 package iftst
 
 import (
-	//"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"reflect"
-
 	"strings"
 
 	govppmock "git.fd.io/govpp.git/adapter/mock"
@@ -11,7 +9,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
-	interfaces_bin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
@@ -23,7 +21,7 @@ var swIfIndexSeq uint32
 
 // RepliesSuccess replies with success binary API message.
 func RepliesSuccess(vppMock *govppmock.VppAdapter) {
-	vppMock.RegisterBinAPITypes(interfaces_bin.Types)
+	vppMock.RegisterBinAPITypes(interfaces.Types)
 	vppMock.RegisterBinAPITypes(memif.Types)
 	vppMock.RegisterBinAPITypes(tap.Types)
 	vppMock.RegisterBinAPITypes(af_packet.Types)

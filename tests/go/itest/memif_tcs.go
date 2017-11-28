@@ -3,30 +3,9 @@ package itest
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 )
-
-func SuiteMemif(t *testing.T) *suiteMemif {
-	return &suiteMemif{T: t,
-		When: testutil.When{
-			WhenIface: iftst.WhenIface{
-				Log:       testutil.NewLogger("WhenIface", t),
-				NewChange: localclient.DataChangeRequest,
-				NewResync: localclient.DataResyncRequest,
-			},
-		},
-		Then: testutil.Then{
-			ThenIface: iftst.ThenIface{
-				Log:       testutil.NewLogger("ThenIface", t),
-				NewChange: localclient.DataChangeRequest},
-			/*TODO OperState
-			k := intf.InterfaceKey(data.Name)
-			found, _, err = etcdmux.NewRootBroker().GetValue(servicelabel.GetAgentPrefix()+k, ifState)*/
-		},
-	}
-}
 
 type suiteMemif struct {
 	T *testing.T
