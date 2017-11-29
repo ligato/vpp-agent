@@ -82,7 +82,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 		return err
 	}
 
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Linux: plugin.Linux}
+	plugin.afPacketConfigurator = &AFPacketConfigurator{Linux: plugin.Linux, SwIfIndices: plugin.swIfIndexes}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	return nil
@@ -197,8 +197,10 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// register name to idx mapping
-	plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
+	// register name to idx mapping if it is not an af_packet interface type (it is registered in ConfigureAfPacketInterface if needed)
+	if iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
+		plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
+	}
 	log.DefaultLogger().WithFields(log.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
 
 	// set interface up if enabled

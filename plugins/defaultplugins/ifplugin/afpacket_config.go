@@ -19,6 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
@@ -27,6 +28,7 @@ import (
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
 	Linux interface{} //just flag if nil
+	SwIfIndices ifaceidx.SwIfIndexRW
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
@@ -72,6 +74,8 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 		return 0, true, err
 	}
 	plugin.addToCache(afpacket, false)
+	// If the interface is not in pending state, register it
+	plugin.SwIfIndices.RegisterName(afpacket.Name, swIdx, afpacket)
 	return swIdx, false, nil
 }
 
@@ -105,6 +109,8 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 	config, found := plugin.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
 		err = vppcalls.DeleteAfPacketInterface(afpacket.GetAfpacket(), plugin.vppCh)
+		// unregister interface to let other plugins know that it is removed from the vpp
+		plugin.SwIfIndices.UnregisterName(afpacket.Name)
 	}
 	plugin.removeFromCache(afpacket)
 	return err
