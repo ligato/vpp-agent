@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iface
+package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"

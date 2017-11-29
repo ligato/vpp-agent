@@ -21,7 +21,6 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls/test/impl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -83,13 +82,12 @@ func TestVppAddBridgeDomain(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
 	err := vppcalls.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD,
-		logrus.NewLogger(dummyLoggerName), mockedChannel, nil)
+		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	msg, ok := mockedChannel.Msg.(*l2ba.BridgeDomainAddDel)
+	msg, ok := ctx.MockChannel.Msg.(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(createTestDataOutBD))
 }
@@ -100,21 +98,20 @@ func TestVppUpdateBridgeDomain(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
-	err := vppcalls.VppUpdateBridgeDomain(dummyBridgeDomain, dummyBridgeDomain,
-		updateTestDataInBd, logrus.NewLogger(dummyLoggerName), mockedChannel, nil)
+	err := vppcalls.VppUpdateBridgeDomain(dummyBridgeDomain, dummyBridgeDomain, updateTestDataInBd,
+		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(mockedChannel.Msgs).To(HaveLen(2))
+	Expect(ctx.MockChannel.Msgs).To(HaveLen(2))
 
 	//delete msg
-	msg, ok := mockedChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
+	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(deleteTestDataOutBd))
 
 	//add msg
-	msg, ok = mockedChannel.Msgs[1].(*l2ba.BridgeDomainAddDel)
+	msg, ok = ctx.MockChannel.Msgs[1].(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(updateTestDataOutBd))
 }
@@ -124,13 +121,12 @@ func TestVppDeleteBridgeDomain(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
-	err := vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain, logrus.NewLogger(dummyLoggerName), mockedChannel,
-		nil)
+	err := vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain,
+		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	msg, ok := mockedChannel.Msg.(*l2ba.BridgeDomainAddDel)
+	msg, ok := ctx.MockChannel.Msg.(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(deleteTestDataOutBd))
 }
