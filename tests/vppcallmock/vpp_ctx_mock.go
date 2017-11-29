@@ -25,30 +25,52 @@ import (
 
 //TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
-	MockVpp *mock.VppAdapter
-	conn    *core.Connection
-	Channel *govppapi.Channel
+	MockVpp     *mock.VppAdapter
+	conn        *core.Connection
+	channel     *govppapi.Channel
+	MockChannel *mockedChannel
 }
 
 //SetupTestCtx sets up all fields of TestCtx structure at the begining of test
 func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 
-	ctx := &TestCtx{}
-	ctx.MockVpp = &mock.VppAdapter{}
+	ctx := &TestCtx{
+		MockVpp: &mock.VppAdapter{},
+	}
 
 	var err error
 	ctx.conn, err = core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	ctx.Channel, err = ctx.conn.NewAPIChannel()
+	ctx.channel, err = ctx.conn.NewAPIChannel()
 	Expect(err).ShouldNot(HaveOccurred())
+
+	ctx.MockChannel = &mockedChannel{channel: ctx.channel}
 
 	return ctx
 }
 
 //TeardownTestCtx politely close all used resources
 func (ctx *TestCtx) TeardownTestCtx() {
-	ctx.Channel.Close()
+	ctx.channel.Close()
 	ctx.conn.Disconnect()
+}
+
+//MockedChannel implements ChannelIntf for testing purposes
+type mockedChannel struct {
+	channel *govppapi.Channel
+
+	//last message which passed through method SendRequest
+	Msg govppapi.Message
+
+	//list of all messages which passed through method SendRequest
+	Msgs []govppapi.Message
+}
+
+//SendRequest just save input argument to structure field for future check
+func (m *mockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
+	m.Msg = msg
+	m.Msgs = append(m.Msgs, msg)
+	return m.channel.SendRequest(msg)
 }

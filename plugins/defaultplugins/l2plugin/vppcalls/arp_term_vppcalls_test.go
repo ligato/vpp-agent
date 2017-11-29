@@ -20,7 +20,6 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls/test/impl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -37,14 +36,16 @@ var createTestDataOutArp = &l2ba.BdIPMacAddDel{
 	IsAdd:      1,
 	IsIpv6:     0,
 	IPAddress:  []byte{192, 168, 4, 4},
-	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
+	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+}
 
 var deleteTestDataOutArp = &l2ba.BdIPMacAddDel{
 	BdID:       dummyBridgeDomain,
 	IsAdd:      0,
 	IsIpv6:     0,
 	IPAddress:  []byte{192, 168, 4, 4},
-	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
+	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+}
 
 //TestVppAddArpTerminationTableEntry tests VppAddArpTerminationTableEntry
 func TestVppAddArpTerminationTableEntry(t *testing.T) {
@@ -52,12 +53,11 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
-	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
-	err := vppcalls.VppAddArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
-		mockedChannel, nil)
+	err := vppcalls.VppAddArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress,
+		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := mockedChannel.Msg.(*l2ba.BdIPMacAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*l2ba.BdIPMacAddDel)
 	Expect(ok).To(BeTrue())
 
 	Expect(vppMsg).NotTo(BeNil())
@@ -70,12 +70,11 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
-	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
-	err := vppcalls.VppRemoveArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
-		mockedChannel, nil)
+	err := vppcalls.VppRemoveArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress,
+		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := mockedChannel.Msg.(*l2ba.BdIPMacAddDel)
+	vppMsg, ok := ctx.MockChannel.Msg.(*l2ba.BdIPMacAddDel)
 	Expect(ok).To(BeTrue())
 
 	Expect(vppMsg).NotTo(BeNil())
