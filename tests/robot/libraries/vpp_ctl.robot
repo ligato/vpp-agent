@@ -532,3 +532,24 @@ vpp_ctl: Check ACL Reply
     ${output}=            Evaluate             json.loads('''${data}''')     json
     log                   ${output}
     [Return]              ${output}
+
+vpp_ctl: Set L4 Features On Node
+    [Arguments]    ${node}    ${enabled}
+    [Documentation]    Enable [disable] L4 features by setting ${enabled} to true [false].
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/enable-l4.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/l4/features/feature
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Application Namespace
+    [Arguments]    ${node}    ${id}    ${secret}    ${interface}
+    [Documentation]    Put application namespace config json to etcd.
+    Log Many    ${node}    ${id}    ${secret}    ${interface}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/app_namespace.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/l4/namespaces/${id}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}

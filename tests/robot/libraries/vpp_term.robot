@@ -230,3 +230,29 @@ vpp_term: Show ARP
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}   sh ip arp
     [Return]           ${out}
+
+vpp_term: Show Application Namespaces
+    [Arguments]        ${node}
+    [Documentation]    Show application namespaces through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh app ns
+    Log    ${out}
+    [Return]           ${out}
+
+vpp_term: Return Data From Show Application Namespaces Output
+    [Arguments]    ${node}    ${id}
+    [Documentation]    Returns a list containing namespace id, index, namespace secret and sw_if_index of an
+    ...   interface associated with the namespace.
+    Log Many    ${node}    ${id}
+    ${out}=    vpp_term: Show Application Namespaces    ${node}
+    ${out_line}=    Get Lines Containing String    ${out}    ${id}
+    ${out_data}=    Split String    ${out_line}
+    [Return]    ${out_data}
+
+vpp_term: Check Data In Show Application Namespaces Output
+    [Arguments]    ${node}    ${id}    @{desired_state}
+    [Documentation]    Desired data is a list variable containing namespace index, namespace secret and sw_if_index of an
+    ...   interface associated with the namespace.
+    Log Many    ${node}    ${id}    @{desired_state}
+    ${actual_state}=    vpp_term: Return Data From Show Application Namespaces Output    ${node}    ${id}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
