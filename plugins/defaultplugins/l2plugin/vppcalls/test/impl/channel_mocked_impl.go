@@ -15,6 +15,10 @@
 package impl
 
 import (
+	"reflect"
+
+	"unsafe"
+
 	govppapi "git.fd.io/govpp.git/api"
 )
 
@@ -22,12 +26,32 @@ import (
 type MockedChannel struct {
 	Channel govppapi.Channel
 
-	//message for analyze
+	//last message which passed through method SendRequest
 	Msg govppapi.Message
+
+	//list of all messages which passed through method SendRequest
+	Msgs []govppapi.Message
 }
 
 //SendRequest just save input argument to structure field for future check
-func (ch *MockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
-	ch.Msg = msg
-	return nil
+func (mockedChannel *MockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
+	mockedChannel.Msg = msg
+	mockedChannel.Msgs = append(mockedChannel.Msgs, msg)
+	mockedChannel.Channel.ReqChan <- &govppapi.VppRequest{
+		Message: msg,
+	}
+	requestCtx := &govppapi.RequestCtx{}
+	specifyChViaReflect(requestCtx, &mockedChannel.Channel)
+
+	return requestCtx
+}
+
+func specifyChViaReflect(requestCtx *govppapi.RequestCtx, channel *govppapi.Channel) {
+	rCh := reflect.ValueOf(&channel).Elem()
+
+	rRequestCtx := reflect.ValueOf(requestCtx).Elem()
+	rFieldCh := rRequestCtx.FieldByName("ch")
+	rFieldCh = reflect.NewAt(rFieldCh.Type(), unsafe.Pointer(rFieldCh.UnsafeAddr())).Elem()
+
+	rFieldCh.Set(rCh)
 }

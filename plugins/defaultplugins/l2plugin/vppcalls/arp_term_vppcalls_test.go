@@ -17,11 +17,11 @@ package vppcalls_test
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls/test/impl"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
@@ -32,39 +32,52 @@ const (
 	dummyLoggerName          = "dummyLogger"
 )
 
+var createTestDataOutArp = &l2ba.BdIPMacAddDel{
+	BdID:       dummyBridgeDomain,
+	IsAdd:      1,
+	IsIpv6:     0,
+	IPAddress:  []byte{192, 168, 4, 4},
+	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
+
+var deleteTestDataOutArp = &l2ba.BdIPMacAddDel{
+	BdID:       dummyBridgeDomain,
+	IsAdd:      0,
+	IsIpv6:     0,
+	IPAddress:  []byte{192, 168, 4, 4},
+	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
+
 //TestVppAddArpTerminationTableEntry tests VppAddArpTerminationTableEntry
 func TestVppAddArpTerminationTableEntry(t *testing.T) {
-	RegisterTestingT(t)
-	mockedChannel := &impl.MockedChannel{Channel: govppapi.Channel{}}
-	vppcalls.VppAddArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
+	err := vppcalls.VppAddArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
 		mockedChannel, nil)
 
+	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := mockedChannel.Msg.(*l2ba.BdIPMacAddDel)
 	Expect(ok).To(BeTrue())
 
 	Expect(vppMsg).NotTo(BeNil())
-	//check values which will be send to VPP
-	Expect(vppMsg.BdID).To(Equal(dummyBridgeDomain))
-	Expect(vppMsg.MacAddress).To(Equal([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}))
-	Expect(vppMsg.IPAddress).To(Equal([]byte{192, 168, 4, 4}))
-	Expect(vppMsg.IsIpv6).To(Equal(uint8(0)))
-	Expect(vppMsg.IsAdd).To(Equal(uint8(1)))
+	Expect(vppMsg).To(Equal(createTestDataOutArp))
 }
 
 // TestVppRemoveArpTerminationTableEntry tests VppRemoveArpTerminationTableEntry method
 func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
-	RegisterTestingT(t)
-	mockedChannel := &impl.MockedChannel{Channel: govppapi.Channel{}}
-	vppcalls.VppRemoveArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
+	err := vppcalls.VppRemoveArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress, logrus.NewLogger(dummyLoggerName),
 		mockedChannel, nil)
+
+	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := mockedChannel.Msg.(*l2ba.BdIPMacAddDel)
 	Expect(ok).To(BeTrue())
 
 	Expect(vppMsg).NotTo(BeNil())
-	//check values which will be send to VPP
-	Expect(vppMsg.BdID).To(Equal(dummyBridgeDomain))
-	Expect(vppMsg.MacAddress).To(Equal([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}))
-	Expect(vppMsg.IPAddress).To(Equal([]byte{192, 168, 4, 4}))
-	Expect(vppMsg.IsIpv6).To(Equal(uint8(0)))
-	Expect(vppMsg.IsAdd).To(Equal(uint8(0)))
+	Expect(vppMsg).To(Equal(deleteTestDataOutArp))
 }

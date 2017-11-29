@@ -17,19 +17,120 @@ package vppcalls_test
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
+	"github.com/ligato/cn-infra/logging/logrus"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls/test/impl"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	. "github.com/onsi/gomega"
 )
 
-func TestVppAddBridgeDomain(t *testing.T) {
-	gomega.RegisterTestingT(t)
+//Input test data for creating bridge domain
+var createTestDataInBD *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
+	Name:                "bridge_domain",
+	Flood:               true,
+	UnknownUnicastFlood: true,
+	Forward:             true,
+	Learn:               true,
+	ArpTermination:      true,
+	MacAge:              45,
+}
 
+//Output test data for creating bridge domain
+var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
+	BdID:    dummyBridgeDomain,
+	Flood:   1,
+	UuFlood: 1,
+	Forward: 1,
+	Learn:   1,
+	ArpTerm: 1,
+	MacAge:  45,
+	IsAdd:   1,
+}
+
+//Input test data for updating bridge domain
+var updateTestDataInBd *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
+	Name:                "bridge_domain",
+	Flood:               false,
+	UnknownUnicastFlood: false,
+	Forward:             false,
+	Learn:               false,
+	ArpTermination:      false,
+	MacAge:              50,
+}
+
+//Output test data for updating bridge domain
+var updateTestDataOutBd *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
+	BdID:    dummyBridgeDomain,
+	Flood:   0,
+	UuFlood: 0,
+	Forward: 0,
+	Learn:   0,
+	ArpTerm: 0,
+	MacAge:  50,
+	IsAdd:   1,
+}
+
+//Output test data for deleting bridge domain
+var deleteTestDataOutBd *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
+	BdID:  dummyBridgeDomain,
+	IsAdd: 0,
+}
+
+func TestVppAddBridgeDomain(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
+	err := vppcalls.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD,
+		logrus.NewLogger(dummyLoggerName), mockedChannel, nil)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := mockedChannel.Msg.(*l2ba.BridgeDomainAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(msg).To(Equal(createTestDataOutBD))
 }
 
 func TestVppUpdateBridgeDomain(t *testing.T) {
-	gomega.RegisterTestingT(t)
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
 
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
+	err := vppcalls.VppUpdateBridgeDomain(dummyBridgeDomain, dummyBridgeDomain,
+		updateTestDataInBd, logrus.NewLogger(dummyLoggerName), mockedChannel, nil)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	Expect(mockedChannel.Msgs).To(HaveLen(2))
+
+	//delete msg
+	msg, ok := mockedChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(msg).To(Equal(deleteTestDataOutBd))
+
+	//add msg
+	msg, ok = mockedChannel.Msgs[1].(*l2ba.BridgeDomainAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(msg).To(Equal(updateTestDataOutBd))
 }
 
 func TestVppDeleteBridgeDomain(t *testing.T) {
-	gomega.RegisterTestingT(t)
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	mockedChannel := &impl.MockedChannel{Channel: *ctx.Channel}
+	err := vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain, logrus.NewLogger(dummyLoggerName), mockedChannel,
+		nil)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := mockedChannel.Msg.(*l2ba.BridgeDomainAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(msg).To(Equal(deleteTestDataOutBd))
 }
