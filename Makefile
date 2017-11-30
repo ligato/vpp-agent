@@ -54,6 +54,8 @@ define test_only
 	@echo "# running unit tests"
 	@go test ./cmd/agentctl/utils
 	@go test ./idxvpp/nametoidx
+    @go test ./plugins/defaultplugins/l2plugin/bdidx
+    @go test ./plugins/defaultplugins/l2plugin/vppcalls
 	@echo "# done"
 endef
 
@@ -62,9 +64,15 @@ define test_cover_only
 	@echo "# running unit tests with coverage analysis"
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx  
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls  
 	@echo "# merging coverage results"
     @cd vendor/github.com/wadey/gocovmerge && go install -v
-    @gocovmerge ${COVER_DIR}coverage_unit1.out ${COVER_DIR}coverage_unit2.out  > ${COVER_DIR}coverage.out
+    @gocovmerge   \
+            ${COVER_DIR}coverage_unit1.out \
+            ${COVER_DIR}coverage_unit2.out \
+            ${COVER_DIR}coverage_l2plugin_bdidx.out    > ${COVER_DIR}coverage.out \
+            ${COVER_DIR}coverage_l2plugin_vppcalls.out    > ${COVER_DIR}coverage.out
     @echo "# coverage data generated into ${COVER_DIR}coverage.out"
     @echo "# done"
 endef
