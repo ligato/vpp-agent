@@ -31,9 +31,9 @@ import (
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 )
 
 // ACLConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -302,7 +302,7 @@ func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
 	for _, aclWithIndex := range *aclsWithIndex {
 		acls = append(acls, aclWithIndex.ACLDetails)
 	}
-	return acls,nil
+	return acls, nil
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
