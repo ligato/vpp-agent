@@ -61,6 +61,7 @@ Check L4 Features Are Disabled
 
 Enable L4 Features
     vpp_ctl: Set L4 Features On Node    node=agent_vpp_1    enabled=true
+    Sleep    1s
 
 Check Default Namespace Was Added
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
