@@ -82,6 +82,10 @@ COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
 # and linux plugin conf
 COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
 
+# and logs conf
+COPY logs.conf /opt/vpp-agent/dev/logs.conf
+
+
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
