@@ -298,7 +298,7 @@ func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
 		plugin.Log.Error(err)
 		return nil, err
 	}
-	acls := make([]*acl.AccessLists_Acl, 0)
+	var acls []*acl.AccessLists_Acl
 	for _, aclWithIndex := range *aclsWithIndex {
 		acls = append(acls, aclWithIndex.ACLDetails)
 	}
