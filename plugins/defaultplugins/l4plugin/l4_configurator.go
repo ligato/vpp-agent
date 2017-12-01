@@ -18,6 +18,8 @@
 package l4plugin
 
 import (
+	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -27,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"fmt"
 )
 
 // L4Configurator runs in the background in its own goroutine where it watches for any changes
