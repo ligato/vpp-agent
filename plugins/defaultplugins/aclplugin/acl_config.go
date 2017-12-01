@@ -31,6 +31,7 @@ import (
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -291,14 +292,17 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl, callback func
 
 // DumpACL returns all configured ACLs in proto format
 // todo ACLDump/ACLDetails error invalid message ID 924, expected 922
-func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	//acls, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
-	//if err != nil {
-	//	plugin.Log.Error(err)
-	//	return nil
-	//}
-	//return acls
-	return  []*acl.AccessLists_Acl{},nil
+func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
+	aclsWithIndex, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Error(err)
+		return nil, err
+	}
+	var acls []*acl.AccessLists_Acl
+	for _, aclWithIndex := range *aclsWithIndex {
+		acls = append(acls, aclWithIndex.ACLDetails)
+	}
+	return acls, nil
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
