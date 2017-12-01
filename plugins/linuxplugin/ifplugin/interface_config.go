@@ -111,8 +111,7 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linuxplugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
-	plugin.Log.SetLevel(logging.DebugLevel)
-	plugin.Log.Debug("Initializing LinuxInterfaceConfigurator")
+	plugin.Log.Debug("Initializing Linux Interface configurator")
 	plugin.ifIndexes = ifIndexes
 
 	// Allocate caches.
@@ -181,7 +180,7 @@ func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
 // the interface in the host network stack through Netlink API.
 func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.LinuxInterfaces_Interface) error {
 	plugin.handleOptionalHostIfName(iface)
-	plugin.Log.Infof("Configuring Linux interface %v with host if-name %v", iface.Name, iface.HostIfName)
+	plugin.Log.Infof("Configuring new Linux interface %v with host if-name %v", iface.Name, iface.HostIfName)
 	var err error
 
 	if iface.Type != intf.LinuxInterfaces_VETH {
@@ -220,7 +219,14 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	if err != nil {
 		return err
 	}
-	return plugin.configureLinuxInterface(nsMgmtCtx, peer)
+	err = plugin.configureLinuxInterface(nsMgmtCtx, peer)
+	if err != nil {
+		return err
+	}
+
+	plugin.Log.Infof("Linux interface %v with host if-name %v configured", iface.Name, iface.HostIfName)
+
+	return nil
 }
 
 func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *LinuxInterfaceConfig) error {
@@ -314,9 +320,11 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 // through Netlink API.
 func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.LinuxInterfaces_Interface,
 	oldConfig *intf.LinuxInterfaces_Interface) error {
+	plugin.Log.Infof("Modifying Linux interface %v", newConfig.Name)
+
 	plugin.handleOptionalHostIfName(newConfig)
 	plugin.handleOptionalHostIfName(oldConfig)
-	plugin.Log.Infof("'Modifying' Linux interface", newConfig.Name)
+
 	var err error
 	var ifName = newConfig.HostIfName
 
@@ -438,13 +446,15 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 		}
 	}
 
+	plugin.Log.Infof("Linux interface %v modified", newConfig.Name)
+
 	return wasError
 }
 
 // DeleteLinuxInterface reacts to a removed NB configuration of a Linux interface.
 func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.LinuxInterfaces_Interface) error {
+	plugin.Log.Infof("Removing Linux interface %v with host if-name %v", iface.Name, iface.HostIfName)
 	plugin.handleOptionalHostIfName(iface)
-	plugin.Log.Infof("'Deleting' Linux interface", iface.Name, "with host if-name", iface.HostIfName)
 
 	if iface.Type != intf.LinuxInterfaces_VETH {
 		return errors.New("unsupported Linux interface type")
@@ -485,6 +495,9 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	// Unregister both VETH ends from the in-memory map (following triggers notifications for all subscribers).
 	plugin.ifIndexes.UnregisterName(iface.Name)
 	plugin.ifIndexes.UnregisterName(peer.config.Name)
+
+	plugin.Log.Infof("Linux Interface %v removed", iface.Name)
+
 	return nil
 }
 
@@ -806,7 +819,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 				// VETH is ready to be created and configured
 				err := plugin.addVethInterface(nsMgmtCtx, intf.config, peer.config)
 				if err != nil {
-					plugin.Log.Warn(err.Error())
+					plugin.Log.Error(err.Error())
 					continue
 				}
 				err = plugin.configureLinuxInterface(nsMgmtCtx, intf)
@@ -814,7 +827,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 					err = plugin.configureLinuxInterface(nsMgmtCtx, peer)
 				}
 				if err != nil {
-					plugin.Log.Warn("failed to configure VETH: %v", err)
+					plugin.Log.Error("failed to configure VETH: %v", err)
 				}
 			}
 		}

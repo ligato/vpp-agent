@@ -71,7 +71,7 @@ type BridgeDomainMeta struct {
 
 // Init members (channels...) and start go routines.
 func (plugin *BDConfigurator) Init(notificationChannel chan BridgeDomainStateMessage) (err error) {
-	plugin.Log.Debug("Initializing L2 Bridge domains")
+	plugin.Log.Debug("Initializing L2 Bridge domains configurator")
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()

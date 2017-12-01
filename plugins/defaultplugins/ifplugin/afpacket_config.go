@@ -50,6 +50,7 @@ type AfPacketConfig struct {
 
 // Init members of AFPacketConfigurator.
 func (plugin *AFPacketConfigurator) Init(vppCh *govppapi.Channel) (err error) {
+	plugin.Infof("Initializing AF-Packet configurator")
 	plugin.vppCh = vppCh
 
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)

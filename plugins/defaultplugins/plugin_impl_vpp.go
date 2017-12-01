@@ -28,19 +28,19 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 )
 
 // defaultpluigns specific flags
@@ -231,7 +231,7 @@ func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
 func (plugin *Plugin) Init() error {
-	plugin.Log.Debug("Initializing interface plugin")
+	plugin.Log.Debug("Initializing default plugins")
 	// handle flag
 	flag.Parse()
 
@@ -359,6 +359,7 @@ func (plugin *Plugin) fixNilPointers() {
 }
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
+	plugin.Log.Infof("Init interface plugin")
 	// configurator loggers
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
@@ -455,6 +456,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
+	plugin.Log.Infof("Init ACL plugin")
 	// logger
 	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
@@ -486,6 +488,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
+	plugin.Log.Infof("Init L2 plugin")
 	// loggers
 	bdLogger := plugin.Log.NewLogger("-l2-bd-conf")
 	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
@@ -589,6 +592,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
+	plugin.Log.Infof("Init L3 plugin")
 	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
 	plugin.routeIndexes = l3idx.NewRouteIndex(
 		nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil))
@@ -646,6 +650,7 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 }
 
 func (plugin *Plugin) initL4(ctx context.Context) error {
+	plugin.Log.Infof("Init L4 plugin")
 	l4Logger := plugin.Log.NewLogger("-l4-plugin")
 	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
 		"namespace_indexes", nil))

@@ -60,7 +60,7 @@ type BFDConfigurator struct {
 // Init members and channels
 func (plugin *BFDConfigurator) Init(bfdSessionIndexes idxvpp.NameToIdxRW, bfdKeyIndexes idxvpp.NameToIdxRW, bfdEchoFunctionIndex idxvpp.NameToIdxRW,
 	bfdRemovedAuthIndex idxvpp.NameToIdxRW) (err error) {
-	plugin.Log.WithField("vppLabel", plugin.ServiceLabel).Debug("Initializing BFD configurator")
+	plugin.Log.Infof("Initializing BFD configurator")
 	plugin.bfdSessionsIndexes = bfdSessionIndexes
 	plugin.bfdKeysIndexes = bfdKeyIndexes
 	plugin.bfdEchoFunctionIndex = bfdEchoFunctionIndex
