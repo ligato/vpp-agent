@@ -17,6 +17,8 @@ package defaultplugins
 import (
 	"context"
 
+	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
@@ -69,6 +71,14 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 					plugin.Log.Error(err)
 				}
 			}
+
+			// Send interface state data to global agent status
+			plugin.StatusCheck.ReportStateChangeWithMeta(plugin.PluginName, statuscheck.OK, nil, &status.InterfaceStatus_Interfaces{
+				InternalName: ifState.State.InternalName,
+				Index:        ifState.State.IfIndex,
+				Status:       ifState.State.AdminStatus.String(),
+				MacAddress:   ifState.State.PhysAddress,
+			})
 
 		case <-ctx.Done():
 			// Stop watching for state data updates.
