@@ -21,6 +21,7 @@ import (
 	"git.fd.io/govpp.git/adapter/vppapiclient"
 )
 
+// NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
 func NewVppAdapter() adapter.VppAdapter {
 	return vppapiclient.NewVppAdapter()
 }

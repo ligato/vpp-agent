@@ -20,6 +20,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 )
 
+// NewVppAdapter returns nil adapter, used for building without vppapiclient library.
 func NewVppAdapter() adapter.VppAdapter {
 	return nil
 }
