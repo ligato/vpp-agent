@@ -13,8 +13,7 @@ RUN apt-get update && apt-get install -y \
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get update && apt-get install -y gcc-7
 
-RUN mkdir /opt/vpp-agent && mkdir /opt/vpp-agent/dev  && \ 
-    mkdir /opt/vpp-agent/plugin && mkdir /etc/supervisord
+RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin /etc/supervisord
 
 RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
 
