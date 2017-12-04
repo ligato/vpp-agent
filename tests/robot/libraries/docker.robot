@@ -40,6 +40,21 @@ Add Agent VPP Node
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
     Log List    ${NODES}
 
+Add Agent Libmemif Node
+    [Arguments]    ${node}
+    Log Many       ${node}
+    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it  --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" --name ${node} ${${node}_DOCKER_IMAGE}
+    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
+    Append To List    ${NODES}    ${node}
+    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    Sleep     3s
+    Open SSH Connection    ${node}_lmterm    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    lmterm: Open LM Terminal    ${node}
+    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Log List    ${NODES}
+
+
 Add Agent VPP Node With Physical Int
     [Arguments]    ${node}    ${int_nums}    ${vswitch}=${FALSE}
     Log Many       ${node}    ${int_nums}    ${vswitch}
@@ -82,6 +97,7 @@ Remove Node
     Switch Connection    ${node}
     Close Connection
     Run Keyword If    "vpp" in "${node}"    Remove VPP Connections    ${node}
+    Run Keyword If    "libmemif" in "${node}"    Remove LM Connections    ${node}
     Remove Values From List    ${NODES}    ${node}
     Execute On Machine    docker    ${DOCKER_COMMAND} rm -f ${node}
 
@@ -94,7 +110,14 @@ Remove VPP Connections
     Log ${node}_vat Output
     Switch Connection    ${node}_vat
     Close Connection
-   
+
+Remove LM Connections
+    [Arguments]    ${node}
+    Log    ${node}
+    Log ${node}_lmterm Output
+    Switch Connection    ${node}_lmterm
+    Close Connection
+
 Check ETCD Running
     ${out}=   Write To Machine    docker     ${DOCKER_COMMAND} exec -it etcd etcdctl version
     Log Many    ${out}

@@ -204,9 +204,13 @@ vpp_ctl: Get Bridge Domain State As Json
 vpp_ctl: Get Interface Internal Name
     [Arguments]    ${node}    ${interface}
     Log Many    ${node}    ${interface}
+    ${name}=    Set Variable      ${EMPTY}
+    ${empty_dict}=   Create Dictionary
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
     Log         ${state}
-    ${name}=    Set Variable    ${state["internal_name"]}
+    ${length}=   Get Length     ${state}
+    Log         ${length}
+    ${name}=    Run Keyword If      ${length} != 0     Set Variable    ${state["internal_name"]}
     Log    ${name}
     [Return]    ${name}
 
@@ -553,3 +557,23 @@ vpp_ctl: Put Application Namespace
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
+
+
+vpp_ctl: Delete ARP
+    [Arguments]    ${node}    ${interface}    ${ipv4}
+    Log Many    ${node}    ${interface}    ${ipv4}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/arp/${interface}/${ipv4}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put Linux ARP
+    [Arguments]    ${node}    ${interface}    ${arp-name}    ${ipv4}    ${MAC}    ${static}
+    Log Many    ${node}    ${interface}      ${arp-name}   ${ipv4}    ${MAC}    ${static}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vnf-agent/vpp1/linux/config/v1/arp/${arp-name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+

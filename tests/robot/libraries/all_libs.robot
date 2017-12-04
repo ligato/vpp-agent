@@ -11,6 +11,7 @@ Resource    docker.robot
 Resource    configurations.robot
 Resource    vat_term.robot
 Resource    vpp_term.robot
+Resource    lm_term.robot
 Resource    vpp.robot
 Resource    vpp_ctl.robot
 Resource    rest_api.robot
