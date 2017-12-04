@@ -79,7 +79,6 @@ COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
 # and linux plugin conf
 COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
 
-logs.conf
 # and logs plugin conf
 COPY logs.conf /opt/vpp-agent/dev/logs.conf
 
