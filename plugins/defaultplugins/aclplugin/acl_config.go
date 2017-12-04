@@ -55,7 +55,7 @@ type ACLConfigurator struct {
 
 // Init goroutines, channels and mappings.
 func (plugin *ACLConfigurator) Init() (err error) {
-	plugin.Log.Infof("Initializing plugin ACL plugin")
+	plugin.Log.Infof("Initializing ACL configurator")
 
 	// Init VPP API channel.
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()

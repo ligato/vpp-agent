@@ -18,6 +18,9 @@ package l3plugin
 
 import (
 	"fmt"
+	"net"
+	"strings"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
@@ -26,8 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 	"github.com/vishvananda/netlink"
-	"net"
-	"strings"
 )
 
 // LinuxRouteConfigurator watches for any changes in the configuration of static routes as modelled by the proto file
@@ -49,7 +50,7 @@ type LinuxRouteConfigurator struct {
 
 // Init initializes static route configurator and starts goroutines
 func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW, rtCachedIndexes l3idx.LinuxRouteIndexRW) error {
-	plugin.Log.Debug("Initializing LinuxRouteConfigurator")
+	plugin.Log.Debug("Initializing Linux Route configurator")
 	plugin.rtIndexes = rtIndexes
 	plugin.rtCachedIndexes = rtCachedIndexes
 
@@ -110,6 +111,8 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.RouteIdxSeq, route)
 	plugin.RouteIdxSeq++
 	plugin.Log.Debugf("Route %v registered", route.Name)
+
+	plugin.Log.Infof("Linux static route %v configured", route.Name)
 
 	return err
 }
@@ -184,7 +187,13 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	if err = plugin.DeleteLinuxStaticRoute(oldRoute); err != nil {
 		return err
 	}
-	return linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch))
+	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err != nil {
+		return err
+	}
+
+	plugin.Log.Infof("Linux static route %v modified", newRoute.Name)
+
+	return nil
 }
 
 // DeleteLinuxStaticRoute reacts to a removed NB configuration of a Linux static route entry.
@@ -248,6 +257,8 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	}
 	plugin.Log.Debugf("Route %v unregistered", route.Name)
 
+	plugin.Log.Infof("Linux static route %v removed", route.Name)
+
 	return err
 }
 
@@ -275,7 +286,7 @@ func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
 
 // ResolveCreatedInterface manages cached static routes for new interface
 func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index uint32) error {
-	plugin.Log.Infof("Linux static routes: resolve new interface %v", name)
+	plugin.Log.Infof("Linux static route configurator: resolve new interface %v", name)
 
 	// Search mapping for cached routes using the new interface
 	cachedRoutes := plugin.rtCachedIndexes.LookupNamesByInterface(name)
@@ -312,7 +323,7 @@ func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index
 
 // ResolveDeletedInterface manages static routes for removed interface
 func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index uint32) error {
-	plugin.Log.Infof("Linux static routes: resolve deleted interface %v", name)
+	plugin.Log.Infof("Linux static route configurator: resolve deleted interface %v", name)
 
 	// Search mapping for configured application namespaces using the new interface
 	confRoutes := plugin.rtIndexes.LookupNamesByInterface(name)
