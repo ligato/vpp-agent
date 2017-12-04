@@ -229,7 +229,23 @@ vpp_term: Show ARP
     [Documentation]    Show ARPs through vpp terminal
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}   sh ip arp
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_arp.json    ${out}
     [Return]           ${out}
+
+vpp_term: Check ARP
+    [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}    ${presence}
+    Log Many    ${node}    ${interface}    ${ipv4}     ${MAC}   ${presence}
+    [Documentation]    Check ARPs presence on interface
+    Log Many           ${node}
+    ${out}=            vpp_term: Show ARP    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    #Should Not Be Equal      ${internal_name}    ${None}
+    Log                ${internal_name}
+    ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
+    Log                ${status}
+    Should Be Equal As Strings   ${status}   ${presence}
+
 
 vpp_term: Show Application Namespaces
     [Arguments]        ${node}

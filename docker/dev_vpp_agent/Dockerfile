@@ -7,22 +7,18 @@ ARG VPP_COMMIT="xxx"
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
-    default-jre default-jdk telnet netcat software-properties-common
+    default-jre default-jdk telnet netcat \
+    golang-gogoprotobuf-dev software-properties-common net-tools
 
-RUN gcc --version  
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get update && apt-get install -y gcc-7
 
-RUN mkdir /opt/vpp-agent
-RUN mkdir /opt/vpp-agent/dev
-RUN mkdir /opt/vpp-agent/plugin
-RUN mkdir /etc/supervisord
-
-WORKDIR /opt/vpp-agent/dev
+RUN mkdir /opt/vpp-agent && mkdir /opt/vpp-agent/dev  && \ 
+    mkdir /opt/vpp-agent/plugin && mkdir /etc/supervisord
 
 RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
 
-RUN gcc --version 
+WORKDIR /opt/vpp-agent/dev
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
@@ -59,15 +55,10 @@ RUN git clone https://github.com/google/protobuf.git && \
     ldconfig && \
     cd .. && rm -rf protobuf
 
-RUN apt-get install -y golang-gogoprotobuf-dev
-
-# copy and execute agent build script
-COPY build-agent.sh .
+# copy and execute agent build script and agent conf files
+COPY build-agent.sh etcd.conf kafka.conf govpp.conf .
 RUN ./build-agent.sh ${AGENT_COMMIT}
 
-COPY etcd.conf .
-COPY kafka.conf .
-COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
@@ -77,15 +68,7 @@ WORKDIR /root/
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 
 # and default plugins conf
-COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
-
-# and linux plugin conf
-COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
-
-# and logs conf
-COPY logs.conf /opt/vpp-agent/dev/logs.conf
-
-
+COPY defaultplugins.conf linuxplugin.conf logs.conf /opt/vpp-agent/dev/
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
