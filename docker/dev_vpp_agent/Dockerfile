@@ -7,17 +7,19 @@ ARG VPP_COMMIT="xxx"
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
-    default-jre default-jdk telnet netcat \
-    golang-gogoprotobuf-dev software-properties-common net-tools
+    default-jre default-jdk telnet netcat software-properties-common
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get update && apt-get install -y gcc-7
 
-RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin /etc/supervisord
-
-RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
+RUN mkdir /opt/vpp-agent
+RUN mkdir /opt/vpp-agent/dev
+RUN mkdir /opt/vpp-agent/plugin
+RUN mkdir /etc/supervisord
 
 WORKDIR /opt/vpp-agent/dev
+
+RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
@@ -54,10 +56,15 @@ RUN git clone https://github.com/google/protobuf.git && \
     ldconfig && \
     cd .. && rm -rf protobuf
 
-# copy and execute agent build script and agent conf files
-COPY build-agent.sh etcd.conf kafka.conf govpp.conf .
+RUN apt-get install -y golang-gogoprotobuf-dev
+
+# copy and execute agent build script
+COPY build-agent.sh .
 RUN ./build-agent.sh ${AGENT_COMMIT}
 
+COPY etcd.conf .
+COPY kafka.conf .
+COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
@@ -67,7 +74,13 @@ WORKDIR /root/
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 
 # and default plugins conf
-COPY defaultplugins.conf linuxplugin.conf logs.conf /opt/vpp-agent/dev/
+COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
+
+# and linux plugin conf
+COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
+
+# and logs plugin conf
+COPY logs.conf /opt/vpp-agent/dev/logs.conf
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
