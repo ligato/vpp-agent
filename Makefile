@@ -5,7 +5,6 @@ DATE=$(shell date +'%Y-%m-%dT%H:%M%:z')
 LDFLAGS=-ldflags '-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildVersion=$(VERSION) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildDate=$(DATE)'
 COVER_DIR=/tmp/
 
-
 # generate go structures from proto files
 define generate_sources
 	$(call install_generators)
@@ -41,11 +40,11 @@ endef
 # install-only binaries
 define install_only
 	@echo "# installing vpp-agent"
-	@cd cmd/vpp-agent && go install -v ${LDFLAGS}
+	@cd cmd/vpp-agent && go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
 	@echo "# installing vpp-agent-ctl"
-	@cd cmd/vpp-agent-ctl && go install -v
+	@cd cmd/vpp-agent-ctl && go install -v -tags="${GO_BUILD_TAGS}"
 	@echo "# installing agentctl"
-    @cd cmd/agentctl && go install -v
+    @cd cmd/agentctl && go install -v -tags="${GO_BUILD_TAGS}"
 	@echo "# done"
 endef
 
@@ -106,30 +105,23 @@ define format_only
     @echo "# done"
 endef
 
-# run test examples
-define test_examples
-    @echo "# Testing examples"
-    ./scripts/test_examples.sh
-    @echo "# done"
-endef
-
 # build examples only
 define build_examples_only
     @echo "# building examples"
-    @cd examples/govpp_call && go build -v -i
-    @cd examples/idx_bd_cache && go build -v -i
-    @cd examples/idx_iface_cache && go build -v -i
-    @cd examples/idx_mapping_lookup && go build -v -i
-    @cd examples/idx_mapping_watcher && go build -v -i
-    @cd examples/localclient_linux && go build -v -i
-    @cd examples/localclient_vpp && go build -v -i
+    @cd examples/govpp_call && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/idx_bd_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/idx_iface_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/idx_mapping_lookup && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/localclient_linux && go build -v -i -tags="${GO_BUILD_TAGS}"
+    @cd examples/localclient_vpp && go build -v -i -tags="${GO_BUILD_TAGS}"
     @echo "# done"
 endef
 
 # build vpp agent only
 define build_vpp_agent_only
     @echo "# building vpp agent"
-    @cd cmd/vpp-agent && go build -v -i ${LDFLAGS}
+    @cd cmd/vpp-agent && go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
     @echo "# done"
 endef
 
@@ -144,14 +136,14 @@ endef
 # build vpp-agent-ctl only
 define build_vpp_agent_ctl_only
     @echo "# building vpp-agent-ctl"
-    @cd cmd/vpp-agent-ctl && go build -v -i
+    @cd cmd/vpp-agent-ctl && go build -v -i -tags="${GO_BUILD_TAGS}"
     @echo "# done"
 endef
 
 # build-only agentctl
 define build_agentctl_only
  	@echo "# building agentctl"
- 	@cd cmd/agentctl && go build -v -i
+ 	@cd cmd/agentctl && go build -v -i -tags="${GO_BUILD_TAGS}"
  	@echo "# done"
 endef
 
@@ -210,10 +202,6 @@ generate:
 # run tests
 test:
 	$(call test_only)
-
-# run smoke tests on examples
-test-examples:
-	$(call test_examples)
 
 # run tests with coverage report
 test-cover:
