@@ -21,6 +21,8 @@ import (
 //VPPChannel is interface for send request to VPP channel
 type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
+
+	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
 }
 
 //TODO: maybe add other function of VPP channel.

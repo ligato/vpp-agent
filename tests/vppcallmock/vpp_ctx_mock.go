@@ -74,3 +74,10 @@ func (m *mockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendRequest(msg)
 }
+
+//SendMultiRequest just save input argument to structure field for future check
+func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx {
+	m.Msg = msg
+	m.Msgs = append(m.Msgs, msg)
+	return m.channel.SendMultiRequest(msg)
+}
