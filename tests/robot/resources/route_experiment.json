@@ -1,8 +1,0 @@
-{
-	"name": "${routename}",
-	"default": "false",
-	"interface": "${interface_name}",
-	"dst_ip_addr": "${dst_ip_addr}",
-	"metric": 100,
-	"table": 0
-}
