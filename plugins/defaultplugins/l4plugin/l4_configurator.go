@@ -18,6 +18,8 @@
 package l4plugin
 
 import (
+	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -117,6 +119,11 @@ func (plugin *L4Configurator) DeleteL4FeatureFlag() error {
 func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Configuring new AppNamespace with ID %v", ns.NamespaceId)
 
+	// Validate data
+	if ns.Interface == "" {
+		return fmt.Errorf("application namespace %v does not contain interface", ns.NamespaceId)
+	}
+
 	// Check whether L4 l4ftEnabled are enabled. If not, all namespaces created earlier are added to cache
 	if !plugin.l4ftEnabled {
 		plugin.NotConfiguredAppNs.RegisterName(ns.NamespaceId, plugin.AppNsIdxSeq, ns)
@@ -140,6 +147,11 @@ func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppName
 // ModifyAppNamespace process the NB AppNamespace config and propagates it to bin api calls
 func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Modifying AppNamespace with ID %v", newNs.NamespaceId)
+
+	// Validate data
+	if newNs.Interface == "" {
+		return fmt.Errorf("modified application namespace %v does not contain interface", newNs.NamespaceId)
+	}
 
 	// At first, unregister the old configuration from both mappings (if exists)
 	plugin.AppNsIndexes.UnregisterName(oldNs.NamespaceId)
