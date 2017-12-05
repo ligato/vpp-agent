@@ -16,8 +16,6 @@ package ifplugin
 
 import (
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
@@ -26,12 +24,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 )
 
-// Resync writes interfaces to the empty VPP
+// Resync writes interfaces to the VPP
 //
 // - resyncs the VPP
 // - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
 // - deletes obsolate status data
-func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interface) (errs []error) {
+func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 	// Calculate and log interface resync
 	defer func() {
@@ -40,90 +38,117 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		}
 	}()
 
-	// Step 0: Dump current state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
+	// Dump current state of the VPP interfaces
+	vppIfs, err := vppdump.DumpInterfaces(plugin.Log, plugin.vppCh, plugin.Stopwatch)
 	if err != nil {
 		return []error{err}
 	}
 
-	plugin.Log.Debug("VPP contains len(vppIfaces)=", len(vppIfaces))
-
-	// Step 1: Correlate vppIfaces with northbound interfaces
-	// it means to find out names for vpp swIndexes
-	// (temporary: correlate using persisted sw_if_indexes)
-
-	corr := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
-
-	if !plugin.resyncDoneOnce { //probably shortly after startup
-		// we temporary load the last state from the file (in case the agent crashed)
-		// later we use the VPP Master ID to correlate
-
-		tmpCorr := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
-
-		err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), tmpCorr)
-		if err != nil {
-			return []error{err}
-		}
-		plugin.resyncDoneOnce = true
-
-		// check if all loaded indexes are still in VPP (remove all sw_if_idx not contained in the VPP dump)
-		for _, nbIface := range nbIfaces {
-			if vppSwIfIdx, meta, found := tmpCorr.LookupIdx(nbIface.Name); found {
-				corr.RegisterName(nbIface.Name, vppSwIfIdx, meta)
-				plugin.Log.WithField("swIfIndex", vppSwIfIdx).Debug("Correlation ", nbIface.Name)
-			}
-		}
+	// Read persistent mapping
+	persistentIfs := nametoidx.NewNameToIdx(plugin.Log, core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
+	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), persistentIfs)
+	if err != nil {
+		return err
 	}
 
-	// Step 2: delete obsolete vpp configuration
-	for vppSwIfIdx, vppIface := range vppIfaces {
-		_, _, found := corr.LookupName(vppSwIfIdx)
-
-		if vppSwIfIdx == 0 {
-			// local0 - default loopback interface
-			plugin.swIfIndexes.RegisterName(vppIface.VPPInternalName, vppSwIfIdx, &vppIface.Interfaces_Interface)
-		} else if vppIface.Type == intf.InterfaceType_ETHERNET_CSMACD {
-			// physical interface (PCI device)
-			plugin.swIfIndexes.RegisterName(vppIface.VPPInternalName, vppSwIfIdx, &vppIface.Interfaces_Interface)
-		} else if !found {
-			err := plugin.deleteVPPInterface(&vppIface.Interfaces_Interface, vppSwIfIdx)
-
-			plugin.Log.WithFields(logging.Fields{"swIfIndex": vppSwIfIdx, "vppIface": vppIface}).
-				Info("Interface deletion ", err)
-
-			if err != nil {
-				errs = append(errs, err)
-			}
+	// Register default and ethernet interfaces
+	configurableVppIfs := make(map[uint32]*vppdump.Interface, 0)
+	for vppIfIdx, vppIf := range vppIfs {
+		if vppIfIdx == 0 || vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
+			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
+			continue
 		}
+		// fill map of all configurable VPP interfaces (skip default & ethernet interfaces)
+		configurableVppIfs[vppIfIdx] = vppIf
 	}
 
-	var toBeConfigured []*intf.Interfaces_Interface
+	// Handle case where persistent mapping is not available
+	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
+		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
+		// In such a case, there is nothing to correlate with. All existing interfaces will be removed
+		var wasErr error
+		for vppIfIdx, vppIf := range configurableVppIfs {
+			// register interface before deletion (to keep state consistent)
+			vppAgentIf := &vppIf.Interfaces_Interface
+			vppAgentIf.Name = vppIf.VPPInternalName
+			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
+			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
+				plugin.Log.Error("Error while removing interface: %v", err)
+				wasErr = err
+			}
+		}
+		// Configure NB interfaces
+		for _, nbIf := range nbIfs {
+			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
+				plugin.Log.Error("Error while configuring interface: %v", err)
+				wasErr = err
+			}
+		}
+		return wasErr
+	}
 
-	// Step 3: modify existing vpp configuration
-	for _, nbIface := range nbIfaces {
-		swIfIdx, _, found := corr.LookupIdx(nbIface.Name)
-		vppIface, foundDump := vppIfaces[swIfIdx]
-		if found && foundDump {
-			err := plugin.modifyVPPInterface(nbIface, &vppIface.Interfaces_Interface, swIfIdx, vppIface.Type)
-			if err != nil {
-				errs = append(errs, err)
+	// Find correlation between VPP, ETCD NB and persistent mapping. Update existing interfaces
+	// and configure new ones
+	var wasErr error
+	plugin.Log.Debugf("Using persistent mapping to resync %v interfaces", len(configurableVppIfs))
+	for _, nbIf := range nbIfs {
+		persistIdx, _, found := persistentIfs.LookupIdx(nbIf.Name)
+		if found {
+			// last interface ID is known. Let's verify that there is an interface
+			// with the same ID on the vpp
+			var ifPresent bool
+			var ifVppData *intf.Interfaces_Interface
+			for vppIfIdx, vppIf := range configurableVppIfs {
+				// Check at least interface type
+				if vppIfIdx == persistIdx && vppIf.Type == nbIf.Type {
+					ifPresent = true
+					ifVppData = &vppIf.Interfaces_Interface
+				}
+			}
+			if ifPresent && ifVppData != nil {
+				// Interface exists on the vpp. Agent assumes that the the configured interface
+				// correlates with the NB one (needs to be registered manually)
+				plugin.swIfIndexes.RegisterName(nbIf.Name, persistIdx, nbIf)
+				plugin.Log.Debugf("Registered existing interface %v with index %v", nbIf.Name, persistIdx)
+				// todo calculate diff before modifying
+				plugin.ModifyVPPInterface(nbIf, ifVppData)
+			} else {
+				// Interface exists in mapping but not in vpp.
+				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
+					plugin.Log.Error("Error while configuring interface: %v", err)
+					wasErr = err
+				}
 			}
 		} else {
-			toBeConfigured = append(toBeConfigured, nbIface)
+			// a new interface (missing in persistent mapping)
+			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
+				plugin.Log.Error("Error while configuring interface: %v", err)
+				wasErr = err
+			}
 		}
 	}
 
-	// Step 4: create missing vpp configuration
-	for _, nbIface := range toBeConfigured {
-		err := plugin.ConfigureVPPInterface(nbIface)
-		if err != nil {
-			errs = append(errs, err)
+	// Remove obsolete config
+	for vppIfIdx, vppIf := range configurableVppIfs {
+		// If interface index is not registered yet, remove it
+		_, _, found := plugin.swIfIndexes.LookupName(vppIfIdx)
+		if !found {
+			// To keep interface state consistent, interface has to be
+			// temporary registered before removal
+			vppAgentIf := &vppIf.Interfaces_Interface
+			vppAgentIf.Name = vppIf.VPPInternalName
+			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
+			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
+				plugin.Log.Error("Error while removing interface: %v", err)
+				wasErr = err
+			}
+			plugin.Log.Debugf("Removed unknown interface with index %v", vppIfIdx)
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", errs)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end.")
 
-	return
+	return wasErr
 }
 
 // VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except

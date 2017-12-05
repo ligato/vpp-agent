@@ -33,6 +33,7 @@ package ifplugin
 import (
 	"bytes"
 	"errors"
+	"strings"
 
 	"time"
 
@@ -54,6 +55,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/prometheus/common/log"
 )
 
 const dummyMode = -1
@@ -116,7 +118,7 @@ func (plugin *InterfaceConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
-// LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
+// LookupVPPInterfaces looks up all VPP interfaces
 func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 	start := time.Now()
 	req := &interfaces.SwInterfaceDump{}
@@ -133,14 +135,13 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 			return err
 		}
 
-		// store the name-to-index mapping if it does not exist yet
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
-			ifName := string(bytes.Trim(msg.InterfaceName, "\x00"))
-			plugin.Log.WithFields(logging.Fields{"ifName": ifName, "swIfIndex": msg.SwIfIndex}).
-				Debug("Register VPP interface name mapping.")
-
-			plugin.swIfIndexes.RegisterName(ifName, msg.SwIfIndex, nil)
+			log.Debugf("Unregistered interface %v with ID %v found on vpp",
+				string(bytes.Trim(msg.InterfaceName, "\x00")), msg.SwIfIndex)
+			// Do not register unknown interface here, cuz it may cause inconsistencies in the ifplugin.
+			// All new interfaces should be registered during configuration
+			continue
 		}
 
 		// propagate interface state information
@@ -712,7 +713,12 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	plugin.deleteContainerIPAddress(oldConfig, ifIdx)
 
-	// let's try to do following even if previously error occurred
+	for i, oldIp := range oldConfig.IpAddresses {
+		if strings.HasPrefix(oldIp, "fe80") {
+			// todo skip link local addresses (possible workaround for af_packet)
+			oldConfig.IpAddresses = append(oldConfig.IpAddresses[:i], oldConfig.IpAddresses[i+1:]...)
+		}
+	}
 	oldAddrs, err := addrs.StrAddrsToStruct(oldConfig.IpAddresses)
 	if err != nil {
 		plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
@@ -720,7 +726,6 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		return err
 	}
 	for _, oldAddr := range oldAddrs {
-		plugin.Log.WithField("addr", oldAddr).Info("Ip removed")
 		err := vppcalls.DelInterfaceIP(ifIdx, oldAddr, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddressReply{}, plugin.Stopwatch))
 		if nil != err {
