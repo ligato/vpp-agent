@@ -325,8 +325,6 @@ func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *inter
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
 		if !found {
-			plugin.Log.WithField("swIfIndex", swIfIndex).
-				Debug("processIfCounterNotification but the swIfIndex is not event registered")
 			continue
 		}
 		if err != nil {
@@ -366,8 +364,6 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
 		if !found {
-			plugin.Log.WithField("swIfIndex", swIfIndex).
-				Debug("processIfCombinedCounterNotification but the swIfIndex is not event registered")
 			continue
 		}
 		if err != nil {
