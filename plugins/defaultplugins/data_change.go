@@ -43,7 +43,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-				return false, err
+				return true, err
 			}
 		} else {
 			return false, err

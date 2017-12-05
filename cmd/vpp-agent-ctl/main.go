@@ -189,7 +189,7 @@ func main() {
 		case "-clarp":
 			createLinuxArp(db)
 		case "-dlarp":
-			delete(db, l32.StaticArpKey("arp1"))
+			delete(db, l32.StaticArpKey("arp3"))
 		case "-clrt":
 			createLinuxRoute(db)
 		case "-clrtdef":

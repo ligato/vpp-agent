@@ -98,7 +98,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
-	plugin.Log.Debug("Initializing Linux interface plugin")
+	plugin.Log.Debug("Initializing Linux plugins")
 
 	config, err := plugin.retrieveLinuxConfig()
 	if err != nil {
@@ -131,12 +131,7 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 
-	err = plugin.initARP()
-	if err != nil {
-		return err
-	}
-
-	err = plugin.initRoutes()
+	err = plugin.initL3()
 	if err != nil {
 		return err
 	}
@@ -146,6 +141,7 @@ func (plugin *Plugin) Init() error {
 
 // Initialize linux interface plugin
 func (plugin *Plugin) initIF() error {
+	plugin.Log.Infof("Init Linux interface plugin")
 	// Interface indexes
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_if_indexes", nil))
@@ -160,28 +156,28 @@ func (plugin *Plugin) initIF() error {
 	return plugin.ifConfigurator.Init(plugin.ifIndexes)
 }
 
-// Initialize linux static ARP plugin
-func (plugin *Plugin) initARP() error {
+// Initialize linux L3 plugin
+func (plugin *Plugin) initL3() error {
+	plugin.Log.Infof("Init Linux L3 plugin")
 	// ARP indexes
 	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_arp_indexes", nil))
 
 	// Linux ARP configurator
-	linuxLogger := plugin.Log.NewLogger("-arp-conf")
+	linuxARPLogger := plugin.Log.NewLogger("-arp-conf")
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("LinuxARPConfigurator", linuxLogger)
+		stopwatch = measure.NewStopwatch("LinuxARPConfigurator", linuxARPLogger)
 	}
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{
-		Log:        linuxLogger,
+		Log:        linuxARPLogger,
 		LinuxIfIdx: plugin.ifIndexes,
 		ArpIdxSeq:  1,
 		Stopwatch:  stopwatch}
-	return plugin.arpConfigurator.Init(plugin.arpIndexes)
-}
+	if err := plugin.arpConfigurator.Init(plugin.arpIndexes); err != nil {
+		return err
+	}
 
-// Initialize linux static route plugin
-func (plugin *Plugin) initRoutes() error {
 	// Route indexes
 	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_route_indexes", nil))
@@ -189,13 +185,12 @@ func (plugin *Plugin) initRoutes() error {
 		"linux_cached_route_indexes", nil))
 
 	// Linux Route configurator
-	linuxLogger := plugin.Log.NewLogger("-route-conf")
-	var stopwatch *measure.Stopwatch
+	linuxRouteLogger := plugin.Log.NewLogger("-route-conf")
 	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", linuxLogger)
+		stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", linuxRouteLogger)
 	}
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{
-		Log:         linuxLogger,
+		Log:         linuxRouteLogger,
 		LinuxIfIdx:  plugin.ifIndexes,
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}

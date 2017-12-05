@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"context"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -55,7 +56,7 @@ type StnConfigurator struct {
 
 // Init initializes ARP configurator
 func (plugin *StnConfigurator) Init() (err error) {
-	plugin.Log.Debug("Initializing StnConfigurator")
+	plugin.Log.Debug("Initializing STN configurator")
 
 	// Init VPP API channel
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -75,7 +76,7 @@ func (plugin *StnConfigurator) Init() (err error) {
 // ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
 func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: Resolving deleted interface: %v", interfaceName)
+	plugin.Log.Debugf("STN plugin: resolving deleted interface: %v", interfaceName)
 	rule := plugin.ruleFromIndex(interfaceName, true)
 	if rule != nil {
 		plugin.Delete(rule)
@@ -85,7 +86,7 @@ func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
 // ResolveCreatedInterface will check rules and if there is one waiting for interfaces it will be written
 // into VPP.
 func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: Resolving interface: %v", interfaceName)
+	plugin.Log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
 	rule := plugin.ruleFromIndex(interfaceName, false)
 	if rule != nil {
 		plugin.Add(rule)
@@ -94,7 +95,7 @@ func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
 
 // Add create a new STN rule.
 func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
-	plugin.Log.Infof("Creating new STN rule %v", rule)
+	plugin.Log.Infof("Configuring new STN rule %v", rule)
 
 	// Check stn data
 	stnRule, doVPPCall, err := plugin.checkStn(rule, plugin.SwIfIndexes)
@@ -114,12 +115,14 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 		plugin.indexSTNRule(rule, false)
 	}
 
+	plugin.Log.Infof("STN rule %v configured", rule)
+
 	return nil
 }
 
 // Delete removes STN rule.
 func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
-	plugin.Log.Infof("Removing rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
+	plugin.Log.Infof("Removing STN rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
 	stnRule, _, err := plugin.checkStn(rule, plugin.SwIfIndexes)
 
@@ -138,12 +141,18 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 	}
 	plugin.Log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
 	// Remove rule
-	return vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
+	if err := vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch)); err != nil {
+		return err
+	}
 
+	plugin.Log.Infof("STN rule %v removed", rule)
+
+	return nil
 }
 
 // Modify configured rule.
 func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelStn.StnRule) error {
+	plugin.Log.Infof("Modifying STN %v", ruleNew)
 
 	if ruleOld == nil {
 		return fmt.Errorf("old stn rule is null")
@@ -158,8 +167,13 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelS
 		return err
 	}
 
-	return plugin.Add(ruleNew)
+	if err := plugin.Add(ruleNew); err != nil {
+		return err
+	}
 
+	plugin.Log.Infof("STN rule %v modified", ruleNew)
+
+	return nil
 }
 
 // Close GOVPP channel.

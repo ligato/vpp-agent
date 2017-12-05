@@ -13,11 +13,13 @@ cache:
   directories:
     - $HOME/build-cache
 
+env:
+  - GO_BUILD_TAGS=novpp
+
 before_install:
-  - go get -u -f "github.com/alecthomas/gometalinter"
+  - go get -u -f github.com/alecthomas/gometalinter
   - gometalinter --install
   - go get github.com/mattn/goveralls
-  - sudo ./scripts/build-vpp.sh
   - sudo apt-get update
   - sudo apt-get install npm && npm install -g markdown-link-check
 
@@ -26,7 +28,6 @@ script:
   - make lint
   - make
   - make test-cover
-  - sudo make test-examples
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

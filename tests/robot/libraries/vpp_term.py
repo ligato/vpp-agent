@@ -19,3 +19,12 @@ def Find_MAC_In_Text(text):
 
 
 
+# input - output from sh ip arp command
+# output - state info list
+def Parse_ARP(info, intf, ip, mac):
+    for line in info.splitlines():
+        if intf in line and ip in line and mac in line:
+            print "ARP Found:"+line
+            return True
+    print "ARP Found"
+    return False

@@ -17,12 +17,13 @@ package vppcalls
 import (
 	"container/list"
 	"fmt"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"time"
 )
 
 // ACLInterfaceLogicalReq groups multiple fields to not enumerate all of them in one function call
@@ -251,6 +252,9 @@ func (acl *ACLInterfacesVppCalls) WatchACLInterfacesReplies(log logging.Logger) 
 			reply := &acl_api.ACLInterfaceSetACLListReply{}
 			err := acl.asyncVppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
 			if err != nil {
+				err = fmt.Errorf("set ACL list for interface failed: %v", err)
+				logicalReq.callback(err)
+			} else if reply.Retval != 0 {
 				err = fmt.Errorf("set ACL list for interface returned %d", reply.Retval)
 				logicalReq.callback(err)
 			} else {

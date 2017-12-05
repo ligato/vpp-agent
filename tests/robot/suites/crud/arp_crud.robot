@@ -14,10 +14,9 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${REPLY_DATA_FOLDER}            replyARP
 ${VARIABLES}=          common
 ${ENV}=                common
-${SYNC_SLEEP}=         10s
+${SYNC_SLEEP}=         6s
 ${VETH1_MAC}=          1a:00:00:11:11:11
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
@@ -78,14 +77,42 @@ Check TAP Interface Created
 
 Add ARPs
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_memif1    155.155.155.155    32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_memif1    155.155.155.156    32:51:51:51:51:52    false
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth1    155.155.155.155    32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth1    155.155.155.150    32:51:51:51:51:5    false
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth2    155.155.155.155    32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth2    155.155.155.150    32:51:51:51:51:5    false
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.155    32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.154    32:51:51:51:51:53    false
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_loop1    155.155.155.155   32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_loop1    155.155.155.152   32:51:51:51:51:55    false
     vpp_ctl: Put ARP    agent_vpp_1    vpp1_tap1    155.155.155.155   32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_tap1    155.155.155.150   32:51:51:51:51:5    false
+    Sleep    ${SYNC_SLEEP}
 
-Check ARPs are created
-    vpp_term: Show ARP   agent_vpp_1
+Check Memif ARP
+    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:51    True
+    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.156    32:51:51:51:51:52    True
+
+#Check Veth1 ARP
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth1    155.155.155.155    32:51:51:51:51:51    True
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth1    155.155.155.150    32:51:51:51:51:5    True
+
+#Check Veth2 ARP
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth2    155.155.155.155    32:51:51:51:51:51    True
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth2    155.155.155.150    32:51:51:51:51:5    True
+
+Check VXLan ARP
+    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.155    32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.154    32:51:51:51:51:53    True
+
+Check Loopback ARP
+    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1    155.155.155.152   32:51:51:51:51:55    True
+
+Check TAP ARP
+    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1    155.155.155.150   32:51:51:51:51:5    True
 
 ADD Afpacket Interface
     vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2
@@ -94,15 +121,98 @@ Check AFpacket Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=a2:a1:a1:a1:a1:a1
     vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1    mac=a2:a1:a1:a1:a1:a1
 
+Check Veth1 Veth2 Are Created After Afpacket is created
+    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_MAC}
+    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
+    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv4=10.10.1.1/24    mtu=1500    state=up
+    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+
 Add ARP for Afpacket
-    vpp_ctl: Put ARP    agent_vpp_1    vpp1_afpacket1    155.155.155.155   32:51:51:51:51:51    false
+    vpp_ctl: Put ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.155   32:51:51:51:51:51    False
+    vpp_ctl: Put ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.150   32:51:51:51:51:5    False
+    Sleep    ${SYNC_SLEEP}
 
-Check ARPs are created
-    vpp_term: Show ARP   agent_vpp_1
+Check Afpacket ARP
+    vpp_term: Check ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.150   32:51:51:51:51:5    True
 
-Delete ARP for Afpacket
-    vpp_ctl: Delete ARP     agent_vpp_1    vpp1_afpacket1    155.155.155.155
+Delete ARPs
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_memif1    155.155.155.156
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_veth1    155.155.155.150
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_veth2    155.155.155.150
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.154
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_loop1    155.155.155.152
+    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_tap1    155.155.155.150
+    vpp_ctl: Delete ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.150
+    vpp_term:Show ARP   agent_vpp_1
+    Execute In Container    agent_vpp_1    ip neigh
+    Sleep    ${SYNC_SLEEP}
 
+Check Memif ARP After Delete
+    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:51    True
+    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.156    32:51:51:51:51:52    False
+
+#Check Veth1 ARP After Delete
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth1    155.155.155.155    32:51:51:51:51:51    True
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth1    155.155.155.15    32:51:51:51:51:5    False
+
+#Check Veth2 ARP After Delete
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth2    155.155.155.155    32:51:51:51:51:51    True
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth2    155.155.155.15    32:51:51:51:51:5    False
+
+Check VXLan ARP After Delete
+    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.155    32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.154    32:51:51:51:51:53    False
+
+Check Loopback ARP After Delete
+    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1    155.155.155.152   32:51:51:51:51:55    False
+
+Check TAP ARP After Delete
+    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1    155.155.155.150   32:51:51:51:51:5    False
+
+Check Afpacket ARP After Delete
+    vpp_term: Check ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.155   32:51:51:51:51:51    True
+    vpp_term: Check ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.150   32:51:51:51:51:5    False
+
+Modify ARPs
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_memif1    155.155.155.155    32:51:51:51:51:58    false
+    vpp_term:Show ARP   agent_vpp_1
+#    vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth1    155.155.155.155    32:51:51:51:51:58    false
+#    vpp_term:Show ARP   agent_vpp_1
+#    vpp_ctl: Put ARP    agent_vpp_1    vpp1_veth2    155.155.155.155    32:51:51:51:51:58    false
+#    vpp_term:Show ARP   agent_vpp_1
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.155    32:51:51:51:51:58    false
+    vpp_term:Show ARP   agent_vpp_1
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_loop1    155.155.155.155   32:51:51:51:51:58    false
+    vpp_term:Show ARP   agent_vpp_1
+    vpp_ctl: Put ARP    agent_vpp_1    vpp1_tap1    155.155.155.155   32:51:51:51:51:58    false
+    vpp_term:Show ARP   agent_vpp_1
+    vpp_ctl: Put ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.155   32:51:51:51:51:58    False
+    vpp_term:Show ARP   agent_vpp_1
+    Sleep    ${SYNC_SLEEP}
+
+Check Memif ARP After Modify
+    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:58    True
+
+#Check Veth1 ARP After Modify
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth1    155.155.155.155    32:51:51:51:51:5    True
+
+#Check Veth2 ARP After Modify
+#    vpp_term: Check ARP    agent_vpp_1    vpp1_veth2    155.155.155.155    32:51:51:51:51:5    True
+
+Check VXLan ARP After Modify
+    vpp_term: Check ARP    agent_vpp_1    vpp1_vxlan1    155.155.155.155    32:51:51:51:51:58    True
+
+Check Loopback ARP After Modify
+    vpp_term: Check ARP    agent_vpp_1    vpp1_loop1    155.155.155.155   32:51:51:51:51:58    True
+
+Check TAP ARP After Modify
+    vpp_term: Check ARP    agent_vpp_1    vpp1_tap1    155.155.155.155   32:51:51:51:51:58    True
+
+Check Afpacket ARP After Modify
+    vpp_term: Check ARP    agent_vpp_1    host-vpp1_veth2    155.155.155.155   32:51:51:51:51:58    True
 
 
 *** Keywords ***

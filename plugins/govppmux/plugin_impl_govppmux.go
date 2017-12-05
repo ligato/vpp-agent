@@ -18,11 +18,9 @@ import (
 	"context"
 	"errors"
 	"sync"
-
 	"time"
 
 	"git.fd.io/govpp.git/adapter"
-	"git.fd.io/govpp.git/adapter/vppapiclient"
 	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/flavors/local"
@@ -59,10 +57,8 @@ type Config struct {
 // FromExistingAdapter is used mainly for testing purposes.
 func FromExistingAdapter(vppAdapter adapter.VppAdapter) *GOVPPPlugin {
 	ret := &GOVPPPlugin{
-		vppConn:    nil,
 		vppAdapter: vppAdapter,
 	}
-
 	return ret
 }
 
@@ -91,7 +87,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 
 	if plugin.vppAdapter == nil {
-		plugin.vppAdapter = vppapiclient.NewVppAdapter()
+		plugin.vppAdapter = NewVppAdapter()
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}

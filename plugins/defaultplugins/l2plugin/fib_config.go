@@ -331,7 +331,7 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 						// Resolve registration.
 						plugin.FibIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 						plugin.FibIndexSeq++
-						plugin.Log.Debug("Registering FIB entry with MAC %v", mac)
+						plugin.Log.Debugf("Registering FIB entry with MAC %v", mac)
 						plugin.FibDesIndexes.UnregisterName(mac)
 						plugin.Log.WithField("Mac", mac).
 							Debugf("Uncofigured FIB entry removed from cache")
@@ -372,7 +372,7 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 				err := plugin.vppcalls.Delete(mac, bdIndex, interfaceIndex, func(err error) {
 					// Resolve registration.
 					plugin.FibIndexes.UnregisterName(mac)
-					plugin.Log.Debug("Unregister FIB entry with MAC %v", mac)
+					plugin.Log.Debugf("Unregister FIB entry with MAC %v", mac)
 					plugin.FibDesIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 					plugin.FibIndexSeq++
 					plugin.Log.Debugf("uncofigured FIB entry with MAC %v added to cache", mac)
@@ -448,7 +448,6 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 			// Check bridge domain.
 			fibBridgeDomain := meta.(*FIBMeta).BridgeDomainName
 			if domainName != fibBridgeDomain {
-				plugin.Log.Warnf("Stopped")
 				continue
 			}
 			// Check interface.

@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -27,7 +26,7 @@ import (
 
 // VppSetAllInterfacesToBridgeDomain looks up all interfaces which belong to bridge domain and bvi interface.
 func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) ([]string, []string, string) {
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) ([]string, []string, string) {
 	log.Debug("Interface lookup started for ", bridgeDomain.Name)
 	// SwInterfaceSetL2Bridge time measurement
 	start := time.Now()
@@ -89,7 +88,7 @@ func VppSetAllInterfacesToBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDoma
 
 // VppUnsetAllInterfacesFromBridgeDomain removes all interfaces from bridge domain (set them as L3).
 func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_BridgeDomain, bridgeDomainIndex uint32,
-	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) []string {
+	swIfIndexes ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) []string {
 	log.Debug("Interface lookup started for ", bridgeDomain.Name)
 	// SwInterfaceSetL2Bridge time measurement
 	start := time.Now()
@@ -140,7 +139,7 @@ func VppUnsetAllInterfacesFromBridgeDomain(bridgeDomain *l2.BridgeDomains_Bridge
 
 // VppSetInterfaceToBridgeDomain sets provided interface to bridge domain.
 func VppSetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger,
-	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) {
+	vppChan VPPChannel, timeLog measure.StopWatchEntry) {
 	log.Debugf("Setting up interface %v to bridge domain %v ", interfaceIndex, bridgeDomainIndex)
 	// SwInterfaceSetL2Bridge time measurement
 	start := time.Now()

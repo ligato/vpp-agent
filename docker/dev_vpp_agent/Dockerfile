@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
     default-jre default-jdk telnet netcat software-properties-common
 
-RUN gcc --version  
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get update && apt-get install -y gcc-7
 
@@ -21,8 +20,6 @@ RUN mkdir /etc/supervisord
 WORKDIR /opt/vpp-agent/dev
 
 RUN cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc 
-
-RUN gcc --version 
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
@@ -82,10 +79,8 @@ COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
 # and linux plugin conf
 COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
 
-# and logs conf
+# and logs plugin conf
 COPY logs.conf /opt/vpp-agent/dev/logs.conf
-
-
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]

@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls
+// +build novpp
+
+package govppmux
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/adapter"
 )
 
-//VPPChannel is interface for send request to VPP channel
-type VPPChannel interface {
-	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
-
-	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
+// NewVppAdapter returns nil adapter, used for building without vppapiclient library.
+func NewVppAdapter() adapter.VppAdapter {
+	return nil
 }
-
-//TODO: maybe add other function of VPP channel.
