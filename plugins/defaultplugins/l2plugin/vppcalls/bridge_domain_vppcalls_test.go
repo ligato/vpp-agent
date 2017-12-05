@@ -25,9 +25,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	dummyBridgeDomainName = "bridge_domain"
+)
+
 //Input test data for creating bridge domain
 var createTestDataInBD *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
-	Name:                "bridge_domain",
+	Name:                dummyBridgeDomainName,
 	Flood:               true,
 	UnknownUnicastFlood: true,
 	Forward:             true,
@@ -50,7 +54,7 @@ var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 
 //Input test data for updating bridge domain
 var updateTestDataInBd *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
-	Name:                "bridge_domain",
+	Name:                dummyBridgeDomainName,
 	Flood:               false,
 	UnknownUnicastFlood: false,
 	Forward:             false,
