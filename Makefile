@@ -56,6 +56,7 @@ define test_only
     @go test ./plugins/defaultplugins/l2plugin/bdidx
     @go test ./plugins/defaultplugins/l2plugin/vppcalls
     @go test ./plugins/defaultplugins/l2plugin/vppdump
+    @go test ./plugins/defaultplugins/ifplugin/vppcalls
 	@echo "# done"
 endef
 
@@ -64,17 +65,19 @@ define test_cover_only
 	@echo "# running unit tests with coverage analysis"
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx  
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls  
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
 	@echo "# merging coverage results"
     @cd vendor/github.com/wadey/gocovmerge && go install -v
     @gocovmerge   \
             ${COVER_DIR}coverage_unit1.out \
             ${COVER_DIR}coverage_unit2.out \
             ${COVER_DIR}coverage_l2plugin_bdidx.out    > ${COVER_DIR}coverage.out \
-            ${COVER_DIR}coverage_l2plugin_vppcalls.out    > ${COVER_DIR}coverage.out \
-            ${COVER_DIR}coverage_l2plugin_vppdump.out    > ${COVER_DIR}coverage.out
+            ${COVER_DIR}coverage_l2plugin_vppcalls.out > ${COVER_DIR}coverage.out \
+            ${COVER_DIR}coverage_l2plugin_vppdump.out  > ${COVER_DIR}coverage.out \
+            ${COVER_DIR}coverage_ifplugin_vppcalls.out > ${COVER_DIR}coverage.out
     @echo "# coverage data generated into ${COVER_DIR}coverage.out"
     @echo "# done"
 endef
