@@ -60,27 +60,21 @@ ARG AGENT_COMMIT
 COPY build-agent.sh .
 RUN ./build-agent.sh ${AGENT_COMMIT}
 
+# copy configs
 COPY etcd.conf .
 COPY kafka.conf .
 COPY govpp.conf .
+COPY defaultplugins.conf .
+COPY linuxplugin.conf .
+COPY logs.conf .
+
 COPY vpp.conf /etc/vpp/vpp.conf
+COPY supervisord.conf /etc/supervisord/supervisord.conf
+
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
 
-# add supervisor conf file
-COPY supervisord.conf /etc/supervisord/supervisord.conf
-
-# and default plugins conf
-COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
-
-# and linux plugin conf
-COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
-
-# and logs plugin conf
-COPY logs.conf /opt/vpp-agent/dev/logs.conf
-
 # run supervisor as the default executable
-#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     /usr/bin/supervisord -c /etc/supervisord/supervisord.conf
