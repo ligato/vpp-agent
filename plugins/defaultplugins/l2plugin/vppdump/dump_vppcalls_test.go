@@ -15,11 +15,8 @@
 package vppdump
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
-	"git.fd.io/govpp.git"
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
@@ -179,7 +176,7 @@ func TestDumpXConnectPairs(t *testing.T) {
 }
 
 //TestDumpL2 probably needs for run also running VPP
-func DumpL2(t *testing.T) {
+/*func DumpL2(t *testing.T) {
 	// Connect to VPP.
 	conn, err := govpp.Connect()
 	if err != nil {
@@ -210,7 +207,7 @@ func DumpL2(t *testing.T) {
 	for _, xconn := range res3 {
 		fmt.Printf("%+v\n", xconn)
 	}
-}
+}*/
 
 func prepareVPPMock(mockVPP *mock.VppAdapter, messages []govppapi.Message) {
 	for _, msg := range messages {
