@@ -4,6 +4,7 @@
 #sudo docker rmi -f dev_vpp_agent 2>/dev/null
 set -e
 
+CURRENT_FOLDER=`pwd`
 AGENT_COMMIT=`git rev-parse HEAD`
 cd ../..
 VPP_COMMIT=`git submodule status|grep vpp|cut -c2-41`
