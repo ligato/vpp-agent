@@ -5,8 +5,9 @@
 set -e
 
 AGENT_COMMIT=`git rev-parse HEAD`
+cd ../..
 VPP_COMMIT=`git submodule status|grep vpp|cut -c2-41`
-
+cd $CURRENT_FOLDER
 echo "repo agent commit number: "$AGENT_COMMIT
 echo "repo vpp commit number: "$VPP_COMMIT
 
