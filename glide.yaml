@@ -7,16 +7,8 @@ import:
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: git.fd.io/govpp.git
-  version: 3f1edad4e6ba0a7876750aea55507fae14d8badf
+  version: de8e6592e23a3819266cea5e9999c7c21fdd826f
   repo: https://git.fd.io/govpp.git
-  subpackages:
-  - adapter
-  - adapter/mock
-  - adapter/mock/binapi_reflect
-  - adapter/vppapiclient
-  - api
-  - api/ifcounters
-  - core
 - package: github.com/vishvananda/netns
   version: 54f0e4339ce73702a0607f49922aaa1e749b418d
   repo: https://github.com/vishvananda/netns

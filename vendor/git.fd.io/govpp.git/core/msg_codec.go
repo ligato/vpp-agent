@@ -30,27 +30,27 @@ import (
 // binary format as accepted by VPP.
 type MsgCodec struct{}
 
-// vppRequestHeader struct contains header fields implemented by all VPP requests.
-type vppRequestHeader struct {
+// VppRequestHeader struct contains header fields implemented by all VPP requests.
+type VppRequestHeader struct {
 	VlMsgID     uint16
 	ClientIndex uint32
 	Context     uint32
 }
 
-// vppReplyHeader struct contains header fields implemented by all VPP replies.
-type vppReplyHeader struct {
+// VppReplyHeader struct contains header fields implemented by all VPP replies.
+type VppReplyHeader struct {
 	VlMsgID uint16
 	Context uint32
 }
 
-// vppEventHeader struct contains header fields implemented by all VPP events.
-type vppEventHeader struct {
+// VppEventHeader struct contains header fields implemented by all VPP events.
+type VppEventHeader struct {
 	VlMsgID uint16
 	Context uint32
 }
 
-// vppOtherHeader struct contains header fields implemented by other VPP messages (not requests nor replies).
-type vppOtherHeader struct {
+// VppOtherHeader struct contains header fields implemented by other VPP messages (not requests nor replies).
+type VppOtherHeader struct {
 	VlMsgID uint16
 }
 
@@ -72,13 +72,13 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 	// encode message header
 	var header interface{}
 	if msg.GetMessageType() == api.RequestMessage {
-		header = &vppRequestHeader{VlMsgID: msgID}
+		header = &VppRequestHeader{VlMsgID: msgID}
 	} else if msg.GetMessageType() == api.ReplyMessage {
-		header = &vppReplyHeader{VlMsgID: msgID}
+		header = &VppReplyHeader{VlMsgID: msgID}
 	} else if msg.GetMessageType() == api.EventMessage {
-		header = &vppEventHeader{VlMsgID: msgID}
+		header = &VppEventHeader{VlMsgID: msgID}
 	} else {
-		header = &vppOtherHeader{VlMsgID: msgID}
+		header = &VppOtherHeader{VlMsgID: msgID}
 	}
 	err := struc.Pack(buf, header)
 	if err != nil {
@@ -115,13 +115,13 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 	// check which header is expected
 	var header interface{}
 	if msg.GetMessageType() == api.RequestMessage {
-		header = &vppRequestHeader{}
+		header = &VppRequestHeader{}
 	} else if msg.GetMessageType() == api.ReplyMessage {
-		header = &vppReplyHeader{}
+		header = &VppReplyHeader{}
 	} else if msg.GetMessageType() == api.EventMessage {
-		header = &vppEventHeader{}
+		header = &VppEventHeader{}
 	} else {
-		header = &vppOtherHeader{}
+		header = &VppOtherHeader{}
 	}
 
 	// decode message header
