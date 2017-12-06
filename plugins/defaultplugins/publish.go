@@ -73,7 +73,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			}
 
 			// Send interface state data to global agent status
-			plugin.StatusCheck.ReportStateChangeWithMeta(plugin.PluginName, statuscheck.OK, nil, &status.InterfaceStatus_Interfaces{
+			plugin.StatusCheck.ReportStateChangeWithMeta(plugin.PluginName, statuscheck.OK, nil, &status.InterfaceStats_Interface{
 				InternalName: ifState.State.InternalName,
 				Index:        ifState.State.IfIndex,
 				Status:       ifState.State.AdminStatus.String(),
