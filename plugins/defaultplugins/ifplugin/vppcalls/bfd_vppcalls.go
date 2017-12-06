@@ -261,7 +261,7 @@ func dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32, vppChannel *go
 	// Prepare the message.
 	req := &bfd_api.BfdUDPSessionDump{}
 	reqCtx := vppChannel.SendMultiRequest(req)
-	var sessionIfacesWithID []*bfd_api.BfdUDPSessionDetails
+	var sessions []*bfd_api.BfdUDPSessionDetails
 	for {
 		msg := &bfd_api.BfdUDPSessionDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -269,7 +269,7 @@ func dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32, vppChannel *go
 			break
 		}
 		if err != nil {
-			return sessionIfacesWithID, err
+			return sessions, err
 		}
 
 		if filterID {
@@ -278,14 +278,14 @@ func dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32, vppChannel *go
 				continue
 			}
 			if msg.BfdKeyID == uint8(authKeyIndex) {
-				sessionIfacesWithID = append(sessionIfacesWithID, msg)
+				sessions = append(sessions, msg)
 			}
 		} else {
-			sessionIfacesWithID = append(sessionIfacesWithID, msg)
+			sessions = append(sessions, msg)
 		}
 	}
 
-	return sessionIfacesWithID, nil
+	return sessions, nil
 }
 
 // SetBfdUDPAuthenticationKey creates new authentication key.
@@ -354,6 +354,35 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	}
 
 	return nil
+}
+
+// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
+func DumpBfdKeys(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdAuthKeysDetails, error) {
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &bfd_api.BfdAuthKeysDump{}
+	var keys []*bfd_api.BfdAuthKeysDetails
+	reqCtx := vppChannel.SendMultiRequest(req)
+
+	for {
+		msg := &bfd_api.BfdAuthKeysDetails{}
+		stop, err := reqCtx.ReceiveReply(msg)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		keys = append(keys, msg)
+	}
+
+	return keys, nil
 }
 
 // AddBfdEchoFunction sets up an echo function for the interface.

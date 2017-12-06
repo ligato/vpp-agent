@@ -203,7 +203,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 		return err
 	}
 
-	// Correlate existing BFD vppSessions from the VPP and NB config, configure new ones
+	// Correlate existing BFD sessions from the VPP and NB config, configure new ones
 	var wasErr error
 	for _, nbSession := range nbSessions {
 		// look for configured session
@@ -248,7 +248,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
-func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error {
+func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
 	// Calculate and log bfd resync
 	defer func() {
@@ -258,24 +258,52 @@ func (plugin *BFDConfigurator) ResyncAuthKey(bfds []*bfd.SingleHopBFD_Key) error
 	}()
 
 	// lookup BFD auth keys
-	err := plugin.LookupBfdKeys()
+	vppKeys, err := plugin.DumpBFDAuthKeys()
 	if err != nil {
 		return err
 	}
 
-	var wasError error
-
-	// create BFD auth keys
-	for _, bfdKey := range bfds {
-		err = plugin.ConfigureBfdAuthKey(bfdKey)
-		if err != nil {
-			wasError = err
+	// Correlate existing BFD keys from the VPP and NB config, configure new ones
+	var wasErr error
+	for _, nbKey := range nbKeys {
+		// look for configured keys
+		var found bool
+		for _, vppKey := range vppKeys {
+			// compare key ID
+			if nbKey.Id == vppKey.Id {
+				plugin.Log.Debugf("found configured BFD auth key with ID %v", nbKey.Id)
+				plugin.bfdKeysIndexes.RegisterName(authKeyIdentifier(nbKey.Id), plugin.BfdIDSeq, nil)
+				if err := plugin.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
+					plugin.Log.Errorf("BFD resync: error modifying BFD auth key with ID %v: %v", nbKey.Id, err)
+					wasErr = err
+				}
+				found = true
+			}
+		}
+		if !found {
+			// configure new BFD authentication key
+			if err := plugin.ConfigureBfdAuthKey(nbKey); err != nil {
+				plugin.Log.Errorf("BFD resync: error creating a new BFD auth key with ID %v: %v", nbKey.Id, err)
+				wasErr = err
+			}
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasError)
+	// Remove old keys
+	for _, vppKey := range vppKeys {
+		// remove every not-yet-registered keys
+		_, _, found := plugin.bfdKeysIndexes.LookupIdx(authKeyIdentifier(vppKey.Id))
+		if !found {
+			if err := plugin.DeleteBfdAuthKey(vppKey); err != nil {
+				plugin.Log.Errorf("BFD resync: error removing BFD auth key with ID %v: %v", vppKey.Id, err)
+				wasErr = err
+			}
+		}
+	}
 
-	return wasError
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasErr)
+
+	return wasErr
 }
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP

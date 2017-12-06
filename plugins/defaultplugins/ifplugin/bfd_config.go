@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"strconv"
-	"time"
 
 	"strconv"
 	"time"
@@ -226,14 +225,15 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 
 // DumpBfdSessions returns a list of all configured BFD sessions
 func (plugin *BFDConfigurator) DumpBfdSessions() ([]*bfd.SingleHopBFD_Session, error) {
+	var bfdSessionList []*bfd.SingleHopBFD_Session
+
 	bfdList, err := vppcalls.DumpBfdUDPSessions(plugin.vppChannel,
 		measure.GetTimeLog(bfd_api.BfdUDPSessionDump{}, plugin.Stopwatch))
-
 	if err != nil {
-		return nil, err
+		return bfdSessionList, err
 	}
+
 	var wasError error
-	var bfdSessionList []*bfd.SingleHopBFD_Session
 	for _, bfdItem := range bfdList {
 		// find interface
 		ifName, _, found := plugin.SwIfIndexes.LookupName(bfdItem.SwIfIndex)
@@ -253,7 +253,10 @@ func (plugin *BFDConfigurator) DumpBfdSessions() ([]*bfd.SingleHopBFD_Session, e
 			DesiredMinTxInterval:  bfdItem.DesiredMinTx,
 			RequiredMinRxInterval: bfdItem.RequiredMinRx,
 			DetectMultiplier:      uint32(bfdItem.DetectMult),
-			// todo dump authentication
+			Authentication: &bfd.SingleHopBFD_Session_Authentication{
+				KeyId:           uint32(bfdItem.BfdKeyID),
+				AdvertisedKeyId: uint32(bfdItem.BfdKeyID),
+			},
 		})
 	}
 
@@ -262,7 +265,7 @@ func (plugin *BFDConfigurator) DumpBfdSessions() ([]*bfd.SingleHopBFD_Session, e
 
 // ConfigureBfdAuthKey crates new authentication key which can be used for BFD session
 func (plugin *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_Key) error {
-	plugin.Log.Print("Setting up BFD authentication key with ID ", bfdAuthKey.Id)
+	plugin.Log.Infof("Configuring BFD authentication key with ID %v", bfdAuthKey.Id)
 
 	// Check whether this auth key was not recreated
 	authKeyIndex := strconv.FormatUint(uint64(bfdAuthKey.Id), 10)
@@ -279,10 +282,12 @@ func (plugin *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_
 		return fmt.Errorf("error while setting up BFD auth key with ID %v", bfdAuthKey.Id)
 	}
 
-	authKeyIDAsString := strconv.FormatUint(uint64(bfdAuthKey.Id), 10)
+	authKeyIDAsString := authKeyIdentifier(bfdAuthKey.Id)
 	plugin.bfdKeysIndexes.RegisterName(authKeyIDAsString, plugin.BfdIDSeq, nil)
 	plugin.Log.Debugf("BFD authentication key with id %v registered. Idx: %v", bfdAuthKey.Id, plugin.BfdIDSeq)
 	plugin.BfdIDSeq++
+
+	plugin.Log.Infof("BFD authentication key with ID %v configured", bfdAuthKey.Id)
 
 	return nil
 }
@@ -326,8 +331,6 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 	if err != nil {
 		return fmt.Errorf("error while setting up BFD auth key with ID %v", oldInput.Id)
 	}
-
-	plugin.LookupBfdKeys()
 
 	// Recreate BFD sessions if necessary
 	if len(sessionList) != 0 {
@@ -387,6 +390,34 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 	return nil
 }
 
+// DumpBFDAuthKeys returns a list of all configured authentication keys
+func (plugin *BFDConfigurator) DumpBFDAuthKeys() ([]*bfd.SingleHopBFD_Key, error) {
+	var bfdAuthKeyList []*bfd.SingleHopBFD_Key
+
+	keys, err := vppcalls.DumpBfdKeys(plugin.vppChannel, measure.GetTimeLog(bfd_api.BfdAuthKeysDump{}, plugin.Stopwatch))
+	if err != nil {
+		return bfdAuthKeyList, err
+	}
+
+	for _, key := range keys {
+		// resolve authentication type
+		var authType bfd.SingleHopBFD_Key_AuthenticationType
+		if key.AuthType == 4 {
+			authType = bfd.SingleHopBFD_Key_KEYED_SHA1
+		} else {
+			authType = bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1
+		}
+
+		bfdAuthKeyList = append(bfdAuthKeyList, &bfd.SingleHopBFD_Key{
+			Id:                 key.ConfKeyID,
+			AuthKeyIndex:       key.ConfKeyID,
+			AuthenticationType: authType,
+		})
+	}
+
+	return bfdAuthKeyList, nil
+}
+
 // ConfigureBfdEchoFunction is used to setup BFD Echo function on existing interface
 func (plugin *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
 	plugin.Log.Print("Configuring BFD echo function for source interface ", bfdInput.EchoSourceInterface)
@@ -431,75 +462,6 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 	return nil
 }
 
-// LookupBfdSessions looks up all BFD sessions and saves their name-to-index mapping
-func (plugin *BFDConfigurator) LookupBfdSessions() error {
-	start := time.Now()
-	req := &bfd_api.BfdUDPSessionDump{}
-	reqCtx := plugin.vppChannel.SendMultiRequest(req)
-
-	for {
-		msg := &bfd_api.BfdUDPSessionDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		// Store the name-to-index mapping if it does not exist yet
-		name, _, found := plugin.SwIfIndexes.LookupName(msg.SwIfIndex)
-		if !found {
-			continue
-		}
-		_, _, found = plugin.bfdSessionsIndexes.LookupIdx(name)
-		if !found {
-			plugin.bfdEchoFunctionIndex.RegisterName(name, plugin.BfdIDSeq, nil)
-			plugin.Log.Debugf("BFD session with interface registered. Idx: %v", plugin.BfdIDSeq)
-			plugin.BfdIDSeq++
-		}
-	}
-
-	// BfdUDPSessionDump time
-	if plugin.Stopwatch != nil {
-		timeLog := measure.GetTimeLog(bfd_api.BfdUDPSessionDump{}, plugin.Stopwatch)
-		timeLog.LogTimeEntry(time.Since(start))
-	}
-
-	return nil
-}
-
-// LookupBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
-func (plugin *BFDConfigurator) LookupBfdKeys() error {
-	start := time.Now()
-	req := &bfd_api.BfdAuthKeysDump{}
-	reqCtx := plugin.vppChannel.SendMultiRequest(req)
-
-	for {
-		msg := &bfd_api.BfdAuthKeysDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		// Store the name-to-index mapping if it does not exist yet
-		keyID := strconv.FormatUint(uint64(msg.ConfKeyID), 10)
-		_, _, found := plugin.bfdKeysIndexes.LookupIdx(keyID)
-		if !found {
-			plugin.bfdEchoFunctionIndex.RegisterName(keyID, plugin.BfdIDSeq, nil)
-			plugin.Log.Debugf("BFD authentication key registered. Idx: %v", plugin.BfdIDSeq)
-			plugin.BfdIDSeq++
-		}
-	}
-
-	// BfdAuthKeysDump time
-	if plugin.Stopwatch != nil {
-		timeLog := measure.GetTimeLog(bfd_api.BfdAuthKeysDump{}, plugin.Stopwatch)
-		timeLog.LogTimeEntry(time.Since(start))
-	}
-
-	return nil
+func authKeyIdentifier(id uint32) string {
+	return strconv.FormatUint(uint64(id), 10)
 }
