@@ -102,24 +102,23 @@ func (plugin *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Se
 	// Check whether BFD contains source IP address
 	if ifMeta == nil {
 		return fmt.Errorf("unable to get IP address data from interface %v", bfdInput.Interface)
-	} else {
-		var ipFound bool
-		for _, ipAddr := range ifMeta.IpAddresses {
-			// Remove suffix (BFD is not using it)
-			ipWithMask := strings.Split(ipAddr, "/")
-			if len(ipWithMask) == 0 {
-				return fmt.Errorf("incorrect IP address format %v", ipAddr)
-			}
-			ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
-			if ipAddrWithoutMask == bfdInput.SourceAddress {
-				ipFound = true
-				break
-			}
+	}
+	var ipFound bool
+	for _, ipAddr := range ifMeta.IpAddresses {
+		// Remove suffix (BFD is not using it)
+		ipWithMask := strings.Split(ipAddr, "/")
+		if len(ipWithMask) == 0 {
+			return fmt.Errorf("incorrect IP address format %v", ipAddr)
 		}
-		if !ipFound {
-			return fmt.Errorf("interface %v does not contain address %v required for BFD session",
-				bfdInput.Interface, bfdInput.SourceAddress)
+		ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
+		if ipAddrWithoutMask == bfdInput.SourceAddress {
+			ipFound = true
+			break
 		}
+	}
+	if !ipFound {
+		return fmt.Errorf("interface %v does not contain address %v required for BFD session",
+			bfdInput.Interface, bfdInput.SourceAddress)
 	}
 
 	// Call vpp api
@@ -152,24 +151,23 @@ func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Se
 	// Check whether BFD contains source IP address
 	if ifMeta == nil {
 		return fmt.Errorf("unable to get IP address data from interface %v", newBfdInput.Interface)
-	} else {
-		var ipFound bool
-		for _, ipAddr := range ifMeta.IpAddresses {
-			// Remove suffix
-			ipWithMask := strings.Split(ipAddr, "/")
-			if len(ipWithMask) == 0 {
-				return fmt.Errorf("incorrect IP address format %v", ipAddr)
-			}
-			ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
-			if ipAddrWithoutMask == newBfdInput.SourceAddress {
-				ipFound = true
-				break
-			}
+	}
+	var ipFound bool
+	for _, ipAddr := range ifMeta.IpAddresses {
+		// Remove suffix
+		ipWithMask := strings.Split(ipAddr, "/")
+		if len(ipWithMask) == 0 {
+			return fmt.Errorf("incorrect IP address format %v", ipAddr)
 		}
-		if !ipFound {
-			return fmt.Errorf("interface %v does not contain address %v required for modified BFD session",
-				newBfdInput.Interface, newBfdInput.SourceAddress)
+		ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
+		if ipAddrWithoutMask == newBfdInput.SourceAddress {
+			ipFound = true
+			break
 		}
+	}
+	if !ipFound {
+		return fmt.Errorf("interface %v does not contain address %v required for modified BFD session",
+			newBfdInput.Interface, newBfdInput.SourceAddress)
 	}
 
 	// Find old BFD session

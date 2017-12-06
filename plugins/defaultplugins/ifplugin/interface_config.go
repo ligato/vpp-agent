@@ -713,8 +713,8 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	plugin.deleteContainerIPAddress(oldConfig, ifIdx)
 
-	for i, oldIp := range oldConfig.IpAddresses {
-		if strings.HasPrefix(oldIp, "fe80") {
+	for i, oldIP := range oldConfig.IpAddresses {
+		if strings.HasPrefix(oldIP, "fe80") {
 			// todo skip link local addresses (possible workaround for af_packet)
 			oldConfig.IpAddresses = append(oldConfig.IpAddresses[:i], oldConfig.IpAddresses[i+1:]...)
 		}
@@ -815,19 +815,19 @@ func (plugin *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.
 }
 
 func (plugin *InterfaceConfigurator) addContainerIPAddress(iface *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIpv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
+	addr, isIPv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
 	if err != nil {
 		return err
 	}
-	return vppcalls.AddContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+	return vppcalls.AddContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
 		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
 }
 
 func (plugin *InterfaceConfigurator) deleteContainerIPAddress(oldConfig *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIpv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
+	addr, isIPv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
 	if err != nil {
 		return nil
 	}
-	return vppcalls.DelContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+	return vppcalls.DelContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
 		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
 }

@@ -73,14 +73,14 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			vppAgentIf.Name = vppIf.VPPInternalName
 			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
 			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-				plugin.Log.Error("Error while removing interface: %v", err)
+				plugin.Log.Errorf("Error while removing interface: %v", err)
 				wasErr = err
 			}
 		}
 		// Configure NB interfaces
 		for _, nbIf := range nbIfs {
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.Log.Error("Error while configuring interface: %v", err)
+				plugin.Log.Errorf("Error while configuring interface: %v", err)
 				wasErr = err
 			}
 		}
@@ -115,14 +115,14 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			} else {
 				// Interface exists in mapping but not in vpp.
 				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-					plugin.Log.Error("Error while configuring interface: %v", err)
+					plugin.Log.Errorf("Error while configuring interface: %v", err)
 					wasErr = err
 				}
 			}
 		} else {
 			// a new interface (missing in persistent mapping)
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.Log.Error("Error while configuring interface: %v", err)
+				plugin.Log.Errorf("Error while configuring interface: %v", err)
 				wasErr = err
 			}
 		}
@@ -139,7 +139,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			vppAgentIf.Name = vppIf.VPPInternalName
 			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
 			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-				plugin.Log.Error("Error while removing interface: %v", err)
+				plugin.Log.Errorf("Error while removing interface: %v", err)
 				wasErr = err
 			}
 			plugin.Log.Debugf("Removed unknown interface with index %v", vppIfIdx)

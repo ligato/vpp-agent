@@ -239,7 +239,7 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 	return nil
 }
 
-// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata
+// DumpBfdUDPSessions returns a list of BFD session's metadata
 func DumpBfdUDPSessions(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
 	return dumpBfdUDPSessionsWithID(false, 0, vppChannel, timeLog)
 }
