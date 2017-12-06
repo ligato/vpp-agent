@@ -14,7 +14,7 @@ cache:
     - $HOME/build-cache
 
 env:
-  - GO_BUILD_TAGS=novpp
+  - GO_BUILD_TAGS=mockvpp
 
 before_install:
   - go get -u -f github.com/alecthomas/gometalinter
