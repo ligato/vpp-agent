@@ -307,7 +307,24 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 }
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP
-func (plugin *BFDConfigurator) ResyncEchoFunction(bfds []*bfd.SingleHopBFD_EchoFunction) error {
+func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Echo source begin.")
+
+	if len(echoFunctions) == 0 {
+		// Nothing to do here. Currently VPP does not support BFD echo dump so agent does not know
+		// whether there is echo function already configured and cannot remove it
+		return nil
+	}
+	// Only one config can be used to set an echo source. If there are multiple configurations,
+	// use the first one
+	if len(echoFunctions) > 1 {
+		plugin.Log.Warn("Multiple configurations of BFD echo function found. Setting up %v as source",
+			echoFunctions[0].EchoSourceInterface)
+	}
+	if err := plugin.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -420,7 +420,7 @@ func (plugin *BFDConfigurator) DumpBFDAuthKeys() ([]*bfd.SingleHopBFD_Key, error
 
 // ConfigureBfdEchoFunction is used to setup BFD Echo function on existing interface
 func (plugin *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
-	plugin.Log.Print("Configuring BFD echo function for source interface ", bfdInput.EchoSourceInterface)
+	plugin.Log.Infof("Configuring BFD echo function for source interface %v", bfdInput.EchoSourceInterface)
 
 	// Verify interface presence
 	_, _, found := plugin.SwIfIndexes.LookupIdx(bfdInput.EchoSourceInterface)
@@ -436,6 +436,8 @@ func (plugin *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopB
 	plugin.bfdEchoFunctionIndex.RegisterName(bfdInput.EchoSourceInterface, plugin.BfdIDSeq, nil)
 	plugin.Log.Debugf("BFD echo function with interface %v registered. Idx: %v", bfdInput.EchoSourceInterface, plugin.BfdIDSeq)
 	plugin.BfdIDSeq++
+
+	plugin.Log.Infof("Echo source set to interface %v ", bfdInput.EchoSourceInterface)
 
 	return nil
 }
@@ -458,6 +460,8 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 
 	plugin.bfdEchoFunctionIndex.UnregisterName(bfdInput.EchoSourceInterface)
 	plugin.Log.Debugf("BFD echo function with interface %v unregistered", bfdInput.EchoSourceInterface)
+
+	plugin.Log.Info("Echo source unset")
 
 	return nil
 }

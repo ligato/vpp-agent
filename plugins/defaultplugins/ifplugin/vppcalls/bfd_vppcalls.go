@@ -386,7 +386,6 @@ func DumpBfdKeys(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (
 }
 
 // AddBfdEchoFunction sets up an echo function for the interface.
-// TODO: Bug 762 invalid message ID 1002, expected 1003
 func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel VPPChannel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPSetEchoSource time measurement
 	start := time.Now()
