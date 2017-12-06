@@ -30,7 +30,7 @@ import (
 )
 
 // AddBfdUDPSession adds new BFD session with authentication if available.
-func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx,
+func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx,
 	log logging.Logger, vppChannel VPPChannel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
@@ -39,12 +39,6 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}()
-
-	// Verify the interface presence.
-	ifIdx, _, found := swIfIndexes.LookupIdx(bfdSession.Interface)
-	if !found {
-		return fmt.Errorf("interface %v does not exist", bfdSession.Interface)
-	}
 
 	// Prepare the message.
 	req := &bfd_api.BfdUDPAdd{}
@@ -246,8 +240,16 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string,
 }
 
 // DumpBfdUDPSessionsWithID returns a list of BFD session's metadata
-func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfIndex, bfdSessionIndexes idxvpp.NameToIdx,
-	vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
+func DumpBfdUDPSessions(vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
+	return dumpBfdUDPSessionsWithID(false, 0, vppChannel, timeLog)
+}
+
+// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
+func DumpBfdUDPSessionsWithID(authKeyIndex uint32, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
+	return dumpBfdUDPSessionsWithID(true, authKeyIndex, vppChannel, timeLog)
+}
+
+func dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*bfd_api.BfdUDPSessionDetails, error) {
 	// BfdUDPSessionDump time measurement
 	start := time.Now()
 	defer func() {
@@ -269,21 +271,16 @@ func DumpBfdUDPSessionsWithID(authKeyIndex uint32, swIfIndexes ifaceidx.SwIfInde
 		if err != nil {
 			return sessionIfacesWithID, err
 		}
-		// Not interested in sessions without auth key
-		if msg.IsAuthenticated == 0 {
-			continue
-		}
-		// Get the interface name used in session.
-		ifName, _, found := swIfIndexes.LookupName(msg.SwIfIndex)
-		if !found {
-			continue
-		}
-		// Verify the session exists.
-		_, _, found = bfdSessionIndexes.LookupIdx(ifName)
-		if !found {
-			continue
-		}
-		if msg.BfdKeyID == uint8(authKeyIndex) {
+
+		if filterID {
+			// Not interested in sessions without auth key
+			if msg.IsAuthenticated == 0 {
+				continue
+			}
+			if msg.BfdKeyID == uint8(authKeyIndex) {
+				sessionIfacesWithID = append(sessionIfacesWithID, msg)
+			}
+		} else {
 			sessionIfacesWithID = append(sessionIfacesWithID, msg)
 		}
 	}

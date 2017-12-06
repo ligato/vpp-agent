@@ -173,7 +173,7 @@ func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.In
 		plugin.Log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
 		return stop
 	}
-	// in interface exists, try to find local0 interface (index 0)
+	// if interface exists, try to find local0 interface (index 0)
 	_, ok := vppIfaces[0]
 	// in case local0 is the only interface on the vpp, stop the resync
 	if len(vppIfaces) == 1 && ok {
@@ -188,7 +188,7 @@ func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.In
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
-func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) error {
+func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
 	// Calculate and log bfd resync
 	defer func() {
@@ -197,25 +197,54 @@ func (plugin *BFDConfigurator) ResyncSession(bfds []*bfd.SingleHopBFD_Session) e
 		}
 	}()
 
-	// lookup BFD sessions
-	err := plugin.LookupBfdSessions()
+	// Dump all BFD vppSessions
+	vppSessions, err := plugin.DumpBfdSessions()
 	if err != nil {
 		return err
 	}
 
-	var wasError error
-
-	// create BFD sessions
-	for _, bfdSession := range bfds {
-		err = plugin.ConfigureBfdSession(bfdSession)
-		if err != nil {
-			wasError = err
+	// Correlate existing BFD vppSessions from the VPP and NB config, configure new ones
+	var wasErr error
+	for _, nbSession := range nbSessions {
+		// look for configured session
+		var found bool
+		for _, vppSession := range vppSessions {
+			// compare fixed fields
+			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
+				nbSession.DestinationAddress == vppSession.DestinationAddress {
+				plugin.Log.Debugf("found configured BFD session for interface %v", nbSession.Interface)
+				plugin.bfdSessionsIndexes.RegisterName(nbSession.Interface, plugin.BfdIDSeq, nil)
+				if err := plugin.ModifyBfdSession(vppSession, nbSession); err != nil {
+					plugin.Log.Errorf("BFD resync: error modifying BFD session for interface %v: %v", nbSession.Interface, err)
+					wasErr = err
+				}
+				found = true
+			}
+		}
+		if !found {
+			// configure new BFD session
+			if err := plugin.ConfigureBfdSession(nbSession); err != nil {
+				plugin.Log.Errorf("BFD resync: error creating a new BFD session for interface %v: %v", nbSession.Interface, err)
+				wasErr = err
+			}
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasError)
+	// Remove old sessions
+	for _, vppSession := range vppSessions {
+		// remove every not-yet-registered session
+		_, _, found := plugin.bfdSessionsIndexes.LookupIdx(vppSession.Interface)
+		if !found {
+			if err := plugin.DeleteBfdSession(vppSession); err != nil {
+				plugin.Log.Errorf("BFD resync: error removing BFD session for interface %v: %v", vppSession.Interface, err)
+				wasErr = err
+			}
+		}
+	}
 
-	return wasError
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasErr)
+
+	return wasErr
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP

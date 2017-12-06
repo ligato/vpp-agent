@@ -19,6 +19,10 @@ package ifplugin
 import (
 	"fmt"
 	"net"
+	"strings"
+
+	"strconv"
+	"time"
 
 	"strconv"
 	"time"
@@ -91,17 +95,36 @@ func (plugin *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Se
 	plugin.Log.Infof("Configuring BFD session for interface %v", bfdInput.Interface)
 
 	// Verify interface presence
-	_, _, found := plugin.SwIfIndexes.LookupIdx(bfdInput.Interface)
+	ifIdx, ifMeta, found := plugin.SwIfIndexes.LookupIdx(bfdInput.Interface)
 	if !found {
 		return fmt.Errorf("interface %v does not exist", bfdInput.Interface)
 	}
-	// Check source ip address
-	res := plugin.SwIfIndexes.LookupNameByIP(bfdInput.SourceAddress)
-	if len(res) != 1 || res[0] != bfdInput.Interface {
-		return fmt.Errorf("BFD source address %v does not match any of provided interface's ip adresses", bfdInput.SourceAddress)
+
+	// Check whether BFD contains source IP address
+	if ifMeta == nil {
+		return fmt.Errorf("unable to get IP address data from interface %v", bfdInput.Interface)
+	} else {
+		var ipFound bool
+		for _, ipAddr := range ifMeta.IpAddresses {
+			// Remove suffix (BFD is not using it)
+			ipWithMask := strings.Split(ipAddr, "/")
+			if len(ipWithMask) == 0 {
+				return fmt.Errorf("incorrect IP address format %v", ipAddr)
+			}
+			ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
+			if ipAddrWithoutMask == bfdInput.SourceAddress {
+				ipFound = true
+				break
+			}
+		}
+		if !ipFound {
+			return fmt.Errorf("interface %v does not contain address %v required for BFD session",
+				bfdInput.Interface, bfdInput.SourceAddress)
+		}
 	}
+
 	// Call vpp api
-	err := vppcalls.AddBfdUDPSession(bfdInput, plugin.SwIfIndexes, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel,
+	err := vppcalls.AddBfdUDPSession(bfdInput, ifIdx, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel,
 		measure.GetTimeLog(bfd_api.BfdUDPAdd{}, plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("error while configuring BFD for interface %v", bfdInput.Interface)
@@ -118,40 +141,62 @@ func (plugin *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Se
 
 // ModifyBfdSession modifies BFD session fields. Source and destination IP address for old and new config has to be the
 // same. Authentication is NOT changed here, BFD modify bin api call does not support that
-func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdSession *bfd.SingleHopBFD_Session, newBfdSession *bfd.SingleHopBFD_Session) error {
-	plugin.Log.Print("Modifying BFD session for interface ")
+func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Session, newBfdInput *bfd.SingleHopBFD_Session) error {
+	plugin.Log.Infof("Modifying BFD session for interface %v", newBfdInput.Interface)
 
 	// Verify interface presence
-	_, _, found := plugin.SwIfIndexes.LookupIdx(newBfdSession.Interface)
+	ifIdx, ifMeta, found := plugin.SwIfIndexes.LookupIdx(newBfdInput.Interface)
 	if !found {
-		return fmt.Errorf("interface %v does not exist", newBfdSession.Interface)
+		return fmt.Errorf("interface %v does not exist", newBfdInput.Interface)
 	}
-	// Check source ip address
-	res := plugin.SwIfIndexes.LookupNameByIP(newBfdSession.SourceAddress)
-	if len(res) == 1 && res[0] == newBfdSession.Interface {
-		return fmt.Errorf("BFD source address %v does not match any of provided interface's ip adresses", newBfdSession.SourceAddress)
+
+	// Check whether BFD contains source IP address
+	if ifMeta == nil {
+		return fmt.Errorf("unable to get IP address data from interface %v", newBfdInput.Interface)
+	} else {
+		var ipFound bool
+		for _, ipAddr := range ifMeta.IpAddresses {
+			// Remove suffix
+			ipWithMask := strings.Split(ipAddr, "/")
+			if len(ipWithMask) == 0 {
+				return fmt.Errorf("incorrect IP address format %v", ipAddr)
+			}
+			ipAddrWithoutMask := ipWithMask[0] // the first index is IP address
+			if ipAddrWithoutMask == newBfdInput.SourceAddress {
+				ipFound = true
+				break
+			}
+		}
+		if !ipFound {
+			return fmt.Errorf("interface %v does not contain address %v required for modified BFD session",
+				newBfdInput.Interface, newBfdInput.SourceAddress)
+		}
 	}
 
 	// Find old BFD session
-	_, _, found = plugin.bfdSessionsIndexes.LookupIdx(oldBfdSession.Interface)
+	_, _, found = plugin.bfdSessionsIndexes.LookupIdx(oldBfdInput.Interface)
 	if !found {
-		plugin.Log.Printf("Previous BFD session does not exist, creating a new one for interface %v", newBfdSession.Interface)
-		err := plugin.ConfigureBfdSession(newBfdSession)
+		plugin.Log.Printf("Previous BFD session does not exist, creating a new one for interface %v", newBfdInput.Interface)
+		err := vppcalls.AddBfdUDPSession(newBfdInput, ifIdx, plugin.bfdKeysIndexes, plugin.Log, plugin.vppChannel,
+			measure.GetTimeLog(bfd_api.BfdUDPAdd{}, plugin.Stopwatch))
 		if err != nil {
-			return fmt.Errorf("error while creating BFD for interface %v", newBfdSession.Interface)
+			return err
 		}
 	} else {
 		// Compare source and destination addresses which cannot change if BFD session is modified
-		if oldBfdSession.SourceAddress != newBfdSession.SourceAddress || oldBfdSession.DestinationAddress != newBfdSession.DestinationAddress {
-			return fmt.Errorf("BFD adresses does not match. Odl session source: %v, dest: %v, new session source: %v, dest: %v",
-				oldBfdSession.SourceAddress, oldBfdSession.DestinationAddress, newBfdSession.SourceAddress, newBfdSession.DestinationAddress)
+		// todo new BFD input should be compared to BFD data on the vpp, not the last change (old BFD data)
+		if oldBfdInput.SourceAddress != newBfdInput.SourceAddress || oldBfdInput.DestinationAddress != newBfdInput.DestinationAddress {
+			return fmt.Errorf("unable to modify BFD session, adresses does not match. Odl session source: %v, dest: %v, new session source: %v, dest: %v",
+				oldBfdInput.SourceAddress, oldBfdInput.DestinationAddress, newBfdInput.SourceAddress, newBfdInput.DestinationAddress)
 		}
-		err := vppcalls.ModifyBfdUDPSession(newBfdSession, plugin.SwIfIndexes, plugin.vppChannel,
+		err := vppcalls.ModifyBfdUDPSession(newBfdInput, plugin.SwIfIndexes, plugin.vppChannel,
 			measure.GetTimeLog(bfd_api.BfdUDPMod{}, plugin.Stopwatch))
 		if err != nil {
-			return fmt.Errorf("error while updating BFD for interface %v", newBfdSession.Interface)
+			return err
 		}
 	}
+
+	plugin.Log.Printf("BFD session for interface %v modified ", newBfdInput.Interface)
 
 	return nil
 }
@@ -165,7 +210,8 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 		return nil
 	}
 
-	err := vppcalls.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress, plugin.vppChannel, nil)
+	err := vppcalls.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress, plugin.vppChannel,
+		measure.GetTimeLog(bfd_api.BfdUDPDel{}, plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("error while deleting BFD for interface %v", bfdInput.Interface)
 	}
@@ -173,7 +219,45 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 	plugin.bfdSessionsIndexes.UnregisterName(bfdInput.Interface)
 	plugin.Log.Debugf("BFD session with interface %v unregistered", bfdInput.Interface)
 
+	plugin.Log.Printf("BFD session for interface %v removed ", bfdInput.Interface)
+
 	return nil
+}
+
+// DumpBfdSessions returns a list of all configured BFD sessions
+func (plugin *BFDConfigurator) DumpBfdSessions() ([]*bfd.SingleHopBFD_Session, error) {
+	bfdList, err := vppcalls.DumpBfdUDPSessions(plugin.vppChannel,
+		measure.GetTimeLog(bfd_api.BfdUDPSessionDump{}, plugin.Stopwatch))
+
+	if err != nil {
+		return nil, err
+	}
+	var wasError error
+	var bfdSessionList []*bfd.SingleHopBFD_Session
+	for _, bfdItem := range bfdList {
+		// find interface
+		ifName, _, found := plugin.SwIfIndexes.LookupName(bfdItem.SwIfIndex)
+		if !found {
+			plugin.Log.Warnf("required interface %v not found for BFD", bfdItem.SwIfIndex)
+		}
+
+		// Prepare IPv4 IP addresses
+		var dstAddr net.IP = bfdItem.PeerAddr[:4]
+		var srcAddr net.IP = bfdItem.LocalAddr[:4]
+
+		bfdSessionList = append(bfdSessionList, &bfd.SingleHopBFD_Session{
+			Interface:             ifName,
+			DestinationAddress:    dstAddr.To4().String(),
+			SourceAddress:         srcAddr.To4().String(),
+			Enabled:               true,
+			DesiredMinTxInterval:  bfdItem.DesiredMinTx,
+			RequiredMinRxInterval: bfdItem.RequiredMinRx,
+			DetectMultiplier:      uint32(bfdItem.DetectMult),
+			// todo dump authentication
+		})
+	}
+
+	return bfdSessionList, wasError
 }
 
 // ConfigureBfdAuthKey crates new authentication key which can be used for BFD session
@@ -215,7 +299,7 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 		plugin.Log.Debugf("Authentication key with ID %v recreated", oldInput.Id)
 	}
 	// Check that this auth key is not used in any session
-	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(newInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel,
+	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(newInput.Id, plugin.vppChannel,
 		measure.GetTimeLog(bfd_api.BfdUDPSessionDump{}, plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("error while verifying authentication key usage. Id: %v", oldInput.Id)
@@ -265,7 +349,8 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 	plugin.Log.Info("Deleting BFD auth key")
 
 	// Check that this auth key is not used in any session
-	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(bfdInput.Id, plugin.SwIfIndexes, plugin.bfdSessionsIndexes, plugin.vppChannel, nil)
+	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(bfdInput.Id, plugin.vppChannel,
+		measure.GetTimeLog(bfd_api.BfdUDPSessionDump{}, plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("error while verifying authentication key usage. Id: %v", bfdInput.Id)
 	}
