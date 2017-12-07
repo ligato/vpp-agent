@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set +e
-sudo docker rmi -f dev_vpp_agent 2>/dev/null
+#set +e
+#sudo docker rmi -f dev_vpp_agent 2>/dev/null
 set -e
 
 CURRENT_FOLDER=`pwd`
@@ -29,5 +29,5 @@ done
 echo "build agent commit number: "$AGENT_COMMIT
 echo "build vpp commit number: "$VPP_COMMIT
 
-sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=$AGENT_COMMIT --build-arg VPP_COMMIT=$VPP_COMMIT --no-cache .
+sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=$AGENT_COMMIT --build-arg VPP_COMMIT=$VPP_COMMIT .
 
