@@ -20,6 +20,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/tapv2.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=bin_api
@@ -437,6 +438,12 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	switch ifaceType {
 	case intf.InterfaceType_TAP_INTERFACE:
+		if !plugin.canTapBeModifWithoutDelete(newConfig.Tap, oldConfig.Tap) {
+			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
+			plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).
+				Debug("modifyVPPInterface end. ", err)
+			return err
+		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if !plugin.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
 			err := plugin.recreateVPPInterface(newConfig, oldConfig, ifIdx)
@@ -713,7 +720,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		err = vppcalls.DeleteTapInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(tap.TapDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteTapInterface(ifIdx, oldConfig.Tap.Version, plugin.vppCh, measure.GetTimeLog(tap.TapDelete{}, plugin.Stopwatch))
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(memif.MemifDelete{}, plugin.Stopwatch))
 	case intf.InterfaceType_VXLAN_TUNNEL:
@@ -758,12 +765,8 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 		return true
 	}
 
-	if newConfig.BufferSize != oldConfig.BufferSize || newConfig.Id != oldConfig.Id || newConfig.Secret != oldConfig.Secret ||
-		newConfig.RingSize != oldConfig.RingSize || newConfig.Master != oldConfig.Master || newConfig.SocketFilename != oldConfig.SocketFilename ||
-		newConfig.RxQueues != oldConfig.RxQueues || newConfig.TxQueues != oldConfig.TxQueues {
-
+	if *newConfig != *oldConfig {
 		plugin.Log.Warnf("Difference between new & old config causing recreation of memif, old: '%+v' new: '%+v'", oldConfig, newConfig)
-
 		return false
 	}
 
@@ -774,7 +777,18 @@ func (plugin *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *int
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if newConfig.SrcAddress != oldConfig.SrcAddress || newConfig.DstAddress != oldConfig.DstAddress || newConfig.Vni != oldConfig.Vni {
+	if *newConfig != *oldConfig {
+		return false
+	}
+
+	return true
+}
+
+func (plugin *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Tap, oldConfig *intf.Interfaces_Interface_Tap) bool {
+	if newConfig == nil || oldConfig == nil {
+		return true
+	}
+	if *newConfig != *oldConfig {
 		return false
 	}
 

@@ -77,7 +77,11 @@ message Interfaces {
         Afpacket afpacket = 103;
 
         message Tap {
-            string host_if_name = 1; /* name of the tap interface in the host OS */
+            uint32 version = 1; /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
+            string host_if_name = 2; /* name of the TAP interface in the host OS */
+            string namespace = 3; /* Linux network namespace in which the host-side of the TAP should be configured; only for TAP v.2 */
+            uint32 rx_ring_size = 4; /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
+            uint32 tx_ring_size = 5; /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
         }
         Tap tap = 104;
     };
