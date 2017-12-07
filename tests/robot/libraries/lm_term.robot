@@ -14,12 +14,13 @@ lmterm: Open LM Terminal
     [Arguments]    ${node}
     [Documentation]    Attaching to already running Libmemif App on node ${node}
     Log Many           ${node}
-    Execute On Machine   ${node}_lmterm    ${DOCKER_COMMAND} attach ${node}
+    #lmterm: Issue Command   ${node}_lmterm    ${DOCKER_COMMAND} attach ${node}
+    Write To Machine    ${node}_lmterm    ${DOCKER_COMMAND} exec -it ${node} bash -c './.libs/icmpr-epoll'
 
 lmterm: Issue Command
     [Arguments]        ${node}     ${command}
     Log Many           ${node}     ${command}    ${node}_lmterm
-    ${out}=            Execute On Machine    ${node}_lmterm    ${command}
+    ${out}=            Write To Machine    ${node}_lmterm    ${command}
     Log                ${out}
 #    Should Contain     ${out}             ${${node}_VPP_TERM_PROMPT}
     [Return]           ${out}

@@ -54,7 +54,7 @@ ${NO_ACL}=
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
-    Configure Environment 2
+    Configure Environment 2        acl_basic.conf
 
 Show ACL Before Setup
     vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt

@@ -53,7 +53,7 @@ ${UDP_PORT}=     3001
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
-    Configure Environment 2
+    Configure Environment 2      acl_basic.conf
     Sleep    ${SYNC_SLEEP}
     Show Interfaces And Other Objects
 

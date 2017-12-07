@@ -13,6 +13,8 @@ Configure Environment 1
     Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
 
 Configure Environment 2
+    [Arguments]        ${sfc_conf}
+    [Documentation]    Setup environment with sfc_setup
     Add Agent VPP Node    agent_vpp_1       vswitch=${TRUE}
     Add Agent Node        agent_1
     Add Agent Node        agent_2
@@ -20,15 +22,18 @@ Configure Environment 2
     Execute In Container    agent_vpp_1    ls -al
     Execute On Machine    docker    ${DOCKER_COMMAND} images
     Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
-    Start SFC Controller Container With Own Config    acl_basic.conf
+    Start SFC Controller Container With Own Config    ${sfc_conf}
     Sleep    ${SYNC_SLEEP}
 
 
 Configure Environment 3
     Add Agent VPP Node         agent_vpp_1
+    Add Agent VPP Node         agent_vpp_2
     Add Agent Libmemif Node    agent_libmemif_1
     Execute In Container       agent_vpp_1    echo $MICROSERVICE_LABEL
     Execute In Container       agent_vpp_1    ls -al
+    Execute In Container       agent_vpp_2    echo $MICROSERVICE_LABEL
+    Execute In Container       agent_vpp_2    ls -al
     Execute On Machine         docker    ${DOCKER_COMMAND} images
     Execute On Machine         docker    ${DOCKER_COMMAND} ps -as
     Sleep    ${SYNC_SLEEP}
