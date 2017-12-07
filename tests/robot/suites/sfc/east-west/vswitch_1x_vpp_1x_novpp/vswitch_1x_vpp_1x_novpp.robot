@@ -61,8 +61,7 @@ Show Interfaces And Other Objects
     Execute In Container    agent_1    ip a
     Make Datastore Snapshots    before_resync
 
-Check Ping VPP2 -> Agent1
-    vpp_term: Check Ping    agent_vpp_2    10.0.0.10
+``
 
 Check Ping Agent1 -> VPP2
     linux: Check Ping    agent_1    10.0.0.1

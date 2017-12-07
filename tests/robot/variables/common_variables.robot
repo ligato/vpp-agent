@@ -87,7 +87,7 @@ ${AGENT_2_REST_API_PORT}           9191
 ${AGENT_2_REST_API_HOST_PORT}      9196
 
 # Variables for container with libmemif without vpp
-${AGENT_LIBMEMIF_IMAGE_NAME}       ligato/libmemif-sample-service
+${AGENT_LIBMEMIF_IMAGE_NAME}       ligato/libmemif-sample-service:test
 
 
 ${AGENT_LIBMEMIF_1_DOCKER_IMAGE}   ${AGENT_LIBMEMIF_IMAGE_NAME}

@@ -44,14 +44,15 @@ Add Agent Libmemif Node
     [Arguments]    ${node}
     Log Many       ${node}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it  --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" --name ${node} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" --name ${node} ${${node}_DOCKER_IMAGE} /bin/bash
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    #${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
     Sleep     3s
+    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
     Open SSH Connection    ${node}_lmterm    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     lmterm: Open LM Terminal    ${node}
-    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
     Log List    ${NODES}
 
 
@@ -86,6 +87,12 @@ Remove All Nodes
     Log List    ${NODES}
     :FOR    ${id}    IN    @{NODES}
     \    Remove Node    ${id}
+    Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
+
+Remove All VPP Nodes
+    Log List    ${NODES}
+    :FOR    ${id}    IN    @{NODES}
+    \   Run Keyword If    "vpp" in "${id}"       Remove Node    ${id}
     Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
 
 Remove Node
