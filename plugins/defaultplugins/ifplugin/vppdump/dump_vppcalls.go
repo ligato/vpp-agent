@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -29,10 +28,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tapv2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	ifnb "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tapv2"
 )
 
 // Interface is the wrapper structure for the interface northbound API structure.
@@ -253,7 +252,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 			return err
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
-			Version: 1,
+			Version:    1,
 			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
 		}
 		ifs[tapDetails.SwIfIndex].Type = ifnb.InterfaceType_TAP_INTERFACE
@@ -272,7 +271,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 			return err
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
-			Version: 2,
+			Version:    2,
 			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
 			// Other parameters are not not yet part of the dump.
 

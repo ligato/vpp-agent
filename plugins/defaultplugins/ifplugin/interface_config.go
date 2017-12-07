@@ -765,12 +765,8 @@ func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *int
 		return true
 	}
 
-	if newConfig.BufferSize != oldConfig.BufferSize || newConfig.Id != oldConfig.Id || newConfig.Secret != oldConfig.Secret ||
-		newConfig.RingSize != oldConfig.RingSize || newConfig.Master != oldConfig.Master || newConfig.SocketFilename != oldConfig.SocketFilename ||
-		newConfig.RxQueues != oldConfig.RxQueues || newConfig.TxQueues != oldConfig.TxQueues {
-
+	if *newConfig != *oldConfig {
 		plugin.Log.Warnf("Difference between new & old config causing recreation of memif, old: '%+v' new: '%+v'", oldConfig, newConfig)
-
 		return false
 	}
 
@@ -781,7 +777,7 @@ func (plugin *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *int
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if newConfig.SrcAddress != oldConfig.SrcAddress || newConfig.DstAddress != oldConfig.DstAddress || newConfig.Vni != oldConfig.Vni {
+	if *newConfig != *oldConfig {
 		return false
 	}
 
@@ -792,8 +788,7 @@ func (plugin *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if newConfig.Version != oldConfig.Version || newConfig.Namespace != oldConfig.Namespace || newConfig.HostIfName != oldConfig.HostIfName ||
-		newConfig.RxRingSize != oldConfig.RxRingSize || newConfig.TxRingSize != oldConfig.TxRingSize {
+	if *newConfig != *oldConfig {
 		return false
 	}
 
