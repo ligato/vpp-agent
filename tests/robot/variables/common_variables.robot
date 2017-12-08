@@ -86,6 +86,22 @@ ${AGENT_2_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
 ${AGENT_2_REST_API_PORT}           9191
 ${AGENT_2_REST_API_HOST_PORT}      9196
 
+${AGENT_3_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
+${AGENT_3_REST_API_PORT}           9191
+${AGENT_3_REST_API_HOST_PORT}      9197
+
+${NODE_1_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
+${NODE_1_REST_API_PORT}           9191
+${NODE_1_REST_API_HOST_PORT}      9195
+
+${NODE_2_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
+${NODE_2_REST_API_PORT}           9191
+${NODE_2_REST_API_HOST_PORT}      9196
+
+${NODE_3_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
+${NODE_3_REST_API_PORT}           9191
+${NODE_3_REST_API_HOST_PORT}      9197
+
 # Variables for container with libmemif without vpp
 ${AGENT_LIBMEMIF_IMAGE_NAME}       ligato/libmemif-sample-service:test
 

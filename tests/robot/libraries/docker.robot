@@ -40,6 +40,25 @@ Add Agent VPP Node
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
     Log List    ${NODES}
 
+
+Add Agent VPP Node With More Debug
+    [Arguments]    ${node}    ${vswitch}=${FALSE}
+    Log Many       ${node}    ${vswitch}
+    ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
+    Log    ${add_params}
+    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e INITIAL_LOGLVL=debug -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
+    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
+    Append To List    ${NODES}    ${node}
+    Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    vpp_term: Open VPP Terminal    ${node}
+    vat_term: Open VAT Terminal    ${node}
+    Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
+    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
+    Log List    ${NODES}
+
 Add Agent Libmemif Node
     [Arguments]    ${node}
     Log Many       ${node}

@@ -37,32 +37,32 @@ Configure Environment
 Check Stuff At Beginning
     Check Stuff
 
-Check Ping Agent1 -> Agent2
-    linux: Check Ping    agent_1    10.0.0.11
+Check Ping Node1 -> Node2
+    linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Agent2 -> Agent1
-    linux: Check Ping    agent_2    10.0.0.10
+Check Ping Node2 -> Node1
+    linux: Check Ping    node_2    10.0.0.10
 
-Remove Agent Nodes
+Remove All Nodes
     Remove Node     agent_vpp_1
-    Remove Node     agent_1
-    Remove Node     agent_2
+    Remove Node     node_1
+    Remove Node     node_2
     Sleep    ${SYNC_SLEEP}
 
-Start Agent Nodes
+Start All Nodes
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
-    Add Agent Node    agent_1
-    Add Agent Node    agent_2
+    Add Agent Node    node_1
+    Add Agent Node    node_2
     Sleep    ${RESYNC_SLEEP}
 
-Check Stuff On After Resync
+Check Stuff After Resync
     Check Stuff
 
-Check Ping Agent1 -> Agent2 After Resync
-    linux: Check Ping    agent_1    10.0.0.11
+Check Ping Node1 -> Node2 After Resync
+    linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Agent2 -> Agent1 After Resync
-    linux: Check Ping    agent_2    10.0.0.10
+Check Ping Node2 -> Node1 After Resync
+    linux: Check Ping    node_2    10.0.0.10
 
 Remove VPP
     Remove Node     agent_vpp_1
@@ -75,45 +75,80 @@ Start VPP
 Check Stuff After VPP Restart
     Check Stuff
 
-Check Ping Agent1 -> Agent2 After VPP Restart
-    linux: Check Ping    agent_1    10.0.0.11
+Check Ping Node1 -> Node2 After VPP Restart
+    linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Agent2 -> Agent1 After VPP Restart
-    linux: Check Ping    agent_2    10.0.0.10
+Check Ping Node2 -> Node1 After VPP Restart
+    linux: Check Ping    node_2    10.0.0.10
 
-Remove Agent 1
-    Remove Node     agent_1
+Remove Node1
+    Remove Node     node_1
     Sleep    ${SYNC_SLEEP}
 
-Start Agent 1
-    Add Agent Node    agent_1
+Start Node1
+    Add Agent Node    node_1
     Sleep    ${RESYNC_SLEEP}
 
-Check Stuff After Agent 1 Restart
+Check Stuff After Node1 Restart
     Check Stuff
 
-Check Ping Agent1 -> Agent2 After Agent1 Restart
-    linux: Check Ping    agent_1    10.0.0.11
+Check Ping Node1 -> Node2 After Node1 Restart
+    linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Agent2 -> Agent1 After Agent1 Restart
-    linux: Check Ping    agent_2    10.0.0.10
+Check Ping Node2 -> Node1 After Node1 Restart
+    linux: Check Ping    node_2    10.0.0.10
 
-Remove Agent 2
-    Remove Node     agent_2
+Remove Node1 Again
+    Remove Node     node_1
     Sleep    ${SYNC_SLEEP}
 
-Start Agent 2
-    Add Agent Node    agent_2
+Start Node1 Again
+    Add Agent Node    node_1
     Sleep    ${RESYNC_SLEEP}
 
-Check Stuff After Agent 2 Restart
+Check Stuff After Node1 Restart Again
     Check Stuff
 
-Check Ping Agent1 -> Agent2 After Agent2 Restart
-    linux: Check Ping    agent_1    10.0.0.11
+Check Ping Node1 -> Node2 After Node1 Restart Again
+    linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Agent2 -> Agent1 After Agent2 Restart
-    linux: Check Ping    agent_2    10.0.0.10
+Check Ping Node2 -> Node1 After Node1 Restart Again
+    linux: Check Ping    node_2    10.0.0.10
+
+Remove Node2
+    Remove Node     node_2
+    Sleep    ${SYNC_SLEEP}
+
+Start Node2
+    Add Agent Node    node_2
+    Sleep    ${RESYNC_SLEEP}
+
+Check Stuff After Node2 Restart
+    Check Stuff
+
+Check Ping Node1 -> Node2 After Node2 Restart
+    linux: Check Ping    node_1    10.0.0.11
+
+Check Ping Node2 -> Node1 After Node2 Restart
+    linux: Check Ping    node_2    10.0.0.10
+
+Remove Node2 Again
+    Remove Node     node_2
+    Sleep    ${SYNC_SLEEP}
+
+Start Node2 Again
+    Add Agent Node    node_2
+    Sleep    ${RESYNC_SLEEP}
+
+Check Stuff After Node2 Restart Again
+    Check Stuff
+
+Check Ping Node1 -> Node2 After Node2 Restart Again
+    linux: Check Ping    node_1    10.0.0.11
+
+Check Ping Node2 -> Node1 After Node2 Restart Again
+    linux: Check Ping    node_2    10.0.0.10
+
 
 Done
     [Tags]    debug
@@ -135,18 +170,18 @@ Show Interfaces And Other Objects
     vat_term: Interfaces Dump    agent_vpp_1
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
-    Execute In Container    agent_1    ip a
-    Execute In Container    agent_2    ip a
-    linux: Check Processes on Node      agent_1
-    linux: Check Processes on Node      agent_2
+    Execute In Container    node_1    ip a
+    Execute In Container    node_2    ip a
+    linux: Check Processes on Node      node_1
+    linux: Check Processes on Node      node_2
     Make Datastore Snapshots    before_resync
 
 Check Stuff
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_2_agent2_veth    enabled=1
-    linux: Interface With IP Is Created    node=agent_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
-    linux: Interface With IP Is Created    node=agent_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
-    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    IF_AFPIF_VSWITCH_agent_2_agent2_veth
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_nod2_veth    enabled=1
+    linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
+    linux: Interface With IP Is Created    node=node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
+    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    IF_AFPIF_VSWITCH_node_2_nod2_veth
     Show Interfaces And Other Objects
 
 
