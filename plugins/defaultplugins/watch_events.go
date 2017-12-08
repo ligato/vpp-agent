@@ -124,17 +124,16 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			ifIdxEv.Done()
 
 		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
-			var name string
+			ifName := linuxIfIdxEv.Name
+			var hostIfName string
 			if linuxIfIdxEv.Metadata != nil && linuxIfIdxEv.Metadata.HostIfName != "" {
-				name = linuxIfIdxEv.Metadata.HostIfName
-			} else {
-				name = linuxIfIdxEv.Name
+				hostIfName = linuxIfIdxEv.Metadata.HostIfName
 			}
 			if !linuxIfIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveCreatedLinuxInterface(name, linuxIfIdxEv.Idx)
+				plugin.ifConfigurator.ResolveCreatedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
 				// TODO propagate error
 			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(name)
+				plugin.ifConfigurator.ResolveDeletedLinuxInterface(ifName, hostIfName)
 				// TODO propagate error
 			}
 			linuxIfIdxEv.Done()

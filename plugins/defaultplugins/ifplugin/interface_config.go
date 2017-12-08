@@ -743,10 +743,10 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 }
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
-func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName string, interfaceIndex uint32) {
-	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "ifIdx": interfaceIndex}).Info("New Linux interface was created")
+func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) {
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName,  "ifIdx": interfaceIndex}).Info("New Linux interface was created")
 
-	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, interfaceIndex)
+	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
 		plugin.ConfigureVPPInterface(pendingAfpacket)
@@ -754,10 +754,10 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName 
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName string) {
-	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName}).Info("Linux interface was deleted")
+func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string) {
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
 
-	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName)
+	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName)
 }
 
 func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {

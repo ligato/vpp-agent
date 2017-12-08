@@ -310,7 +310,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		}
 	}
 
-	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), nil)
+	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &intf.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})
 	plugin.Log.WithFields(log.Fields{"ifName": iface.config.Name, "ifIdx": idx}).Info("An entry added into ifState.")
 
 	return wasError
