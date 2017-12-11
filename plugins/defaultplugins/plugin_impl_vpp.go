@@ -224,6 +224,12 @@ func (plugin *Plugin) GetXConnectIndexes() idxvpp.NameToIdx {
 	return plugin.xcIndexes
 }
 
+// GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
+// to their respective indices as assigned by VPP.
+func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
+	return plugin.namespaceIndexes
+}
+
 // DumpACL returns a list of all configured ACL entires
 func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	return plugin.aclConfigurator.DumpACL()
