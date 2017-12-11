@@ -35,19 +35,18 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	}()
 
 	// Prepare the message.
-	req := &af_packet.AfPacketCreate{}
-
-	req.HostIfName = []byte(afPacketIntf.HostIfName)
-	req.UseRandomHwAddr = 1
+	req := &af_packet.AfPacketCreate{
+		HostIfName:      []byte(afPacketIntf.HostIfName),
+		UseRandomHwAddr: 1,
+	}
 
 	reply := &af_packet.AfPacketCreateReply{}
 	err = vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return 0, err
 	}
-
-	if 0 != reply.Retval {
-		return 0, fmt.Errorf("add af_packet interface returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return 0, fmt.Errorf("add af_packet interface (%+v) returned %d", req, reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil
@@ -64,17 +63,17 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	}()
 
 	// Prepare the message.
-	req := &af_packet.AfPacketDelete{}
-	req.HostIfName = []byte(afPacketIntf.HostIfName)
+	req := &af_packet.AfPacketDelete{
+		HostIfName: []byte(afPacketIntf.HostIfName),
+	}
 
 	reply := &af_packet.AfPacketDeleteReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
-		return fmt.Errorf("deleting of af_packet interface returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("deleting of af_packet interface (%+v) returned %d", req, reply.Retval)
 	}
 
 	return nil
