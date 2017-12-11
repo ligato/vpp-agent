@@ -34,19 +34,19 @@ type ACLInterfaceLogicalReq struct {
 
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
-	vppChan         *govppapi.Channel
-	swIfIndexes     ifaceidx.SwIfIndex
-	dumpIfaces      measure.StopWatchEntry
-	ifaceSetACLList measure.StopWatchEntry
+	vppChan          *govppapi.Channel
+	swIfIndexes      ifaceidx.SwIfIndex
+	dumpACLStopwatch measure.StopWatchEntry
+	setACLStopwatch  measure.StopWatchEntry
 }
 
 // NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
 func NewACLInterfacesVppCalls(vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
-		vppChan:         vppChan,
-		swIfIndexes:     swIfIndexes,
-		dumpIfaces:      measure.GetTimeLog(acl_api.ACLInterfaceListDump{}, stopwatch),
-		ifaceSetACLList: measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, stopwatch),
+		vppChan:          vppChan,
+		swIfIndexes:      swIfIndexes,
+		dumpACLStopwatch: measure.GetTimeLog(acl_api.ACLInterfaceListDump{}, stopwatch),
+		setACLStopwatch:  measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, stopwatch),
 	}
 }
 
@@ -95,7 +95,6 @@ func (acl *ACLInterfacesVppCalls) RemoveIPEgressACLFromInterfaces(ACLIndex uint3
 }
 
 func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
-	var wasErr error
 	for _, aclInterface := range logicalReq.interfaces {
 		// Create acl list with new entry
 		var ACLs []uint32
@@ -105,7 +104,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 			continue
 		}
 		// All previously assigned ACLs have to be dumped and added to acl list
-		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
+		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpACLStopwatch)
 		if err != nil {
 			return err
 		}
@@ -146,21 +145,21 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 		reply := &acl_api.ACLInterfaceSetACLListReply{}
 		err = acl.vppChan.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
-			wasErr = err
+			return err
 		}
 		if reply.Retval != 0 {
-			log.Error("Setting up interface ACL list returned %v", reply.Retval)
+			return fmt.Errorf("setting up interface ACL list returned %v", reply.Retval)
 		}
 
 		log.WithFields(logging.Fields{"SwIdx index": msg.SwIfIndex, "AclIdx": logicalReq.aclIndex}).Debug("Interface set to ACL")
 
 		// Log ACLInterfaceSetACLList time measurement results
-		if acl.ifaceSetACLList != nil {
-			acl.ifaceSetACLList.LogTimeEntry(time.Since(start))
+		if acl.setACLStopwatch != nil {
+			acl.setACLStopwatch.LogTimeEntry(time.Since(start))
 		}
 	}
 
-	return wasErr
+	return nil
 }
 
 func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACLInterfaceLogicalReq, log logging.Logger) error {
@@ -174,7 +173,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 			continue
 		}
 		// All assigned ACLs have to be dumped
-		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpIfaces)
+		aclInterfaceDetails, err := DumpInterface(index, acl.vppChan, acl.dumpACLStopwatch)
 		if err != nil {
 			return err
 		}
@@ -208,14 +207,14 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 			wasErr = err
 		}
 		if reply.Retval != 0 {
-			log.Error("Setting up interface ACL list returned %v", reply.Retval)
+			wasErr = fmt.Errorf("setting up interface ACL list returned %v", reply.Retval)
 		}
 
 		log.WithFields(logging.Fields{"SwIdx index": msg.SwIfIndex, "AclIdx": logicalReq.aclIndex}).Debug("Interface removed from ACL")
 
 		// Log ACLInterfaceSetACLList time measurement results
-		if acl.ifaceSetACLList != nil {
-			acl.ifaceSetACLList.LogTimeEntry(time.Since(start))
+		if acl.setACLStopwatch != nil {
+			acl.setACLStopwatch.LogTimeEntry(time.Since(start))
 		}
 	}
 
@@ -250,8 +249,8 @@ func (acl *ACLInterfacesVppCalls) SetMacIPAclToInterface(aclIndex uint32, interf
 		log.Debugf("Interface %v set to L2 ACL %v as ingress", ingressInterface, aclIndex)
 
 		// Log MacipACLInterfaceAddDel time measurement results.
-		if acl.ifaceSetACLList != nil {
-			acl.ifaceSetACLList.LogTimeEntry(time.Since(start))
+		if acl.setACLStopwatch != nil {
+			acl.setACLStopwatch.LogTimeEntry(time.Since(start))
 		}
 	}
 
@@ -286,8 +285,8 @@ func (acl *ACLInterfacesVppCalls) RemoveMacIPIngressACLFromInterfaces(removedACL
 		log.Debugf("L2 ACL %v removed from interface %v (ingress)", removedACLIndex, ingressInterface)
 
 		// Log MacipACLInterfaceAddDel time measurement results.
-		if acl.ifaceSetACLList != nil {
-			acl.ifaceSetACLList.LogTimeEntry(time.Since(start))
+		if acl.setACLStopwatch != nil {
+			acl.setACLStopwatch.LogTimeEntry(time.Since(start))
 		}
 	}
 	return nil
