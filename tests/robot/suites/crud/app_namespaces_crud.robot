@@ -61,6 +61,7 @@ Check L4 Features Are Disabled
 
 Enable L4 Features
     vpp_ctl: Set L4 Features On Node    node=agent_vpp_1    enabled=true
+    Sleep    1s
 
 Check Default Namespace Was Added
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
@@ -72,12 +73,16 @@ Put Interface TAP1 And Namespace NS1 Associated With TAP1 And Check The Namespac
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET1}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
     Log    ${out}
+    ${out_lines1}=    Get Line Count    ${out}
+    Set Suite Variable    ${out_lines1}
     vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET1}    ${TAP1_SW_IF_INDEX}
 
 Put Already Existing Namespace NS1 And Check Namespace Was Not Added To Namespaces List
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET1}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
     Log    ${out}
+    ${out_lines2}=    Get Line Count    ${out}
+    Should Be Equal    ${out_lines1}    ${out_lines2}
     vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET1}    ${TAP1_SW_IF_INDEX}
 
 Update Namespace NS1 Secret And Check The Namespace's Update Is Reflected In Namespaces List
@@ -156,6 +161,7 @@ Put Namespace NS5 Associated With MEMIF1 Interface That Is Not Created And Check
 
 Put MEMIF1 Interface And Check Namespace NS5 Is Present In Namespaces List
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=memif1    mac=${MEMIF1_MAC}    master=true    id=1    ip=192.168.1.2    prefix=28    socket=default.sock
+    Sleep    1
     vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS5_ID}    5    ${SECRET1}    ${MEMIF1_SW_IF_INDEX}
 
 Put Namespace NS6 Associated With LOOP1 Interface That Is Not Created And Check NS6 Is Not Present In Namespaces List
@@ -165,6 +171,7 @@ Put Namespace NS6 Associated With LOOP1 Interface That Is Not Created And Check 
 
 Put LOOP1 Interface And Check Namespace NS6 Is Present In Namespaces List
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=${LOOP1_NAME}    mac=${LOOP1_MAC}    ip=${LOOP1_IP}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
+    Sleep    1
     vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS6_ID}    6    ${SECRET1}    ${LOOP1_SW_IF_INDEX}
 
 Put Namespace NS7 Associated With VXLAN1 Interface That Is Not Created And Check NS7 Is Not Present In Namespaces List
@@ -174,6 +181,7 @@ Put Namespace NS7 Associated With VXLAN1 Interface That Is Not Created And Check
 
 Put VXLAN1 Interface And Check Namespace NS7 Is Present In Namespaces List
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=${VXLAN1_NAME}    src=${VXLAN1_SRC}    dst=${VXLAN1_DST}    vni=${VXLAN1_VNI}
+    Sleep    1
     vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS7_ID}    7    ${SECRET1}    ${VXLAN1_SW_IF_INDEX}
 
 Do RESYNC 2
