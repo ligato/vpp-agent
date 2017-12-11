@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -118,8 +119,8 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
+		resyncErrs = append(resyncErrs, errs...)
 	}
 	if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
 		resyncErrs = append(resyncErrs, err)
