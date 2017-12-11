@@ -162,10 +162,10 @@ Start Node 1 and Node2
 Check Stuff After Node1 and Node2 Restart
     Check Stuff
 
-Check Ping Node1 -> Node2 After Node2 Restart
+Check Ping Node1 -> Node2 After Node1 and Node2 Restart
     linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Node2 -> Node1 After Node2 Restart
+Check Ping Node2 -> Node1 After Node1 and Node2 Restart
     linux: Check Ping    node_2    10.0.0.10
 
 Remove Node 1 and Node2 Again
@@ -181,10 +181,10 @@ Start Node 1 and Node2 Again
 Check Stuff After Node1 and Node2 Restart Again
     Check Stuff
 
-Check Ping Node1 -> Node2 After Node2 Restart Again
+Check Ping Node1 -> Node2 After Node1 and Node2 Restart Again
     linux: Check Ping    node_1    10.0.0.11
 
-Check Ping Node2 -> Node1 After Node2 Restart Again
+Check Ping Node2 -> Node1 After Node1 and Node2 Restart Again
     linux: Check Ping    node_2    10.0.0.10
 
 
