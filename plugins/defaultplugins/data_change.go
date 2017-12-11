@@ -42,8 +42,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType(), callback); err != nil {
-				return true, err
+			if err := plugin.dataChangeACL(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
 			}
 		} else {
 			return false, err
@@ -217,15 +217,15 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 
 // dataChangeACL propagates data change to the particular aclConfigurator.
 func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevValue *acl.AccessLists_Acl,
-	changeType datasync.PutDel, callback func(error)) error {
+	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.aclConfigurator.DeleteACL(prevValue, callback)
+		return plugin.aclConfigurator.DeleteACL(prevValue)
 	} else if diff {
-		return plugin.aclConfigurator.ModifyACL(prevValue, value, callback)
+		return plugin.aclConfigurator.ModifyACL(prevValue, value)
 	}
-	return plugin.aclConfigurator.ConfigureACL(value, callback)
+	return plugin.aclConfigurator.ConfigureACL(value)
 }
 
 // DataChangeIface propagates data change to the ifConfigurator.
