@@ -283,7 +283,7 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 		if !found {
 			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, nil)
 			plugin.ArpIdxSeq++
-			plugin.Log.Debug("ARP entry registered as %v", arpIdentifier(&entry))
+			plugin.Log.Debugf("ARP entry registered as %v", arpIdentifier(&entry))
 		}
 	}
 
