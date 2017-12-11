@@ -17,6 +17,8 @@ package dbadapter
 import (
 	"net"
 
+	"strconv"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -27,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
-	"strconv"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -149,8 +150,8 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
-// StnRules adds a request to create or update STN rule.
-func (dsl *PutDSL) StnRules(val *stn.StnRule) defaultplugins.PutDSL {
+// StnRule adds a request to create or update STN rule.
+func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
 	return dsl
 }
@@ -223,9 +224,9 @@ func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 	return dsl
 }
 
-// StnRules adds Stn rules to the RESYNC request.
-func (dsl *DeleteDSL) StnRules(ruleName string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(stn.Key(ruleName))
+// L4Features delete request for the L4Features
+func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l4.FeatureKey())
 	return dsl
 }
 
@@ -235,15 +236,15 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.Delete
 	return dsl
 }
 
-// L4Features delete request for the L4Features
-func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l4.FeatureKey())
-	return dsl
-}
-
 // AppNamespace adds a request to delete an existing VPP Application Namespace.
 func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(l4.AppNamespacesKey(id))
+	return dsl
+}
+
+// StnRule adds request to delete Stn rule.
+func (dsl *DeleteDSL) StnRule(ruleName string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(stn.Key(ruleName))
 	return dsl
 }
 
