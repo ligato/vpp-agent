@@ -47,7 +47,6 @@ linux: Check Interface With IP Presence
     ${result}=         Check Linux Interface IP Presence    ${ints}    ${mac}   ${ip}
     Should Be Equal    ${result}    ${status}
 
-
 linux: Interface Is Created
     [Arguments]    ${node}    ${mac}                    
     Log Many       ${node}    ${mac} 
@@ -91,7 +90,6 @@ linux: Run TCP Ping Server On Node
     Log Many           ${node}   ${port}
     ${out}=            Execute In Container Background    ${node}    ${PINGSERVER_TCP} ${port}
 
-
 linux: Run UDP Ping Server On Node
     [Arguments]    ${node}   ${port}
     [Documentation]    Run UDP PingServer as listener on node ${node}
@@ -124,6 +122,7 @@ linux: UDPPing
     ${out}=            Write Command to Container    ${node}    ${UDPPING} ${ip} ${port}
     Should Contain     ${out}    Connection to ${ip} ${port} port [udp/*] succeeded!
     Should Not Contain    ${out}    Connection refused
+
 linux: UDPPingNot
     [Arguments]        ${node}    ${ip}     ${port}
     Log Many           ${node}    ${ip}     ${port}

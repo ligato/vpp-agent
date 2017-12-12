@@ -129,7 +129,7 @@ Show Interfaces Address On ${node}
     ${out}=   vpp_term: Show Interfaces Address    ${node}
     Log Many  ${out}
 
-Create Linux Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop}
+Create Linux Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
     Log Many        ${node}    ${ip}   ${prefix}    ${next_hop}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/linux_static_route.json
     Log Many        ${data}
