@@ -60,8 +60,6 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 				err := plugin.PublishStatistics.Put(key, ifState.State)
 				if err != nil {
 					plugin.Log.Error(err)
-				} else {
-					plugin.Log.Debug("Sending Messaging notification")
 				}
 			}
 
@@ -70,8 +68,6 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
 					plugin.Log.Error(err)
-				} else {
-					plugin.Log.Debug("Sending Messaging notification")
 				}
 			}
 

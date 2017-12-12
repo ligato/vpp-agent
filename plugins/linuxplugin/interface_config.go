@@ -131,22 +131,23 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 }
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
-func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfaces_Interface) error {
-	var wasError error
+func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfaces_Interface) []error {
+	var wasError []error
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 
 	// Step 1: Create missing Linux interfaces and recreate existing ones
 	for _, iface := range interfaces {
 		err := plugin.ConfigureLinuxInterface(iface)
 		if err != nil {
-			wasError = err
+			log.DefaultLogger().Error(err)
+			wasError = append(wasError, err)
 		}
 	}
 
 	// Step 2: Dump pre-existing and currently not managed interfaces in the current namespace.
 	err := plugin.LookupLinuxInterfaces()
 	if err != nil {
-		return err
+		wasError = append(wasError, err)
 	}
 
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
@@ -671,6 +672,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			if err == nil {
 				log.DefaultLogger().Info("Successfully established connection with the docker daemon.")
 			} else {
+				log.DefaultLogger().Info("Trying to connect to the docker daemon ... ")
 				goto nextRefresh
 			}
 		}
@@ -694,6 +696,8 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 				} else if details.State.Status == "created" {
 					nextCreated = append(nextCreated, container)
 				}
+			} else {
+				log.DefaultLogger().Debugf("Inspect container ID %v failed: %v", container, err)
 			}
 		}
 		created = nextCreated
@@ -709,7 +713,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		containers, err = plugin.dockerClient.ListContainers(listOpts)
 		if err != nil {
 			log.DefaultLogger().Errorf("Error listing docker containers: %v", err)
-			if err, ok := err.(*docker.Error); ok && err.Status == 500 {
+			if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
 				log.DefaultLogger().Debugf("Clearing since: %v", since)
 				since = ""
 			}
@@ -721,6 +725,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 				// inspect the container to get the list of defined environment variables
 				details, err := plugin.dockerClient.InspectContainer(container.ID)
 				if err != nil {
+					log.DefaultLogger().Debugf("Inspect container %v failed: %v", container.ID, err)
 					continue
 				}
 				plugin.detectMicroservice(nsMgmtCtx, details)

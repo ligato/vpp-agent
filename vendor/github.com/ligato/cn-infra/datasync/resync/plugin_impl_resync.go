@@ -104,7 +104,7 @@ func (plugin *Plugin) startSingleResync(resyncName string, reg Registration) {
 	reg.StatusChan() <- started
 	select {
 	case <-started.ReceiveAck():
-	case <-time.After(5 * time.Second):
+	case <-time.After(20 * time.Second):
 		plugin.Log.WithField("regName", resyncName).Warn("Timeout of ACK")
 	}
 }

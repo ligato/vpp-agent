@@ -88,6 +88,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 				Info("Interface deletion ", err)
 
 			if err != nil {
+				log.DefaultLogger().Error(err)
 				wasError = err
 			}
 		}
@@ -102,6 +103,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 		if found && foundDump {
 			err := plugin.modifyVPPInterface(nbIface, &vppIface.Interfaces_Interface, swIfIdx, vppIface.Type)
 			if err != nil {
+				log.DefaultLogger().Error(err)
 				wasError = err
 			}
 			if !plugin.afPacketConfigurator.IsPendingAfPacket(nbIface) {
@@ -117,6 +119,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfaces []*intf.Interfaces_Interfac
 	for _, nbIface := range toBeConfigured {
 		err := plugin.ConfigureVPPInterface(nbIface)
 		if err != nil {
+			log.DefaultLogger().Error(err)
 			wasError = err
 		}
 	}
