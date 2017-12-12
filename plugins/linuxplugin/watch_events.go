@@ -45,14 +45,14 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			req := resyncParseEvent(resyncEv)
 			err := plugin.resyncPropageRequest(req)
 
-			resyncEv.Done(err)
-
 			// optional hard sleep after linux resync
 			if sleepAfterLinuxResync > 0 {
 				log.DefaultLogger().Warnf("starting sleep after linux resync for %v", sleepAfterLinuxResync)
 				time.Sleep(sleepAfterLinuxResync)
 				log.DefaultLogger().Warnf("finished sleep after linux resync")
 			}
+
+			resyncEv.Done(err)
 
 		case dataChng := <-plugin.changeChan:
 			err := plugin.changePropagateRequest(dataChng)
