@@ -131,8 +131,8 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 }
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
-func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfaces_Interface) error {
-	var wasError error
+func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfaces_Interface) []error {
+	var wasError []error
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 
 	// Step 1: Create missing Linux interfaces and recreate existing ones
@@ -140,14 +140,14 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 		err := plugin.ConfigureLinuxInterface(iface)
 		if err != nil {
 			log.DefaultLogger().Error(err)
-			wasError = err
+			wasError = append(wasError, err)
 		}
 	}
 
 	// Step 2: Dump pre-existing and currently not managed interfaces in the current namespace.
 	err := plugin.LookupLinuxInterfaces()
 	if err != nil {
-		return err
+		wasError = append(wasError, err)
 	}
 
 	log.DefaultLogger().WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)

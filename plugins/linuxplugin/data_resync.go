@@ -15,6 +15,7 @@
 package linuxplugin
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
@@ -40,9 +41,22 @@ func NewDataResyncReq() *DataResyncReq {
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	log.DefaultLogger().Info("resync the Linux Configuration")
 
-	plugin.ifConfigurator.Resync(req.Interfaces)
+	// store all resync errors
+	var resyncErrs []error
 
-	return nil
+	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
+		resyncErrs = append(resyncErrs, errs...)
+	}
+
+	// log errors if any
+	if len(resyncErrs) == 0 {
+		return nil
+	}
+	for _, err := range resyncErrs {
+		log.DefaultLogger().Error(err)
+	}
+
+	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 
 func resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
