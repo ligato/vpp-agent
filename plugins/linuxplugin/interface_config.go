@@ -139,6 +139,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*intf.LinuxInterfa
 	for _, iface := range interfaces {
 		err := plugin.ConfigureLinuxInterface(iface)
 		if err != nil {
+			log.DefaultLogger().Error(err)
 			wasError = err
 		}
 	}
