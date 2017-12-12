@@ -25,6 +25,7 @@ import (
 type Plugin struct {
 	Deps
 
+	regOrder      []string
 	registrations map[string]Registration
 	access        sync.Mutex
 }
@@ -76,6 +77,8 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 		plugin.Log.WithField("resyncName", resyncName).Panic("You are trying to register same resync twice")
 		return nil
 	}
+	// ensure that resync is triggered in the same order as the plugins were registered
+	plugin.regOrder = append(plugin.regOrder, resyncName)
 
 	reg := NewRegistration(resyncName, make(chan StatusEvent, 0)) /*Zero to have back pressure*/
 	plugin.registrations[resyncName] = reg
@@ -84,15 +87,19 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 
 // call callback on plugins to create/delete/modify objects
 func (plugin *Plugin) startResync() {
+	plugin.Log.Info("Resync order", plugin.regOrder)
 
 	startTime := time.Now()
-	for regName, reg := range plugin.registrations {
-		resyncPartStart := time.Now()
+	for _, regName := range plugin.regOrder {
+		if reg, found := plugin.registrations[regName]; found {
+			resyncPartStart := time.Now()
 
-		plugin.startSingleResync(regName, reg)
+			plugin.startSingleResync(regName, reg)
 
-		resyncPart := time.Since(resyncPartStart)
-		plugin.Log.WithField("durationInNs", resyncPart.Nanoseconds()).Info("Resync of ", regName, " took ", resyncPart)
+			resyncPart := time.Since(resyncPartStart)
+
+			plugin.Log.WithField("durationInNs", resyncPart.Nanoseconds()).Info("Resync of ", regName, " took ", resyncPart)
+		}
 	}
 
 	resyncTime := time.Since(startTime)
