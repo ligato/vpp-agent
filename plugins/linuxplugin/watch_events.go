@@ -48,7 +48,9 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 			// optional hard sleep after linux resync
 			if sleepAfterLinuxResync > 0 {
+				plugin.Log.Warnf("starting sleep after linux resync for %v", sleepAfterLinuxResync)
 				time.Sleep(sleepAfterLinuxResync)
+				plugin.Log.Warnf("finished sleep after linux resync")
 			}
 
 		case dataChng := <-plugin.changeChan:
