@@ -671,6 +671,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			if err == nil {
 				log.DefaultLogger().Info("Successfully established connection with the docker daemon.")
 			} else {
+				log.DefaultLogger().Info("Trying to connect to the docker daemon ... ")
 				goto nextRefresh
 			}
 		}
@@ -694,6 +695,8 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 				} else if details.State.Status == "created" {
 					nextCreated = append(nextCreated, container)
 				}
+			} else {
+				log.DefaultLogger().Debugf("Inspect container ID %v failed: %v", container, err)
 			}
 		}
 		created = nextCreated
@@ -721,6 +724,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 				// inspect the container to get the list of defined environment variables
 				details, err := plugin.dockerClient.InspectContainer(container.ID)
 				if err != nil {
+					log.DefaultLogger().Debugf("Inspect container %v failed: %v", container.ID, err)
 					continue
 				}
 				plugin.detectMicroservice(nsMgmtCtx, details)
