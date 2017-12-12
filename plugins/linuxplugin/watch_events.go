@@ -15,9 +15,24 @@
 package linuxplugin
 
 import (
+	"os"
+	"strconv"
+	"time"
+
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"golang.org/x/net/context"
 )
+
+var (
+	sleepAfterLinuxResync = time.Duration(0)
+)
+
+func init() {
+	sec, err := strconv.Atoi(os.Getenv("SLEEP_AFTER_LINUX_RESYNC"))
+	if err == nil && sec > 0 {
+		sleepAfterLinuxResync = time.Second * time.Duration(sec)
+	}
+}
 
 // WatchEvents goroutine is used to watch for changes in the northbound configuration
 func (plugin *Plugin) watchEvents(ctx context.Context) {
@@ -31,6 +46,11 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			err := plugin.resyncPropageRequest(req)
 
 			resyncEv.Done(err)
+
+			// optional hard sleep after linux resync
+			if sleepAfterLinuxResync > 0 {
+				time.Sleep(sleepAfterLinuxResync)
+			}
 
 		case dataChng := <-plugin.changeChan:
 			err := plugin.changePropagateRequest(dataChng)
