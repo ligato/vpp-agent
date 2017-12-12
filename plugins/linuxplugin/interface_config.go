@@ -712,7 +712,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		containers, err = plugin.dockerClient.ListContainers(listOpts)
 		if err != nil {
 			log.DefaultLogger().Errorf("Error listing docker containers: %v", err)
-			if err, ok := err.(*docker.Error); ok && err.Status == 500 {
+			if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
 				log.DefaultLogger().Debugf("Clearing since: %v", since)
 				since = ""
 			}
