@@ -715,7 +715,12 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
 
-	msCtx := &MicroserviceCtx{nsMgmtCtx, created, since, lastInspected}
+	msCtx := &MicroserviceCtx{
+		nsMgmtCtx:     nsMgmtCtx,
+		created:       created,
+		since:         since,
+		lastInspected: lastInspected,
+	}
 
 	for {
 		if plugin.dockerClient == nil {
@@ -987,13 +992,13 @@ func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool
 		_, err := net.InterfaceByName(iface)
 		if attempt == max {
 			plugin.Log.Errorf("veth %v does not exist", iface)
-			time.Sleep(vethRefreshPeriod)
 			return false
 		}
 		if err == nil {
 			plugin.Log.Debugf("veth %v exists, found on %v attempt", iface, attempt)
 			return true
 		}
+		time.Sleep(vethRefreshPeriod)
 	}
 
 	plugin.Log.Errorf("veth %v does not exist", iface)
@@ -1009,10 +1014,11 @@ func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 		}
 		if err == nil {
 			if strings.Contains(veth.Flags.String(), net.FlagUp.String()) {
-				plugin.Log.Debugf("veth %v is UP", iface)
+				plugin.Log.Debugf("veth %v is UP on %v attempt", iface, attempt)
 				return true
 			}
 		}
+		time.Sleep(vethRefreshPeriod)
 	}
 
 	plugin.Log.Errorf("veth %v is DOWN", iface)
