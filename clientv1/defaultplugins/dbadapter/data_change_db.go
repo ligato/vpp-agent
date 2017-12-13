@@ -15,8 +15,6 @@
 package dbadapter
 
 import (
-	"net"
-
 	"strconv"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -119,8 +117,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
-	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr), val)
+	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr), val)
 	return dsl
 }
 
@@ -214,8 +211,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) defaultplugins.DeleteDSL {
-	_, dstNet, _ := net.ParseCIDR(dstAddr)
-	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstNet, nextHopAddr))
+	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddr, nextHopAddr))
 	return dsl
 }
 

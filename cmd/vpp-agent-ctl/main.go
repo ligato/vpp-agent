@@ -28,8 +28,6 @@ import (
 
 	"github.com/namsral/flag"
 
-	"net"
-
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
@@ -450,24 +448,13 @@ func createRoute(db keyval.ProtoBroker) {
 		},
 	}
 
-	_, dstNetAddr, err := net.ParseCIDR(routes.Route[0].DstIpAddr)
-	if err != nil {
-		log.Errorf("Error parsing address %v", routes.Route[0].DstIpAddr)
-		return
-	}
-
-	key := l3.RouteKey(routes.Route[0].VrfId, dstNetAddr, routes.Route[0].NextHopAddr)
+	key := l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr)
 	db.Put(key, routes.Route[0])
 	log.Printf("Adding route %v", key)
 }
 
 func deleteRoute(db keyval.ProtoBroker, routeDstIP string, routeNhIP string) {
-	_, dstNetAddr, err := net.ParseCIDR(routeDstIP)
-	if err != nil {
-		log.Errorf("Error parsing address %v", routeDstIP)
-		return
-	}
-	path := l3.RouteKey(0, dstNetAddr, "192.168.1.13")
+	path := l3.RouteKey(0, routeDstIP, "192.168.1.13")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }

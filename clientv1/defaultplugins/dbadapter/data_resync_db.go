@@ -15,8 +15,6 @@
 package dbadapter
 
 import (
-	"net"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -113,8 +111,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
-	key := l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)
+	key := l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
