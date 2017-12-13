@@ -712,6 +712,12 @@ func (plugin *Plugin) AfterInit() error {
 		return err
 	}
 
+	if plugin.StatusCheck != nil {
+		// Register the plugin to status check. Periodical probe is not needed,
+		// data change will be reported when changed
+		plugin.StatusCheck.Register(plugin.PluginName, nil)
+	}
+
 	plugin.Log.Debug("vpp plugins AfterInit finished successfully")
 
 	return nil
