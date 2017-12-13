@@ -15,7 +15,7 @@
 package grpcadapter
 
 import (
-	"net"
+	"strconv"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
@@ -27,7 +27,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"golang.org/x/net/context"
-	"strconv"
 )
 
 // NewDataResyncDSL is a constructor.
@@ -115,8 +114,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
-	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)] = val
+	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
 
 	return dsl
 }

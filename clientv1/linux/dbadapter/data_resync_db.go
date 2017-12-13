@@ -23,8 +23,10 @@ import (
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
@@ -131,6 +133,30 @@ func (dsl *DataResyncDSL) StaticRoute(staticRoute *vpp_l3.StaticRoutes_Route) li
 // ACL adds VPP Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(acl *vpp_acl.AccessLists_Acl) linux.DataResyncDSL {
 	dsl.vppDataResync.ACL(acl)
+	return dsl
+}
+
+// Arp adds VPP L3 ARP to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.DataResyncDSL {
+	dsl.vppDataResync.Arp(arp)
+	return dsl
+}
+
+// L4Features adds L4 features to the RESYNC request
+func (dsl *DataResyncDSL) L4Features(val *vpp_l4.L4Features) linux.DataResyncDSL {
+	dsl.vppDataResync.L4Features(val)
+	return dsl
+}
+
+// AppNamespace adds VPP Application namespaces to the RESYNC request
+func (dsl *DataResyncDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) linux.DataResyncDSL {
+	dsl.vppDataResync.AppNamespace(appNs)
+	return dsl
+}
+
+// StnRule adds Stn rule to the RESYNC request.
+func (dsl *DataResyncDSL) StnRule(stn *vpp_stn.StnRule) linux.DataResyncDSL {
+	dsl.vppDataResync.StnRule(stn)
 	return dsl
 }
 

@@ -15,16 +15,15 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-
-	"net"
-
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
@@ -83,6 +82,14 @@ type PutDSL interface {
 	StaticRoute(val *vpp_l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
+	// Arp adds a request to create or update VPP L3 ARP.
+	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) PutDSL
+	// L4Features adds a request to enable or disable L4 features
+	L4Features(val *vpp_l4.L4Features) PutDSL
+	// AppNamespace adds a request to create or update VPP Application namespace
+	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) PutDSL
+	// StnRule adds a request to create or update VPP Stn rule.
+	StnRule(stn *vpp_stn.StnRule) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -99,9 +106,9 @@ type DeleteDSL interface {
 	// interface.
 	LinuxInterface(ifaceName string) DeleteDSL
 	// LinuxArpEntry adds a request to crete or update Linux ARP entry
-	LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) DeleteDSL
+	LinuxArpEntry(entryName string) DeleteDSL
 	// LinuxRoute adds a request to crete or update Linux route
-	LinuxRoute(val *l3.LinuxStaticRoutes_Route) DeleteDSL
+	LinuxRoute(routeName string) DeleteDSL
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
@@ -122,9 +129,18 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
+	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
+	// L4Features adds a request to enable or disable L4 features
+	L4Features() DeleteDSL
+	// AppNamespace adds a request to delete VPP Application namespace
+	// Note: current version does not support application namespace deletion
+	AppNamespace(id string) DeleteDSL
+	// Arp adds a request to delete an existing VPP L3 ARP.
+	Arp(ifaceName string, ipAddr string) DeleteDSL
+	// StnRule adds a request to delete an existing VPP Stn rule.
+	StnRule(ruleName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

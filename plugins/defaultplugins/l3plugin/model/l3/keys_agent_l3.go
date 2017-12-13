@@ -57,9 +57,10 @@ func ArpKeyPrefix() string {
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
-func RouteKey(vrf uint32, dstAddr *net.IPNet, nextHopAddr string) string {
-	dstNetAddr := dstAddr.IP.String()
-	dstNetMask, _ := dstAddr.Mask.Size()
+func RouteKey(vrf uint32, dstAddr string, nextHopAddr string) string {
+	_, dstNet, _ := net.ParseCIDR(dstAddr)
+	dstNetAddr := dstNet.IP.String()
+	dstNetMask, _ := dstNet.Mask.Size()
 	key := RoutesPrefix
 	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
 	key = strings.Replace(key, "{net}", dstNetAddr, 1)

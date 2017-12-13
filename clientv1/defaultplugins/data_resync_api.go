@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -57,6 +58,8 @@ type DataResyncDSL interface {
 	L4Features(val *l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request
 	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) DataResyncDSL
+	// StnRule adds Stn rule to the RESYNC request.
+	StnRule(stn *stn.StnRule) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply

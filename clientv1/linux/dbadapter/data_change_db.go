@@ -15,21 +15,21 @@
 package dbadapter
 
 import (
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
-	"net"
-
-	"github.com/ligato/cn-infra/db/keyval"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -152,6 +152,30 @@ func (dsl *PutDSL) ACL(acl *vpp_acl.AccessLists_Acl) linux.PutDSL {
 	return dsl
 }
 
+// Arp adds a request to create or update VPP L3 ARP.
+func (dsl *PutDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.PutDSL {
+	dsl.vppPut.Arp(arp)
+	return dsl
+}
+
+// L4Features adds a request to enable or disable L4 features
+func (dsl *PutDSL) L4Features(val *vpp_l4.L4Features) linux.PutDSL {
+	dsl.vppPut.L4Features(val)
+	return dsl
+}
+
+// AppNamespace adds a request to create or update VPP Application namespace
+func (dsl *PutDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) linux.PutDSL {
+	dsl.vppPut.AppNamespace(appNs)
+	return dsl
+}
+
+// StnRule adds a request to create or update VPP Stn rule.
+func (dsl *PutDSL) StnRule(stn *vpp_stn.StnRule) linux.PutDSL {
+	dsl.vppPut.StnRule(stn)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linux.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -170,14 +194,14 @@ func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linux.DeleteDSL {
 }
 
 // LinuxArpEntry adds a request to delete Linux ARP entry.
-func (dsl *DeleteDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linux.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticArpKey(val.Name))
+func (dsl *DeleteDSL) LinuxArpEntry(entryName string) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticArpKey(entryName))
 	return dsl
 }
 
 // LinuxRoute adds a request to delete Linux route.
-func (dsl *DeleteDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linux.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticRouteKey(val.Name))
+func (dsl *DeleteDSL) LinuxRoute(routeName string) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticRouteKey(routeName))
 	return dsl
 }
 
@@ -227,14 +251,39 @@ func (dsl *DeleteDSL) XConnect(rxIfaceName string) linux.DeleteDSL {
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddrInput net.IP) linux.DeleteDSL {
-	dsl.vppDelete.StaticRoute(vrf, dstAddrInput, nextHopAddrInput)
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) linux.DeleteDSL {
+	dsl.vppDelete.StaticRoute(vrf, dstAddr, nextHopAddr)
 	return dsl
 }
 
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) linux.DeleteDSL {
 	dsl.vppDelete.ACL(aclName)
+	return dsl
+}
+
+// L4Features adds a request to enable or disable L4 features
+func (dsl *DeleteDSL) L4Features() linux.DeleteDSL {
+	dsl.vppDelete.L4Features()
+	return dsl
+}
+
+// AppNamespace adds a request to delete VPP Application namespace
+// Note: current version does not support application namespace deletion
+func (dsl *DeleteDSL) AppNamespace(id string) linux.DeleteDSL {
+	dsl.vppDelete.AppNamespace(id)
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linux.DeleteDSL {
+	dsl.vppDelete.Arp(ifaceName, ipAddr)
+	return dsl
+}
+
+// StnRule adds a request to delete an existing VPP Stn rule.
+func (dsl *DeleteDSL) StnRule(ruleName string) linux.DeleteDSL {
+	dsl.vppDelete.StnRule(ruleName)
 	return dsl
 }
 

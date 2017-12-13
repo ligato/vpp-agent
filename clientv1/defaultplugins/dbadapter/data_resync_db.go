@@ -15,14 +15,13 @@
 package dbadapter
 
 import (
-	"net"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
@@ -112,8 +111,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
-	key := l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)
+	key := l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -150,6 +148,15 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 // Arp adds L3 ARP entry to the RESYNC request.
 func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
 	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// StnRule adds Stn rule to the RESYNC request.
+func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+	key := stn.Key(val.RuleName)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

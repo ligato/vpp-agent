@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"sort"
 	"strings"
 
@@ -262,10 +261,7 @@ func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	fibRoot.Route = fibData.Routes
 	var keyset []string
 	for _, fib := range fibData.Routes {
-		_, dstNetAddr, err := net.ParseCIDR(fib.DstIpAddr)
-		if err == nil {
-			keyset = append(keyset, l3.RouteKey(fib.VrfId, dstNetAddr, fib.NextHopAddr))
-		}
+		keyset = append(keyset, l3.RouteKey(fib.VrfId, fib.DstIpAddr, fib.NextHopAddr))
 	}
 	sort.Strings(keyset)
 
