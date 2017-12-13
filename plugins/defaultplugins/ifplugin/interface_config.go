@@ -58,8 +58,6 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-const dummyMode = -1
-
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of interfaces as modelled by the proto file "../model/interfaces/interfaces.proto"
 // and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1interface".
@@ -85,8 +83,6 @@ type InterfaceConfigurator struct {
 	vppCh *govppapi.Channel
 
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
-
-	resyncDoneOnce bool
 }
 
 // Init members (channels...) and start go routines
@@ -118,8 +114,8 @@ func (plugin *InterfaceConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
-// LookupVPPInterfaces looks up all VPP interfaces
-func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
+// PropagateIfDetailsToStatus looks up all VPP interfaces
+func (plugin *InterfaceConfigurator) PropagateIfDetailsToStatus() error {
 	start := time.Now()
 	req := &interfaces.SwInterfaceDump{}
 	reqCtx := plugin.vppCh.SendMultiRequest(req)
@@ -144,7 +140,7 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 			continue
 		}
 
-		// propagate interface state information
+		// Propagate interface state information to notification channel.
 		plugin.notifChan <- msg
 	}
 
@@ -193,7 +189,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	var errs []error
 
-	//rx mode
+	// rx mode
 	if err := plugin.configRxModeForInterface(iface, ifIdx); err != nil {
 		errs = append(errs, err)
 	}
@@ -267,7 +263,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// load interface state data for newly added interface (no way to filter by swIfIndex, need to dump all of them)
-	plugin.LookupVPPInterfaces()
+	plugin.PropagateIfDetailsToStatus()
 
 	l.Info("Interface configuration done")
 
@@ -310,7 +306,7 @@ func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interf
 }
 
 /**
-Call concrete vpp API method for setting rx-mode
+Call specific vpp API method for setting rx-mode
 */
 func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings) error {
 	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.Log, plugin.vppCh,
@@ -596,12 +592,9 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 	newRxSettings := newIntf.RxModeSettings
 	if oldRxSettings != newRxSettings {
 		var oldRxMode intf.RxModeType
-		if oldRxSettings == nil {
-			oldRxMode = dummyMode
-		} else {
+		if oldRxSettings != nil {
 			oldRxMode = oldRxSettings.RxMode
 		}
-
 		if newRxSettings != nil {
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:

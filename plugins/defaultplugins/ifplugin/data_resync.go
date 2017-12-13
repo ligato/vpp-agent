@@ -48,7 +48,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	persistentIfs := nametoidx.NewNameToIdx(plugin.Log, core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
 	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), persistentIfs)
 	if err != nil {
-		return err
+		return []error{err}
 	}
 
 	// Register default and ethernet interfaces
@@ -66,7 +66,6 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
 		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
 		// In such a case, there is nothing to correlate with. All existing interfaces will be removed
-		var wasErr error
 		for vppIfIdx, vppIf := range configurableVppIfs {
 			// register interface before deletion (to keep state consistent)
 			vppAgentIf := &vppIf.Interfaces_Interface
@@ -74,22 +73,21 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
 			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
 				plugin.Log.Errorf("Error while removing interface: %v", err)
-				wasErr = err
+				errs = append(errs, err)
 			}
 		}
 		// Configure NB interfaces
 		for _, nbIf := range nbIfs {
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
 				plugin.Log.Errorf("Error while configuring interface: %v", err)
-				wasErr = err
+				errs = append(errs, err)
 			}
 		}
-		return wasErr
+		return
 	}
 
 	// Find correlation between VPP, ETCD NB and persistent mapping. Update existing interfaces
 	// and configure new ones
-	var wasErr error
 	plugin.Log.Debugf("Using persistent mapping to resync %v interfaces", len(configurableVppIfs))
 	for _, nbIf := range nbIfs {
 		persistIdx, _, found := persistentIfs.LookupIdx(nbIf.Name)
@@ -116,14 +114,14 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 				// Interface exists in mapping but not in vpp.
 				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
 					plugin.Log.Errorf("Error while configuring interface: %v", err)
-					wasErr = err
+					errs = append(errs, err)
 				}
 			}
 		} else {
 			// a new interface (missing in persistent mapping)
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
 				plugin.Log.Errorf("Error while configuring interface: %v", err)
-				wasErr = err
+				errs = append(errs, err)
 			}
 		}
 	}
@@ -140,7 +138,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
 			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
 				plugin.Log.Errorf("Error while removing interface: %v", err)
-				wasErr = err
+				errs = append(errs, err)
 			}
 			plugin.Log.Debugf("Removed unknown interface with index %v", vppIfIdx)
 		}
@@ -148,7 +146,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end.")
 
-	return wasErr
+	return
 }
 
 // VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except
