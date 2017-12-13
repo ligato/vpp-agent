@@ -42,9 +42,19 @@ import (
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
 const (
-	dockerRefreshPeriod = 3 * time.Second
-	vethConfigNamespace = "veth-cfg-ns"
+	dockerRefreshPeriod     = 3 * time.Second
+	vethRefreshPeriod       = 50 * time.Millisecond
+	vethRefreshAttemptCount = 10
+	vethConfigNamespace     = "veth-cfg-ns"
 )
+
+// MicroserviceCtx contains all data required to handle microservice changes
+type MicroserviceCtx struct {
+	nsMgmtCtx     *linuxcalls.NamespaceMgmtCtx
+	created       []string
+	since         string
+	lastInspected int64
+}
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
 type LinuxInterfaceConfig struct {
@@ -105,14 +115,20 @@ type LinuxInterfaceConfigurator struct {
 	ifWatcherNotifCh chan netlink.LinkUpdate
 	ifWatcherDoneCh  chan struct{}
 
+	/* channel to send microservice updates */
+	microserviceChan chan *MicroserviceCtx
+
 	/* time measurement */
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
 }
 
 // Init linuxplugin and start go routines.
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
+func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) error {
 	plugin.Log.Debug("Initializing Linux Interface configurator")
 	plugin.ifIndexes = ifIndexes
+
+	// Init channel
+	plugin.microserviceChan = msChan
 
 	// Allocate caches.
 	plugin.intfByName = make(map[string]*LinuxInterfaceConfig)
@@ -210,7 +226,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	}
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
-	err = plugin.addVethInterface(nsMgmtCtx, iface, peer.config)
+	err = plugin.addVethInterfacePair(nsMgmtCtx, iface, peer.config)
 	if err != nil {
 		return err
 	}
@@ -308,6 +324,12 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		if nil != err {
 			wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 		}
+	}
+
+	// Check that the interface is up
+	// verify veth pair interface existence
+	if isUp := plugin.vethIsUp(iface.config.Name, vethRefreshAttemptCount); !isUp {
+		return fmt.Errorf("veth interface %v is DOWN", iface.config.Name)
 	}
 
 	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &intf.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})
@@ -487,7 +509,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	}
 	defer revertNs()
 
-	err = linuxcalls.DelVethInterface(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.DelVethInterfacePair(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to delete VETH interface: %v", err)
 	}
@@ -536,7 +558,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		return err
 	}
 	plugin.Log.WithFields(log.Fields{"ifName": vethName, "peerName": peerName}).Debug("Removing obsolete VETH interface")
-	err = linuxcalls.DelVethInterface(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.DelVethInterfacePair(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -545,8 +567,8 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	return nil
 }
 
-// addVethInterface creates a new VETH interface with a "clean" configuration.
-func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
+// addVethInterfacePair creates a new VETH interface with a "clean" configuration.
+func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
 	// Prepare generic vet cfg namespace object
 	ifaceNs := linuxcalls.ToGenericNs(plugin.vethCfgNamespace)
 
@@ -574,10 +596,19 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls
 	if err != nil {
 		return err
 	}
-	err = linuxcalls.AddVethInterface(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.AddVethInterfacePair(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to create new VETH: %v", err)
 	}
+
+	// verify veth pair interface existence
+	if exists := plugin.vethExists(iface.Name, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	}
+	if exists := plugin.vethExists(peer.Name, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	}
+
 	return nil
 }
 
@@ -684,12 +715,14 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
 
-	for {
-		var newest int64
-		var listOpts docker.ListContainersOptions
-		var containers []docker.APIContainers
-		nextCreated := []string{}
+	msCtx := &MicroserviceCtx{
+		nsMgmtCtx:     nsMgmtCtx,
+		created:       created,
+		since:         since,
+		lastInspected: lastInspected,
+	}
 
+	for {
 		if plugin.dockerClient == nil {
 			plugin.dockerClient, err = docker.NewClientFromEnv()
 			if err == nil {
@@ -700,81 +733,92 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 		}
 
-		// First check if any microservice has terminated.
-		plugin.cfgLock.Lock()
-		for container := range plugin.microserviceByID {
-			details, err := plugin.dockerClient.InspectContainer(container)
-			if err != nil || !details.State.Running {
-				plugin.processTerminatedMicroservice(nsMgmtCtx, container)
-			}
-		}
-		plugin.cfgLock.Unlock()
-
-		// Now check if previously created containers have transitioned to the state "running".
-		for _, container := range created {
-			details, err := plugin.dockerClient.InspectContainer(container)
-			if err == nil {
-				if details.State.Running {
-					plugin.detectMicroservice(nsMgmtCtx, details)
-				} else if details.State.Status == "created" {
-					nextCreated = append(nextCreated, container)
-				}
-			} else {
-				plugin.Log.Debugf("Inspect container ID %v failed: %v", container, err)
-			}
-		}
-		created = nextCreated
-
-		// Finally inspect newly created containers.
-		listOpts = docker.ListContainersOptions{}
-		listOpts.All = true
-		listOpts.Filters = map[string][]string{}
-		if since != "" {
-			listOpts.Filters["since"] = []string{since}
-		}
-
-		containers, err = plugin.dockerClient.ListContainers(listOpts)
-		if err != nil {
-			plugin.Log.Errorf("Error listing docker containers: %v", err)
-			if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
-				plugin.Log.Debugf("Clearing since: %v", since)
-				since = ""
-			}
-			goto nextRefresh
-		}
-
-		for _, container := range containers {
-			plugin.Log.Debugf("processing new container %v with state %v", container.ID, container.State)
-			if container.State == "running" && container.Created > lastInspected {
-				// Inspect the container to get the list of defined environment variables.
-				details, err := plugin.dockerClient.InspectContainer(container.ID)
-				if err != nil {
-					plugin.Log.Debugf("Inspect container %v failed: %v", container.ID, err)
-					continue
-				}
-				plugin.detectMicroservice(nsMgmtCtx, details)
-			}
-			if container.State == "created" {
-				created = append(created, container.ID)
-			}
-			if container.Created > newest {
-				newest = container.Created
-				since = container.ID
-			}
-		}
-
-		if newest > lastInspected {
-			lastInspected = newest
-		}
+		// process changes
+		plugin.microserviceChan <- msCtx
 
 	nextRefresh:
 		// Sleep before another refresh.
 		select {
 		case <-time.After(dockerRefreshPeriod):
 			continue
-		case <-ctx.Done():
+		case <-plugin.ctx.Done():
 			return
 		}
+	}
+}
+
+// HandleMicroservices handles microservice changes
+func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceCtx) {
+	var err error
+	var newest int64
+	var containers []docker.APIContainers
+	var nextCreated []string
+
+	// First check if any microservice has terminated.
+	plugin.cfgLock.Lock()
+	for container := range plugin.microserviceByID {
+		details, err := plugin.dockerClient.InspectContainer(container)
+		if err != nil || !details.State.Running {
+			plugin.processTerminatedMicroservice(ctx.nsMgmtCtx, container)
+		}
+	}
+	plugin.cfgLock.Unlock()
+
+	// Now check if previously created containers have transitioned to the state "running".
+	for _, container := range ctx.created {
+		details, err := plugin.dockerClient.InspectContainer(container)
+		if err == nil {
+			if details.State.Running {
+				plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+			} else if details.State.Status == "created" {
+				nextCreated = append(nextCreated, container)
+			}
+		} else {
+			plugin.Log.Debugf("Inspect container ID %v failed: %v", container, err)
+		}
+	}
+	ctx.created = nextCreated
+
+	// Finally inspect newly created containers.
+	listOpts := docker.ListContainersOptions{}
+	listOpts.All = true
+	listOpts.Filters = map[string][]string{}
+	if ctx.since != "" {
+		listOpts.Filters["since"] = []string{ctx.since}
+	}
+
+	containers, err = plugin.dockerClient.ListContainers(listOpts)
+	if err != nil {
+		plugin.Log.Errorf("Error listing docker containers: %v", err)
+		if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
+			plugin.Log.Debugf("Clearing since: %v", ctx.since)
+			ctx.since = ""
+		}
+		return
+	}
+
+	for _, container := range containers {
+		plugin.Log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		if container.State == "running" && container.Created > ctx.lastInspected {
+			// Inspect the container to get the list of defined environment variables.
+			details, err := plugin.dockerClient.InspectContainer(container.ID)
+			if err != nil {
+				plugin.Log.Debugf("Inspect container %v failed: %v", container.ID, err)
+				continue
+			}
+			plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+		}
+		if container.State == "created" {
+			ctx.created = append(ctx.created, container.ID)
+		}
+		if container.Created > newest {
+			newest = container.Created
+			ctx.since = container.ID
+		}
+	}
+
+	if newest > ctx.lastInspected {
+		ctx.lastInspected = newest
 	}
 }
 
@@ -824,7 +868,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 			}
 			if peer != nil && plugin.isNamespaceAvailable(peer.config.Namespace) {
 				// VETH is ready to be created and configured
-				err := plugin.addVethInterface(nsMgmtCtx, intf.config, peer.config)
+				err := plugin.addVethInterfacePair(nsMgmtCtx, intf.config, peer.config)
 				if err != nil {
 					plugin.Log.Error(err.Error())
 					continue
@@ -940,4 +984,34 @@ func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 	}
 	plugin.vethCfgNamespace, err = linuxcalls.ToInterfaceNs(ns)
 	return err
+}
+
+func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool {
+	for attempt := 1; attempt <= max; attempt++ {
+		_, err := net.InterfaceByName(iface)
+		if err == nil {
+			plugin.Log.Debugf("veth %v exists, found on %v attempt", iface, attempt)
+			return true
+		}
+		time.Sleep(vethRefreshPeriod)
+	}
+
+	plugin.Log.Errorf("veth %v does not exist", iface)
+	return false
+}
+
+func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
+	for attempt := 1; attempt <= max; attempt++ {
+		veth, err := net.InterfaceByName(iface)
+		if err == nil {
+			if veth.Flags&net.FlagUp != 0 {
+				plugin.Log.Debugf("veth %v is UP on %v attempt", iface, attempt)
+				return true
+			}
+		}
+		time.Sleep(vethRefreshPeriod)
+	}
+
+	plugin.Log.Errorf("veth %v is DOWN", iface)
+	return false
 }
