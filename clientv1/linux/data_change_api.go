@@ -15,8 +15,6 @@
 package linux
 
 import (
-	"net"
-
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
@@ -108,9 +106,9 @@ type DeleteDSL interface {
 	// interface.
 	LinuxInterface(ifaceName string) DeleteDSL
 	// LinuxArpEntry adds a request to crete or update Linux ARP entry
-	LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) DeleteDSL
+	LinuxArpEntry(entryName string) DeleteDSL
 	// LinuxRoute adds a request to crete or update Linux route
-	LinuxRoute(val *l3.LinuxStaticRoutes_Route) DeleteDSL
+	LinuxRoute(routeName string) DeleteDSL
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
@@ -131,7 +129,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
+	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// L4Features adds a request to enable or disable L4 features
@@ -140,7 +138,7 @@ type DeleteDSL interface {
 	// Note: current version does not support application namespace deletion
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
-	Arp(ifaceName string, ipAddr net.IP) DeleteDSL
+	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// StnRule adds a request to delete an existing VPP Stn rule.
 	StnRule(ruleName string) DeleteDSL
 

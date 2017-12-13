@@ -15,8 +15,8 @@
 package dbadapter
 
 import (
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
@@ -28,11 +28,8 @@ import (
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 
-	"net"
-
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
-
-	"github.com/ligato/cn-infra/db/keyval"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -197,14 +194,14 @@ func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linux.DeleteDSL {
 }
 
 // LinuxArpEntry adds a request to delete Linux ARP entry.
-func (dsl *DeleteDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linux.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticArpKey(val.Name))
+func (dsl *DeleteDSL) LinuxArpEntry(entryName string) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticArpKey(entryName))
 	return dsl
 }
 
 // LinuxRoute adds a request to delete Linux route.
-func (dsl *DeleteDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linux.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticRouteKey(val.Name))
+func (dsl *DeleteDSL) LinuxRoute(routeName string) linux.DeleteDSL {
+	dsl.parent.txn.Delete(l3.StaticRouteKey(routeName))
 	return dsl
 }
 
@@ -254,8 +251,8 @@ func (dsl *DeleteDSL) XConnect(rxIfaceName string) linux.DeleteDSL {
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddrInput net.IP) linux.DeleteDSL {
-	dsl.vppDelete.StaticRoute(vrf, dstAddrInput, nextHopAddrInput)
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) linux.DeleteDSL {
+	dsl.vppDelete.StaticRoute(vrf, dstAddr, nextHopAddr)
 	return dsl
 }
 
@@ -279,7 +276,7 @@ func (dsl *DeleteDSL) AppNamespace(id string) linux.DeleteDSL {
 }
 
 // Arp adds a request to delete an existing VPP L3 ARP.
-func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) linux.DeleteDSL {
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linux.DeleteDSL {
 	dsl.vppDelete.Arp(ifaceName, ipAddr)
 	return dsl
 }

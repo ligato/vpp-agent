@@ -15,8 +15,6 @@
 package defaultplugins
 
 import (
-	"net"
-
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
@@ -113,7 +111,7 @@ type DeleteDSL interface {
 	// XConnect adds a request to delete an existing VPP Cross Connect.
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
-	StaticRoute(vrf uint32, dstAddr *net.IPNet, nextHopAddr net.IP) DeleteDSL
+	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
 	// L4Features adds a request to enable or disable L4 features
@@ -122,7 +120,7 @@ type DeleteDSL interface {
 	// Note: current version does not support application namespace deletion
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
-	Arp(ifaceName string, ipAddr net.IP) DeleteDSL
+	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// StnRule adds a request to delete an existing Stn rule.
 	StnRule(ruleName string) DeleteDSL
 

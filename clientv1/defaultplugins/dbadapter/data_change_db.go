@@ -213,8 +213,9 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 }
 
 // StaticRoute adds a request to delete an existing VPP L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String()))
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) defaultplugins.DeleteDSL {
+	_, dstNet, _ := net.ParseCIDR(dstAddr)
+	dsl.parent.txn.Delete(l3.RouteKey(vrf, dstNet, nextHopAddr))
 	return dsl
 }
 
@@ -231,8 +232,8 @@ func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
 }
 
 // Arp adds a request to delete an existing VPP L3 ARP entry.
-func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr net.IP) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr.String()))
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr))
 	return dsl
 }
 
