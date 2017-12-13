@@ -752,7 +752,6 @@ func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceC
 	var err error
 	var newest int64
 	var containers []docker.APIContainers
-	var listOpts docker.ListContainersOptions
 	var nextCreated []string
 
 	// First check if any microservice has terminated.
@@ -781,7 +780,7 @@ func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceC
 	ctx.created = nextCreated
 
 	// Finally inspect newly created containers.
-	listOpts = docker.ListContainersOptions{}
+	listOpts := docker.ListContainersOptions{}
 	listOpts.All = true
 	listOpts.Filters = map[string][]string{}
 	if ctx.since != "" {
@@ -990,10 +989,6 @@ func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool {
 	for attempt := 1; attempt <= max; attempt++ {
 		_, err := net.InterfaceByName(iface)
-		if attempt == max {
-			plugin.Log.Errorf("veth %v does not exist", iface)
-			return false
-		}
 		if err == nil {
 			plugin.Log.Debugf("veth %v exists, found on %v attempt", iface, attempt)
 			return true
@@ -1008,12 +1003,8 @@ func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool
 func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 	for attempt := 1; attempt <= max; attempt++ {
 		veth, err := net.InterfaceByName(iface)
-		if attempt == max {
-			plugin.Log.Errorf("veth %v is DOWN", iface)
-			return false
-		}
 		if err == nil {
-			if strings.Contains(veth.Flags.String(), net.FlagUp.String()) {
+			if veth.Flags&net.FlagUp != 0 {
 				plugin.Log.Debugf("veth %v is UP on %v attempt", iface, attempt)
 				return true
 			}
