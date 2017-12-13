@@ -42,8 +42,10 @@ import (
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
 const (
-	dockerRefreshPeriod = 3 * time.Second
-	vethConfigNamespace = "veth-cfg-ns"
+	dockerRefreshPeriod     = 3 * time.Second
+	vethRefreshPeriod       = 50 * time.Millisecond
+	vethRefreshAttemptCount = 10
+	vethConfigNamespace     = "veth-cfg-ns"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
@@ -210,7 +212,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	}
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
-	err = plugin.addVethInterface(nsMgmtCtx, iface, peer.config)
+	err = plugin.addVethInterfacePair(nsMgmtCtx, iface, peer.config)
 	if err != nil {
 		return err
 	}
@@ -308,6 +310,12 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		if nil != err {
 			wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 		}
+	}
+
+	// Check that the interface is up
+	// verify veth pair interface existence
+	if isUp := plugin.vethIsUp(iface.config.Name, vethRefreshAttemptCount); !isUp {
+		return fmt.Errorf("veth interface %v is DOWN", iface.config.Name)
 	}
 
 	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &intf.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})
@@ -487,7 +495,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *intf.Linux
 	}
 	defer revertNs()
 
-	err = linuxcalls.DelVethInterface(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.DelVethInterfacePair(oldCfg.config.HostIfName, peer.config.HostIfName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to delete VETH interface: %v", err)
 	}
@@ -536,7 +544,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		return err
 	}
 	plugin.Log.WithFields(log.Fields{"ifName": vethName, "peerName": peerName}).Debug("Removing obsolete VETH interface")
-	err = linuxcalls.DelVethInterface(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.DelVethInterfacePair(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -545,8 +553,8 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	return nil
 }
 
-// addVethInterface creates a new VETH interface with a "clean" configuration.
-func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
+// addVethInterfacePair creates a new VETH interface with a "clean" configuration.
+func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, iface *intf.LinuxInterfaces_Interface, peer *intf.LinuxInterfaces_Interface) error {
 	// Prepare generic vet cfg namespace object
 	ifaceNs := linuxcalls.ToGenericNs(plugin.vethCfgNamespace)
 
@@ -574,10 +582,19 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterface(nsMgmtCtx *linuxcalls
 	if err != nil {
 		return err
 	}
-	err = linuxcalls.AddVethInterface(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.AddVethInterfacePair(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to create new VETH: %v", err)
 	}
+
+	// verify veth pair interface existence
+	if exists := plugin.vethExists(iface.Name, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	}
+	if exists := plugin.vethExists(peer.Name, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	}
+
 	return nil
 }
 
@@ -772,7 +789,7 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		select {
 		case <-time.After(dockerRefreshPeriod):
 			continue
-		case <-ctx.Done():
+		case <-plugin.ctx.Done():
 			return
 		}
 	}
@@ -824,7 +841,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 			}
 			if peer != nil && plugin.isNamespaceAvailable(peer.config.Namespace) {
 				// VETH is ready to be created and configured
-				err := plugin.addVethInterface(nsMgmtCtx, intf.config, peer.config)
+				err := plugin.addVethInterfacePair(nsMgmtCtx, intf.config, peer.config)
 				if err != nil {
 					plugin.Log.Error(err.Error())
 					continue
@@ -940,4 +957,41 @@ func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 	}
 	plugin.vethCfgNamespace, err = linuxcalls.ToInterfaceNs(ns)
 	return err
+}
+
+func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool {
+	for attempt := 1; attempt <= max; attempt++ {
+		_, err := net.InterfaceByName(iface)
+		if attempt == max {
+			plugin.Log.Errorf("veth %v does not exist", iface)
+			time.Sleep(vethRefreshPeriod)
+			return false
+		}
+		if err == nil {
+			plugin.Log.Debugf("veth %v exists, found on %v attempt", iface, attempt)
+			return true
+		}
+	}
+
+	plugin.Log.Errorf("veth %v does not exist", iface)
+	return false
+}
+
+func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
+	for attempt := 1; attempt <= max; attempt++ {
+		veth, err := net.InterfaceByName(iface)
+		if attempt == max {
+			plugin.Log.Errorf("veth %v is DOWN", iface)
+			return false
+		}
+		if err == nil {
+			if strings.Contains(veth.Flags.String(), net.FlagUp.String()) {
+				plugin.Log.Debugf("veth %v is UP", iface)
+				return true
+			}
+		}
+	}
+
+	plugin.Log.Errorf("veth %v is DOWN", iface)
+	return false
 }
