@@ -57,6 +57,7 @@ type Plugin struct {
 
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
+	msChan     chan *ifplugin.MicroserviceCtx
 
 	watchDataReg datasync.WatchRegistration
 
@@ -117,6 +118,7 @@ func (plugin *Plugin) Init() error {
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
+	plugin.msChan = make(chan *ifplugin.MicroserviceCtx)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
 
 	// Create plugin context and save cancel function into the plugin handle.
@@ -153,7 +155,7 @@ func (plugin *Plugin) initIF() error {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	return plugin.ifConfigurator.Init(plugin.ifIndexes)
+	return plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.msChan)
 }
 
 // Initialize linux L3 plugin
