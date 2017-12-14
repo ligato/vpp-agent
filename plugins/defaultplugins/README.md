@@ -49,3 +49,11 @@
  
  To **skip resync** completely, start vpp-agent with `--skip-vpp-resync` parameter. In such a case the resync is skipped 
  (config file resync strategy is not taken into account). 
+
+ *Status Publishers*
+
+ Status Publishers define list of data syncs to which status is published.
+
+ `status-publishers: [<datasync>, <datasync2>, ...]`
+
+ Currently supported data syncs for publishing state: `etcd` and `redis`.

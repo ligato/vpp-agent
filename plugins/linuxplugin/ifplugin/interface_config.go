@@ -990,13 +990,13 @@ func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool
 	for attempt := 1; attempt <= max; attempt++ {
 		_, err := net.InterfaceByName(iface)
 		if err == nil {
-			plugin.Log.Debugf("veth %v exists, found on %v attempt", iface, attempt)
+			plugin.Log.Debugf("veth %v exists (on %v. attempt)", iface, attempt)
 			return true
 		}
 		time.Sleep(vethRefreshPeriod)
 	}
 
-	plugin.Log.Errorf("veth %v does not exist", iface)
+	plugin.Log.Debugf("veth %v does not exist", iface)
 	return false
 }
 
@@ -1005,13 +1005,13 @@ func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 		veth, err := net.InterfaceByName(iface)
 		if err == nil {
 			if veth.Flags&net.FlagUp != 0 {
-				plugin.Log.Debugf("veth %v is UP on %v attempt", iface, attempt)
+				plugin.Log.Debugf("veth %v is UP (on %v. attempt)", iface, attempt)
 				return true
 			}
 		}
 		time.Sleep(vethRefreshPeriod)
 	}
 
-	plugin.Log.Errorf("veth %v is DOWN", iface)
+	plugin.Log.Debugf("veth %v is DOWN", iface)
 	return false
 }

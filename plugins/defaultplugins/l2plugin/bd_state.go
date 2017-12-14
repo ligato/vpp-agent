@@ -125,7 +125,11 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails, name string) *l2.BridgeDomainState_BridgeDomain {
 	bdState := &l2.BridgeDomainState_BridgeDomain{}
 	// Delete case.
-	if msg.BdID == 0 && name != "" {
+	if msg.BdID == 0 {
+		if name == "" {
+			plugin.Log.Debugf("invalid bridge domain received: %+v", msg)
+			return bdState
+		}
 		// Mark index to 0 to be removed, but pass name so that the key can be constructed.
 		bdState.Index = 0
 		bdState.InternalName = name
@@ -134,7 +138,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 	bdState.Index = msg.BdID
 	name, _, found := plugin.bdIndex.LookupName(msg.BdID)
 	if !found {
-		plugin.Log.Warnf("Unable to store bridge domain state, index %v is not in the mapping", msg.BdID)
+		plugin.Log.Warnf("bridge domain index not found, index %v is not in the mapping", msg.BdID)
 		return bdState
 	}
 	bdState.InternalName = name

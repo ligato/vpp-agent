@@ -70,8 +70,14 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
 	f.VPP.Deps.Publish = &f.AllConnectorsFlavor.ETCDDataSync
-	f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+
+	/* note: now configurable with `status-publishers` in defaultplugins
+		f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
 		&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
+	}*/
+	f.VPP.Deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
+		"etcd":  &f.AllConnectorsFlavor.ETCDDataSync,
+		"redis": &f.AllConnectorsFlavor.RedisDataSync,
 	}
 
 	f.IfStatePub.Messaging = &f.Kafka
