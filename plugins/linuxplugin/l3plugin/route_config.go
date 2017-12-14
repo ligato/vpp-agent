@@ -277,7 +277,7 @@ func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
 		if !found {
 			plugin.rtIndexes.RegisterName(routeIdentifier(&rt), plugin.RouteIdxSeq, nil)
 			plugin.RouteIdxSeq++
-			plugin.Log.Debug("route registered as %v", routeIdentifier(&rt))
+			plugin.Log.Debugf("route registered as %v", routeIdentifier(&rt))
 		}
 	}
 
