@@ -606,7 +606,7 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxc
 		return fmt.Errorf("veth interface %v is missing", iface.Name)
 	}
 	if exists := plugin.vethExists(peer.Name, vethRefreshAttemptCount); !exists {
-		return fmt.Errorf("veth interface %v is missing", iface.Name)
+		return fmt.Errorf("veth interface %v is missing", peer.Name)
 	}
 
 	return nil
