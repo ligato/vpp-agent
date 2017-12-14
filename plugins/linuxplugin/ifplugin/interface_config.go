@@ -996,7 +996,7 @@ func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool
 		time.Sleep(vethRefreshPeriod)
 	}
 
-	plugin.Log.Errorf("veth %v does not exist", iface)
+	plugin.Log.Debugf("veth %v does not exist", iface)
 	return false
 }
 
@@ -1012,6 +1012,6 @@ func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 		time.Sleep(vethRefreshPeriod)
 	}
 
-	plugin.Log.Errorf("veth %v is DOWN", iface)
+	plugin.Log.Debugf("veth %v is DOWN", iface)
 	return false
 }
