@@ -328,8 +328,8 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 
 	// Check that the interface is up
 	// verify veth pair interface existence
-	if isUp := plugin.vethIsUp(iface.config.Name, vethRefreshAttemptCount); !isUp {
-		return fmt.Errorf("veth interface %v is DOWN", iface.config.Name)
+	if isUp := plugin.vethIsUp(iface.config.HostIfName, vethRefreshAttemptCount); !isUp {
+		return fmt.Errorf("veth interface %v is DOWN", iface.config.HostIfName)
 	}
 
 	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &intf.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})
@@ -602,11 +602,11 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxc
 	}
 
 	// verify veth pair interface existence
-	if exists := plugin.vethExists(iface.Name, vethRefreshAttemptCount); !exists {
-		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	if exists := plugin.vethExists(iface.HostIfName, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", iface.HostIfName)
 	}
-	if exists := plugin.vethExists(peer.Name, vethRefreshAttemptCount); !exists {
-		return fmt.Errorf("veth interface %v is missing", iface.Name)
+	if exists := plugin.vethExists(peer.HostIfName, vethRefreshAttemptCount); !exists {
+		return fmt.Errorf("veth interface %v is missing", peer.HostIfName)
 	}
 
 	return nil
@@ -987,8 +987,9 @@ func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 }
 
 func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool {
+	var err error
 	for attempt := 1; attempt <= max; attempt++ {
-		_, err := net.InterfaceByName(iface)
+		_, err = net.InterfaceByName(iface)
 		if err == nil {
 			plugin.Log.Debugf("veth %v exists (on %v. attempt)", iface, attempt)
 			return true
@@ -996,7 +997,7 @@ func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool
 		time.Sleep(vethRefreshPeriod)
 	}
 
-	plugin.Log.Debugf("veth %v does not exist", iface)
+	plugin.Log.Debugf("veth %v does not exist, err: %+v", iface, err)
 	return false
 }
 
@@ -1008,6 +1009,7 @@ func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 				plugin.Log.Debugf("veth %v is UP (on %v. attempt)", iface, attempt)
 				return true
 			}
+			plugin.Log.Debugf("veth is not up yet: %+v", veth)
 		}
 		time.Sleep(vethRefreshPeriod)
 	}
