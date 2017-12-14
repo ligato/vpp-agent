@@ -171,6 +171,10 @@ func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
 func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails) {
+	_, ifIdxExists := ifs[ipDetails.SwIfIndex]
+	if !ifIdxExists {
+		return
+	}
 	if ifs[ipDetails.SwIfIndex].IpAddresses == nil {
 		ifs[ipDetails.SwIfIndex].IpAddresses = make([]string, 0)
 	}
@@ -213,6 +217,10 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 			log.Error(err)
 			return err
 		}
+		_, ifIdxExists := ifs[memifDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
 		ifs[memifDetails.SwIfIndex].Memif = &ifnb.Interfaces_Interface_Memif{
 			Master: memifDetails.Role == 0,
 			Mode:   memifModetoNB(memifDetails.Mode),
@@ -251,6 +259,10 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 			log.Error(err)
 			return err
 		}
+		_, ifIdxExists := ifs[tapDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    1,
 			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
@@ -269,6 +281,10 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		if err != nil {
 			log.Error(err)
 			return err
+		}
+		_, ifIdxExists := ifs[tapDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    2,
@@ -302,6 +318,10 @@ func dumpVxlanDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		if err != nil {
 			log.Error(err)
 			return err
+		}
+		_, ifIdxExists := ifs[vxlanDetails.SwIfIndex]
+		if !ifIdxExists {
+			continue
 		}
 		if vxlanDetails.IsIpv6 == 1 {
 			ifs[vxlanDetails.SwIfIndex].Vxlan = &ifnb.Interfaces_Interface_Vxlan{
