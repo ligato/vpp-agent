@@ -1008,9 +1008,8 @@ func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
 			if veth.Flags&net.FlagUp != 0 {
 				plugin.Log.Debugf("veth %v is UP (on %v. attempt)", iface, attempt)
 				return true
-			} else {
-				plugin.Log.Debugf("veth is not up yet: %+v", veth)
 			}
+			plugin.Log.Debugf("veth is not up yet: %+v", veth)
 		}
 		time.Sleep(vethRefreshPeriod)
 	}
