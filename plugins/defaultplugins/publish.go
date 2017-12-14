@@ -96,7 +96,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		}
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
-			err := plugin.Publish.Put(key, nil)
+			err := plugin.PublishStatistics.Put(key, nil)
 			if err != nil {
 				return err
 			}
@@ -121,11 +121,11 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
-					plugin.Publish.Put(key, nil)
+					plugin.PublishStatistics.Put(key, nil)
 					plugin.Log.Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
 					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
-					plugin.Publish.Put(key, bdState.State)
+					plugin.PublishStatistics.Put(key, bdState.State)
 					plugin.Log.Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
 				} else {
 					plugin.Log.Warnf("Unable to process bridge domain state with Idx %v and Name %v",

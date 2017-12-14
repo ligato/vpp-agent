@@ -160,12 +160,15 @@ type Plugin struct {
 type Deps struct {
 	// inject all below
 	local.PluginInfraDeps
+
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
 	Watch             datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             linuxpluginAPI
+
+	DataSyncs map[string]datasync.KeyProtoValWriter
 }
 
 type linuxpluginAPI interface {
@@ -177,9 +180,10 @@ type linuxpluginAPI interface {
 
 // DPConfig holds the defaultpluigns configuration.
 type DPConfig struct {
-	Mtu       uint32 `json:"mtu"`
-	Stopwatch bool   `json:"stopwatch"`
-	Strategy  string `json:"strategy"`
+	Mtu              uint32   `json:"mtu"`
+	Stopwatch        bool     `json:"stopwatch"`
+	Strategy         string   `json:"strategy"`
+	StatusPublishers []string `json:"status-publishers"`
 }
 
 // DisableResync can be used to disable resync for one or more key prefixes
@@ -241,16 +245,23 @@ func (plugin *Plugin) Init() error {
 	// handle flag
 	flag.Parse()
 
-	plugin.fixNilPointers()
-
-	plugin.ifStateNotifications = plugin.Deps.IfStatePub
-
 	// read config file and set all related fields
 	config, err := plugin.retrieveDPConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
+		publishers := &datasync.CompositeKVProtoWriter{}
+		for _, pub := range config.StatusPublishers {
+			db, found := plugin.Deps.DataSyncs[pub]
+			if !found {
+				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
+				continue
+			}
+			publishers.Adapters = append(publishers.Adapters, db)
+			plugin.Log.Infof("Added status publisher %q from config", pub)
+		}
+		plugin.Deps.PublishStatistics = publishers
 		if config.Mtu != 0 {
 			plugin.ifMtu = config.Mtu
 			plugin.Log.Info("Default MTU set to %v", plugin.ifMtu)
@@ -270,6 +281,10 @@ func (plugin *Plugin) Init() error {
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(fullResync)
 		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
+
+	plugin.fixNilPointers()
+
+	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// All channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
