@@ -151,6 +151,7 @@ type Plugin struct {
 
 	// Common
 	enableStopwatch bool
+	statusCheckReg  bool
 	cancel          context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg              sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
@@ -722,6 +723,9 @@ func (plugin *Plugin) AfterInit() error {
 		// Register the plugin to status check. Periodical probe is not needed,
 		// data change will be reported when changed
 		plugin.StatusCheck.Register(plugin.PluginName, nil)
+		// Notify that status check for default plugins was registered. It will
+		// prevent status report errors in case resync is executed before AfterInit
+		plugin.statusCheckReg = true
 	}
 
 	plugin.Log.Debug("vpp plugins AfterInit finished successfully")
