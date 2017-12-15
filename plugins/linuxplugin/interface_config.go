@@ -268,13 +268,13 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	}
 	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, iface.config.HostIfName, ns)
 	if err != nil {
-		return fmt.Errorf("failed to move interface across namespaces: %v", err)
+		return fmt.Errorf("failed to set interface %s to namespace %s: %v", iface.config.HostIfName, ns.Microservice, err)
 	}
 
 	// continue configuring interface in its namespace
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, iface.config.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to switch network namespace: %v", err)
+		return fmt.Errorf("failed to switch network namespace to %s: %v", ns.Name, err)
 	}
 	defer revertNs()
 
@@ -282,7 +282,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	if iface.config.Enabled {
 		err := linuxcalls.InterfaceAdminUp(iface.config.HostIfName)
 		if nil != err {
-			return fmt.Errorf("failed to enable Linux interface: %v", err)
+			return fmt.Errorf("failed to enable Linux interface %s: %v", iface.config.HostIfName, err)
 		}
 	}
 
@@ -784,6 +784,8 @@ func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceC
 	}
 }
 
+var microserviceContainerCreated = make(map[string]time.Time)
+
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
 func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, container *docker.Container) {
@@ -793,6 +795,13 @@ func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcal
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
+				log.DefaultLogger().Debugf("detected container as microservice: %+v", container)
+				last := microserviceContainerCreated[label]
+				if last.After(container.Created) {
+					log.DefaultLogger().Debugf("ignoring older container created at %v as microservice: %+v", last, container)
+					continue
+				}
+				microserviceContainerCreated[label] = container.Created
 				plugin.processNewMicroservice(nsMgmtCtx, label, container.ID, container.State.Pid)
 			}
 		}
@@ -809,10 +818,10 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 	if restarted {
 		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.id)
 		log.DefaultLogger().WithFields(log.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
-			Warn("Microservice has been restarted")
+			Warn("Microservice has been restarted: %+v", microservice)
 	} else {
 		log.DefaultLogger().WithFields(log.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
-			Debugf("Discovered new microservice: %+v", microservice)
+			Debugf("Discovered new microservice: %v", microserviceLabel)
 	}
 
 	microservice = &Microservice{label: microserviceLabel, pid: pid, id: id}
