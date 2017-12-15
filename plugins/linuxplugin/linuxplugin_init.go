@@ -42,6 +42,7 @@ type Plugin struct {
 
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
+	msChan     chan *MicroserviceCtx
 
 	watchDataReg datasync.WatchRegistration
 
@@ -68,6 +69,7 @@ func (plugin *Plugin) Init() error {
 
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
+	plugin.msChan = make(chan *MicroserviceCtx)
 
 	// create plugin context, save cancel function into the plugin handle
 	var ctx context.Context
@@ -82,7 +84,7 @@ func (plugin *Plugin) Init() error {
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &LinuxInterfaceConfigurator{}
-	plugin.ifConfigurator.Init(plugin.ifIndexes)
+	plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.msChan)
 
 	return plugin.subscribeWatcher()
 }

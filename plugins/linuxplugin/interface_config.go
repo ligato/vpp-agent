@@ -55,6 +55,14 @@ type Microservice struct {
 	id    string
 }
 
+// MicroserviceCtx contains all data required to handle microservice changes
+type MicroserviceCtx struct {
+	nsMgmtCtx     *linuxcalls.NamespaceMgmtCtx
+	created       []string
+	since         string
+	lastInspected int64
+}
+
 // unavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
 type unavailableMicroserviceErr struct {
 	label string
@@ -95,12 +103,18 @@ type LinuxInterfaceConfigurator struct {
 	ifWatcherRunning bool
 	ifWatcherNotifCh chan netlink.LinkUpdate
 	ifWatcherDoneCh  chan struct{}
+
+	/* channel to send microservice updates */
+	microserviceChan chan *MicroserviceCtx
 }
 
 // Init linuxplugin and start go routines
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW) error {
+func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) error {
 	log.DefaultLogger().Debug("Initializing LinuxInterfaceConfigurator")
 	plugin.ifIndexes = ifIndexes
+
+	// Init channel
+	plugin.microserviceChan = msChan
 
 	// allocate caches
 	plugin.intfByName = make(map[string]*LinuxInterfaceConfig)
@@ -661,12 +675,14 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
 
-	for {
-		var newest int64
-		var listOpts docker.ListContainersOptions
-		var containers []docker.APIContainers
-		nextCreated := []string{}
+	msCtx := &MicroserviceCtx{
+		nsMgmtCtx:     nsMgmtCtx,
+		created:       created,
+		since:         since,
+		lastInspected: lastInspected,
+	}
 
+	for {
 		if plugin.dockerClient == nil {
 			plugin.dockerClient, err = docker.NewClientFromEnv()
 			if err == nil {
@@ -677,80 +693,91 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 		}
 
-		// first check if any microservice has terminated
-		plugin.cfgLock.Lock()
-		for container := range plugin.microserviceByID {
-			details, err := plugin.dockerClient.InspectContainer(container)
-			if err != nil || !details.State.Running {
-				plugin.processTerminatedMicroservice(nsMgmtCtx, container)
-			}
-		}
-		plugin.cfgLock.Unlock()
-
-		// now check if previously created containers have transitioned to the state "running"
-		for _, container := range created {
-			details, err := plugin.dockerClient.InspectContainer(container)
-			if err == nil {
-				if details.State.Running {
-					plugin.detectMicroservice(nsMgmtCtx, details)
-				} else if details.State.Status == "created" {
-					nextCreated = append(nextCreated, container)
-				}
-			} else {
-				log.DefaultLogger().Debugf("Inspect container ID %v failed: %v", container, err)
-			}
-		}
-		created = nextCreated
-
-		// finally inspect newly created containers
-		listOpts = docker.ListContainersOptions{}
-		listOpts.All = true
-		listOpts.Filters = map[string][]string{}
-		if since != "" {
-			listOpts.Filters["since"] = []string{since}
-		}
-
-		containers, err = plugin.dockerClient.ListContainers(listOpts)
-		if err != nil {
-			log.DefaultLogger().Errorf("Error listing docker containers: %v", err)
-			if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
-				log.DefaultLogger().Debugf("Clearing since: %v", since)
-				since = ""
-			}
-			goto nextRefresh
-		}
-
-		for _, container := range containers {
-			if container.State == "running" && container.Created > lastInspected {
-				// inspect the container to get the list of defined environment variables
-				details, err := plugin.dockerClient.InspectContainer(container.ID)
-				if err != nil {
-					log.DefaultLogger().Debugf("Inspect container %v failed: %v", container.ID, err)
-					continue
-				}
-				plugin.detectMicroservice(nsMgmtCtx, details)
-			}
-			if container.State == "created" {
-				created = append(created, container.ID)
-			}
-			if container.Created > newest {
-				newest = container.Created
-				since = container.ID
-			}
-		}
-
-		if newest > lastInspected {
-			lastInspected = newest
-		}
+		// process changes
+		plugin.microserviceChan <- msCtx
 
 	nextRefresh:
-		// sleep before another refresh
+		// Sleep before another refresh.
 		select {
 		case <-time.After(dockerRefreshPeriod):
 			continue
-		case <-ctx.Done():
+		case <-plugin.ctx.Done():
 			return
 		}
+	}
+}
+
+// HandleMicroservices handles microservice changes
+func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceCtx) {
+	var err error
+	var newest int64
+	var containers []docker.APIContainers
+
+	// first check if any microservice has terminated
+	plugin.cfgLock.Lock()
+	for container := range plugin.microserviceByID {
+		details, err := plugin.dockerClient.InspectContainer(container)
+		if err != nil || !details.State.Running {
+			plugin.processTerminatedMicroservice(ctx.nsMgmtCtx, container)
+		}
+	}
+	plugin.cfgLock.Unlock()
+
+	// now check if previously created containers have transitioned to the state "running"
+	var nextCreated []string
+	for _, container := range ctx.created {
+		details, err := plugin.dockerClient.InspectContainer(container)
+		if err == nil {
+			if details.State.Running {
+				plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+			} else if details.State.Status == "created" {
+				nextCreated = append(nextCreated, container)
+			}
+		} else {
+			log.DefaultLogger().Debugf("Inspect container ID %v failed: %v", container, err)
+		}
+	}
+	ctx.created = nextCreated
+
+	// finally inspect newly created containers
+	listOpts := docker.ListContainersOptions{}
+	listOpts.All = true
+	listOpts.Filters = map[string][]string{}
+	if ctx.since != "" {
+		listOpts.Filters["since"] = []string{ctx.since}
+	}
+
+	containers, err = plugin.dockerClient.ListContainers(listOpts)
+	if err != nil {
+		log.DefaultLogger().Errorf("Error listing docker containers: %v", err)
+		if err, ok := err.(*docker.Error); ok && (err.Status == 500 || err.Status == 404) {
+			log.DefaultLogger().Debugf("Clearing since: %v", ctx.since)
+			ctx.since = ""
+		}
+		return
+	}
+
+	for _, container := range containers {
+		if container.State == "running" && container.Created > ctx.lastInspected {
+			// inspect the container to get the list of defined environment variables
+			details, err := plugin.dockerClient.InspectContainer(container.ID)
+			if err != nil {
+				log.DefaultLogger().Debugf("Inspect container %v failed: %v", container.ID, err)
+				continue
+			}
+			plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+		}
+		if container.State == "created" {
+			ctx.created = append(ctx.created, container.ID)
+		}
+		if container.Created > newest {
+			newest = container.Created
+			ctx.since = container.ID
+		}
+	}
+
+	if newest > ctx.lastInspected {
+		ctx.lastInspected = newest
 	}
 }
 
