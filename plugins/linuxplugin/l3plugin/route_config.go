@@ -358,15 +358,15 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
 	// Destination address
-	dstIpAddr := route.DstIpAddr
-	if dstIpAddr == "" {
-		dstIpAddr = ipv4AddrAny
+	dstIPAddr := route.DstIpAddr
+	if dstIPAddr == "" {
+		dstIPAddr = ipv4AddrAny
 	}
-	if dstIpAddr != ipv4AddrAny && dstIpAddr != ipv6AddrAny {
-		plugin.Log.Warnf("route marked as default has dst address set to %v. The address will be ignored", dstIpAddr)
-		dstIpAddr = ipv4AddrAny
+	if dstIPAddr != ipv4AddrAny && dstIPAddr != ipv6AddrAny {
+		plugin.Log.Warnf("route marked as default has dst address set to %v. The address will be ignored", dstIPAddr)
+		dstIPAddr = ipv4AddrAny
 	}
-	_, netLinkRoute.Dst, _ = net.ParseCIDR(dstIpAddr)
+	_, netLinkRoute.Dst, _ = net.ParseCIDR(dstIPAddr)
 
 	// Gateway
 	gateway := net.ParseIP(route.GwAddr)
