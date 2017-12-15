@@ -139,7 +139,7 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 	}
 	log.DefaultLogger().WithFields(log.Fields{
 		"ifName": ifName, "ns": NamespaceToStr(namespace), "ns-fd": int(ns)}).
-		Debugf("Moved Linux interface across namespaces to %q", ns)
+		Debugf("Moved Linux interface across namespaces to %v", ns)
 
 	// re-configure interface in its new namespace
 	revertNs, err := SwitchNamespace(ctx, namespace)
@@ -217,12 +217,12 @@ func SwitchNamespace(ctx *NamespaceMgmtCtx, namespace *intf.LinuxInterfaces_Inte
 	// Switch the namespace.
 	netns.Set(ns)
 	log.DefaultLogger().WithFields(log.Fields{"ns-fd": int(ns)}).
-		Debugf("Switched Linux namespace %q", NamespaceToStr(namespace))
+		Debugf("Switched Linux namespace %v", NamespaceToStr(namespace))
 
 	return func() {
 		netns.Set(origns)
 		log.DefaultLogger().WithFields(log.Fields{"ns-fd": int(origns)}).
-			Debugf("Switched back to the original Linux namespace %q", origns.String())
+			Debugf("Switched back to the original Linux namespace %v", origns.String())
 		origns.Close()
 
 		if !alreadyLocked {
