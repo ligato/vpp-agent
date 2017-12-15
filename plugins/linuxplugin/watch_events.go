@@ -59,6 +59,9 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 			dataChng.Done(err)
 
+		case microserviceChng := <-plugin.msChan:
+			plugin.ifConfigurator.HandleMicroservices(microserviceChng)
+
 		case <-ctx.Done():
 			log.DefaultLogger().Debug("Stop watching events")
 			return
