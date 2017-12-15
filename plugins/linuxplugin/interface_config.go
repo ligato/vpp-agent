@@ -911,7 +911,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	defer plugin.cfgLock.Unlock()
 
 	log.DefaultLogger().WithFields(log.Fields{"name": linkAttrs.Name}).
-		Debug("Processing Linux link update")
+		Debugf("Processing Linux link update (%v) %+v", link.Type(), linkAttrs)
 
 	// register newly added interface only if it is not already managed by this plugin
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
