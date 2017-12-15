@@ -181,7 +181,7 @@ func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
 		return err
 	}
 
-	log.DefaultLogger().Debug("looked up %d linux interfaces: %+v", len(ifaces), ifaces)
+	log.DefaultLogger().Debugf("looked up %d linux interfaces: %+v", len(ifaces), ifaces)
 
 	for _, iface := range ifaces {
 		idx := GetLinuxInterfaceIndex(iface.Name)
@@ -209,11 +209,11 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	log.DefaultLogger().Debugf("Configuring new Linux interface %q with hostIfName %q", iface.Name, iface.HostIfName)
+	log.DefaultLogger().Debugf("Configuring new Linux interface %v with hostIfName %v", iface.Name, iface.HostIfName)
 	plugin.handleOptionalHostIfName(iface)
 
 	if _, exists := plugin.intfByName[iface.Name]; exists {
-		return fmt.Errorf("VETH interface %q is already configured", iface.Name)
+		return fmt.Errorf("VETH interface %v is already configured", iface.Name)
 	}
 
 	peer := plugin.getInterfaceConfig(iface.Veth.PeerIfName)
@@ -247,7 +247,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(iface *intf.Li
 		return err
 	}
 
-	log.DefaultLogger().Infof("Linux interface %q with hostIfName %q configured", iface.Name, iface.HostIfName)
+	log.DefaultLogger().Infof("Linux interface %v with hostIfName %v configured", iface.Name, iface.HostIfName)
 
 	return nil
 }
@@ -341,7 +341,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newConfig *intf.L
 		return errors.New("unsupported Linux interface type")
 	}
 
-	log.DefaultLogger().Infof("Modifying Linux interface %q with hostIfName", newConfig.Name, newConfig.HostIfName)
+	log.DefaultLogger().Infof("Modifying Linux interface %v with hostIfName", newConfig.Name, newConfig.HostIfName)
 	plugin.handleOptionalHostIfName(newConfig)
 	plugin.handleOptionalHostIfName(oldConfig)
 
@@ -809,10 +809,10 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 	if restarted {
 		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.id)
 		log.DefaultLogger().WithFields(log.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
-			Warn("Microservice has been quickly restarted")
+			Warn("Microservice has been restarted")
 	} else {
 		log.DefaultLogger().WithFields(log.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
-			Debug("Discovered new microservice")
+			Debugf("Discovered new microservice: %+v", microservice)
 	}
 
 	microservice = &Microservice{label: microserviceLabel, pid: pid, id: id}
@@ -844,7 +844,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 					log.DefaultLogger().Warnf("failed to configure VETH interface %s: %v", peer.config.Name, err)
 				}
 			} else {
-				log.DefaultLogger().Debugf("peer VETH %q is not ready yet, microservice: %+v", intf.config.Name, microservice)
+				log.DefaultLogger().Debugf("peer VETH %v is not ready yet, microservice: %+v", intf.config.Name, microservice)
 			}
 		}
 	}
@@ -911,7 +911,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	defer plugin.cfgLock.Unlock()
 
 	log.DefaultLogger().WithFields(log.Fields{"name": linkAttrs.Name}).
-		Debug("Processing Linux link update")
+		Debugf("Processing Linux link update (%v) %+v", link.Type(), linkAttrs)
 
 	// register newly added interface only if it is not already managed by this plugin
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
