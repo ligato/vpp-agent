@@ -357,6 +357,7 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
+	var err error
 	// Destination address
 	dstIPAddr := route.DstIpAddr
 	if dstIPAddr == "" {
@@ -368,6 +369,7 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 	}
 	_, netLinkRoute.Dst, err = net.ParseCIDR(dstIPAddr)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 

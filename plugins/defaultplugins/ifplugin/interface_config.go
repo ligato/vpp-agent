@@ -744,7 +744,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
 func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) {
-	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName,  "ifIdx": interfaceIndex}).Info("New Linux interface was created")
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName, "ifIdx": interfaceIndex}).Info("New Linux interface was created")
 
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
