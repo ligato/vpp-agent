@@ -323,12 +323,6 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		}
 	}
 
-	// Check that the interface is up
-	// verify veth pair interface existence
-	if isUp := plugin.vethIsUp(iface.config.HostIfName, vethRefreshAttemptCount); !isUp {
-		return fmt.Errorf("veth interface %v is DOWN", iface.config.HostIfName)
-	}
-
 	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &interfaces.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})
 	plugin.Log.WithFields(log.Fields{"ifName": iface.config.Name, "ifIdx": idx}).
 		Info("An entry added into ifState.")
@@ -600,14 +594,6 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxc
 	err = linuxcalls.AddVethInterfacePair(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to create new VETH: %v", err)
-	}
-
-	// verify veth pair interface existence
-	if exists := plugin.vethExists(iface.HostIfName, vethRefreshAttemptCount); !exists {
-		return fmt.Errorf("veth interface %v is missing", iface.HostIfName)
-	}
-	if exists := plugin.vethExists(peer.HostIfName, vethRefreshAttemptCount); !exists {
-		return fmt.Errorf("veth interface %v is missing", peer.HostIfName)
 	}
 
 	return nil
@@ -984,36 +970,4 @@ func (plugin *LinuxInterfaceConfigurator) prepareVethConfigNamespace() error {
 	}
 	plugin.vethCfgNamespace, err = linuxcalls.ToInterfaceNs(ns)
 	return err
-}
-
-func (plugin *LinuxInterfaceConfigurator) vethExists(iface string, max int) bool {
-	var err error
-	for attempt := 1; attempt <= max; attempt++ {
-		_, err = net.InterfaceByName(iface)
-		if err == nil {
-			plugin.Log.Debugf("veth %v exists (on %v. attempt)", iface, attempt)
-			return true
-		}
-		time.Sleep(vethRefreshPeriod)
-	}
-
-	plugin.Log.Debugf("veth %v does not exist, err: %+v", iface, err)
-	return false
-}
-
-func (plugin *LinuxInterfaceConfigurator) vethIsUp(iface string, max int) bool {
-	for attempt := 1; attempt <= max; attempt++ {
-		veth, err := net.InterfaceByName(iface)
-		if err == nil {
-			if veth.Flags&net.FlagUp != 0 {
-				plugin.Log.Debugf("veth %v is UP (on %v. attempt)", iface, attempt)
-				return true
-			}
-			plugin.Log.Debugf("veth is not up yet: %+v", veth)
-		}
-		time.Sleep(vethRefreshPeriod)
-	}
-
-	plugin.Log.Debugf("veth %v is DOWN", iface)
-	return false
 }
