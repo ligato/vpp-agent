@@ -22,4 +22,3 @@ import (
 type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 }
-

@@ -31,8 +31,8 @@ var dummyAfPacket = &interfaces.Interfaces_Interface_Afpacket{
 }
 
 var testAfPacketAddData = &af_packet.AfPacketCreate{
-	HostIfName: []byte(dummyHostIFName),
-	HwAddr: nil,
+	HostIfName:      []byte(dummyHostIFName),
+	HwAddr:          nil,
 	UseRandomHwAddr: 1,
 }
 
