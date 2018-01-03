@@ -71,6 +71,7 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	for _, err := range resyncErrs {
 		plugin.Log.Error(err)
 	}
+
 	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 

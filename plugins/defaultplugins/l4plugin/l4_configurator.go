@@ -44,10 +44,11 @@ type L4Configurator struct {
 	GoVppmux     govppmux.API
 
 	// Indexes
-	SwIfIndexes        ifaceidx.SwIfIndex
-	AppNsIndexes       nsidx.AppNsIndexRW
+	SwIfIndexes  ifaceidx.SwIfIndex
+	AppNsIndexes nsidx.AppNsIndexRW
+
 	NotConfiguredAppNs nsidx.AppNsIndexRW // the mapping stores not-configurable app namespaces with metadata
-	AppNsIdxSeq        uint32             // common for both mappings, should be incremented after every registration
+	AppNsIdxSeq        uint32             // used only for NotConfiguredAppNs; incremented after every registration
 
 	// timer used to measure and store time
 	Stopwatch *measure.Stopwatch
@@ -174,6 +175,7 @@ func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppName
 		return nil
 	}
 
+	// todo remove namespace
 	return plugin.configureAppNamespace(newNs, ifIdx)
 }
 
@@ -215,7 +217,7 @@ func (plugin *L4Configurator) ResolveDeletedInterface(interfaceName string, inte
 	plugin.Log.Infof("L4 configurator: resolving deleted interface %v", interfaceName)
 
 	// Search mapping for configured application namespaces using the new interface
-	confAppNs := plugin.NotConfiguredAppNs.LookupNamesByInterface(interfaceName)
+	confAppNs := plugin.AppNsIndexes.LookupNamesByInterface(interfaceName)
 	if len(confAppNs) > 0 {
 		plugin.Log.Debugf("Found %v app namespaces belonging to removed interface %v", len(confAppNs), interfaceName)
 		for _, appNamespace := range confAppNs {
@@ -235,15 +237,14 @@ func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppName
 	// Namespace ID
 	nsID := []byte(ns.NamespaceId)
 
-	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.Log, plugin.vppCh)
+	appnsIndex, err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.Log, plugin.vppCh)
 	if err != nil {
 		return err
 	}
 
 	// register namespace
-	plugin.AppNsIndexes.RegisterName(ns.NamespaceId, plugin.AppNsIdxSeq, ns)
-	plugin.AppNsIdxSeq++
-	plugin.Log.Debugf("Application namespace %v registered")
+	plugin.AppNsIndexes.RegisterName(ns.NamespaceId, appnsIndex, ns)
+	plugin.Log.Debugf("Application namespace %v registered", ns)
 
 	return nil
 }
@@ -255,15 +256,9 @@ func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppName
 func (plugin *L4Configurator) resolveCachedNamespaces() {
 	plugin.Log.Info("Configuring cached namespaces after L4 features were enabled")
 
-	index := plugin.AppNsIdxSeq
 	// Scan all registered indexes in mapping for un-configured application namespaces
-	for {
-		if index == 0 {
-			break
-		}
-		index--
-
-		_, ns, found := plugin.NotConfiguredAppNs.LookupName(index)
+	for _, name := range plugin.NotConfiguredAppNs.ListNames() {
+		_, ns, found := plugin.NotConfiguredAppNs.LookupIdx(name)
 		if !found {
 			continue
 		}
@@ -276,7 +271,7 @@ func (plugin *L4Configurator) resolveCachedNamespaces() {
 		}
 
 		plugin.configureAppNamespace(ns, ifIdx)
-		// AppNamespace was configured, remove drom cache
+		// AppNamespace was configured, remove from cache
 		plugin.NotConfiguredAppNs.UnregisterName(ns.NamespaceId)
 	}
 }

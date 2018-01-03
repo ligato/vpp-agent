@@ -21,7 +21,7 @@ import (
 )
 
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace
-func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, log logging.Logger, vppChan *govppapi.Channel) error {
+func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, log logging.Logger, vppChan *govppapi.Channel) (appnsIndex uint32, err error) {
 	log.Debugf("Adding App Namespace %v to interface %v", string(id), swIfIdx)
 
 	req := &session.AppNamespaceAddDel{
@@ -35,16 +35,21 @@ func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byt
 
 	reply := &session.AppNamespaceAddDelReply{}
 
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	err = vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		log.WithFields(logging.Fields{"Error": err, "AppNamespace": string(id)}).Error("Error while configuring AppNamespace")
-		return err
+		return 0, err
 	}
 	if reply.Retval != 0 {
 		log.WithField("Return value", reply.Retval).Error("Unexpected return value")
-		return err
+		return 0, err
 	}
-	log.WithField("AppNamespaceID", string(id)).Debug("AppNamespace added.")
 
-	return nil
+	appnsIndex = reply.AppnsIndex
+	log.WithFields(logging.Fields{
+		"AppNamespaceID":    string(id),
+		"AppNamespaceIndex": appnsIndex,
+	}).Debug("AppNamespace added.")
+
+	return appnsIndex, nil
 }

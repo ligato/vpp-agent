@@ -52,6 +52,7 @@ vpp_term: Show Interfaces Address
     [Documentation]    Show interfaces address through vpp terminal
     Log Many           ${node}    ${interface}
     ${out}=            vpp_term: Issue Command  ${node}   sh int addr ${interface}
+    Log                ${out}
     [Return]           ${out}
 
 vpp_term: Show Hardware
