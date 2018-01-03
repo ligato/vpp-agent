@@ -27,7 +27,9 @@ define generate_sources
 	@cd plugins/defaultplugins/ifplugin/bin_api/interfaces && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/ip && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/memif && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/stats && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/tap && pkgreflect
+	@cd plugins/defaultplugins/ifplugin/bin_api/tapv2 && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/vpe && pkgreflect
 	@cd plugins/defaultplugins/ifplugin/bin_api/vxlan && pkgreflect
 	@cd plugins/defaultplugins/l2plugin/bin_api/l2 && pkgreflect

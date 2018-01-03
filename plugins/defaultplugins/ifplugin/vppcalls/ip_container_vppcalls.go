@@ -18,15 +18,16 @@ import (
 	"fmt"
 	"net"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
-	"time"
 )
 
 const (
-	addContainerIP uint8 = 1
+	addContainerIP    uint8 = 1
 	removeContainerIP uint8 = 0
 )
 
@@ -75,9 +76,9 @@ func prepareMessageForVpp(ifIdx uint32, addr *net.IPNet, isIpv6 bool, isAdd uint
 	return req
 }
 
-func sendAndLogMessageForVpp(ifIdx uint32, req *ip.IPContainerProxyAddDel, logActionType string, log logging.Logger,  vppChan *govppapi.Channel) error {
+func sendAndLogMessageForVpp(ifIdx uint32, req *ip.IPContainerProxyAddDel, logActionType string, log logging.Logger, vppChan *govppapi.Channel) error {
 	log.WithFields(logging.Fields{"isIpv4": req.IsIP4, "prefix": req.Plen, "address": req.IP, "if_index": ifIdx}).
-		Debug("Container IP address ",logActionType,"ing...")
+		Debug("Container IP address ", logActionType, "ing...")
 
 	// send the message
 	reply := &ip.IPContainerProxyAddDelReply{}
@@ -90,7 +91,7 @@ func sendAndLogMessageForVpp(ifIdx uint32, req *ip.IPContainerProxyAddDel, logAc
 		return fmt.Errorf(logActionType, "ing IP address returned %d", reply.Retval)
 	}
 	log.WithFields(logging.Fields{"isIpv4": req.IsIP4, "prefix": req.Plen, "address": req.IP, "if_index": ifIdx}).
-		Debug("Container IP address ", logActionType,"ed.")
+		Debug("Container IP address ", logActionType, "ed.")
 
 	return nil
 }
