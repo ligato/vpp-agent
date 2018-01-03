@@ -822,6 +822,8 @@ func (plugin *LinuxInterfaceConfigurator) HandleMicroservices(ctx *MicroserviceC
 	}
 }
 
+var microserviceContainerCreated = make(map[string]time.Time)
+
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
 func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, container *docker.Container) {
@@ -831,6 +833,13 @@ func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcal
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
+				log.DefaultLogger().Debugf("detected container as microservice: %+v", container)
+				last := microserviceContainerCreated[label]
+				if last.After(container.Created) {
+					log.DefaultLogger().Debugf("ignoring older container created at %v as microservice: %+v", last, container)
+					continue
+				}
+				microserviceContainerCreated[label] = container.Created
 				plugin.processNewMicroservice(nsMgmtCtx, label, container.ID, container.State.Pid)
 			}
 		}
