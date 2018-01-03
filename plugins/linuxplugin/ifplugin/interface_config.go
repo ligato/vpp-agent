@@ -251,11 +251,6 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	// Push defer to a stack as the first one, so it will be called last
 	defer revertCfgNs()
 
-	idx := GetLinuxInterfaceIndex(iface.config.HostIfName)
-	if idx < 0 {
-		return fmt.Errorf("failed to get index of the VETH interface %s", iface.config.HostIfName)
-	}
-
 	// Move interface to the proper namespace.
 	ns := iface.config.Namespace
 	if ns != nil && ns.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
@@ -318,6 +313,11 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		if nil != err {
 			wasError = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
 		}
+	}
+
+	idx := GetLinuxInterfaceIndex(iface.config.HostIfName)
+	if idx < 0 {
+		return fmt.Errorf("failed to get index of the VETH interface %s", iface.config.HostIfName)
 	}
 
 	plugin.ifIndexes.RegisterName(iface.config.Name, uint32(idx), &interfaces.LinuxInterfaces_Interface{Name: iface.config.Name, HostIfName: iface.config.HostIfName})

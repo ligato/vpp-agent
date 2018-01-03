@@ -31,6 +31,11 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+const (
+	ipv4AddrAny = "0.0.0.0/0"
+	ipv6AddrAny = "::/0"
+)
+
 // LinuxRouteConfigurator watches for any changes in the configuration of static routes as modelled by the proto file
 // "model/l3/l3.proto" and stored in ETCD under the key "/vnf-agent/{vnf-agent}/linux/config/v1/route".
 // Updates received from the northbound API are compared with the Linux network configuration and differences
@@ -85,12 +90,14 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	if route.Default {
 		err = plugin.createDefaultRoute(netLinkRoute, route)
 		if err != nil {
+			plugin.Log.Error(err)
 			return err
 		}
 	} else {
 		// static route
 		err = plugin.createStaticRoute(netLinkRoute, route)
 		if err != nil {
+			plugin.Log.Error(err)
 			return err
 		}
 	}
@@ -102,6 +109,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	defer revertNs()
@@ -157,14 +165,16 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 			replace = false
 		}
 		if err = plugin.createDefaultRoute(netLinkRoute, newRoute); err != nil {
-			return nil
+			plugin.Log.Error(err)
+			return err
 		}
 	} else {
 		if oldRoute.DstIpAddr != newRoute.Interface {
 			replace = false
 		}
 		if err = plugin.createStaticRoute(netLinkRoute, newRoute); err != nil {
-			return nil
+			plugin.Log.Error(err)
+			return err
 		}
 	}
 
@@ -179,15 +189,18 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	defer revertNs()
 
 	// Remove old route and create a new one
 	if err = plugin.DeleteLinuxStaticRoute(oldRoute); err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
@@ -218,6 +231,7 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 		if len(addressWithPrefix) > 1 {
 			_, dstIPAddr, err = net.ParseCIDR(route.DstIpAddr)
 			if err != nil {
+				plugin.Log.Error(err)
 				return err
 			}
 		} else {
@@ -245,6 +259,7 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	defer revertNs()
@@ -269,6 +284,7 @@ func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
 	// read all routes
 	routes, err := linuxcalls.ReadStaticRoutes(nil, noFamilyFilter, plugin.Log, nil)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	for _, rt := range routes {
@@ -341,11 +357,22 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
+	var err error
 	// Destination address
-	if route.DstIpAddr != "" {
-		plugin.Log.Warnf("route marked as default has dst address set to %v. The address will be ignored", route.DstIpAddr)
+	dstIPAddr := route.DstIpAddr
+	if dstIPAddr == "" {
+		dstIPAddr = ipv4AddrAny
 	}
-	netLinkRoute.Dst = nil
+	if dstIPAddr != ipv4AddrAny && dstIPAddr != ipv6AddrAny {
+		plugin.Log.Warnf("route marked as default has dst address set to %v. The address will be ignored", dstIPAddr)
+		dstIPAddr = ipv4AddrAny
+	}
+	_, netLinkRoute.Dst, err = net.ParseCIDR(dstIPAddr)
+	if err != nil {
+		plugin.Log.Error(err)
+		return err
+	}
+
 	// Gateway
 	gateway := net.ParseIP(route.GwAddr)
 	if gateway == nil {
@@ -372,6 +399,7 @@ func (plugin *LinuxRouteConfigurator) createStaticRoute(netLinkRoute *netlink.Ro
 		if len(addressWithPrefix) > 1 {
 			_, dstIPAddr, err = net.ParseCIDR(route.DstIpAddr)
 			if err != nil {
+				plugin.Log.Error(err)
 				return err
 			}
 		} else {
@@ -423,6 +451,7 @@ func (plugin *LinuxRouteConfigurator) updateLinuxStaticRoute(netLinkRoute *netli
 	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 	defer revertNs()
