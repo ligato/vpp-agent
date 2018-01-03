@@ -17,8 +17,9 @@
 package linuxcalls
 
 import (
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"strconv"
+
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
 	"fmt"
 	"net"
@@ -111,7 +112,8 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 		return err
 	}
 	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": NamespaceToStr(namespace),
-		"dest-namespace-fd": int(ns)}).Debug("Moved Linux interface across namespaces")
+		"dest-namespace-fd": int(ns)}).
+		Debug("Moved Linux interface across namespaces")
 
 	// re-configure interface in its new namespace
 	revertNs, err := ifaceNs.SwitchNamespace(ctx, log)
@@ -126,7 +128,8 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
-		log.WithFields(logging.Fields{"ifName": ifName}).Debug("Linux interface was re-enabled")
+		log.WithFields(logging.Fields{"ifName": ifName}).
+			Debug("Linux interface was re-enabled")
 	}
 
 	// re-add IP addresses
@@ -143,7 +146,8 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 			}
 			return fmt.Errorf("failed to assign IPv4 address to a Linux interface `%s`: %v", ifName, err)
 		}
-		log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).Debug("IP address was re-assigned to Linux interface")
+		log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).
+			Debug("IP address was re-assigned to Linux interface")
 	}
 
 	// revert back the MTU config
@@ -151,7 +155,8 @@ func SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}
-	log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).Debug("MTU was reconfigured for Linux interface")
+	log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).
+		Debug("MTU was reconfigured for Linux interface")
 
 	return nil
 }
