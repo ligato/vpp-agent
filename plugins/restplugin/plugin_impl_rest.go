@@ -16,6 +16,7 @@ package restplugin
 
 import (
 	"fmt"
+
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -56,7 +57,6 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLPostHandler, "POST")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLGetHandler, "GET")
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/acl/ip/example", plugin.exampleACLGetHandler, "GET")
-
 
 	plugin.Deps.HTTPHandlers.RegisterHTTPHandler("/", plugin.showCommandHandler, "POST")
 

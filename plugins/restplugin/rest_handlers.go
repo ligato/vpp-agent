@@ -16,18 +16,19 @@ package restplugin
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	aclvpp "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	aclvpp  "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
 	"github.com/unrolled/render"
-	"io/ioutil"
-	"net/http"
-	"strconv"
 )
 
 //interfacesGetHandler - used to get list of all interfaces
@@ -347,7 +348,6 @@ func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.Han
 		formatter.JSON(w, http.StatusOK, aclIndex)
 	}
 }
-
 
 //showCommandHandler - used to execute VPP CLI commands
 func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
