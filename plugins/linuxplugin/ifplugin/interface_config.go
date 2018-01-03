@@ -41,10 +41,8 @@ import (
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
 const (
-	dockerRefreshPeriod     = 3 * time.Second
-	vethRefreshPeriod       = 50 * time.Millisecond
-	vethRefreshAttemptCount = 10
-	vethConfigNamespace     = "veth-cfg-ns"
+	dockerRefreshPeriod = 3 * time.Second
+	vethConfigNamespace = "veth-cfg-ns"
 )
 
 // MicroserviceCtx contains all data required to handle microservice changes
