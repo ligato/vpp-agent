@@ -366,7 +366,10 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 		plugin.Log.Warnf("route marked as default has dst address set to %v. The address will be ignored", dstIPAddr)
 		dstIPAddr = ipv4AddrAny
 	}
-	_, netLinkRoute.Dst, _ = net.ParseCIDR(dstIPAddr)
+	_, netLinkRoute.Dst, err = net.ParseCIDR(dstIPAddr)
+	if err != nil {
+		return err
+	}
 
 	// Gateway
 	gateway := net.ParseIP(route.GwAddr)
