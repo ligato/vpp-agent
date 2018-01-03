@@ -28,15 +28,14 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netlink"
 
-	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-
 	"github.com/ligato/cn-infra/logging"
+	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 )
 
 /* how often in seconds to refresh the microservice label -> docker container PID map */
