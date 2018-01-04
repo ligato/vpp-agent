@@ -59,6 +59,7 @@ func (ev *DoneCallback) Done(err error) {
 // AggregateDone can be reused to avoid repetitive code that triggers a slice of events and waits until it is finished.
 func AggregateDone(events []func(chan error), done chan error) {
 	partialDone := make(chan error, 5)
+
 	go collectDoneEvents(partialDone, done, len(events))
 
 	for _, event := range events {
@@ -83,5 +84,6 @@ func collectDoneEvents(partialDone, done chan error, evCount int) {
 			}
 		}
 	}
+
 	done <- lastError
 }

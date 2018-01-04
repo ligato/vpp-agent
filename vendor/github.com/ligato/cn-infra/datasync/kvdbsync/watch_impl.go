@@ -24,6 +24,10 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
+const (
+	resyncTimeout = time.Second * 15
+)
+
 // WatchBrokerKeys implements go routines on top of Change & Resync channels.
 type watchBrokerKeys struct {
 	resyncReg  resync.Registration
@@ -138,7 +142,7 @@ func (keys *watchBrokerKeys) resync() error {
 		if err != nil {
 			return err
 		}
-	case <-time.After(15 * time.Second):
+	case <-time.After(resyncTimeout):
 		logrus.DefaultLogger().Warn("Timeout of resync callback")
 	}
 	return nil
