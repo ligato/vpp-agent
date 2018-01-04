@@ -15,8 +15,6 @@
 package datasync
 
 import (
-	"fmt"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
@@ -66,9 +64,6 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 // Put writes data to all aggregated transports.
 // This function implements KeyProtoValWriter.Put().
 func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...PutOption) error {
-	if len(ta.Adapters) == 0 {
-		return fmt.Errorf("no transport is available in aggregator")
-	}
 	var wasError error
 	for _, transport := range ta.Adapters {
 		err := transport.Put(key, data, opts...)

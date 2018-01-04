@@ -1,7 +1,7 @@
 package: github.com/ligato/vpp-agent
 import:
 - package: github.com/ligato/cn-infra
-  version: 5023e30145e53cf65a0a7475f05400896650bc61
+  version: 6499f7f2150d608735f167502bcf3394be7270d4
 - package: github.com/wadey/gocovmerge
   version: b5bfa59ec0adc420475f97f89b58045c721d761c
 - package: github.com/onsi/gomega

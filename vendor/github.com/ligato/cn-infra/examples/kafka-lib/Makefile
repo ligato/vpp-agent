@@ -1,9 +1,9 @@
 
 build:
-	cd asyncproducer && go build
-	cd consumer && go build
-	cd syncproducer && go build
-	cd mux && go build
+	cd asyncproducer && go build -i
+	cd consumer && go build -i
+	cd syncproducer && go build -i
+	cd mux && go build -i
 
 clean:
 	rm -f asyncproducer/asyncproducer

@@ -62,9 +62,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	//log.Fatal("Bye") calls os.Exit(1) after logging
 
 	// Log with field - automatically adds timestamp
-	plugin.Log.WithField("Ex. string: ", exampleString).Info("Info log with field example")
+	plugin.Log.WithField("exampleString", exampleString).Info("Info log with field example")
 	// For multiple fields
-	plugin.Log.WithFields(map[string]interface{}{"Ex. string": exampleString, "Ex. num": exampleNum}).Info("Info log with field example string and num")
+	plugin.Log.WithFields(map[string]interface{}{"exampleString": exampleString, "exampleNum": exampleNum}).Info("Info log with field example string and num")
 
 	// Custom (child) logger with name
 	childLogger := plugin.Log.NewLogger("childLogger")
