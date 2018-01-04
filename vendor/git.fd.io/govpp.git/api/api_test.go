@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git"
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
@@ -39,12 +38,12 @@ type testCtx struct {
 func setupTest(t *testing.T) *testCtx {
 	RegisterTestingT(t)
 
-	ctx := &testCtx{}
-	ctx.mockVpp = &mock.VppAdapter{}
-	govpp.SetAdapter(ctx.mockVpp)
+	ctx := &testCtx{
+		mockVpp: &mock.VppAdapter{},
+	}
 
 	var err error
-	ctx.conn, err = govpp.Connect()
+	ctx.conn, err = core.Connect(ctx.mockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.ch, err = ctx.conn.NewAPIChannel()

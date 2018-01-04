@@ -34,8 +34,8 @@ import (
 type VppAdapter struct {
 	callback func(context uint32, msgId uint16, data []byte)
 
-	msgNameToIds *map[string]uint16
-	msgIDsToName *map[uint16]string
+	msgNameToIds map[string]uint16
+	msgIDsToName map[uint16]string
 	msgIDSeq     uint16
 	binAPITypes  map[string]reflect.Type
 	access       sync.RWMutex
@@ -101,7 +101,7 @@ func (a *VppAdapter) GetMsgNameByID(msgID uint16) (string, bool) {
 	a.access.Lock()
 	defer a.access.Unlock()
 	a.initMaps()
-	msgName, found := (*a.msgIDsToName)[msgID]
+	msgName, found := a.msgIDsToName[msgID]
 
 	return msgName, found
 }
@@ -181,15 +181,15 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 	defer a.access.Unlock()
 	a.initMaps()
 
-	msgID, found := (*a.msgNameToIds)[msgName]
+	msgID, found := a.msgNameToIds[msgName]
 	if found {
 		return msgID, nil
 	}
 
 	a.msgIDSeq++
 	msgID = a.msgIDSeq
-	(*a.msgNameToIds)[msgName] = msgID
-	(*a.msgIDsToName)[msgID] = msgName
+	a.msgNameToIds[msgName] = msgID
+	a.msgIDsToName[msgID] = msgName
 
 	log.Println("VPP GetMessageId ", msgID, " name:", msgName, " crc:", msgCrc)
 
@@ -199,8 +199,8 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 // initMaps initializes internal maps (if not already initialized).
 func (a *VppAdapter) initMaps() {
 	if a.msgIDsToName == nil {
-		a.msgIDsToName = &map[uint16]string{}
-		a.msgNameToIds = &map[string]uint16{}
+		a.msgIDsToName = map[uint16]string{}
+		a.msgNameToIds = map[string]uint16{}
 		a.msgIDSeq = 1000
 	}
 
@@ -222,7 +222,7 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 			struc.Unpack(buf, &reqHeader)
 
 			a.access.Lock()
-			reqMsgName, _ := (*a.msgIDsToName)[reqHeader.VlMsgID]
+			reqMsgName, _ := a.msgIDsToName[reqHeader.VlMsgID]
 			a.access.Unlock()
 
 			reply, msgID, finished := replyHandler(MessageDTO{reqHeader.VlMsgID, reqMsgName,
@@ -261,6 +261,11 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		}
 		if len(replies) > 0 {
 			replies = []api.Message{}
+			if len(replyHandlers) > 0 {
+				// Switch back to handlers once the queue is empty to revert back
+				// the fallthrough effect.
+				mode = useReplyHandlers
+			}
 			return nil
 		}
 

@@ -7,7 +7,7 @@ import:
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: git.fd.io/govpp.git
-  version: de8e6592e23a3819266cea5e9999c7c21fdd826f
+  version: 35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3
   repo: https://git.fd.io/govpp.git
 - package: github.com/vishvananda/netns
   version: 54f0e4339ce73702a0607f49922aaa1e749b418d
