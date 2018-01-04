@@ -17,6 +17,6 @@ clean:
 	rm -f watcher/watcher
 
 build:
-	cd view && go build
-	cd editor && go build
-	cd watcher && go build
+	cd view && go build -i
+	cd editor && go build -i
+	cd watcher && go build -i

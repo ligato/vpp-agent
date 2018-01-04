@@ -19,8 +19,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"regexp"
+
 	"github.com/ligato/cn-infra/logging"
+	"github.com/sirupsen/logrus"
 )
 
 var initialLogLvl = logrus.InfoLevel
@@ -56,6 +58,15 @@ type logRegistry struct {
 	logLevels map[string]logrus.Level
 	// defaultLevel is used if logger level is not set
 	defaultLevel logrus.Level
+}
+
+var validLoggerName = regexp.MustCompile(`^[a-zA-Z0-9.-]+$`).MatchString
+
+func checkLoggerName(name string) error {
+	if !validLoggerName(name) {
+		return fmt.Errorf("logger name can contain only alphanum characters, dash and comma")
+	}
+	return nil
 }
 
 // NewLogger creates new named Logger instance. Name can be subsequently used to

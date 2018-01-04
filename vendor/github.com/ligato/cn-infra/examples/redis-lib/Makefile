@@ -18,10 +18,10 @@ clean:
 	rm -f airport/airport-linux
 
 build:
-	cd simple && go build
-	cd airport && go build
+	cd simple && go build -i
+	cd airport && go build -i
 
 linux: ## build for linux
 	@echo "building template (linux)"
-	cd simple && env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o simple-linux
-	cd airport && env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o airport-linux
+	cd simple && env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -i -o simple-linux
+	cd airport && env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -i -o airport-linux

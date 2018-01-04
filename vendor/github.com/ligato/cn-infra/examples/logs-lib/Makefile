@@ -5,6 +5,6 @@ clean:
 	rm -f http/http
 
 build:
-	cd basic && go build
-	cd custom && go build
-	cd http && go build
+	cd basic && go build -i
+	cd custom && go build -i
+	cd http && go build -i

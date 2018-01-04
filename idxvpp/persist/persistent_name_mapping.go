@@ -18,6 +18,7 @@ package persist
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -25,9 +26,8 @@ import (
 	"sync"
 	"time"
 
-	"flag"
-
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -50,10 +50,10 @@ func init() {
 		var err error
 		gConfig, err = nametoidx.ConfigFromFile(idxMapConfigFile)
 		if err != nil {
-			log.DefaultLogger().WithFields(log.Fields{"filepath": idxMapConfigFile, "err": err}).Warn(
+			log.DefaultLogger().WithFields(logging.Fields{"filepath": idxMapConfigFile, "err": err}).Warn(
 				"Failed to load idxmap configuration file")
 		} else {
-			log.DefaultLogger().WithFields(log.Fields{"filepath": idxMapConfigFile}).Debug(
+			log.DefaultLogger().WithFields(logging.Fields{"filepath": idxMapConfigFile}).Debug(
 				"Loaded idxmap configuration file")
 		}
 	}
@@ -133,7 +133,7 @@ func (persist *NameToIdxPersist) Init() error {
 // loadIdxMapFile loads persistently stored entries of the associated registry.
 func (persist *NameToIdxPersist) loadIdxMapFile(loadedFromFile idxvpp.NameToIdxRW) error {
 	if _, err := os.Stat(persist.filePath); os.IsNotExist(err) {
-		log.DefaultLogger().WithFields(log.Fields{"Filepath": persist.filePath}).Debug(
+		log.DefaultLogger().WithFields(logging.Fields{"Filepath": persist.filePath}).Debug(
 			"Persistent storage for name-to-index mapping doesn't exist yet")
 		return nil
 	}
@@ -169,7 +169,7 @@ func (persist *NameToIdxPersist) periodicIdxMapSync(offset time.Duration) error 
 			offset = 0
 			err := persist.syncMapping()
 			if err != nil {
-				log.DefaultLogger().WithFields(log.Fields{"Error": err, "Filepath": persist.filePath}).Error(
+				log.DefaultLogger().WithFields(logging.Fields{"Error": err, "Filepath": persist.filePath}).Error(
 					"Failed to sync idxMap with the persistent storage")
 			}
 		}
