@@ -17,6 +17,7 @@ message AgentStatus {
     int64 last_change = 5;  /* last change of the state */
     int64 last_update = 6;  /* last update of the state by some plugin */
     InterfaceStats interface_stats = 7;
+    string commit_hash = 8;
 }
 
 message PluginStatus {
