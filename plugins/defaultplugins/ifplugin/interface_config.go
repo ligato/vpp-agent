@@ -223,8 +223,10 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// configure container IP address
-	if err := plugin.addContainerIPAddress(iface, ifIdx); err != nil {
-		errs = append(errs, err)
+	if iface.ContainerIpAddress != "" {
+		if err := plugin.addContainerIPAddress(iface, ifIdx); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	// configure mtu. Prefer value in interface config, otherwise set default value if defined
