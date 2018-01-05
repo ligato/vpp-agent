@@ -73,6 +73,7 @@ func (p *Plugin) Init() error {
 		State:        status.OperationalState_INIT,
 		StartTime:    time.Now().Unix(),
 		LastChange:   time.Now().Unix(),
+		CommitHash:   core.CommitHash,
 	}
 
 	// initial empty interface status

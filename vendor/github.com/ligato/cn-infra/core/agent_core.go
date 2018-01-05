@@ -29,6 +29,7 @@ import (
 var (
 	BuildVersion string
 	BuildDate    string
+	CommitHash   string
 )
 
 // Agent implements startup & shutdown procedures.
@@ -191,7 +192,8 @@ type logRegistryGetter interface {
 // The startup/initialization must take no longer than maxStartup time limit,
 // otherwise ErrPluginsInitTimeout error is returned.
 func (agent *Agent) Start() error {
-	agent.WithFields(logging.Fields{"BuildVersion": BuildVersion, "BuildDate": BuildDate}).Info("Starting the agent...")
+	agent.WithFields(logging.Fields{"CommitHash": CommitHash, "BuildDate": BuildDate}).
+		Infof("Starting agent %v", BuildVersion)
 
 	doneChannel := make(chan struct{}, 0)
 	errChannel := make(chan error, 0)
