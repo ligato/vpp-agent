@@ -66,7 +66,7 @@ func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("setting of interface flags (%+v) returned %d", req, reply.Retval)
+		return fmt.Errorf("setting of interface flags %+v returned %d", req, reply.Retval)
 	}
 
 	return nil
