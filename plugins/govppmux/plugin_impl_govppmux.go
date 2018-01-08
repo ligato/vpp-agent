@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
@@ -106,6 +107,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 	vppConnectTime := time.Since(startTime)
 	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
+	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
@@ -164,6 +166,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
+				plugin.retrieveVersion()
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 			} else {
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, errors.New("VPP disconnected"))
@@ -173,6 +176,24 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (plugin *GOVPPPlugin) retrieveVersion() {
+	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
+	if err != nil {
+		plugin.Log.Error("getting new api channel failed:", err)
+		return
+	}
+	defer vppAPIChan.Close()
+
+	info, err := vppcalls.GetVersionInfo(plugin.Log, vppAPIChan)
+	if err != nil {
+		plugin.Log.Warn("getting version info failed:", err)
+		return
+	}
+
+	plugin.Log.Debugf("version info: %+v", info)
+	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
 }
 
 func defaultConfig() Config {
