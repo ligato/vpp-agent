@@ -863,7 +863,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 				continue
 			}
 
-			if err := plugin.configureLinuxInterface(nsMgmtCtx, iface); err == nil {
+			if err := plugin.configureLinuxInterface(nsMgmtCtx, iface); err != nil {
 				plugin.Log.Warnf("failed to configure VETH interface %s: %v", iface.config.Name, err)
 			} else if err := plugin.configureLinuxInterface(nsMgmtCtx, peer); err != nil {
 				plugin.Log.Warnf("failed to configure VETH interface %s: %v", peer.config.Name, err)
