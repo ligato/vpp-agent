@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tapv2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 )
 
@@ -53,13 +54,10 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&tap.SwInterfaceTapDump{},
 		&tap.SwInterfaceTapDetails{},
 
-		/*
-			Temporary disabled for VPP downgrade!
-		*/
-		/*&tapv2.TapCreateV2{},
+		&tapv2.TapCreateV2{},
 		&tapv2.TapCreateV2Reply{},
 		&tapv2.TapDeleteV2{},
-		&tapv2.TapDeleteV2Reply{},*/
+		&tapv2.TapDeleteV2Reply{},
 
 		&interfaces.SwInterfaceEvent{},
 		&interfaces.SwInterfaceSetFlags{},
