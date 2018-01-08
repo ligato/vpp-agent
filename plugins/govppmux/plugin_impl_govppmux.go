@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
@@ -36,6 +37,8 @@ type GOVPPPlugin struct {
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
+
+	vppAPIChan *api.Channel
 
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
@@ -106,6 +109,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 	vppConnectTime := time.Since(startTime)
 	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
+	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
@@ -164,6 +168,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
+				plugin.retrieveVersion()
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 			} else {
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, errors.New("VPP disconnected"))
@@ -173,6 +178,25 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (plugin *GOVPPPlugin) retrieveVersion() {
+	if plugin.vppAPIChan == nil {
+		var err error
+		if plugin.vppAPIChan, err = plugin.vppConn.NewAPIChannel(); err != nil {
+			plugin.Log.Error("getting new api channel failed:", err)
+			return
+		}
+	}
+
+	info, err := vppcalls.GetVersionInfo(plugin.Log, plugin.vppAPIChan)
+	if err != nil {
+		plugin.Log.Warn("getting version info failed:", err)
+		return
+	}
+
+	plugin.Log.Debugf("version info: %+v", info)
+	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
 }
 
 func defaultConfig() Config {
