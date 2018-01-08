@@ -38,8 +38,6 @@ type GOVPPPlugin struct {
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
 
-	vppAPIChan *api.Channel
-
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
@@ -181,15 +179,14 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 }
 
 func (plugin *GOVPPPlugin) retrieveVersion() {
-	if plugin.vppAPIChan == nil {
-		var err error
-		if plugin.vppAPIChan, err = plugin.vppConn.NewAPIChannel(); err != nil {
-			plugin.Log.Error("getting new api channel failed:", err)
-			return
-		}
+	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
+	if err != nil {
+		plugin.Log.Error("getting new api channel failed:", err)
+		return
 	}
+	defer vppAPIChan.Close()
 
-	info, err := vppcalls.GetVersionInfo(plugin.Log, plugin.vppAPIChan)
+	info, err := vppcalls.GetVersionInfo(plugin.Log, vppAPIChan)
 	if err != nil {
 		plugin.Log.Warn("getting version info failed:", err)
 		return
