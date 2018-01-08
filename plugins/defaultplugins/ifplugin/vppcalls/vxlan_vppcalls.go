@@ -71,8 +71,7 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32,
 	}()
 
 	// this is temporary fix to solve creation of VRF table for VXLAN
-	// TODO: manage VRF tables globally in separate configurator
-	if err := createVrfIfNeeded(encapVrf, vppChan); err != nil {
+	if err := CreateVrfIfNeeded(encapVrf, vppChan); err != nil {
 		return 0, err
 	}
 

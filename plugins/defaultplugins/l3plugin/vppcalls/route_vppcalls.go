@@ -23,6 +23,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 )
 
@@ -97,7 +98,6 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 	req.IsDrop = 0
 
 	// VRF
-	req.CreateVrfIfNeeded = 1
 	req.TableID = route.VrfID
 
 	// Multi path is always true
@@ -119,6 +119,9 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 
 // VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppAddRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
+		return err
+	}
 	return vppAddDelRoute(route, vppChan, false, timeLog)
 }
 
