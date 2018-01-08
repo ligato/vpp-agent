@@ -1,6 +1,7 @@
 package vppcalls
 
 import (
+	"bytes"
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -32,10 +33,10 @@ func GetVersionInfo(log logging.Logger, vppChan *govppapi.Channel) (*VersionInfo
 	}
 
 	info := &VersionInfo{
-		Program:        string(reply.Program),
-		Version:        string(reply.Version),
-		BuildDate:      string(reply.BuildDate),
-		BuildDirectory: string(reply.BuildDirectory),
+		Program:        string(bytes.Trim(reply.Program, "\x00")),
+		Version:        string(bytes.Trim(reply.Version, "\x00")),
+		BuildDate:      string(bytes.Trim(reply.BuildDate, "\x00")),
+		BuildDirectory: string(bytes.Trim(reply.BuildDirectory, "\x00")),
 	}
 	return info, nil
 }
