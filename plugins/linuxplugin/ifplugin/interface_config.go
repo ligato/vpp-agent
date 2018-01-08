@@ -40,6 +40,7 @@ import (
 /* how often in seconds to refresh the microservice label -> docker container PID map */
 const (
 	dockerRefreshPeriod = 3 * time.Second
+	dockerRetryPeriod   = 5 * time.Second
 	vethConfigNamespace = "veth-cfg-ns"
 )
 
@@ -695,21 +696,28 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		nsMgmtCtx: linuxcalls.NewNamespaceMgmtCtx(),
 	}
 
-	var err error
+	timer := time.NewTimer(0)
+
 	for {
-		if plugin.dockerClient == nil {
-			if plugin.dockerClient, err = docker.NewClientFromEnv(); err == nil {
-				plugin.Log.Debugf("Successfully established connection with the docker daemon.")
-				plugin.microserviceChan <- msCtx
-			} else {
-				plugin.Log.Warnf("Failed to establish connection with the docker daemon: %v", err)
-				plugin.Log.Debugf("Retrying connect in few seconds..")
-			}
-		}
-		// Sleep before another refresh.
 		select {
-		case <-time.After(dockerRefreshPeriod):
-			continue
+		case <-timer.C:
+			if plugin.dockerClient == nil {
+				var err error
+				if plugin.dockerClient, err = docker.NewClientFromEnv(); err == nil {
+					plugin.Log.Debugf("Successfully established connection with the docker daemon.")
+				} else {
+					plugin.Log.Warnf("Failed to establish connection with the docker daemon: %v", err)
+					plugin.Log.Debugf("Retrying connect in few seconds..")
+					// Sleep before another retry.
+					timer.Reset(dockerRetryPeriod)
+					continue
+				}
+			}
+
+			plugin.microserviceChan <- msCtx
+
+			// Sleep before another refresh.
+			timer.Reset(dockerRefreshPeriod)
 		case <-plugin.ctx.Done():
 			return
 		}
