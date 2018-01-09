@@ -120,3 +120,34 @@ func DelStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govp
 
 	return nil
 }
+
+// DumpStnRules returns a list of all STN rules configured on the VPP
+func DumpStnRules(log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) ([]*stn.StnRuleDetails, error) {
+	// StnRulesDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &stn.StnRulesDump{}
+	reqCtx := vppChan.SendMultiRequest(req)
+	var stnRules []*stn.StnRuleDetails
+	for {
+		msg := &stn.StnRuleDetails{}
+		stop, err := reqCtx.ReceiveReply(msg)
+		if stop {
+			break
+		}
+		if err != nil {
+			log.Errorf("failed to dump STN rules: %v", err)
+			return stnRules, err
+		}
+		stnRules = append(stnRules, msg)
+	}
+
+	log.Warnf("%v configured STN rules found", len(stnRules))
+
+	return stnRules, nil
+}

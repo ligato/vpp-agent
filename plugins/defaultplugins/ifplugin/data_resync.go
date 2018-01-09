@@ -15,9 +15,12 @@
 package ifplugin
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
+	stn_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
@@ -327,7 +330,7 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHop
 }
 
 // Resync writes stn rule to the the empty VPP
-func (plugin *StnConfigurator) Resync(stnRules []*stn.StnRule) error {
+func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync
 	defer func() {
@@ -336,12 +339,61 @@ func (plugin *StnConfigurator) Resync(stnRules []*stn.StnRule) error {
 		}
 	}()
 
-	var wasError error
-	if len(stnRules) > 0 {
-		for _, rule := range stnRules {
-			wasError = plugin.Add(rule)
+	// Dump existing STN Rules
+	// Todo: stn rules dump returns incorrect message ID
+	//vppStnRules, err := plugin.Dump()
+	//if err != nil {
+	//	return err
+	//}
+	var vppStnRules []*stn_api.StnRuleDetails
+
+	// Correlate configuration, add missing STN rules
+	var wasErr error
+	for _, nbStnRule := range nbStnRules {
+		nbStnIfIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbStnRule.Interface)
+		// Index all STN rules which cannot be configured
+		if !found {
+			plugin.Log.Debugf("Interface %v does not exist for STN rule", nbStnRule.Interface)
+			plugin.indexSTNRule(nbStnRule, true)
+			continue
+		}
+
+		// look for configured STN rule
+		var vppRuleFound bool
+		for _, vppStnRule := range vppStnRules {
+			if vppStnRule.SwIfIndex == nbStnIfIdx && net.IP(vppStnRule.IPAddress).String() == nbStnRule.IpAddress {
+				plugin.indexSTNRule(nbStnRule, false)
+				vppRuleFound = true
+			}
+		}
+		// Configure new STN rule
+		if !vppRuleFound {
+			if err := plugin.Add(nbStnRule); err != nil {
+				wasErr = err
+			}
 		}
 	}
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules end. ", wasError)
-	return wasError
+
+	// remove obsolete configuration
+	for _, vppStnRule := range vppStnRules {
+		ruleID := StnIdentifier(net.IP(vppStnRule.IPAddress).String())
+		_, _, found := plugin.StnAllIndexes.LookupIdx(ruleID)
+		if !found {
+			// find rule interface
+			ifName, _, found := plugin.SwIfIndexes.LookupName(vppStnRule.SwIfIndex)
+			if !found {
+				plugin.Log.Warnf("Obsolete STN rule %v cannot be removed, missing interface with index %v",
+					ruleID, vppStnRule.SwIfIndex)
+				continue
+			}
+			// prepare stn rule to delete
+			obsoleteRule := &stn.StnRule{
+				IpAddress: net.IP(vppStnRule.IPAddress).String(),
+				Interface: ifName,
+			}
+			plugin.Delete(obsoleteRule)
+		}
+	}
+
+	return wasErr
 }
