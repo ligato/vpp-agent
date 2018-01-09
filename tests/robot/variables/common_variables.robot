@@ -102,6 +102,9 @@ ${NODE_3_DOCKER_IMAGE}            ${AGENT_IMAGE_NAME}
 ${NODE_3_REST_API_PORT}           9191
 ${NODE_3_REST_API_HOST_PORT}      9197
 
+${NODE_1_AGAIN_REST_API_PORT}     9191
+${NODE_1_AGAIN_REST_API_HOST_PORT}  9198
+
 # Variables for container with libmemif without vpp
 ${AGENT_LIBMEMIF_IMAGE_NAME}       ligato/libmemif-sample-service:test
 
