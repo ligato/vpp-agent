@@ -89,8 +89,14 @@ Agent ${ability} Should Be ${expected} On ${node}
     ${uri}=         Set Variable     /${ability}
     ${out}=         rest_api: Get    ${node}    ${uri}
     Log Many        ${out}
-    Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+\\}
-
+    #Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+,\\"commit_hash\\":\\"[a-e0-9]+\\"\\}
+    Should Match Regexp    ${out}     \\"build_version\\":\\"[a-z0-9_.-]+\\"
+    Should Match Regexp    ${out}     \\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\"
+    Should Match Regexp    ${out}     \\"state\\"\\:${expected}
+    Should Match Regexp    ${out}     \\"start_time\\":\\d+
+    Should Match Regexp    ${out}     \\"last_change\\":\\d+
+    Should Match Regexp    ${out}     \\"last_update\\":\\d+
+    Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
 Change API Port From ${old_port} To ${new_port} On ${node}
     Log Many    ${old_port}    ${new_port}    ${node}
 
@@ -114,7 +120,15 @@ Get Agent Status For ${node} From ETCD Should be ${expected}
     ${out}=   Write To Machine    docker     docker exec -it etcd etcdctl get /vnf-agent/${node}/check/status/v1/agent
     Log Many    ${out}
     Should Contain         ${out}    ${node}
-    Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+\\}
+    #Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+\\}
+    Should Match Regexp    ${out}     \\"build_version\\":\\"[a-z0-9_.-]+\\"
+    Should Match Regexp    ${out}     \\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\"
+    Should Match Regexp    ${out}     \\"state\\"\\:${expected}
+    Should Match Regexp    ${out}     \\"start_time\\":\\d+
+    Should Match Regexp    ${out}     \\"last_change\\":\\d+
+    Should Match Regexp    ${out}     \\"last_update\\":\\d+
+    Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
+
     Sleep    20s
     ${out2}=    Write To Machine    docker    docker exec -it etcd etcdctl get /vnf-agent/${node}/check/status/v1/agent
     Log Many    ${out}     ${out2}
