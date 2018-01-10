@@ -6,7 +6,7 @@ package ip
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x15949b09
+const VlAPIVersion = 0x19e56d7a
 
 // FibPath represents the VPP binary API data type 'fib_path'.
 // Generated from '/usr/share/vpp/api/ip.api.json', line 3:
@@ -840,7 +840,7 @@ func NewSwInterfaceIP6SetLinkLocalAddressReply() api.Message {
 //            ["u8", "is_multipath"],
 //            ["u8", "is_resolve_host"],
 //            ["u8", "is_resolve_attached"],
-//            ["u8", "is_l2_bridged"],
+//            ["u8", "is_dvr"],
 //            ["u8", "is_source_lookup"],
 //            ["u8", "is_udp_encap"],
 //            ["u8", "next_hop_weight"],
@@ -852,7 +852,7 @@ func NewSwInterfaceIP6SetLinkLocalAddressReply() api.Message {
 //            ["u8", "next_hop_n_out_labels"],
 //            ["u32", "next_hop_via_label"],
 //            ["u32", "next_hop_out_label_stack", 0, "next_hop_n_out_labels"],
-//            {"crc" : "0x185f7474"}
+//            {"crc" : "0x212e3b82"}
 //        ],
 //
 type IPAddDelRoute struct {
@@ -871,7 +871,7 @@ type IPAddDelRoute struct {
 	IsMultipath          uint8
 	IsResolveHost        uint8
 	IsResolveAttached    uint8
-	IsL2Bridged          uint8
+	IsDvr                uint8
 	IsSourceLookup       uint8
 	IsUDPEncap           uint8
 	NextHopWeight        uint8
@@ -892,7 +892,7 @@ func (*IPAddDelRoute) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IPAddDelRoute) GetCrcString() string {
-	return "185f7474"
+	return "212e3b82"
 }
 func NewIPAddDelRoute() api.Message {
 	return &IPAddDelRoute{}
