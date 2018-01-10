@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
@@ -43,6 +44,18 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		return err
 	}
 
+	// Read persistent mapping
+	tmpCorr := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-l2plugin"), "bd resync corr", nil)
+	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.BdIndices.GetMapping(), tmpCorr)
+	if err != nil {
+		return err
+	}
+	// todo
+	for _, name := range tmpCorr.ListNames() {
+		idx, _, _ := tmpCorr.LookupIdx(name)
+		plugin.Log.Warnf("persistent mapping entry %v %v", name, idx)
+	}
+
 	pluginID := core.PluginName("defaultvppplugins-l2plugin")
 
 	var wasError error
@@ -62,7 +75,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			hackBD.Interfaces = append(hackBD.Interfaces, &hackBDIface)
 		}
 
-		vppcalls.VppUnsetAllInterfacesFromBridgeDomain(&hackBD, vppIdx,
+		vppcalls.UnsetInterfacesFromBridgeDomain(&hackBD, vppIdx, hackBD.Interfaces,
 			hackIfIndexes, plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
 		err := plugin.deleteBridgeDomain(&hackBD, vppIdx)
 		// TODO check if it is ok to delete the initial BD

@@ -528,6 +528,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
 		Log:               bdLogger,
 		GoVppmux:          plugin.GoVppmux,
+		ServiceLabel:      plugin.ServiceLabel,
 		SwIfIndices:       plugin.swIfIndexes,
 		BdIndices:         plugin.bdIndexes,
 		BridgeDomainIDSeq: 1,

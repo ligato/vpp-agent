@@ -485,7 +485,7 @@ func (plugin *FIBConfigurator) validateInterfaceBDPair(interfaceName string, bri
 		plugin.Log.Errorf("Interface %v registered as a pair with bridge domain but no meta found", interfaceName)
 		return false
 	}
-	wantedIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
+	wantedIndex := meta.(*BridgeDomainMeta).bdIdx
 	if bridgeDomainIndex == wantedIndex {
 		return true
 	}
