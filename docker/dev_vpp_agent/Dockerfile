@@ -1,8 +1,5 @@
 FROM ubuntu:16.04
 
-ARG VPP_URL
-ARG VPP_COMMIT
-
 RUN apt-get update && apt-get install -y \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
@@ -15,6 +12,9 @@ RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
+
+ARG VPP_URL
+ARG VPP_COMMIT
 
 # build & install VPP
 # memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
@@ -35,9 +35,9 @@ RUN /bin/bash -c "\
         cd build-root && \
         rm -rf .ccache; \
     fi; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb"
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
 
-# install Go & Glide
+# install Go
 RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.9.2.linux-amd64.tar.gz && \
     rm -f go1.9.2.linux-amd64.tar.gz
@@ -61,16 +61,10 @@ COPY build-agent.sh .
 RUN ./build-agent.sh ${AGENT_COMMIT}
 
 # copy configs
-COPY etcd.conf .
-COPY kafka.conf .
-COPY govpp.conf .
-COPY defaultplugins.conf .
-COPY linuxplugin.conf .
-COPY logs.conf .
-
+COPY etcd.conf kafka.conf govpp.conf defaultplugins.conf linuxplugin.conf logs.conf ./
 COPY vpp.conf /etc/vpp/vpp.conf
-COPY supervisord.conf /etc/supervisord/supervisord.conf
 
+COPY supervisord.conf /etc/supervisord/supervisord.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
