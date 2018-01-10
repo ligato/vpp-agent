@@ -515,7 +515,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *interfaces
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
 func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, vethName string, hostIfName string, ns *interfaces.LinuxInterfaces_Interface_Namespace) error {
-	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "ns": linuxcalls.NamespaceToStr(ns)}).
+	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": linuxcalls.NamespaceToStr(ns)}).
 		Debug("Attempting to remove obsolete VETH")
 
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ns)

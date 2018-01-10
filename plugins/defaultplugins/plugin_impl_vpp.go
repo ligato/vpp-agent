@@ -16,6 +16,7 @@ package defaultplugins
 
 import (
 	"context"
+	"os"
 
 	"sync"
 
@@ -704,15 +705,21 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 
 func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	config := &DPConfig{}
+
 	found, err := plugin.PluginConfig.GetValue(config)
-	if !found {
-		plugin.Log.Debug("defaultplugins config not found")
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
+	} else if !found {
+		plugin.Log.Warn("defaultplugins config not found")
+		return nil, nil
 	}
-	plugin.Log.Debug("defaultplugins config found")
+	plugin.Log.Debugf("defaultplugins config found: %+v", config)
+
+	if pubs := os.Getenv("DP_STATUS_PUBLISHERS"); pubs != "" {
+		plugin.Log.Debugf("status publishers from env: %v", pubs)
+		config.StatusPublishers = append(config.StatusPublishers, pubs)
+	}
+
 	return config, err
 }
 
