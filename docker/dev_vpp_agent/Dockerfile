@@ -35,7 +35,7 @@ RUN /bin/bash -c "\
         cd build-root && \
         rm -rf .ccache; \
     fi; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb"
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
 
 # install Go & Glide
 RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
