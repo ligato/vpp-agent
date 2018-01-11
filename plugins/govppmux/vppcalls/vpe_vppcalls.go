@@ -19,8 +19,6 @@ type VersionInfo struct {
 
 // GetVersionInfo retrieves version information
 func GetVersionInfo(log logging.Logger, vppChan *govppapi.Channel) (*VersionInfo, error) {
-	log.Debugf("retrieving version info")
-
 	req := new(vpe.ShowVersion)
 	reply := new(vpe.ShowVersionReply)
 
