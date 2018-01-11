@@ -30,4 +30,7 @@ type VppAdapter interface {
 
 	// SetMsgCallback sets a callback function that will be called by the adapter whenever a message comes from VPP.
 	SetMsgCallback(func(context uint32, msgId uint16, data []byte))
+
+	// WaitReady waits until adapter is ready.
+	WaitReady() error
 }

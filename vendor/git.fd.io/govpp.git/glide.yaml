@@ -1,6 +1,6 @@
 package: git.fd.io/govpp.git
 import:
-- package: github.com/Sirupsen/logrus
+- package: github.com/sirupsen/logrus
   version: v1.0.0
 - package: github.com/bennyscetbun/jsongo
   version: 5240b3f82c6665fe3ccd96bdf5e6f38fe1e1399d

@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git"
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
@@ -39,12 +38,12 @@ type testCtx struct {
 func setupTest(t *testing.T) *testCtx {
 	RegisterTestingT(t)
 
-	ctx := &testCtx{}
-	ctx.mockVpp = &mock.VppAdapter{}
-	govpp.SetAdapter(ctx.mockVpp)
+	ctx := &testCtx{
+		mockVpp: &mock.VppAdapter{},
+	}
 
 	var err error
-	ctx.conn, err = govpp.Connect()
+	ctx.conn, err = core.Connect(ctx.mockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.ch, err = ctx.conn.NewAPIChannel()
@@ -263,12 +262,55 @@ func TestNotifications(t *testing.T) {
 	ctx.mockVpp.SendMsg(0, []byte(""))
 
 	// receive the notification
-	notif := (<-notifChan).(*interfaces.SwInterfaceSetFlags)
+	var notif *interfaces.SwInterfaceSetFlags
+	Eventually(func() *interfaces.SwInterfaceSetFlags {
+		select {
+		case n := <-notifChan:
+			notif = n.(*interfaces.SwInterfaceSetFlags)
+			return notif
+		default:
+			return nil
+		}
+	}).ShouldNot(BeNil())
 
 	// verify the received notifications
-	Expect(notif).ShouldNot(BeNil())
 	Expect(notif.SwIfIndex).To(BeEquivalentTo(3), "Incorrect SwIfIndex value for SwInterfaceSetFlags")
 	Expect(notif.AdminUpDown).To(BeEquivalentTo(1), "Incorrect AdminUpDown value for SwInterfaceSetFlags")
+
+	ctx.ch.UnsubscribeNotification(subs)
+}
+
+func TestNotificationEvent(t *testing.T) {
+	ctx := setupTest(t)
+	defer ctx.teardownTest()
+
+	// subscribe for notification
+	notifChan := make(chan api.Message, 1)
+	subs, err := ctx.ch.SubscribeNotification(notifChan, interfaces.NewSwInterfaceEvent)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	// mock the notification and force its delivery
+	ctx.mockVpp.MockReply(&interfaces.SwInterfaceEvent{
+		SwIfIndex:  2,
+		LinkUpDown: 1,
+	})
+	ctx.mockVpp.SendMsg(0, []byte(""))
+
+	// receive the notification
+	var notif *interfaces.SwInterfaceEvent
+	Eventually(func() *interfaces.SwInterfaceEvent {
+		select {
+		case n := <-notifChan:
+			notif = n.(*interfaces.SwInterfaceEvent)
+			return notif
+		default:
+			return nil
+		}
+	}).ShouldNot(BeNil())
+
+	// verify the received notifications
+	Expect(notif.SwIfIndex).To(BeEquivalentTo(2), "Incorrect SwIfIndex value for SwInterfaceSetFlags")
+	Expect(notif.LinkUpDown).To(BeEquivalentTo(1), "Incorrect LinkUpDown value for SwInterfaceSetFlags")
 
 	ctx.ch.UnsubscribeNotification(subs)
 }

@@ -28,7 +28,6 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
-	"github.com/fsnotify/fsnotify"
 )
 
 const (
@@ -52,15 +51,6 @@ const (
 
 	// Disconnected connection state means that the connection to VPP has been lost.
 	Disconnected = iota
-)
-
-const (
-	// watchedFolder is a folder where vpp's shared memory is supposed to be created.
-	// File system events are monitored in this folder.
-	watchedFolder = "/dev/shm/"
-	// watchedFile is a name of the file in the watchedFolder. Once the file is present
-	// the vpp is ready to accept a new connection.
-	watchedFile = watchedFolder + "vpe-api"
 )
 
 // ConnectionEvent is a notification about change in the VPP connection state.
@@ -197,10 +187,13 @@ func newConnection(vppAdapter adapter.VppAdapter) (*Connection, error) {
 		return nil, errors.New("only one connection per process is supported")
 	}
 
-	conn = &Connection{vpp: vppAdapter, codec: &MsgCodec{}}
-	conn.channels = make(map[uint32]*api.Channel)
-	conn.msgIDs = make(map[string]uint16)
-	conn.notifSubscriptions = make(map[uint16][]*api.NotifSubscription)
+	conn = &Connection{
+		vpp:                vppAdapter,
+		codec:              &MsgCodec{},
+		channels:           make(map[uint32]*api.Channel),
+		msgIDs:             make(map[string]uint16),
+		notifSubscriptions: make(map[uint16][]*api.NotifSubscription),
+	}
 
 	conn.vpp.SetMsgCallback(msgCallback)
 	return conn, nil
@@ -235,50 +228,13 @@ func (c *Connection) disconnectVPP() {
 	}
 }
 
-func fileExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
-}
-
-// waitForVpp blocks until shared memory for sending bin api calls
-// is present on the file system.
-func waitForVpp() error {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-	defer watcher.Close()
-
-	err = watcher.Add(watchedFolder)
-	if err != nil {
-		return err
-	}
-
-	if fileExists(watchedFile) {
-		return nil
-	}
-
-	for {
-		ev := <-watcher.Events
-		if ev.Name == watchedFile && (ev.Op&fsnotify.Create) == fsnotify.Create {
-			break
-		}
-	}
-	return nil
-}
-
 // connectLoop attempts to connect to VPP until it succeeds.
 // Then it continues with healthCheckLoop.
 func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
-		waitForVpp()
-		err := c.connectVPP()
-		if err == nil {
+		c.vpp.WaitReady()
+		if err := c.connectVPP(); err == nil {
 			// signal connected event
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Connected}
 			break

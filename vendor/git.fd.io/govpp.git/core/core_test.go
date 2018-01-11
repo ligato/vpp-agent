@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package core_test
 
 import (
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"git.fd.io/govpp.git/examples/bin_api/interfaces"
 
@@ -27,7 +28,7 @@ import (
 
 type testCtx struct {
 	mockVpp *mock.VppAdapter
-	conn    *Connection
+	conn    *core.Connection
 	ch      *api.Channel
 }
 
@@ -38,7 +39,7 @@ func setupTest(t *testing.T) *testCtx {
 	ctx.mockVpp = &mock.VppAdapter{}
 
 	var err error
-	ctx.conn, err = Connect(ctx.mockVpp)
+	ctx.conn, err = core.Connect(ctx.mockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.ch, err = ctx.conn.NewAPIChannel()
@@ -146,7 +147,7 @@ func TestNotifications(t *testing.T) {
 
 func TestNilConnection(t *testing.T) {
 	RegisterTestingT(t)
-	var conn *Connection
+	var conn *core.Connection
 
 	ch, err := conn.NewAPIChannel()
 	Expect(ch).Should(BeNil())
@@ -163,7 +164,7 @@ func TestDoubleConnection(t *testing.T) {
 	ctx := setupTest(t)
 	defer ctx.teardownTest()
 
-	conn, err := Connect(ctx.mockVpp)
+	conn, err := core.Connect(ctx.mockVpp)
 	Expect(err).Should(HaveOccurred())
 	Expect(err.Error()).To(ContainSubstring("only one connection per process"))
 	Expect(conn).Should(BeNil())
@@ -174,14 +175,14 @@ func TestAsyncConnection(t *testing.T) {
 	defer ctx.teardownTest()
 
 	ctx.conn.Disconnect()
-	conn, ch, err := AsyncConnect(ctx.mockVpp)
+	conn, ch, err := core.AsyncConnect(ctx.mockVpp)
 	ctx.conn = conn
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(conn).ShouldNot(BeNil())
 
 	ev := <-ch
-	Expect(ev.State).Should(BeEquivalentTo(Connected))
+	Expect(ev.State).Should(BeEquivalentTo(core.Connected))
 }
 
 func TestFullBuffer(t *testing.T) {
@@ -218,7 +219,7 @@ func TestFullBuffer(t *testing.T) {
 func TestCodec(t *testing.T) {
 	RegisterTestingT(t)
 
-	codec := &MsgCodec{}
+	codec := &core.MsgCodec{}
 
 	// request
 	data, err := codec.EncodeMsg(&vpe.CreateLoopback{MacAddress: []byte{1, 2, 3, 4, 5, 6}}, 11)
@@ -254,7 +255,7 @@ func TestCodec(t *testing.T) {
 func TestCodecNegative(t *testing.T) {
 	RegisterTestingT(t)
 
-	codec := &MsgCodec{}
+	codec := &core.MsgCodec{}
 
 	// nil message for encoding
 	data, err := codec.EncodeMsg(nil, 15)

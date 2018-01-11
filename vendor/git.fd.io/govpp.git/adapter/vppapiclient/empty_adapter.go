@@ -50,3 +50,7 @@ func (a *vppAPIClientAdapter) SendMsg(clientID uint32, data []byte) error {
 func (a *vppAPIClientAdapter) SetMsgCallback(cb func(context uint32, msgID uint16, data []byte)) {
 	// no op
 }
+
+func (a *vppAPIClientAdapter) WaitReady() func() error {
+	return func() error { return nil }
+}

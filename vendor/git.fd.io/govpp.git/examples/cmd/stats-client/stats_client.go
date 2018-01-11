@@ -17,7 +17,7 @@
 package main
 
 // Generates Go bindings for all VPP APIs located in the json directory.
-//go:generate binapi-generator --input-dir=bin_api --output-dir=bin_api
+//go:generate binapi-generator --input-dir=../../bin_api --output-dir=../../bin_api
 
 import (
 	"fmt"
