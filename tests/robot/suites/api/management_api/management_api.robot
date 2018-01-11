@@ -19,7 +19,9 @@ List All Loggers
     Get All Loggers on agent_vpp_1
 
 Change Logger Level
-    Change Log Level On agent_vpp_1 From debug To info On defaultLogger
+    #Change Log Level On agent_vpp_1 From debug To info On defaultLogger
+    Change Log Level On agent_vpp_1 From debug To info On default-plugins
+    Change Log Level On agent_vpp_1 From debug To info On default-plugins-if-conf
     ${from_now}=  Get Time     epoch
     Log Many     ${from_now}
     vpp_ctl: Put Loopback Interface With IP    agent_vpp_1    loop0   8a:f1:be:90:00:03    10.1.1.1
@@ -28,7 +30,7 @@ Change Logger Level
     Log Many     ${out}
     Should Not Contain     ${out}    level=debug msg="Start processing change for key: vpp/config/v1/interface/loop0"
     Should Not Contain     ${out}    level=debug msg="MAC address added" MAC address="8a:f1:be:90:00:03"
-    Should Not Contain     ${out}    level=debug msg="IP address added." IPaddress=10.1.1.1
+    Should Not Contain     ${out}    level=debug msg="IP address added." IPAddress=10.1.1.1
 
 Check If Agent Is Live
     Agent liveness Should Be OK On agent_vpp_1
@@ -97,9 +99,9 @@ Agent ${ability} Should Be ${expected} On ${node}
     Should Match Regexp    ${out}     \\"last_change\\":\\d+
     Should Match Regexp    ${out}     \\"last_update\\":\\d+
     Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
+
 Change API Port From ${old_port} To ${new_port} On ${node}
     Log Many    ${old_port}    ${new_port}    ${node}
-
     Log Many             ${${node}_REST_API_HOST_PORT}    ${${node}_REST_API_PORT}
     Set Test Variable    ${${node}_REST_API_PORT}         ${new_port}
     Set Test Variable    ${${node}_REST_API_HOST_PORT}    ${new_port}
@@ -110,7 +112,7 @@ Change API Port From ${old_port} To ${new_port} On ${node}
     Add VPP Agent agent_vpp_1
     Start VPP On Node agent_vpp_1
     Start Agent On ${node} With Port ${new_port}
-    Sleep    6    # we need wait until agent is fully loaded
+    Sleep    20    # we need wait until agent is fully loaded
     Agent readiness Should Be OK On ${node}
 
 Get Agent Status For ${node} From ETCD Should be ${expected}
@@ -128,7 +130,6 @@ Get Agent Status For ${node} From ETCD Should be ${expected}
     Should Match Regexp    ${out}     \\"last_change\\":\\d+
     Should Match Regexp    ${out}     \\"last_update\\":\\d+
     Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
-
     Sleep    20s
     ${out2}=    Write To Machine    docker    docker exec -it etcd etcdctl get /vnf-agent/${node}/check/status/v1/agent
     Log Many    ${out}     ${out2}
