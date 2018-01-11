@@ -79,10 +79,21 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"unsafe"
 
 	"git.fd.io/govpp.git/adapter"
+	"github.com/fsnotify/fsnotify"
+)
+
+const (
+	// watchedFolder is a folder where vpp's shared memory is supposed to be created.
+	// File system events are monitored in this folder.
+	watchedFolder = "/dev/shm/"
+	// watchedFile is a name of the file in the watchedFolder. Once the file is present
+	// the vpp is ready to accept a new connection.
+	watchedFile = watchedFolder + "vpe-api"
 )
 
 // vppAPIClientAdapter is the opaque context of the adapter.
@@ -137,6 +148,42 @@ func (a *vppAPIClientAdapter) SendMsg(clientID uint32, data []byte) error {
 // SetMsgCallback sets a callback function that will be called by the adapter whenever a message comes from VPP.
 func (a *vppAPIClientAdapter) SetMsgCallback(cb func(context uint32, msgID uint16, data []byte)) {
 	a.callback = cb
+}
+
+// WaitReady blocks until shared memory for sending
+// binary api calls is present on the file system.
+func (a *vppAPIClientAdapter) WaitReady() error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(watchedFolder)
+	if err != nil {
+		return err
+	}
+
+	if fileExists(watchedFile) {
+		return nil
+	}
+
+	for {
+		ev := <-watcher.Events
+		if ev.Name == watchedFile && (ev.Op&fsnotify.Create) == fsnotify.Create {
+			break
+		}
+	}
+	return nil
+}
+
+func fileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
 
 //export go_msg_callback

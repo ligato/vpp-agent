@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"sync"
 
+	"git.fd.io/govpp.git/core"
 	"github.com/lunixbochs/struc"
 
 	"git.fd.io/govpp.git/adapter"
@@ -33,29 +34,11 @@ import (
 type VppAdapter struct {
 	callback func(context uint32, msgId uint16, data []byte)
 
-	msgNameToIds *map[string]uint16
-	msgIDsToName *map[uint16]string
+	msgNameToIds map[string]uint16
+	msgIDsToName map[uint16]string
 	msgIDSeq     uint16
 	binAPITypes  map[string]reflect.Type
 	access       sync.RWMutex
-}
-
-// replyHeader represents a common header of each VPP request message.
-type requestHeader struct {
-	VlMsgID     uint16
-	ClientIndex uint32
-	Context     uint32
-}
-
-// replyHeader represents a common header of each VPP reply message.
-type replyHeader struct {
-	VlMsgID uint16
-	Context uint32
-}
-
-// otherHeader represents a common header of each VPP reply message.
-type otherHeader struct {
-	VlMsgID uint16
 }
 
 // defaultReply is a default reply message that mock adapter returns for a request.
@@ -118,7 +101,7 @@ func (a *VppAdapter) GetMsgNameByID(msgID uint16) (string, bool) {
 	a.access.Lock()
 	defer a.access.Unlock()
 	a.initMaps()
-	msgName, found := (*a.msgIDsToName)[msgID]
+	msgName, found := a.msgIDsToName[msgID]
 
 	return msgName, found
 }
@@ -175,7 +158,7 @@ func (a *VppAdapter) ReplyBytes(request MessageDTO, reply api.Message) ([]byte, 
 	log.Println("ReplyBytes ", replyMsgID, " ", reply.GetMessageName(), " clientId: ", request.ClientID)
 
 	buf := new(bytes.Buffer)
-	struc.Pack(buf, &replyHeader{VlMsgID: replyMsgID, Context: request.ClientID})
+	struc.Pack(buf, &core.VppReplyHeader{VlMsgID: replyMsgID, Context: request.ClientID})
 	struc.Pack(buf, reply)
 
 	return buf.Bytes(), nil
@@ -198,15 +181,15 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 	defer a.access.Unlock()
 	a.initMaps()
 
-	msgID, found := (*a.msgNameToIds)[msgName]
+	msgID, found := a.msgNameToIds[msgName]
 	if found {
 		return msgID, nil
 	}
 
 	a.msgIDSeq++
 	msgID = a.msgIDSeq
-	(*a.msgNameToIds)[msgName] = msgID
-	(*a.msgIDsToName)[msgID] = msgName
+	a.msgNameToIds[msgName] = msgID
+	a.msgIDsToName[msgID] = msgName
 
 	log.Println("VPP GetMessageId ", msgID, " name:", msgName, " crc:", msgCrc)
 
@@ -216,8 +199,8 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 // initMaps initializes internal maps (if not already initialized).
 func (a *VppAdapter) initMaps() {
 	if a.msgIDsToName == nil {
-		a.msgIDsToName = &map[uint16]string{}
-		a.msgNameToIds = &map[string]uint16{}
+		a.msgIDsToName = map[uint16]string{}
+		a.msgNameToIds = map[string]uint16{}
 		a.msgIDSeq = 1000
 	}
 
@@ -235,11 +218,11 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 			replyHandler := replyHandlers[i]
 
 			buf := bytes.NewReader(data)
-			reqHeader := requestHeader{}
+			reqHeader := core.VppRequestHeader{}
 			struc.Unpack(buf, &reqHeader)
 
 			a.access.Lock()
-			reqMsgName, _ := (*a.msgIDsToName)[reqHeader.VlMsgID]
+			reqMsgName, _ := a.msgIDsToName[reqHeader.VlMsgID]
 			a.access.Unlock()
 
 			reply, msgID, finished := replyHandler(MessageDTO{reqHeader.VlMsgID, reqMsgName,
@@ -265,15 +248,24 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 			msgID, _ := a.GetMsgID(reply.GetMessageName(), reply.GetCrcString())
 			buf := new(bytes.Buffer)
 			if reply.GetMessageType() == api.ReplyMessage {
-				struc.Pack(buf, &replyHeader{VlMsgID: msgID, Context: clientID})
+				struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: clientID})
+			} else if reply.GetMessageType() == api.EventMessage {
+				struc.Pack(buf, &core.VppEventHeader{VlMsgID: msgID, Context: clientID})
+			} else if reply.GetMessageType() == api.RequestMessage {
+				struc.Pack(buf, &core.VppRequestHeader{VlMsgID: msgID, Context: clientID})
 			} else {
-				struc.Pack(buf, &requestHeader{VlMsgID: msgID, Context: clientID})
+				struc.Pack(buf, &core.VppOtherHeader{VlMsgID: msgID})
 			}
 			struc.Pack(buf, reply)
 			a.callback(clientID, msgID, buf.Bytes())
 		}
 		if len(replies) > 0 {
 			replies = []api.Message{}
+			if len(replyHandlers) > 0 {
+				// Switch back to handlers once the queue is empty to revert back
+				// the fallthrough effect.
+				mode = useReplyHandlers
+			}
 			return nil
 		}
 
@@ -282,7 +274,7 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		// return default reply
 		buf := new(bytes.Buffer)
 		msgID := uint16(defaultReplyMsgID)
-		struc.Pack(buf, &replyHeader{VlMsgID: msgID, Context: clientID})
+		struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: clientID})
 		struc.Pack(buf, &defaultReply{})
 		a.callback(clientID, msgID, buf.Bytes())
 	}
@@ -292,6 +284,11 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 // SetMsgCallback sets a callback function that will be called by the adapter whenever a message comes from the mock.
 func (a *VppAdapter) SetMsgCallback(cb func(context uint32, msgID uint16, data []byte)) {
 	a.callback = cb
+}
+
+// WaitReady mocks waiting for VPP
+func (a *VppAdapter) WaitReady() error {
+	return nil
 }
 
 // MockReply stores a message to be returned when the next request comes. It is a FIFO queue - multiple replies
