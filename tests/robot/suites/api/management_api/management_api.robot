@@ -19,7 +19,9 @@ List All Loggers
     Get All Loggers on agent_vpp_1
 
 Change Logger Level
-    Change Log Level On agent_vpp_1 From debug To info On defaultLogger
+    #Change Log Level On agent_vpp_1 From debug To info On defaultLogger
+    Change Log Level On agent_vpp_1 From debug To info On default-plugins
+    Change Log Level On agent_vpp_1 From debug To info On default-plugins-if-conf
     ${from_now}=  Get Time     epoch
     Log Many     ${from_now}
     vpp_ctl: Put Loopback Interface With IP    agent_vpp_1    loop0   8a:f1:be:90:00:03    10.1.1.1
@@ -27,8 +29,8 @@ Change Logger Level
     ${out}=      Write To Machine    docker     docker logs --since ${from_now} agent_vpp_1
     Log Many     ${out}
     Should Not Contain     ${out}    level=debug msg="Start processing change for key: vpp/config/v1/interface/loop0"
-    Should Not Contain     ${out}    level=debug msg="MAC address added" MAC address="8a:f1:be:90:00:03"
-    Should Not Contain     ${out}    level=debug msg="IP address added." IPaddress=10.1.1.1
+    Should Not Contain     ${out}    level=debug msg="MAC address added" MAC address="8a:f1:be:90:00:03"default-plugins-if-conf
+    Should Not Contain     ${out}    level=debug msg="IP address added." IPAddress=10.1.1.1
 
 Check If Agent Is Live
     Agent liveness Should Be OK On agent_vpp_1
@@ -90,13 +92,14 @@ Agent ${ability} Should Be ${expected} On ${node}
     ${out}=         rest_api: Get    ${node}    ${uri}
     Log Many        ${out}
     #Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+,\\"commit_hash\\":\\"[a-e0-9]+\\"\\}
-    Should Match Regexp    ${out}     \\"build_version\\":\\"[a-f0-9]+\\"
+    Should Match Regexp    ${out}     \\"build_version\\":\\"[a-z0-9_.-]+\\"
     Should Match Regexp    ${out}     \\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\"
     Should Match Regexp    ${out}     \\"state\\"\\:${expected}
     Should Match Regexp    ${out}     \\"start_time\\":\\d+
     Should Match Regexp    ${out}     \\"last_change\\":\\d+
     Should Match Regexp    ${out}     \\"last_update\\":\\d+
-    Should Match Regexp    ${out}
+    Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
+
 Change API Port From ${old_port} To ${new_port} On ${node}
     Log Many    ${old_port}    ${new_port}    ${node}
     Log Many             ${${node}_REST_API_HOST_PORT}    ${${node}_REST_API_PORT}
@@ -119,7 +122,14 @@ Get Agent Status For ${node} From ETCD Should be ${expected}
     ${out}=   Write To Machine    docker     docker exec -it etcd etcdctl get /vnf-agent/${node}/check/status/v1/agent
     Log Many    ${out}
     Should Contain         ${out}    ${node}
-    Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+\\}
+    #Should Match Regexp    ${out}    \\{\\"build_version\\":\\"[a-f0-9]+\\"\\,\\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\",\\"state\\"\\:${expected},\\"start_time\\":\\d+,\\"last_change\\":\\d+,\\"last_update\\":\\d+\\}
+    Should Match Regexp    ${out}     \\"build_version\\":\\"[a-z0-9_.-]+\\"
+    Should Match Regexp    ${out}     \\"build_date\\"\\:\\"\\d{4}\\-\\d{2}\\-\\d{2}\\T\\d{2}\\:\\d{2}\\+\\d{2}\\:\\d{2}\\"
+    Should Match Regexp    ${out}     \\"state\\"\\:${expected}
+    Should Match Regexp    ${out}     \\"start_time\\":\\d+
+    Should Match Regexp    ${out}     \\"last_change\\":\\d+
+    Should Match Regexp    ${out}     \\"last_update\\":\\d+
+    Should Match Regexp    ${out}     \\"commit_hash\\":\\"[a-f0-9]+\\"
     Sleep    20s
     ${out2}=    Write To Machine    docker    docker exec -it etcd etcdctl get /vnf-agent/${node}/check/status/v1/agent
     Log Many    ${out}     ${out2}
