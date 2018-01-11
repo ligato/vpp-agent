@@ -29,7 +29,7 @@ Change Logger Level
     ${out}=      Write To Machine    docker     docker logs --since ${from_now} agent_vpp_1
     Log Many     ${out}
     Should Not Contain     ${out}    level=debug msg="Start processing change for key: vpp/config/v1/interface/loop0"
-    Should Not Contain     ${out}    level=debug msg="MAC address added" MAC address="8a:f1:be:90:00:03"default-plugins-if-conf
+    Should Not Contain     ${out}    level=debug msg="MAC address added" MAC address="8a:f1:be:90:00:03"
     Should Not Contain     ${out}    level=debug msg="IP address added." IPAddress=10.1.1.1
 
 Check If Agent Is Live
