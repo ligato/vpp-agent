@@ -52,23 +52,37 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
+	// store last errors to prevent repeating
+	var lastPublishErr error
+	var lastNotifErr error
+
 	for {
 		select {
 		case ifState := <-plugin.ifStateChan:
 			key := intf.InterfaceStateKey(ifState.State.Name)
 
 			if plugin.PublishStatistics != nil {
-				err := plugin.PublishStatistics.Put(key, ifState.State)
-				if err != nil {
-					plugin.Log.Error(err)
+				if err := plugin.PublishStatistics.Put(key, ifState.State); err != nil {
+					if err.Error() != lastPublishErr.Error() {
+						plugin.Log.Error(err)
+						lastPublishErr = err
+					}
+				} else {
+					// clean last publish error after successful call
+					lastPublishErr = nil
 				}
 			}
 
 			// Marshall data into JSON & send kafka message.
 			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
-				err := plugin.ifStateNotifications.Put(key, ifState.State)
-				if err != nil {
-					plugin.Log.Error(err)
+				if err := plugin.ifStateNotifications.Put(key, ifState.State); err != nil {
+					if err.Error() != lastNotifErr.Error() {
+						plugin.Log.Error(err)
+						lastNotifErr = err
+					}
+				} else {
+					// clean last kafka error after successful call
+					lastNotifErr = nil
 				}
 			}
 
