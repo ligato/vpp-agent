@@ -38,22 +38,44 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 	}()
 
-	// Step 0: Dump current state of the VPP.
+	// Dump current state of the VPP bridge domains
 	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.BridgeDomainDump{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
 
 	// Read persistent mapping
-	tmpCorr := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-l2plugin"), "bd resync corr", nil)
-	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.BdIndices.GetMapping(), tmpCorr)
+	persistent := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-l2plugin"), "bd resync corr", nil)
+	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.BdIndices.GetMapping(), persistent)
 	if err != nil {
 		return err
 	}
+
 	// todo
-	for _, name := range tmpCorr.ListNames() {
-		idx, _, _ := tmpCorr.LookupIdx(name)
+	for _, name := range persistent.ListNames() {
+		idx, _, _ := persistent.LookupIdx(name)
 		plugin.Log.Warnf("persistent mapping entry %v %v", name, idx)
+	}
+
+	// Handle the case where persistent mapping is not available
+	var wasErr error
+	if len(persistent.ListNames()) == 0 && len(vppBDs) > 0 {
+		plugin.Log.Infof("Persisten mapping for bridge domains is empty (%v unknown bridge domains)", len(vppBDs))
+		// There is no way how to correlate NB and VPP configuration so remove all bridge domains from the VPP
+		for bdID, unknownVppBd := range vppBDs {
+			// Try to reconstruct bridge domain with interfaces
+			// todo: bridge domain dump returns no interfaces. It is possible to remove bridge domain to unsetting it,
+			// but it would be better to do so
+			bd := l2.BridgeDomains_BridgeDomain(unknownVppBd.BridgeDomains_BridgeDomain)
+			bd.Name = "unknownBD" + string(bdID)
+			plugin.BdIndices.RegisterName(bd.Name, bdID, nil)
+			wasErr = plugin.DeleteBridgeDomain(&bd)
+		}
+		// Configure NB
+		for _, nbBd := range nbBDs {
+			wasErr = plugin.ConfigureBridgeDomain(nbBd)
+		}
+		return wasErr
 	}
 
 	pluginID := core.PluginName("defaultvppplugins-l2plugin")
