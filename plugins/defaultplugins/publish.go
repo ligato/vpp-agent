@@ -63,7 +63,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 
 			if plugin.PublishStatistics != nil {
 				err := plugin.PublishStatistics.Put(key, ifState.State)
-				if err.Error() != lastPublishErr.Error() {
+				if err != lastPublishErr {
 					plugin.Log.Error(err)
 				}
 				lastPublishErr = err
@@ -72,7 +72,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			// Marshall data into JSON & send kafka message.
 			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
-				if err.Error() != lastNotifErr.Error() {
+				if err != lastNotifErr {
 					plugin.Log.Error(err)
 				}
 				lastNotifErr = err
