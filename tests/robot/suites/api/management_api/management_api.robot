@@ -9,8 +9,7 @@ Resource     ../../../libraries/all_libs.robot
 
 Suite Setup       Setup
 Suite Teardown    Testsuite Teardown
-Test Setup        TestSetup
-Test Teardown     TestTeardown
+
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
