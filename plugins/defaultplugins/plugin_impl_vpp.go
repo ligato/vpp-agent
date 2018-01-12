@@ -357,7 +357,7 @@ func (plugin *Plugin) resolveResyncStrategy(strategy string) string {
 	} else if strategy == fullResync || strategy == optimizeColdStart {
 		return strategy
 	}
-	plugin.Log.Warnf("Resync strategy %v is not known, setting up the full resync", strategy)
+	plugin.Log.Infof("Resync strategy %v is not known, setting up the full resync", strategy)
 	return fullResync
 }
 
