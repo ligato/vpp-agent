@@ -135,6 +135,20 @@ Check Linux Interfaces On VPP1 After Resync
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
 
+    ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns1 ip route add 192.168.22.6/32 via 192.168.22.2
+    ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns3 ip route add 192.168.22.1/32 via 192.168.22.5
+
+    # IP FORWARDING
+    # Advice from Andrej Marcinek
+    # 9, enable IP forwarding
+    # sudo sysctl -w net.ipv4.ip_forward=1
+    # 10, do 'sudo nano /etc/sysctl.conf' and uncomment line:
+    # net.ipv4.ip_forward=1
+    #https://unix.stackexchange.com/questions/292801/routing-between-linux-namespaces
+    #ip netns exec $NS_MID sysctl -w net.ipv4.ip_forward=1
+    ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns2 sysctl -w net.ipv4.ip_forward=1
+
+
 Try to ping among namespaces
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.2
     Ping in namespace    node=agent_vpp_1    namespace=ns2    ip=192.168.22.1
