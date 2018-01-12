@@ -125,17 +125,19 @@ func (adapter *Registry) PropagateChanges(txData map[string] /*key*/ datasync.Ch
 						_, prev, curRev = adapter.lastRev.Put(key, val)
 					}
 
-					onDone := func(done chan error) {
-						sub.ChangeChan <- &ChangeEvent{
-							Key:        key,
-							ChangeType: val.GetChangeType(),
-							CurrVal:    val,
-							CurrRev:    curRev,
-							PrevVal:    prev,
-							delegate:   NewDoneChannel(done),
+					sendTo := func(sub *Subscription, key string, val datasync.ChangeValue) func(done chan error) {
+						return func(done chan error) {
+							sub.ChangeChan <- &ChangeEvent{
+								Key:        key,
+								ChangeType: val.GetChangeType(),
+								CurrVal:    val,
+								CurrRev:    curRev,
+								PrevVal:    prev,
+								delegate:   NewDoneChannel(done),
+							}
 						}
 					}
-					events = append(events, onDone)
+					events = append(events, sendTo(sub, key, val))
 				}
 			}
 		}
