@@ -40,6 +40,7 @@ func main() {
 	// Initialize multiplexer named "default".
 	mx, err := mux.InitMultiplexer(configFile, "default", logrus.DefaultLogger())
 	if err != nil {
+		fmt.Printf("Error initializing multiplexer %v", err)
 		os.Exit(1)
 	}
 

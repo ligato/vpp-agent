@@ -65,8 +65,6 @@ func NewAsyncProducer(config *Config, sClient sarama.Client, partitioner string,
 	// set partitioner
 	config.SetPartitioner(partitioner)
 
-	config.Logger.Debugf("AsyncProducer config: %#v", config)
-
 	// initAsyncProducer object
 	ap := &AsyncProducer{
 		Logger:       config.Logger,

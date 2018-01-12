@@ -171,6 +171,7 @@ func NewClient(config *Config, partitioner string) (sarama.Client, error) {
 
 	sClient, err := sarama.NewClient(config.Brokers, &config.Config.Config)
 	if err != nil {
+		fmt.Printf("Error creating consumer client %v", err)
 		return nil, err
 	}
 

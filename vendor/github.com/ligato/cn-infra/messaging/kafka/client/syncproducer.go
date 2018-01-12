@@ -62,8 +62,6 @@ func NewSyncProducer(config *Config, sClient sarama.Client, partitioner string, 
 	// set partitioner
 	config.SetPartitioner(partitioner)
 
-	config.Logger.Debugf("SyncProducer config: %#v", config)
-
 	// initProducer object
 	sp := &SyncProducer{
 		Logger:       config.Logger,
@@ -176,7 +174,6 @@ func (ref *SyncProducer) SendMsgToPartition(topic string, partition int32, key s
 		Partition: partition,
 	}
 	if err != nil {
-		ref.Errorf("message error: %s, err: %v", pmsg, err)
 		return pmsg, err
 	}
 
