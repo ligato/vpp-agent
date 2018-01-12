@@ -62,28 +62,20 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			key := intf.InterfaceStateKey(ifState.State.Name)
 
 			if plugin.PublishStatistics != nil {
-				if err := plugin.PublishStatistics.Put(key, ifState.State); err != nil {
-					if err.Error() != lastPublishErr.Error() {
-						plugin.Log.Error(err)
-						lastPublishErr = err
-					}
-				} else {
-					// clean last publish error after successful call
-					lastPublishErr = nil
+				err := plugin.PublishStatistics.Put(key, ifState.State)
+				if err.Error() != lastPublishErr.Error() {
+					plugin.Log.Error(err)
 				}
+				lastPublishErr = err
 			}
 
 			// Marshall data into JSON & send kafka message.
 			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
-				if err := plugin.ifStateNotifications.Put(key, ifState.State); err != nil {
-					if err.Error() != lastNotifErr.Error() {
-						plugin.Log.Error(err)
-						lastNotifErr = err
-					}
-				} else {
-					// clean last kafka error after successful call
-					lastNotifErr = nil
+				err := plugin.ifStateNotifications.Put(key, ifState.State)
+				if err.Error() != lastNotifErr.Error() {
+					plugin.Log.Error(err)
 				}
+				lastNotifErr = err
 			}
 
 			// Send interface state data to global agent status
