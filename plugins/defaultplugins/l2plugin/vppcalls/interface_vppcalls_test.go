@@ -48,18 +48,18 @@ const (
 
 var testDataInDummySwIfIndex = initSwIfIndex().(ifaceidx.SwIfIndexRW)
 
+var testDataIfaces = []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	{Name: ifaceA, BridgedVirtualInterface: true, SplitHorizonGroup: splitHorizonGroupA},
+	{Name: ifaceB, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupA},
+	{Name: ifaceC, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB},
+	{Name: ifaceD, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB},
+	{Name: ifaceE, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB},
+}
+
 var testDataInBDIfaces = []*l2.BridgeDomains_BridgeDomain{
 	{
-		Name: dummyBridgeDomainName,
-		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
-			{Name: ifaceA, BridgedVirtualInterface: true, SplitHorizonGroup: splitHorizonGroupA},
-			{Name: ifaceB, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupA},
-			{Name: ifaceC, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB},
-			{Name: ifaceD, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB},
-			{Name: ifaceE, BridgedVirtualInterface: false, SplitHorizonGroup: splitHorizonGroupB}},
-	},
-	{
-		Name: dummyBridgeDomainName,
+		Name:       dummyBridgeDomainName,
+		Interfaces: testDataIfaces,
 	},
 }
 
@@ -107,51 +107,13 @@ func TestVppSetAllInterfacesToBridgeDomainWithInterfaces(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 
 	//call testing method
-	allBdInterfaces, configuredBdInterfaces, bviInterfaceName := vppcalls.VppSetAllInterfacesToBridgeDomain(
-		testDataInBDIfaces[0], dummyBridgeDomain, testDataInDummySwIfIndex, logrus.DefaultLogger(),
-		ctx.MockChannel, nil)
-
-	//evaluate allBdInterfaces
-	Expect(allBdInterfaces).To(HaveLen(3))
-	Expect(allBdInterfaces).To(Equal([]string{ifaceA, ifaceB, ifaceE}))
+	vppcalls.SetInterfacesToBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
+		testDataIfaces, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	//Four VPP call - only two of them are successfull
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(4))
 	Expect(ctx.MockChannel.Msgs[0]).To(Equal(testDataOutBDIfaces[0]))
 	Expect(ctx.MockChannel.Msgs[1]).To(Equal(testDataOutBDIfaces[1]))
-
-	//evaluate configuredBdInterfaces
-	Expect(configuredBdInterfaces).To(HaveLen(2))
-	Expect(configuredBdInterfaces).To(ContainElement(ifaceA))
-	Expect(configuredBdInterfaces).To(ContainElement(ifaceB))
-	Expect(configuredBdInterfaces).To(HaveLen(2))
-
-	//evaluate bviInterfaceName
-	Expect(bviInterfaceName).To(Equal(ifaceA))
-}
-
-/**
-scenario
-- input list of interfaces which should be added to BD is empty
-*/
-//TestVppSetAllInterfacesToBridgeDomainWithoutInterfaces tests method VppSetAllInterfacesToBridgeDomain
-func TestVppSetAllInterfacesToBridgeDomainWithoutInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	//call testing method
-	allBdInterfaces, configuredBdInterfaces, bviInterfaceName := vppcalls.VppSetAllInterfacesToBridgeDomain(
-		testDataInBDIfaces[1], dummyBridgeDomain, testDataInDummySwIfIndex, logrus.DefaultLogger(),
-		ctx.MockChannel, nil)
-
-	//evaluate allBdInterfaces
-	Expect(allBdInterfaces).To(BeEmpty())
-
-	//evaluate configuredBdInterfaces
-	Expect(configuredBdInterfaces).To(BeEmpty())
-
-	//evaluate bviInterfaceName
-	Expect(bviInterfaceName).To(Equal(""))
 }
 
 /**
@@ -174,34 +136,12 @@ func TestVppUnsetAllInterfacesFromBridgeDomain(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 
 	//call testing method
-	allBdInterfaces := vppcalls.VppUnsetAllInterfacesFromBridgeDomain(
-		testDataInBDIfaces[0], dummyBridgeDomain, testDataInDummySwIfIndex, logrus.DefaultLogger(),
-		ctx.MockChannel, nil)
-
-	Expect(allBdInterfaces).To(HaveLen(5))
-	Expect(allBdInterfaces).To(Equal([]string{ifaceA, ifaceB, ifaceC, ifaceD, ifaceE}))
+	vppcalls.UnsetInterfacesFromBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
+		testDataIfaces, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(4))
 	Expect(ctx.MockChannel.Msgs[0]).To(Equal(testDataOutBDIfaces[2]))
 	Expect(ctx.MockChannel.Msgs[1]).To(Equal(testDataOutBDIfaces[3]))
-}
-
-/**
-scenario
-- input list of interfaces which should be added to BD is empty
-*/
-//TestVppSetAllInterfacesToBridgeDomainWithoutInterfaces tests method VppSetAllInterfacesToBridgeDomain
-func TestVppUnsetAllInterfacesToBridgeDomainWithoutInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	//call testing method
-	allBdInterfaces := vppcalls.VppUnsetAllInterfacesFromBridgeDomain(
-		testDataInBDIfaces[1], dummyBridgeDomain, testDataInDummySwIfIndex, logrus.DefaultLogger(),
-		ctx.MockChannel, nil)
-
-	//evaluate allBdInterfaces
-	Expect(allBdInterfaces).To(BeEmpty())
 }
 
 var testDatasInInterfaceToBd = []struct {
@@ -231,7 +171,7 @@ func TestVppSetInterfaceToBridgeDomain(t *testing.T) {
 
 	for idx, testDataIn := range testDatasInInterfaceToBd {
 		ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
-		vppcalls.VppSetInterfaceToBridgeDomain(testDataIn.bdIndex, testDataIn.swIfIndex, testDataIn.bvi,
+		vppcalls.SetInterfaceToBridgeDomain(testDataIn.bdIndex, testDataIn.swIfIndex, testDataIn.bvi,
 			logrus.DefaultLogger(), ctx.MockChannel, nil)
 		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutInterfaceToBd[idx]))
 	}
