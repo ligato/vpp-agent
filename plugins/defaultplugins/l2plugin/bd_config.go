@@ -221,7 +221,6 @@ func (plugin *BDConfigurator) DeleteBridgeDomain(bdConfig *l2.BridgeDomains_Brid
 	}
 
 	return plugin.deleteBridgeDomain(bdConfig, bdIdx)
-	return nil
 }
 
 func (plugin *BDConfigurator) deleteBridgeDomain(bdConfig *l2.BridgeDomains_BridgeDomain, bdIdx uint32) error {

@@ -147,7 +147,7 @@ func main() {
 		case "-cxc":
 			createL2xConnect(db, ifName1, ifName2)
 		case "-dxc":
-			delete(db, l2.XConnectKey(ifName1))
+			delete(db, l2.XConnectKey("tap3"))
 		case "-caf":
 			createAfPacket(db, afpacket1, "lo", "b4:e6:1c:a1:0d:31", "",
 				"fdcd:f7fb:995c::/48")
@@ -527,20 +527,20 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = ifname
+	ifs.Interface[0].Name = "tap4"
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
+	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:41"
 	ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 3)
-	ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[0].IpAddresses[1] = "192.168.2.5/24"
-	ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	ifs.Interface[0].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[0].IpAddresses[0] = "192.168.2.8/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
 	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
 	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
 	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap4"}
 
 	log.Println(ifs)
 
@@ -809,10 +809,11 @@ func addStaticFibTableEntry(db keyval.ProtoBroker, bdName string, iface string) 
 	fibTable := l2.FibTableEntries{}
 	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
 	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].OutgoingInterface = iface
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
+	fibTable.FibTableEntry[0].OutgoingInterface = "tap1"
+	fibTable.FibTableEntry[0].BridgeDomain = "bd2"
+	fibTable.FibTableEntry[0].PhysAddress = "ff:65:f1:59:8E:BC"
 	fibTable.FibTableEntry[0].BridgedVirtualInterface = false
+	fibTable.FibTableEntry[0].StaticConfig = true
 
 	log.Println(fibTable)
 
@@ -823,8 +824,8 @@ func deleteStaticFibTableEntry(db keyval.ProtoBroker, bdName string) {
 	fibTable := l2.FibTableEntries{}
 	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
 	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
+	fibTable.FibTableEntry[0].PhysAddress = "06:9e:df:66:54:41"
+	fibTable.FibTableEntry[0].BridgeDomain = "bd2"
 
 	log.Println(fibTable)
 
@@ -835,8 +836,8 @@ func createL2xConnect(db keyval.ProtoBroker, ifnameRx string, ifnameTx string) {
 	xcp := l2.XConnectPairs{}
 	xcp.XConnectPairs = make([]*l2.XConnectPairs_XConnectPair, 1)
 	xcp.XConnectPairs[0] = new(l2.XConnectPairs_XConnectPair)
-	xcp.XConnectPairs[0].ReceiveInterface = ifnameRx
-	xcp.XConnectPairs[0].TransmitInterface = ifnameTx
+	xcp.XConnectPairs[0].ReceiveInterface = "tap1"
+	xcp.XConnectPairs[0].TransmitInterface = "tap2"
 
 	log.Println(xcp)
 
