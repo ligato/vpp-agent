@@ -220,7 +220,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 }
 
 // Resync writes missing XCons to the VPP and removes obsolete ones.
-func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
+func (plugin *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
 	// Calculate and log xConnect resync.
 	defer func() {
@@ -229,20 +229,56 @@ func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnect
 		}
 	}()
 
-	err := plugin.LookupXConnectPairs()
+	// Read cross connect from the VPP
+	vppXConns, err := vppdump.DumpXConnectPairs(plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(l2ba.L2XconnectDump{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
 
-	var wasError error
-	for _, xcon := range xcConfig {
-		err = plugin.ConfigureXConnectPair(xcon)
-		if err != nil {
-			wasError = err
+	// Correlate with NB config
+	var wasErr error
+	for _, vppXConn := range vppXConns {
+		var existsInNB bool
+		var rxIfName, txIfName string
+		for _, nbXConn := range nbXConns {
+			// find receive and transmitt interface
+			rxIfName, _, rxIfExists := plugin.SwIfIndexes.LookupName(vppXConn.ReceiveInterfaceSwIfIdx)
+			txIfName, _, txIfExists := plugin.SwIfIndexes.LookupName(vppXConn.TransmitInterfaceSwIfIdx)
+			if !rxIfExists || !txIfExists {
+				continue
+			}
+
+			if rxIfName == nbXConn.ReceiveInterface && txIfName == nbXConn.TransmitInterface {
+				// NB interface already exists
+				plugin.XcIndexes.RegisterName(nbXConn.ReceiveInterface, plugin.XcIndexSeq, &XConnectMeta{
+					TransmitInterface: nbXConn.TransmitInterface,
+					configured:        rxIfExists && txIfExists,
+				})
+				plugin.XcIndexSeq++
+			}
+		}
+		if !existsInNB {
+			if err := plugin.DeleteXConnectPair(&l2.XConnectPairs_XConnectPair{
+				ReceiveInterface:  rxIfName,
+				TransmitInterface: txIfName,
+			}); err != nil {
+				wasErr = err
+			}
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect end. ", wasError)
+	// Configure new xConnect pairs
+	for _, nbXConn := range nbXConns {
+		_, _, found := plugin.XcIndexes.LookupIdx(nbXConn.ReceiveInterface)
+		if !found {
+			if err := plugin.ConfigureXConnectPair(nbXConn); err != nil {
+				wasErr = err
+			}
+		}
+	}
 
-	return wasError
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect end. ", wasErr)
+
+	return wasErr
 }
