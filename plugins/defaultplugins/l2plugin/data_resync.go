@@ -16,6 +16,7 @@ package l2plugin
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -28,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 )
 
-// Resync writes BDs to the empty VPP.
+// Resync writes missing BDs to the VPP and removes obsolete ones.
 func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
 	// Calculate and log bd resync.
@@ -82,6 +83,8 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 	var wasError error
 
+	// todo: if the bridge domain dump is fixed, it is better to correlate existing bridge domains with NB config and
+	// do partial changes only
 	// Step 1: Delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
 	for vppIdx, vppBD := range vppBDs {
 		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.Log, pluginID,
@@ -119,8 +122,8 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	return wasError
 }
 
-// Resync writes FIBs to the empty VPP.
-func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEntry) error {
+// Resync writes missing FIBs to the VPP and removes obsolete ones.
+func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 	// Calculate and log fib resync.
 	defer func() {
@@ -129,29 +132,94 @@ func (plugin *FIBConfigurator) Resync(fibConfig []*l2.FibTableEntries_FibTableEn
 		}
 	}()
 
-	activeDomains, err := vppdump.DumpBridgeDomainIDs(plugin.Log, plugin.syncVppChannel,
-		measure.GetTimeLog(l2ba.BridgeDomainDump{}, plugin.Stopwatch))
+	// Get all FIB entries configured on the VPP
+	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.Log, plugin.syncVppChannel,
+		measure.GetTimeLog(l2ba.L2FibTableDump{}, plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
-	for _, domainID := range activeDomains {
-		plugin.LookupFIBEntries(domainID)
+
+	// Correlate existing config with the NB
+	var wasErr error
+	for vppFIBmac, vppFIBdata := range vppFIBs {
+		exists, meta := func(nbFIBs []*l2.FibTableEntries_FibTableEntry) (bool, *FIBMeta) {
+			for _, nbFIB := range nbFIBs {
+				// Physical address
+				if strings.ToUpper(vppFIBmac) != strings.ToUpper(nbFIB.PhysAddress) {
+					continue
+				}
+				// Bridge domain
+				bdIdx, _, found := plugin.BdIndexes.LookupIdx(nbFIB.BridgeDomain)
+				if !found || vppFIBdata.BridgeDomainIdx != bdIdx {
+					continue
+				}
+				// BVI
+				if vppFIBdata.BridgedVirtualInterface != nbFIB.BridgedVirtualInterface {
+					continue
+				}
+				// Interface
+				swIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbFIB.OutgoingInterface)
+				if !found || vppFIBdata.OutgoingInterfaceSwIfIdx != swIdx {
+					continue
+				}
+				// Is static
+				if vppFIBdata.StaticConfig != nbFIB.StaticConfig {
+					continue
+				}
+
+				// Prepare FIB metadata
+				meta := &FIBMeta{nbFIB.OutgoingInterface, nbFIB.BridgeDomain, nbFIB.BridgedVirtualInterface, nbFIB.StaticConfig}
+
+				return true, meta
+			}
+			return false, nil
+		}(nbFIBs)
+
+		// Register existing entries, Remove entries missing in NB config (except non-static)
+		if exists {
+			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.FibIndexSeq, meta)
+			plugin.FibIndexSeq++
+		} else if vppFIBdata.StaticConfig {
+			// Get appropriate interface/bridge domain names
+			ifIdx, _, ifFound := plugin.SwIfIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
+			bdIdx, _, bdFound := plugin.BdIndexes.LookupName(vppFIBdata.BridgeDomainIdx)
+			if !ifFound || !bdFound {
+				// FIB entry cannot be removed without these informations and
+				// it should be removed by the VPP
+				continue
+			}
+
+			plugin.Delete(&l2.FibTableEntries_FibTableEntry{
+				PhysAddress:       vppFIBmac,
+				OutgoingInterface: ifIdx,
+				BridgeDomain:      bdIdx,
+			}, func(callbackErr error) {
+				if callbackErr != nil {
+					wasErr = callbackErr
+				}
+			})
+
+		}
 	}
 
-	for _, fib := range fibConfig {
-		plugin.Add(fib, func(err2 error) {
-			if err2 != nil {
-				plugin.Log.Error(err2)
-			}
-		})
+	// Configure all unregistered FIB entries from NB config
+	for _, nbFIB := range nbFIBs {
+		_, _, found := plugin.FibIndexes.LookupIdx(nbFIB.PhysAddress)
+		if !found {
+			plugin.Add(nbFIB, func(callbackErr error) {
+				if callbackErr != nil {
+					wasErr = callbackErr
+				}
+			})
+		}
 	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs end.")
 
-	return nil
+	return wasErr
 }
 
-// Resync writes XCons to the empty VPP.
+// Resync writes missing XCons to the VPP and removes obsolete ones.
 func (plugin *XConnectConfigurator) Resync(xcConfig []*l2.XConnectPairs_XConnectPair) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC XConnect begin.")
 	// Calculate and log xConnect resync.
