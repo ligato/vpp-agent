@@ -1,3 +1,46 @@
+# Release v1.0.9 (2017-1-22)
+
+## Compatibility
+VPP version v18.04-rc0~33-gb59bd65
+cn-infra v1.0.8
+
+# New Features
+- [ifplugin](plugins/defaultplugins/ifplugin)
+    - added support for un-numbered interfaces. Interface can be marked as un-numbered with information 
+    about another interface containing required IP address. Un-numbered interface does not need to have 
+    IP address set.
+    - added support for virtio-based TAPv2 interfaces.
+    - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
+    setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
+- [l2plugin](plugins/defaultplugins/l2plugin)      
+    - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
+    setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
+
+# Improvements
+- [ifplugin](plugins/defaultplugins/ifplugin)
+    - default MTU value was removed in order to be able to just pass empty MTU field. MTU now can be 
+    set only in interface configuration (preffered) or defined in defaultplugins.conf. If none of them
+    is set, MTU value will be empty.
+    - interface state data are stored in statuscheck readiness probe
+- [l3plugin](plugins/defaultplugins/l3plugin)
+    - removed strict configuration order for VPP ARP entries and routes. Both ARP entry or route can 
+    be configured without interface already present.
+- [l4plugin](plugins/defaultplugins/l4plugin)    
+   - removed strict configuration order for application namespaces. Application namespace can 
+    be configured without interface already present.
+    
+#Localclient
+- added API for ARP entries, L4 features, Application namespaces and STN rules.
+
+# Logging
+- consolidated and improved logging in defaultplugins and linuxplugins.    
+
+# Bugfix
+- fixed skip-resync parameter if defaultplugins.conf is not provided.
+- corrected af_packet type interface behavior if veth interface is created/removed.
+- several fixes related to the af_packet and veth interface type configuration.
+- microservice and veth-interface related events are synchronized. 
+
 # Release v1.0.8 (2017-11-21)
 
 ## Compatibility
