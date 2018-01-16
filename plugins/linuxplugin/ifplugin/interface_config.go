@@ -830,7 +830,7 @@ func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcal
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				plugin.Log.Debugf("detected container as microservice: %+v", container)
+				plugin.Log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
 					plugin.Log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
@@ -950,8 +950,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	plugin.Log.WithFields(logging.Fields{"name": linkAttrs.Name}).
-		Debugf("Processing Linux link update (%v) %+v", link.Type(), linkAttrs)
+	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v", linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
 
 	// Register newly added interface only if it is not already managed by this plugin.
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
