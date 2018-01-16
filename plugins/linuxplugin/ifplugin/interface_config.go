@@ -693,11 +693,6 @@ func (plugin *LinuxInterfaceConfigurator) switchToNamespace(nsMgmtCtx *linuxcall
 	return ifaceNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 }
 
-func isNoSuchFileOrDirError(err error) bool {
-	// TODO: change to better checking of error, using concrete types
-	return strings.Contains(err.Error(), "no such file or directory")
-}
-
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
 func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context) {
 	plugin.wg.Add(1)
@@ -708,13 +703,6 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 	}
 
 	var clientOk bool
-	if err := plugin.dockerClient.Ping(); err != nil {
-		if isNoSuchFileOrDirError(err) {
-			plugin.Log.Infof("Docker client unable to connect: %v", err)
-		} else {
-			plugin.Log.Errorf("Docker client connecting failed: %v", err)
-		}
-	}
 
 	timer := time.NewTimer(0)
 	for {
@@ -732,14 +720,15 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 
 			if !clientOk {
-				if info, err := plugin.dockerClient.Info(); err != nil {
+				plugin.Log.Infof("Docker ping check OK")
+				/*if info, err := plugin.dockerClient.Info(); err != nil {
 					plugin.Log.Errorf("Retrieving docker info failed: %v", err)
 					timer.Reset(dockerRetryPeriod)
 					continue
 				} else {
 					plugin.Log.Infof("Docker connection established: server version: %v (%v %v %v)",
 						info.ServerVersion, info.OperatingSystem, info.Architecture, info.KernelVersion)
-				}
+				}*/
 			}
 			clientOk = true
 
