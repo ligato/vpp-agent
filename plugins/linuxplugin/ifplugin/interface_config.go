@@ -693,11 +693,6 @@ func (plugin *LinuxInterfaceConfigurator) switchToNamespace(nsMgmtCtx *linuxcall
 	return ifaceNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 }
 
-func isNoSuchFileOrDirError(err error) bool {
-	// TODO: change to better checking of error, using concrete types
-	return strings.Contains(err.Error(), "no such file or directory")
-}
-
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
 func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context) {
 	plugin.wg.Add(1)
@@ -708,13 +703,6 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 	}
 
 	var clientOk bool
-	if err := plugin.dockerClient.Ping(); err != nil {
-		if isNoSuchFileOrDirError(err) {
-			plugin.Log.Infof("Docker client unable to connect: %v", err)
-		} else {
-			plugin.Log.Errorf("Docker client connecting failed: %v", err)
-		}
-	}
 
 	timer := time.NewTimer(0)
 	for {
@@ -732,14 +720,15 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 			}
 
 			if !clientOk {
-				if info, err := plugin.dockerClient.Info(); err != nil {
+				plugin.Log.Infof("Docker ping check OK")
+				/*if info, err := plugin.dockerClient.Info(); err != nil {
 					plugin.Log.Errorf("Retrieving docker info failed: %v", err)
 					timer.Reset(dockerRetryPeriod)
 					continue
 				} else {
 					plugin.Log.Infof("Docker connection established: server version: %v (%v %v %v)",
 						info.ServerVersion, info.OperatingSystem, info.Architecture, info.KernelVersion)
-				}
+				}*/
 			}
 			clientOk = true
 
@@ -841,7 +830,7 @@ func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcal
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				plugin.Log.Debugf("detected container as microservice: %+v", container)
+				plugin.Log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
 					plugin.Log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
@@ -961,8 +950,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	plugin.Log.WithFields(logging.Fields{"name": linkAttrs.Name}).
-		Debugf("Processing Linux link update (%v) %+v", link.Type(), linkAttrs)
+	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v", linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
 
 	// Register newly added interface only if it is not already managed by this plugin.
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
