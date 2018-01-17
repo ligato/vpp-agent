@@ -42,14 +42,26 @@ Create Intfs And BD On VPP3
 #    Ping from agent_vpp_1 to 10.1.1.3
 #    Ping from agent_vpp_3 to 10.1.1.1
 
-Modify Loopback IP on VPP3
-    Create loopback interface bvi_loop0 on agent_vpp_3 with ip 20.1.1.3/24 and mac 8a:f1:be:90:00:03
+#Modify Loopback IP on VPP3
+#    Create loopback interface bvi_loop0 on agent_vpp_3 with ip 20.1.1.3/24 and mac 8a:f1:be:90:00:03
+#    Sleep    6s
+#    vpp_term: Show Interfaces    agent_vpp_3
+#
+#Modify Loopback IP on VPP3 Back
+#    Create loopback interface bvi_loop0 on agent_vpp_3 with ip 10.1.1.3/24 and mac 8a:f1:be:90:00:03
+#    Sleep    6s
+#    vpp_term: Show Interfaces    agent_vpp_3
+
+Modify Loopback IP on VPP1
+    Create loopback interface bvi_loop0 on agent_vpp_1 with ip 20.1.1.1/24 and mac 8a:f1:be:90:00:00
     Sleep    6s
+    vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_3
 
-Modify Loopback IP on VPP3 Back
-    Create loopback interface bvi_loop0 on agent_vpp_3 with ip 10.1.1.3/24 and mac 8a:f1:be:90:00:03
+Modify Loopback IP on VPP1 Back
+    Create loopback interface bvi_loop0 on agent_vpp_1 with ip 10.1.1.1/24 and mac 8a:f1:be:90:00:00
     Sleep    6s
+    vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Show Interfaces    agent_vpp_3
 
 Ping VPP3 x VPP1
