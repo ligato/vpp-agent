@@ -567,13 +567,30 @@ vpp_ctl: Delete ARP
     Log Many     ${out}
     [Return]    ${out}
 
-vpp_ctl: Put Linux ARP
-    [Arguments]    ${node}    ${interface}    ${arp-name}    ${ipv4}    ${MAC}    ${static}
-    Log Many    ${node}    ${interface}      ${arp-name}   ${ipv4}    ${MAC}    ${static}
-    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vnf-agent/vpp1/linux/config/v1/arp/${arp-name}
+vpp_ctl: Put Linux ARP With Namespace
+    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}    ${nsname}    ${nstype}
+    Log Many    ${node}    ${interface}      ${arpname}   ${ipv4}    ${MAC}    ${nsname}       ${nstype}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Put Linux ARP
+    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}
+    Log Many    ${node}    ${interface}      ${arpname}   ${ipv4}    ${MAC}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Linux ARP
+    [Arguments]    ${node}    ${arpname}
+    Log Many    ${node}    ${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
