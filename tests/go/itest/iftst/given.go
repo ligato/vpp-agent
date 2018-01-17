@@ -11,7 +11,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stats"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tapv2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
@@ -24,13 +26,20 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 	vppMock.RegisterBinAPITypes(interfaces.Types)
 	vppMock.RegisterBinAPITypes(memif.Types)
 	vppMock.RegisterBinAPITypes(tap.Types)
+	vppMock.RegisterBinAPITypes(tapv2.Types)
 	vppMock.RegisterBinAPITypes(af_packet.Types)
 	vppMock.RegisterBinAPITypes(vpe.Types)
 	vppMock.RegisterBinAPITypes(vxlan.Types)
 	vppMock.RegisterBinAPITypes(bfd.Types)
 	vppMock.RegisterBinAPITypes(session.Types)
+	vppMock.RegisterBinAPITypes(stats.Types)
 
-	vppMock.MockReplyHandler(func(request govppmock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
+	vppMock.MockReplyHandler(VppMockHandler(vppMock))
+}
+
+// VppMockHandler returns reply handler for mock adapter
+func VppMockHandler(vppMock *govppmock.VppAdapter) govppmock.ReplyHandler {
+	return func(request govppmock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
 		reqName, found := vppMock.GetMsgNameByID(request.MsgID)
 		if !found {
 			logrus.DefaultLogger().Error("Not existing req msg name for MsgID=", request.MsgID)
@@ -59,10 +68,10 @@ func RepliesSuccess(vppMock *govppmock.VppAdapter) {
 				}
 				logrus.DefaultLogger().Error("Error creating bytes ", err)
 			} else {
-				logrus.DefaultLogger().Info("No default reply for ", reqName, ", ", request.MsgID)
+				logrus.DefaultLogger().Warn("No default reply for ", reqName, ", ", request.MsgID)
 			}
 		}
 
 		return reply, 0, false
-	})
+	}
 }

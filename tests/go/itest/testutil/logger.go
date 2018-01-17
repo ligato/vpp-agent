@@ -16,9 +16,8 @@ package testutil
 
 import (
 	"fmt"
-	"sync"
-
 	"regexp"
+	"sync"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"

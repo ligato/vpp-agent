@@ -28,6 +28,7 @@ script:
   - make lint
   - make
   - make test-cover
+  - go test -tags mockvpp ./tests/go/itest
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

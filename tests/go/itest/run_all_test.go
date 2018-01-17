@@ -1,32 +1,26 @@
 package itest
 
 import (
+	"os"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
-	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
+	govppcore "git.fd.io/govpp.git/core"
 	"github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	govpplogger := logrus.New()
+	govpplogger.Out = os.Stdout
+	govpplogger.Level = logrus.DebugLevel
+	govppcore.SetLogger(govpplogger)
+}
 
 // Test runs all TC methods of multiple test suites in a sequence.
 func Test(t *testing.T) {
-	suite := &suiteMemif{T: t,
-		When: testutil.When{
-			WhenIface: iftst.WhenIface{
-				Log:       testutil.NewLogger("WhenIface", t),
-				NewChange: localclient.DataChangeRequest,
-				NewResync: localclient.DataResyncRequest,
-			}},
-		Then: testutil.Then{
-			ThenIface: iftst.ThenIface{
-				Log:       testutil.NewLogger("ThenIface", t),
-				NewChange: localclient.DataChangeRequest,
-			}},
-	}
-	RunTestSuite(suite, t)
+	RunTestSuite(forMemif(t), t)
 }
 
 // RunTestSuite uses reflection to run each method prefixed with "TC".

@@ -16,9 +16,9 @@ func lookupIdx(mapping idx.NameToIdx, lookupName string) func() uint32 {
 
 // ContainsName verifies lookup name presence in provided mapping.
 func ContainsName(mapping idx.NameToIdx, lookupName string) uint32 {
-	Eventually(lookupIdx(mapping, lookupName), 100*time.Millisecond, 10*time.Millisecond).ShouldNot(BeZero())
 	// Block until Eventually's timeout elapses.
-	time.Sleep(1 * time.Second)
+	Eventually(lookupIdx(mapping, lookupName), 1000*time.Millisecond, 25*time.Millisecond).
+		ShouldNot(BeZero())
 	return lookupIdx(mapping, lookupName)()
 }
 
