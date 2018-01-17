@@ -5,6 +5,7 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
+	"github.com/ligato/cn-infra/utils/clienttls"
 	"time"
 )
 
@@ -21,8 +22,9 @@ const (
 
 // Config holds the settings for kafka multiplexer.
 type Config struct {
-	Addrs []string `json:"addrs"`
-	GroupID string `json:"group-id"`
+	Addrs   []string      `json:"addrs"`
+	GroupID string        `json:"group_id"`
+	TLS     clienttls.TLS `json:"tls"`
 }
 
 // ConsumerFactory produces a consumer for the selected topics in a specified consumer group.
@@ -61,7 +63,8 @@ func getConsumerFactory(config *client.Config) ConsumerFactory {
 // a groupId. This is leveraged to deliver unread messages after restart.
 func InitMultiplexer(configFile string, name string, log logging.Logger) (*Multiplexer, error) {
 	var err error
-	cfg := &Config{[]string{DefAddress}, ""}
+	var tls clienttls.TLS
+	cfg := &Config{[]string{DefAddress}, "", tls}
 	if configFile != "" {
 		cfg, err = ConfigFromFile(configFile)
 		if err != nil {
@@ -76,6 +79,13 @@ func InitMultiplexer(configFile string, name string, log logging.Logger) (*Multi
 	clientCfg.SetSendError(true)
 	clientCfg.SetErrorChan(make(chan *client.ProducerError))
 	clientCfg.SetBrokers(cfg.Addrs...)
+	if cfg.TLS.Enabled {
+		tlsConfig, err := clienttls.CreateTLSConfig(cfg.TLS)
+		if err != nil {
+			return nil, err
+		}
+		clientCfg.SetTLS(tlsConfig)
+	}
 
 	// create hash client
 	sClientHash, err := client.NewClient(clientCfg, client.Hash)

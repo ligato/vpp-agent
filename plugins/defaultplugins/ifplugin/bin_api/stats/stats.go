@@ -6,7 +6,7 @@ package stats
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xfe415fcd
+const VlAPIVersion = 0xb2a91caa
 
 // IP4FibCounter represents the VPP binary API data type 'ip4_fib_counter'.
 // Generated from '/usr/share/vpp/api/stats.api.json', line 3:
@@ -33,8 +33,35 @@ func (*IP4FibCounter) GetCrcString() string {
 	return "b2739495"
 }
 
-// IP4NbrCounter represents the VPP binary API data type 'ip4_nbr_counter'.
+// IP4MfibCounter represents the VPP binary API data type 'ip4_mfib_counter'.
 // Generated from '/usr/share/vpp/api/stats.api.json', line 10:
+//
+//        ["ip4_mfib_counter",
+//            ["u8", "source", 4],
+//            ["u8", "group", 4],
+//            ["u8", "group_length"],
+//            ["u64", "packets"],
+//            ["u64", "bytes"],
+//            {"crc" : "0x1044fa4b"}
+//        ],
+//
+type IP4MfibCounter struct {
+	Source      []byte `struc:"[4]byte"`
+	Group       []byte `struc:"[4]byte"`
+	GroupLength uint8
+	Packets     uint64
+	Bytes       uint64
+}
+
+func (*IP4MfibCounter) GetTypeName() string {
+	return "ip4_mfib_counter"
+}
+func (*IP4MfibCounter) GetCrcString() string {
+	return "1044fa4b"
+}
+
+// IP4NbrCounter represents the VPP binary API data type 'ip4_nbr_counter'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 18:
 //
 //        ["ip4_nbr_counter",
 //            ["u32", "address"],
@@ -59,7 +86,7 @@ func (*IP4NbrCounter) GetCrcString() string {
 }
 
 // IP6FibCounter represents the VPP binary API data type 'ip6_fib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 17:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 25:
 //
 //        ["ip6_fib_counter",
 //            ["u64", "address", 2],
@@ -83,8 +110,35 @@ func (*IP6FibCounter) GetCrcString() string {
 	return "cf35769b"
 }
 
+// IP6MfibCounter represents the VPP binary API data type 'ip6_mfib_counter'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 32:
+//
+//        ["ip6_mfib_counter",
+//            ["u8", "source", 16],
+//            ["u8", "group", 16],
+//            ["u8", "group_length"],
+//            ["u64", "packets"],
+//            ["u64", "bytes"],
+//            {"crc" : "0xba5ab587"}
+//        ],
+//
+type IP6MfibCounter struct {
+	Source      []byte `struc:"[16]byte"`
+	Group       []byte `struc:"[16]byte"`
+	GroupLength uint8
+	Packets     uint64
+	Bytes       uint64
+}
+
+func (*IP6MfibCounter) GetTypeName() string {
+	return "ip6_mfib_counter"
+}
+func (*IP6MfibCounter) GetCrcString() string {
+	return "ba5ab587"
+}
+
 // IP6NbrCounter represents the VPP binary API data type 'ip6_nbr_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 24:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 40:
 //
 //        ["ip6_nbr_counter",
 //            ["u64", "address", 2],
@@ -109,7 +163,7 @@ func (*IP6NbrCounter) GetCrcString() string {
 }
 
 // WantStats represents the VPP binary API message 'want_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 33:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 49:
 //
 //        ["want_stats",
 //            ["u16", "_vl_msg_id"],
@@ -139,7 +193,7 @@ func NewWantStats() api.Message {
 }
 
 // WantStatsReply represents the VPP binary API message 'want_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 41:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 57:
 //
 //        ["want_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -166,7 +220,7 @@ func NewWantStatsReply() api.Message {
 }
 
 // WantInterfaceSimpleStats represents the VPP binary API message 'want_interface_simple_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 47:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 63:
 //
 //        ["want_interface_simple_stats",
 //            ["u16", "_vl_msg_id"],
@@ -196,7 +250,7 @@ func NewWantInterfaceSimpleStats() api.Message {
 }
 
 // WantInterfaceSimpleStatsReply represents the VPP binary API message 'want_interface_simple_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 55:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 71:
 //
 //        ["want_interface_simple_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -223,7 +277,7 @@ func NewWantInterfaceSimpleStatsReply() api.Message {
 }
 
 // WantPerInterfaceSimpleStats represents the VPP binary API message 'want_per_interface_simple_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 61:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 77:
 //
 //        ["want_per_interface_simple_stats",
 //            ["u16", "_vl_msg_id"],
@@ -257,7 +311,7 @@ func NewWantPerInterfaceSimpleStats() api.Message {
 }
 
 // WantPerInterfaceSimpleStatsReply represents the VPP binary API message 'want_per_interface_simple_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 71:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 87:
 //
 //        ["want_per_interface_simple_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -284,7 +338,7 @@ func NewWantPerInterfaceSimpleStatsReply() api.Message {
 }
 
 // WantInterfaceCombinedStats represents the VPP binary API message 'want_interface_combined_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 77:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 93:
 //
 //        ["want_interface_combined_stats",
 //            ["u16", "_vl_msg_id"],
@@ -314,7 +368,7 @@ func NewWantInterfaceCombinedStats() api.Message {
 }
 
 // WantInterfaceCombinedStatsReply represents the VPP binary API message 'want_interface_combined_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 85:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 101:
 //
 //        ["want_interface_combined_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -341,7 +395,7 @@ func NewWantInterfaceCombinedStatsReply() api.Message {
 }
 
 // WantPerInterfaceCombinedStats represents the VPP binary API message 'want_per_interface_combined_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 91:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 107:
 //
 //        ["want_per_interface_combined_stats",
 //            ["u16", "_vl_msg_id"],
@@ -375,7 +429,7 @@ func NewWantPerInterfaceCombinedStats() api.Message {
 }
 
 // WantPerInterfaceCombinedStatsReply represents the VPP binary API message 'want_per_interface_combined_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 101:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 117:
 //
 //        ["want_per_interface_combined_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -402,7 +456,7 @@ func NewWantPerInterfaceCombinedStatsReply() api.Message {
 }
 
 // WantIP4FibStats represents the VPP binary API message 'want_ip4_fib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 107:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 123:
 //
 //        ["want_ip4_fib_stats",
 //            ["u16", "_vl_msg_id"],
@@ -432,7 +486,7 @@ func NewWantIP4FibStats() api.Message {
 }
 
 // WantIP4FibStatsReply represents the VPP binary API message 'want_ip4_fib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 115:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 131:
 //
 //        ["want_ip4_fib_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -459,7 +513,7 @@ func NewWantIP4FibStatsReply() api.Message {
 }
 
 // WantIP6FibStats represents the VPP binary API message 'want_ip6_fib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 121:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 137:
 //
 //        ["want_ip6_fib_stats",
 //            ["u16", "_vl_msg_id"],
@@ -489,7 +543,7 @@ func NewWantIP6FibStats() api.Message {
 }
 
 // WantIP6FibStatsReply represents the VPP binary API message 'want_ip6_fib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 129:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 145:
 //
 //        ["want_ip6_fib_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -515,8 +569,122 @@ func NewWantIP6FibStatsReply() api.Message {
 	return &WantIP6FibStatsReply{}
 }
 
+// WantIP4MfibStats represents the VPP binary API message 'want_ip4_mfib_stats'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 151:
+//
+//        ["want_ip4_mfib_stats",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "enable_disable"],
+//            ["u32", "pid"],
+//            {"crc" : "0x7212b461"}
+//        ],
+//
+type WantIP4MfibStats struct {
+	EnableDisable uint32
+	Pid           uint32
+}
+
+func (*WantIP4MfibStats) GetMessageName() string {
+	return "want_ip4_mfib_stats"
+}
+func (*WantIP4MfibStats) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*WantIP4MfibStats) GetCrcString() string {
+	return "7212b461"
+}
+func NewWantIP4MfibStats() api.Message {
+	return &WantIP4MfibStats{}
+}
+
+// WantIP4MfibStatsReply represents the VPP binary API message 'want_ip4_mfib_stats_reply'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 159:
+//
+//        ["want_ip4_mfib_stats_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0x3e6c7fc9"}
+//        ],
+//
+type WantIP4MfibStatsReply struct {
+	Retval int32
+}
+
+func (*WantIP4MfibStatsReply) GetMessageName() string {
+	return "want_ip4_mfib_stats_reply"
+}
+func (*WantIP4MfibStatsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*WantIP4MfibStatsReply) GetCrcString() string {
+	return "3e6c7fc9"
+}
+func NewWantIP4MfibStatsReply() api.Message {
+	return &WantIP4MfibStatsReply{}
+}
+
+// WantIP6MfibStats represents the VPP binary API message 'want_ip6_mfib_stats'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 165:
+//
+//        ["want_ip6_mfib_stats",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "client_index"],
+//            ["u32", "context"],
+//            ["u32", "enable_disable"],
+//            ["u32", "pid"],
+//            {"crc" : "0x8a3001de"}
+//        ],
+//
+type WantIP6MfibStats struct {
+	EnableDisable uint32
+	Pid           uint32
+}
+
+func (*WantIP6MfibStats) GetMessageName() string {
+	return "want_ip6_mfib_stats"
+}
+func (*WantIP6MfibStats) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*WantIP6MfibStats) GetCrcString() string {
+	return "8a3001de"
+}
+func NewWantIP6MfibStats() api.Message {
+	return &WantIP6MfibStats{}
+}
+
+// WantIP6MfibStatsReply represents the VPP binary API message 'want_ip6_mfib_stats_reply'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 173:
+//
+//        ["want_ip6_mfib_stats_reply",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "context"],
+//            ["i32", "retval"],
+//            {"crc" : "0xa07c7171"}
+//        ],
+//
+type WantIP6MfibStatsReply struct {
+	Retval int32
+}
+
+func (*WantIP6MfibStatsReply) GetMessageName() string {
+	return "want_ip6_mfib_stats_reply"
+}
+func (*WantIP6MfibStatsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*WantIP6MfibStatsReply) GetCrcString() string {
+	return "a07c7171"
+}
+func NewWantIP6MfibStatsReply() api.Message {
+	return &WantIP6MfibStatsReply{}
+}
+
 // WantIP4NbrStats represents the VPP binary API message 'want_ip4_nbr_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 135:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 179:
 //
 //        ["want_ip4_nbr_stats",
 //            ["u16", "_vl_msg_id"],
@@ -546,7 +714,7 @@ func NewWantIP4NbrStats() api.Message {
 }
 
 // WantIP4NbrStatsReply represents the VPP binary API message 'want_ip4_nbr_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 143:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 187:
 //
 //        ["want_ip4_nbr_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -573,7 +741,7 @@ func NewWantIP4NbrStatsReply() api.Message {
 }
 
 // WantIP6NbrStats represents the VPP binary API message 'want_ip6_nbr_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 149:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 193:
 //
 //        ["want_ip6_nbr_stats",
 //            ["u16", "_vl_msg_id"],
@@ -603,7 +771,7 @@ func NewWantIP6NbrStats() api.Message {
 }
 
 // WantIP6NbrStatsReply represents the VPP binary API message 'want_ip6_nbr_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 157:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 201:
 //
 //        ["want_ip6_nbr_stats_reply",
 //            ["u16", "_vl_msg_id"],
@@ -630,7 +798,7 @@ func NewWantIP6NbrStatsReply() api.Message {
 }
 
 // VnetIP4FibCounters represents the VPP binary API message 'vnet_ip4_fib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 163:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 207:
 //
 //        ["vnet_ip4_fib_counters",
 //            ["u16", "_vl_msg_id"],
@@ -659,8 +827,38 @@ func NewVnetIP4FibCounters() api.Message {
 	return &VnetIP4FibCounters{}
 }
 
+// VnetIP4MfibCounters represents the VPP binary API message 'vnet_ip4_mfib_counters'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 214:
+//
+//        ["vnet_ip4_mfib_counters",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "vrf_id"],
+//            ["u32", "count"],
+//            ["vl_api_ip4_mfib_counter_t", "c", 0, "count"],
+//            {"crc" : "0xf1a05536"}
+//        ],
+//
+type VnetIP4MfibCounters struct {
+	VrfID uint32
+	Count uint32 `struc:"sizeof=C"`
+	C     []IP4MfibCounter
+}
+
+func (*VnetIP4MfibCounters) GetMessageName() string {
+	return "vnet_ip4_mfib_counters"
+}
+func (*VnetIP4MfibCounters) GetMessageType() api.MessageType {
+	return api.OtherMessage
+}
+func (*VnetIP4MfibCounters) GetCrcString() string {
+	return "f1a05536"
+}
+func NewVnetIP4MfibCounters() api.Message {
+	return &VnetIP4MfibCounters{}
+}
+
 // VnetIP4NbrCounters represents the VPP binary API message 'vnet_ip4_nbr_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 170:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 221:
 //
 //        ["vnet_ip4_nbr_counters",
 //            ["u16", "_vl_msg_id"],
@@ -692,7 +890,7 @@ func NewVnetIP4NbrCounters() api.Message {
 }
 
 // VnetIP6FibCounters represents the VPP binary API message 'vnet_ip6_fib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 178:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 229:
 //
 //        ["vnet_ip6_fib_counters",
 //            ["u16", "_vl_msg_id"],
@@ -721,8 +919,38 @@ func NewVnetIP6FibCounters() api.Message {
 	return &VnetIP6FibCounters{}
 }
 
+// VnetIP6MfibCounters represents the VPP binary API message 'vnet_ip6_mfib_counters'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 236:
+//
+//        ["vnet_ip6_mfib_counters",
+//            ["u16", "_vl_msg_id"],
+//            ["u32", "vrf_id"],
+//            ["u32", "count"],
+//            ["vl_api_ip6_mfib_counter_t", "c", 0, "count"],
+//            {"crc" : "0xa0f743b0"}
+//        ],
+//
+type VnetIP6MfibCounters struct {
+	VrfID uint32
+	Count uint32 `struc:"sizeof=C"`
+	C     []IP6MfibCounter
+}
+
+func (*VnetIP6MfibCounters) GetMessageName() string {
+	return "vnet_ip6_mfib_counters"
+}
+func (*VnetIP6MfibCounters) GetMessageType() api.MessageType {
+	return api.OtherMessage
+}
+func (*VnetIP6MfibCounters) GetCrcString() string {
+	return "a0f743b0"
+}
+func NewVnetIP6MfibCounters() api.Message {
+	return &VnetIP6MfibCounters{}
+}
+
 // VnetIP6NbrCounters represents the VPP binary API message 'vnet_ip6_nbr_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 185:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 243:
 //
 //        ["vnet_ip6_nbr_counters",
 //            ["u16", "_vl_msg_id"],
@@ -754,7 +982,7 @@ func NewVnetIP6NbrCounters() api.Message {
 }
 
 // VnetGetSummaryStats represents the VPP binary API message 'vnet_get_summary_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 193:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 251:
 //
 //        ["vnet_get_summary_stats",
 //            ["u16", "_vl_msg_id"],
@@ -780,7 +1008,7 @@ func NewVnetGetSummaryStats() api.Message {
 }
 
 // VnetGetSummaryStatsReply represents the VPP binary API message 'vnet_get_summary_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 199:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 257:
 //
 //        ["vnet_get_summary_stats_reply",
 //            ["u16", "_vl_msg_id"],

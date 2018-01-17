@@ -27,16 +27,22 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
+	"github.com/ligato/cn-infra/utils/clienttls"
 )
 
 var (
 	// Flags used to read the input arguments.
-	brokerList = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster")
-	topicList  = flag.String("topics", "", "REQUIRED: the topics to consume")
-	groupID    = flag.String("groupid", "", "REQUIRED: the group name")
-	offset     = flag.String("offset", "newest", "The offset to start with. Can be `oldest`, `newest`")
-	debug      = flag.Bool("debug", false, "turns on debug logging")
-	commit     = flag.Bool("commit", false, "Commit offsets (default: true)")
+	brokerList    = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster")
+	topicList     = flag.String("topics", "", "REQUIRED: the topics to consume")
+	groupID       = flag.String("groupid", "", "REQUIRED: the group name")
+	offset        = flag.String("offset", "newest", "The offset to start with. Can be `oldest`, `newest`")
+	debug         = flag.Bool("debug", false, "turns on debug logging")
+	commit        = flag.Bool("commit", false, "Commit offsets (default: true)")
+	tlsEnabled    = flag.Bool("tlsEnabled", false, "turns on TLS communication")
+	tlsSkipVerify = flag.Bool("tlsSkipVerify", true, "skips verification of server name & certificate")
+	tlsCAFile     = flag.String("tlsCAFile", "", "Certificate Authority")
+	tlsCertFile   = flag.String("tlsCertFile", "", "Client Certificate")
+	tlsKeyFile    = flag.String("tlsKeyFile", "", "Client Private Key")
 )
 
 func main() {
@@ -49,11 +55,19 @@ func main() {
 	}
 
 	if *topicList == "" {
-		printUsageErrorAndExit("-topic is required")
+		printUsageErrorAndExit("-topics is required")
 	}
 
 	if *groupID == "" {
-		printUsageErrorAndExit("-groupID is required")
+		printUsageErrorAndExit("-groupid is required")
+	}
+
+	tls := clienttls.TLS{
+		Enabled:    *tlsEnabled,
+		SkipVerify: *tlsSkipVerify,
+		CAfile:     *tlsCAFile,
+		Certfile:   *tlsCertFile,
+		Keyfile:    *tlsKeyFile,
 	}
 
 	// Determine the initial offset type.
@@ -80,6 +94,13 @@ func main() {
 	config.SetBrokers(*brokerList)
 	config.SetTopics(*topicList)
 	config.SetGroup(*groupID)
+
+	tlsConfig, err := clienttls.CreateTLSConfig(tls)
+	if err != nil {
+		fmt.Printf("Failed to create TLS config: %v", err)
+		os.Exit(1)
+	}
+	config.SetTLS(tlsConfig)
 
 	// Demonstrate NewConsumer() API to create a new message consumer.
 	consumer, err := client.NewConsumer(config, nil)

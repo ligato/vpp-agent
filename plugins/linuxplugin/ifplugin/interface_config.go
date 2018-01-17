@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -40,6 +41,7 @@ import (
 /* how often in seconds to refresh the microservice label -> docker container PID map */
 const (
 	dockerRefreshPeriod = 3 * time.Second
+	dockerRetryPeriod   = 5 * time.Second
 	vethConfigNamespace = "veth-cfg-ns"
 )
 
@@ -118,7 +120,7 @@ type LinuxInterfaceConfigurator struct {
 }
 
 // Init linuxplugin and start go routines.
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) error {
+func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) (err error) {
 	plugin.Log.Debug("Initializing Linux Interface configurator")
 	plugin.ifIndexes = ifIndexes
 
@@ -131,11 +133,16 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 	plugin.microserviceByLabel = make(map[string]*Microservice)
 	plugin.microserviceByID = make(map[string]*Microservice)
 
-	var err error
 	plugin.dockerClient, err = docker.NewClientFromEnv()
-	if err != nil || plugin.dockerClient == nil {
-		plugin.Log.Warn("Failed to connect with the docker daemon. Will keep re-connecting in the background.")
+	if err != nil {
+		plugin.Log.WithFields(logging.Fields{
+			"DOCKER_HOST":       os.Getenv("DOCKER_HOST"),
+			"DOCKER_TLS_VERIFY": os.Getenv("DOCKER_TLS_VERIFY"),
+			"DOCKER_CERT_PATH":  os.Getenv("DOCKER_CERT_PATH"),
+		}).Errorf("Failed to get docker client instance from the environment variables: %v", err)
+		return err
 	}
+	plugin.Log.Debugf("Using docker client endpoint: %+v", plugin.dockerClient.Endpoint())
 
 	plugin.ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.trackMicroservices(plugin.ctx)
@@ -514,7 +521,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(iface *interfaces
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
 func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcalls.NamespaceMgmtCtx, vethName string, hostIfName string, ns *interfaces.LinuxInterfaces_Interface_Namespace) error {
-	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "ns": linuxcalls.NamespaceToStr(ns)}).
+	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": linuxcalls.NamespaceToStr(ns)}).
 		Debug("Attempting to remove obsolete VETH")
 
 	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ns)
@@ -695,21 +702,40 @@ func (plugin *LinuxInterfaceConfigurator) trackMicroservices(ctx context.Context
 		nsMgmtCtx: linuxcalls.NewNamespaceMgmtCtx(),
 	}
 
-	var err error
+	var clientOk bool
+
+	timer := time.NewTimer(0)
 	for {
-		if plugin.dockerClient == nil {
-			if plugin.dockerClient, err = docker.NewClientFromEnv(); err == nil {
-				plugin.Log.Debugf("Successfully established connection with the docker daemon.")
-				plugin.microserviceChan <- msCtx
-			} else {
-				plugin.Log.Warnf("Failed to establish connection with the docker daemon: %v", err)
-				plugin.Log.Debugf("Retrying connect in few seconds..")
-			}
-		}
-		// Sleep before another refresh.
 		select {
-		case <-time.After(dockerRefreshPeriod):
-			continue
+		case <-timer.C:
+			if err := plugin.dockerClient.Ping(); err != nil {
+				if clientOk {
+					plugin.Log.Errorf("Docker ping check failed: %v", err)
+				}
+				clientOk = false
+
+				// Sleep before another retry.
+				timer.Reset(dockerRetryPeriod)
+				continue
+			}
+
+			if !clientOk {
+				plugin.Log.Infof("Docker ping check OK")
+				/*if info, err := plugin.dockerClient.Info(); err != nil {
+					plugin.Log.Errorf("Retrieving docker info failed: %v", err)
+					timer.Reset(dockerRetryPeriod)
+					continue
+				} else {
+					plugin.Log.Infof("Docker connection established: server version: %v (%v %v %v)",
+						info.ServerVersion, info.OperatingSystem, info.Architecture, info.KernelVersion)
+				}*/
+			}
+			clientOk = true
+
+			plugin.microserviceChan <- msCtx
+
+			// Sleep before another refresh.
+			timer.Reset(dockerRefreshPeriod)
 		case <-plugin.ctx.Done():
 			return
 		}
@@ -804,7 +830,7 @@ func (plugin *LinuxInterfaceConfigurator) detectMicroservice(nsMgmtCtx *linuxcal
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				plugin.Log.Debugf("detected container as microservice: %+v", container)
+				plugin.Log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
 					plugin.Log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
@@ -855,7 +881,7 @@ func (plugin *LinuxInterfaceConfigurator) processNewMicroservice(nsMgmtCtx *linu
 				continue
 			}
 
-			if err := plugin.configureLinuxInterface(nsMgmtCtx, iface); err == nil {
+			if err := plugin.configureLinuxInterface(nsMgmtCtx, iface); err != nil {
 				plugin.Log.Warnf("failed to configure VETH interface %s: %v", iface.config.Name, err)
 			} else if err := plugin.configureLinuxInterface(nsMgmtCtx, peer); err != nil {
 				plugin.Log.Warnf("failed to configure VETH interface %s: %v", peer.config.Name, err)
@@ -924,8 +950,7 @@ func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	plugin.Log.WithFields(logging.Fields{"name": linkAttrs.Name}).
-		Debugf("Processing Linux link update (%v) %+v", link.Type(), linkAttrs)
+	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v", linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
 
 	// Register newly added interface only if it is not already managed by this plugin.
 	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)

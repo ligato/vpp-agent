@@ -50,7 +50,7 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 	if tapIf.Version == 2 {
 		// Configure fast virtio-based TAP interface
 		req := &tapv2.TapCreateV2{}
-		req.TapName = []byte(tapIf.HostIfName)
+		req.HostIfName = []byte(tapIf.HostIfName)
 		req.UseRandomMac = 1
 		if tapIf.Namespace != "" {
 			req.HostNamespace = []byte(tapIf.Namespace)

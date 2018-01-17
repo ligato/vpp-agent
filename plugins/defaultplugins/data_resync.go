@@ -162,8 +162,8 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if len(resyncErrs) == 0 {
 		return nil
 	}
-	for _, err := range resyncErrs {
-		plugin.Log.Error(err)
+	for i, err := range resyncErrs {
+		plugin.Log.Errorf("resync error #%d: %v", i, err)
 	}
 	return fmt.Errorf("%v errors occured during defaultplugins resync", len(resyncErrs))
 }

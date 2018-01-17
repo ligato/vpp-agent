@@ -9,7 +9,9 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 Resource     ../../libraries/all_libs.robot
 
 Suite Setup       Testsuite Setup
-# Suite Teardown    Testsuite Teardown
+Suite Teardown    Testsuite Teardown
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=          common
@@ -215,3 +217,10 @@ Ping in namespace
     Log    ${out}
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
+
+*** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

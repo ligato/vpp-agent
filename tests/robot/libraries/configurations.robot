@@ -16,7 +16,7 @@ Configure Environment 1
 Configure Environment 2
     [Arguments]        ${sfc_conf}
     [Documentation]    Setup environment with sfc_setup
-    Add Agent VPP Node With More Debug   agent_vpp_1       vswitch=${TRUE}
+    Add Agent VPP Node   agent_vpp_1       vswitch=${TRUE}
     Add Agent Node        node_1
     Add Agent Node        node_2
     Execute In Container    agent_vpp_1    echo $MICROSERVICE_LABEL
@@ -42,7 +42,7 @@ Configure Environment 3
 Configure Environment 4
     [Arguments]        ${sfc_conf}
     [Documentation]    Setup environment with sfc_setup
-    Add Agent VPP Node With More Debug   agent_vpp_1       vswitch=${TRUE}
+    Add Agent VPP Node   agent_vpp_1       vswitch=${TRUE}
     Add Agent Node        node_1
     Add Agent Node        node_2
     Add Agent Node        node_3

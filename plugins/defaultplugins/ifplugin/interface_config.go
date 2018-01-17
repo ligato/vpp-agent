@@ -158,12 +158,10 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 
 // ConfigureVPPInterface reacts to a new northbound VPP interface config by creating and configuring
 // the interface in the VPP network stack through the VPP binary API.
-func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Interface) error {
+func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Interface) (err error) {
 	plugin.Log.Infof("Configuring new interface %v", iface.Name)
+
 	var ifIdx uint32
-	var err error
-	var exists bool
-	var pending bool
 
 	switch iface.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
@@ -175,40 +173,43 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, measure.GetTimeLog(vpe.CreateLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
-		ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name)
-		if !exists {
+		var exists bool
+		if ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name); !exists {
 			return errors.New("it is not yet supported to add (whitelist) a new physical interface")
 		}
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
-		ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface)
+		var pending bool
+		if ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface); err != nil {
+			return err
+		} else if pending {
+			plugin.Log.Debugf("interface %+v cannot be created yet and will be configured later", iface)
+			return nil
+		}
 	}
-
-	var wasError error
-
-	if nil != err {
+	if err != nil {
 		return err
 	}
-	if pending {
-		// interface cannot be created yet and will be configured later
-		return nil
-	}
+
+	var errs []error
 
 	//rx mode
-	wasError = plugin.configRxModeForInterface(iface, ifIdx)
+	if err := plugin.configRxModeForInterface(iface, ifIdx); err != nil {
+		errs = append(errs, err)
+	}
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
 		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceSetMacAddress{}, plugin.Stopwatch))
 		if err != nil {
-			wasError = err
+			errs = append(errs, err)
 		}
 	}
 
 	// configure optional vrf
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
-			wasError = err
+			errs = append(errs, err)
 		}
 	}
 
@@ -217,10 +218,16 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	if err != nil {
 		return err
 	}
-	wasError = plugin.configureIPAddresses(iface.Name, ifIdx, IPAddrs, iface.Unnumbered)
+	if err := plugin.configureIPAddresses(iface.Name, ifIdx, IPAddrs, iface.Unnumbered); err != nil {
+		errs = append(errs, err)
+	}
 
 	// configure container IP address
-	plugin.addContainerIPAddress(iface, ifIdx)
+	if iface.ContainerIpAddress != "" {
+		if err := plugin.addContainerIPAddress(iface, ifIdx); err != nil {
+			errs = append(errs, err)
+		}
+	}
 
 	// configure mtu. Prefer value in interface config, otherwise set default value if defined
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
@@ -228,13 +235,13 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 			err = vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.Log, plugin.vppCh,
 				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
 			if err != nil {
-				wasError = err
+				errs = append(errs, err)
 			}
 		} else if plugin.mtu != 0 {
 			err = vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh,
 				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
 			if err != nil {
-				wasError = err
+				errs = append(errs, err)
 			}
 		}
 	}
@@ -243,7 +250,9 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	if iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		plugin.swIfIndexes.RegisterName(iface.Name, ifIdx, iface)
 	}
-	plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "ifIdx": ifIdx}).Info("Configured interface")
+
+	l := plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "ifIdx": ifIdx})
+	l.Debug("Configured interface")
 
 	// set interface up if enabled
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
@@ -251,6 +260,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceSetFlags{}, plugin.Stopwatch))
 		if nil != err {
+			l.Debugf("setting interface up failed: %v", err)
 			return err
 		}
 	}
@@ -258,9 +268,13 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// load interface state data for newly added interface (no way to filter by swIfIndex, need to dump all of them)
 	plugin.LookupVPPInterfaces()
 
-	plugin.Log.Infof("Interface %v configuration done", iface.Name)
+	l.Info("Interface configuration done")
 
-	return wasError
+	// TODO: use some error aggregator
+	if errs != nil {
+		return fmt.Errorf("%v", errs)
+	}
+	return nil
 }
 
 /**

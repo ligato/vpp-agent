@@ -12,15 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
-
-//SwIndexNotFound is specific error type used to differentiate state when software index associated with name
-// wasn't found in register
-type SwIndexNotFound struct {
-	error
-	OriginalError error
-}
-
-func (swIndexNotFound SwIndexNotFound) Error() string {
-	return swIndexNotFound.OriginalError.Error()
-}
+// Package clienttls provides tls utilities.
+package clienttls

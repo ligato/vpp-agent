@@ -20,6 +20,8 @@ ${SYNC_SLEEP}=         6s
 ${VETH1_MAC}=          1a:00:00:11:11:11
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
+${NAMESPACE}=
+${NSTYPE}=            3
 
 *** Test Cases ***
 Configure Environment
@@ -39,13 +41,12 @@ Add Veth2 Interface
     vpp_ctl: Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=${VETH2_MAC}    peer=vpp1_veth1
     Show Info
 
-Add ARPs
-    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  155.155.155.155    32:51:51:51:51:51    false
-    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  155.155.155.156    32:51:51:51:51:52    false
-    vpp_ctl: Put Linux ARP    agent_vpp_1    lo          loopback_arp  155.155.155.156    32:51:51:51:51:52    false
-    vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  155.155.155.156    32:51:51:51:51:52    false
-    Sleep    ${SYNC_SLEEP}
-    Show Info
+Check That Veth1 And Veth2 Interfaces Are Created
+    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_MAC}
+    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
+    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv4=10.10.1.1/24    mtu=1500    state=up
+    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+
 
 ADD Afpacket Interface
     vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth2
@@ -54,37 +55,50 @@ Check AFpacket Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=a2:a1:a1:a1:a1:a1
     vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1    mac=a2:a1:a1:a1:a1:a1
     Sleep    ${SYNC_SLEEP}
-    Show Info
 
-Delete Afpacket1 Interface
-    vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_afpacket1
-    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${AFP1_MAC}
+Add ARPs
+    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  155.155.155.155    32:51:51:51:51:51
+    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  155.155.155.156    32:51:51:51:51:52
+    vpp_ctl: Put Linux ARP    agent_vpp_1    lo          loopback_arp  155.155.155.156    32:51:51:51:51:52
+    vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  155.155.155.156    32:51:51:51:51:52
     Sleep    ${SYNC_SLEEP}
-    Show Info
 
-#Check  ARP
-#    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:51    True
-#    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.156    32:51:51:51:51:52    True
-#
-#
-#Delete ARPs
-#    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_memif1    155.155.155.156
-#    vpp_ctl: Delete ARP    agent_vpp_1    vpp1_veth1    155.155.155.150
-#    Sleep    ${SYNC_SLEEP}
-#
-#Check Memif ARP After Delete
-#    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:51    True
-#    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.156    32:51:51:51:51:52    False
-#
-#
-#Modify ARPs
-#    vpp_ctl: Put ARP    agent_vpp_1    vpp1_memif1    155.155.155.155    32:51:51:51:51:5    false
-#    vpp_term:Show ARP   agent_vpp_1
-#    Sleep    ${SYNC_SLEEP}
-#
-#Check Memif ARP After Modify
-#    vpp_term: Check ARP   agent_vpp_1     vpp1_memif1    155.155.155.155    32:51:51:51:51:51    True
-#
+Check ARPSs
+    ${out}=       Execute In Container    agent_vpp_1    ip neigh
+    Log           ${out}
+    Should Contain     ${out}    155.155.155.156 dev vpp1_veth2 lladdr 32:51:51:51:51:52 PERMANENT
+    Should Contain     ${out}    155.155.155.155 dev vpp1_veth1 lladdr 32:51:51:51:51:51 PERMANENT
+    Should Contain     ${out}    155.155.155.156 dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
+    Should Contain     ${out}    155.155.155.156 dev lo lladdr 32:51:51:51:51:52 PERMANENT
+
+Change ARPs
+    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  155.255.155.155    32:61:51:51:51:51
+    vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  155.255.155.156    32:61:51:51:51:52
+    vpp_ctl: Put Linux ARP    agent_vpp_1    lo          loopback_arp  155.255.155.156    32:61:51:51:51:52
+    vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  155.255.155.156    32:61:51:51:51:52
+    Sleep    ${SYNC_SLEEP}
+
+Check ARPSs Again
+    ${out}=       Execute In Container    agent_vpp_1    ip neigh
+    Log           ${out}
+    Should Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
+    Should Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
+    Should Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
+    Should Contain     ${out}    155.255.155.156 dev lo lladdr 32:61:51:51:51:52 PERMANENT
+
+Delete ARPs
+    vpp_ctl: Delete Linux ARP    agent_vpp_1    veth1_arp
+    vpp_ctl: Delete Linux ARP    agent_vpp_1    veth2_arp
+    vpp_ctl: Delete Linux ARP    agent_vpp_1    loopback_arp
+    vpp_ctl: Delete Linux ARP    agent_vpp_1    eth_arp
+
+Check ARPSs After Delete
+    ${out}=       Execute In Container    agent_vpp_1    ip neigh
+    Log           ${out}
+    Should Not Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
+    Should Not Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
+    Should Not Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
+    Should Not Contain     ${out}    155.255.155.156 dev lo lladdr 32:61:51:51:51:52 PERMANENT
 
 
 *** Keywords ***

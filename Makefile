@@ -1,8 +1,9 @@
 include Makeroutines.mk
 
-VERSION=$(shell git rev-parse HEAD)
+VERSION=$(shell git describe --tags --dirty)
+COMMIT=$(shell git rev-parse HEAD)
 DATE=$(shell date +'%Y-%m-%dT%H:%M%:z')
-LDFLAGS=-ldflags '-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildVersion=$(VERSION) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildDate=$(DATE)'
+LDFLAGS=-ldflags '-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildVersion=$(VERSION) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.CommitHash=$(COMMIT) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildDate=$(DATE)'
 COVER_DIR=/tmp/
 
 # generate go structures from proto files

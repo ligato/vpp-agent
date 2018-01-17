@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
+	"github.com/ligato/cn-infra/utils/clienttls"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
@@ -33,7 +34,7 @@ const topic = "status-check"
 type Plugin struct {
 	Deps         // inject
 	mux          *mux.Multiplexer
-	subscription chan (*client.ConsumerMessage)
+	subscription chan *client.ConsumerMessage
 
 	// Kafka plugin is using two clients. The first one is using 'hash' (default) partitioner. The second mux
 	// uses manual partitioner which allows to send a message to specified partition and watching to desired partition/offset
@@ -71,7 +72,10 @@ func (plugin *Plugin) Init() (err error) {
 		return err
 	}
 	// retrieve clientCfg
-	clientCfg := plugin.getClientConfig(muxCfg, plugin.Log, topic)
+	clientCfg, err := plugin.getClientConfig(muxCfg, plugin.Log, topic)
+	if err != nil {
+		return err
+	}
 
 	// init 'hash' sarama client
 	plugin.hsClient, err = client.NewClient(clientCfg, client.Hash)
@@ -202,7 +206,7 @@ func (plugin *Plugin) Disabled() (disabled bool) {
 }
 
 // Receive client config according to kafka config data
-func (plugin *Plugin) getClientConfig(config *mux.Config, logger logging.Logger, topic string) *client.Config {
+func (plugin *Plugin) getClientConfig(config *mux.Config, logger logging.Logger, topic string) (*client.Config, error) {
 	clientCfg := client.NewConfig(logger)
 	// Set brokers obtained from kafka config. In case there are none available, use a default one
 	if len(config.Addrs) > 0 {
@@ -219,5 +223,13 @@ func (plugin *Plugin) getClientConfig(config *mux.Config, logger logging.Logger,
 	clientCfg.SetRecvMessageChan(plugin.subscription)
 	clientCfg.SetInitialOffset(sarama.OffsetNewest)
 	clientCfg.SetTopics(topic)
-	return clientCfg
+	if config.TLS.Enabled {
+		plugin.Log.Info("TLS enabled")
+		tlsConfig, err := clienttls.CreateTLSConfig(config.TLS)
+		if err != nil {
+			return nil, err
+		}
+		clientCfg.SetTLS(tlsConfig)
+	}
+	return clientCfg, nil
 }

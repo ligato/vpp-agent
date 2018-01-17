@@ -53,6 +53,7 @@ type AgentStatus struct {
 	LastChange     int64            `protobuf:"varint,5,opt,name=last_change,proto3" json:"last_change,omitempty"`
 	LastUpdate     int64            `protobuf:"varint,6,opt,name=last_update,proto3" json:"last_update,omitempty"`
 	InterfaceStats *InterfaceStats  `protobuf:"bytes,7,opt,name=interface_stats" json:"interface_stats,omitempty"`
+	CommitHash     string           `protobuf:"bytes,8,opt,name=commit_hash,proto3" json:"commit_hash,omitempty"`
 }
 
 func (m *AgentStatus) Reset()         { *m = AgentStatus{} }

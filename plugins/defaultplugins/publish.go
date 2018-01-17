@@ -52,6 +52,10 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
+	// store last errors to prevent repeating
+	var lastPublishErr error
+	var lastNotifErr error
+
 	for {
 		select {
 		case ifState := <-plugin.ifStateChan:
@@ -60,16 +64,22 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			if plugin.PublishStatistics != nil {
 				err := plugin.PublishStatistics.Put(key, ifState.State)
 				if err != nil {
-					plugin.Log.Error(err)
+					if lastPublishErr == nil || lastPublishErr.Error() != err.Error() {
+						plugin.Log.Error(err)
+					}
 				}
+				lastPublishErr = err
 			}
 
 			// Marshall data into JSON & send kafka message.
 			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
-					plugin.Log.Error(err)
+					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {
+						plugin.Log.Error(err)
+					}
 				}
+				lastNotifErr = err
 			}
 
 			// Send interface state data to global agent status

@@ -22,32 +22,26 @@ Add Agent Node
     Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
     Log List    ${NODES}
 
+Add Agent Node Again
+    [Arguments]    ${node}
+    Log Many       ${node}
+    Open SSH Connection    ${node}_again    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE}
+    #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
+    Write To Machine       ${node}_again    ${DOCKER_COMMAND} start ${node}_again
+    Append To List    ${NODES}    ${node}_again
+    Create Session    ${node}_again    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
+    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
+    Set Suite Variable    ${${node}_again_HOSTNAME}    ${hostname}
+    Log List    ${NODES}
+
 Add Agent VPP Node
     [Arguments]    ${node}    ${vswitch}=${FALSE}
     Log Many       ${node}    ${vswitch}
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
-    Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
-    Append To List    ${NODES}    ${node}
-    Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Open SSH Connection    ${node}_vat    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    vpp_term: Open VPP Terminal    ${node}
-    vat_term: Open VAT Terminal    ${node}
-    Create Session    ${node}    http://${DOCKER_HOST_IP}:${${node}_REST_API_HOST_PORT}
-    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec ${node} bash -c 'echo $HOSTNAME'
-    Set Suite Variable    ${${node}_HOSTNAME}    ${hostname}
-    Log List    ${NODES}
-
-
-Add Agent VPP Node With More Debug
-    [Arguments]    ${node}    ${vswitch}=${FALSE}
-    Log Many       ${node}    ${vswitch}
-    ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
-    Log    ${add_params}
-    Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e INITIAL_LOGLVL=debug -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e DP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -273,7 +267,8 @@ Start SFC Controller Container With Own Config
     SSHLibrary.Put_file    ${TEST_DATA_FOLDER}/${config}	/tmp/
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp /tmp/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
     Write To Machine       sfc_controller    ${DOCKER_COMMAND} start -i sfc_controller
-    ${hostname}=           Execute On Machine    docker    ${DOCKER_COMMAND} exec sfc_controller bash -c 'echo $HOSTNAME'
+    #Sleep                  400s
+    ${hostname}=           Execute On Machine    docker    ${DOCKER_COMMAND} exec sfc_controller sh -c 'echo $HOSTNAME'
     Set Suite Variable     ${SFC_CONTROLLER_HOSTNAME}    ${hostname}
 
 Stop SFC Controller Container
