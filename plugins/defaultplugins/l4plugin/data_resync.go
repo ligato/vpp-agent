@@ -39,7 +39,7 @@ func (plugin *L4Configurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppN
 	return nil
 }
 
-// ResyncFeatures sets L4Features flag
+// ResyncFeatures sets initital L4Features flag
 func (plugin *L4Configurator) ResyncFeatures(l4Features *l4.L4Features) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC L4Features begin. ")
 	// Calculate and log L4Features resync
