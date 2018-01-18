@@ -14,7 +14,7 @@ cache:
     - $HOME/build-cache
 
 env:
-  - GO_BUILD_TAGS=novpp
+  - GO_BUILD_TAGS=mockvpp
 
 before_install:
   - go get -u -f github.com/alecthomas/gometalinter
@@ -28,6 +28,7 @@ script:
   - make lint
   - make
   - make test-cover
+  - go test -tags mockvpp ./tests/go/itest
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

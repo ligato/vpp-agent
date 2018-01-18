@@ -9,14 +9,6 @@ import:
 - package: git.fd.io/govpp.git
   version: 35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3
   repo: https://git.fd.io/govpp.git
-  subpackages:
-  - adapter
-  - adapter/mock
-  - adapter/mock/binapi_reflect
-  - adapter/vppapiclient
-  - api
-  - api/ifcounters
-  - core
 - package: github.com/vishvananda/netns
   version: 54f0e4339ce73702a0607f49922aaa1e749b418d
   repo: https://github.com/vishvananda/netns

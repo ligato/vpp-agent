@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build novpp
+// +build mockvpp
 
 package govppmux
 
 import (
 	"git.fd.io/govpp.git/adapter"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 )
 
-// NewVppAdapter returns nil adapter, used for building without vppapiclient library.
+// NewVppAdapter returns mock adapter, used for building without vppapiclient library.
 func NewVppAdapter() adapter.VppAdapter {
-	return nil
+	return govppmock.NewVppAdapter()
 }
