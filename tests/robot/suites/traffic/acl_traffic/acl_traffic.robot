@@ -31,10 +31,10 @@ ${ACL3_NAME}=       acl3_UDP
 ${ACL4_NAME}=       acl4_UDP
 ${ACL5_NAME}=       acl5_ICMP
 ${ACL6_NAME}=       acl6_ICMP
-${E_INTF1}=         IF_AFPIF_VSWITCH_agent_2_agent2_veth
-${I_INTF1}=         IF_AFPIF_VSWITCH_agent_1_agent1_veth
-${E_INTF2}=         IF_AFPIF_VSWITCH_agent_1_agent1_veth
-${I_INTF2}=         IF_AFPIF_VSWITCH_agent_2_agent2_veth
+${E_INTF1}=         IF_AFPIF_VSWITCH_node_2_node2_veth
+${I_INTF1}=         IF_AFPIF_VSWITCH_node_1_node1_veth
+${E_INTF2}=         IF_AFPIF_VSWITCH_node_1_node1_veth
+${I_INTF2}=         IF_AFPIF_VSWITCH_node_2_node2_veth
 ${RULE_NM1_1}=         acl1_rule1
 ${RULE_NM2_1}=         acl2_rule1
 ${RULE_NM3_1}=         acl3_rule1
@@ -58,21 +58,21 @@ Configure Environment
     Show Interfaces And Other Objects
 
 Check AfPackets On Vswitch
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_2_agent2_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_node2_veth    enabled=1
 
 Check Veth Interface On Agent1
-    linux: Interface With IP Is Created    node=agent_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
+    linux: Interface With IP Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent1_veth     mac=${AGENT1_VETH_MAC}    ipv4=10.0.0.10/24    mtu=1500    state=up
 
 Check Veth Interface On Agent2
-    linux: Interface With IP Is Created    node=agent_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
+    linux: Interface With IP Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent2_veth     mac=${AGENT2_VETH_MAC}    ipv4=10.0.0.11/24    mtu=1500    state=up
 
 Check Bridge Domain Is Created
-    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    IF_AFPIF_VSWITCH_agent_2_agent2_veth
+    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth
 
 
 Show All Objects
@@ -82,22 +82,22 @@ Start TCP And UDP Listeners
     Start UDP and TCP Ping Servers
 
 Check Ping Agent1 -> Agent2
-    linux: Check Ping    agent_1    10.0.0.11
+    linux: Check Ping    node_1    10.0.0.11
 
 Check Ping Agent2 -> Agent1
-    linux: Check Ping    agent_2    10.0.0.10
+    linux: Check Ping    node_2    10.0.0.10
 
 Check UDP Ping Agent1 -> Agent2
-    linux: UDPPing  agent_1     10.0.0.11   ${UDP_PORT}
+    linux: UDPPing  node_1     10.0.0.11   ${UDP_PORT}
 
 Check TCP Ping Agent1 -> Agent2
-    linux: TCPPing  agent_1     10.0.0.11   ${TCP_PORT}
+    linux: TCPPing  node_1     10.0.0.11   ${TCP_PORT}
 
 Check UDP Ping Agent2 -> Agent1
-    linux: UDPPing  agent_2     10.0.0.10   ${UDP_PORT}
+    linux: UDPPing  node_2     10.0.0.10   ${UDP_PORT}
 
 Check TCP Ping Agent2 -> Agent1
-    linux: TCPPing  agent_2     10.0.0.10   ${TCP_PORT}
+    linux: TCPPing  node_2     10.0.0.10   ${TCP_PORT}
 
 
 Add ACL1_TCP Disable TCP Port
@@ -118,16 +118,16 @@ Show ACLs on VPP
     vpp_term: Show ACL      agent_vpp_1
 
 Check UDP Not Ping Agent2 -> Agent1 After Disabling
-    linux: UDPPingNot  agent_2     10.0.0.10   ${UDP_PORT}
+    linux: UDPPingNot  node_2     10.0.0.10   ${UDP_PORT}
 
 Check UDP Not Ping Agent1 -> Agent2 After Disabling
-    linux: UDPPingNot  agent_1     10.0.0.11   ${UDP_PORT}
+    linux: UDPPingNot  node_1     10.0.0.11   ${UDP_PORT}
 
 Check TCP Not Ping Agent1 -> Agent2
-    linux: TCPPingNot  agent_1     10.0.0.11   ${TCP_PORT}
+    linux: TCPPingNot  node_1     10.0.0.11   ${TCP_PORT}
 
 Check TCP Not Ping Agent2 -> Agent1
-    linux: TCPPingNot  agent_2     10.0.0.10   ${TCP_PORT}
+    linux: TCPPingNot  node_2     10.0.0.10   ${TCP_PORT}
 
 Remove Agent Nodes
     Remove All Nodes
@@ -135,26 +135,26 @@ Remove Agent Nodes
 
 Start Agent Nodes Again
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
-    Add Agent Node    agent_1
-    Add Agent Node    agent_2
+    Add Agent Node    node_1
+    Add Agent Node    node_2
     Sleep    ${SYNC_SLEEP}
 
 Check AfPackets On Vswitch After Resync
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_2_agent2_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_node2_veth    enabled=1
 
 Check Veth Interface On Agent1 After Resync
-    linux: Interface With IP Is Created    node=agent_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
+    linux: Interface With IP Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent1_veth     mac=${AGENT1_VETH_MAC}    ipv4=10.0.0.10/24    mtu=1500    state=up
 
 Check Veth Interface On Agent2 After Resync
-   linux: Interface With IP Is Created    node=agent_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
+   linux: Interface With IP Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent2_veth     mac=${AGENT2_VETH_MAC}    ipv4=10.0.0.11/24    mtu=1500    state=up
 
 Check Bridge Domain Is Created After Resync
-    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_veth    IF_AFPIF_VSWITCH_agent_2_agent2_veth
+    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth
 
 Show All Objects After Resync
     Show Interfaces And Other Objects
@@ -166,26 +166,22 @@ Start TCP And UDP Listeners After Resync
     Start UDP and TCP Ping Servers
 
 Check Ping Agent1 -> Agent2 After Resync
-    linux: Check Ping    agent_1    10.0.0.11
+    linux: Check Ping    node_1    10.0.0.11
 
 Check Ping Agent2 -> Agent1 After Resync
-    linux: Check Ping    agent_2    10.0.0.10
+    linux: Check Ping    node_2    10.0.0.10
 
 Check UDP Not Ping Agent1 -> Agent2 After Resync
-    linux: UDPPingNot  agent_1     10.0.0.11   ${UDP_PORT}
+    linux: UDPPingNot  node_1     10.0.0.11   ${UDP_PORT}
 
 Check UDP Not Ping Agent2 -> Agent1 After Resync
-    linux: UDPPingNot  agent_2     10.0.0.10   ${UDP_PORT}
+    linux: UDPPingNot  node_2     10.0.0.10   ${UDP_PORT}
 
 Check TCP Not Ping Agent1 -> Agent2 After Resync
-    linux: TCPPingNot  agent_1     10.0.0.11   ${TCP_PORT}
+    linux: TCPPingNot  node_1     10.0.0.11   ${TCP_PORT}
 
 Check TCP Not Ping Agent2 -> Agent1 After Resync
-    linux: TCPPingNot  agent_2     10.0.0.10   ${TCP_PORT}
-
-
-
-
+    linux: TCPPingNot  node_2     10.0.0.10   ${TCP_PORT}
 
 Done
     [Tags]    debug
@@ -207,19 +203,19 @@ Show Interfaces And Other Objects
     vat_term: Interfaces Dump    agent_vpp_1
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
-    Execute In Container    agent_1    ip a
-    Execute In Container    agent_2    ip a
-    linux: Check Processes on Node      agent_1
-    linux: Check Processes on Node      agent_2
+    Execute In Container    node_1    ip a
+    Execute In Container    node_2    ip a
+    linux: Check Processes on Node      node_1
+    linux: Check Processes on Node      node_2
     Make Datastore Snapshots    before_resync
 
 Start UDP and TCP Ping Servers
-    linux: Run TCP Ping Server On Node      agent_1     ${TCP_PORT}
-    linux: Run UDP Ping Server On Node      agent_1     ${UDP_PORT}
-    linux: Run TCP Ping Server On Node      agent_2     ${TCP_PORT}
-    linux: Run UDP Ping Server On Node      agent_2     ${UDP_PORT}
-    linux: Check Processes on Node      agent_1
-    linux: Check Processes on Node      agent_2
+    linux: Run TCP Ping Server On Node      node_1     ${TCP_PORT}
+    linux: Run UDP Ping Server On Node      node_1     ${UDP_PORT}
+    linux: Run TCP Ping Server On Node      node_2     ${TCP_PORT}
+    linux: Run UDP Ping Server On Node      node_2     ${UDP_PORT}
+    linux: Check Processes on Node      node_1
+    linux: Check Processes on Node      node_2
     Sleep    ${SYNC_SLEEP}
 
 

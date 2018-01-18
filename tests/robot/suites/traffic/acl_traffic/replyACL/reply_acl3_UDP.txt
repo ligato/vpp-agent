@@ -2,12 +2,12 @@
     "acl_name": "acl3_UDP",
     "interfaces": {
         "egress": [
-            "IF_AFPIF_VSWITCH_agent_2_agent2_veth",
-            "IF_AFPIF_VSWITCH_agent_1_agent1_veth"
+            "IF_AFPIF_VSWITCH_node_2_node2_veth",
+            "IF_AFPIF_VSWITCH_node_1_node1_veth"
         ],
         "ingress": [
-            "IF_AFPIF_VSWITCH_agent_1_agent1_veth",
-            "IF_AFPIF_VSWITCH_agent_2_agent2_veth"
+            "IF_AFPIF_VSWITCH_node_1_node1_veth",
+            "IF_AFPIF_VSWITCH_node_2_node2_veth"
         ]
     },
     "rules": [
