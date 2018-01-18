@@ -69,7 +69,7 @@ type ACLToInterface struct {
 	EgressACL  []uint32
 }
 
-//
+// DumpACLs return a list of all configured ACLs including rules and interfaces
 func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *govppapi.Channel,
 	timeLog measure.StopWatchEntry) ([]*ACLEntry, error) {
 
@@ -107,7 +107,7 @@ func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *go
 	return ACLs, nil
 }
 
-// DumpACLRules returns a map of ACL indices with appropriate list of rules
+// DumpACLRules returns all acl rules for all ACLs
 func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
 	timeLog measure.StopWatchEntry) ([]*ACLRules, error) {
 	var aclRules []*ACLRules
@@ -172,6 +172,7 @@ func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
 	return aclRules, wasErr
 }
 
+// DumpACLInterfaces returns a map of ACL indices with interfaces
 func DumpACLInterfaces(aclIndices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel *govppapi.Channel,
 	timeLog measure.StopWatchEntry) (map[uint32]*acl.AccessLists_Acl_Interfaces, error) {
 	// ACLInterfaceListDump time measurement
