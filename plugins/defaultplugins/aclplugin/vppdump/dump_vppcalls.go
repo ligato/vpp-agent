@@ -24,7 +24,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
@@ -184,11 +183,9 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (*acl.AccessLists
 func getIPRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
 	ipRule := acl.AccessLists_Acl_Rule_Matches_IpRule{}
 
-	saddr := net.IPNet{IP: r.SrcIPAddr, Mask: []byte{}}
-	daddr := net.IPNet{IP: r.DstIPAddr, Mask: []byte{}}
 	ip := acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
-		SourceNetwork:      fmt.Sprintf("%s/%d", saddr.String(), r.SrcIPPrefixLen),
-		DestinationNetwork: fmt.Sprintf("%s/%d", daddr.String(), r.DstIPPrefixLen),
+		SourceNetwork:      fmt.Sprintf("%v/%d", decodeIPv4Address(r.SrcIPAddr), r.SrcIPPrefixLen),
+		DestinationNetwork: fmt.Sprintf("%s/%d", decodeIPv4Address(r.DstIPAddr), r.DstIPPrefixLen),
 	}
 	ipRule.Ip = &ip
 
@@ -261,4 +258,19 @@ func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 		IcmpTypeRange: &typeRange,
 	}
 	return &icmp
+}
+
+// decodeIPv4Address converts first four elements of provided byte array to IPv4 address
+// as a string.
+func decodeIPv4Address(addr []byte) string {
+	var ipv4 []byte
+	for i, octet := range addr {
+		ipv4 = append(ipv4, octet)
+		if i >= 3 {
+			break
+		}
+	}
+	var IPv4Addr net.IP = ipv4
+
+	return IPv4Addr.To4().String()
 }
