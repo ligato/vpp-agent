@@ -52,3 +52,10 @@ Configure Environment 4
     Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
     Start SFC Controller Container With Own Config    ${sfc_conf}
     Sleep    ${SYNC_SLEEP}
+
+Configure Environment 5
+    Add Agent VPP Node    agent_vpp_1
+    Execute In Container    agent_vpp_1    echo $MICROSERVICE_LABEL
+    Execute In Container    agent_vpp_1    ls -al
+    Execute On Machine    docker    ${DOCKER_COMMAND} images
+    Execute On Machine    docker    ${DOCKER_COMMAND} ps -as

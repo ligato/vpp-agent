@@ -273,3 +273,11 @@ vpp_term: Check Data In Show Application Namespaces Output
     Log Many    ${node}    ${id}    @{desired_state}
     ${actual_state}=    vpp_term: Return Data From Show Application Namespaces Output    ${node}    ${id}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
+
+vpp_term: Show Interface Mode
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Show Interfaces Mode
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    show mode
+    [Return]           ${out}
+
