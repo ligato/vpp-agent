@@ -410,17 +410,17 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 			}
 			if !validated {
 				plugin.Log.Infof("FIB entry %v - required interface %v is not a part of bridge domain %v",
-					mac, domainID)
+					mac, fibInterface, domainID)
 				continue
 			} else {
 				fibBvi := meta.(*FIBMeta).BVI
 				fibStatic := meta.(*FIBMeta).StaticConfig
 				err := plugin.vppcalls.Add(mac, domainID, ifIndex, fibBvi, fibStatic, func(err error) {
-					plugin.Log.Infof("Previously not configurable FIB entry with MAC %v is now configured", mac)
+					plugin.Log.Debugf("Previously not configurable FIB entry with MAC %v is now configured", mac)
 					// Resolve registration.
 					plugin.FibIndexes.RegisterName(mac, plugin.FibIndexSeq, meta)
 					plugin.FibIndexSeq++
-					plugin.Log.Debug("Registering FIB table entry with MAC ", mac)
+					plugin.Log.Debugf("Registering FIB table entry with MAC %v", mac)
 					plugin.FibDesIndexes.UnregisterName(mac)
 					plugin.Log.Debugf("Unconfigured FIB entry with MAC %v removed from cache", mac)
 					callback(err)
@@ -431,7 +431,7 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 			}
 		}
 	}
-	plugin.Log.Infof("FIB: resolution of created bridge domain %v is done", domainName)
+	plugin.Log.Debugf("FIB: resolution of created bridge domain %v is done", domainName)
 	return wasError
 }
 
