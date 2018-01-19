@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 )
 
 // VppMetaData defines the etcd metadata.
