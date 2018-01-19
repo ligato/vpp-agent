@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 )
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport).

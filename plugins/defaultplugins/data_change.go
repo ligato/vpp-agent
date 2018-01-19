@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
 	"github.com/ligato/cn-infra/datasync"

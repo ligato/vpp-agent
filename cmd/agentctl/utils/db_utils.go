@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 )
 
