@@ -16,7 +16,7 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP.

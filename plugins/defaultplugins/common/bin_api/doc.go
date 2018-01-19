@@ -13,5 +13,5 @@
 // limitations under the License.
 
 // Package binapi defines the aclplugin's southbound API. The southbound
-// API is generated from the ACL VPP binary API.
+// API is generated from the VPP binary API.
 package binapi
