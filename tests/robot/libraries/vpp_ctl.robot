@@ -594,3 +594,23 @@ vpp_ctl: Delete Linux ARP
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
+
+vpp_ctl: Put L2XConnect
+    [Arguments]    ${node}    ${rx_if}    ${tx_if}
+    [Documentation]    Put L2 Xconnect config json to etcd.
+    Log Many              ${node}    ${rx_if}    ${tx_if}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/l2xconnect.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/xconnect/${rx_if}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete L2XConnect
+    [Arguments]    ${node}    ${rx_if}
+    [Documentation]    Delete L2 Xconnect config json from etcd.
+    Log Many    ${node}    ${rx_if}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/xconnect/${rx_if}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}

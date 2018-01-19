@@ -44,6 +44,8 @@ Check That Veth1 And Veth2 Interfaces Are Created
     linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
     linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv4=10.10.1.1/24    mtu=1500    state=up
     linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+    vpp_term: Show Interface Mode  agent_vpp_1    vpp1_veth1@vpp1_veth2
+    vpp_term: Show Interface Mode  agent_vpp_1    vpp1_veth2@vpp1_veth1
 
 
 Add Memif Interface
