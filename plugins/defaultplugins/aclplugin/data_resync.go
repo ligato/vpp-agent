@@ -41,24 +41,24 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	}
 
 	// Remove all configured VPP ACLs
-	// Note: due to unablity to dump ACL interfaces, it is not currently possible to calculate
-	// difference between configs
+	// Note: due to unablity to dump ACL interfaces, it is not currently possible to correctly
+	// calculate difference between configs
 	var wasErr error
 	for _, vppACL := range vppACLs {
 
-		// ACL with IP-type rules uses different binary call to create/remove. Check what type of
-		// rules is in the ACL
+		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
+		// Check what type of rules is in the ACL
 		ipRulesExist := checkIPRules(vppACL.ACLDetails.Rules)
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppACL.ACLIndex, plugin.Log, plugin.vppChannel,
+			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
 				measure.GetTimeLog(&acl_api.ACLDel{}, plugin.Stopwatch)); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
 			continue
 		} else {
-			if err := vppcalls.DeleteMacIPAcl(vppACL.ACLIndex, plugin.Log, plugin.vppChannel,
+			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
 				measure.GetTimeLog(&acl_api.MacipACLAdd{}, plugin.Stopwatch)); err != nil {
 				log.Error(err)
 				wasErr = err
