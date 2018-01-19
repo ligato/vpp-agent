@@ -22,8 +22,8 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // AddDelVxlanTunnelReq prepares the request for bin API calls.

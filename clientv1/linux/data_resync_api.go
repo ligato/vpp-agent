@@ -19,9 +19,9 @@ import (
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
+	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"

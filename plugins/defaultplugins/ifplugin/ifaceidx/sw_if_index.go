@@ -19,7 +19,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // SwIfIndex provides read-only access to mapping between software interface indices

@@ -25,7 +25,7 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 
 	"github.com/ligato/cn-infra/logging"

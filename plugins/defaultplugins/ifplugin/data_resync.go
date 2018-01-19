@@ -20,9 +20,9 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 )
 

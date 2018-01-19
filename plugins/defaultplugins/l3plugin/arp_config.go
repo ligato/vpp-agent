@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"

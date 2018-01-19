@@ -17,14 +17,14 @@ package defaultplugins
 import (
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 )
 

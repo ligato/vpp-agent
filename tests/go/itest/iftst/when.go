@@ -8,8 +8,8 @@ import (
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 const pluginName = core.PluginName("when_iface")

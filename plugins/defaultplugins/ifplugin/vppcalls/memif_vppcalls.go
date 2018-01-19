@@ -21,8 +21,8 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // AddMemifInterface calls MemifCreate bin API.

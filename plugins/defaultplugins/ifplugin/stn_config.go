@@ -29,9 +29,9 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
+	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
