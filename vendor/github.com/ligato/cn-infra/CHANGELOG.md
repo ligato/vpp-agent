@@ -1,3 +1,18 @@
+# Release v1.0.8 (2018-1-22)
+
+## Kafka
+  * Added support for Kafka TLS.
+
+## Logging
+  * Logger config file now enables to set every logger to desired level or use default level for all loggers
+    within plugins. For this purpose it is also possible to use environment variable INITITAL_LOGLVL.
+
+## Statuscheck
+  * Readiness probe now allows to report interfaces' state to the proble output. 
+
+## Dependencies
+  * Sirupsen package is now lower-cased according to recommandations.   
+
 # Release v1.0.7 (2017-11-14)
 
 ## Agent, Flavors
