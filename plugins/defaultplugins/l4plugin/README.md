@@ -1,7 +1,7 @@
 # L4 plugin
 
 The l4plugin is a Core Agent Plugin that is designed to configure VPP application namespaces.
-Configuration managed by this plugin is modelled by the [proto file](model/l4/l4.proto). The configuration
+Configuration managed by this plugin is modelled by the [proto file](../common/model/l4/l4.proto). The configuration
 must be stored in etcd using the following key:
 
 ```

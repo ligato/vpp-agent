@@ -1,7 +1,7 @@
 # L2 Plugin
 
 The `l2plugin` is a Core Agent Plugin designed to configure Bridge Domains and L2 FIB in the VPP.
-Configuration managed by this plugin is modelled by [l2 proto file](model/l2/l2.proto). The
+Configuration managed by this plugin is modelled by [l2 proto file](../common/model/l2/l2.proto). The
 configuration must be stored in etcd using following keys:
 
 ```

@@ -1,7 +1,7 @@
 # L3 plugin
 
 The l3plugin is a Core Agent Plugin that is designed to configure ARP entries and routes in the VPP. 
-Configuration managed by this plugin is modelled by the [proto file](model/l3/l3.proto). 
+Configuration managed by this plugin is modelled by the [proto file](../common/model/l3/l3.proto). 
 
 ## ARP entries
 
