@@ -23,7 +23,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 )
 
 // ArpEntry represents ARP entry for interface

@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 )
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.

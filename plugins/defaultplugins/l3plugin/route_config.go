@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/l3 --gogo_out=model/l3 model/l3/l3.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=bin_api
+//go:generate protoc --proto_path=../common/model/l3 --gogo_out=../common/model/l3 ../common/model/l3/l3.proto
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 
 // Package l3plugin implements the L3 plugin that handles L3 FIBs.
 package l3plugin
@@ -26,10 +26,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )

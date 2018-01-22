@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/acl --gogo_out=model/acl model/acl/acl.proto
+//go:generate protoc --proto_path=../common/model/acl --gogo_out=../common/model/acl ../common/model/acl/acl.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=../common/bin_api
 
 // Package aclplugin implements the ACL Plugin that handles management of VPP
 // Access lists.
@@ -28,10 +28,10 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
+	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )

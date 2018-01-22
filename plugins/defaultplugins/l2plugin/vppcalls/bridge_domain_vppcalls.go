@@ -20,8 +20,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 )
 
 // VppAddBridgeDomain adds new bridge domain.

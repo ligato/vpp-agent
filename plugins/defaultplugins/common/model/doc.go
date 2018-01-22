@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model is the parent for packages that define various if plugin
-// northbound APIs generated from protobuf data models.
+// Package model defines the northbound API of the default plugins.
+// The API is defined in a protobuf data model. The Golang declaration
+// of the API (i.e. the methods and data structures that define
+// the API's functionality) is generated from the protobuf data model.
 package model

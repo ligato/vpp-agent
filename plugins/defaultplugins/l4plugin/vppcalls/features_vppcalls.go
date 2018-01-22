@@ -13,7 +13,7 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
 )
 
 // EnableL4Features sets L4 feature flag on VPP to true

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/l2 --gogo_out=model/l2 model/l2/l2.proto
+//go:generate protoc --proto_path=../common/model/l2 --gogo_out=../common/model/l2 ../common/model/l2/l2.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/l2.api.json --output-dir=bin_api
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/l2.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=../common/bin_api
 
 // Package l2plugin implements the L2 plugin that handles Bridge Domains and L2 FIBs.
 package l2plugin
@@ -29,10 +29,10 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )

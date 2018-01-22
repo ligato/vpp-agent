@@ -19,7 +19,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	. "github.com/onsi/gomega"
 )
 

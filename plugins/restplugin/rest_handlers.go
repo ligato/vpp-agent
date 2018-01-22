@@ -22,9 +22,9 @@ import (
 
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	aclvpp "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"

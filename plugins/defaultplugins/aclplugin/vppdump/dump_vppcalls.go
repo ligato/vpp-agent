@@ -17,14 +17,15 @@ package vppdump
 import (
 	"bytes"
 	"fmt"
+	"net"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
-	"net"
-	"time"
+	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
 // IPACLList defines the list of IP ACLs returned by the DumpIPAcl function

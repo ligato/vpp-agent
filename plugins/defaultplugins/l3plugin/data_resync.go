@@ -15,7 +15,7 @@
 package l3plugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 )
 
 // Resync configures the empty VPP (overwrites the static route).

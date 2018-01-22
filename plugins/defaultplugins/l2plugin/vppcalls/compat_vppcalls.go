@@ -17,7 +17,7 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
 
 // CheckMsgCompatibilityForBridgeDomains checks if CRSs are compatible with VPP in runtime.

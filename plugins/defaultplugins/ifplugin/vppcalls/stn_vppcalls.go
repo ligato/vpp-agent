@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"net"
 
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stn"
-	"time"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
 )
 
 // StnRule represents stn rule entry

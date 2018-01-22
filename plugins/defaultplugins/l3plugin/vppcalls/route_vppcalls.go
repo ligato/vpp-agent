@@ -23,8 +23,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/bin_api/ip"
 )
 
 // Route represents a forward IP route entry with the parameters of gateway

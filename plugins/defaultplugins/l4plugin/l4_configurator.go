@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/l4 --gogo_out=model/l4 model/l4/l4.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=bin_api
+//go:generate protoc --proto_path=../common/model/l4 --gogo_out=../common/model/l4 ../common/model/l4/l4.proto
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=../common/bin_api
 
 package l4plugin
 
@@ -24,8 +24,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
