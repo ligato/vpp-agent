@@ -202,6 +202,7 @@ func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, inte
 		plugin.Log.Debugf("Found %v app namespaces for interface %v", len(appNamespaces), interfaceName)
 		for _, appNamespace := range appNamespaces {
 			if err := plugin.configureAppNamespace(appNamespace, interfaceIndex); err != nil {
+				plugin.Log.Error(err)
 				wasErr = err
 			}
 			// Remove from cache
@@ -272,6 +273,7 @@ func (plugin *L4Configurator) resolveCachedNamespaces() error {
 		}
 
 		if err := plugin.configureAppNamespace(ns, ifIdx); err != nil {
+			plugin.Log.Error(err)
 			wasErr = err
 		} else {
 			// AppNamespace was configured, remove from cache
