@@ -21,8 +21,8 @@ import (
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )

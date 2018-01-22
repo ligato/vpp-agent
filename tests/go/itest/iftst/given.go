@@ -11,12 +11,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stats"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tapv2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/bin_api/session"
 )
 
 var swIfIndexSeq uint32
