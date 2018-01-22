@@ -7,7 +7,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 )
