@@ -14,7 +14,7 @@
 
 package ifplugin
 
-//go:generate protoc --proto_path=model/bfd --gogo_out=model/bfd model/bfd/bfd.proto
+//go:generate protoc --proto_path=../common/model/bfd --gogo_out=../common/model/bfd ../common/model/bfd/bfd.proto
 
 import (
 	"fmt"

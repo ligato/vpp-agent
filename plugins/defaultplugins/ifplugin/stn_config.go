@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/stn --gogo_out=model/stn model/stn/stn.proto
+//go:generate protoc --proto_path=../common/model/stn --gogo_out=../common/model/stn ../common/model/stn/stn.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/stn.api.json --output-dir=bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/stn.api.json --output-dir=../common/bin_api
 
 package ifplugin
 
