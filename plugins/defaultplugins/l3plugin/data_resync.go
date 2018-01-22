@@ -74,9 +74,16 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	// Add missing route configuration
 	var wasError error
 	if len(nbRoutes) > 0 {
-		for _, route := range nbRoutes {
-			// VRF ID is already validated at this point.
-			wasError = plugin.ConfigureRoute(route, string(route.VrfId))
+		for _, nbRoute := range nbRoutes {
+			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+			_, _, found := plugin.RouteIndexes.LookupIdx(routeID)
+			if !found {
+				// create new route if does not exist yet. VRF ID is already validated at this point.
+				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
+					plugin.Log.Error(err)
+					wasError = err
+				}
+			}
 		}
 	}
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
