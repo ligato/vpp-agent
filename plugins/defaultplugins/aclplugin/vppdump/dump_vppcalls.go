@@ -113,6 +113,7 @@ func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
 			for _, IPRule := range IPRules {
 				ruleDetails, err := getIPRuleDetails(IPRule)
 				if err != nil {
+					log.Error(err)
 					wasErr = err
 				}
 				rulesDetails = append(rulesDetails, ruleDetails)
@@ -129,6 +130,7 @@ func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
 			for _, MACIPRule := range MACIPRules {
 				ruleDetails, err := getMACIPRuleDetails(MACIPRule)
 				if err != nil {
+					log.Error(err)
 					wasErr = err
 				}
 				rulesDetails = append(rulesDetails, ruleDetails)
@@ -172,6 +174,7 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 			break
 		}
 		if err != nil {
+			log.Error(err)
 			wasErr = err
 		}
 
@@ -247,6 +250,7 @@ func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
 		msg := &acl_api.ACLDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
+			log.Error(err)
 			wasErr = err
 		}
 		if stop {
@@ -285,6 +289,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 		msg := &acl_api.MacipACLDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
+			log.Error(err)
 			wasErr = err
 		}
 		if stop {
