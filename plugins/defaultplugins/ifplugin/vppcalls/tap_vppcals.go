@@ -15,10 +15,8 @@
 package vppcalls
 
 import (
-	"fmt"
-
 	"errors"
-
+	"fmt"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"

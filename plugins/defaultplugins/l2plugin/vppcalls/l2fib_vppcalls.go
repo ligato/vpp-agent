@@ -18,13 +18,12 @@ import (
 	"container/list"
 	"fmt"
 	"net"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
-
-	"time"
 )
 
 // FibLogicalReq groups multiple fields so that all of them do not enumerate in one function call (request, reply/callback).

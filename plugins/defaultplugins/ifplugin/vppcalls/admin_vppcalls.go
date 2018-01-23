@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"

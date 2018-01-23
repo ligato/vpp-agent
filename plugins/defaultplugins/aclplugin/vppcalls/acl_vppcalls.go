@@ -17,9 +17,7 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"strings"
-
 	"time"
 
 	"git.fd.io/govpp.git/api"
