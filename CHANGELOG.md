@@ -39,7 +39,11 @@ cn-infra v1.0.8
 - fixed skip-resync parameter if defaultplugins.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
-- microservice and veth-interface related events are synchronized. 
+- microservice and veth-interface related events are synchronized.
+
+# Known Issues
+- VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
+- VPP-Agent might not properly handle initialization across plugins (this is not occuring currently, but needs to be tested more)
 
 # Release v1.0.8 (2017-11-21)
 
