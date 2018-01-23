@@ -73,15 +73,16 @@ endef
 # build plugin example only
 define build_plugin_examples_only
     @echo "# building plugin examples"
-    @cd examples/configs-plugin && go build -v ${LDFLAGS}
-    @cd examples/datasync-plugin && go build -v ${LDFLAGS}
-    @cd examples/flags-lib && go build -v ${LDFLAGS}
-    @cd examples/kafka-plugin/manual-partitioner && go build -v ${LDFLAGS}
-    @cd examples/kafka-plugin/hash-partitioner && go build -v ${LDFLAGS}
-    @cd examples/kafka-plugin/post-init-consumer && go build -v ${LDFLAGS}
-    @cd examples/logs-plugin && go build -v ${LDFLAGS}
-    @cd examples/simple-agent && go build -v ${LDFLAGS}
-    @cd examples/redis-plugin && go build -v ${LDFLAGS}
+    @cd examples/configs-plugin && go build -i -v ${LDFLAGS}
+    @cd examples/datasync-plugin && go build -i -v ${LDFLAGS}
+    @cd examples/flags-lib && go build -i -v ${LDFLAGS}
+    @cd examples/kafka-plugin/manual-partitioner && go build -i -v ${LDFLAGS}
+    @cd examples/kafka-plugin/hash-partitioner && go build -i -v ${LDFLAGS}
+    @cd examples/kafka-plugin/post-init-consumer && go build -i -v ${LDFLAGS}
+    @cd examples/logs-plugin && go build -i -v ${LDFLAGS}
+    @cd examples/simple-agent && go build -i -v ${LDFLAGS}
+    @cd examples/redis-plugin && go build -i -v ${LDFLAGS}
+    @cd examples/statuscheck-plugin && go build -i -v ${LDFLAGS}
     @echo "# done"
 endef
 
@@ -119,6 +120,7 @@ define clean_plugin_examples_only
     @rm -f examples/kafka-plugin/hash-partitioner/hash-partitioner
     @rm -f examples/logs-plugin/logs-plugin
     @rm -f examples/redis-plugin/redis-plugin
+    @rm -f examples/statuscheck-plugin/statuscheck-plugin
     @echo "# done"
 endef
 

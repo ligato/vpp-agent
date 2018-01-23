@@ -14,9 +14,7 @@
 
 package syncbase
 
-import (
-	"github.com/ligato/cn-infra/logging/logroot"
-)
+import "github.com/ligato/cn-infra/logging/logrus"
 
 // NewDoneChannel creates a new instance of DoneChannel.
 func NewDoneChannel(doneChan chan error) *DoneChannel {
@@ -36,10 +34,10 @@ func (ev *DoneChannel) Done(err error) {
 		case ev.DoneChan <- err:
 			//sent successfully
 		default:
-			logroot.StandardLogger().Debug("Nobody is listening anymore")
+			logrus.DefaultLogger().Debug("Nobody is listening anymore")
 		}
 	} else if err != nil {
-		logroot.StandardLogger().Error(err)
+		logrus.DefaultLogger().Error(err)
 	}
 }
 
@@ -54,13 +52,14 @@ func (ev *DoneCallback) Done(err error) {
 	if ev.Callback != nil {
 		ev.Callback(err)
 	} else if err != nil {
-		logroot.StandardLogger().Error(err)
+		logrus.DefaultLogger().Error(err)
 	}
 }
 
 // AggregateDone can be reused to avoid repetitive code that triggers a slice of events and waits until it is finished.
 func AggregateDone(events []func(chan error), done chan error) {
 	partialDone := make(chan error, 5)
+
 	go collectDoneEvents(partialDone, done, len(events))
 
 	for _, event := range events {
@@ -80,10 +79,11 @@ func collectDoneEvents(partialDone, done chan error, evCount int) {
 				lastError = doneEv
 			}
 			if numDone >= evCount {
-				logroot.StandardLogger().Debug("TX Done - all events callbacks received")
+				logrus.DefaultLogger().Debug("TX Done - all events callbacks received")
 				break
 			}
 		}
 	}
+
 	done <- lastError
 }

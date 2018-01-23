@@ -52,6 +52,7 @@ vpp_term: Show Interfaces Address
     [Documentation]    Show interfaces address through vpp terminal
     Log Many           ${node}    ${interface}
     ${out}=            vpp_term: Issue Command  ${node}   sh int addr ${interface}
+    Log                ${out}
     [Return]           ${out}
 
 vpp_term: Show Hardware
@@ -192,6 +193,7 @@ vpp_term: Show Memif
 vpp_term: Check TAP Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
     ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
     Log                  ${internal_name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
@@ -209,3 +211,73 @@ vpp_term: Check TAP Interface State
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
+
+vpp_term: Show ACL
+    [Arguments]        ${node}
+    [Documentation]    Show ACLs through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh acl-plugin acl
+    [Return]           ${out}
+
+vpp_term: Add Route
+    [Arguments]    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    [Documentation]    Add ip route through vpp terminal.
+    Log Many    ${node}    ${destination_ip}    ${prefix}    ${next_hop_ip}
+    vpp_term: Issue Command    ${node}    ip route add ${destination_ip}/${prefix} via ${next_hop_ip}
+
+vpp_term: Show ARP
+    [Arguments]        ${node}
+    [Documentation]    Show ARPs through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh ip arp
+    #OperatingSystem.Create File   ${REPLY_DATA_FOLDER}/reply_arp.json    ${out}
+    [Return]           ${out}
+
+vpp_term: Check ARP
+    [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}    ${presence}
+    Log Many    ${node}    ${interface}    ${ipv4}     ${MAC}   ${presence}
+    [Documentation]    Check ARPs presence on interface
+    Log Many           ${node}
+    ${out}=            vpp_term: Show ARP    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    #Should Not Be Equal      ${internal_name}    ${None}
+    Log                ${internal_name}
+    ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
+    Log                ${status}
+    Should Be Equal As Strings   ${status}   ${presence}
+
+
+vpp_term: Show Application Namespaces
+    [Arguments]        ${node}
+    [Documentation]    Show application namespaces through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh app ns
+    Log    ${out}
+    [Return]           ${out}
+
+vpp_term: Return Data From Show Application Namespaces Output
+    [Arguments]    ${node}    ${id}
+    [Documentation]    Returns a list containing namespace id, index, namespace secret and sw_if_index of an
+    ...   interface associated with the namespace.
+    Log Many    ${node}    ${id}
+    ${out}=    vpp_term: Show Application Namespaces    ${node}
+    ${out_line}=    Get Lines Containing String    ${out}    ${id}
+    ${out_data}=    Split String    ${out_line}
+    [Return]    ${out_data}
+
+vpp_term: Check Data In Show Application Namespaces Output
+    [Arguments]    ${node}    ${id}    @{desired_state}
+    [Documentation]    Desired data is a list variable containing namespace index, namespace secret and sw_if_index of an
+    ...   interface associated with the namespace.
+    Log Many    ${node}    ${id}    @{desired_state}
+    ${actual_state}=    vpp_term: Return Data From Show Application Namespaces Output    ${node}    ${id}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+
+vpp_term: Show Interface Mode
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Show Interfaces Mode
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    show mode
+    [Return]           ${out}
+

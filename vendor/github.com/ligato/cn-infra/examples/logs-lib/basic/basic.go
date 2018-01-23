@@ -16,14 +16,13 @@ package main
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 var logger logging.Logger
 
 func init() {
-	logger = logroot.StandardLogger()
+	logger = logrus.DefaultLogger()
 	logger.SetLevel(logging.DebugLevel)
 }
 
@@ -31,7 +30,7 @@ func main() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			logger.WithFields(logrus.Fields{
+			logger.WithFields(logging.Fields{
 				"omg":    true,
 				"err":    err,
 				"number": 100,
@@ -39,26 +38,26 @@ func main() {
 		}
 	}()
 
-	logger.WithFields(logrus.Fields{
+	logger.WithFields(logging.Fields{
 		"animal": "walrus",
 		"number": 8,
 	}).Debug("Started observing beach")
 
-	logger.WithFields(logrus.Fields{
+	logger.WithFields(logging.Fields{
 		"animal": "walrus",
 		"size":   10,
 	}).Info("A group of walrus emerges from the ocean")
 
-	logger.WithFields(logrus.Fields{
+	logger.WithFields(logging.Fields{
 		"omg":    true,
 		"number": 122,
 	}).Warn("The group's number increased tremendously!")
 
-	logger.WithFields(logrus.Fields{
+	logger.WithFields(logging.Fields{
 		"temperature": -4,
 	}).Debug("Temperature changes")
 
-	logger.WithFields(logrus.Fields{
+	logger.WithFields(logging.Fields{
 		"animal": "orca",
 		"size":   9009,
 	}).Panic("It's over 9000!")

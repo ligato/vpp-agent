@@ -19,13 +19,12 @@ import (
 
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 )
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
-func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
+func InterfaceAdminDown(ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {
@@ -34,25 +33,11 @@ func InterfaceAdminDown(ifIdx uint32, vppChan *govppapi.Channel, timeLog *measur
 		}
 	}()
 
-	// Prepare the message.
-	req := &interfaces.SwInterfaceSetFlags{}
-	req.SwIfIndex = ifIdx
-	req.AdminUpDown = 0
-
-	reply := &interfaces.SwInterfaceSetFlagsReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		return err
-	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
-	}
-
-	return nil
+	return interfaceSetFlags(ifIdx, false, vppChan)
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
-func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func InterfaceAdminUp(ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceSetFlags time measurement
 	start := time.Now()
 	defer func() {
@@ -61,20 +46,28 @@ func InterfaceAdminUp(ifIdx uint32, vppChan *govppapi.Channel, timeLog measure.S
 		}
 	}()
 
+	return interfaceSetFlags(ifIdx, true, vppChan)
+}
+
+func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
 	// Prepare the message.
-	req := &interfaces.SwInterfaceSetFlags{}
-	req.SwIfIndex = ifIdx
-	req.AdminUpDown = 1
+	req := &interfaces.SwInterfaceSetFlags{
+		SwIfIndex: ifIdx,
+	}
+	if adminUp {
+		req.AdminUpDown = 1
+	} else {
+		req.AdminUpDown = 0
+	}
 
 	reply := &interfaces.SwInterfaceSetFlagsReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("setting of interface flags returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("setting of interface flags %+v returned %d", req, reply.Retval)
 	}
 
 	return nil
-
 }

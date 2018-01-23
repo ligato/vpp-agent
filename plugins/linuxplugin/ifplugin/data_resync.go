@@ -15,15 +15,16 @@
 package ifplugin
 
 import (
+	"time"
+
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-	"time"
 )
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
-func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*interfaces.LinuxInterfaces_Interface) error {
-	var wasError error
+func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*interfaces.LinuxInterfaces_Interface) (errs []error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+
 	start := time.Now()
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -36,17 +37,17 @@ func (plugin *LinuxInterfaceConfigurator) Resync(interfaces []*interfaces.LinuxI
 	for _, iface := range interfaces {
 		err := plugin.ConfigureLinuxInterface(iface)
 		if err != nil {
-			wasError = err
+			errs = append(errs, err)
 		}
 	}
 
 	// Step 2: Dump pre-existing and currently not managed interfaces in the current namespace.
 	err := plugin.LookupLinuxInterfaces()
 	if err != nil {
-		return err
+		return []error{err}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", wasError)
+	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", errs)
 
-	return wasError
+	return
 }

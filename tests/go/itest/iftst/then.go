@@ -1,15 +1,14 @@
 package iftst
 
 import (
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
-	//"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
+	"fmt"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
+
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
+	"github.com/ligato/cn-infra/logging/logrus"
 	idx "github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	. "github.com/onsi/gomega"
@@ -18,7 +17,7 @@ import (
 // ThenIface is a collection of test step methods (see Behavior Driven Development)
 // (methods that will be called from test scenarios).
 type ThenIface struct {
-	NewChange func(name core.PluginName) vppclient.DataChangeDSL
+	//NewChange func(name core.PluginName) vppclient.DataChangeDSL
 	OperState ifstateGetter
 
 	Log logging.Logger
@@ -72,26 +71,28 @@ func (a *BfdIndexesAssertions) NotContainsName(mapping idx.NameToIdx, bfdInterfa
 
 // IfStateInDB asserts that there is InterfacesState_Interface_DOWN in ETCD for particular Interfaces_Interface.
 func (step *ThenIface) IfStateInDB(status intf.InterfacesState_Interface_Status, data *intf.Interfaces_Interface) {
-	logroot.StandardLogger().Debug("IfStateDownInDB begin")
+	logrus.DefaultLogger().Debug("IfStateDownInDB begin")
+
+	time.Sleep(time.Second / 10)
 
 	ifState := &intf.InterfacesState_Interface{}
 	var found bool
 	var err error
-	for i := 0; i < 3; i++ {
-		step.OperState.InterfaceState(data.Name, ifState)
+	for i := 0; i < 12; i++ {
+		found, err = step.OperState.InterfaceState(data.Name, ifState)
 
 		if err != nil {
-			logroot.StandardLogger().Panic(err)
+			logrus.DefaultLogger().Panic(err)
 		}
 		if found {
 			break
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second / 4)
 	}
 	Expect(found).Should(BeTrue(),
 		"not found operational state "+data.Name)
-	// Expect(ifState.OperStatus).Should(BeEquivalentTo(status),
-	//	"Status needs to be down for " + data.Name) // TODO
+	Expect(ifState.OperStatus).Should(BeEquivalentTo(status),
+		fmt.Sprintf("Status needs to be %v for %v", status, data.Name))
 
-	logroot.StandardLogger().Debug("IfStateDownInDB end")
+	logrus.DefaultLogger().Debug("IfStateDownInDB end")
 }

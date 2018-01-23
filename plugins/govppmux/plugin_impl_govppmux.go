@@ -18,17 +18,16 @@ import (
 	"context"
 	"errors"
 	"sync"
-
 	"time"
 
 	"git.fd.io/govpp.git/adapter"
-	"git.fd.io/govpp.git/adapter/vppapiclient"
 	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
 // GOVPPPlugin implements the govppmux plugin interface.
@@ -59,10 +58,8 @@ type Config struct {
 // FromExistingAdapter is used mainly for testing purposes.
 func FromExistingAdapter(vppAdapter adapter.VppAdapter) *GOVPPPlugin {
 	ret := &GOVPPPlugin{
-		vppConn:    nil,
 		vppAdapter: vppAdapter,
 	}
-
 	return ret
 }
 
@@ -91,7 +88,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 
 	if plugin.vppAdapter == nil {
-		plugin.vppAdapter = vppapiclient.NewVppAdapter()
+		plugin.vppAdapter = NewVppAdapter()
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}
@@ -110,6 +107,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 	vppConnectTime := time.Since(startTime)
 	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
+	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
@@ -168,6 +166,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
+				plugin.retrieveVersion()
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 			} else {
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, errors.New("VPP disconnected"))
@@ -177,6 +176,24 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (plugin *GOVPPPlugin) retrieveVersion() {
+	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
+	if err != nil {
+		plugin.Log.Error("getting new api channel failed:", err)
+		return
+	}
+	defer vppAPIChan.Close()
+
+	info, err := vppcalls.GetVersionInfo(plugin.Log, vppAPIChan)
+	if err != nil {
+		plugin.Log.Warn("getting version info failed:", err)
+		return
+	}
+
+	plugin.Log.Debugf("version info: %+v", info)
+	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
 }
 
 func defaultConfig() Config {

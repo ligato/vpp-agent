@@ -19,9 +19,9 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 )
 
 /*
@@ -86,6 +86,24 @@ func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger,
 	return nil
 }
 
+// TODO: manage VRF tables globally in separate configurator
+
+// CreateVrfIfNeeded checks if VRF exists and creates it if not
+func CreateVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
+	if vrf == 0 {
+		return nil
+	}
+	tables, err := dumpVrfTables(vppChan)
+	if err != nil {
+		return err
+	}
+	if _, ok := tables[vrf]; !ok {
+		logrus.DefaultLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
+		return vppAddDelIPTable(vrf, vppChan, false)
+	}
+	return nil
+}
+
 func dumpVrfTables(vppChan *govppapi.Channel) (map[uint32][]*ip.IPFibDetails, error) {
 	fibs := map[uint32][]*ip.IPFibDetails{}
 
@@ -126,20 +144,5 @@ func vppAddDelIPTable(tableID uint32, vppChan *govppapi.Channel, delete bool) er
 		return fmt.Errorf("IPTableAddDel returned %d", reply.Retval)
 	}
 
-	return nil
-}
-
-func createVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
-	if vrf == 0 {
-		return nil
-	}
-	tables, err := dumpVrfTables(vppChan)
-	if err != nil {
-		return err
-	}
-	if _, ok := tables[vrf]; !ok {
-		logroot.StandardLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
-		return vppAddDelIPTable(vrf, vppChan, false)
-	}
 	return nil
 }

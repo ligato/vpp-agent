@@ -20,17 +20,15 @@ import (
 	"sync"
 	"time"
 
-	"net"
-
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 )
 
 // init sets the default logging level.
@@ -121,12 +119,6 @@ func (plugin *ExamplePlugin) resyncVPP() {
 
 // reconfigureVPP simulates a set of changes in the configuration related to VPP plugins.
 func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
-	_, dstNetAddr, err := net.ParseCIDR("192.168.2.1/32")
-	if err != nil {
-		return
-	}
-	nextHopAddr := net.ParseIP("192.168.1.1")
-
 	select {
 	case <-time.After(15 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
@@ -140,7 +132,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
-			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
+			StaticRoute(0, "192.168.2.1/32", "192.168.1.1"). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
 			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)

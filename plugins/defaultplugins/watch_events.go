@@ -17,8 +17,8 @@ package defaultplugins
 import (
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"golang.org/x/net/context"
 )
 
@@ -83,8 +83,8 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			resyncStatusEv.Done(wasError)
 
 		case dataChng := <-plugin.changeChan:
-			// For FIBs only: if changePropagateRequest ends up without errors,
-			// the dataChng.Done is called in l2fib_vppcalls, otherwise the dataChng.Done is called here.
+			// For asynchronous calls only: if changePropagateRequest ends up without errors,
+			// the dataChng.Done is called in particular vppcall, otherwise the dataChng.Done is called here.
 			callbackCalled, err := plugin.changePropagateRequest(dataChng, dataChng.Done)
 			// When the request propagation is complete, send the error context (even if the error is nil).
 			plugin.errorChannel <- ErrCtx{dataChng, err}
@@ -95,6 +95,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case ifIdxEv := <-plugin.ifIdxWatchCh:
 			if !ifIdxEv.IsDelete() {
 				// Keep order.
+				plugin.arpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
@@ -103,8 +104,11 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				})
 				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.l4Configurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.stnConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
+				plugin.routeConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			} else {
+				plugin.arpConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
 				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
@@ -113,22 +117,23 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				})
 				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				plugin.l4Configurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.stnConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
+				plugin.routeConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			}
 			ifIdxEv.Done()
 
 		case linuxIfIdxEv := <-plugin.linuxIfIdxWatchCh:
-			var name string
+			ifName := linuxIfIdxEv.Name
+			var hostIfName string
 			if linuxIfIdxEv.Metadata != nil && linuxIfIdxEv.Metadata.HostIfName != "" {
-				name = linuxIfIdxEv.Metadata.HostIfName
-			} else {
-				name = linuxIfIdxEv.Name
+				hostIfName = linuxIfIdxEv.Metadata.HostIfName
 			}
 			if !linuxIfIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveCreatedLinuxInterface(name, linuxIfIdxEv.Idx)
+				plugin.ifConfigurator.ResolveCreatedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
 				// TODO propagate error
 			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(name)
+				plugin.ifConfigurator.ResolveDeletedLinuxInterface(ifName, hostIfName)
 				// TODO propagate error
 			}
 			linuxIfIdxEv.Done()

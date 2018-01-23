@@ -15,7 +15,7 @@
 package l4plugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 )
 
 // ResyncAppNs configures app namespaces to the empty VPP

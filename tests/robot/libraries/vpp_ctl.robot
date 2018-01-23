@@ -32,9 +32,9 @@ vpp_ctl: Read Key With Prefix
     [Return]           ${out}
 
 vpp_ctl: Put Memif Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -44,9 +44,9 @@ vpp_ctl: Put Memif Interface
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Memif Interface With IP
-    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=default.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
+    [Arguments]    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}=24    ${socket}=memif.sock    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     Log Many    ${node}    ${name}    ${mac}    ${master}    ${id}    ${ip}    ${prefix}    ${socket}    ${mtu}    ${vrf}    ${enabled}
-    ${socket}=            Set Variable                  ${${node}_SOCKET_FOLDER}/${socket}
+    ${socket}=            Set Variable                  ${${node}_MEMIF_SOCKET_FOLDER}/${socket}
     Log                   ${socket}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/memif_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -204,9 +204,13 @@ vpp_ctl: Get Bridge Domain State As Json
 vpp_ctl: Get Interface Internal Name
     [Arguments]    ${node}    ${interface}
     Log Many    ${node}    ${interface}
+    ${name}=    Set Variable      ${EMPTY}
+    ${empty_dict}=   Create Dictionary
     ${state}=    vpp_ctl: Get VPP Interface State As Json    ${node}    ${interface}
     Log         ${state}
-    ${name}=    Set Variable    ${state["internal_name"]}
+    ${length}=   Get Length     ${state}
+    Log         ${length}
+    ${name}=    Run Keyword If      ${length} != 0     Set Variable    ${state["internal_name"]}
     Log    ${name}
     [Return]    ${name}
 
@@ -235,6 +239,7 @@ vpp_ctl: Put TAP Interface With IP
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
 vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
@@ -426,11 +431,186 @@ etcd: Get ETCD Tree
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]            ${out}
 
-
 vpp_ctl: Delete ACL
     [Arguments]    ${node}    ${name}
     Log Many     ${node}    ${name}
     ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/acl/${name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put Veth Interface Via Linux Plugin
+    [Arguments]    ${node}    ${namespace}    ${name}    ${host_if_name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${namespace}    ${name}    ${host_if_name}    ${mac}    ${peer}    ${ip}    ${prefix}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_veth_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Linux Route
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100    ${isdefault}=false
+    Log Many    ${node}    ${namespace}    ${interface}    ${routename}    ${ip}    ${prefix}    ${next_hop}    ${metric}    ${isdefault}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Default Linux Route
+    [Arguments]    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}=100    ${isdefault}=true
+    Log Many    ${node}    ${namespace}    ${interface}    ${routename}    ${next_hop}    ${metric}    ${isdefault}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_default_static_route.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Linux Route Without Interface
+    [Arguments]    ${node}    ${namespace}    ${routename}    ${ip}    ${next_hop}    ${prefix}=24    ${metric}=100
+    Log Many    ${node}    ${namespace}    ${routename}    ${ip}    ${prefix}    ${next_hop}    ${metric}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/linux_static_route_without_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Linux Route
+    [Arguments]    ${node}    ${routename}
+    Log Many    ${node}    ${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Get Linux Route As Json
+    [Arguments]    ${node}    ${routename}
+    Log Many    ${node}    ${routename}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/route/${routename}
+    Log                   ${uri}
+    ${data}=              vpp_ctl: Read Key    ${uri}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
+vpp_ctl: Check ACL Reply
+    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    ${acl_d}=           vpp_ctl: Get ACL As Json    ${node}    ${acl_name}
+    ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
+    ${term_d_lines}=    Split To Lines    ${term_d}
+    Log                 ${term_d_lines}
+    ${data}=            OperatingSystem.Get File    ${reply_json}
+    Should Be Equal     ${data}   ${acl_d}
+    ${data}=            OperatingSystem.Get File    ${reply_term}
+    ${t_data_lines}=    Split To Lines    ${data}
+    Log                 ${t_data_lines}
+    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
+
+
+ vpp_ctl: Put ARP
+    [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
+    Log Many    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/arp/${interface}/${ipv4}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+ vpp_ctl: Get ARP As Json
+    [Arguments]           ${node}  ${interface}
+    Log Many              ${node}     ${interface}
+    ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/arp/${interface}
+    Log                   ${key}
+    ${data}=              vpp_ctl: Read Key    ${key}
+    Log                   ${data}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    Log                   ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')     json
+    log                   ${output}
+    [Return]              ${output}
+
+vpp_ctl: Set L4 Features On Node
+    [Arguments]    ${node}    ${enabled}
+    [Documentation]    Enable [disable] L4 features by setting ${enabled} to true [false].
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/enable-l4.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/l4/features/feature
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Application Namespace
+    [Arguments]    ${node}    ${id}    ${secret}    ${interface}
+    [Documentation]    Put application namespace config json to etcd.
+    Log Many    ${node}    ${id}    ${secret}    ${interface}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/app_namespace.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/l4/namespaces/${id}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+
+vpp_ctl: Delete ARP
+    [Arguments]    ${node}    ${interface}    ${ipv4}
+    Log Many    ${node}    ${interface}    ${ipv4}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/arp/${interface}/${ipv4}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put Linux ARP With Namespace
+    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}    ${nsname}    ${nstype}
+    Log Many    ${node}    ${interface}      ${arpname}   ${ipv4}    ${MAC}    ${nsname}       ${nstype}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Linux ARP
+    [Arguments]    ${node}    ${interface}    ${arpname}    ${ipv4}    ${MAC}
+    Log Many    ${node}    ${interface}      ${arpname}   ${ipv4}    ${MAC}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp_linux.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Linux ARP
+    [Arguments]    ${node}    ${arpname}
+    Log Many    ${node}    ${arpname}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/arp/${arpname}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put L2XConnect
+    [Arguments]    ${node}    ${rx_if}    ${tx_if}
+    [Documentation]    Put L2 Xconnect config json to etcd.
+    Log Many              ${node}    ${rx_if}    ${tx_if}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/l2xconnect.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/xconnect/${rx_if}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete L2XConnect
+    [Arguments]    ${node}    ${rx_if}
+    [Documentation]    Delete L2 Xconnect config json from etcd.
+    Log Many    ${node}    ${rx_if}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/xconnect/${rx_if}
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}

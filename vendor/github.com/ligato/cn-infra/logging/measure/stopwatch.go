@@ -16,10 +16,11 @@ package measure
 
 import (
 	"fmt"
-	"github.com/ligato/cn-infra/logging"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/ligato/cn-infra/logging"
 )
 
 // StopWatchEntry provides method to log measured time entries
@@ -94,6 +95,19 @@ func (st *Stopwatch) timeLog(n interface{}) *TimeLog {
 func (t *TimeLog) LogTimeEntry(d time.Duration) {
 	if t != nil && t.entries != nil {
 		t.entries = append(t.entries, d)
+	}
+}
+
+// LogTimeEntryFor sets start time and returns func which logs the time entry,
+// usable as single-line defer call: `defer s.LogTimeEntryFor("xyz")()`
+func (st *Stopwatch) LogTimeEntryFor(n interface{}) func() {
+	if st == nil {
+		return func() {}
+	}
+	l := st.timeLog(n)
+	start := time.Now()
+	return func() {
+		l.LogTimeEntry(time.Since(start))
 	}
 }
 

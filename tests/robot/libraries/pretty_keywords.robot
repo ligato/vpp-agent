@@ -128,3 +128,14 @@ Show Interfaces On ${node}
 Show Interfaces Address On ${node}
     ${out}=   vpp_term: Show Interfaces Address    ${node}
     Log Many  ${out}
+
+Create Linux Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
+    Log Many        ${node}    ${ip}   ${prefix}    ${next_hop}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/linux_static_route.json
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}

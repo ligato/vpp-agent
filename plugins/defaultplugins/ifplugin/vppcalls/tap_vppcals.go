@@ -23,13 +23,14 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tapv2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // AddTapInterface calls TapConnect bin API.
 func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
-	// TapConnect time measurement
+	// TapConnect/TapCreateV2 time measurement
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -41,28 +42,53 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
 
-	// Prepare the message.
-	req := &tap.TapConnect{}
-	req.TapName = []byte(tapIf.HostIfName)
+	var (
+		retval    int32
+		swIfIndex uint32
+	)
 
-	req.UseRandomMac = 1
+	if tapIf.Version == 2 {
+		// Configure fast virtio-based TAP interface
+		req := &tapv2.TapCreateV2{}
+		req.ID = ^uint32(0)
+		req.HostIfName = []byte(tapIf.HostIfName)
+		req.HostIfNameSet = 1
+		req.UseRandomMac = 1
+		if tapIf.Namespace != "" {
+			req.HostNamespace = []byte(tapIf.Namespace)
+			req.HostNamespaceSet = 1
+		}
+		req.RxRingSz = uint16(tapIf.RxRingSize)
+		req.TxRingSz = uint16(tapIf.TxRingSize)
 
-	reply := &tap.TapConnectReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
+		reply := &tapv2.TapCreateV2Reply{}
+		err = vppChan.SendRequest(req).ReceiveReply(reply)
+		retval = reply.Retval
+		swIfIndex = reply.SwIfIndex
+	} else {
+		// Configure the original TAP interface
+		req := &tap.TapConnect{}
+		req.TapName = []byte(tapIf.HostIfName)
+		req.UseRandomMac = 1
+
+		reply := &tap.TapConnectReply{}
+		err = vppChan.SendRequest(req).ReceiveReply(reply)
+		retval = reply.Retval
+		swIfIndex = reply.SwIfIndex
+	}
 
 	if err != nil {
 		return 0, err
 	}
-
-	if 0 != reply.Retval {
-		return 0, fmt.Errorf("add tap interface returned %d", reply.Retval)
+	if 0 != retval {
+		return 0, fmt.Errorf("add tap interface returned %d", retval)
 	}
 
-	return reply.SwIfIndex, nil
+	return swIfIndex, nil
 }
 
 // DeleteTapInterface calls TapDelete bin API.
-func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func DeleteTapInterface(idx uint32, version uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// TapDelete time measurement
 	start := time.Now()
 	defer func() {
@@ -71,18 +97,33 @@ func DeleteTapInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.S
 		}
 	}()
 
-	// Prepare the message.
-	req := &tap.TapDelete{}
-	req.SwIfIndex = idx
+	var (
+		err    error
+		retval int32
+	)
 
-	reply := &tap.TapDeleteReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	if version == 2 {
+		req := &tapv2.TapDeleteV2{}
+		req.SwIfIndex = idx
+
+		reply := &tapv2.TapDeleteV2Reply{}
+		err = vppChan.SendRequest(req).ReceiveReply(reply)
+		retval = reply.Retval
+	} else {
+		req := &tap.TapDelete{}
+		req.SwIfIndex = idx
+
+		reply := &tap.TapDeleteReply{}
+		err = vppChan.SendRequest(req).ReceiveReply(reply)
+		retval = reply.Retval
+	}
+
 	if err != nil {
 		return err
 	}
 
-	if 0 != reply.Retval {
-		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
+	if 0 != retval {
+		return fmt.Errorf("deleting of interface returned %d", retval)
 	}
 
 	return nil

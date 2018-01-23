@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync/syncbase/msg"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -53,7 +53,7 @@ func (s *DataMsgServiceServer) DataChanges(stream msg.DataMsgService_DataChanges
 						err = stream.Send(&msg.DataChangeReply{Key: chng.Key, OperationType: chng.OperationType,
 							Result: 0 /*TODO VPP Result*/})
 						if err != nil {
-							logroot.StandardLogger().Error(err) //Not able to propagate it somewhere else
+							logrus.DefaultLogger().Error(err) //Not able to propagate it somewhere else
 						}
 					})
 				}

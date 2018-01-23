@@ -9,7 +9,7 @@ import (
 
 	"strings"
 
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 )
 
@@ -123,7 +123,7 @@ func (p *pluginConfig) getConfigName() string {
 			}
 			cfgDir, err := Dir()
 			if err != nil {
-				logroot.StandardLogger().Error(err)
+				logrus.DefaultLogger().Error(err)
 				return ""
 			}
 			// if exist flag value in config dir

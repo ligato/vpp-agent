@@ -24,14 +24,14 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
+	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
 )
 
 // AddBfdUDPSession adds new BFD session with authentication if available.
 func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, bfdKeyIndexes idxvpp.NameToIdx,
-	log logging.Logger, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	log logging.Logger, vppChannel VPPChannel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
 	defer func() {
@@ -107,7 +107,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 
 // AddBfdUDPSessionFromDetails adds new BFD session with authentication if available.
 func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
-	vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	vppChannel VPPChannel, timeLog measure.StopWatchEntry) error {
 	// BfdUDPAdd time measurement
 	start := time.Now()
 	defer func() {
@@ -360,7 +360,8 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 }
 
 // AddBfdEchoFunction sets up an echo function for the interface.
-func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel *govppapi.Channel, timeLog measure.StopWatchEntry) (err error) {
+// TODO: Bug 762 invalid message ID 1002, expected 1003
+func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChannel VPPChannel, timeLog measure.StopWatchEntry) (err error) {
 	// BfdUDPSetEchoSource time measurement
 	start := time.Now()
 	defer func() {

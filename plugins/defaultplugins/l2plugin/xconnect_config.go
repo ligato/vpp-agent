@@ -26,9 +26,9 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -56,7 +56,7 @@ type XConnectMeta struct {
 
 // Init members (channels...) and start go routines.
 func (plugin *XConnectConfigurator) Init() (err error) {
-	plugin.Log.Debug("Initializing L2 xConnect")
+	plugin.Log.Debug("Initializing L2 xConnect configurator")
 
 	// Init VPP API channel.
 	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
@@ -122,6 +122,8 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xConnectPairInput *l2.
 	plugin.XcIndexes.RegisterName(xConnectPairInput.ReceiveInterface, plugin.XcIndexSeq, &meta)
 	plugin.XcIndexSeq++
 
+	plugin.Log.Infof("L2 xConnect pair %v configured", xConnectPairInput.ReceiveInterface)
+
 	return nil
 }
 
@@ -178,12 +180,22 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newConfig *l2.XConnectPai
 	plugin.XcIndexes.RegisterName(newConfig.ReceiveInterface, receiveInterfaceIndex, &meta)
 	plugin.XcIndexSeq++
 
+	plugin.Log.Infof("L2 xConnect pair %v modified", newConfig.ReceiveInterface)
+
 	return nil
 }
 
 // DeleteXConnectPair processes the NB config and propagates it to bin api calls.
 func (plugin *XConnectConfigurator) DeleteXConnectPair(xConnectPairInput *l2.XConnectPairs_XConnectPair) error {
-	return plugin.deleteL2XConnectPair(xConnectPairInput.ReceiveInterface, xConnectPairInput.TransmitInterface)
+	plugin.Log.Infof("Removing L2 xConnect pair %v", xConnectPairInput.ReceiveInterface)
+
+	if err := plugin.deleteL2XConnectPair(xConnectPairInput.ReceiveInterface, xConnectPairInput.TransmitInterface); err != nil {
+		return err
+	}
+
+	plugin.Log.Infof("L2 xConnect pair %v removed", xConnectPairInput.ReceiveInterface)
+
+	return nil
 }
 
 // LookupXConnectPairs registers missing l2 xConnect pairs.
@@ -229,7 +241,7 @@ func (plugin *XConnectConfigurator) LookupXConnectPairs() error {
 
 // ResolveCreatedInterface configures xconnect pairs that use the interface as rx or tx and have not been configured yet.
 func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
-	plugin.Log.Infof("Resolving L2 xConnect pairs for created interface %v", interfaceName)
+	plugin.Log.Infof("XConnect configurator: resolving created interface %v", interfaceName)
 	var err error
 
 	// Lookup for the interface in rx interfaces.
@@ -246,7 +258,7 @@ func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string
 
 // ResolveDeletedInterface deletes xconnect pairs that have not been deleted yet and use the interface as rx or tx.
 func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string) error {
-	plugin.Log.Infof("Resolving L2 xConnect pairs for deleted interface %v", interfaceName)
+	plugin.Log.Infof("XConnect configurator: resolving deleted interface %v", interfaceName)
 
 	var err error
 

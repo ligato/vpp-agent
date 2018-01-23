@@ -23,22 +23,26 @@ import (
 
 	"github.com/ligato/cn-infra/examples/kafka-lib/utils"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
+	"github.com/ligato/cn-infra/utils/clienttls"
 )
 
 var (
 	// Flags used to read the input arguments.
-	brokerList  = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster. You can also set the KAFKA_PEERS environment variable")
-	partitioner = flag.String("partitioner", "hash", "The partitioning scheme to use. Can be `hash`, `manual`, or `random`")
-	partition   = flag.Int("partition", -1, "The partition to produce to.")
-	debug       = flag.Bool("debug", false, "turn on debug logging")
-	silent      = flag.Bool("silent", false, "Turn off printing the message's topic, partition, and offset to stdout")
+	brokerList    = flag.String("brokers", os.Getenv("KAFKA_PEERS"), "The comma separated list of brokers in the Kafka cluster. You can also set the KAFKA_PEERS environment variable")
+	partitioner   = flag.String("partitioner", "hash", "The partitioning scheme to use. Can be `hash`, `manual`, or `random`")
+	partition     = flag.Int("partition", -1, "The partition to produce to.")
+	debug         = flag.Bool("debug", false, "turn on debug logging")
+	tlsEnabled    = flag.Bool("tlsEnabled", false, "turns on TLS communication")
+	tlsSkipVerify = flag.Bool("tlsSkipVerify", true, "skips verification of server name & certificate")
+	tlsCAFile     = flag.String("tlsCAFile", "", "Certificate Authority")
+	tlsCertFile   = flag.String("tlsCertFile", "", "Client Certificate")
+	tlsKeyFile    = flag.String("tlsKeyFile", "", "Client Private Key")
 )
 
 func main() {
-	log.StandardLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 	flag.Parse()
 
 	if *brokerList == "" {
@@ -46,10 +50,25 @@ func main() {
 	}
 
 	// init config
-	config := client.NewConfig(logroot.StandardLogger())
+	config := client.NewConfig(logrus.DefaultLogger())
 	config.SetDebug(*debug)
 	config.SetPartition(int32(*partition))
 	config.SetBrokers(strings.Split(*brokerList, ",")...)
+
+	tls := clienttls.TLS{
+		Enabled:    *tlsEnabled,
+		SkipVerify: *tlsSkipVerify,
+		CAfile:     *tlsCAFile,
+		Certfile:   *tlsCertFile,
+		Keyfile:    *tlsKeyFile,
+	}
+
+	tlsConfig, err := clienttls.CreateTLSConfig(tls)
+	if err != nil {
+		fmt.Printf("Failed to create TLS config: %v", err)
+		os.Exit(1)
+	}
+	config.SetTLS(tlsConfig)
 
 	sClient, err := client.NewClient(config, *partitioner)
 	if err != nil {
@@ -105,7 +124,7 @@ func sendMessage(producer *client.SyncProducer, msg utils.Message) error {
 	// The function doesn't return until the delivery status is known.
 	_, err := producer.SendMsgByte(msg.Topic, msgKey, msgValue)
 	if err != nil {
-		log.StandardLogger().Errorf("SendMsg Error: %v", err)
+		logrus.DefaultLogger().Errorf("SendMsg Error: %v", err)
 		return err
 	}
 	fmt.Println("message sent")
@@ -118,7 +137,7 @@ func closeProducer(producer *client.SyncProducer) error {
 	err := producer.Close()
 	if err != nil {
 		fmt.Printf("SyncProducer close errored: %v\n", err)
-		log.StandardLogger().Errorf("SyncProducer close errored: %v", err)
+		logrus.DefaultLogger().Errorf("SyncProducer close errored: %v", err)
 		return err
 	}
 	return nil
@@ -130,9 +149,4 @@ func printUsageErrorAndExit(message string) {
 	fmt.Fprintln(os.Stderr, "Available command line options:")
 	flag.PrintDefaults()
 	os.Exit(64)
-}
-
-func stdinAvailable() bool {
-	stat, _ := os.Stdin.Stat()
-	return (stat.Mode() & os.ModeCharDevice) == 0
 }

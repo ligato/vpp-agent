@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 )
 
@@ -152,7 +152,7 @@ func ToChan(ch chan idxvpp.NameToIdxDto) func(dto idxvpp.NameToIdxDto) {
 		select {
 		case ch <- dto:
 		case <-time.After(idxmap.DefaultNotifTimeout):
-			logroot.StandardLogger().Warn("Unable to deliver notification")
+			logrus.DefaultLogger().Warn("Unable to deliver notification")
 		}
 	}
 }

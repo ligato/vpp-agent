@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 )
 
 // AppNsIndex provides read-only access to mapping between indexes (used internally in VPP) and AppNamespace indexes.
@@ -34,6 +34,9 @@ type AppNsIndex interface {
 
 	// LookupNamesByInterface returns names of items that contains given IP address in metadata
 	LookupNamesByInterface(ifName string) []*l4.AppNamespaces_AppNamespace
+
+	// ListNames returns all names in the mapping.
+	ListNames() (names []string)
 
 	// WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
@@ -116,6 +119,11 @@ func (swi *appNsIndex) LookupNamesByInterface(ifName string) []*l4.AppNamespaces
 		}
 	}
 	return match
+}
+
+// ListNames returns all names in the mapping.
+func (swi *appNsIndex) ListNames() (names []string) {
+	return swi.mapping.ListNames()
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping

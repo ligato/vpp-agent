@@ -15,6 +15,8 @@
 package grpcadapter
 
 import (
+	"strconv"
+
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
@@ -24,8 +26,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"golang.org/x/net/context"
-	"net"
-	"strconv"
 )
 
 // NewDataChangeDSL is a constructor
@@ -143,8 +143,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 
 // StaticRoute creates or updates the L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
-	_, dstAddr, _ := net.ParseCIDR(val.DstIpAddr)
-	dsl.parent.txnPutStaticRoute[l3.RouteKey(val.VrfId, dstAddr, val.NextHopAddr)] = val
+	dsl.parent.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
 
 	return dsl
 }
@@ -240,10 +239,9 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 }
 
 // StaticRoute deletes the L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddrInput *net.IPNet, nextHopAddr net.IP) defaultplugins.DeleteDSL {
-	//_, dstAddr, _ := net.ParseCIDR(dstAddrInput)
-	dsl.parent.txnDelStaticRoute[l3.RouteKey(vrf, dstAddrInput, nextHopAddr.String())] =
-		&vppsvc.DelStaticRoutesRequest_DelStaticRoute{vrf, dstAddrInput.String(), nextHopAddr.String()}
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelStaticRoute[l3.RouteKey(vrf, dstAddr, nextHopAddr)] =
+		&vppsvc.DelStaticRoutesRequest_DelStaticRoute{vrf, dstAddr, nextHopAddr}
 
 	return dsl
 }

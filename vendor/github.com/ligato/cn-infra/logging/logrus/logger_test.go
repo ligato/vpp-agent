@@ -22,16 +22,16 @@ import (
 	"sync"
 	"testing"
 
-	lg "github.com/Sirupsen/logrus"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
+	lg "github.com/sirupsen/logrus"
 )
 
 func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields lg.Fields)) {
 	var buffer bytes.Buffer
 	var fields lg.Fields
 
-	gomega.RegisterTestingT(t)
+	RegisterTestingT(t)
 
 	logger := NewLogger("testLogger")
 	logger.SetOutput(&buffer)
@@ -40,14 +40,14 @@ func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields lg
 	log(logger)
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
-	gomega.Expect(err).To(gomega.BeNil())
+	Expect(err).To(BeNil())
 
 	assertions(fields)
 }
 
 func LogAndAssertText(t *testing.T, log func(*Logger), assertions func(fields map[string]string)) {
 	var buffer bytes.Buffer
-	gomega.RegisterTestingT(t)
+	RegisterTestingT(t)
 
 	logger := NewLogger("testLogger")
 	logger.SetOutput(&buffer)
@@ -68,7 +68,7 @@ func LogAndAssertText(t *testing.T, log func(*Logger), assertions func(fields ma
 		if kvArr[1][0] == '"' {
 			var err error
 			val, err = strconv.Unquote(val)
-			gomega.Expect(err).To(gomega.BeNil())
+			Expect(err).To(BeNil())
 		}
 		fields[key] = val
 	}
@@ -79,8 +79,8 @@ func TestPrint(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Print("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test"))
-		gomega.Expect(fields["level"]).To(gomega.BeEquivalentTo("info"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test"))
+		Expect(fields["level"]).To(BeEquivalentTo("info"))
 	})
 }
 
@@ -88,8 +88,8 @@ func TestInfo(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test"))
-		gomega.Expect(fields["level"]).To(gomega.BeEquivalentTo("info"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test"))
+		Expect(fields["level"]).To(BeEquivalentTo("info"))
 	})
 }
 
@@ -97,8 +97,8 @@ func TestWarn(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Warn("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test"))
-		gomega.Expect(fields["level"]).To(gomega.BeEquivalentTo("warning"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test"))
+		Expect(fields["level"]).To(BeEquivalentTo("warning"))
 	})
 }
 
@@ -106,7 +106,7 @@ func TestInfolnShouldAddSpacesBetweenStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln("test", "test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test test"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test test"))
 	})
 }
 
@@ -114,7 +114,7 @@ func TestInfolnShouldAddSpacesBetweenStringAndNonstring(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln("test", 10)
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test 10"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test 10"))
 	})
 }
 
@@ -122,7 +122,7 @@ func TestInfolnShouldAddSpacesBetweenTwoNonStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln(10, 10)
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("10 10"))
+		Expect(fields["msg"]).To(BeEquivalentTo("10 10"))
 	})
 }
 
@@ -130,7 +130,7 @@ func TestInfoShouldAddSpacesBetweenTwoNonStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln(10, 10)
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("10 10"))
+		Expect(fields["msg"]).To(BeEquivalentTo("10 10"))
 	})
 }
 
@@ -138,7 +138,7 @@ func TestInfoShouldNotAddSpacesBetweenStringAndNonstring(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test", 10)
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test10"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test10"))
 	})
 }
 
@@ -146,13 +146,13 @@ func TestInfoShouldNotAddSpacesBetweenStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test", "test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("testtest"))
+		Expect(fields["msg"]).To(BeEquivalentTo("testtest"))
 	})
 }
 
 func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 	var buffer bytes.Buffer
-	var fields Fields
+	var fields logging.Fields
 
 	logger := NewLogger("testLogger")
 	logger.SetOutput(&buffer)
@@ -165,27 +165,27 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 
 	entry2.WithField("key2", "value2").Info("test")
 	err := json.Unmarshal(buffer.Bytes(), &fields)
-	gomega.Expect(err).To(gomega.BeNil())
+	Expect(err).To(BeNil())
 
-	gomega.Expect("value2").To(gomega.BeEquivalentTo(fields["key2"]))
-	gomega.Expect("value1").To(gomega.BeEquivalentTo(fields["key1"]))
+	Expect("value2").To(BeEquivalentTo(fields["key2"]))
+	Expect("value1").To(BeEquivalentTo(fields["key1"]))
 
 	buffer = bytes.Buffer{}
-	fields = Fields{}
+	fields = logging.Fields{}
 	entry2.Info("test")
 	err = json.Unmarshal(buffer.Bytes(), &fields)
-	gomega.Expect(err).To(gomega.BeNil())
+	Expect(err).To(BeNil())
 
 	_, ok := fields["key2"]
-	gomega.Expect(ok).To(gomega.BeFalse())
-	gomega.Expect(fields["key1"]).To(gomega.BeEquivalentTo("value1"))
+	Expect(ok).To(BeFalse())
+	Expect(fields["key1"]).To(BeEquivalentTo("value1"))
 }
 
 func TestUserSuppliedFieldDoesNotOverwriteDefaults(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.WithField("msg", "hello").Info("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test"))
 	})
 }
 
@@ -193,8 +193,8 @@ func TestUserSuppliedMsgFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.WithField("msg", "hello").Info("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("test"))
-		gomega.Expect(fields["fields.msg"]).To(gomega.BeEquivalentTo("hello"))
+		Expect(fields["msg"]).To(BeEquivalentTo("test"))
+		Expect(fields["fields.msg"]).To(BeEquivalentTo("hello"))
 	})
 }
 
@@ -202,7 +202,7 @@ func TestUserSuppliedTimeFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.WithField("time", "hello").Info("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["fields.time"]).To(gomega.BeEquivalentTo("hello"))
+		Expect(fields["fields.time"]).To(BeEquivalentTo("hello"))
 	})
 }
 
@@ -210,8 +210,8 @@ func TestUserSuppliedLevelFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.WithField("level", 1).Info("test")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["level"]).To(gomega.BeEquivalentTo("info"))
-		gomega.Expect(fields["fields.level"]).To(gomega.BeEquivalentTo(1.0)) // JSON has floats only
+		Expect(fields["level"]).To(BeEquivalentTo("info"))
+		Expect(fields["fields.level"]).To(BeEquivalentTo(1.0)) // JSON has floats only
 	})
 }
 
@@ -230,34 +230,33 @@ func TestDefaultFieldsAreNotPrefixed(t *testing.T) {
 }
 
 func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
-
 	var buffer bytes.Buffer
-	var fields Fields
+	var fields logging.Fields
 
 	logger := NewLogger("testLogger")
 	logger.SetOutput(&buffer)
 	logger.SetFormatter(new(lg.JSONFormatter))
 
-	llog := logger.WithField("context", "eating raw fish")
+	entry := logger.WithField("context", "eating raw fish")
 
-	llog.Info("looks delicious")
+	entry.Info("looks delicious")
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
-	gomega.Expect(err).To(gomega.BeNil(), "should have decoded first message")
-	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(7), "should only have msg/time/level/context/loc/tag/logger fields")
-	gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("looks delicious"))
-	gomega.Expect(fields["context"]).To(gomega.BeEquivalentTo("eating raw fish"))
+	Expect(err).To(BeNil(), "should have decoded first message")
+	Expect(len(fields)).To(BeEquivalentTo(6), "should only have 6 fields (msg/time/level/context/loc/logger)")
+	Expect(fields["msg"]).To(BeEquivalentTo("looks delicious"))
+	Expect(fields["context"]).To(BeEquivalentTo("eating raw fish"))
 
 	buffer.Reset()
 
-	llog.Warn("omg it is!")
+	entry.Warn("omg it is!")
 
 	err = json.Unmarshal(buffer.Bytes(), &fields)
-	gomega.Expect(err).To(gomega.BeNil(), "should have decoded second message")
-	gomega.Expect(len(fields)).To(gomega.BeEquivalentTo(7), "should only have msg/time/level/context/logger fields")
-	gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("omg it is!"))
-	gomega.Expect(fields["context"]).To(gomega.BeEquivalentTo("eating raw fish"))
-	gomega.Expect(fields["fields.msg"]).To(gomega.BeNil(), "should not have prefixed previous `msg` entry")
+	Expect(err).To(BeNil(), "should have decoded second message")
+	Expect(len(fields)).To(BeEquivalentTo(6), "should only have 6 fields (msg/time/level/context/loc/logger)")
+	Expect(fields["msg"]).To(BeEquivalentTo("omg it is!"))
+	Expect(fields["context"]).To(BeEquivalentTo("eating raw fish"))
+	Expect(fields["fields.msg"]).To(BeNil(), "should not have prefixed previous `msg` entry")
 }
 
 func TestGetSetLevelRace(t *testing.T) {
@@ -308,8 +307,8 @@ func TestLogInterface(t *testing.T) {
 	fn(logger)
 
 	// test Entry
-	e := logger.withField("another", "value")
-	fn(e.logger)
+	e := logger.WithField("another", "value")
+	fn(e.(*Entry).logger)
 }
 
 func TestSetTag(t *testing.T) {
@@ -317,7 +316,7 @@ func TestSetTag(t *testing.T) {
 		log.SetTag("testtag")
 		log.Info("hello")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["tag"]).To(gomega.BeEquivalentTo("testtag"))
+		Expect(fields["tag"]).To(BeEquivalentTo("testtag"))
 	})
 }
 
@@ -327,16 +326,16 @@ func TestClearTag(t *testing.T) {
 		log.ClearTag()
 		log.Info("hello")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["tag"]).To(gomega.BeEquivalentTo("00000000"))
+		Expect(fields["tag"]).To(BeNil())
 	})
 }
 
 func TestInitTag(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.InitTag("testtag")
+		log.InitTag()
 		log.Info("hello")
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["tag"]).To(gomega.BeEquivalentTo("testtag"))
+		Expect(fields["tag"]).ToNot(BeEquivalentTo(""))
 	})
 }
 
@@ -346,6 +345,6 @@ func TestGetTag(t *testing.T) {
 		tag := log.GetTag()
 		log.Info(tag)
 	}, func(fields lg.Fields) {
-		gomega.Expect(fields["msg"]).To(gomega.BeEquivalentTo("testtag"))
+		Expect(fields["msg"]).To(BeEquivalentTo("testtag"))
 	})
 }

@@ -22,8 +22,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
-	log "github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/namsral/flag"
@@ -34,13 +33,14 @@ func main() {
 
 	// Get the config file name from the input arguments or from an environment
 	// variable.
-	log.StandardLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 	flag.StringVar(&configFile, "config", "", "Configuration file path.")
 	flag.Parse()
 
 	// Initialize multiplexer named "default".
-	mx, err := mux.InitMultiplexer(configFile, "default", logroot.StandardLogger())
+	mx, err := mux.InitMultiplexer(configFile, "default", logrus.DefaultLogger())
 	if err != nil {
+		fmt.Printf("Error initializing multiplexer %v", err)
 		os.Exit(1)
 	}
 

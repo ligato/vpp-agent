@@ -216,6 +216,37 @@ Check Ping From VPP1 to VPP2 After Resync
 Check Ping From VPP2 to VPP1 After Resync
     linux: Check Ping    agent_vpp_2    10.10.1.1
 
+Remove VPP Nodes 2
+    Remove All Nodes
+    Sleep    ${SYNC_SLEEP}
+
+Start VPP1 And VPP2 Again 2
+    Add Agent VPP Node    agent_vpp_1
+    Add Agent VPP Node    agent_vpp_2
+    Sleep    ${RESYNC_WAIT}
+
+Check Ping From VPP1 to VPP2 After Resync 2
+    linux: Check Ping    agent_vpp_1    10.10.1.2
+
+Check Ping From VPP2 to VPP1 After Resync 2
+    linux: Check Ping    agent_vpp_2    10.10.1.1
+
+Remove VPP Nodes 3
+    Remove All Nodes
+    Sleep    ${SYNC_SLEEP}
+
+Start VPP1 And VPP2 Again 3
+    Add Agent VPP Node    agent_vpp_1
+    Add Agent VPP Node    agent_vpp_2
+    Sleep    ${RESYNC_WAIT}
+
+Check Ping From VPP1 to VPP2 After Resync 3
+    linux: Check Ping    agent_vpp_1    10.10.1.2
+
+Check Ping From VPP2 to VPP1 After Resync 3
+    linux: Check Ping    agent_vpp_2    10.10.1.1
+
+
 Resync Done
     No Operation
 

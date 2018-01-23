@@ -1,22 +1,14 @@
 package: github.com/ligato/vpp-agent
 import:
 - package: github.com/ligato/cn-infra
-  version: cf9cc72676bf591d323aabc02356bcbff84d2560
+  version: 0c822c01bfb9bc0f9292d3e4ddcd910de3c021df
 - package: github.com/wadey/gocovmerge
   version: b5bfa59ec0adc420475f97f89b58045c721d761c
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: git.fd.io/govpp.git
-  version: 3f1edad4e6ba0a7876750aea55507fae14d8badf
+  version: 35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3
   repo: https://git.fd.io/govpp.git
-  subpackages:
-  - adapter
-  - adapter/mock
-  - adapter/mock/binapi_reflect
-  - adapter/vppapiclient
-  - api
-  - api/ifcounters
-  - core
 - package: github.com/vishvananda/netns
   version: 54f0e4339ce73702a0607f49922aaa1e749b418d
   repo: https://github.com/vishvananda/netns

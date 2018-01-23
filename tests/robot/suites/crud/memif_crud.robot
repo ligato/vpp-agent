@@ -37,7 +37,7 @@ Add VPP1_memif1 Interface
 
 Check That VPP1_memif1 Is Created But Not Connected
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP2_memif1 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_2    mac=${MEMIF21_MAC}
@@ -45,8 +45,8 @@ Add VPP2_memif1 Interface
 
 Check That VPP2_memif1 Is Created And Connected With VPP1_memif1
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP1_memif2 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MEMIF12_MAC}
@@ -54,7 +54,7 @@ Add VPP1_memif2 Interface
 
 Check That VPP1_memif2 Is Created But Not Connected
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF12_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=0  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP2_memif2 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_2    mac=${MEMIF22_MAC}
@@ -62,57 +62,57 @@ Add VPP2_memif2 Interface
 
 Check That VPP2_memif2 Is Created And Connected With VPP1_memif2
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF22_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 And VPP2_memif1 Interfaces Are Not Affected By VPP1_memif2 And VPP2_memif2 Interfaces
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv4=192.168.1.1/24  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Update VPP1_memif1 Interface
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MEMIF11_SEC_MAC}    master=true    id=1    ip=192.168.10.1    prefix=30    socket=default.sock
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF11_MAC}
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_SEC_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP2_memif1 Is Still Configured And Connected
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv4=192.168.1.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif2 And VPP2_memif2 Are Not Affected By VPP1_memif1 Update
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Update VPP2_memif1 Interface
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=${MEMIF21_SEC_MAC}    master=false    id=1    ip=192.168.10.2    prefix=24    socket=default.sock
     vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF21_MAC}
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_SEC_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 Is Still Configured And Connected
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif2 And VPP2_memif2 Are Not Affected By VPP2_memif1 Update
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv4=192.168.2.1/26  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Delete VPP1_memif2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif2
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF12_MAC}
 
 Check That VPP2_memif2 Interface Is Disconnected
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=0  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=0  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 And VPP2_memif1 Are Not Affected By VPP1_memif2 Delete
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Delete VPP2_memif2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_2    name=vpp2_memif2
     vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF22_MAC}
 
 Check That VPP1_memif1 And VPP2_memif1 Are Not Affected By VPP2_memif2 Delete
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1

@@ -16,7 +16,7 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP.
@@ -34,11 +34,7 @@ func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.L
 	// Create VPP ACLs.
 	log.Debugf("Configuring %v new ACLs", len(acls))
 	for _, aclInput := range acls {
-		plugin.ConfigureACL(aclInput, func(err error) {
-			if err != nil {
-				plugin.Log.Error(err)
-			}
-		})
+		plugin.ConfigureACL(aclInput)
 	}
 
 	log.WithField("cfg", plugin).Debug("RESYNC ACLs end. ", wasError)

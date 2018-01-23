@@ -16,17 +16,35 @@ package logrus
 
 import (
 	"fmt"
-
-	"github.com/Sirupsen/logrus"
-	"github.com/ligato/cn-infra/logging"
+	"os"
 	"sync"
+
+	"regexp"
+
+	"github.com/ligato/cn-infra/logging"
+	"github.com/sirupsen/logrus"
 )
+
+var initialLogLvl = logrus.InfoLevel
+
+func init() {
+	if lvl, err := logrus.ParseLevel(os.Getenv("INITIAL_LOGLVL")); err == nil {
+		initialLogLvl = lvl
+		if err := setLevel(defaultLogger, lvl); err != nil {
+			defaultLogger.Warnf("setting initial log level to %v failed: %v", lvl.String(), err)
+		} else {
+			defaultLogger.Debugf("initial log level: %v", lvl.String())
+		}
+	}
+}
 
 // NewLogRegistry is a constructor
 func NewLogRegistry() logging.Registry {
-	registry := &logRegistry{}
-	// init new sync mapping in loggers
-	registry.loggers = new(sync.Map)
+	registry := &logRegistry{
+		loggers:      new(sync.Map),
+		logLevels:    make(map[string]logrus.Level),
+		defaultLevel: initialLogLvl,
+	}
 	// put default logger
 	registry.putLoggerToMapping(defaultLogger)
 	return registry
@@ -36,13 +54,25 @@ func NewLogRegistry() logging.Registry {
 type logRegistry struct {
 	// loggers holds mapping of logger instances indexed by their names
 	loggers *sync.Map
+	// logLevels store map of log levels for logger names
+	logLevels map[string]logrus.Level
+	// defaultLevel is used if logger level is not set
+	defaultLevel logrus.Level
+}
+
+var validLoggerName = regexp.MustCompile(`^[a-zA-Z0-9.-]+$`).MatchString
+
+func checkLoggerName(name string) error {
+	if !validLoggerName(name) {
+		return fmt.Errorf("logger name can contain only alphanum characters, dash and comma")
+	}
+	return nil
 }
 
 // NewLogger creates new named Logger instance. Name can be subsequently used to
 // refer the logger in registry.
 func (lr *logRegistry) NewLogger(name string) logging.Logger {
-	existingLogger := lr.getLoggerFromMapping(name)
-	if existingLogger != nil {
+	if existingLogger := lr.getLoggerFromMapping(name); existingLogger != nil {
 		panic(fmt.Errorf("logger with name '%s' already exists", name))
 	}
 	if err := checkLoggerName(name); err != nil {
@@ -50,6 +80,13 @@ func (lr *logRegistry) NewLogger(name string) logging.Logger {
 	}
 
 	logger := NewLogger(name)
+
+	// set initial logger level
+	if lvl, ok := lr.logLevels[name]; ok {
+		setLevel(logger, lvl)
+	} else {
+		setLevel(logger, lr.defaultLevel)
+	}
 
 	lr.putLoggerToMapping(logger)
 	return logger
@@ -85,33 +122,43 @@ func (lr *logRegistry) ListLoggers() map[string]string {
 	return list
 }
 
+func setLevel(logVal logging.Logger, lvl logrus.Level) error {
+	if logVal == nil {
+		return fmt.Errorf("logger %q not found", logVal)
+	}
+	switch lvl {
+	case logrus.DebugLevel:
+		logVal.SetLevel(logging.DebugLevel)
+	case logrus.InfoLevel:
+		logVal.SetLevel(logging.InfoLevel)
+	case logrus.WarnLevel:
+		logVal.SetLevel(logging.WarnLevel)
+	case logrus.ErrorLevel:
+		logVal.SetLevel(logging.ErrorLevel)
+	case logrus.PanicLevel:
+		logVal.SetLevel(logging.PanicLevel)
+	case logrus.FatalLevel:
+		logVal.SetLevel(logging.FatalLevel)
+	}
+	return nil
+}
+
 // SetLevel modifies log level of selected logger in the registry
 func (lr *logRegistry) SetLevel(logger, level string) error {
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
 		return err
 	}
+	if logger == "default" {
+		lr.defaultLevel = lvl
+		return nil
+	}
+	lr.logLevels[logger] = lvl
 	logVal := lr.getLoggerFromMapping(logger)
-	if logVal == nil {
-		return fmt.Errorf("logger %v not found", logger)
+	if logVal != nil {
+		defaultLogger.Debugf("setting logger level: %v -> %v", logVal.GetName(), lvl.String())
+		return setLevel(logVal, lvl)
 	}
-	if err == nil {
-		switch lvl {
-		case logrus.DebugLevel:
-			logVal.SetLevel(logging.DebugLevel)
-		case logrus.InfoLevel:
-			logVal.SetLevel(logging.InfoLevel)
-		case logrus.WarnLevel:
-			logVal.SetLevel(logging.WarnLevel)
-		case logrus.ErrorLevel:
-			logVal.SetLevel(logging.ErrorLevel)
-		case logrus.PanicLevel:
-			logVal.SetLevel(logging.PanicLevel)
-		case logrus.FatalLevel:
-			logVal.SetLevel(logging.FatalLevel)
-		}
-	}
-
 	return nil
 }
 

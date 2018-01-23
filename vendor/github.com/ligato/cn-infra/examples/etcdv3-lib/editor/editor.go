@@ -10,7 +10,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/examples/etcdv3-lib/model/phonebook"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 const (
@@ -117,7 +117,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := etcdv3.NewEtcdConnectionWithBytes(*cfg, logroot.StandardLogger())
+	db, err := etcdv3.NewEtcdConnectionWithBytes(*cfg, logrus.DefaultLogger())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

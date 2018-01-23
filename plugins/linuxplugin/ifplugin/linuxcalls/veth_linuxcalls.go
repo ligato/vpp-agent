@@ -26,8 +26,8 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// AddVethInterface calls LinkAdd Netlink API for the Netlink.Veth interface type.
-func AddVethInterface(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
+// AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
+func AddVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
 	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
 	start := time.Now()
 	defer func() {
@@ -50,8 +50,8 @@ func AddVethInterface(ifName, peerIfName string, log logging.Logger, timeLog mea
 	return err
 }
 
-// DelVethInterface calls LinkDel Netlink API for the Netlink.Veth interface type.
-func DelVethInterface(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
+// DelVethInterfacePair calls LinkDel Netlink API for the Netlink.Veth interface type.
+func DelVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
 	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
 	start := time.Now()
 	defer func() {

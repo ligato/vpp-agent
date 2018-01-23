@@ -17,8 +17,7 @@ package syncbase
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // Adapter implements datasync.TransportAdapter but allows the Watch/ Put functions to be optionally implemented.
@@ -34,7 +33,7 @@ func (adapter *Adapter) Watch(resyncName string, changeChan chan datasync.Change
 	if adapter.Watcher != nil {
 		return adapter.Watcher.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 	}
-	logroot.StandardLogger().Debug("KeyValProtoWatcher is nil")
+	logrus.DefaultLogger().Debug("KeyValProtoWatcher is nil")
 
 	return nil, nil
 }

@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/buger/goterm"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
 	"github.com/spf13/cobra"
@@ -136,7 +136,7 @@ func watchFunc(cmd *cobra.Command, args []string) {
 		// Write (flush) buffered data.
 		err := goterm.Output.Flush()
 		if err != nil {
-			logroot.StandardLogger().Errorf("%v", err)
+			logrus.DefaultLogger().Errorf("%v", err)
 		}
 		// Reset the screen buffer.
 		goterm.Screen.Reset()

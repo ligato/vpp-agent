@@ -15,9 +15,9 @@
 package linuxplugin
 
 import (
+	"fmt"
 	"strings"
 
-	"fmt"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
@@ -52,16 +52,16 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
+		resyncErrs = append(resyncErrs, errs...)
 	}
 
-	if err := plugin.arpConfigurator.Resync(req.ARPs); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if errs := plugin.arpConfigurator.Resync(req.ARPs); errs != nil {
+		resyncErrs = append(resyncErrs, errs...)
 	}
 
-	if err := plugin.routeConfigurator.Resync(req.Routes); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if errs := plugin.routeConfigurator.Resync(req.Routes); errs != nil {
+		resyncErrs = append(resyncErrs, errs...)
 	}
 
 	// log errors if any
@@ -71,6 +71,7 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	for _, err := range resyncErrs {
 		plugin.Log.Error(err)
 	}
+
 	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 

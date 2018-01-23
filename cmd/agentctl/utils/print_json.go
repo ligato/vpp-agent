@@ -18,13 +18,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"sort"
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/logrusorgru/aurora.git"
 )
 
@@ -262,10 +261,7 @@ func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	fibRoot.Route = fibData.Routes
 	var keyset []string
 	for _, fib := range fibData.Routes {
-		_, dstNetAddr, err := net.ParseCIDR(fib.DstIpAddr)
-		if err == nil {
-			keyset = append(keyset, l3.RouteKey(fib.VrfId, dstNetAddr, fib.NextHopAddr))
-		}
+		keyset = append(keyset, l3.RouteKey(fib.VrfId, fib.DstIpAddr, fib.NextHopAddr))
 	}
 	sort.Strings(keyset)
 

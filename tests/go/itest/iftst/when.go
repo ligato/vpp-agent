@@ -1,11 +1,15 @@
 package iftst
 
 import (
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 const pluginName = core.PluginName("when_iface")
@@ -14,62 +18,82 @@ const pluginName = core.PluginName("when_iface")
 // (methods that will be called from test scenarios).
 type WhenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
+	NewResync func(name core.PluginName) vppclient.DataResyncDSL
 	Log       logging.Logger
+	VPP       defaultplugins.API
+	MockVpp   *govppmock.VppAdapter
+}
+
+// ResyncIf stores configuration of a given interface in ETCD.
+func (when *WhenIface) ResyncIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+	when.Log.Debug("When_ResyncIf begin")
+	err := when.NewResync(pluginName).Interface(data).Send().ReceiveReply()
+	if err != nil {
+		when.Log.Panic(err)
+	}
+	when.Log.Debug("When_ResyncIf end")
 }
 
 // StoreIf stores configuration of a given interface in ETCD.
-func (step *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interface{}) {
-	step.Log.Debug("When_StoreIf begin")
-	err := step.NewChange(pluginName).Put().Interface(data).Send().ReceiveReply()
+func (when *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+	when.Log.Debug("When_StoreIf begin")
+	err := when.NewChange(pluginName).Put().Interface(data).Send().ReceiveReply()
 	if err != nil {
-		step.Log.Panic(err)
+		when.Log.Panic(err)
 	}
-	step.Log.Debug("When_StoreIf end")
+	when.Log.Debug("When_StoreIf end")
 }
 
 // DelIf removes configuration of a given interface from ETCD.
-func (step *WhenIface) DelIf(data *intf.Interfaces_Interface) {
-	step.Log.Debug("When_StoreIf begin")
+func (when *WhenIface) DelIf(data *intf.Interfaces_Interface) {
+	when.Log.Debug("When_StoreIf begin")
 	err := localclient.DataChangeRequest(pluginName).Delete().Interface(data.Name).Send().ReceiveReply()
 	if err != nil {
-		step.Log.Panic(err)
+		when.Log.Panic(err)
 	}
-	step.Log.Debug("When_StoreIf end")
+	when.Log.Debug("When_StoreIf end")
+}
+
+// VppLinkUp sends interface event link up using VPP mock.
+func (when *WhenIface) VppLinkUp(data *intf.Interfaces_Interface) {
+	idx, _, exists := when.VPP.GetSwIfIndexes().LookupIdx(data.Name)
+	if !exists {
+		when.Log.Panicf("swIfIndex for %q doesnt exist", data.Name)
+	}
+
+	logrus.DefaultLogger().Infof("- VppLinkUp idx:%v", idx)
+
+	// mock the notification and force its delivery
+	when.MockVpp.MockReply(&interfaces.SwInterfaceEvent{
+		SwIfIndex: idx,
+		//AdminUpDown: 1,
+		LinkUpDown: 1,
+	})
+	when.MockVpp.SendMsg(0, []byte(""))
+
+	logrus.DefaultLogger().Info("~ VppLinkUp")
+}
+
+// VppLinkDown sends interface event link down using VPP mock.
+func (when *WhenIface) VppLinkDown(data *intf.Interfaces_Interface) {
+	idx, _, exists := when.VPP.GetSwIfIndexes().LookupIdx(data.Name)
+	if !exists {
+		when.Log.Panicf("swIfIndex for %q doesnt exist", data.Name)
+	}
+
+	logrus.DefaultLogger().Info("- VppLinkDown")
+
+	// mock the notification and force its delivery
+	when.MockVpp.MockReply(&interfaces.SwInterfaceEvent{
+		SwIfIndex:  idx,
+		LinkUpDown: 0,
+	})
+	when.MockVpp.SendMsg(0, []byte(""))
+
+	logrus.DefaultLogger().Info("~ VppLinkDown")
 }
 
 /*
-// VppLinkDown sends SwInterfaceSetFlags{LinkUpDown: 0} using VPP mock.
-func (step *WhenIface) VppLinkDown(data *intf.Interfaces_Interface, given *testing.GivenAndKW) {
-	given.And().VppMock(func(mockVpp *govppmock.VppAdapter) {
-		n := data.Name
-		idx, _, _ := defaultplugins.GetSwIfIndexes().LookupIdx(n)
-
-		// mock the notification and force its delivery
-		mockVpp.MockReply(&interfaces.SwInterfaceSetFlags{
-			SwIfIndex:  idx,
-			LinkUpDown: 0,
-		})
-		mockVpp.SendMsg(0, []byte(""))
-
-	})
-}
-
-// VppLinkUp sends SwInterfaceSetFlags{LinkUpDown: 1} using VPP mock.
-func (step *WhenIface) VppLinkUp(data *intf.Interfaces_Interface, given *testing.GivenAndKW) {
-	given.And().VppMock(func(mockVpp *govppmock.VppAdapter) {
-		n := data.Name
-		idx, _, _ := defaultplugins.GetSwIfIndexes().LookupIdx(n)
-
-		// mock the notification and force its delivery
-		mockVpp.MockReply(&interfaces.SwInterfaceSetFlags{
-			SwIfIndex:  idx,
-			LinkUpDown: 0,
-		})
-		mockVpp.SendMsg(0, []byte(""))
-
-	})
-}
-
 // StoreBfdSession stores configuration of a given BFD session in ETCD.
 func (step *WhenIface) StoreBfdSession(data *bfd.SingleHopBFD_Session) {
 	log.Debug("When_StoreBfdSession begin")

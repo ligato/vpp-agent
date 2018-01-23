@@ -19,15 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/onsi/gomega"
 )
 
 func ExampleAsyncProducer() {
-	log := logroot.StandardLogger()
+	log := logrus.DefaultLogger()
 
 	//init config
-	config := NewConfig(logroot.StandardLogger())
+	config := NewConfig(logrus.DefaultLogger())
 	config.SetBrokers("localhost:9091", "localhost:9092")
 	config.SetSendSuccess(true)
 	config.SetSuccessChan(make(chan *ProducerMessage))

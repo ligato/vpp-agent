@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=model/l4 --gogo_out=model/l4 model/l4/l4.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=bin_api
+//go:generate protoc --proto_path=../common/model/l4 --gogo_out=../common/model/l4 ../common/model/l4/l4.proto
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=../common/bin_api
 
 package l4plugin
 
 import (
+	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -42,10 +44,11 @@ type L4Configurator struct {
 	GoVppmux     govppmux.API
 
 	// Indexes
-	SwIfIndexes        ifaceidx.SwIfIndex
-	AppNsIndexes       nsidx.AppNsIndexRW
+	SwIfIndexes  ifaceidx.SwIfIndex
+	AppNsIndexes nsidx.AppNsIndexRW
+
 	NotConfiguredAppNs nsidx.AppNsIndexRW // the mapping stores not-configurable app namespaces with metadata
-	AppNsIdxSeq        uint32             // common for both mappings, should be incremented after every registration
+	AppNsIdxSeq        uint32             // used only for NotConfiguredAppNs; incremented after every registration
 
 	// timer used to measure and store time
 	Stopwatch *measure.Stopwatch
@@ -59,7 +62,7 @@ type L4Configurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *L4Configurator) Init() error {
-	plugin.Log.Debugf("Init L4Configurator plugin")
+	plugin.Log.Debugf("Initializing L4 configurator")
 	var err error
 
 	// init vpp channel
@@ -78,14 +81,14 @@ func (plugin *L4Configurator) Close() error {
 
 // ConfigureL4FeatureFlag process the NB Features config and propagates it to bin api calls
 func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) error {
-	plugin.Log.Info("Configuring L4 l4ftEnabled")
+	plugin.Log.Info("Setting up L4 features config")
 
 	if features.Enabled {
 		if err := vppcalls.EnableL4Features(plugin.Log, plugin.vppCh); err != nil {
 			return err
 		}
 		plugin.l4ftEnabled = true
-		plugin.Log.Infof("L4 l4ftEnabled were enabled")
+		plugin.Log.Infof("L4 features enabled")
 
 		plugin.resolveCachedNamespaces()
 
@@ -94,7 +97,7 @@ func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) er
 			return err
 		}
 		plugin.l4ftEnabled = false
-		plugin.Log.Infof("L4 l4ftEnabled were disabled")
+		plugin.Log.Infof("L4 features disabled")
 	}
 
 	return nil
@@ -102,13 +105,13 @@ func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) er
 
 // DeleteL4FeatureFlag process the NB Features config and propagates it to bin api calls
 func (plugin *L4Configurator) DeleteL4FeatureFlag() error {
-	plugin.Log.Info("Deleting L4 l4ftEnabled")
+	plugin.Log.Info("Removing up L4 features config")
 
 	if err := vppcalls.DisableL4Features(plugin.Log, plugin.vppCh); err != nil {
 		return err
 	}
 	plugin.l4ftEnabled = false
-	plugin.Log.Infof("L4 l4ftEnabled were disabled")
+	plugin.Log.Infof("L4 features disabled")
 
 	return nil
 }
@@ -116,6 +119,11 @@ func (plugin *L4Configurator) DeleteL4FeatureFlag() error {
 // ConfigureAppNamespace process the NB AppNamespace config and propagates it to bin api calls
 func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Configuring new AppNamespace with ID %v", ns.NamespaceId)
+
+	// Validate data
+	if ns.Interface == "" {
+		return fmt.Errorf("application namespace %v does not contain interface", ns.NamespaceId)
+	}
 
 	// Check whether L4 l4ftEnabled are enabled. If not, all namespaces created earlier are added to cache
 	if !plugin.l4ftEnabled {
@@ -141,6 +149,11 @@ func (plugin *L4Configurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppName
 func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.Infof("Modifying AppNamespace with ID %v", newNs.NamespaceId)
 
+	// Validate data
+	if newNs.Interface == "" {
+		return fmt.Errorf("modified application namespace %v does not contain interface", newNs.NamespaceId)
+	}
+
 	// At first, unregister the old configuration from both mappings (if exists)
 	plugin.AppNsIndexes.UnregisterName(oldNs.NamespaceId)
 	plugin.NotConfiguredAppNs.UnregisterName(oldNs.NamespaceId)
@@ -162,6 +175,7 @@ func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppName
 		return nil
 	}
 
+	// todo remove namespace
 	return plugin.configureAppNamespace(newNs, ifIdx)
 }
 
@@ -169,13 +183,13 @@ func (plugin *L4Configurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppName
 // supported by VPP
 func (plugin *L4Configurator) DeleteAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	// todo implement
-	plugin.Log.Warn("AppNamespace removal not supported by VPP")
+	plugin.Log.Warn("AppNamespace removal not supported by the VPP")
 	return nil
 }
 
 // ResolveCreatedInterface looks for application namespace this interface is assigned to and configures them
 func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
-	plugin.Log.Infof("L4Plugin: Resolving new interface %v", interfaceName)
+	plugin.Log.Infof("L4 configurator: resolving new interface %v", interfaceName)
 
 	// If L4 features are not enabled, skip (and keep all in cache)
 	if !plugin.l4ftEnabled {
@@ -200,10 +214,10 @@ func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, inte
 
 // ResolveDeletedInterface looks for application namespace this interface is assigned to and removes
 func (plugin *L4Configurator) ResolveDeletedInterface(interfaceName string, interfaceIndex uint32) error {
-	plugin.Log.Infof("L4Plugin: Resolving removed interface %v", interfaceName)
+	plugin.Log.Infof("L4 configurator: resolving deleted interface %v", interfaceName)
 
 	// Search mapping for configured application namespaces using the new interface
-	confAppNs := plugin.NotConfiguredAppNs.LookupNamesByInterface(interfaceName)
+	confAppNs := plugin.AppNsIndexes.LookupNamesByInterface(interfaceName)
 	if len(confAppNs) > 0 {
 		plugin.Log.Debugf("Found %v app namespaces belonging to removed interface %v", len(confAppNs), interfaceName)
 		for _, appNamespace := range confAppNs {
@@ -223,15 +237,14 @@ func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppName
 	// Namespace ID
 	nsID := []byte(ns.NamespaceId)
 
-	err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.Log, plugin.vppCh)
+	appnsIndex, err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.Log, plugin.vppCh)
 	if err != nil {
 		return err
 	}
 
 	// register namespace
-	plugin.AppNsIndexes.RegisterName(ns.NamespaceId, plugin.AppNsIdxSeq, ns)
-	plugin.AppNsIdxSeq++
-	plugin.Log.Debugf("Application namespace %v registered")
+	plugin.AppNsIndexes.RegisterName(ns.NamespaceId, appnsIndex, ns)
+	plugin.Log.Debugf("Application namespace %v registered", ns)
 
 	return nil
 }
@@ -243,15 +256,9 @@ func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppName
 func (plugin *L4Configurator) resolveCachedNamespaces() {
 	plugin.Log.Info("Configuring cached namespaces after L4 features were enabled")
 
-	index := plugin.AppNsIdxSeq
 	// Scan all registered indexes in mapping for un-configured application namespaces
-	for {
-		if index == 0 {
-			break
-		}
-		index--
-
-		_, ns, found := plugin.NotConfiguredAppNs.LookupName(index)
+	for _, name := range plugin.NotConfiguredAppNs.ListNames() {
+		_, ns, found := plugin.NotConfiguredAppNs.LookupIdx(name)
 		if !found {
 			continue
 		}
@@ -264,7 +271,7 @@ func (plugin *L4Configurator) resolveCachedNamespaces() {
 		}
 
 		plugin.configureAppNamespace(ns, ifIdx)
-		// AppNamespace was configured, remove drom cache
+		// AppNamespace was configured, remove from cache
 		plugin.NotConfiguredAppNs.UnregisterName(ns.NamespaceId)
 	}
 }

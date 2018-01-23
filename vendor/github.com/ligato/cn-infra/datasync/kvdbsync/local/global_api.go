@@ -15,24 +15,14 @@
 package local
 
 import (
-	"sync"
-
 	"github.com/ligato/cn-infra/datasync/syncbase"
 )
 
-var (
-	gTransport       *syncbase.Registry
-	gTransportAccess sync.Mutex
-)
+// DefaultTransport is a default registry.
+var DefaultTransport = syncbase.NewRegistry()
 
-// Get returns global singleton instance.
+// Get returns the global singleton instance.
 func Get() *syncbase.Registry {
-	gTransportAccess.Lock()
-	defer gTransportAccess.Unlock()
-
-	if gTransport == nil {
-		gTransport = syncbase.NewRegistry()
-	}
-
-	return gTransport
+	// TODO: obsolete, use DefaultTransport directly instead
+	return DefaultTransport
 }

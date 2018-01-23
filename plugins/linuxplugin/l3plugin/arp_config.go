@@ -18,8 +18,9 @@ package l3plugin
 
 import (
 	"fmt"
+	"net"
+
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	common "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
@@ -27,7 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 	"github.com/vishvananda/netlink"
-	"net"
 )
 
 const (
@@ -53,7 +53,7 @@ type LinuxArpConfigurator struct {
 
 // Init initializes ARP configurator and starts goroutines
 func (plugin *LinuxArpConfigurator) Init(arpIndexes l3idx.LinuxARPIndexRW) error {
-	plugin.Log.Debug("Initializing LinuxArpConfigurator")
+	plugin.Log.Debug("Initializing Linux ARP configurator")
 	plugin.arpIndexes = arpIndexes
 
 	return nil
@@ -118,7 +118,9 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	// Register created ARP entry
 	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.ArpIdxSeq, nil)
 	plugin.ArpIdxSeq++
-	plugin.Log.Debug("ARP entry %v registered as %v", arpEntry.Name, arpIdentifier(neigh))
+	plugin.Log.Debugf("ARP entry %v registered as %v", arpEntry.Name, arpIdentifier(neigh))
+
+	plugin.Log.Infof("Linux ARP entry %v configured", arpEntry.Name)
 
 	return err
 }
@@ -193,6 +195,8 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 
 	err = linuxcalls.ModifyArpEntry(newArpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("modify-arp-entry", plugin.Stopwatch))
 
+	plugin.Log.Infof("Linux ARP entry %v modified", newArpEntry.Name)
+
 	return err
 }
 
@@ -258,6 +262,8 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 		plugin.Log.Debugf("ARP entry unregistered %v", arpEntry.Name)
 	}
 
+	plugin.Log.Infof("Linux ARP entry %v removed", arpEntry.Name)
+
 	return err
 }
 
@@ -277,7 +283,7 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 		if !found {
 			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, nil)
 			plugin.ArpIdxSeq++
-			plugin.Log.Debug("ARP entry registered as %v", arpIdentifier(&entry))
+			plugin.Log.Debugf("ARP entry registered as %v", arpIdentifier(&entry))
 		}
 	}
 
@@ -306,7 +312,6 @@ func arpStateParser(stateType *l3.LinuxStaticArpEntries_ArpEntry_NudState) int {
 }
 
 func compareARPLinkIdxAndIP(arp1 *netlink.Neigh, arp2 *netlink.Neigh) bool {
-	logrus.DefaultLogger().Warn("1 %v 2%v", arp1, arp2)
 	if arp1.LinkIndex != arp2.LinkIndex {
 		return false
 	}

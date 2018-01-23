@@ -59,15 +59,16 @@ func (p *Plugin) AfterInit() error {
 func (p *Plugin) readinessProbeHandler(formatter *render.Render) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, req *http.Request) {
-		stat := p.StatusCheck.GetAgentStatus()
-		statJSON, _ := json.Marshal(stat)
-		if stat.State == status.OperationalState_OK {
+		ifStat := p.StatusCheck.GetInterfaceStats()
+		agentStat := p.StatusCheck.GetAgentStatus()
+		agentStat.InterfaceStats = &ifStat
+		agentStatJSON, _ := json.Marshal(agentStat)
+		if agentStat.State == status.OperationalState_OK {
 			w.WriteHeader(http.StatusOK)
-			w.Write(statJSON)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(statJSON)
 		}
+		w.Write(agentStatJSON)
 	}
 }
 

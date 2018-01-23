@@ -20,18 +20,18 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
 
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.
 // Most importantly it needs to ensure that Afpacket interface is create AFTER the associated host interface.
 type AFPacketConfigurator struct {
 	logging.Logger
-	Linux     interface{}        //just flag if nil
-	Stopwatch *measure.Stopwatch // from InterfaceConfigurator
+	Linux       interface{}        //just flag if nil
+	Stopwatch   *measure.Stopwatch // from InterfaceConfigurator
 	SwIfIndexes ifaceidx.SwIfIndexRW
 
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
@@ -50,6 +50,7 @@ type AfPacketConfig struct {
 
 // Init members of AFPacketConfigurator.
 func (plugin *AFPacketConfigurator) Init(vppCh *govppapi.Channel) (err error) {
+	plugin.Infof("Initializing AF-Packet configurator")
 	plugin.vppCh = vppCh
 
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
@@ -120,18 +121,18 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 }
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
-func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName string, interfaceIndex uint32) *intf.Interfaces_Interface {
+func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) *intf.Interfaces_Interface {
 	if plugin.Linux == nil {
-		plugin.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about a new Linux interface")
+		plugin.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Warn("Unexpectedly learned about a new Linux interface")
 		return nil
 	}
-	plugin.hostInterfaces[interfaceName] = struct{}{}
+	plugin.hostInterfaces[hostIfName] = struct{}{}
 
-	afpacket, found := plugin.afPacketByHostIf[interfaceName]
+	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
 		if !afpacket.pending {
 			// this should not happen, log as warning
-			plugin.WithFields(logging.Fields{"ifName": afpacket.config.Name, "hostIfName": interfaceName}).Warn(
+			plugin.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Warn(
 				"Re-creating already configured AFPacket interface")
 			// remove the existing afpacket and let the interface configurator to re-create it
 			plugin.DeleteAfPacketInterface(afpacket.config)
@@ -143,14 +144,14 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName s
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName string) {
+func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string) {
 	if plugin.Linux == nil {
-		plugin.WithField("hostIfName", interfaceName).Warn("Unexpectedly learned about removed Linux interface")
+		plugin.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Warn("Unexpectedly learned about removed Linux interface")
 		return
 	}
-	delete(plugin.hostInterfaces, interfaceName)
+	delete(plugin.hostInterfaces, hostIfName)
 
-	afpacket, found := plugin.afPacketByHostIf[interfaceName]
+	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
 		// remove the interface and re-add as pending
 		plugin.DeleteAfPacketInterface(afpacket.config)

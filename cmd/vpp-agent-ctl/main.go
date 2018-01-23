@@ -28,24 +28,21 @@ import (
 
 	"github.com/namsral/flag"
 
-	"net"
-
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logroot"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/stn"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
 	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
@@ -56,7 +53,7 @@ var (
 )
 
 func main() {
-	log = logroot.StandardLogger()
+	log = logrus.DefaultLogger()
 	log.SetLevel(logging.InfoLevel)
 	flag.CommandLine.ParseEnv(os.Environ())
 
@@ -141,6 +138,10 @@ func main() {
 			addStaticFibTableEntry(db, bridgeDomain1, ifName1)
 		case "-dft":
 			deleteStaticFibTableEntry(db, bridgeDomain1)
+		case "-aae":
+			addArpEntry(db, ifName1)
+		case "-dae":
+			deleteArpEntry(db, ifName1)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -186,7 +187,7 @@ func main() {
 		case "-clarp":
 			createLinuxArp(db)
 		case "-dlarp":
-			delete(db, l32.StaticArpKey("arp1"))
+			delete(db, l32.StaticArpKey("arp3"))
 		case "-clrt":
 			createLinuxRoute(db)
 		case "-clrtdef":
@@ -447,24 +448,13 @@ func createRoute(db keyval.ProtoBroker) {
 		},
 	}
 
-	_, dstNetAddr, err := net.ParseCIDR(routes.Route[0].DstIpAddr)
-	if err != nil {
-		log.Errorf("Error parsing address %v", routes.Route[0].DstIpAddr)
-		return
-	}
-
-	key := l3.RouteKey(routes.Route[0].VrfId, dstNetAddr, routes.Route[0].NextHopAddr)
+	key := l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr)
 	db.Put(key, routes.Route[0])
 	log.Printf("Adding route %v", key)
 }
 
 func deleteRoute(db keyval.ProtoBroker, routeDstIP string, routeNhIP string) {
-	_, dstNetAddr, err := net.ParseCIDR(routeDstIP)
-	if err != nil {
-		log.Errorf("Error parsing address %v", routeDstIP)
-		return
-	}
-	path := l3.RouteKey(0, dstNetAddr, "192.168.1.13")
+	path := l3.RouteKey(0, routeDstIP, "192.168.1.13")
 	db.Delete(path)
 	log.WithField("path", path).Debug("Removing route")
 }
@@ -540,11 +530,15 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface[0].Name = ifname
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
-	ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
+	ifs.Interface[0].Mtu = 555
+	ifs.Interface[0].IpAddresses = make([]string, 3)
 	ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[0].IpAddresses[1] = "192.168.2.5/24"
+	ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
@@ -760,6 +754,32 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	log.Println(bd)
 	db.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
+}
+
+func addArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Put(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress), arpTable.ArpTableEntries[0])
+}
+
+func deleteArpEntry(db keyval.ProtoBroker, iface string) {
+	arpTable := l3.ArpTable{}
+	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
+	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
+	arpTable.ArpTableEntries[0].Interface = "tap1"
+	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
+	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
+	arpTable.ArpTableEntries[0].Static = true
+
+	log.Println(arpTable)
+	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {

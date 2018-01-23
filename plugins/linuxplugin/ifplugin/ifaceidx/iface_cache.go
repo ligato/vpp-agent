@@ -20,7 +20,7 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/logroot"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	linux_ifaces "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
@@ -30,7 +30,7 @@ import (
 // If change appears, it is registered in idx map.
 func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) LinuxIfIndex {
 	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
-	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logroot.StandardLogger(), caller, resyncName, IndexMetadata))
+	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),

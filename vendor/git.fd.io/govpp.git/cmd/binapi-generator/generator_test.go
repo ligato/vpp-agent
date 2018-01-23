@@ -245,7 +245,7 @@ func TestGenerateMessageFieldTypes(t *testing.T) {
 		for j := 0; j < types.At(i).Len(); j++ {
 			field := types.At(i).At(j)
 			if jsongo.TypeArray == field.GetType() {
-				err := processMessageField(testCtx, &fields, field, otherMessage)
+				err := processMessageField(testCtx, &fields, field, false)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(fields[j-1]).To(BeEquivalentTo(expectedTypes[j-1]))
 			}
@@ -282,7 +282,7 @@ func TestGenerateMessageFieldMessages(t *testing.T) {
 					specificFieldName == "client_index" || specificFieldName == "context" {
 					continue
 				}
-				err := processMessageField(testCtx, &fields, field, requestMessage)
+				err := processMessageField(testCtx, &fields, field, false)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(fields[customIndex]).To(BeEquivalentTo(expectedTypes[customIndex]))
 				customIndex++

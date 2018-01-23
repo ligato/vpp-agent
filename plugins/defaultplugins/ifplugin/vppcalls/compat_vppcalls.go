@@ -17,13 +17,14 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/af_packet"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/ip"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/memif"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/vxlan"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tapv2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
 )
 
 // CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
@@ -53,6 +54,11 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&tap.SwInterfaceTapDump{},
 		&tap.SwInterfaceTapDetails{},
 
+		&tapv2.TapCreateV2{},
+		&tapv2.TapCreateV2Reply{},
+		&tapv2.TapDeleteV2{},
+		&tapv2.TapDeleteV2Reply{},
+
 		&interfaces.SwInterfaceEvent{},
 		&interfaces.SwInterfaceSetFlags{},
 		&interfaces.SwInterfaceSetFlagsReply{},
@@ -65,6 +71,8 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 		&interfaces.SwInterfaceSetTableReply{},
 		&interfaces.SwInterfaceGetTable{},
 		&interfaces.SwInterfaceGetTableReply{},
+		&interfaces.SwInterfaceSetUnnumbered{},
+		&interfaces.SwInterfaceSetUnnumberedReply{},
 
 		&ip.IPAddressDump{},
 		&ip.IPAddressDetails{},
@@ -81,7 +89,7 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan *govppapi.Cha
 }
 
 // CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) error {
+func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
@@ -94,9 +102,5 @@ func CheckMsgCompatibilityForBfd(log logging.Logger, vppChan *govppapi.Channel) 
 		&bfd.BfdAuthDelKey{},
 		&bfd.BfdAuthDelKeyReply{},
 	}
-	err := vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		log.Error(err)
-	}
-	return err
+	return vppChan.CheckMessageCompatibility(msgs...)
 }

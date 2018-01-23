@@ -16,9 +16,8 @@ package testutil
 
 import (
 	"fmt"
-	"sync"
-
 	"regexp"
+	"sync"
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
@@ -50,7 +49,7 @@ func NewLogger(name string, t *testing.T) *Logger {
 		std:  t,
 		name: name,
 	}
-
+	logger.SetLevel(logging.DebugLevel)
 	return logger
 }
 
