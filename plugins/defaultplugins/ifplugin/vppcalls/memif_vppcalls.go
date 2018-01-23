@@ -60,13 +60,10 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, socketID uint32
 	}
 
 	reply := &memif.MemifCreateReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return 0, fmt.Errorf("add memif interface returned %d", reply.Retval)
 	}
 
@@ -88,11 +85,10 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure
 	req.SwIfIndex = idx
 
 	reply := &memif.MemifDeleteReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
 

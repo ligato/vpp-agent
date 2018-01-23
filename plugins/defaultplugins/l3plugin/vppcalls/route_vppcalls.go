@@ -104,12 +104,10 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
 	}
 

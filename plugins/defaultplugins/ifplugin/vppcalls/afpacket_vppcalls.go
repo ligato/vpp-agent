@@ -40,8 +40,7 @@ func AddAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, vppC
 	}
 
 	reply := &af_packet.AfPacketCreateReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
@@ -67,8 +66,7 @@ func DeleteAfPacketInterface(afPacketIntf *intf.Interfaces_Interface_Afpacket, v
 	}
 
 	reply := &af_packet.AfPacketDeleteReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

@@ -34,14 +34,12 @@ func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEn
 	}()
 
 	req := &interfaces.CreateLoopback{}
-	reply := &interfaces.CreateLoopbackReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
 
-	if err != nil {
+	reply := &interfaces.CreateLoopbackReply{}
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
 	}
 
@@ -63,12 +61,10 @@ func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog meas
 	req.SwIfIndex = idx
 
 	reply := &interfaces.DeleteLoopbackReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
 	}
 

@@ -11,6 +11,8 @@
 package vppcalls
 
 import (
+	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
@@ -23,18 +25,17 @@ func EnableL4Features(log logging.Logger, vppChan *govppapi.Channel) error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 1,
 	}
+
 	reply := &session.SessionEnableDisableReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		log.WithFields(logging.Fields{"Error": err, "L4Features": true}).Error("Error while enabling L4 features")
 		return err
 	}
 	if reply.Retval != 0 {
-		log.WithField("Return value", reply.Retval).Error("Unexpected return value")
-		return err
+		return fmt.Errorf("enabling L4 features returned %v", reply.Retval)
 	}
-	log.Debug("L4 features enabled.")
 
+	log.Debug("L4 features enabled.")
 	return nil
 }
 
@@ -45,17 +46,16 @@ func DisableL4Features(log logging.Logger, vppChan *govppapi.Channel) error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 0,
 	}
+
 	reply := &session.SessionEnableDisableReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		log.WithFields(logging.Fields{"Error": err, "L4Features": true}).Error("Error while disabling L4 features")
 		return err
 	}
 	if reply.Retval != 0 {
-		log.WithField("Return value", reply.Retval).Error("Unexpected return value")
-		return err
+		return fmt.Errorf("disabling L4 features returned %v", reply.Retval)
 	}
-	log.Debug("L4 features disabled.")
 
+	log.Debug("L4 features disabled.")
 	return nil
 }

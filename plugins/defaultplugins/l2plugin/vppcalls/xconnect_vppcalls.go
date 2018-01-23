@@ -40,11 +40,10 @@ func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log l
 	req.Enable = 1
 
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("creating xConnect returned %d", reply.Retval)
 	}
 
@@ -69,11 +68,10 @@ func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log
 	req.Enable = 0
 
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("removing xConnect returned %d", reply.Retval)
 	}
 

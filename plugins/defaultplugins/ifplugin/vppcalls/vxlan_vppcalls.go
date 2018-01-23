@@ -28,12 +28,11 @@ import (
 // AddDelVxlanTunnelReq prepares the request for bin API calls.
 func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8) (req *vxlan.VxlanAddDelTunnel, err error) {
 	req = &vxlan.VxlanAddDelTunnel{}
-	var address net.IP
 
 	req.IsAdd = add
 
-	address = net.ParseIP(vxlanIntf.SrcAddress).To4()
-	if nil == address {
+	address := net.ParseIP(vxlanIntf.SrcAddress).To4()
+	if address == nil {
 		address = net.ParseIP(vxlanIntf.SrcAddress).To16()
 		if nil == address {
 			return nil, fmt.Errorf("VXLAN source address is neither IPv4 nor IPv6 address")
@@ -44,12 +43,12 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 	}
 	req.SrcAddress = []byte(address)
 
-	if 0 == req.IsIpv6 {
+	if req.IsIpv6 == 0 {
 		address = net.ParseIP(vxlanIntf.DstAddress).To4()
 	} else {
 		address = net.ParseIP(vxlanIntf.DstAddress).To16()
 	}
-	if nil == address {
+	if address == nil {
 		return nil, fmt.Errorf("VXLAN destination and source addresses differ in IP version")
 	}
 	req.DstAddress = []byte(address)
@@ -81,11 +80,10 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32,
 	req.EncapVrfID = encapVrf
 
 	reply := &vxlan.VxlanAddDelTunnelReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
 	}
 
@@ -108,11 +106,10 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 	}
 
 	reply := &vxlan.VxlanAddDelTunnelReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
 	}
 

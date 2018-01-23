@@ -27,7 +27,7 @@ import (
 )
 
 // AddTapInterface calls TapConnect bin API.
-func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (uint32, error) {
 	// TapConnect/TapCreateV2 time measurement
 	start := time.Now()
 	defer func() {
@@ -41,6 +41,7 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 	}
 
 	var (
+		err       error
 		retval    int32
 		swIfIndex uint32
 	)
@@ -74,11 +75,10 @@ func AddTapInterface(tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppa
 		retval = reply.Retval
 		swIfIndex = reply.SwIfIndex
 	}
-
 	if err != nil {
 		return 0, err
 	}
-	if 0 != retval {
+	if retval != 0 {
 		return 0, fmt.Errorf("add tap interface returned %d", retval)
 	}
 
@@ -115,12 +115,10 @@ func DeleteTapInterface(idx uint32, version uint32, vppChan *govppapi.Channel, t
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
 	}
-
 	if err != nil {
 		return err
 	}
-
-	if 0 != retval {
+	if retval != 0 {
 		return fmt.Errorf("deleting of interface returned %d", retval)
 	}
 

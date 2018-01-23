@@ -60,8 +60,7 @@ func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
 	}
 
 	reply := &interfaces.SwInterfaceSetFlagsReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

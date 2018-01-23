@@ -91,8 +91,7 @@ func AddBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKey
 	if err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
 
@@ -139,12 +138,10 @@ func AddBfdUDPSessionFromDetails(bfdSession *bfd_api.BfdUDPSessionDetails, bfdKe
 	}
 
 	reply := &bfd_api.BfdUDPAddReply{}
-	err := vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("add BFD UDP session interface returned %d", reply.Retval)
 	}
 
@@ -198,14 +195,13 @@ func ModifyBfdUDPSession(bfdSession *bfd.SingleHopBFD_Session, swIfIndexes iface
 	}
 
 	reply := &bfd_api.BfdUDPModReply{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
 	if 0 != reply.Retval {
 		return fmt.Errorf("update BFD UDP session interface returned %d", reply.Retval)
 	}
+
 	return nil
 }
 
@@ -317,12 +313,10 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	req.KeyLen = uint8(len(bfdKey.Secret))
 
 	reply := &bfd_api.BfdAuthSetKeyReply{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("set BFD authentication key returned %d", reply.Retval)
 	}
 
@@ -344,12 +338,10 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChannel *gov
 	req.ConfKeyID = bfdKey.Id
 
 	reply := &bfd_api.BfdAuthDelKeyReply{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("delete BFD authentication key returned %d", reply.Retval)
 	}
 
@@ -406,14 +398,13 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	req.SwIfIndex = ifIdx
 
 	reply := &bfd_api.BfdUDPSetEchoSourceReply{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("set BFD echo source returned %d", reply.Retval)
 	}
+
 	return nil
 }
 
@@ -431,13 +422,12 @@ func DeleteBfdEchoFunction(vppChannel *govppapi.Channel, timeLog measure.StopWat
 	req := &bfd_api.BfdUDPDelEchoSource{}
 
 	reply := &bfd_api.BfdUDPDelEchoSourceReply{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("delete BFD echo source returned %d", reply.Retval)
 	}
+
 	return nil
 }
