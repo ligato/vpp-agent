@@ -6,21 +6,44 @@ package stn
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xe5fdd9f7
+const VlAPIVersion = 0xa175d700
 
 // StnAddDelRule represents the VPP binary API message 'stn_add_del_rule'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 6:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 13:
 //
-//        ["stn_add_del_rule",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u8", "is_ip4"],
-//            ["u8", "ip_address", 16],
-//            ["u32", "sw_if_index"],
-//            ["u8", "is_add"],
-//            {"crc" : "0x4a761a12"}
-//        ],
+//            "stn_add_del_rule",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip_address",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0x9f0bbe21"
+//            }
 //
 type StnAddDelRule struct {
 	IsIP4     uint8
@@ -36,21 +59,31 @@ func (*StnAddDelRule) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*StnAddDelRule) GetCrcString() string {
-	return "4a761a12"
+	return "9f0bbe21"
 }
 func NewStnAddDelRule() api.Message {
 	return &StnAddDelRule{}
 }
 
 // StnAddDelRuleReply represents the VPP binary API message 'stn_add_del_rule_reply'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 16:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 48:
 //
-//        ["stn_add_del_rule_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x7af79b37"}
-//        ],
+//            "stn_add_del_rule_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type StnAddDelRuleReply struct {
 	Retval int32
@@ -63,21 +96,31 @@ func (*StnAddDelRuleReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*StnAddDelRuleReply) GetCrcString() string {
-	return "7af79b37"
+	return "e8d4e804"
 }
 func NewStnAddDelRuleReply() api.Message {
 	return &StnAddDelRuleReply{}
 }
 
 // StnRulesDump represents the VPP binary API message 'stn_rules_dump'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 22:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 66:
 //
-//        ["stn_rules_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0xe3b863a5"}
-//        ],
+//            "stn_rules_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type StnRulesDump struct {
 }
@@ -89,23 +132,40 @@ func (*StnRulesDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*StnRulesDump) GetCrcString() string {
-	return "e3b863a5"
+	return "51077d14"
 }
 func NewStnRulesDump() api.Message {
 	return &StnRulesDump{}
 }
 
 // StnRuleDetails represents the VPP binary API message 'stn_rule_details'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 28:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 84:
 //
-//        ["stn_rule_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u8", "is_ip4"],
-//            ["u8", "ip_address", 16],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0xaf614822"}
-//        ]
+//            "stn_rule_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip_address",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x5eafa31e"
+//            }
 //
 type StnRuleDetails struct {
 	IsIP4     uint8
@@ -120,7 +180,7 @@ func (*StnRuleDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*StnRuleDetails) GetCrcString() string {
-	return "af614822"
+	return "5eafa31e"
 }
 func NewStnRuleDetails() api.Message {
 	return &StnRuleDetails{}

@@ -6,29 +6,80 @@ package tap
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x2a0b7b9e
+const VlAPIVersion = 0x3a0725de
 
 // TapConnect represents the VPP binary API message 'tap_connect'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 6:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 29:
 //
-//        ["tap_connect",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u8", "use_random_mac"],
-//            ["u8", "tap_name", 64],
-//            ["u8", "mac_address", 6],
-//            ["u8", "renumber"],
-//            ["u32", "custom_dev_instance"],
-//            ["u8", "ip4_address_set"],
-//            ["u8", "ip4_address", 4],
-//            ["u8", "ip4_mask_width"],
-//            ["u8", "ip6_address_set"],
-//            ["u8", "ip6_address", 16],
-//            ["u8", "ip6_mask_width"],
-//            ["u8", "tag", 64],
-//            {"crc" : "0x91720de3"}
-//        ],
+//            "tap_connect",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "use_random_mac"
+//            ],
+//            [
+//                "u8",
+//                "tap_name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "mac_address",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "renumber"
+//            ],
+//            [
+//                "u32",
+//                "custom_dev_instance"
+//            ],
+//            [
+//                "u8",
+//                "ip4_address_set"
+//            ],
+//            [
+//                "u8",
+//                "ip4_address",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "ip4_mask_width"
+//            ],
+//            [
+//                "u8",
+//                "ip6_address_set"
+//            ],
+//            [
+//                "u8",
+//                "ip6_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "ip6_mask_width"
+//            ],
+//            [
+//                "u8",
+//                "tag",
+//                64
+//            ],
+//            {
+//                "crc": "0x9b9c396f"
+//            }
 //
 type TapConnect struct {
 	UseRandomMac      uint8
@@ -52,22 +103,35 @@ func (*TapConnect) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*TapConnect) GetCrcString() string {
-	return "91720de3"
+	return "9b9c396f"
 }
 func NewTapConnect() api.Message {
 	return &TapConnect{}
 }
 
 // TapConnectReply represents the VPP binary API message 'tap_connect_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 24:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 100:
 //
-//        ["tap_connect_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0xf47feac1"}
-//        ],
+//            "tap_connect_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0xfda5941f"
+//            }
 //
 type TapConnectReply struct {
 	Retval    int32
@@ -81,27 +145,57 @@ func (*TapConnectReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*TapConnectReply) GetCrcString() string {
-	return "f47feac1"
+	return "fda5941f"
 }
 func NewTapConnectReply() api.Message {
 	return &TapConnectReply{}
 }
 
 // TapModify represents the VPP binary API message 'tap_modify'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 31:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 122:
 //
-//        ["tap_modify",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "use_random_mac"],
-//            ["u8", "tap_name", 64],
-//            ["u8", "mac_address", 6],
-//            ["u8", "renumber"],
-//            ["u32", "custom_dev_instance"],
-//            {"crc" : "0x8abcd5f3"}
-//        ],
+//            "tap_modify",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "use_random_mac"
+//            ],
+//            [
+//                "u8",
+//                "tap_name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "mac_address",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "renumber"
+//            ],
+//            [
+//                "u32",
+//                "custom_dev_instance"
+//            ],
+//            {
+//                "crc": "0x8047ae5c"
+//            }
 //
 type TapModify struct {
 	SwIfIndex         uint32
@@ -119,22 +213,35 @@ func (*TapModify) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*TapModify) GetCrcString() string {
-	return "8abcd5f3"
+	return "8047ae5c"
 }
 func NewTapModify() api.Message {
 	return &TapModify{}
 }
 
 // TapModifyReply represents the VPP binary API message 'tap_modify_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 43:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 166:
 //
-//        ["tap_modify_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0x00aaf940"}
-//        ],
+//            "tap_modify_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0xfda5941f"
+//            }
 //
 type TapModifyReply struct {
 	Retval    int32
@@ -148,22 +255,35 @@ func (*TapModifyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*TapModifyReply) GetCrcString() string {
-	return "00aaf940"
+	return "fda5941f"
 }
 func NewTapModifyReply() api.Message {
 	return &TapModifyReply{}
 }
 
 // TapDelete represents the VPP binary API message 'tap_delete'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 50:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 188:
 //
-//        ["tap_delete",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0xe99d41c1"}
-//        ],
+//            "tap_delete",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x529cb13f"
+//            }
 //
 type TapDelete struct {
 	SwIfIndex uint32
@@ -176,21 +296,31 @@ func (*TapDelete) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*TapDelete) GetCrcString() string {
-	return "e99d41c1"
+	return "529cb13f"
 }
 func NewTapDelete() api.Message {
 	return &TapDelete{}
 }
 
 // TapDeleteReply represents the VPP binary API message 'tap_delete_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 57:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 210:
 //
-//        ["tap_delete_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x0e47d140"}
-//        ],
+//            "tap_delete_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type TapDeleteReply struct {
 	Retval int32
@@ -203,21 +333,31 @@ func (*TapDeleteReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*TapDeleteReply) GetCrcString() string {
-	return "0e47d140"
+	return "e8d4e804"
 }
 func NewTapDeleteReply() api.Message {
 	return &TapDeleteReply{}
 }
 
 // SwInterfaceTapDump represents the VPP binary API message 'sw_interface_tap_dump'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 63:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 228:
 //
-//        ["sw_interface_tap_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0xbc6ddbe2"}
-//        ],
+//            "sw_interface_tap_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type SwInterfaceTapDump struct {
 }
@@ -229,22 +369,36 @@ func (*SwInterfaceTapDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SwInterfaceTapDump) GetCrcString() string {
-	return "bc6ddbe2"
+	return "51077d14"
 }
 func NewSwInterfaceTapDump() api.Message {
 	return &SwInterfaceTapDump{}
 }
 
 // SwInterfaceTapDetails represents the VPP binary API message 'sw_interface_tap_details'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 69:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 246:
 //
-//        ["sw_interface_tap_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "dev_name", 64],
-//            {"crc" : "0x0df07bc3"}
-//        ]
+//            "sw_interface_tap_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "dev_name",
+//                64
+//            ],
+//            {
+//                "crc": "0x76229a57"
+//            }
 //
 type SwInterfaceTapDetails struct {
 	SwIfIndex uint32
@@ -258,7 +412,7 @@ func (*SwInterfaceTapDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SwInterfaceTapDetails) GetCrcString() string {
-	return "0df07bc3"
+	return "76229a57"
 }
 func NewSwInterfaceTapDetails() api.Message {
 	return &SwInterfaceTapDetails{}
