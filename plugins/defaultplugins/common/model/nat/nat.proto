@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package nat;
+
+/* NAT44 global config */
+message NatGlobal {
+    bool forwarding = 1;                        /* Enable/disable forwarding */
+    repeated string in = 2;                     /* Local network interfaces enabled for NAT44 */
+    repeated string out = 3;                    /* External network interfaces enabled for NAT44 */
+    message AddressPool {
+        string FirstSrcAddress = 1;             /* starting address of the source IPv4 pool range */
+        string LastSrcAddres = 2;               /* ending address of the source IPv4 pool range. Optional parameter */
+    }
+    repeated AddressPool address_pool = 4;
+}
+
+/* Many-to-one (SNAT) setup */
+message Nat44SNat {
+    // tbd
+}
+
+/* One-to-many (DNAT) setup */
+message Nat44DNat {
+    string label = 1;                            /* unique identifier of the static mapping */
+    uint32 vrfId = 2;                           /* VRF (table) ID */
+    bool SNatEnabled = 3;                       /* Enable/Disable SNat, enables 'twice-nat' for the mapping */
+   
+    message Mapping {
+        string externalInterface = 1;           /* external interface may be used together with IP addresses */ 
+        string externalIP = 2;                  /* external <address>/<port> (<address> only for address mapping) */  
+        message LocalIP {           
+            string localIP = 1;                 /* local <address>/<port> (<address> only for address mapping) */
+            uint32 probability = 2;             /* probability mode */ 
+        }   
+        repeated LocalIP local_ip = 3;          /* list of local IP addresses. If there is more than one entry, 
+                                                   load ballancer is enabled */
+        enum Protocol {
+            TCP = 0;
+            UDP = 1;
+            ICMP = 2;                           /* ICMP is not permitted for load ballanced entries */
+        };
+        Protocol protocol = 4;                      /* protocol used for static mapping */                                        
+    }   
+    repeated Mapping mapping = 4;                                         
+}
