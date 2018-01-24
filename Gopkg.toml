@@ -29,6 +29,10 @@
   branch = "master"
   name = "git.fd.io/govpp.git"
 
+[[override]]
+  name = "git.fd.io/govpp.git"
+  revision = "35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3"
+
 [[constraint]]
   branch = "master"
   name = "github.com/buger/goterm"
@@ -56,6 +60,10 @@
 [[constraint]]
   name = "github.com/ligato/cn-infra"
   version = "1.0.8"
+
+[[override]]
+  name = "github.com/ligato/cn-infra"
+  revision = "a52923bfaa17ce9072674451c7754e938cc21d15"
 
 [[constraint]]
   branch = "master"

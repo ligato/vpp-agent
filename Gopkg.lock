@@ -2,7 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -302,8 +301,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "0c822c01bfb9bc0f9292d3e4ddcd910de3c021df"
-  version = "v1.0.8"
+  revision = "a52923bfaa17ce9072674451c7754e938cc21d15"
 
 [[projects]]
   branch = "master"
@@ -609,6 +607,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "507e486517a1f4ddf24b6e925a79c8423e52d8eaaf87935514b647f1cfc072c4"
+  inputs-digest = "9908d5ce02d4443f404f3dd6c7da4e56cc86901e02aac3ca388601a413d40650"
   solver-name = "gps-cdcl"
   solver-version = 1

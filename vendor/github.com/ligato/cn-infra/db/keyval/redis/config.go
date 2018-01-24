@@ -95,7 +95,6 @@ type Client interface {
 	// Declare these additional methods to enable access to them through this
 	// interface.
 	Close() error
-	TxPipeline() goredis.Pipeliner
 	PSubscribe(channels ...string) *goredis.PubSub
 }
 
@@ -222,7 +221,7 @@ func CreateNodeClient(config NodeConfig) (Client, error) {
 		DB: config.DB,
 
 		// Enables read only queries on slave nodes.
-		ReadOnly: config.EnableReadQueryOnSlave,
+		/*ReadOnly: config.EnableReadQueryOnSlave,*/
 
 		// TLS Config to use. When set TLS will be negotiated.
 		TLSConfig: tlsConfig,
