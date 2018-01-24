@@ -38,9 +38,10 @@ RUN /bin/bash -c "\
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
 
 # install Go
-RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.9.2.linux-amd64.tar.gz && \
-    rm -f go1.9.2.linux-amd64.tar.gz
+ENV GOLANG_VERSION 1.9.3
+RUN wget -O go.tgz "https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" && \
+    tar -C /usr/local -xzf go.tgz && \
+    rm go.tgz
 
 # build & install Protobuf & gogo protobuf compiler
 RUN apt-get install -y \
