@@ -1,4 +1,4 @@
-# Release v1.0.9 (2017-1-22)
+# Release v1.1 (2017-01-22)
 
 ## Compatibility
 VPP version v18.04-rc0~33-gb59bd65
@@ -128,7 +128,7 @@ VPP version v18.01-rc0~154-gfc1c612
    `HostIfName` field is optional. If it is not defined, the name in the host OS
    will be the same as the symbolic one - defined by `Name` field.
 
-# Release v1.0.5 (2017-9-26)
+# Release v1.0.5 (2017-09-26)
 
 ## Compatibility
 VPP version v17.10-rc0~334-gce41a5c
