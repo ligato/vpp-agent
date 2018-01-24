@@ -4,14 +4,16 @@ package nat;
 
 /* NAT44 global config */
 message Nat44Global {
-    bool forwarding = 1;                        /* Enable/disable forwarding */
-    repeated string in = 2;                     /* Local network interfaces enabled for NAT44 */
-    repeated string out = 3;                    /* External network interfaces enabled for NAT44 */
+    uint32 vrfId = 1;                           /* VRF (table) ID */ 
+    bool forwarding = 2;                        /* Enable/disable forwarding */
+    repeated string in = 3;                     /* Local network interfaces enabled for NAT44 */
+    repeated string out = 4;                    /* External network interfaces enabled for NAT44 */
     message AddressPool {
         string FirstSrcAddress = 1;             /* starting address of the source IPv4 pool range */
         string LastSrcAddres = 2;               /* ending address of the source IPv4 pool range. Optional parameter */
+        bool twiceNat = 3;                   
     }
-    repeated AddressPool address_pool = 4;
+    repeated AddressPool address_pool = 5;
 }
 
 /* Many-to-one (SNAT) setup */

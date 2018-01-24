@@ -45,10 +45,11 @@ func (x Nat44DNat_DNatConfig_Mapping_Protocol) String() string {
 
 // NAT44 global config
 type Nat44Global struct {
-	Forwarding  bool                       `protobuf:"varint,1,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	In          []string                   `protobuf:"bytes,2,rep,name=in" json:"in,omitempty"`
-	Out         []string                   `protobuf:"bytes,3,rep,name=out" json:"out,omitempty"`
-	AddressPool []*Nat44Global_AddressPool `protobuf:"bytes,4,rep,name=address_pool" json:"address_pool,omitempty"`
+	VrfId       uint32                     `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
+	Forwarding  bool                       `protobuf:"varint,2,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
+	In          []string                   `protobuf:"bytes,3,rep,name=in" json:"in,omitempty"`
+	Out         []string                   `protobuf:"bytes,4,rep,name=out" json:"out,omitempty"`
+	AddressPool []*Nat44Global_AddressPool `protobuf:"bytes,5,rep,name=address_pool" json:"address_pool,omitempty"`
 }
 
 func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
@@ -65,6 +66,7 @@ func (m *Nat44Global) GetAddressPool() []*Nat44Global_AddressPool {
 type Nat44Global_AddressPool struct {
 	FirstSrcAddress string `protobuf:"bytes,1,opt,proto3" json:"FirstSrcAddress,omitempty"`
 	LastSrcAddres   string `protobuf:"bytes,2,opt,proto3" json:"LastSrcAddres,omitempty"`
+	TwiceNat        bool   `protobuf:"varint,3,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
 }
 
 func (m *Nat44Global_AddressPool) Reset()         { *m = Nat44Global_AddressPool{} }
