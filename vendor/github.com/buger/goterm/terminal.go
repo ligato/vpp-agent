@@ -27,7 +27,7 @@ const RESET = "\033[0m"
 // Reset to default color
 const RESET_COLOR = "\033[32m"
 
-// Return curor to start of line and clean it
+// Return cursor to start of line and clean it
 const RESET_LINE = "\r\033[K"
 
 // List of possible colors
@@ -68,10 +68,10 @@ type winsize struct {
 }
 
 // Global screen buffer
-// Its not recommented write to buffer dirrectly, use package Print,Printf,Println fucntions instead.
+// Its not recommended write to buffer dirrectly, use package Print,Printf,Println fucntions instead.
 var Screen *bytes.Buffer = new(bytes.Buffer)
 
-// Get relative or absolute coorditantes
+// Get relative or absolute coordinates
 // To get relative, set PCT flag to number:
 //
 //      // Get 10% of total width to `x` and 20 to y
@@ -113,27 +113,27 @@ func Clear() {
 
 // Move cursor to given position
 func MoveCursor(x int, y int) {
-	fmt.Fprintf(Screen, "\033[%d;%dH", x, y)
+	fmt.Fprintf(Screen, "\033[%d;%dH", y, x)
 }
 
 // Move cursor up relative the current position
 func MoveCursorUp(bias int) {
-  fmt.Fprintf(Screen, "\033[%dA", bias);
+	fmt.Fprintf(Screen, "\033[%dA", bias)
 }
 
 // Move cursor down relative the current position
 func MoveCursorDown(bias int) {
-  fmt.Fprintf(Screen, "\033[%dB", bias);
+	fmt.Fprintf(Screen, "\033[%dB", bias)
 }
 
 // Move cursor forward relative the current position
 func MoveCursorForward(bias int) {
-  fmt.Fprintf(Screen, "\033[%dC", bias);
+	fmt.Fprintf(Screen, "\033[%dC", bias)
 }
 
 // Move cursor backward relative the current position
 func MoveCursorBackward(bias int) {
-  fmt.Fprintf(Screen, "\033[%dD", bias);
+	fmt.Fprintf(Screen, "\033[%dD", bias)
 }
 
 // Move string to possition
@@ -227,16 +227,16 @@ func Flush() {
 	Screen.Reset()
 }
 
-func Print(a ...interface{}) {
-	fmt.Fprint(Screen, a...)
+func Print(a ...interface{}) (n int, err error) {
+	return fmt.Fprint(Screen, a...)
 }
 
-func Println(a ...interface{}) {
-	fmt.Fprintln(Screen, a...)
+func Println(a ...interface{}) (n int, err error) {
+	return fmt.Fprintln(Screen, a...)
 }
 
-func Printf(format string, a ...interface{}) {
-	fmt.Fprintf(Screen, format, a...)
+func Printf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(Screen, format, a...)
 }
 
 func Context(data string, idx, max int) string {
