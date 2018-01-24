@@ -120,6 +120,10 @@ type Plugin struct {
 	xcConfigurator *l2plugin.XConnectConfigurator
 	xcIndexes      idxvpp.NameToIdxRW
 
+	// NAT fields
+	natConfigurator *ifplugin.NatConfigurator
+	natIndices      idxvpp.NameToIdxRW
+
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
 	routeIndexes      l3idx.RouteIndexRW
@@ -388,6 +392,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	stnLogger := plugin.Log.NewLogger("-stn-conf")
+	natLogger := plugin.Log.NewLogger("-nat-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -471,9 +476,28 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		StnAllIndexSeq:      1,
 		Stopwatch:           stopwatch,
 	}
-	plugin.stnConfigurator.Init()
+	if err := plugin.stnConfigurator.Init(); err != nil {
+		return err
+	}
 
 	plugin.Log.Debug("stnConfigurator Initialized")
+
+	// NAT indices
+	plugin.natIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "nat-all-indices", nil)
+
+	plugin.natConfigurator = &ifplugin.NatConfigurator{
+		Log:         natLogger,
+		GoVppmux:    plugin.GoVppmux,
+		SwIfIndexes: plugin.swIfIndexes,
+		NatIndices:  plugin.natIndices,
+		NatIndexSeq: 1,
+		Stopwatch:   stopwatch,
+	}
+	if err := plugin.natConfigurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("Configurator Initialized")
 
 	return nil
 }
@@ -756,7 +780,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator)
 
 	return err
 }

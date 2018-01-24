@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/namsral/flag"
@@ -42,6 +43,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
@@ -204,6 +206,12 @@ func main() {
 			createStnRule(db, ifName1, "10.1.1.3")
 		case "-stnd":
 			delete(db, stn.Key("rule1"))
+		case "-natg":
+			setNatGlobalConfig(db)
+		case "-snat":
+			createSNat(db)
+		case "-dnat":
+			createDNat(db)
 		default:
 			usage()
 		}
@@ -1134,4 +1142,35 @@ func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 	log.Println(stnRule)
 
 	db.Put(stn.Key(stnRule.RuleName), &stnRule)
+}
+
+func setNatGlobalConfig(db keyval.ProtoBroker) {
+	natGlobal := &nat.Nat44Global{
+		Forwarding: false,
+	}
+
+	log.Println(natGlobal)
+
+	db.Put(nat.GlobalConfigKey(), natGlobal)
+}
+
+func createSNat(db keyval.ProtoBroker) {
+	sNat := &nat.Nat44SNat_SNatConfig{
+		Label: "pool1",
+	}
+
+	log.Println(sNat)
+
+	db.Put(nat.SNatKey(strconv.Itoa(int(0)), sNat.Label), sNat)
+}
+
+func createDNat(db keyval.ProtoBroker) {
+	dNat := &nat.Nat44DNat_DNatConfig{
+		Label: "pool1",
+		VrfId: 0,
+	}
+
+	log.Println(dNat)
+
+	db.Put(nat.DNatKey(strconv.Itoa(int(dNat.VrfId)), dNat.Label), dNat)
 }

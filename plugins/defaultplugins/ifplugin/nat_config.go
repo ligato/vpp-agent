@@ -74,48 +74,56 @@ func (plugin *NatConfigurator) Close() error {
 }
 
 // SetNatGlobalConfig configures common setup for all NAT use cases
-func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.NatGlobal) error {
-
+func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error {
+	plugin.Log.Warn("Global config CREATE not implemented")
 	return nil
 }
 
 // ModifyNatGlobalConfig modifies common setup for all NAT use cases
-func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.NatGlobal) error {
+func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.Nat44Global) error {
+	plugin.Log.Warn("Global config MODIFY not implemented")
 	return nil
 }
 
 // DeleteNatGlobalConfig removes common setup for all NAT use cases
-func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.NatGlobal) error {
+func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) error {
+	plugin.Log.Warn("Global config DELETE not implemented")
 	return nil
 }
 
 // ConfigureSNat configures new SNAT setup
 func (plugin *NatConfigurator) ConfigureSNat(sNat *nat.Nat44SNat) error {
+	plugin.Log.Warn("SNAT CREATE not implemented")
 	return nil
 }
 
 // ModifySNat modifies existing SNAT setup
 func (plugin *NatConfigurator) ModifySNat(oldSNat, newSNat *nat.Nat44SNat) error {
+	plugin.Log.Warn("SNAT MODIFY not implemented")
 	return nil
 }
 
 // DeleteSNat removes existing SNAT setup
 func (plugin *NatConfigurator) DeleteSNat(sNat *nat.Nat44SNat) error {
+	plugin.Log.Warn("SNAT DELETE not implemented")
 	return nil
 }
 
 // ConfigureDNat configures new DNAT setup
 func (plugin *NatConfigurator) ConfigureDNat(sNat *nat.Nat44DNat) error {
+	plugin.Log.Warn("DNAT CREATE not implemented")
 	return nil
 }
 
 // ModifyDNat modifies existing DNAT setup
 func (plugin *NatConfigurator) ModifyDNat(oldSNat, newSNat *nat.Nat44DNat) error {
+	plugin.Log.Warn("DNAT MODIFY not implemented")
 	return nil
 }
 
 // DeleteDNat removes existing DNAT setup
 func (plugin *NatConfigurator) DeleteDNat(sNat *nat.Nat44DNat) error {
+	plugin.Log.Warn("DNAT DELETE not implemented")
 	return nil
 }
 

@@ -36,7 +36,7 @@ import (
 )
 
 // BFDConfigurator runs in the background in its own goroutine where it watches for any changes
-// in the configuration of interfaces as modelled by the proto file "../model/bfd/bfd.proto"
+// in the configuration of BFDs as modelled by the proto file "../model/bfd/bfd.proto"
 // and stored in ETCD under the key "/vnf-agent/{agent-label}/vpp/config/v1/bfd/".
 // Updates received from the northbound API are compared with the VPP run-time configuration and differences
 // are applied through the VPP binary API.

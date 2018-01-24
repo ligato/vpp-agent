@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/persist"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
@@ -409,4 +410,19 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 	}
 
 	return wasErr
+}
+
+// ResyncNatGlobal writes NAT address pool config to the the empty VPP
+func (plugin *NatConfigurator) ResyncNatGlobal(global *nat.Nat44Global) error {
+	return nil
+}
+
+// ResyncSNat writes NAT static mapping config to the the empty VPP
+func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) error {
+	return nil
+}
+
+// ResyncDNat writes NAT static mapping config to the the empty VPP
+func (plugin *NatConfigurator) ResyncDNat(dNatConf []*nat.Nat44DNat_DNatConfig) error {
+	return nil
 }

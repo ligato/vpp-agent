@@ -3,7 +3,7 @@ syntax = "proto3";
 package nat;
 
 /* NAT44 global config */
-message NatGlobal {
+message Nat44Global {
     bool forwarding = 1;                        /* Enable/disable forwarding */
     repeated string in = 2;                     /* Local network interfaces enabled for NAT44 */
     repeated string out = 3;                    /* External network interfaces enabled for NAT44 */
@@ -16,30 +16,37 @@ message NatGlobal {
 
 /* Many-to-one (SNAT) setup */
 message Nat44SNat {
-    // tbd
+    message SNatConfig {                        /* DNat configuration list */
+        string label = 1;                       /* unique identifier of the DNAT config */
+        //tbd
+    }
+    repeated SNatConfig snat_config = 1;
 }
 
 /* One-to-many (DNAT) setup */
 message Nat44DNat {
-    string label = 1;                            /* unique identifier of the static mapping */
-    uint32 vrfId = 2;                           /* VRF (table) ID */
-    bool SNatEnabled = 3;                       /* Enable/Disable SNat, enables 'twice-nat' for the mapping */
-   
-    message Mapping {
-        string externalInterface = 1;           /* external interface may be used together with IP addresses */ 
-        string externalIP = 2;                  /* external <address>/<port> (<address> only for address mapping) */  
-        message LocalIP {           
-            string localIP = 1;                 /* local <address>/<port> (<address> only for address mapping) */
-            uint32 probability = 2;             /* probability mode */ 
+    message DNatConfig {                        /* DNat configuration list */
+        string label = 1;                       /* unique identifier of the DNAT config */
+        uint32 vrfId = 2;                       /* VRF (table) ID */
+        bool SNatEnabled = 3;                   /* Enable/Disable SNat, enables 'twice-nat' for the mapping */
+    
+        message Mapping {
+            string externalInterface = 1;       /* external interface may be used together with IP addresses */ 
+            string externalIP = 2;              /* external <address>/<port> (<address> only for address mapping) */  
+            message LocalIP {           
+                string localIP = 1;             /* local <address>/<port> (<address> only for address mapping) */
+                uint32 probability = 2;         /* probability mode */ 
+            }   
+            repeated LocalIP local_ip = 3;      /* list of local IP addresses. If there is more than one entry, 
+                                                load ballancer is enabled */
+            enum Protocol {
+                TCP = 0;
+                UDP = 1;
+                ICMP = 2;                       /* ICMP is not permitted for load ballanced entries */
+            };
+            Protocol protocol = 4;              /* protocol used for static mapping */                                        
         }   
-        repeated LocalIP local_ip = 3;          /* list of local IP addresses. If there is more than one entry, 
-                                                   load ballancer is enabled */
-        enum Protocol {
-            TCP = 0;
-            UDP = 1;
-            ICMP = 2;                           /* ICMP is not permitted for load ballanced entries */
-        };
-        Protocol protocol = 4;                      /* protocol used for static mapping */                                        
-    }   
-    repeated Mapping mapping = 4;                                         
+        repeated Mapping mapping = 4;     
+    }      
+    repeated DNatConfig dnat_config = 1;                              
 }
