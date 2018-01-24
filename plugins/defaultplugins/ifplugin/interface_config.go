@@ -16,6 +16,7 @@
 //go:generate protoc --proto_path=../common/model/bfd --gogo_out=../common/model/bfd ../common/model/bfd/bfd.proto
 
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=../common/bin_api
