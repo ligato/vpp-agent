@@ -1,4 +1,4 @@
-# Release v1.1 (2017-01-22)
+# Release v1.1 (2018-01-22)
 
 ## Compatibility
 VPP version v18.04-rc0~33-gb59bd65
