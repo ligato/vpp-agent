@@ -1,4 +1,4 @@
-# Release v1.0.9 (2017-1-22)
+# Release v1.1 (2018-01-22)
 
 ## Compatibility
 VPP version v18.04-rc0~33-gb59bd65
@@ -39,7 +39,11 @@ cn-infra v1.0.8
 - fixed skip-resync parameter if defaultplugins.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
-- microservice and veth-interface related events are synchronized. 
+- microservice and veth-interface related events are synchronized.
+
+# Known Issues
+- VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
+- VPP-Agent might not properly handle initialization across plugins (this is not occuring currently, but needs to be tested more)
 
 # Release v1.0.8 (2017-11-21)
 
@@ -124,7 +128,7 @@ VPP version v18.01-rc0~154-gfc1c612
    `HostIfName` field is optional. If it is not defined, the name in the host OS
    will be the same as the symbolic one - defined by `Name` field.
 
-# Release v1.0.5 (2017-9-26)
+# Release v1.0.5 (2017-09-26)
 
 ## Compatibility
 VPP version v17.10-rc0~334-gce41a5c
