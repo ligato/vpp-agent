@@ -31,9 +31,11 @@ RUN /bin/bash -c "\
         make bootstrap && \
         make dpdk-install-dev && \
         make vpp_configure_args_vpp='--disable-japi --disable-vom' build && \
-        make pkg-deb && \
+        make vpp_configure_args_vpp='--disable-japi --disable-vom' pkg-deb && \
         cd build-root && \
-        rm -rf .ccache; \
+        rm -rf .ccache \
+         build-vpp-native/vpp/vpp-api/vom \
+         build-vpp_debug-native/vpp/vpp-api/vom; \
     fi; \
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
 
