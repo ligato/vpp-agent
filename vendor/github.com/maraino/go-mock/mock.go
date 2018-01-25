@@ -267,7 +267,13 @@ func (m *Mock) When(name string, arguments ...interface{}) *MockFunction {
 //			return r.Int(0), r.String(1), r.Error(2)
 // 		}
 func (m *Mock) Called(arguments ...interface{}) *MockResult {
-	defer m.mutex.Unlock()
+	var timeout time.Duration
+	defer func() {
+		m.mutex.Unlock()
+		if timeout > 0 {
+			time.Sleep(timeout)
+		}
+	}()
 	m.mutex.Lock()
 
 	pc, _, _, ok := runtime.Caller(1)
@@ -312,9 +318,7 @@ func (m *Mock) Called(arguments ...interface{}) *MockResult {
 			}
 		}
 
-		if f.timeout > 0 {
-			time.Sleep(f.timeout)
-		}
+		timeout = f.timeout
 
 		if f.PanicValue != nil {
 			panic(f.PanicValue)

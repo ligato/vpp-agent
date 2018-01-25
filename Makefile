@@ -71,7 +71,6 @@ define test_cover_only
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
 	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
 	@echo "# merging coverage results"
-    @cd vendor/github.com/wadey/gocovmerge && go install -v
     @gocovmerge   \
             ${COVER_DIR}coverage_unit1.out \
             ${COVER_DIR}coverage_unit2.out \

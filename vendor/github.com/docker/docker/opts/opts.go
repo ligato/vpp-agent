@@ -177,7 +177,7 @@ func (opts *MapOpts) GetAll() map[string]string {
 }
 
 func (opts *MapOpts) String() string {
-	return fmt.Sprintf("%v", map[string]string((opts.values)))
+	return fmt.Sprintf("%v", opts.values)
 }
 
 // Type returns a string name for this Option type
@@ -259,6 +259,16 @@ func validateDomain(val string) (string, error) {
 func ValidateLabel(val string) (string, error) {
 	if strings.Count(val, "=") < 1 {
 		return "", fmt.Errorf("bad attribute format: %s", val)
+	}
+	return val, nil
+}
+
+// ValidateSingleGenericResource validates that a single entry in the
+// generic resource list is valid.
+// i.e 'GPU=UID1' is valid however 'GPU:UID1' or 'UID1' isn't
+func ValidateSingleGenericResource(val string) (string, error) {
+	if strings.Count(val, "=") < 1 {
+		return "", fmt.Errorf("invalid node-generic-resource format `%s` expected `name=value`", val)
 	}
 	return val, nil
 }

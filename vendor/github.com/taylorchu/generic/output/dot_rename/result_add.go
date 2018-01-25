@@ -1,4 +1,0 @@
-package GOPACKAGE
-
-func resultAdd() {
-}
