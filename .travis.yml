@@ -3,8 +3,10 @@ sudo: required
 language: go
 
 go_import_path: github.com/ligato/vpp-agent
+
 git:
-    depth: 5
+  depth: 1
+  submodules: false
 
 go:
   - 1.9.x
@@ -17,10 +19,10 @@ env:
   - GO_BUILD_TAGS=mockvpp
 
 before_install:
-  - go get -u -f github.com/alecthomas/gometalinter
+  - go get github.com/alecthomas/gometalinter
   - gometalinter --install
   - go get github.com/mattn/goveralls
-  - sudo apt-get update
+  - go get github.com/wadey/gocovmerge
   - sudo apt-get install npm && npm install -g markdown-link-check
 
 script:
