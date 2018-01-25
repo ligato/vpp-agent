@@ -24,6 +24,32 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 )
 
+// StaticMappingContext groups common fields required for static mapping
+type StaticMappingContext struct {
+	AddressOnly   bool
+	LocalIP       []byte
+	LocalPort     uint16
+	ExternalIP    []byte
+	ExternalPort  uint16
+	ExternalIfIdx uint32
+	Protocol      uint8
+}
+
+// StaticMappingLbContext groups common fields required for static mapping with load balancer
+type StaticMappingLbContext struct {
+	LocalIPs     []*LocalLbAddress
+	ExternalIP   []byte
+	ExternalPort uint16
+	Protocol     uint8
+}
+
+// LocalLbAddress represents one local IP and address entry
+type LocalLbAddress struct {
+	LocalIP     []byte
+	LocalPort   uint16
+	Probability uint8
+}
+
 // SetNat44Forwarding configures global forwarding setup for NAT44
 func SetNat44Forwarding(fwd bool, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// Nat44ForwardingEnableDisable time measurement
@@ -111,7 +137,7 @@ func AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool, log logg
 		}
 	}()
 
-	if err := handleNat44AdressPool(first, last, vrf, twiceNat, true, vppChan); err != nil {
+	if err := handleNat44AddressPool(first, last, vrf, twiceNat, true, vppChan); err != nil {
 		return nil
 	}
 
@@ -131,11 +157,104 @@ func DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool, log logg
 		}
 	}()
 
-	if err := handleNat44AdressPool(first, last, vrf, twiceNat, false, vppChan); err != nil {
+	if err := handleNat44AddressPool(first, last, vrf, twiceNat, false, vppChan); err != nil {
 		return nil
 	}
 
 	log.Debugf("Address pool %v - %v removed", first, last)
+
+	return nil
+}
+
+// AddNat44StaticMapping creates new static mapping entry (considering address only or both, address and port
+// depending on the context)
+func AddNat44StaticMapping(ctx *StaticMappingContext, vrfID uint32, twiceNat bool, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelStaticMapping time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if ctx.AddressOnly {
+		if err := handleNat44StaticMappingAddrOnly(ctx, vrfID, twiceNat, true, log, vppChan); err != nil {
+			return nil
+		}
+	} else {
+		if err := handleNat44StaticMapping(ctx, vrfID, twiceNat, true, log, vppChan); err != nil {
+			return nil
+		}
+	}
+
+	log.Debug("Static mapping added")
+
+	return nil
+}
+
+// DelNat44StaticMapping removes existing static mapping entry
+func DelNat44StaticMapping(ctx *StaticMappingContext, vrfID uint32, twiceNat bool, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelStaticMapping time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if ctx.AddressOnly {
+		if err := handleNat44StaticMappingAddrOnly(ctx, vrfID, twiceNat, false, log, vppChan); err != nil {
+			return nil
+		}
+	} else {
+		if err := handleNat44StaticMapping(ctx, vrfID, twiceNat, false, log, vppChan); err != nil {
+			return nil
+		}
+	}
+
+	log.Debug("Static mapping removed")
+
+	return nil
+}
+
+// AddNat44StaticMappingLb creates new static mapping entry with load balancer
+func AddNat44StaticMappingLb(ctx *StaticMappingLbContext, vrfID uint32, twiceNat bool, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelLbStaticMapping time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if err := handleNat44StaticMappingLb(ctx, vrfID, twiceNat, true, vppChan); err != nil {
+		return nil
+	}
+
+	log.Debug("Static mapping with load balancer added")
+
+	return nil
+}
+
+// DelNat44StaticMappingLb removes existing static mapping entry with load balancer
+func DelNat44StaticMappingLb(ctx *StaticMappingLbContext, vrfID uint32, twiceNat bool, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelLbStaticMapping time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if err := handleNat44StaticMappingLb(ctx, vrfID, twiceNat, false, vppChan); err != nil {
+		return nil
+	}
+
+	log.Debug("Static mapping with load balancer removed")
 
 	return nil
 }
@@ -159,20 +278,19 @@ func handleNat44Interface(ifName string, ifIdx uint32, isInside, isAdd bool, vpp
 	}
 
 	reply := &nat.Nat44InterfaceAddDelFeatureReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Enabling NAT for interface %v returned %d", ifName, reply.Retval)
+		return fmt.Errorf("enabling NAT for interface %v returned %d", ifName, reply.Retval)
 	}
 
 	return nil
 }
 
 // Calls VPP binary API to add/remove address pool
-func handleNat44AdressPool(first, last []byte, vrf uint32, twiceNat, isAdd bool, vppChan *govppapi.Channel) error {
+func handleNat44AddressPool(first, last []byte, vrf uint32, twiceNat, isAdd bool, vppChan *govppapi.Channel) error {
 	req := &nat.Nat44AddDelAddressRange{
 		FirstIPAddress: first,
 		LastIPAddress:  last,
@@ -192,13 +310,138 @@ func handleNat44AdressPool(first, last []byte, vrf uint32, twiceNat, isAdd bool,
 	}
 
 	reply := &nat.Nat44AddDelAddressRangeReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 
 	if 0 != reply.Retval {
-		return fmt.Errorf("Adding NAT44 address pool returned %d", reply.Retval)
+		return fmt.Errorf("adding NAT44 address pool returned %d", reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to add/remove static mapping
+func handleNat44StaticMapping(ctx *StaticMappingContext, vrf uint32, twiceNat, isAdd bool,
+	log logging.Logger, vppChan *govppapi.Channel) error {
+	log.Debugf("NAT44 static mapping adding: %v", isAdd)
+	req := &nat.Nat44AddDelStaticMapping{
+		LocalIPAddress:    ctx.LocalIP,
+		LocalPort:         ctx.LocalPort,
+		ExternalIPAddress: ctx.ExternalIP,
+		ExternalPort:      ctx.ExternalPort,
+		Protocol:          ctx.Protocol,
+		ExternalSwIfIndex: ctx.ExternalIfIdx,
+		VrfID:             vrf,
+		TwiceNat: func(twiceNat bool) uint8 {
+			if twiceNat {
+				return 1
+			}
+			return 0
+		}(twiceNat),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(isAdd),
+	}
+
+	log.Warnf("addronly %v, localIP/port %v/%v, ext IP/Port %v/%v, proto %v, extIface %v, vrf %v, twiceNat %v, isAdd %v",
+		req.AddrOnly, req.LocalIPAddress, req.LocalPort, req.ExternalIPAddress, req.ExternalPort, req.Protocol, req.ExternalSwIfIndex,
+		req.VrfID, req.TwiceNat, req.IsAdd)
+
+	reply := &nat.Nat44AddDelStaticMappingReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("adding NAT44 static mapping (address only) returned %d", reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to add/remove static mapping (address only)
+func handleNat44StaticMappingAddrOnly(ctx *StaticMappingContext, vrf uint32, twiceNat, isAdd bool, log logging.Logger,
+	vppChan *govppapi.Channel) error {
+	log.Debugf("NAT44 static mapping (address only) adding: %v", isAdd)
+	req := &nat.Nat44AddDelStaticMapping{
+		AddrOnly:          1,
+		LocalIPAddress:    ctx.LocalIP,
+		ExternalIPAddress: ctx.ExternalIP,
+		Protocol:          ctx.Protocol,
+		ExternalSwIfIndex: ctx.ExternalIfIdx,
+		VrfID:             vrf,
+		TwiceNat: func(twiceNat bool) uint8 {
+			if twiceNat {
+				return 1
+			}
+			return 0
+		}(twiceNat),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(isAdd),
+	}
+
+	reply := &nat.Nat44AddDelStaticMappingReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("adding NAT44 static mapping (address only) returned %d", reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to add/remove static mapping with load balancer
+func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, vrf uint32, twiceNat, isAdd bool, vppChan *govppapi.Channel) error {
+	// Transform local IP/Ports
+	var localAddrPorts []nat.Nat44LbAddrPort
+	for _, ctxLocal := range ctx.LocalIPs {
+		localAddrPort := nat.Nat44LbAddrPort{
+			Addr:        ctxLocal.LocalIP,
+			Port:        ctxLocal.LocalPort,
+			Probability: ctxLocal.Probability,
+		}
+		localAddrPorts = append(localAddrPorts, localAddrPort)
+	}
+
+	req := &nat.Nat44AddDelLbStaticMapping{
+		Locals:       localAddrPorts,
+		LocalNum:     uint8(len(localAddrPorts)),
+		ExternalAddr: ctx.ExternalIP,
+		ExternalPort: ctx.ExternalPort,
+		Protocol:     ctx.Protocol,
+
+		VrfID: vrf,
+		TwiceNat: func(twiceNat bool) uint8 {
+			if twiceNat {
+				return 1
+			}
+			return 0
+		}(twiceNat),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(isAdd),
+	}
+
+	reply := &nat.Nat44AddDelLbStaticMappingReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("adding NAT44 static mapping with load ballancer returned %d", reply.Retval)
 	}
 
 	return nil

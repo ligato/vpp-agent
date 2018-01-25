@@ -228,7 +228,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			}
 		} else if snat {
 			// SNAT config
-			var value, prevValue nat.Nat44SNat
+			var value, prevValue nat.Nat44SNat_SNatConfig
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
@@ -241,7 +241,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			}
 		} else if dnat {
 			// DNAT config
-			var value, prevValue nat.Nat44DNat
+			var value, prevValue nat.Nat44DNat_DNatConfig
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
@@ -441,7 +441,7 @@ func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44
 }
 
 // dataChangeSNat propagates data change to the nat configurator
-func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.PutDel) error {
 	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -453,7 +453,7 @@ func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat,
 }
 
 // dataChangeDNat propagates data change to the nat configurator
-func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.PutDel) error {
 	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {

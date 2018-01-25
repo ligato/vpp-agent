@@ -121,8 +121,11 @@ type Plugin struct {
 	xcIndexes      idxvpp.NameToIdxRW
 
 	// NAT fields
-	natConfigurator *ifplugin.NatConfigurator
-	natIndices      idxvpp.NameToIdxRW
+	natConfigurator    *ifplugin.NatConfigurator
+	sNatIndices        idxvpp.NameToIdxRW
+	sNatMappingIndices idxvpp.NameToIdxRW
+	dNatIndices        idxvpp.NameToIdxRW
+	dNatMappingIndices idxvpp.NameToIdxRW
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
@@ -483,15 +486,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices
-	plugin.natIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "nat-all-indices", nil)
+	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
+	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
+	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
+	plugin.dNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-mapping-indices", nil)
 
 	plugin.natConfigurator = &ifplugin.NatConfigurator{
-		Log:         natLogger,
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
-		NatIndices:  plugin.natIndices,
-		NatIndexSeq: 1,
-		Stopwatch:   stopwatch,
+		Log:                natLogger,
+		GoVppmux:           plugin.GoVppmux,
+		SwIfIndexes:        plugin.swIfIndexes,
+		SNatIndices:        plugin.sNatIndices,
+		SNatMappingIndices: plugin.sNatMappingIndices,
+		DNatIndices:        plugin.dNatIndices,
+		DNatMappingIndices: plugin.dNatMappingIndices,
+		NatIndexSeq:        1,
+		Stopwatch:          stopwatch,
 	}
 	if err := plugin.natConfigurator.Init(); err != nil {
 		return err
