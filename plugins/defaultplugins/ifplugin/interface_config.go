@@ -16,6 +16,7 @@
 //go:generate protoc --proto_path=../common/model/bfd --gogo_out=../common/model/bfd ../common/model/bfd/bfd.proto
 
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=../common/bin_api
@@ -39,7 +40,6 @@ import (
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -171,7 +171,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, iface.Vrf, plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnelReply{}, plugin.Stopwatch))
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, measure.GetTimeLog(vpe.CreateLoopback{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, measure.GetTimeLog(interfaces.CreateLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		var exists bool
 		if ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name); !exists {
@@ -740,7 +740,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnel{}, plugin.Stopwatch))
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(vpe.DeleteLoopback{}, plugin.Stopwatch))
+		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.DeleteLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		return errors.New("it is not yet supported to remove (blacklist) physical interface")
 	case intf.InterfaceType_AF_PACKET_INTERFACE:

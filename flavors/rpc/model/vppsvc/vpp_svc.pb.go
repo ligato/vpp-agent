@@ -21,10 +21,10 @@ package vppsvc
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import interfaces "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-import l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-import l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
-import acl "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
+import interfaces "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+import l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+import l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+import acl "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 
 import (
 	context "golang.org/x/net/context"

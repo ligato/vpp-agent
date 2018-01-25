@@ -31,7 +31,7 @@
 
 [[override]]
   name = "git.fd.io/govpp.git"
-  revision = "35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3"
+  revision = "8ca20507d15703412c18b07d4f4ce6b4de989de6"
 
 [[constraint]]
   branch = "master"

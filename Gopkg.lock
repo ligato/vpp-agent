@@ -12,7 +12,7 @@
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "35fd2cc86d442dee6fa4c8adb46a6e4906a66ab3"
+  revision = "8ca20507d15703412c18b07d4f4ce6b4de989de6"
 
 [[projects]]
   branch = "master"
@@ -607,6 +607,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9908d5ce02d4443f404f3dd6c7da4e56cc86901e02aac3ca388601a413d40650"
+  inputs-digest = "c8c1ae0385946836a665c2579e67e60233c5fb9a260f890e90ababad3a129f58"
   solver-name = "gps-cdcl"
   solver-version = 1
