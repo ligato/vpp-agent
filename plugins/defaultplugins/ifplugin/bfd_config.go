@@ -19,12 +19,8 @@ package ifplugin
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
-
-	"strconv"
-
-	"strconv"
-	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"

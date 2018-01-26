@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
-	stn_api "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/bin_api/stn"
+	stn_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"

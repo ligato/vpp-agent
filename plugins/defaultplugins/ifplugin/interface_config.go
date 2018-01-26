@@ -55,7 +55,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/prometheus/common/log"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -133,7 +132,7 @@ func (plugin *InterfaceConfigurator) PropagateIfDetailsToStatus() error {
 
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
-			log.Debugf("Unregistered interface %v with ID %v found on vpp",
+			plugin.Log.Debugf("Unregistered interface %v with ID %v found on vpp",
 				string(bytes.Trim(msg.InterfaceName, "\x00")), msg.SwIfIndex)
 			// Do not register unknown interface here, cuz it may cause inconsistencies in the ifplugin.
 			// All new interfaces should be registered during configuration
