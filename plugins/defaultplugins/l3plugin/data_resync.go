@@ -15,11 +15,14 @@
 package l3plugin
 
 import (
+	"github.com/ligato/cn-infra/logging/measure"
+	l3ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
 )
 
-// Resync configures the empty VPP (overwrites the static route).
-func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) error {
+// Resync configures the VPP static routes.
+func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// Calculate and log route resync.
 	defer func() {
@@ -28,13 +31,59 @@ func (plugin *RouteConfigurator) Resync(staticRoutes []*l3.StaticRoutes_Route) e
 		}
 	}()
 
-	// TODO lookup vpp Route Configs
+	// Retrieve VPP route configuration
+	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.Log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
 
+	// Correlate VPP and NB configuration
+	for _, vppRoute := range vppRoutes {
+		// Look for the same route in the configuration
+		for _, nbRoute := range nbRoutes {
+			ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbRoute.OutgoingInterface)
+			if !found {
+				continue
+			}
+			if vppRoute.OutIface != ifIdx {
+				continue
+			}
+			if vppRoute.DstAddr.String() != nbRoute.DstIpAddr {
+				continue
+			}
+			if vppRoute.VrfID != nbRoute.VrfId {
+				continue
+			}
+			if vppRoute.Weight != nbRoute.Weight {
+				continue
+			}
+			if vppRoute.Preference != nbRoute.Preference {
+				continue
+			}
+			if vppRoute.NextHopAddr.String() != nbRoute.NextHopAddr {
+				continue
+			}
+			// Register existing routes
+			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+			plugin.RouteIndexes.RegisterName(routeID, plugin.RouteIndexSeq, nbRoute)
+			plugin.RouteIndexSeq++
+		}
+
+	}
+
+	// Add missing route configuration
 	var wasError error
-	if len(staticRoutes) > 0 {
-		for _, route := range staticRoutes {
-			// VRF ID is already validated at this point.
-			wasError = plugin.ConfigureRoute(route, string(route.VrfId))
+	if len(nbRoutes) > 0 {
+		for _, nbRoute := range nbRoutes {
+			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+			_, _, found := plugin.RouteIndexes.LookupIdx(routeID)
+			if !found {
+				// create new route if does not exist yet. VRF ID is already validated at this point.
+				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
+					plugin.Log.Error(err)
+					wasError = err
+				}
+			}
 		}
 	}
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
