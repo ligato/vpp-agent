@@ -414,6 +414,49 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 
 // ResyncNatGlobal writes NAT address pool config to the the empty VPP
 func (plugin *NatConfigurator) ResyncNatGlobal(global *nat.Nat44Global) error {
+
+	addresses, err := vppdump.Nat44AddressDump(plugin.Log, plugin.vppChan, nil)
+	if err != nil {
+		plugin.Log.Errorf("address dump: %v", err)
+	}
+	interfaces, err := vppdump.Nat44InterfaceDump(plugin.Log, plugin.vppChan, nil)
+	if err != nil {
+		plugin.Log.Errorf("iface dump: %v", err)
+	}
+	staticMappings, err := vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, nil)
+	if err != nil {
+		plugin.Log.Errorf("sm dump: %v", err)
+	}
+	lbStaticMappings, err := vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan, nil)
+	if err != nil {
+		plugin.Log.Errorf("lbsm dump: %v", err)
+	}
+
+	plugin.Log.Warn("Addresses:")
+	for i, address := range addresses {
+		plugin.Log.Warnf("%v: IP:%v, twice-nat:%v, vrf:%v", i, address.IPAddress, address.TwiceNat, address.VrfID)
+	}
+
+	plugin.Log.Warn("Interfaces:")
+	for i, iface := range interfaces {
+		plugin.Log.Warnf("%v: IfIdx:%v, inside:%v", i, iface.IfIdx, iface.IsInside)
+	}
+
+	plugin.Log.Warn("Static mappings:")
+	for i, staticMapping := range staticMappings {
+		plugin.Log.Warnf("%v: lcIP:%v:%v, exIP:%v:%v, exIdx:%v, proto:%v, addrOnly:%v, twice-nat:%v, vrf:%v ", i, staticMapping.LocalIPs[0].LocalIP, staticMapping.LocalIPs[0].LocalPort, staticMapping.ExternalIP,
+			staticMapping.ExternalPort, staticMapping.ExternalIfIdx, staticMapping.Protocol, staticMapping.AddressOnly, staticMapping.TwiceNat, staticMapping.VrfID)
+	}
+
+	plugin.Log.Warn("LB-Static mappings:")
+	for i, lbStaticMapping := range lbStaticMappings {
+		plugin.Log.Warnf("%v: exIP:%v:%v, exIdx:%v, proto:%v, addrOnly:%v, twice-nat:%v, vrf:%v ", i, lbStaticMapping.ExternalIP,
+			lbStaticMapping.ExternalPort, lbStaticMapping.ExternalIfIdx, lbStaticMapping.Protocol, lbStaticMapping.AddressOnly, lbStaticMapping.TwiceNat, lbStaticMapping.VrfID)
+		for _, local := range lbStaticMapping.LocalIPs {
+			plugin.Log.Warnf("	IP:%v:%v, prob.:%v", local.LocalIP, local.LocalPort, local.Probability)
+		}
+	}
+
 	return nil
 }
 

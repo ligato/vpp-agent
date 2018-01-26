@@ -36,16 +36,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
-// Num protocol representation
-const (
-	// ICMP proto
-	ICMP uint8 = 1
-	// TCP proto
-	TCP uint8 = 6
-	// UDP proto
-	UDP uint8 = 17
-)
-
 // NatConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of NAT address pools and static entries with or without a load ballance,
 // as modelled by the proto file "../common/model/nat/nat.proto"
@@ -754,14 +744,14 @@ func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP, log loggin
 // returns num representation of provided protocol value
 func getProtocol(protocol nat.Nat44DNat_DNatConfig_Mapping_Protocol, log logging.Logger) (proto uint8) {
 	if protocol == nat.Nat44DNat_DNatConfig_Mapping_TCP {
-		proto = TCP
+		proto = vppcalls.TCP
 	} else if protocol == nat.Nat44DNat_DNatConfig_Mapping_UDP {
-		proto = UDP
+		proto = vppcalls.UDP
 	} else if protocol == nat.Nat44DNat_DNatConfig_Mapping_ICMP {
-		proto = ICMP
+		proto = vppcalls.ICMP
 	} else {
 		log.Warnf("Unknown protocol %v, defaulting to TCP", protocol)
-		proto = TCP
+		proto = vppcalls.TCP
 	}
 	return
 }

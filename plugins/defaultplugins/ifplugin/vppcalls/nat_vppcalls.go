@@ -24,6 +24,16 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 )
 
+// Num protocol representation
+const (
+	// ICMP proto
+	ICMP uint8 = 1
+	// TCP proto
+	TCP uint8 = 6
+	// UDP proto
+	UDP uint8 = 17
+)
+
 // StaticMappingContext groups common fields required for static mapping
 type StaticMappingContext struct {
 	AddressOnly   bool
