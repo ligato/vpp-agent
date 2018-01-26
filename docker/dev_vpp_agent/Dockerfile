@@ -34,11 +34,11 @@ RUN /bin/bash -c "\
         make vpp_configure_args_vpp='--disable-japi --disable-vom' pkg-deb && \
         cd build-root && \
         rm -rf .ccache \
-         build-vpp-native/vpp/vpp-api/vom \
-         build-vpp_debug-native/vpp/vpp-api/vom; \
+          build-vpp-native/vpp/vpp-api/vom \
+          build-vpp_debug-native/vpp/vpp-api/vom && \
+        ln -s /opt/vpp-agent/dev/vpp/build-root/install-vpp_debug-native/vpp/bin/vpp /usr/bin/vpp_debug; \
     fi; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb; \
-    ln -s /opt/vpp-agent/dev/vpp/build-root/install-vpp_debug-native/vpp/bin/vpp /usr/bin/vpp_debug"
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
 # install Go
 ENV GOLANG_VERSION 1.9.3
