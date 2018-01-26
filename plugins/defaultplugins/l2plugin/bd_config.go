@@ -183,7 +183,7 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 		// Update interfaces.
 		toSet, toUnset := plugin.calculateIfaceDiff(newBdConfig.Interfaces, oldBdConfig.Interfaces)
 		vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig, bdidx, toUnset, plugin.SwIfIndices, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(vpe.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
+			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
 		vppcalls.SetInterfacesToBridgeDomain(newBdConfig, bdidx, toSet, plugin.SwIfIndices, plugin.Log,
 			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
 
