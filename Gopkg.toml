@@ -24,12 +24,12 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = [
+    "git.fd.io/govpp.git/cmd/binapi-generator",
+    "github.com/ungerik/pkgreflect"
+]
 
 [[constraint]]
-  branch = "master"
-  name = "git.fd.io/govpp.git"
-
-[[override]]
   name = "git.fd.io/govpp.git"
   revision = "8ca20507d15703412c18b07d4f4ce6b4de989de6"
 
@@ -58,10 +58,6 @@
   version = "1.6.1"
 
 [[constraint]]
-  name = "github.com/ligato/cn-infra"
-  version = "1.0.8"
-
-[[override]]
   name = "github.com/ligato/cn-infra"
   revision = "a52923bfaa17ce9072674451c7754e938cc21d15"
 

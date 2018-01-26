@@ -9,12 +9,12 @@ COVER_DIR=/tmp/
 # generate go structures from proto files
 define generate_sources
 	$(call install_generators)
-	@echo "# installing generic"
-	@cd vendor/github.com/taylorchu/generic/cmd/generic/ && go install -v
-	@cd vendor/github.com/ungerik/pkgreflect/ && go install -v
-	@echo "# installing gomock"
-	@cd vendor/github.com/golang/mock/gomock && go install -v
-	@cd vendor/github.com/golang/mock/mockgen && go install -v
+#	@cd vendor/github.com/taylorchu/generic/cmd/generic && go install
+	@echo "# installing pkgreflect"
+	@cd vendor/github.com/ungerik/pkgreflect && go install
+#	@echo "# installing gomock"
+#	@cd vendor/github.com/golang/mock/gomock && go install
+#	@cd vendor/github.com/golang/mock/mockgen && go install
 	@echo "# generating sources"
 	@cd plugins/linuxplugin && go generate
 	@cd plugins/defaultplugins/aclplugin && go generate
