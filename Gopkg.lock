@@ -9,6 +9,7 @@
     "adapter/mock/binapi",
     "adapter/vppapiclient",
     "api",
+    "cmd/binapi-generator",
     "core",
     "core/bin_api/vpe"
   ]
@@ -43,6 +44,12 @@
   ]
   revision = "3b1b38866a79f06deddf0487d5c27ba0697ccd65"
   version = "v1.15.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/bennyscetbun/jsongo"
+  packages = ["."]
+  revision = "a97f4e906f8da60776250125ca8531adfd8ec44f"
 
 [[projects]]
   branch = "master"
@@ -462,6 +469,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ungerik/pkgreflect"
+  packages = ["."]
+  revision = "bfeb2a93186329a0bb03885bea902e86842f633d"
+
+[[projects]]
+  branch = "master"
   name = "github.com/unrolled/render"
   packages = ["."]
   revision = "65450fb6b2d3595beca39f969c411db8f8d5c806"
@@ -607,6 +620,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c8c1ae0385946836a665c2579e67e60233c5fb9a260f890e90ababad3a129f58"
+  inputs-digest = "eaaba2aae28f5cee15862e27f479f65b20d1e4fec9ea3a49ef44790253caefaa"
   solver-name = "gps-cdcl"
   solver-version = 1
