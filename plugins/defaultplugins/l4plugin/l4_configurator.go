@@ -90,15 +90,14 @@ func (plugin *L4Configurator) ConfigureL4FeatureFlag(features *l4.L4Features) er
 		plugin.l4ftEnabled = true
 		plugin.Log.Infof("L4 features enabled")
 
-		plugin.resolveCachedNamespaces()
+		return plugin.resolveCachedNamespaces()
 
-	} else {
-		if err := vppcalls.DisableL4Features(plugin.Log, plugin.vppCh); err != nil {
-			return err
-		}
-		plugin.l4ftEnabled = false
-		plugin.Log.Infof("L4 features disabled")
 	}
+	if err := vppcalls.DisableL4Features(plugin.Log, plugin.vppCh); err != nil {
+		return err
+	}
+	plugin.l4ftEnabled = false
+	plugin.Log.Infof("L4 features disabled")
 
 	return nil
 }
@@ -197,19 +196,21 @@ func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, inte
 	}
 
 	// Search mapping for unregistered application namespaces using the new interface
+	var wasErr error
 	appNamespaces := plugin.NotConfiguredAppNs.LookupNamesByInterface(interfaceName)
 	if len(appNamespaces) > 0 {
 		plugin.Log.Debugf("Found %v app namespaces for interface %v", len(appNamespaces), interfaceName)
 		for _, appNamespace := range appNamespaces {
 			if err := plugin.configureAppNamespace(appNamespace, interfaceIndex); err != nil {
-				return err
+				plugin.Log.Error(err)
+				wasErr = err
 			}
 			// Remove from cache
 			plugin.NotConfiguredAppNs.UnregisterName(appNamespace.NamespaceId)
 		}
 	}
 
-	return nil
+	return wasErr
 }
 
 // ResolveDeletedInterface looks for application namespace this interface is assigned to and removes
@@ -253,10 +254,11 @@ func (plugin *L4Configurator) configureAppNamespace(ns *l4.AppNamespaces_AppName
 // 		- the required interface was missing
 //      - the L4 features were disabled
 // Namespaces skipped due to the second case are configured here
-func (plugin *L4Configurator) resolveCachedNamespaces() {
+func (plugin *L4Configurator) resolveCachedNamespaces() error {
 	plugin.Log.Info("Configuring cached namespaces after L4 features were enabled")
 
 	// Scan all registered indexes in mapping for un-configured application namespaces
+	var wasErr error
 	for _, name := range plugin.NotConfiguredAppNs.ListNames() {
 		_, ns, found := plugin.NotConfiguredAppNs.LookupIdx(name)
 		if !found {
@@ -270,8 +272,14 @@ func (plugin *L4Configurator) resolveCachedNamespaces() {
 			continue
 		}
 
-		plugin.configureAppNamespace(ns, ifIdx)
-		// AppNamespace was configured, remove from cache
-		plugin.NotConfiguredAppNs.UnregisterName(ns.NamespaceId)
+		if err := plugin.configureAppNamespace(ns, ifIdx); err != nil {
+			plugin.Log.Error(err)
+			wasErr = err
+		} else {
+			// AppNamespace was configured, remove from cache
+			plugin.NotConfiguredAppNs.UnregisterName(ns.NamespaceId)
+		}
 	}
+
+	return wasErr
 }
