@@ -37,7 +37,8 @@ RUN /bin/bash -c "\
          build-vpp-native/vpp/vpp-api/vom \
          build-vpp_debug-native/vpp/vpp-api/vom; \
     fi; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb; \
+    ln -s /opt/vpp-agent/dev/vpp/build-root/install-vpp_debug-native/vpp/bin/vpp /usr/local/bin/vpp_debug"
 
 # install Go
 ENV GOLANG_VERSION 1.9.3
