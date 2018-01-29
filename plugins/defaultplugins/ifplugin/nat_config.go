@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -290,9 +291,13 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 		plugin.DNatMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 		plugin.NatIndexSeq++
 
-		plugin.Log.Debugf("DNAT lb-mapping configured (ID %v)", mappingIdentifier)
-
+		plugin.Log.Debugf("DNAT lb-mapping configured (ID: %v)", mappingIdentifier)
 	}
+
+	// Register DNAT configuration
+	plugin.DNatIndices.RegisterName(dNat.Label, plugin.NatIndexSeq, nil)
+	plugin.NatIndexSeq++
+	plugin.Log.Debugf("DNAT configuration registered (label: %v)", dNat.Label)
 
 	plugin.Log.Infof("DNAT %v configuration done", dNat.Label)
 
@@ -348,9 +353,33 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 		plugin.Log.Debugf("DNAT lb-mapping un-configured (ID %v)", mappingIdentifier)
 	}
 
+	// Unregister DNAT configuration
+	plugin.DNatIndices.UnregisterName(dNat.Label)
+	plugin.Log.Debugf("DNAT configuration unregistered (label: %v)", dNat.Label)
+
 	plugin.Log.Infof("DNAT %v removal done", dNat.Label)
 
 	return nil
+}
+
+// DumpAddressPools returns a list of all configured NAT address pools
+func (plugin *NatConfigurator) DumpAddressPools() ([]*vppdump.Nat44AddressPool, error) {
+	return vppdump.Nat44AddressDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
+}
+
+// DumpInterfaces returns a list of all enabled interfaces
+func (plugin *NatConfigurator) DumpInterfaces() ([]*vppdump.Nat44Interface, error) {
+	return vppdump.Nat44InterfaceDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
+}
+
+// DumpStaticMapping returns a list of static mappings
+func (plugin *NatConfigurator) DumpStaticMapping() ([]*vppdump.Nat44StaticMappingEntry, error) {
+	return vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
+}
+
+// DumpStaticMapping returns a list of static mappings with load balancer
+func (plugin *NatConfigurator) DumpLbStaticMapping() ([]*vppdump.Nat44StaticMappingEntry, error) {
+	return vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
 }
 
 // enables set of interfaces as inside/outside in NAT

@@ -291,3 +291,34 @@ func Nat44InterfaceDump(log logging.Logger, vppChan *govppapi.Channel, timeLog m
 
 	return
 }
+
+// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
+func Nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (isEnabled bool, err error) {
+	// Nat44ForwardingIsEnabled time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &bin_api.Nat44ForwardingIsEnabled{}
+
+	msg := &bin_api.Nat44ForwardingIsEnabledReply{}
+	replyErr := vppChan.SendRequest(req).ReceiveReply(msg)
+	if replyErr != nil {
+		err = fmt.Errorf("failed to dump forwarding: %v", replyErr)
+		return
+	}
+
+	isEnabled = func(enabled uint8) bool {
+		if enabled == 1 {
+			return true
+		}
+		return false
+	}(msg.Enabled)
+
+	log.Debug("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
+
+	return
+}
