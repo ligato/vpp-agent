@@ -132,9 +132,11 @@ func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.Br
 		bdIdx, meta, exists := bdi.mapping.LookupIdx(bdName)
 		if exists && meta != nil {
 			bd = bdi.castMetadata(meta)
-			for _, iface := range bd.Interfaces {
-				if iface.Name == ifName {
-					return bdIdx, bd, iface.BridgedVirtualInterface, true
+			if bd != nil {
+				for _, iface := range bd.Interfaces {
+					if iface.Name == ifName {
+						return bdIdx, bd, iface.BridgedVirtualInterface, true
+					}
 				}
 			}
 		}

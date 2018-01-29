@@ -137,7 +137,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 	}
 
 	// Register created bridge domain.
-	plugin.BdIndices.RegisterName(bdConfig.Name, bdIdx, nil)
+	plugin.BdIndices.RegisterName(bdConfig.Name, bdIdx, bdConfig)
 	plugin.Log.WithFields(logging.Fields{"Name": bdConfig.Name, "Index": bdIdx}).Debug("Bridge domain registered.")
 
 	// Push to bridge domain state.
