@@ -212,8 +212,6 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 	plugin.bfdSessionsIndexes.UnregisterName(bfdInput.Interface)
 	plugin.Log.Debugf("BFD session with interface %v unregistered", bfdInput.Interface)
 
-	plugin.Log.Printf("BFD session for interface %v removed ", bfdInput.Interface)
-
 	return nil
 }
 
