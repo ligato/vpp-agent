@@ -377,7 +377,7 @@ func (plugin *NatConfigurator) DumpStaticMapping() ([]*vppdump.Nat44StaticMappin
 	return vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
 }
 
-// DumpStaticMapping returns a list of static mappings with load balancer
+// DumpLbStaticMapping returns a list of static mappings with load balancer
 func (plugin *NatConfigurator) DumpLbStaticMapping() ([]*vppdump.Nat44StaticMappingEntry, error) {
 	return vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
 }
