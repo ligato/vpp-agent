@@ -498,7 +498,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 		// Look for interface
 		ifName, _, found := plugin.SwIfIndexes.LookupName(vppIface.IfIdx)
 		if !found {
-			plugin.Log.Warnf("NAT44 interface dump: interface %v not found in the mapping")
+			plugin.Log.Warnf("NAT44 interface dump: interface %v not found in the mapping", vppIface.IfIdx)
 			continue
 		}
 		if vppIface.IsInside {

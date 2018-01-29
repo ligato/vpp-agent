@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 )
@@ -80,4 +81,16 @@ type API interface {
 
 	// DumpACL returns a list of all configured ACLs.
 	DumpACL() (acls []*acl.AccessLists_Acl, err error)
+
+	// DumpNat44AddressPool returns a list of all configured NAT address pools
+	DumpNat44AddressPool() ([]*vppdump.Nat44AddressPool, error)
+
+	// DumpNat44Interfaces returns a list of all enabled interfaces
+	DumpNat44Interfaces() ([]*vppdump.Nat44Interface, error)
+
+	// DumpNat44StaticMappings returns a list of static mappings
+	DumpNat44StaticMappings() ([]*vppdump.Nat44StaticMappingEntry, error)
+
+	// DumpNat44LbStaticMappings returns a list of static mappings with load balancer
+	DumpNat44LbStaticMappings() ([]*vppdump.Nat44StaticMappingEntry, error)
 }

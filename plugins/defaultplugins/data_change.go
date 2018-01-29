@@ -210,48 +210,44 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.Prefix()) {
-		// resolve nat config type
-		global, snat, dnat := nat.DeriveNATConfigType(key)
-		if global {
-			// Global NAT config
-			var value, prevValue nat.Nat44Global
-			if err := dataChng.GetValue(&value); err != nil {
+	} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+		// Global NAT config
+		var value, prevValue nat.Nat44Global
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeNatGlobal(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
-			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-				if err := plugin.dataChangeNatGlobal(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-					return false, err
-				}
-			} else {
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+		// SNAT config
+		var value, prevValue nat.Nat44SNat_SNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeSNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
-		} else if snat {
-			// SNAT config
-			var value, prevValue nat.Nat44SNat_SNatConfig
-			if err := dataChng.GetValue(&value); err != nil {
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+		// DNAT config
+		var value, prevValue nat.Nat44DNat_DNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeDNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
-			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-				if err := plugin.dataChangeSNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-					return false, err
-				}
-			} else {
-				return false, err
-			}
-		} else if dnat {
-			// DNAT config
-			var value, prevValue nat.Nat44DNat_DNatConfig
-			if err := dataChng.GetValue(&value); err != nil {
-				return false, err
-			}
-			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-				if err := plugin.dataChangeDNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-					return false, err
-				}
-			} else {
-				return false, err
-			}
+		} else {
+			return false, err
 		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!

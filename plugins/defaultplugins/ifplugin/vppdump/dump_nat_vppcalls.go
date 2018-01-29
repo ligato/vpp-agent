@@ -30,33 +30,33 @@ import (
 // Nat44AddressPool is a representation of single address used in NAT
 type Nat44AddressPool struct {
 	IPAddress string
-	TwiceNat bool
-	VrfID uint32
+	TwiceNat  bool
+	VrfID     uint32
 }
 
 // Nat44StaticMappingEntry represents single NAT44 mapping entry
 type Nat44StaticMappingEntry struct {
-	AddressOnly bool
-	LocalIPs []*LocalIPEntry // more than one if load balanced
-	ExternalIP string
-	ExternalPort uint32
+	AddressOnly   bool
+	LocalIPs      []*LocalIPEntry // more than one if load balanced
+	ExternalIP    string
+	ExternalPort  uint32
 	ExternalIfIdx uint32
-	Protocol nat.Nat44DNat_DNatConfig_Mapping_Protocol
-	OutToInOnly bool // rule match only out2in direction
-	TwiceNat bool
-	VrfID uint32
+	Protocol      nat.Nat44DNat_DNatConfig_Mapping_Protocol
+	OutToInOnly   bool // rule match only out2in direction
+	TwiceNat      bool
+	VrfID         uint32
 }
 
 // Nat44Interface is an interface with flag telling about whether it is inside or outside interface
 type Nat44Interface struct {
-	IfIdx uint32
+	IfIdx    uint32
 	IsInside bool
 }
 
 // LocalIPEntry is a single Local IP/Port value with probability
 type LocalIPEntry struct {
-	LocalIP string
-	LocalPort uint32
+	LocalIP     string
+	LocalPort   uint32
 	Probability uint32
 }
 
@@ -100,7 +100,7 @@ func Nat44AddressDump(log logging.Logger, vppChan *govppapi.Channel, timeLog mea
 		})
 	}
 
-	log.Debug("NAT44 address pool dump complete, found %d entries", len(addresses))
+	log.Debugf("NAT44 address pool dump complete, found %d entries", len(addresses))
 
 	return
 }
@@ -115,8 +115,8 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 		}
 	}()
 
-	var lcIpAddress net.IP
-	var exIpAddress net.IP
+	var lcIPAddress net.IP
+	var exIPAddress net.IP
 
 	req := &bin_api.Nat44StaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
@@ -132,8 +132,8 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 			break
 		}
 		var locals []*LocalIPEntry
-		lcIpAddress = msg.LocalIPAddress
-		exIpAddress = msg.ExternalIPAddress
+		lcIPAddress = msg.LocalIPAddress
+		exIPAddress = msg.ExternalIPAddress
 
 		entries = append(entries, &Nat44StaticMappingEntry{
 			AddressOnly: func(addrOnly uint8) bool {
@@ -142,12 +142,12 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 				}
 				return false
 			}(msg.AddrOnly),
-			LocalIPs: append(locals, &LocalIPEntry{	// single-value
-				LocalIP: lcIpAddress.To4().String(),
+			LocalIPs: append(locals, &LocalIPEntry{ // single-value
+				LocalIP:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
-			ExternalIP: exIpAddress.To4().String(),
-			ExternalPort: uint32(msg.ExternalPort),
+			ExternalIP:    exIPAddress.To4().String(),
+			ExternalPort:  uint32(msg.ExternalPort),
 			ExternalIfIdx: msg.ExternalSwIfIndex,
 			Protocol: func(protocol uint8) nat.Nat44DNat_DNatConfig_Mapping_Protocol {
 				if protocol == vppcalls.TCP {
@@ -156,10 +156,9 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 					return nat.Nat44DNat_DNatConfig_Mapping_UDP
 				} else if protocol == vppcalls.ICMP {
 					return nat.Nat44DNat_DNatConfig_Mapping_ICMP
-				} else {
-					log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
-					return 0
 				}
+				log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
+				return 0
 			}(msg.Protocol),
 			TwiceNat: func(twiceNat uint8) bool {
 				if twiceNat == 1 {
@@ -171,7 +170,7 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 		})
 	}
 
-	log.Debug("NAT44 static mapping dump complete, found %d entries", len(entries))
+	log.Debugf("NAT44 static mapping dump complete, found %d entries", len(entries))
 
 	return
 }
@@ -186,7 +185,7 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 		}
 	}()
 
-	var exIpAddress net.IP
+	var exIPAddress net.IP
 
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
@@ -208,16 +207,17 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 		for _, localIPVal := range msg.Locals {
 			localIP = localIPVal.Addr
 			locals = append(locals, &LocalIPEntry{
-				LocalIP: localIP.To4().String(),
-				LocalPort: uint32(localIPVal.Port),
+				LocalIP:     localIP.To4().String(),
+				LocalPort:   uint32(localIPVal.Port),
 				Probability: uint32(localIPVal.Probability),
 			})
 		}
+		exIPAddress = msg.ExternalAddr
 
 		entries = append(entries, &Nat44StaticMappingEntry{
-			AddressOnly: false,
-			LocalIPs: locals,
-			ExternalIP: exIpAddress.To4().String(),
+			AddressOnly:  false,
+			LocalIPs:     locals,
+			ExternalIP:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			Protocol: func(protocol uint8) nat.Nat44DNat_DNatConfig_Mapping_Protocol {
 				if protocol == vppcalls.TCP {
@@ -226,10 +226,9 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 					return nat.Nat44DNat_DNatConfig_Mapping_UDP
 				} else if protocol == vppcalls.ICMP {
 					return nat.Nat44DNat_DNatConfig_Mapping_ICMP
-				} else {
-					log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
-					return 0
 				}
+				log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
+				return 0
 			}(msg.Protocol),
 			TwiceNat: func(twiceNat uint8) bool {
 				if twiceNat == 1 {
@@ -247,7 +246,7 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 		})
 	}
 
-	log.Debug("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
+	log.Debugf("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
 
 	return
 }
@@ -287,12 +286,12 @@ func Nat44InterfaceDump(log logging.Logger, vppChan *govppapi.Channel, timeLog m
 		})
 	}
 
-	log.Debug("NAT44 interface dump complete, found %d entries", len(interfaces))
+	log.Debugf("NAT44 interface dump complete, found %d entries", len(interfaces))
 
 	return
 }
 
-// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
+// Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
 func Nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (isEnabled bool, err error) {
 	// Nat44ForwardingIsEnabled time measurement
 	start := time.Now()
@@ -318,7 +317,7 @@ func Nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, tim
 		return false
 	}(msg.Enabled)
 
-	log.Debug("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
+	log.Debugf("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
 
 	return
 }

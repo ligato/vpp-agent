@@ -24,17 +24,18 @@ const (
 	// natPrefix
 	prefix = "vpp/config/v1/nat/"
 	// globalConfigPrefix is relative prefix for global config
-	globalConfigPrefix = prefix + vrfPlaceholder + "/global/"
+	globalConfigPrefix = prefix + "/global/"
 	// sNatPrefix is relative prefix for SNAT setup
-	sNatPrefix = prefix + vrfPlaceholder + "/snat/"
+	sNatPrefix = prefix + "/snat/"
 	// dNatPrefix is relative prefix for DNAT setup
-	dNatPrefix = prefix + vrfPlaceholder + "/dnat/"
+	dNatPrefix = prefix + "/dnat/"
+	// globalConfigKeyTemplate is prefix for global config with vrf placeholder
+	globalConfigKeyTemplate = prefix + "/global/" + vrfPlaceholder
+	// sNatKeyTemplate is prefix for SNAT setup with vrf placeholder
+	sNatKeyTemplate = prefix + "/snat/" + vrfPlaceholder
+	// dNatKeyTemplate is prefix for DNAT setup with vrf placeholder
+	dNatKeyTemplate = prefix + "/dnat/" + vrfPlaceholder
 )
-
-// Prefix returns the common prefix for NAT configuration
-func Prefix() string {
-	return prefix
-}
 
 // GlobalConfigPrefix returns the prefix used in ETCD to store NAT global config
 func GlobalConfigPrefix() string {
@@ -42,8 +43,8 @@ func GlobalConfigPrefix() string {
 }
 
 // GlobalConfigKey returns the key used in ETCD to store NAT global config
-func GlobalConfigKey() string {
-	return globalConfigPrefix + "config"
+func GlobalConfigKey(vrf string) string {
+	return strings.Replace(globalConfigKeyTemplate, vrfPlaceholder, vrf, 1)
 }
 
 // SNatPrefix returns the prefix used in ETCD to store SNAT config
@@ -53,7 +54,7 @@ func SNatPrefix() string {
 
 // SNatKey returns the key used in ETCD to store SNAT config
 func SNatKey(vrf string, label string) string {
-	return strings.Replace(sNatPrefix, vrfPlaceholder, vrf, 1) + label
+	return strings.Replace(sNatKeyTemplate, vrfPlaceholder, vrf, 1) + label
 }
 
 // DNatPrefix returns the prefix used in ETCD to store NAT DNAT config
@@ -63,17 +64,5 @@ func DNatPrefix() string {
 
 // DNatKey returns the key used in ETCD to store DNAT config
 func DNatKey(vrf string, label string) string {
-	return strings.Replace(dNatPrefix, vrfPlaceholder, vrf, 1) + label
-}
-
-// DeriveNATConfigType resolves NAT configuration type using provided key
-func DeriveNATConfigType(key string) (global, snat, dnat bool) {
-	if strings.Contains(key, "/global/") {
-		global = true
-	} else if strings.Contains(key, "/snat/") {
-		snat = true
-	} else if strings.Contains(key, "/dnat/") {
-		dnat = true
-	}
-	return
+	return strings.Replace(dNatKeyTemplate, vrfPlaceholder, vrf, 1) + label
 }

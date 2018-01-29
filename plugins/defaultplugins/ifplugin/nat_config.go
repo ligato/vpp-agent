@@ -193,10 +193,10 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 	// added/removed
 	if oldConfig.VrfId == newConfig.VrfId {
 		toAdd, toRemove := diffAddressPools(oldConfig.AddressPool, newConfig.AddressPool)
-		if err := plugin.addAddressPool(toAdd, newConfig.VrfId); err != nil {
+		if err := plugin.deleteAddressPool(toRemove, newConfig.VrfId); err != nil {
 			return err
 		}
-		if err := plugin.deleteAddressPool(toRemove, newConfig.VrfId); err != nil {
+		if err := plugin.addAddressPool(toAdd, newConfig.VrfId); err != nil {
 			return err
 		}
 	} else {
@@ -596,8 +596,8 @@ func (plugin *NatConfigurator) handleStaticMapping(externalIP string, exIfName s
 		}
 		// Parse external IP address
 		exIPAddrByte = net.ParseIP(exIPAddr).To4()
-		if lcIPAddrByte == nil {
-			return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", lcIPAddr)
+		if exIPAddrByte == nil {
+			return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", exIPAddr)
 		}
 	}
 

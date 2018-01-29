@@ -214,6 +214,8 @@ func main() {
 			createSNat(db)
 		case "-dnat":
 			createDNat(db)
+		case "-ddnat":
+			deleteDNat(db)
 		default:
 			usage()
 		}
@@ -1166,11 +1168,11 @@ func setNatGlobalConfig(db keyval.ProtoBroker) {
 
 	log.Println(natGlobal)
 
-	db.Put(nat.GlobalConfigKey(), natGlobal)
+	db.Put(nat.GlobalConfigKey(strconv.Itoa(int(0))), natGlobal)
 }
 
 func deleteNatGlobalConfig(db keyval.ProtoBroker) {
-	db.Delete(nat.GlobalConfigKey())
+	db.Delete(nat.GlobalConfigKey(strconv.Itoa(int(0))))
 }
 
 func createSNat(db keyval.ProtoBroker) {
@@ -1184,12 +1186,46 @@ func createSNat(db keyval.ProtoBroker) {
 }
 
 func createDNat(db keyval.ProtoBroker) {
+	var localIPs []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP
+	localIP := &nat.Nat44DNat_DNatConfig_Mapping_LocalIP{
+		LocalIP:     "172.124.0.2/24",
+		Probability: 40,
+	}
+	localIPs = append(localIPs, localIP)
+	localIP = &nat.Nat44DNat_DNatConfig_Mapping_LocalIP{
+		LocalIP:     "172.125.10.5/24",
+		Probability: 40,
+	}
+	localIPs = append(localIPs, localIP)
+
+	var mapping []*nat.Nat44DNat_DNatConfig_Mapping
+	entry := &nat.Nat44DNat_DNatConfig_Mapping{
+		//ExternalInterface: "tap1",
+		ExternalIP: "192.168.0.1/24",
+		LocalIp:    localIPs,
+		Protocol:   1,
+	}
+	mapping = append(mapping, entry)
+
 	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: "pool1",
-		VrfId: 0,
+		Label:       "dnat1",
+		VrfId:       0,
+		SNatEnabled: false,
+		Mapping:     mapping,
 	}
 
 	log.Println(dNat)
 
 	db.Put(nat.DNatKey(strconv.Itoa(int(dNat.VrfId)), dNat.Label), dNat)
+}
+
+func deleteDNat(db keyval.ProtoBroker) {
+	dNat := &nat.Nat44DNat_DNatConfig{
+		Label: "dnat1",
+		VrfId: 0,
+	}
+
+	log.Println(dNat)
+
+	db.Delete(nat.DNatKey(strconv.Itoa(int(dNat.VrfId)), dNat.Label))
 }

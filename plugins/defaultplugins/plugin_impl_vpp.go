@@ -33,6 +33,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
@@ -246,6 +247,26 @@ func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
 // DumpACL returns a list of all configured ACL entires
 func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	return plugin.aclConfigurator.DumpACL()
+}
+
+// DumpNat44AddressPool returns a list of all configured NAT address pools
+func (plugin *Plugin) DumpNat44AddressPool() ([]*vppdump.Nat44AddressPool, error) {
+	return plugin.natConfigurator.DumpAddressPools()
+}
+
+// DumpNat44Interfaces returns a list of all enabled interfaces
+func (plugin *Plugin) DumpNat44Interfaces() ([]*vppdump.Nat44Interface, error) {
+	return plugin.natConfigurator.DumpInterfaces()
+}
+
+// DumpNat44StaticMappings returns a list of static mappings
+func (plugin *Plugin) DumpNat44StaticMappings() ([]*vppdump.Nat44StaticMappingEntry, error) {
+	return plugin.natConfigurator.DumpStaticMapping()
+}
+
+// DumpNat44LbStaticMappings returns a list of static mappings with load balancer
+func (plugin *Plugin) DumpNat44LbStaticMappings() ([]*vppdump.Nat44StaticMappingEntry, error) {
+	return plugin.natConfigurator.DumpLbStaticMapping()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
