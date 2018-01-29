@@ -107,15 +107,10 @@ func TestVppUpdateBridgeDomain(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(ctx.MockChannel.Msgs).To(HaveLen(2))
-
-	//delete msg
-	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
-	Expect(ok).To(BeTrue())
-	Expect(msg).To(Equal(deleteTestDataOutBd))
+	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 
 	//add msg
-	msg, ok = ctx.MockChannel.Msgs[1].(*l2ba.BridgeDomainAddDel)
+	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(updateTestDataOutBd))
 }

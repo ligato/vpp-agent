@@ -163,7 +163,7 @@ func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.Br
 		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
 		name, _, found := plugin.swIfIndexes.LookupName(swIfaceDetails.SwIfIndex)
 		if !found {
-			plugin.Log.Debugf("Interface name for index %v not found for bridge domain status", swIfaceDetails)
+			plugin.Log.Debugf("Interface name with index %v not found for bridge domain status", swIfaceDetails.SwIfIndex)
 			bdIfaceState.Name = "unknown"
 		} else {
 			bdIfaceState.Name = name
