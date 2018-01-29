@@ -33,6 +33,7 @@ package ifplugin
 import (
 	"bytes"
 	"errors"
+	"strings"
 
 	"time"
 
@@ -55,8 +56,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
-
-const dummyMode = -1
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of interfaces as modelled by the proto file "../model/interfaces/interfaces.proto"
@@ -83,8 +82,6 @@ type InterfaceConfigurator struct {
 	vppCh *govppapi.Channel
 
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
-
-	resyncDoneOnce bool
 }
 
 // Init members (channels...) and start go routines
@@ -116,8 +113,8 @@ func (plugin *InterfaceConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
-// LookupVPPInterfaces looks up all VPP interfaces and saves their name-to-index mapping and state information.
-func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
+// PropagateIfDetailsToStatus looks up all VPP interfaces
+func (plugin *InterfaceConfigurator) PropagateIfDetailsToStatus() error {
 	start := time.Now()
 	req := &interfaces.SwInterfaceDump{}
 	reqCtx := plugin.vppCh.SendMultiRequest(req)
@@ -133,17 +130,16 @@ func (plugin *InterfaceConfigurator) LookupVPPInterfaces() error {
 			return err
 		}
 
-		// store the name-to-index mapping if it does not exist yet
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
-			ifName := string(bytes.Trim(msg.InterfaceName, "\x00"))
-			plugin.Log.WithFields(logging.Fields{"ifName": ifName, "swIfIndex": msg.SwIfIndex}).
-				Debug("Register VPP interface name mapping.")
-
-			plugin.swIfIndexes.RegisterName(ifName, msg.SwIfIndex, nil)
+			plugin.Log.Debugf("Unregistered interface %v with ID %v found on vpp",
+				string(bytes.Trim(msg.InterfaceName, "\x00")), msg.SwIfIndex)
+			// Do not register unknown interface here, cuz it may cause inconsistencies in the ifplugin.
+			// All new interfaces should be registered during configuration
+			continue
 		}
 
-		// propagate interface state information
+		// Propagate interface state information to notification channel.
 		plugin.notifChan <- msg
 	}
 
@@ -192,7 +188,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	var errs []error
 
-	//rx mode
+	// rx mode
 	if err := plugin.configRxModeForInterface(iface, ifIdx); err != nil {
 		errs = append(errs, err)
 	}
@@ -266,7 +262,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	}
 
 	// load interface state data for newly added interface (no way to filter by swIfIndex, need to dump all of them)
-	plugin.LookupVPPInterfaces()
+	plugin.PropagateIfDetailsToStatus()
 
 	l.Info("Interface configuration done")
 
@@ -309,7 +305,7 @@ func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interf
 }
 
 /**
-Call concrete vpp API method for setting rx-mode
+Call specific vpp API method for setting rx-mode
 */
 func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings) error {
 	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.Log, plugin.vppCh,
@@ -595,12 +591,9 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 	newRxSettings := newIntf.RxModeSettings
 	if oldRxSettings != newRxSettings {
 		var oldRxMode intf.RxModeType
-		if oldRxSettings == nil {
-			oldRxMode = dummyMode
-		} else {
+		if oldRxSettings != nil {
 			oldRxMode = oldRxSettings.RxMode
 		}
-
 		if newRxSettings != nil {
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:
@@ -712,7 +705,12 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	plugin.deleteContainerIPAddress(oldConfig, ifIdx)
 
-	// let's try to do following even if previously error occurred
+	for i, oldIP := range oldConfig.IpAddresses {
+		if strings.HasPrefix(oldIP, "fe80") {
+			// todo skip link local addresses (possible workaround for af_packet)
+			oldConfig.IpAddresses = append(oldConfig.IpAddresses[:i], oldConfig.IpAddresses[i+1:]...)
+		}
+	}
 	oldAddrs, err := addrs.StrAddrsToStruct(oldConfig.IpAddresses)
 	if err != nil {
 		plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
@@ -720,7 +718,6 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		return err
 	}
 	for _, oldAddr := range oldAddrs {
-		plugin.Log.WithField("addr", oldAddr).Info("Ip removed")
 		err := vppcalls.DelInterfaceIP(ifIdx, oldAddr, plugin.Log, plugin.vppCh,
 			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddressReply{}, plugin.Stopwatch))
 		if nil != err {
@@ -810,19 +807,19 @@ func (plugin *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.
 }
 
 func (plugin *InterfaceConfigurator) addContainerIPAddress(iface *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIpv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
+	addr, isIPv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
 	if err != nil {
 		return err
 	}
-	return vppcalls.AddContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+	return vppcalls.AddContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
 		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
 }
 
 func (plugin *InterfaceConfigurator) deleteContainerIPAddress(oldConfig *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIpv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
+	addr, isIPv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
 	if err != nil {
 		return nil
 	}
-	return vppcalls.DelContainerIP(ifIdx, addr, isIpv6, plugin.Log, plugin.vppCh,
+	return vppcalls.DelContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
 		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
 }
