@@ -150,9 +150,16 @@ func TestLookupByIfaceName(t *testing.T) {
 			bdName1: {ifaceCName},
 			bdName2: {ifaceDName}})
 
-	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
-	bdIndex.RegisterName(bridgeDomains[1].Name, idx1, bridgeDomains[1])
-	bdIndex.RegisterName(bridgeDomains[2].Name, idx2, bridgeDomains[2])
+	// Assign correct index to every bridge domain
+	for _, bridgeDomain := range bridgeDomains {
+		if bridgeDomain.Name == bdName0 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx0, bridgeDomain)
+		} else if bridgeDomain.Name == bdName1 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx1, bridgeDomain)
+		} else {
+			bdIndex.RegisterName(bridgeDomain.Name, idx2, bridgeDomain)
+		}
+	}
 
 	//return all bridge domains to which ifaceAName belongs
 	bdIdx, _, _, exists := bdIndex.LookupBdForInterface(ifaceAName)
