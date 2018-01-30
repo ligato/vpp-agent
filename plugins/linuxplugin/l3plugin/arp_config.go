@@ -46,15 +46,28 @@ type LinuxArpConfigurator struct {
 	ArpIdxSeq  uint32
 	arpIndexes l3idx.LinuxARPIndexRW
 
+	// Cache for non-configurable ARPs due to missing interface
+	arpIfCache map[string]*arpToInterface // map[arp_name]arp_to_interface
+
 	// Time measurement
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
+}
 
+// ArpToInterface is an object which stores ARP-to-interface pairs used in cache.
+// Field 'isAdd' marks whether the entry should be added or removed
+type arpToInterface struct {
+	arp    *l3.LinuxStaticArpEntries_ArpEntry
+	ifName string
+	isAdd  bool
 }
 
 // Init initializes ARP configurator and starts goroutines
 func (plugin *LinuxArpConfigurator) Init(arpIndexes l3idx.LinuxARPIndexRW) error {
 	plugin.Log.Debug("Initializing Linux ARP configurator")
 	plugin.arpIndexes = arpIndexes
+
+	// initialize arp-interface cache
+	plugin.arpIfCache = make(map[string]*arpToInterface)
 
 	return nil
 }
@@ -76,7 +89,13 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	// Find interface
 	idx, _, found := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
 	if !found {
-		return fmt.Errorf("cannot create ARP entry %v, interface %v not found", arpEntry.Name, arpEntry.Interface)
+		plugin.Log.Debugf("cannot create ARP entry %v due to missing interface %v, cached", arpEntry.Name, arpEntry.Interface)
+		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
+			arp:    arpEntry,
+			ifName: arpEntry.Interface,
+			isAdd:  true,
+		}
+		return nil
 	}
 	neigh.LinkIndex = int(idx)
 
@@ -116,7 +135,7 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	err = linuxcalls.AddArpEntry(arpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("add-arp-entry", plugin.Stopwatch))
 
 	// Register created ARP entry
-	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.ArpIdxSeq, nil)
+	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.ArpIdxSeq, arpEntry)
 	plugin.ArpIdxSeq++
 	plugin.Log.Debugf("ARP entry %v registered as %v", arpEntry.Name, arpIdentifier(neigh))
 
@@ -211,7 +230,12 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	// Find interface
 	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
 	if !foundIface {
-		return fmt.Errorf("cannot remove ARP entry %v, interface %v not found", arpEntry.Name, arpEntry.Interface)
+		plugin.Log.Debugf("cannot remove ARP entry %v due to missing interface %v, cached", arpEntry.Name, arpEntry.Interface)
+		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
+			arp:    arpEntry,
+			ifName: arpEntry.Interface,
+		}
+		return nil
 	}
 	neigh.LinkIndex = int(idx)
 
@@ -281,9 +305,94 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 		plugin.Log.WithField("interface", entry.LinkIndex).Debugf("Found new static linux ARP entry")
 		_, _, found := plugin.arpIndexes.LookupIdx(arpIdentifier(&entry))
 		if !found {
-			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, nil)
+			ifName, _, _ := plugin.LinuxIfIdx.LookupName(uint32(entry.LinkIndex))
+			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
+				// Register fields required to reconstruct ARP identifier
+				Interface: ifName,
+				IpAddr:    entry.IP.String(),
+				HwAddress: entry.HardwareAddr.String(),
+			})
 			plugin.ArpIdxSeq++
 			plugin.Log.Debugf("ARP entry registered as %v", arpIdentifier(&entry))
+		}
+	}
+
+	return nil
+}
+
+// ResolveCreatedInterface resolves a new linux interface from ARP perspective
+func (plugin *LinuxArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("Linux ARP configurator: resolve created interface %v", ifName)
+
+	// Look for ARP entries where the interface is used
+	var wasErr error
+	for arpName, arpIfPair := range plugin.arpIfCache {
+		if arpIfPair.ifName == ifName && arpIfPair.isAdd {
+			plugin.Log.Debugf("Cached ARP %v for interface %v created", arpName, ifName)
+			if err := plugin.ConfigureLinuxStaticArpEntry(arpIfPair.arp); err != nil {
+				plugin.Log.Error(err)
+				wasErr = err
+			}
+			delete(plugin.arpIfCache, arpName)
+		} else if arpIfPair.ifName == ifName && !arpIfPair.isAdd {
+			plugin.Log.Debugf("Cached ARP %v for interface %v removed", arpName, ifName)
+			if err := plugin.DeleteLinuxStaticArpEntry(arpIfPair.arp); err != nil {
+				plugin.Log.Error(err)
+				wasErr = err
+			}
+			delete(plugin.arpIfCache, arpName)
+		}
+	}
+
+	return wasErr
+}
+
+// ResolveDeletedInterface resolves removed linux interface from ARP perspective
+func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("Linux ARP configurator: resolve deleted interface %v", ifName)
+
+	// Read cache at first and remove obsolete entries
+	for arpName, arpToIface := range plugin.arpIfCache {
+		if arpToIface.ifName == ifName && !arpToIface.isAdd {
+			delete(plugin.arpIfCache, arpName)
+		}
+	}
+
+	// Read mapping of ARP entries and find all using removed interface
+	for _, arpName := range plugin.arpIndexes.GetMapping().ListNames() {
+		_, arp, found := plugin.arpIndexes.LookupIdx(arpName)
+		if !found {
+			// Should not happend but better to log it
+			plugin.Log.Warnf("ARP %v not found in the mapping", arpName)
+			continue
+		}
+		if arp == nil {
+			plugin.Log.Warnf("ARP %v - no data available", arpName)
+			continue
+		}
+		if arp.Interface == ifName {
+			// Unregister
+			ip := net.ParseIP(arp.IpAddr)
+			if ip == nil {
+				plugin.Log.Errorf("ARP %v - cannot unregister, invalid IP %v", arpName, arp.IpAddr)
+				continue
+			}
+			mac, err := net.ParseMAC(arp.HwAddress)
+			if err != nil {
+				plugin.Log.Errorf("ARP %v - cannot unregister, invalid MAC %v: %v", arpName, arp.HwAddress, err)
+				continue
+			}
+			plugin.arpIndexes.UnregisterName(arpIdentifier(&netlink.Neigh{
+				LinkIndex:    int(ifIdx),
+				IP:           ip,
+				HardwareAddr: mac,
+			}))
+			// Cache
+			plugin.arpIfCache[arpName] = &arpToInterface{
+				arp:    arp,
+				ifName: ifName,
+				isAdd:  true,
+			}
 		}
 	}
 

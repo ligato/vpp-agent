@@ -63,8 +63,10 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 		case linuxIdxEv := <-plugin.ifIndexesWatchChan:
 			if linuxIdxEv.IsDelete() {
+				plugin.arpConfigurator.ResolveDeletedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
 				plugin.routeConfigurator.ResolveDeletedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
 			} else {
+				plugin.arpConfigurator.ResolveCreatedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
 				plugin.routeConfigurator.ResolveCreatedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
 			}
 			linuxIdxEv.Done()
