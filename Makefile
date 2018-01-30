@@ -7,30 +7,34 @@ LDFLAGS	= -ldflags '-X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE
 
 COVER_DIR ?= /tmp/
 
-default: examples build
+# Build all
+build: cmd examples
 
-all: lint test install
+# Clean all
+clean: clean-cmd clean-examples
 
-clean-all: clean clean-examples
-
-build:
-	@echo "# building commands"
-	cd ./cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
-	cd ./cmd/vpp-agent-ctl 	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	cd ./cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-
+# Install commands
 install:
 	@echo "# installing commands"
 	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
 	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
 	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
-clean:
+# Build commands
+cmd:
+	@echo "# building commands"
+	cd cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
+	cd cmd/vpp-agent-ctl	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	cd cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+
+# Clean commands
+clean-cmd:
 	@echo "# cleaning binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
+# Build examples
 examples:
 	@echo "# building examples"
 	cd examples/govpp_call 			&& go build -v -i -tags="${GO_BUILD_TAGS}"
@@ -41,6 +45,7 @@ examples:
 	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 
+# Clean examples
 clean-examples:
 	@echo "# cleaning examples"
 	rm -f examples/govpp_call/govpp_call
@@ -63,12 +68,12 @@ test:
 	go test ./plugins/defaultplugins/l2plugin/vppdump
 	go test ./plugins/defaultplugins/ifplugin/vppcalls
 
+# Get coverage report tools
 get-covtools:
 	go get -v github.com/wadey/gocovmerge
-	go get -v github.com/mattn/goveralls
 
-# Run tests with coverage report
-test-cover:
+# Run coverage report
+test-cover: get-covtools
 	@echo "# running unit tests with coverage analysis"
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
@@ -97,7 +102,7 @@ test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
 	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
 
-# Get protobuf and binapi-generator
+# Get generator tools
 get-generators: dep-install
 	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 	go install -v ./vendor/github.com/ungerik/pkgreflect
@@ -125,36 +130,49 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
 
+# Get dependency manager tool
 get-dep:
 	go get -v github.com/golang/dep/cmd/dep
 
 # Install the project's dependencies
 dep-install: get-dep
+	@echo "# installing project's dependencies"
 	dep ensure
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
+	@echo "# updating all dependencies"
 	dep ensure -update
 
+# Get linter tools
 get-linters:
 	@echo "# installing linters"
 	go get -v github.com/alecthomas/gometalinter
 	gometalinter --install
 
-lint:
+# Run linters
+lint: get-linters
 	@echo "# running code analysis"
 	./scripts/static_analysis.sh golint vet
 
+# Format code
 format:
 	@echo "# formatting the code"
 	./scripts/gofmt.sh
 
+# Get link check tool
 get-linkcheck:
 	sudo apt-get install npm
 	npm install -g markdown-link-check
 
 # Validate links in markdown files
-check-links:
+check-links: get-linkcheck
 	./scripts/check_links.sh
 
-.PHONY: default all clean-all build install clean examples clean-examples test test-cover test-cover-html test-cover-xml get-generators generate get-dep dep-install dep-update get-linters lint format check-links
+.PHONY: build clean \
+	install cmd examples clean-examples test \
+	get-covtools test-cover test-cover-html test-cover-xml \
+	get-generators generate \
+	get-dep dep-install dep-update \
+	get-linters lint format \
+	get-linkcheck check-links

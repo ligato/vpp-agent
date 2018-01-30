@@ -19,9 +19,10 @@ env:
   - GO_BUILD_TAGS=mockvpp
 
 before_install:
+  - make get-linkcheck
   - make get-linters
   - make get-covtools
-  - make get-linkcheck
+  - go get -v github.com/mattn/goveralls
 
 script:
   - make check-links || true
