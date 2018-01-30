@@ -25,6 +25,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -33,7 +35,7 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 	return &DataChangeDSL{client,
 		map[string] /*name*/ *interfaces.Interfaces_Interface{},
 		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
-		map[uint32] /*id*/ *bfd.SingleHopBFD_Key{},
+		map[string] /*id*/ *bfd.SingleHopBFD_Key{},
 		map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction{},
 		map[string] /*name*/ *l2.BridgeDomains_BridgeDomain{},
 		map[string] /*key*/ *l2.FibTableEntries_FibTableEntry{},
@@ -42,10 +44,14 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *acl.AccessLists_Acl{},
 		map[string] /*value*/ *l4.L4Features{},
 		map[string] /*id*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 
 		map[string] /*name*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
-		map[uint32] /*id*/ *struct{}{},
+		map[string] /*id*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
 		map[string] /*key*/ *struct{}{},
@@ -54,6 +60,10 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *struct{}{},
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*key*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 	}
 }
 
@@ -63,7 +73,7 @@ type DataChangeDSL struct {
 	client            vppsvc.ChangeConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
 	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
-	txnPutBfdAuthKey  map[uint32] /*id*/ *bfd.SingleHopBFD_Key
+	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
 	txnPutBfdEcho     map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction
 	txnPutBD          map[string] /*name*/ *l2.BridgeDomains_BridgeDomain
 	txnPutBDFIB       map[string] /*key*/ *l2.FibTableEntries_FibTableEntry
@@ -72,10 +82,14 @@ type DataChangeDSL struct {
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutStn         map[string] /*value*/ *stn.StnRule
+	txnPutNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
 
 	txnDelIntf        map[string] /*name*/ *struct{}
 	txnDelBfdSession  map[string] /*name*/ *struct{}
-	txnDelBfdAuthKey  map[uint32] /*id*/ *struct{}
+	txnDelBfdAuthKey  map[string] /*id*/ *struct{}
 	txnDelBfdEcho     map[string] /*name*/ *struct{}
 	txnDelBD          map[string] /*name*/ *struct{}
 	txnDelBDFIB       map[string] /*key*/ *struct{}
@@ -84,6 +98,10 @@ type DataChangeDSL struct {
 	txnDelACL         map[string] /*name*/ *struct{}
 	txnDelL4Features  map[string] /*value*/ *l4.L4Features
 	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnDelArp         map[string] /*value*/ *l3.ArpTable_ArpTableEntry
+	txnDelStn         map[string] /*value*/ *stn.StnRule
+	txnDelNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnDelDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
 }
 
 // PutDSL allows to add or edit the configuration of delault plugins based on grpc requests.
@@ -110,7 +128,7 @@ func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugins.PutD
 
 // BfdAuthKeys creates or updates the bidirectional forwarding detection key.
 func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.PutDSL {
-	dsl.parent.txnPutBfdAuthKey[val.Id] = val
+	dsl.parent.txnPutBfdAuthKey[strconv.Itoa(int(val.Id))] = val
 	return dsl
 }
 
@@ -169,6 +187,30 @@ func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugi
 	return dsl
 }
 
+// Arp adds a request to create or update VPP L3 ARP entry.
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+	dsl.parent.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// StnRule adds a request to create or update STN rule.
+func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
+	dsl.parent.txnPutStn[val.RuleName] = val
+	return dsl
+}
+
+// NAT44Global adds a request to set global configuration for NAT44
+func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
+	dsl.parent.txnPutNatGlobal[strconv.Itoa(int(nat44.VrfId))] = nat44
+	return dsl
+}
+
+// NAT44DNat adds a request to create a new DNAT configuration
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
+	dsl.parent.txnPutDNat[nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label)] = nat44
+	return dsl
+}
+
 // Put enables creating Interface/BD...
 func (dsl *DataChangeDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl}
@@ -206,7 +248,7 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.Dele
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
 func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) defaultplugins.DeleteDSL {
-	dsl.parent.txnDelBfdAuthKey[AtoibfdKeyID] = nil
+	dsl.parent.txnDelBfdAuthKey[bfdKeyID] = nil
 	return dsl
 }
 
@@ -255,15 +297,39 @@ func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 
 // L4Features deletes request for the L4Features.
 func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
-	dsl.parent.txnPutL4Features["l4"] = nil
+	dsl.parent.txnDelL4Features["l4"] = nil
 
 	return dsl
 }
 
 // AppNamespace delets request for the Application Namespaces List.
 func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
-	dsl.parent.txnPutAppNs[id] = nil
+	dsl.parent.txnDelAppNs[id] = nil
 
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP entry.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelArp[l3.ArpEntryKey(ifaceName, ipAddr)] = nil
+	return dsl
+}
+
+// StnRule adds request to delete Stn rule.
+func (dsl *DeleteDSL) StnRule(name string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelStn[name] = nil
+	return dsl
+}
+
+// NAT44Global adds a request to remove global configuration for NAT44
+func (dsl *DeleteDSL) NAT44Global(vrf string) defaultplugins.DeleteDSL {
+	dsl.parent.txnPutNatGlobal[vrf] = nil
+	return dsl
+}
+
+// NAT44DNat adds a request to delete a new DNAT configuration
+func (dsl *DeleteDSL) NAT44DNat(vrf, label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnPutDNat[nat.DNatKey(vrf, label)] = nil
 	return dsl
 }
 

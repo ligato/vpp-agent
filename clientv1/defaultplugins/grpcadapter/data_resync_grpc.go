@@ -26,6 +26,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -34,7 +36,7 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 	return &DataResyncDSL{client,
 		map[string] /*name*/ *interfaces.Interfaces_Interface{},
 		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
-		map[uint32] /*id*/ *bfd.SingleHopBFD_Key{},
+		map[string] /*id*/ *bfd.SingleHopBFD_Key{},
 		map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction{},
 		map[string] /*name*/ *l2.BridgeDomains_BridgeDomain{},
 		map[string] /*key*/ *l2.FibTableEntries_FibTableEntry{},
@@ -43,6 +45,10 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*name*/ *acl.AccessLists_Acl{},
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 	}
 }
 
@@ -52,7 +58,7 @@ type DataResyncDSL struct {
 	client            vppsvc.ResyncConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
 	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
-	txnPutBfdAuthKey  map[uint32] /*id*/ *bfd.SingleHopBFD_Key
+	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
 	txnPutBfdEcho     map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction
 	txnPutBD          map[string] /*name*/ *l2.BridgeDomains_BridgeDomain
 	txnPutBDFIB       map[string] /*key*/ *l2.FibTableEntries_FibTableEntry
@@ -61,6 +67,10 @@ type DataResyncDSL struct {
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutStn         map[string] /*value*/ *stn.StnRule
+	txnPutNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
@@ -79,7 +89,7 @@ func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugi
 
 // BfdAuthKeys adds BFD key to the RESYNC request.
 func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
-	dsl.txnPutBfdAuthKey[val.Id] = val
+	dsl.txnPutBfdAuthKey[strconv.Itoa(int(val.Id))] = val
 
 	return dsl
 }
@@ -137,6 +147,30 @@ func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResy
 func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
 	dsl.txnPutAppNs[val.NamespaceId] = val
 
+	return dsl
+}
+
+// Arp adds VPP L3 ARP to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+	dsl.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// StnRule adds Stn rule to the RESYNC request.
+func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+	dsl.txnPutStn[val.RuleName] = val
+	return dsl
+}
+
+// NAT44Global adds a request to RESYNC global configuration for NAT44
+func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
+	dsl.txnPutNatGlobal[strconv.Itoa(int(nat44.VrfId))] = nat44
+	return dsl
+}
+
+// NAT44DNat adds a request to RESYNC a new DNAT configuration
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
+	dsl.txnPutDNat[nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label)] = nat44
 	return dsl
 }
 

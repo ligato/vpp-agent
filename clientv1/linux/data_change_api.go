@@ -22,6 +22,7 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
@@ -90,6 +91,10 @@ type PutDSL interface {
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update VPP Stn rule.
 	StnRule(stn *vpp_stn.StnRule) PutDSL
+	// NAT44Global adds a request to set global configuration for NAT44
+	NAT44Global(nat *nat.Nat44Global) PutDSL
+	// NAT44DNat adds a request to create a new DNAT configuration
+	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -117,7 +122,7 @@ type DeleteDSL interface {
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing VPP bidirectional
 	// forwarding detection key.
-	BfdAuthKeys(bfdKey uint32) DeleteDSL
+	BfdAuthKeys(bfdKey string) DeleteDSL
 	// BfdEchoFunction adds a request to delete an existing VPP bidirectional
 	// forwarding detection echo function.
 	BfdEchoFunction(bfdEchoName string) DeleteDSL
@@ -141,6 +146,10 @@ type DeleteDSL interface {
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// StnRule adds a request to delete an existing VPP Stn rule.
 	StnRule(ruleName string) DeleteDSL
+	// NAT44Global adds a request to remove global configuration for NAT44
+	NAT44Global(vrf string) DeleteDSL
+	// NAT44DNat adds a request to delete a new DNAT configuration
+	NAT44DNat(vrf, label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
