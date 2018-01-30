@@ -20,9 +20,8 @@ env:
 
 before_install:
   - make get-linters
-  - go get github.com/mattn/goveralls
-  - go get github.com/wadey/gocovmerge
-  - sudo apt-get install npm && npm install -g markdown-link-check
+  - make get-covtools
+  - make get-linkcheck
 
 script:
   - make check-links || true

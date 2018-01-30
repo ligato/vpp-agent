@@ -1,4 +1,4 @@
-VERSION	:= $(shell git describe --tags --dirty)
+VERSION	:= $(shell git describe --always --tags --dirty)
 COMMIT	:= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
@@ -15,31 +15,31 @@ clean-all: clean clean-examples
 
 build:
 	@echo "# building commands"
-	cd cmd/vpp-agent && go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
-	cd cmd/vpp-agent-ctl && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd ./cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
+	cd ./cmd/vpp-agent-ctl 	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	cd ./cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
 
 install:
 	@echo "# installing commands"
-	cd cmd/vpp-agent && go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	cd cmd/vpp-agent-ctl && go install -v -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl && go install -v -tags="${GO_BUILD_TAGS}"
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
 clean:
 	@echo "# cleaning binaries"
-	rm -f cmd/vpp-agent/vpp-agent
-	rm -f cmd/vpp-agent-ctl/vpp-agent-ctl
-	rm -f cmd/agentctl/agentctl
+	rm -f ./cmd/vpp-agent/vpp-agent
+	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
+	rm -f ./cmd/agentctl/agentctl
 
 examples:
 	@echo "# building examples"
-	cd examples/govpp_call && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_bd_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_iface_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_lookup && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/govpp_call 			&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_bd_cache 		&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_iface_cache 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_lookup 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 
 clean-examples:
 	@echo "# cleaning examples"
@@ -54,7 +54,7 @@ clean-examples:
 # Run tests
 test:
 	@echo "# running scenario tests"
-	go test -tags mockvpp ./tests/go/itest
+	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	@echo "# running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
@@ -63,10 +63,14 @@ test:
 	go test ./plugins/defaultplugins/l2plugin/vppdump
 	go test ./plugins/defaultplugins/ifplugin/vppcalls
 
+get-covtools:
+	go get -v github.com/wadey/gocovmerge
+	go get -v github.com/mattn/goveralls
+
 # Run tests with coverage report
 test-cover:
 	@echo "# running unit tests with coverage analysis"
-	go test -tags mockvpp -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out ./tests/go/itest
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
@@ -94,8 +98,8 @@ test-cover-xml: test-cover
 
 # Get protobuf and binapi-generator
 get-generators: dep-install
-	cd vendor/git.fd.io/govpp.git/cmd/binapi-generator && go install -v
-	cd vendor/github.com/ungerik/pkgreflect && go install -v
+	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	go install -v ./vendor/github.com/ungerik/pkgreflect
 
 # Generate sources
 generate: get-generators
@@ -121,7 +125,7 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
 
 get-dep:
-	go get github.com/golang/dep/cmd/dep
+	go get -v github.com/golang/dep/cmd/dep
 
 # Install the project's dependencies
 dep-install: get-dep
@@ -131,18 +135,12 @@ dep-install: get-dep
 dep-update: get-dep
 	dep ensure -update
 
-# Validate links in markdown files
-check-links:
-	npm install -g markdown-link-check
-	./scripts/check_links.sh
-
 get-linters:
 	@echo "# installing linters"
-	go get github.com/alecthomas/gometalinter
-	go get github.com/golang/lint/golint
-	go get github.com/golang/go/src/cmd/vet
+	go get -v github.com/alecthomas/gometalinter
+	gometalinter --install
 
-lint: get-linters
+lint:
 	@echo "# running code analysis"
 	./scripts/static_analysis.sh golint vet
 
@@ -150,4 +148,12 @@ format:
 	@echo "# formatting the code"
 	./scripts/gofmt.sh
 
-.PHONY: default all build install clean examples clean-examples test lint format get-generators test-cover test-cover-html test-cover-xml get-dep dep-install dep-update check_links
+get-linkcheck:
+	sudo apt-get install npm
+	npm install -g markdown-link-check
+
+# Validate links in markdown files
+check-links:
+	./scripts/check_links.sh
+
+.PHONY: default all clean-all build install clean examples clean-examples test test-cover test-cover-html test-cover-xml get-generators generate get-dep dep-install dep-update get-linters lint format check-links
