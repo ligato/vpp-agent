@@ -19,18 +19,16 @@ env:
   - GO_BUILD_TAGS=mockvpp
 
 before_install:
-  - go get github.com/alecthomas/gometalinter
-  - gometalinter --install
+  - make get-linters
   - go get github.com/mattn/goveralls
   - go get github.com/wadey/gocovmerge
   - sudo apt-get install npm && npm install -g markdown-link-check
 
 script:
-  - make check_links || true
+  - make check-links || true
   - make lint
   - make
   - make test-cover
-  - go test -tags mockvpp ./tests/go/itest
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

@@ -13,12 +13,6 @@ all: lint test install
 
 clean-all: clean clean-examples
 
-lint:
-	./scripts/static_analysis.sh golint vet
-
-format:
-	./scripts/gofmt.sh
-
 build:
 	@echo "# building commands"
 	cd cmd/vpp-agent && go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
@@ -57,7 +51,10 @@ clean-examples:
 	rm -f examples/localclient_linux/localclient_linux
 	rm -r examples/localclient_vpp/localclient_vpp
 
+# Run tests
 test:
+	@echo "# running scenario tests"
+	go test -tags mockvpp ./tests/go/itest
 	@echo "# running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
@@ -69,14 +66,16 @@ test:
 # Run tests with coverage report
 test-cover:
 	@echo "# running unit tests with coverage analysis"
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	go test -tags mockvpp -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out ./tests/go/itest
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
 	@echo "# merging coverage results"
-	@gocovmerge   \
+	gocovmerge \
+			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
 			${COVER_DIR}coverage_unit2.out \
 			${COVER_DIR}coverage_l2plugin_bdidx.out    > ${COVER_DIR}coverage.out \
@@ -94,36 +93,33 @@ test-cover-xml: test-cover
 	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
 
 # Get protobuf and binapi-generator
-get-generators:
-	go get github.com/gogo/protobuf
+get-generators: dep-install
 	cd vendor/git.fd.io/govpp.git/cmd/binapi-generator && go install -v
 	cd vendor/github.com/ungerik/pkgreflect && go install -v
 
 # Generate sources
 generate: get-generators
 	@echo "# generating sources"
-	@cd plugins/linuxplugin && go generate
-	@cd plugins/defaultplugins/aclplugin && go generate
-	@cd plugins/defaultplugins/ifplugin && go generate
-	@cd plugins/defaultplugins/l2plugin && go generate
-	@cd plugins/defaultplugins/l3plugin && go generate
-	@cd plugins/defaultplugins/l4plugin && go generate
-	@cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/session && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
-	@echo "# done"
+	cd plugins/linuxplugin && go generate
+	cd plugins/defaultplugins/aclplugin && go generate
+	cd plugins/defaultplugins/ifplugin && go generate
+	cd plugins/defaultplugins/l2plugin && go generate
+	cd plugins/defaultplugins/l3plugin && go generate
+	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
 
-# Get dep
 get-dep:
 	go get github.com/golang/dep/cmd/dep
 
@@ -136,8 +132,22 @@ dep-update: get-dep
 	dep ensure -update
 
 # Validate links in markdown files
-check_links:
+check-links:
 	npm install -g markdown-link-check
 	./scripts/check_links.sh
+
+get-linters:
+	@echo "# installing linters"
+	go get github.com/alecthomas/gometalinter
+	go get github.com/golang/lint/golint
+	go get github.com/golang/go/src/cmd/vet
+
+lint: get-linters
+	@echo "# running code analysis"
+	./scripts/static_analysis.sh golint vet
+
+format:
+	@echo "# formatting the code"
+	./scripts/gofmt.sh
 
 .PHONY: default all build install clean examples clean-examples test lint format get-generators test-cover test-cover-html test-cover-xml get-dep dep-install dep-update check_links
