@@ -82,10 +82,11 @@ test-cover:
 			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
 			${COVER_DIR}coverage_unit2.out \
-			${COVER_DIR}coverage_l2plugin_bdidx.out    > ${COVER_DIR}coverage.out \
-			${COVER_DIR}coverage_l2plugin_vppcalls.out > ${COVER_DIR}coverage.out \
-			${COVER_DIR}coverage_l2plugin_vppdump.out  > ${COVER_DIR}coverage.out \
-			${COVER_DIR}coverage_ifplugin_vppcalls.out > ${COVER_DIR}coverage.out
+			${COVER_DIR}coverage_l2plugin_bdidx.out \
+			${COVER_DIR}coverage_l2plugin_vppcalls.out \
+			${COVER_DIR}coverage_l2plugin_vppdump.out  \
+			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+		> ${COVER_DIR}coverage.out
 	@echo "# coverage data generated into ${COVER_DIR}coverage.out"
 
 test-cover-html: test-cover
