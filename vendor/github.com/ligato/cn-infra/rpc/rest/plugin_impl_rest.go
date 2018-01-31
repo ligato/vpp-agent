@@ -50,9 +50,9 @@ type Plugin struct {
 
 // Deps lists the dependencies of the Rest plugin.
 type Deps struct {
-	Log        logging.PluginLogger //inject
-	PluginName core.PluginName      //inject
-	config.PluginConfig             //inject
+	Log                 logging.PluginLogger //inject
+	PluginName          core.PluginName      //inject
+	config.PluginConfig                      //inject
 }
 
 // Init is the plugin entry point called by Agent Core
