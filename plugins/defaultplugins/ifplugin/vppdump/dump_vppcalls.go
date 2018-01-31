@@ -58,7 +58,6 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
-		log.Warnf("iface %v, idx %v", string(bytes.Trim(ifDetails.InterfaceName, "\x00")), ifDetails.SwIfIndex)
 		if stop {
 			break // Break from the loop.
 		}

@@ -332,8 +332,7 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	}
 
 	if res.SwIfIndex != swIndex {
-		return alAcls, 0, fmt.Errorf(fmt.Sprintf("Returned interface index %d does not match request",
-			res.SwIfIndex))
+		return alAcls, 0, fmt.Errorf("returned interface index %d does not match request", res.SwIfIndex)
 	}
 
 	for aidx := range res.Acls {
@@ -347,18 +346,11 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 	return alAcls, res.NInput, nil
 }
 
-func getIPRuleDetails(rule acl_api.ACLRule) (*acl.AccessLists_Acl_Rule, error) {
+func getIPRuleDetails(rule acl_api.ACLRule) (aclRule *acl.AccessLists_Acl_Rule, err error) {
 	// Resolve rule actions
 	actions := &acl.AccessLists_Acl_Rule_Actions{}
-	switch rule.IsPermit {
-	case 0:
-		actions.AclAction = acl.AclAction_DENY
-	case 1:
-		actions.AclAction = acl.AclAction_PERMIT
-	case 2:
-		actions.AclAction = acl.AclAction_REFLECT
-	default:
-		return nil, fmt.Errorf("invalid match rule %d", rule.IsPermit)
+	if actions.AclAction, err = resolveRuleAction(rule.IsPermit); err != nil {
+		return nil, err
 	}
 
 	// Resolve rule matches
@@ -372,18 +364,11 @@ func getIPRuleDetails(rule acl_api.ACLRule) (*acl.AccessLists_Acl_Rule, error) {
 	}, nil
 }
 
-func getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.AccessLists_Acl_Rule, error) {
+func getMACIPRuleDetails(rule acl_api.MacipACLRule) (aclRule *acl.AccessLists_Acl_Rule, err error) {
 	// Resolve rule actions
 	actions := &acl.AccessLists_Acl_Rule_Actions{}
-	switch rule.IsPermit {
-	case 0:
-		actions.AclAction = acl.AclAction_DENY
-	case 1:
-		actions.AclAction = acl.AclAction_PERMIT
-	case 2:
-		actions.AclAction = acl.AclAction_REFLECT
-	default:
-		return nil, fmt.Errorf("invalid match rule %d", rule.IsPermit)
+	if actions.AclAction, err = resolveRuleAction(rule.IsPermit); err != nil {
+		return nil, err
 	}
 
 	// Resolve rule matches
@@ -399,17 +384,17 @@ func getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.AccessLists_Acl_Rule, 
 
 //getIPACLDetails gets details for a given IP ACL from VPP and translates
 //them from the binary VPP API format into the ACL Plugin's NB format.
-func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (*acl.AccessLists_Acl, error) {
+func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
 	req := &acl_api.ACLDump{}
 	req.ACLIndex = uint32(idx)
 
 	reply := &acl_api.ACLDetails{}
-	err := vppChannel.SendRequest(req).ReceiveReply(reply)
+	err = vppChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return nil, err
 	}
 
-	ruleData := make([]*acl.AccessLists_Acl_Rule, 0)
+	var ruleData []*acl.AccessLists_Acl_Rule
 	for _, r := range reply.R {
 		rule := acl.AccessLists_Acl_Rule{}
 
@@ -420,15 +405,8 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (*acl.AccessLists
 		}
 
 		actions := acl.AccessLists_Acl_Rule_Actions{}
-		switch r.IsPermit {
-		case 0:
-			actions.AclAction = acl.AclAction_DENY
-		case 1:
-			actions.AclAction = acl.AclAction_PERMIT
-		case 2:
-			actions.AclAction = acl.AclAction_REFLECT
-		default:
-			return nil, fmt.Errorf("invalid match rule %d", r.IsPermit)
+		if actions.AclAction, err = resolveRuleAction(r.IsPermit); err != nil {
+			return nil, err
 		}
 
 		rule.Matches = &matches
@@ -444,9 +422,18 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (*acl.AccessLists
 func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRule {
 	ipRule := acl.AccessLists_Acl_Rule_Matches_IpRule{}
 
+	var srcIP, dstIP string
+	if r.IsIpv6 == 1 {
+		srcIP = net.IP(r.SrcIPAddr).To16().String()
+		dstIP = net.IP(r.DstIPAddr).To16().String()
+	} else {
+		srcIP = net.IP(r.SrcIPAddr[:4]).To4().String()
+		dstIP = net.IP(r.DstIPAddr[:4]).To4().String()
+	}
+
 	ip := acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
-		SourceNetwork:      fmt.Sprintf("%s/%d", net.IP(r.SrcIPAddr[:4]).To4().String(), r.SrcIPPrefixLen),
-		DestinationNetwork: fmt.Sprintf("%s/%d", net.IP(r.SrcIPAddr[:4]).To4().String(), r.DstIPPrefixLen),
+		SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
+		DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
 	}
 	ipRule.Ip = &ip
 
@@ -470,8 +457,14 @@ func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 }
 
 func getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.AccessLists_Acl_Rule_Matches_MacIpRule {
+	var srcAddr string
+	if rule.IsIpv6 == 1 {
+		srcAddr = net.IP(rule.SrcIPAddr).To16().String()
+	} else {
+		srcAddr = net.IP(rule.SrcIPAddr[:4]).To4().String()
+	}
 	return &acl.AccessLists_Acl_Rule_Matches_MacIpRule{
-		SourceAddress:        net.IP(rule.SrcIPAddr[:4]).To4().String(),
+		SourceAddress:        srcAddr,
 		SourceAddressPrefix:  uint32(rule.SrcIPPrefixLen),
 		SourceMacAddress:     string(rule.SrcMac),
 		SourceMacAddressMask: string(rule.SrcMacMask),
@@ -528,4 +521,18 @@ func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 		IcmpTypeRange: &typeRange,
 	}
 	return &icmp
+}
+
+// Returns rule action representation in model according to the vpp input
+func resolveRuleAction(isPermit uint8) (acl.AclAction, error) {
+	switch isPermit {
+	case 0:
+		return acl.AclAction_DENY, nil
+	case 1:
+		return acl.AclAction_PERMIT, nil
+	case 2:
+		return acl.AclAction_REFLECT, nil
+	default:
+		return acl.AclAction_DENY, fmt.Errorf("invalid match rule %d", isPermit)
+	}
 }
