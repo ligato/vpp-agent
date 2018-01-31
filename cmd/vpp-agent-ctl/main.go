@@ -201,7 +201,7 @@ func main() {
 		case "-dlrt":
 			delete(db, l32.StaticRouteKey("route1"))
 		case "-stna":
-			createStnRule(db, ifName1, "10.1.1.3/32")
+			createStnRule(db, ifName1, "10.1.1.3")
 		case "-stnd":
 			delete(db, stn.Key("rule1"))
 		default:
@@ -527,20 +527,20 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap4"
+	ifs.Interface[0].Name = "tap1"
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
 	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:41"
 	ifs.Interface[0].Mtu = 555
 	ifs.Interface[0].IpAddresses = make([]string, 1)
 	//ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[0].IpAddresses[0] = "192.168.2.8/24"
+	ifs.Interface[0].IpAddresses[0] = "192.168.2.9/24"
 	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
 	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
 	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
 	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap4"}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
 
 	log.Println(ifs)
 
@@ -1076,8 +1076,8 @@ func disableL4Features(db keyval.ProtoBroker) {
 func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 	stnRule := stn.StnRule{
 		RuleName:  "rule1",
-		IpAddress: ipAddress,
-		Interface: ifName,
+		IpAddress: ifName,
+		Interface: ipAddress,
 	}
 
 	log.Println(stnRule)

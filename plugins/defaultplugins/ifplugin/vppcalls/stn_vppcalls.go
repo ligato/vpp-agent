@@ -29,12 +29,12 @@ import (
 
 // StnRule represents stn rule entry
 type StnRule struct {
-	IPAddress net.IPNet
+	IPAddress net.IP
 	IfaceIdx  uint32
 }
 
 // AddStnRule calls StnAddDelRule bin API with IsAdd=1
-func AddStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func AddStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// StnAddDelRule time measurement
 	start := time.Now()
 	defer func() {
@@ -48,15 +48,15 @@ func AddStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govp
 	req.SwIfIndex = ifIdx
 	req.IsAdd = 1
 
-	v6, err := addrs.IsIPv6(addr.IP.String())
+	v6, err := addrs.IsIPv6(addr.String())
 	if err != nil {
 		return err
 	}
 	if v6 {
-		req.IPAddress = []byte(addr.IP.To16())
+		req.IPAddress = []byte(addr.To16())
 		req.IsIP4 = 0
 	} else {
-		req.IPAddress = []byte(addr.IP.To4())
+		req.IPAddress = []byte(addr.To4())
 		req.IsIP4 = 1
 	}
 
@@ -71,14 +71,14 @@ func AddStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govp
 	if 0 != reply.Retval {
 		return fmt.Errorf("stn rule adding returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("rule added.")
+	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule added.")
 
 	return nil
 
 }
 
 // DelStnRule calls StnAddDelRule bin API with IsAdd=00
-func DelStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
+func DelStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
 	// StnAddDelRuleReply time measurement
 	start := time.Now()
 	defer func() {
@@ -92,15 +92,15 @@ func DelStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govp
 	req.SwIfIndex = ifIdx
 	req.IsAdd = 0
 
-	v6, err := addrs.IsIPv6(addr.IP.String())
+	v6, err := addrs.IsIPv6(addr.String())
 	if err != nil {
 		return err
 	}
 	if v6 {
-		req.IPAddress = []byte(addr.IP.To16())
+		req.IPAddress = []byte(addr.To16())
 		req.IsIP4 = 0
 	} else {
-		req.IPAddress = []byte(addr.IP.To4())
+		req.IPAddress = []byte(addr.To4())
 		req.IsIP4 = 1
 	}
 
@@ -116,7 +116,7 @@ func DelStnRule(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *govp
 	if 0 != reply.Retval {
 		return fmt.Errorf("stn rule del returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("rule removed.")
+	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule removed.")
 
 	return nil
 }
@@ -147,7 +147,7 @@ func DumpStnRules(log logging.Logger, vppChan *govppapi.Channel, timeLog *measur
 		stnRules = append(stnRules, msg)
 	}
 
-	log.Warnf("%v configured STN rules found", len(stnRules))
+	log.Debugf("%v configured STN rules found", len(stnRules))
 
 	return stnRules, nil
 }
