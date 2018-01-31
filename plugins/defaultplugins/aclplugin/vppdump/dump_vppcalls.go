@@ -76,7 +76,7 @@ func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *go
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleData {
 		ACLs = append(ACLs, &ACLEntry{
-			Identifier: identifier,
+			Identifier: &identifier,
 			ACLDetails: &acl.AccessLists_Acl{
 				Rules:      rules,
 				Interfaces: interfaceData[identifier.ACLIndex],
@@ -89,9 +89,9 @@ func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *go
 
 // DumpACLRules returns all ruleData for every ACL
 func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (map[*ACLIdentifier][]*acl.AccessLists_Acl_Rule, error) {
+	timeLog measure.StopWatchEntry) (map[ACLIdentifier][]*acl.AccessLists_Acl_Rule, error) {
 	// rule map will be returned
-	rules := make(map[*ACLIdentifier][]*acl.AccessLists_Acl_Rule)
+	rules := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with IP ruleData
 	IPRuleACLs, err := DumpIPAcls(log, vppChannel, timeLog)
@@ -162,8 +162,9 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 
 	var interfaceData []*ACLToInterface
 
-	msg := &acl_api.ACLInterfaceListDump{}
-	msg.SwIfIndex = 0xffffffff // dump all
+	msg := &acl_api.ACLInterfaceListDump{
+		SwIfIndex: 0xffffffff, // dump all
+	}
 
 	req := vppChannel.SendMultiRequest(msg)
 
@@ -232,7 +233,7 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 
 // DumpIPAcls returns a list of all configured ACLs with IP-type ruleData.
 func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (map[*ACLIdentifier][]acl_api.ACLRule, error) {
+	timeLog measure.StopWatchEntry) (map[ACLIdentifier][]acl_api.ACLRule, error) {
 	// ACLDump time measurement
 	start := time.Now()
 	defer func() {
@@ -241,7 +242,7 @@ func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
 		}
 	}()
 
-	aclIPRules := make(map[*ACLIdentifier][]acl_api.ACLRule)
+	aclIPRules := make(map[ACLIdentifier][]acl_api.ACLRule)
 	var wasErr error
 
 	req := &acl_api.ACLDump{}
@@ -258,7 +259,7 @@ func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
 			break
 		}
 
-		identifier := &ACLIdentifier{
+		identifier := ACLIdentifier{
 			ACLIndex: msg.ACLIndex,
 			Tag:      string(bytes.Trim(msg.Tag, "\x00")),
 		}
@@ -271,7 +272,7 @@ func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
 
 // DumpMacIPAcls returns a list of all configured ACL with IPMAC-type ruleData.
 func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (map[*ACLIdentifier][]acl_api.MacipACLRule, error) {
+	timeLog measure.StopWatchEntry) (map[ACLIdentifier][]acl_api.MacipACLRule, error) {
 	// MacipACLDump time measurement
 	start := time.Now()
 	defer func() {
@@ -280,7 +281,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 		}
 	}()
 
-	aclMACIPRules := make(map[*ACLIdentifier][]acl_api.MacipACLRule)
+	aclMACIPRules := make(map[ACLIdentifier][]acl_api.MacipACLRule)
 	var wasErr error
 
 	req := &acl_api.MacipACLDump{}
@@ -297,7 +298,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 			break
 		}
 
-		identifier := &ACLIdentifier{
+		identifier := ACLIdentifier{
 			ACLIndex: msg.ACLIndex,
 			Tag:      string(bytes.Trim(msg.Tag, "\x00")),
 		}
@@ -444,8 +445,8 @@ func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 	ipRule := acl.AccessLists_Acl_Rule_Matches_IpRule{}
 
 	ip := acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
-		SourceNetwork:      fmt.Sprintf("%v/%d", decodeIPv4Address(r.SrcIPAddr), r.SrcIPPrefixLen),
-		DestinationNetwork: fmt.Sprintf("%s/%d", decodeIPv4Address(r.DstIPAddr), r.DstIPPrefixLen),
+		SourceNetwork:      fmt.Sprintf("%s/%d", net.IP(r.SrcIPAddr[:4]).To4().String(), r.SrcIPPrefixLen),
+		DestinationNetwork: fmt.Sprintf("%s/%d", net.IP(r.SrcIPAddr[:4]).To4().String(), r.DstIPPrefixLen),
 	}
 	ipRule.Ip = &ip
 
@@ -470,7 +471,7 @@ func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 
 func getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.AccessLists_Acl_Rule_Matches_MacIpRule {
 	return &acl.AccessLists_Acl_Rule_Matches_MacIpRule{
-		SourceAddress:        decodeIPv4Address(rule.SrcIPAddr),
+		SourceAddress:        net.IP(rule.SrcIPAddr[:4]).To4().String(),
 		SourceAddressPrefix:  uint32(rule.SrcIPPrefixLen),
 		SourceMacAddress:     string(rule.SrcMac),
 		SourceMacAddressMask: string(rule.SrcMacMask),
@@ -527,19 +528,4 @@ func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 		IcmpTypeRange: &typeRange,
 	}
 	return &icmp
-}
-
-// decodeIPv4Address converts first four elements of provided byte array to IPv4 address
-// as a string.
-func decodeIPv4Address(addr []byte) string {
-	var ipv4 []byte
-	for i, octet := range addr {
-		ipv4 = append(ipv4, octet)
-		if i >= 3 {
-			break
-		}
-	}
-	var IPv4Addr net.IP = ipv4
-
-	return IPv4Addr.To4().String()
 }
