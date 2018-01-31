@@ -147,7 +147,7 @@ func DumpStnRules(log logging.Logger, vppChan *govppapi.Channel, timeLog *measur
 		stnRules = append(stnRules, msg)
 	}
 
-	log.Warnf("%v configured STN rules found", len(stnRules))
+	log.Debugf("%v configured STN rules found", len(stnRules))
 
 	return stnRules, nil
 }
