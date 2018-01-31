@@ -15,17 +15,12 @@
 package l2plugin
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/idxvpp/persist"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	if_dump "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 )
@@ -46,81 +41,116 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		return err
 	}
 
-	// Read persistent mapping
-	persistent := nametoidx.NewNameToIdx(logrus.DefaultLogger(), core.PluginName("defaultvppplugins-l2plugin"), "bd resync corr", nil)
-	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.BdIndices.GetMapping(), persistent)
-	if err != nil {
-		return err
-	}
-
-	// todo
-	for _, name := range persistent.ListNames() {
-		idx, _, _ := persistent.LookupIdx(name)
-		plugin.Log.Warnf("persistent mapping entry %v %v", name, idx)
-	}
-
-	// Handle the case where persistent mapping is not available
+	// Correlate with NB config
 	var wasErr error
-	if len(persistent.ListNames()) == 0 && len(vppBDs) > 0 {
-		plugin.Log.Infof("Persisten mapping for bridge domains is empty (%v unknown bridge domains)", len(vppBDs))
-		// There is no way how to correlate NB and VPP configuration so remove all bridge domains from the VPP
-		for bdID, unknownVppBd := range vppBDs {
-			// Try to reconstruct bridge domain with interfaces
-			// todo: bridge domain dump returns no interfaces. It is possible to remove bridge domain to unsetting it,
-			// but it would be better to do so
-			bd := l2.BridgeDomains_BridgeDomain(unknownVppBd.BridgeDomains_BridgeDomain)
-			bd.Name = "unknownBD" + string(bdID)
-			plugin.BdIndices.RegisterName(bd.Name, bdID, nil)
-			wasErr = plugin.DeleteBridgeDomain(&bd)
+	for vppBDIdx, vppBD := range vppBDs {
+		// tag is bridge domain name (unique identifier)
+		tag := vppBD.Name
+		// Find NB bridge domain with the same name
+		nbBD := func(nbBDs []*l2.BridgeDomains_BridgeDomain) *l2.BridgeDomains_BridgeDomain {
+			for _, bd := range nbBDs {
+				if tag == bd.Name {
+					return bd
+				}
+			}
+			return nil
+		}(nbBDs)
+
+		// NB config does not exist, VPP bridge domain is obsolete
+		if nbBD == nil {
+			if err := plugin.deleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+				Name: tag,
+			}, vppBDIdx); err != nil {
+				plugin.Log.Error(err)
+				continue
+			}
+			plugin.Log.Debugf("RESYNC bridge domain: obsolete config %v (ID %v) removed", tag, vppBDIdx)
+		} else {
+			// Bridge domain exists, validate
+			valid, recreate := plugin.vppValidateBridgeDomainBVI(nbBD, &l2.BridgeDomains_BridgeDomain{
+				Name:                tag,
+				Learn:               vppBD.Learn,
+				Flood:               vppBD.Flood,
+				Forward:             vppBD.Forward,
+				UnknownUnicastFlood: vppBD.UnknownUnicastFlood,
+				ArpTermination:      vppBD.ArpTermination,
+				MacAge:              vppBD.MacAge,
+			})
+			if !valid {
+				plugin.Log.Errorf("RESYNC bridge domain: new config %v is invalid", nbBD.Name)
+				continue
+			}
+			if recreate {
+				// Internal bridge domain parameters changed, cannot be modified and will be recreated
+				if err := plugin.deleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+					Name: tag,
+				}, vppBDIdx); err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				if err := plugin.ConfigureBridgeDomain(nbBD); err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				plugin.Log.Debugf("RESYNC bridge domains: config %v recreated", nbBD.Name)
+				continue
+			}
+
+			// todo currently it is not possible to dump interfaces. In order to prevent BD removal, unset all available interfaces
+			// Dump all interfaces
+			interfaceMap, err := if_dump.DumpInterfaces(plugin.Log, plugin.vppChan, nil)
+			if err != nil {
+				plugin.Log.Error(err)
+				wasErr = err
+				continue
+			}
+			// Prepare a list of interface objects with proper name
+			var interfacesToUnset []*l2.BridgeDomains_BridgeDomain_Interfaces
+			for _, iface := range interfaceMap {
+				interfacesToUnset = append(interfacesToUnset, &l2.BridgeDomains_BridgeDomain_Interfaces{
+					Name: iface.Name,
+				})
+			}
+			// Remove interfaces from bridge domain. Attempt to unset interface which does not belong to the bridge domain
+			// does not cause an error
+			vppcalls.UnsetInterfacesFromBridgeDomain(nbBD, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
+				plugin.vppChan, nil)
+
+			// Set all new interfaces to the bridge domain
+			vppcalls.SetInterfacesToBridgeDomain(nbBD, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
+				plugin.vppChan, nil)
+
+			// todo VPP does not support ARP dump, they can be only added at this time
+			// Resolve new ARP entries
+			for _, arpEntry := range nbBD.ArpTerminationTable {
+				if err := vppcalls.VppAddArpTerminationTableEntry(vppBDIdx, arpEntry.PhysAddress, arpEntry.IpAddress,
+					plugin.Log, plugin.vppChan, nil); err != nil {
+					plugin.Log.Error(err)
+					wasErr = err
+				}
+			}
+
+			// Register bridge domain
+			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, nbBD)
+			plugin.BridgeDomainIDSeq++
+
+			plugin.Log.Debugf("RESYNC Bridge domain: config %v (ID %v) modified", tag, vppBDIdx)
 		}
-		// Configure NB
-		for _, nbBd := range nbBDs {
-			wasErr = plugin.ConfigureBridgeDomain(nbBd)
-		}
-		return wasErr
 	}
 
-	pluginID := core.PluginName("defaultvppplugins-l2plugin")
-
-	var wasError error
-
-	// todo: if the bridge domain dump is fixed, it is better to correlate existing bridge domains with NB config and
-	// do partial changes only
-	// Step 1: Delete existing vpp configuration (current ModifyBridgeDomain does it also... need to improve that first)
-	for vppIdx, vppBD := range vppBDs {
-		hackIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.Log, pluginID,
-			"hack_sw_if_indexes", ifaceidx.IndexMetadata))
-
-		// hack to reuse an existing binary call wrappers
-		hackBD := l2.BridgeDomains_BridgeDomain(vppBD.BridgeDomains_BridgeDomain)
-		for _, vppBDIface := range vppBD.Interfaces {
-			hackIfaceName := fmt.Sprintf("%d", vppBDIface.SwIfIndex)
-			hackIfIndexes.RegisterName(hackIfaceName, vppBDIface.SwIfIndex, nil)
-			hackBDIface := l2.BridgeDomains_BridgeDomain_Interfaces(vppBDIface.BridgeDomains_BridgeDomain_Interfaces)
-			hackBDIface.Name = hackIfaceName
-			hackBD.Interfaces = append(hackBD.Interfaces, &hackBDIface)
-		}
-
-		vppcalls.UnsetInterfacesFromBridgeDomain(&hackBD, vppIdx, hackBD.Interfaces,
-			hackIfIndexes, plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
-		err := plugin.deleteBridgeDomain(&hackBD, vppIdx)
-		// TODO check if it is ok to delete the initial BD
-		if err != nil {
-			wasError = err
+	// Configure new bridge domains
+	for _, newBD := range nbBDs {
+		_, _, found := plugin.BdIndices.LookupIdx(newBD.Name)
+		if !found {
+			if err := plugin.ConfigureBridgeDomain(newBD); err != nil {
+				plugin.Log.Error(err)
+				continue
+			}
+			plugin.Log.Debugf("RESYNC bridge domains: new config %v added", newBD.Name)
 		}
 	}
 
-	// Step 2: Create missing vpp configuration.
-	for _, nbBD := range nbBDs {
-		err := plugin.ConfigureBridgeDomain(nbBD)
-		if err != nil {
-			wasError = err
-		}
-	}
-
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs end. ", wasError)
-
-	return wasError
+	return wasErr
 }
 
 // Resync writes missing FIBs to the VPP and removes obsolete ones.

@@ -102,11 +102,23 @@ func DumpBridgeDomains(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog 
 			return nil, err
 		}
 
+		log.Warnf("tag %v, learn %v, forward %v, flood %v, arpT %v, uuflood %v, macage %v,",
+			bdDetails.BdTag, bdDetails.Learn, bdDetails.Forward, bdDetails.Flood, bdDetails.ArpTerm, bdDetails.UuFlood, bdDetails.MacAge)
+		log.Warnf("id %v, ifcount %v, if %v, bvi %v", bdDetails.BdID, bdDetails.NSwIfs, bdDetails.SwIfDetails, bdDetails.BviSwIfIndex)
+
 		// bridge domain details
 		bds[bdDetails.BdID] = &BridgeDomain{
 			Interfaces: []*BridgeDomainInterface{},
 			BridgeDomains_BridgeDomain: l2nb.BridgeDomains_BridgeDomain{
-				Name: 				 string(bdDetails.BdTag),
+				Name: 				 func(input[]byte) string {
+					var bdTag []byte
+					for _, item := range input {
+						if item != 0 {
+							bdTag = append(bdTag, item)
+						}
+					}
+					return string(bdTag)
+				}(bdDetails.BdTag),
 				Flood:               bdDetails.Flood > 0,
 				UnknownUnicastFlood: bdDetails.UuFlood > 0,
 				Forward:             bdDetails.Forward > 0,
