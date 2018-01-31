@@ -47,6 +47,7 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 	req.UuFlood = boolToUint(bridgeDomain.UnknownUnicastFlood)
 	req.Forward = boolToUint(bridgeDomain.Forward)
 	req.MacAge = uint8(bridgeDomain.MacAge)
+	req.BdTag = []byte(bridgeDomain.Name)
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)

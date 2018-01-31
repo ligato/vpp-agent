@@ -106,6 +106,7 @@ func DumpBridgeDomains(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog 
 		bds[bdDetails.BdID] = &BridgeDomain{
 			Interfaces: []*BridgeDomainInterface{},
 			BridgeDomains_BridgeDomain: l2nb.BridgeDomains_BridgeDomain{
+				Name: 				 string(bdDetails.BdTag),
 				Flood:               bdDetails.Flood > 0,
 				UnknownUnicastFlood: bdDetails.UuFlood > 0,
 				Forward:             bdDetails.Forward > 0,
