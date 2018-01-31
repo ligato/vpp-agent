@@ -363,7 +363,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &net.IPNet{IP: vppStnIP}, plugin.Log, plugin.vppChan,
+			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.Log, plugin.vppChan,
 				nil); err != nil {
 				plugin.Log.Error(err)
 				wasErr = err
@@ -386,7 +386,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &net.IPNet{IP: vppStnIP}, plugin.Log, plugin.vppChan,
+			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.Log, plugin.vppChan,
 				nil); err != nil {
 				plugin.Log.Error(err)
 				wasErr = err

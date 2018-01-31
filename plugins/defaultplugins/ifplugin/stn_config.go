@@ -20,13 +20,13 @@ package ifplugin
 
 import (
 	"fmt"
+	"net"
 
 	"context"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
@@ -208,8 +208,9 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 		return
 	}
 
-	parsedIP, _, err := addrs.ParseIPWithPrefix(stnInput.IpAddress)
-	if err != nil {
+	parsedIP := net.ParseIP(stnInput.IpAddress)
+	if parsedIP == nil {
+		err = fmt.Errorf("unable to parse IP %v", stnInput.IpAddress)
 		return
 	}
 
@@ -217,7 +218,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 	ifIndex, _, exists := index.LookupIdx(ifName)
 
 	stnRule = &vppcalls.StnRule{
-		IPAddress: *parsedIP,
+		IPAddress: parsedIP,
 		IfaceIdx:  ifIndex,
 	}
 
