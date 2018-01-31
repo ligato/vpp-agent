@@ -301,6 +301,7 @@
     "messaging/kafka/client",
     "messaging/kafka/mux",
     "rpc/grpc",
+    "rpc/prometheus",
     "rpc/rest",
     "servicelabel",
     "utils/addrs",
@@ -308,7 +309,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "a52923bfaa17ce9072674451c7754e938cc21d15"
+  revision = "aa078b4c978baf600f44632c2f64db875aaeb437"
 
 [[projects]]
   branch = "master"
@@ -620,6 +621,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "eaaba2aae28f5cee15862e27f479f65b20d1e4fec9ea3a49ef44790253caefaa"
+  inputs-digest = "9d9eb94d0d644b8321c5ad1ec010b7e796c45fd2dbc205f81d37edb1aa5dc505"
   solver-name = "gps-cdcl"
   solver-version = 1

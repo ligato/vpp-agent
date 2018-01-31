@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
@@ -48,7 +49,8 @@ type FlavorRPC struct {
 
 	HTTP rest.Plugin
 	//TODO GRPC (& enable/disable using config)
-	HTTPProbe rest.ForkPlugin
+	HTTPProbe  rest.ForkPlugin
+	Prometheus prometheus.Plugin
 
 	HealthRPC     probe.Plugin
 	PrometheusRPC probe.PrometheusPlugin
@@ -78,6 +80,9 @@ func (f *FlavorRPC) Inject() bool {
 
 	f.Logs.HTTP = &f.HTTP
 
+	f.Prometheus.Deps.PluginInfraDeps = *f.InfraDeps("prometheus")
+	f.Prometheus.HTTP = &f.HTTPProbe
+
 	grpc.DeclareGRPCPortFlag("grpc")
 	grpcPlugDeps := *f.InfraDeps("grpc", local.WithConf())
 	f.GRPC.Deps.Log = grpcPlugDeps.Log
@@ -97,9 +102,9 @@ func (f *FlavorRPC) Inject() bool {
 	f.HealthRPC.Deps.StatusCheck = &f.StatusCheck
 	//TODO f.HealthRPC.Transport inject restsync
 
-	f.PrometheusRPC.Deps.PluginInfraDeps = *f.InfraDeps("health-prometheus-rpc")
-	f.PrometheusRPC.Deps.HTTP = &f.HTTPProbe
-	f.PrometheusRPC.Deps.StatusCheck = &f.StatusCheck
+	f.PrometheusRPC.PluginInfraDeps = *f.InfraDeps("health-prometheus-rpc")
+	f.PrometheusRPC.Prometheus = &f.Prometheus
+	f.PrometheusRPC.StatusCheck = &f.StatusCheck
 
 	return true
 }

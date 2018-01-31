@@ -18,12 +18,21 @@ package probe
 import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
 
-// Deps lists dependencies of all proble plugins.
+// Deps lists dependencies of REST plugin.
 type Deps struct {
-	local.PluginInfraDeps                               // inject
-	HTTP                  rest.HTTPHandlers             // inject
-	StatusCheck           statuscheck.StatusReader		// inject
+	local.PluginInfraDeps                          // inject
+	HTTP                  rest.HTTPHandlers        // inject
+	StatusCheck           statuscheck.StatusReader // inject
+}
+
+// PrometheusDeps lists dependencies of Prometheus plugin.
+type PrometheusDeps struct {
+	local.PluginInfraDeps                          // inject
+	HTTP                  rest.HTTPHandlers        // inject
+	StatusCheck           statuscheck.StatusReader // inject
+	Prometheus            prometheus.API           // inject
 }
