@@ -41,9 +41,19 @@ type Nat44StaticMappingEntry struct {
 	ExternalIP    string
 	ExternalPort  uint32
 	ExternalIfIdx uint32
-	Protocol      nat.Nat44DNat_DNatConfig_Mapping_Protocol
+	Protocol      nat.Protocol
 	OutToInOnly   bool // rule match only out2in direction
 	TwiceNat      bool
+	VrfID         uint32
+}
+
+// Nat44IdentityMappingEntry represents single NAT44 identity mapping entry
+type Nat44IdentityMappingEntry struct {
+	AddressOnly   bool
+	IPAddress    string
+	Port  uint32
+	IfIdx uint32
+	Protocol      nat.Protocol
 	VrfID         uint32
 }
 
@@ -149,13 +159,13 @@ func Nat44StaticMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeL
 			ExternalIP:    exIPAddress.To4().String(),
 			ExternalPort:  uint32(msg.ExternalPort),
 			ExternalIfIdx: msg.ExternalSwIfIndex,
-			Protocol: func(protocol uint8) nat.Nat44DNat_DNatConfig_Mapping_Protocol {
+			Protocol: func(protocol uint8) nat.Protocol {
 				if protocol == vppcalls.TCP {
-					return nat.Nat44DNat_DNatConfig_Mapping_TCP
+					return nat.Protocol_TCP
 				} else if protocol == vppcalls.UDP {
-					return nat.Nat44DNat_DNatConfig_Mapping_UDP
+					return nat.Protocol_UDP
 				} else if protocol == vppcalls.ICMP {
-					return nat.Nat44DNat_DNatConfig_Mapping_ICMP
+					return nat.Protocol_ICMP
 				}
 				log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
 				return 0
@@ -219,13 +229,13 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 			LocalIPs:     locals,
 			ExternalIP:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
-			Protocol: func(protocol uint8) nat.Nat44DNat_DNatConfig_Mapping_Protocol {
+			Protocol: func(protocol uint8) nat.Protocol {
 				if protocol == vppcalls.TCP {
-					return nat.Nat44DNat_DNatConfig_Mapping_TCP
+					return nat.Protocol_TCP
 				} else if protocol == vppcalls.UDP {
-					return nat.Nat44DNat_DNatConfig_Mapping_UDP
+					return nat.Protocol_UDP
 				} else if protocol == vppcalls.ICMP {
-					return nat.Nat44DNat_DNatConfig_Mapping_ICMP
+					return nat.Protocol_ICMP
 				}
 				log.Warnf("Static mapping dump returned unknown protocol %d", protocol)
 				return 0
@@ -247,6 +257,64 @@ func Nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel, tim
 	}
 
 	log.Debugf("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
+
+	return
+}
+
+// Nat44IdentityMappingDump returns a list of static mapping entries with load balancer
+func Nat44IdentityMappingDump(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (entries []*Nat44IdentityMappingEntry, err error) {
+	// Nat44IdentityMappingDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	var ipAddress net.IP
+
+	req := &bin_api.Nat44IdentityMappingDump{}
+	reqContext := vppChan.SendMultiRequest(req)
+
+	for {
+		msg := &bin_api.Nat44IdentityMappingDetails{}
+		stop, replyErr := reqContext.ReceiveReply(msg)
+		if replyErr != nil {
+			err = fmt.Errorf("failed to dump NAT44 identity mapping: %v", replyErr)
+			return
+		}
+		if stop {
+			break
+		}
+
+		ipAddress = msg.IPAddress
+
+		entries = append(entries, &Nat44IdentityMappingEntry{
+			AddressOnly:  func(addrOnly uint8) bool {
+				if addrOnly == 1 {
+					return true
+				}
+				return false
+			}(msg.AddrOnly),
+			IPAddress: ipAddress.To4().String(),
+			Port: uint32(msg.Port),
+			IfIdx: msg.SwIfIndex,
+			Protocol: func(protocol uint8) nat.Protocol {
+				if protocol == vppcalls.TCP {
+					return nat.Protocol_TCP
+				} else if protocol == vppcalls.UDP {
+					return nat.Protocol_UDP
+				} else if protocol == vppcalls.ICMP {
+					return nat.Protocol_ICMP
+				}
+				log.Warnf("Identity mapping dump returned unknown protocol %d", protocol)
+				return 0
+			}(msg.Protocol),
+			VrfID: msg.VrfID,
+		})
+	}
+
+	log.Debugf("NAT44 identity mapping dump complete, found %d entries", len(entries))
 
 	return
 }

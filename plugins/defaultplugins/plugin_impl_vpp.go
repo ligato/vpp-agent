@@ -122,11 +122,12 @@ type Plugin struct {
 	xcIndexes      idxvpp.NameToIdxRW
 
 	// NAT fields
-	natConfigurator    *ifplugin.NatConfigurator
-	sNatIndices        idxvpp.NameToIdxRW
-	sNatMappingIndices idxvpp.NameToIdxRW
-	dNatIndices        idxvpp.NameToIdxRW
-	dNatMappingIndices idxvpp.NameToIdxRW
+	natConfigurator      *ifplugin.NatConfigurator
+	sNatIndices          idxvpp.NameToIdxRW
+	sNatMappingIndices   idxvpp.NameToIdxRW
+	dNatIndices          idxvpp.NameToIdxRW
+	dNatStMappingIndices idxvpp.NameToIdxRW
+	dNatIdMappingIndices idxvpp.NameToIdxRW
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
@@ -510,18 +511,20 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
 	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
 	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
-	plugin.dNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-mapping-indices", nil)
+	plugin.dNatStMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-st-mapping-indices", nil)
+	plugin.dNatIdMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-id-mapping-indices", nil)
 
 	plugin.natConfigurator = &ifplugin.NatConfigurator{
-		Log:                natLogger,
-		GoVppmux:           plugin.GoVppmux,
-		SwIfIndexes:        plugin.swIfIndexes,
-		SNatIndices:        plugin.sNatIndices,
-		SNatMappingIndices: plugin.sNatMappingIndices,
-		DNatIndices:        plugin.dNatIndices,
-		DNatMappingIndices: plugin.dNatMappingIndices,
-		NatIndexSeq:        1,
-		Stopwatch:          stopwatch,
+		Log:                  natLogger,
+		GoVppmux:             plugin.GoVppmux,
+		SwIfIndexes:          plugin.swIfIndexes,
+		SNatIndices:          plugin.sNatIndices,
+		SNatMappingIndices:   plugin.sNatMappingIndices,
+		DNatIndices:          plugin.dNatIndices,
+		DNatStMappingIndices: plugin.dNatStMappingIndices,
+		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
+		NatIndexSeq:          1,
+		Stopwatch:            stopwatch,
 	}
 	if err := plugin.natConfigurator.Init(); err != nil {
 		return err

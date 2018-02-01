@@ -58,10 +58,12 @@ type NatConfigurator struct {
 	SNatMappingIndices idxvpp.NameToIdxRW
 	// DNAT indices
 	DNatIndices idxvpp.NameToIdxRW
-	// DNAT indices for static mapping
-	DNatMappingIndices idxvpp.NameToIdxRW
-	NatIndexSeq        uint32
-	vppChan            *govppapi.Channel
+	// DNAT indices for static/identity mapping
+	DNatStMappingIndices idxvpp.NameToIdxRW
+	DNatIdMappingIndices idxvpp.NameToIdxRW
+
+	NatIndexSeq uint32
+	vppChan     *govppapi.Channel
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/isInside)
 	notEnabledIfs []*nat.Nat44Global_NatInterface
@@ -141,7 +143,7 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) (err 
 			lastIP = firstIP
 		}
 
-		// configure address pool
+		// Configure address pool
 		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, config.VrfId, addressPool.TwiceNat, plugin.Log, plugin.vppChan,
 			measure.GetTimeLog(bin_api.Nat44AddDelAddressRange{}, plugin.Stopwatch)); err != nil {
 			return
@@ -253,32 +255,52 @@ func (plugin *NatConfigurator) DeleteSNat(sNat *nat.Nat44SNat_SNatConfig) error 
 func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.Infof("Configuring DNAT with label %v", dNat.Label)
 
-	mapping := dNat.Mapping
-	for mappingIdx, mappingEntry := range mapping {
+	// Resolve static mapping
+	for mappingIdx, mappingEntry := range dNat.Mapping {
 		localIPList := mappingEntry.LocalIp
 		if len(localIPList) == 0 {
-			plugin.Log.Errorf("cannot configure DNAT %v mapping: no local address provided", mappingIdx)
+			plugin.Log.Errorf("cannot configure DNAT %v static mapping: no local address provided", mappingIdx)
 			continue
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
 			if err := plugin.handleStaticMapping(mappingEntry.ExternalIP, mappingEntry.ExternalInterface, dNat.VrfId,
 				dNat.SNatEnabled, mappingEntry, true); err != nil {
-				plugin.Log.Errorf("DNAT mapping configuration failed: %v", err)
+				plugin.Log.Errorf("DNAT static mapping configuration failed: %v", err)
 				continue
 			}
 		} else {
 			// Case with load balance (more local addresses)
 			if err := plugin.handleStaticMappingLb(dNat.VrfId, dNat.SNatEnabled, mappingEntry, true); err != nil {
-				plugin.Log.Errorf("DNAT lb-mapping configuration failed: %v", err)
+				plugin.Log.Errorf("DNAT static lb-mapping configuration failed: %v", err)
 				continue
 			}
 		}
-		// Register DNAT mapping
-		mappingIdentifier := getMappingIdentifier(mappingEntry, dNat.VrfId)
-		plugin.DNatMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
+		// Register DNAT static mapping
+		mappingIdentifier := getStMappingIdentifier(mappingEntry, dNat.VrfId)
+		plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 		plugin.NatIndexSeq++
 
-		plugin.Log.Debugf("DNAT lb-mapping configured (ID: %v)", mappingIdentifier)
+		plugin.Log.Debugf("DNAT static (lb)mapping configured (ID: %v)", mappingIdentifier)
+	}
+
+	// Resolve identity mapping
+	for mappingIdx, idMapping := range dNat.IdMapping {
+		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
+			plugin.Log.Errorf("cannot configure DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
+			continue
+		}
+		if err := plugin.handleIdentityMapping(idMapping.AddressedInterface, idMapping.IpAddress, idMapping.Port, dNat.VrfId,
+			idMapping.Protocol, true); err != nil {
+			plugin.Log.Error(err)
+			continue
+		}
+
+		// Register DNAT identity mapping
+		mappingIdentifier := getIdMappingIdentifier(idMapping, dNat.VrfId)
+		plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
+		plugin.NatIndexSeq++
+
+		plugin.Log.Debugf("DNAT identity (lb)mapping configured (ID: %v)", mappingIdentifier)
 	}
 
 	// Register DNAT configuration
@@ -312,7 +334,7 @@ func (plugin *NatConfigurator) ModifyDNat(oldDNat, newDNat *nat.Nat44DNat_DNatCo
 func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.Infof("Deleting DNAT with label %v", dNat.Label)
 
-	// In delete case, vpp-agent attempts to reconstruct every mapping entry and remove it from the VPP
+	// In delete case, vpp-agent attempts to reconstruct every static mapping entry and remove it from the VPP
 	mapping := dNat.Mapping
 	for mappingIdx, mappingEntry := range mapping {
 		localIPList := mappingEntry.LocalIp
@@ -334,10 +356,30 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 			}
 		}
 		// Unregister DNAT mapping
-		mappingIdentifier := getMappingIdentifier(mappingEntry, dNat.VrfId)
-		plugin.DNatMappingIndices.UnregisterName(mappingIdentifier)
+		mappingIdentifier := getStMappingIdentifier(mappingEntry, dNat.VrfId)
+		plugin.DNatStMappingIndices.UnregisterName(mappingIdentifier)
 
 		plugin.Log.Debugf("DNAT lb-mapping un-configured (ID %v)", mappingIdentifier)
+	}
+
+	// Do the same also for identity apping
+	for mappingIdx, idMapping := range dNat.IdMapping {
+		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
+			plugin.Log.Errorf("cannot remove DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
+			continue
+		}
+		if err := plugin.handleIdentityMapping(idMapping.AddressedInterface, idMapping.IpAddress, idMapping.Port,
+			dNat.VrfId, idMapping.Protocol, false); err != nil {
+			plugin.Log.Error(err)
+			continue
+		}
+
+		// Register DNAT identity mapping
+		mappingIdentifier := getIdMappingIdentifier(idMapping, dNat.VrfId)
+		plugin.DNatIdMappingIndices.UnregisterName(mappingIdentifier)
+		plugin.NatIndexSeq++
+
+		plugin.Log.Debugf("DNAT identity (lb)mapping un-configured (ID: %v)", mappingIdentifier)
 	}
 
 	// Unregister DNAT configuration
@@ -377,28 +419,27 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 			plugin.Log.Debugf("Interface %v missing, cannot enable NAT", natInterface.Name)
 			plugin.notEnabledIfs = append(plugin.notEnabledIfs, natInterface) // cache interface
 		} else {
-			// enable nat interface
-			if err = vppcalls.EnableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
-				measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
-				return
-			}
-			if natInterface.IsInside {
-				plugin.Log.Debugf("Interface %v enabled for NAT as inside", natInterface.Name)
-			} else {
-				plugin.Log.Debugf("Interface %v enabled for NAT as outside", natInterface.Name)
-			}
-			// Enable/disable interface output feature. At first, check the current state (VPP does not like enablig
-			// output feature if it is already enabled)
-			isEnabled, dumpErr := vppdump.Nat44SingleInterfaceOutputFeatureDump(ifIdx, plugin.Log, plugin.vppChan,
-				measure.GetTimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}, plugin.Stopwatch))
-			if dumpErr != nil {
-				err = dumpErr
-				return
-			}
-			if (!isEnabled && natInterface.OutputFeature) || (isEnabled && !natInterface.OutputFeature) {
-				if err = vppcalls.SetNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside, natInterface.OutputFeature,
+			if natInterface.OutputFeature {
+				// enable nat interface and output feature
+				if err = vppcalls.EnableNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside,
 					plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44InterfaceAddDelOutputFeature{}, plugin.Stopwatch)); err != nil {
 					return
+				}
+				if natInterface.IsInside {
+					plugin.Log.Debugf("Interface %v output-feature enabled for NAT as inside", natInterface.Name)
+				} else {
+					plugin.Log.Debugf("Interface %v output-feature enabled for NAT as outside", natInterface.Name)
+				}
+			} else {
+				// enable interface only
+				if err = vppcalls.EnableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
+					measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
+					return
+				}
+				if natInterface.IsInside {
+					plugin.Log.Debugf("Interface %v enabled for NAT as inside", natInterface.Name)
+				} else {
+					plugin.Log.Debugf("Interface %v enabled for NAT as outside", natInterface.Name)
 				}
 			}
 		}
@@ -415,15 +456,28 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 			plugin.Log.Debugf("Interface %v missing, cannot disable NAT", natInterface)
 			plugin.notDisabledIfs = append(plugin.notDisabledIfs, natInterface) // cache interface
 		} else {
-			// disable interface
-			if err = vppcalls.DisableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
-				measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
-				return
-			}
-			if natInterface.IsInside {
-				plugin.Log.Debugf("Interface %v disabled for NAT as inside", natInterface)
+			if natInterface.OutputFeature {
+				// disable nat interface and output feature
+				if err = vppcalls.DisableNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside,
+					plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44InterfaceAddDelOutputFeature{}, plugin.Stopwatch)); err != nil {
+					return
+				}
+				if natInterface.IsInside {
+					plugin.Log.Debugf("Interface %v output-feature disabled for NAT as inside", natInterface.Name)
+				} else {
+					plugin.Log.Debugf("Interface %v output-feature disabled for NAT as outside", natInterface.Name)
+				}
 			} else {
-				plugin.Log.Debugf("Interface %v disabled for NAT as outside", natInterface)
+				// disable interface
+				if err = vppcalls.DisableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
+					measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
+					return
+				}
+				if natInterface.IsInside {
+					plugin.Log.Debugf("Interface %v disabled for NAT as inside", natInterface)
+				} else {
+					plugin.Log.Debugf("Interface %v disabled for NAT as outside", natInterface)
+				}
 			}
 		}
 	}
@@ -511,26 +565,21 @@ func (plugin *NatConfigurator) deleteAddressPool(addressPools []*nat.Nat44Global
 func (plugin *NatConfigurator) handleStaticMappingLb(vrf uint32, sNatEnabled bool, entry *nat.Nat44DNat_DNatConfig_Mapping,
 	add bool) (err error) {
 
-	// Resolve external IP address and port
-	exIPAddr, exPort, err := splitIPPortVal(entry.ExternalIP)
-	if err != nil {
-		return fmt.Errorf("cannot configure DNAT mapping: %v", err)
-	}
 	// Parse external IP address
-	exIPAddrByte := net.ParseIP(exIPAddr).To4()
+	exIPAddrByte := net.ParseIP(entry.ExternalIP).To4()
 	if exIPAddrByte == nil {
-		return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", exIPAddr)
+		return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", entry.ExternalIP)
 	}
 
 	// In this case, external port is required
-	if exPort == 0 {
+	if entry.ExternalPort == 0 {
 		return fmt.Errorf("cannot configure DNAT mapping: external port is not set")
 	}
 
 	// Address mapping with load balancer
 	ctx := &vppcalls.StaticMappingLbContext{
 		ExternalIP:   exIPAddrByte,
-		ExternalPort: uint16(exPort),
+		ExternalPort: uint16(entry.ExternalPort),
 		Protocol:     getProtocol(entry.Protocol, plugin.Log),
 		LocalIPs:     getLocalIPs(entry.LocalIp, plugin.Log),
 	}
@@ -546,40 +595,27 @@ func (plugin *NatConfigurator) handleStaticMappingLb(vrf uint32, sNatEnabled boo
 }
 
 // Configure static mapping with load balancer
-func (plugin *NatConfigurator) configureStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) (err error) {
-	if err = vppcalls.AddNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("DNAT lb-mapping configuration failed: %v", err)
-	}
-	return
+func (plugin *NatConfigurator) configureStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) error {
+	return vppcalls.AddNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch))
 }
 
 // Remove static mapping with load balancer
-func (plugin *NatConfigurator) removeStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) (err error) {
-	if err = vppcalls.DelNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("DNAT lb-mapping removal failed: %v", err)
-	}
-	return
+func (plugin *NatConfigurator) removeStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) error {
+	return vppcalls.DelNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch))
 }
 
 // handler for single static mapping entry
 func (plugin *NatConfigurator) handleStaticMapping(externalIP string, exIfName string, vrf uint32,
 	sNatEnabled bool, entry *nat.Nat44DNat_DNatConfig_Mapping, add bool) (err error) {
 	var ifIdx uint32 = 0xffffffff // default value - means no external interface is set
-	var exIPAddr string
-	var exIPAddrByte []byte
-	var exPort int
+	var exIPAddr []byte
 
-	// Resolve local IP address and port
-	var lcIPAddr string
-	lcIPAddr, lcPort, err := splitIPPortVal(entry.LocalIp[0].LocalIP)
-	if err != nil {
-		return fmt.Errorf("cannot configure DNAT mapping: %v", err)
-	}
-	// Parse local IP address
-	lcIPAddrByte := net.ParseIP(lcIPAddr).To4()
-	if lcIPAddrByte == nil {
+	// Parse local IP address and port
+	lcIPAddr := net.ParseIP(entry.LocalIp[0].LocalIP).To4()
+	lcPort := entry.LocalIp[0].LocalPort
+	if lcIPAddr == nil {
 		return fmt.Errorf("cannot configure DNAT mapping: unable to parse local IP %v", lcIPAddr)
 	}
 
@@ -592,31 +628,26 @@ func (plugin *NatConfigurator) handleStaticMapping(externalIP string, exIfName s
 			return fmt.Errorf("required external interface %v is missing", exIfName)
 		}
 	} else {
-		// If no external interface, check external IP address/port
-		exIPAddr, exPort, err = splitIPPortVal(externalIP)
-		if err != nil {
-			return fmt.Errorf("cannot configure DNAT mapping: %v", err)
-		}
 		// Parse external IP address
-		exIPAddrByte = net.ParseIP(exIPAddr).To4()
-		if exIPAddrByte == nil {
+		exIPAddr = net.ParseIP(entry.ExternalIP).To4()
+		if exIPAddr == nil {
 			return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", exIPAddr)
 		}
 	}
 
 	// Resolve mapping (address only or address and port)
 	var addrOnly bool
-	if lcPort == 0 || exPort == 0 {
+	if lcPort == 0 || entry.ExternalPort == 0 {
 		addrOnly = true
 	}
 
 	// Address mapping with load balancer
 	ctx := &vppcalls.StaticMappingContext{
 		AddressOnly:   addrOnly,
-		LocalIP:       lcIPAddrByte,
+		LocalIP:       lcIPAddr,
 		LocalPort:     uint16(lcPort),
-		ExternalIP:    exIPAddrByte,
-		ExternalPort:  uint16(exPort),
+		ExternalIP:    exIPAddr,
+		ExternalPort:  uint16(entry.ExternalPort),
 		ExternalIfIdx: ifIdx,
 		Protocol:      getProtocol(entry.Protocol, plugin.Log),
 	}
@@ -628,21 +659,64 @@ func (plugin *NatConfigurator) handleStaticMapping(externalIP string, exIfName s
 }
 
 // Configure static mapping
-func (plugin *NatConfigurator) configureStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) (err error) {
-	if err = vppcalls.AddNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("DNAT mapping configuration failed: %v", err)
-	}
-	return
+func (plugin *NatConfigurator) configureStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) error {
+	return vppcalls.AddNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch))
 }
 
 // Remove static mapping
-func (plugin *NatConfigurator) removeStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) (err error) {
-	if err = vppcalls.DelNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("DNAT mapping removal failed: %v", err)
+func (plugin *NatConfigurator) removeStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) error {
+	return vppcalls.DelNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch))
+}
+
+// handler for single identity mapping entry
+func (plugin *NatConfigurator) handleIdentityMapping(addressInterface string, ipAddress string, port, vrf uint32,
+	proto nat.Protocol, isAdd bool) (err error) {
+	var parsedIP net.IP
+
+	// Verify interface if exists
+	var ifIdx uint32
+	if addressInterface != "" {
+		var found bool
+		ifIdx, _, found = plugin.SwIfIndexes.LookupIdx(addressInterface)
+		if !found {
+			// todo use cache to configure later
+			plugin.Log.Warn("Identity mapping config: provided interface %v does not exist", addressInterface)
+			return
+		}
 	}
-	return
+
+	if ifIdx != 0 {
+		// Case with interface
+		if isAdd {
+			return plugin.configureIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+		}
+		return plugin.removeIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+	}
+	// Case with IP (optionally port). Verify and parse input IP/port
+	parsedIP = net.ParseIP(ipAddress).To4()
+	if parsedIP == nil {
+		return fmt.Errorf("unable to parse IP address %v", ipAddress)
+	}
+
+	// Configure/remove identity mapping
+	if isAdd {
+		return plugin.configureIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+	}
+	return plugin.removeIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+}
+
+// Configure identity mapping
+func (plugin *NatConfigurator) configureIdentityEntry(ip []byte, proto nat.Protocol, port uint16, ifIdx, vrf uint32) error {
+	return vppcalls.AddNat44IdentityMapping(ip, getProtocol(proto, plugin.Log), port, ifIdx, vrf,
+		plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelIdentityMapping{}, plugin.Stopwatch))
+}
+
+// Remove identity mapping
+func (plugin *NatConfigurator) removeIdentityEntry(ip []byte, proto nat.Protocol, port uint16, ifIdx, vrf uint32) error {
+	return vppcalls.DelNat44IdentityMapping(ip, getProtocol(proto, plugin.Log), port, ifIdx, vrf,
+		plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelIdentityMapping{}, plugin.Stopwatch))
 }
 
 // looks for new and obsolete IN interfaces
@@ -738,44 +812,23 @@ func (plugin *NatConfigurator) checkMsgCompatibility() error {
 	return err
 }
 
-// returns ip and port if provided value is correct
-func splitIPPortVal(val string) (ip string, port int, err error) {
-	ipPort := strings.Split(val, "/")
-	if len(ipPort) == 0 {
-		err = fmt.Errorf("unable to get ip/port value, incorrect format %v", val)
-	} else if len(ipPort) == 1 {
-		ip = ipPort[0]
-	} else if len(ipPort) == 2 {
-		ip = ipPort[0]
-		port, err = strconv.Atoi(ipPort[1])
-	} else {
-		err = fmt.Errorf("unable to get ip/port value, incorrect format %v", val)
-	}
-	return
-}
-
 // returns a list of validated local IP addresses with port and probability value
 func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
 	for _, ipPort := range ipPorts {
-		localIP, localPort, err := splitIPPortVal(ipPort.LocalIP)
-		if err != nil {
-			log.Errorf("cannot set local IP/Port to mapping: %v", err)
-			continue
-		}
-		if localPort == 0 {
+		if ipPort.LocalPort == 0 {
 			log.Error("cannot set local IP/Port to mapping: port is missing")
 			continue
 		}
 
-		localIPByte := net.ParseIP(localIP).To4()
-		if localIPByte == nil {
-			log.Error("cannot set local IP/Port to mapping: unable to parse local IP %v", localIP)
+		localIP := net.ParseIP(ipPort.LocalIP).To4()
+		if localIP == nil {
+			log.Error("cannot set local IP/Port to mapping: unable to parse local IP %v", ipPort.LocalIP)
 			continue
 		}
 
 		locals = append(locals, &vppcalls.LocalLbAddress{
-			LocalIP:     localIPByte,
-			LocalPort:   uint16(localPort),
+			LocalIP:     localIP,
+			LocalPort:   uint16(ipPort.LocalPort),
 			Probability: uint8(ipPort.Probability),
 		})
 	}
@@ -784,12 +837,12 @@ func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP, log loggin
 }
 
 // returns num representation of provided protocol value
-func getProtocol(protocol nat.Nat44DNat_DNatConfig_Mapping_Protocol, log logging.Logger) (proto uint8) {
-	if protocol == nat.Nat44DNat_DNatConfig_Mapping_TCP {
+func getProtocol(protocol nat.Protocol, log logging.Logger) (proto uint8) {
+	if protocol == nat.Protocol_TCP {
 		proto = vppcalls.TCP
-	} else if protocol == nat.Nat44DNat_DNatConfig_Mapping_UDP {
+	} else if protocol == nat.Protocol_UDP {
 		proto = vppcalls.UDP
-	} else if protocol == nat.Nat44DNat_DNatConfig_Mapping_ICMP {
+	} else if protocol == nat.Protocol_ICMP {
 		proto = vppcalls.ICMP
 	} else {
 		log.Warnf("Unknown protocol %v, defaulting to TCP", protocol)
@@ -799,10 +852,17 @@ func getProtocol(protocol nat.Nat44DNat_DNatConfig_Mapping_Protocol, log logging
 }
 
 // returns unique ID of the mapping
-func getMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_Mapping, vrf uint32) string {
+func getStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_Mapping, vrf uint32) string {
 	extIP := strings.Replace(mapping.ExternalIP, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
 	locIP := strings.Replace(mapping.LocalIp[0].LocalIP, ".", "", -1)
 	locIP = strings.Replace(locIP, "/", "", -1)
 	return extIP + locIP + strconv.Itoa(int(vrf))
+}
+
+// returns unique ID of the mapping
+func getIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping, vrf uint32) string {
+	extIP := strings.Replace(mapping.IpAddress, ".", "", -1)
+	extIP = strings.Replace(extIP, "/", "", -1)
+	return extIP + "-" + mapping.AddressedInterface + "-" + strconv.Itoa(int(vrf))
 }

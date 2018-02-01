@@ -2,6 +2,12 @@ syntax = "proto3";
 
 package nat;
 
+enum Protocol {                                 /* Available protocols */
+    TCP = 0;
+    UDP = 1;
+    ICMP = 2;                                   /* ICMP is not permitted for load ballanced entries */
+};
+
 /* NAT44 global config */
 message Nat44Global {
     uint32 vrfId = 1;                           /* VRF (table) ID */ 
@@ -38,21 +44,27 @@ message Nat44DNat {
     
         message Mapping {
             string externalInterface = 1;       /* external interface may be used together with IP addresses */ 
-            string externalIP = 2;              /* external <address>/<port> (<address> only for address mapping) */  
+            string externalIP = 2;              /* external address  */
+            uint32 externalPort = 3;                    /* port (do not set for address mapping) */
             message LocalIP {           
-                string localIP = 1;             /* local <address>/<port> (<address> only for address mapping) */
+                string localIP = 1;             /* local IP address) */
+                uint32 localPort = 3;                /* port (do not set for address mapping) */
                 uint32 probability = 2;         /* probability mode */ 
             }   
-            repeated LocalIP local_ip = 3;      /* list of local IP addresses. If there is more than one entry, 
-                                                load ballancer is enabled */
-            enum Protocol {
-                TCP = 0;
-                UDP = 1;
-                ICMP = 2;                       /* ICMP is not permitted for load ballanced entries */
-            };
-            Protocol protocol = 4;              /* protocol used for static mapping */                                        
+            repeated LocalIP local_ip = 4;      /* list of local IP addresses. If there is more than one entry,
+                                                   load ballancer is enabled */
+            Protocol protocol = 5;              /* protocol used for static mapping */
         }   
-        repeated Mapping mapping = 4;     
+        repeated Mapping mapping = 4;
+
+        message IdentityMapping {
+            string addressedInterface = 1;       /* name of the DHCP addressed interface, preffered before IP address */
+            string ipAddress = 2;                /* ip address */
+            uint32 port = 3;                     /* port (do not set for address mapping) */
+            Protocol protocol = 4;               /* protocol used for identity mapping */
+
+        }
+        repeated IdentityMapping id_mapping = 6;
     }      
     repeated DNatConfig dnat_config = 1;                              
 }

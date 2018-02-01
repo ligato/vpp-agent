@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
+	"github.com/sirupsen/logrus"
 )
 
 // Num protocol representation
@@ -136,8 +137,8 @@ func DisableNat44Interface(ifName string, ifIdx uint32, isInside bool, log loggi
 	return nil
 }
 
-// SetNat44InterfaceOutput enables or disables NAT output feature for provided interface
-func SetNat44InterfaceOutput(ifName string, ifIdx uint32, isInside bool, enable bool, log logging.Logger, vppChan *govppapi.Channel,
+// EnableNat44InterfaceOutput enables NAT output feature for provided interface
+func EnableNat44InterfaceOutput(ifName string, ifIdx uint32, isInside bool, log logging.Logger, vppChan *govppapi.Channel,
 	timeLog measure.StopWatchEntry) error {
 	// Nat44InterfaceAddDelOutputFeature time measurement
 	start := time.Now()
@@ -147,34 +148,31 @@ func SetNat44InterfaceOutput(ifName string, ifIdx uint32, isInside bool, enable 
 		}
 	}()
 
-	req := &nat.Nat44InterfaceAddDelOutputFeature{
-		SwIfIndex: ifIdx,
-		IsInside: func(isInside bool) uint8 {
-			if isInside {
-				return 1
-			}
-			return 0
-		}(isInside),
-		IsAdd: func(isAdd bool) uint8 {
-			if isAdd {
-				return 1
-			}
-			return 0
-		}(enable),
-	}
-
-	reply := &nat.Nat44InterfaceAddDelOutputFeatureReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handleNat44InterfaceOutputFeature(ifName, ifIdx, isInside, true, vppChan); err != nil {
 		return err
 	}
 
-	if 0 != reply.Retval {
-		return fmt.Errorf("enabling NAT output feature for interface %v returned %d", ifName, reply.Retval)
-	}
+	log.Debugf("NAT output feature enabled for interface %v", ifName)
 
 	return nil
+}
 
-	log.Debugf("NAT output feature enabled for interface %v", ifName)
+// DisableNat44InterfaceOutput disables NAT output feature for provided interface
+func DisableNat44InterfaceOutput(ifName string, ifIdx uint32, isInside bool, log logging.Logger, vppChan *govppapi.Channel,
+	timeLog measure.StopWatchEntry) error {
+	// Nat44InterfaceAddDelOutputFeature time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if err := handleNat44InterfaceOutputFeature(ifName, ifIdx, isInside, false, vppChan); err != nil {
+		return err
+	}
+
+	log.Debugf("NAT output feature disabled for interface %v", ifName)
 
 	return nil
 }
@@ -215,6 +213,46 @@ func DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool, log logg
 	}
 
 	log.Debugf("Address pool %v - %v removed", first, last)
+
+	return nil
+}
+
+// AddNat44IdentityMapping sets new NAT address pool
+func AddNat44IdentityMapping(ip []byte, protocol uint8, port uint16, ifIdx, vrf uint32, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelAddressRange time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if err := handleNat44IdentityMapping(ip, protocol, port, ifIdx, vrf, true, vppChan); err != nil {
+		return nil
+	}
+
+	log.Debug("Identity mapping added")
+
+	return nil
+}
+
+// DelNat44IdentityMapping sets new NAT address pool
+func DelNat44IdentityMapping(ip []byte, protocol uint8, port uint16, ifIdx, vrf uint32, log logging.Logger,
+	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// Nat44AddDelAddressRange time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	if err := handleNat44IdentityMapping(ip, protocol, port, ifIdx, vrf, false, vppChan); err != nil {
+		return nil
+	}
+
+	log.Debug("Identity mapping removed")
 
 	return nil
 }
@@ -337,6 +375,36 @@ func handleNat44Interface(ifName string, ifIdx uint32, isInside, isAdd bool, vpp
 
 	if 0 != reply.Retval {
 		return fmt.Errorf("enabling NAT for interface %v returned %d", ifName, reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to set/unset interface as NAT with output feature
+func handleNat44InterfaceOutputFeature(ifName string, ifIdx uint32, isInside, isAdd bool, vppChan *govppapi.Channel) error {
+	req := &nat.Nat44InterfaceAddDelOutputFeature{
+		SwIfIndex: ifIdx,
+		IsInside: func(isInside bool) uint8 {
+			if isInside {
+				return 1
+			}
+			return 0
+		}(isInside),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(isAdd),
+	}
+
+	reply := &nat.Nat44InterfaceAddDelOutputFeatureReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("enabling NAT output feature for interface %v returned %d", ifName, reply.Retval)
 	}
 
 	return nil
@@ -495,6 +563,45 @@ func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, vrf uint32, twiceNa
 
 	if 0 != reply.Retval {
 		return fmt.Errorf("adding NAT44 static mapping with load ballancer returned %d", reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to add/remove identity mapping
+func handleNat44IdentityMapping(ip []byte, protocol uint8, port uint16, ifIdx, vrf uint32, isAdd bool, vppChan *govppapi.Channel) error {
+	req := &nat.Nat44AddDelIdentityMapping{
+		AddrOnly: func(port uint16) uint8 {
+			// Set addr only if port is set to zero
+			if port == 0 {
+				return 1
+			}
+			return 0
+		}(port),
+		IPAddress: ip,
+		Port:      port,
+		Protocol:  protocol,
+		VrfID:     vrf,
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(isAdd),
+	}
+
+	if ifIdx == 0 {
+		req.SwIfIndex = 0xffffffff // means no interface
+	}
+
+	logrus.Warnf("sending data addronly:%v, proto:%v, ifIdx:%v, ip:%v, port:%v, vrf:%v", req.AddrOnly, req.Protocol, req.SwIfIndex, req.IPAddress, req.Port, req.VrfID)
+	reply := &nat.Nat44AddDelIdentityMappingReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	logrus.Warnf("data send %v", req)
+	if 0 != reply.Retval {
+		return fmt.Errorf("adding NAT44 identity mapping returned %d", reply.Retval)
 	}
 
 	return nil
