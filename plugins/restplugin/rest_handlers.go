@@ -219,7 +219,7 @@ func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) ht
 			return
 		}
 
-		res, err := acldump.DumpInterfaceAcls(plugin.Deps.Log, swIndex, ch, nil)
+		res, _, err := acldump.DumpInterfaceAcls(plugin.Deps.Log, swIndex, ch, nil)
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
@@ -246,7 +246,7 @@ func (plugin *RESTAPIPlugin) ipACLGetHandler(formatter *render.Render) http.Hand
 			return
 		}
 
-		res, err := acldump.DumpIPAcl(plugin.Deps.Log, ch, nil)
+		res, err := acldump.DumpACLs(plugin.Deps.Log, nil, ch, nil)
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

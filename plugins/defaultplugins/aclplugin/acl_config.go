@@ -288,15 +288,14 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 }
 
 // DumpACL returns all configured ACLs in proto format
-// todo ACLDump/ACLDetails error invalid message ID 924, expected 922
 func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
-	aclsWithIndex, err := vppdump.DumpIPAcl(plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return nil, err
 	}
 	var acls []*acl.AccessLists_Acl
-	for _, aclWithIndex := range *aclsWithIndex {
+	for _, aclWithIndex := range aclsWithIndex {
 		acls = append(acls, aclWithIndex.ACLDetails)
 	}
 	return acls, nil

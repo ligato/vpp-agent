@@ -244,7 +244,7 @@ func createACL(db keyval.ProtoBroker) {
 	// Ipv4Rule
 	accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.2/32"
+	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.1/32"
 	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "10.20.0.1/24"
 
 	//// Ipv6Rule
@@ -524,7 +524,7 @@ func listAllAgentKeys(db *etcdv3.BytesConnectionEtcd) {
 func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	// fill in data - option 1
 	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
+	ifs.Interface = make([]*interfaces.Interfaces_Interface, 4)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
 	ifs.Interface[0].Name = "tap1"
@@ -542,9 +542,60 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
 
+	ifs.Interface[1] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[1].Name = "tap2"
+	ifs.Interface[1].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[1].Enabled = true
+	ifs.Interface[1].PhysAddress = "09:9e:df:66:54:42"
+	ifs.Interface[1].Mtu = 555
+	ifs.Interface[1].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[1].IpAddresses[0] = "192.168.2.2/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[1].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap2"}
+
+	ifs.Interface[2] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[2].Name = "tap3"
+	ifs.Interface[2].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[2].Enabled = true
+	ifs.Interface[2].PhysAddress = "09:9e:df:66:54:43"
+	ifs.Interface[2].Mtu = 555
+	ifs.Interface[2].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[2].IpAddresses[0] = "192.168.2.3/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[2].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap3"}
+
+	ifs.Interface[3] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[3].Name = "tap4"
+	ifs.Interface[3].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[3].Enabled = true
+	ifs.Interface[3].PhysAddress = "09:9e:df:66:54:44"
+	ifs.Interface[3].Mtu = 555
+	ifs.Interface[3].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[3].IpAddresses[0] = "192.168.2.4/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[3].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap4"}
+
 	log.Println(ifs)
 
 	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[2].Name), ifs.Interface[2])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[3].Name), ifs.Interface[3])
 
 }
 
