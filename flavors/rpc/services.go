@@ -15,8 +15,6 @@
 package rpc
 
 import (
-	"net"
-
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
@@ -203,12 +201,7 @@ func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *vppsvc.De
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
 	for _, route := range request.Route {
-		_, dst, err := net.ParseCIDR(route.DstAddr)
-		if err != nil {
-			localReqDel.StaticRoute(route.VRF, dst, net.ParseIP(route.NextHopAddr))
-		} else {
-			svc.Log.Error("error parsing static route ", route.DstAddr)
-		}
+		localReqDel.StaticRoute(route.VRF, route.DstAddr, route.NextHopAddr)
 	}
 
 	err := localReq.Send().ReceiveReply()
