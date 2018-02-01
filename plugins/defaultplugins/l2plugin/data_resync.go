@@ -47,14 +47,13 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		// tag is bridge domain name (unique identifier)
 		tag := vppBD.Name
 		// Find NB bridge domain with the same name
-		nbBD := func(nbBDs []*l2.BridgeDomains_BridgeDomain) *l2.BridgeDomains_BridgeDomain {
-			for _, bd := range nbBDs {
-				if tag == bd.Name {
-					return bd
-				}
+		var nbBD *l2.BridgeDomains_BridgeDomain
+		for _, nbBDConfig := range nbBDs {
+			if tag == nbBDConfig.Name {
+				nbBD = nbBDConfig
+				break
 			}
-			return nil
-		}(nbBDs)
+		}
 
 		// NB config does not exist, VPP bridge domain is obsolete
 		if nbBD == nil {
