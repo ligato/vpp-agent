@@ -64,9 +64,9 @@ type NatConfigurator struct {
 	vppChan            *govppapi.Channel
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/isInside)
-	notEnabledIfs map[string]bool
+	notEnabledIfs []*nat.Nat44Global_NatInterface
 	// a map of NAT-enabled interfaces which should be disabled (format ifName/isInside)
-	notDisabledIfs map[string]bool
+	notDisabledIfs []*nat.Nat44Global_NatInterface
 
 	Stopwatch *measure.Stopwatch
 }
@@ -84,10 +84,6 @@ func (plugin *NatConfigurator) Init() (err error) {
 	if err = plugin.checkMsgCompatibility(); err != nil {
 		return
 	}
-
-	// Init local vars
-	plugin.notEnabledIfs = make(map[string]bool)
-	plugin.notDisabledIfs = make(map[string]bool)
 
 	return
 }
@@ -107,22 +103,13 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) (err 
 		return
 	}
 
-	// Inside interfaces
-	if len(config.In) > 0 {
-		if err := plugin.enableNatInterfaces(config.In, true); err != nil {
+	// Inside/outside interfaces
+	if len(config.NatInterface) > 0 {
+		if err := plugin.enableNatInterfaces(config.NatInterface); err != nil {
 			return err
 		}
 	} else {
-		plugin.Log.Debug("No inside interfaces to configure")
-	}
-
-	// Outside interfaces
-	if len(config.Out) > 0 {
-		if err := plugin.enableNatInterfaces(config.Out, false); err != nil {
-			return err
-		}
-	} else {
-		plugin.Log.Debug("No outside interfaces to configure")
+		plugin.Log.Debug("No NAT interfaces to configure")
 	}
 
 	// Address pool
@@ -179,12 +166,18 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 	}
 
 	// Inside/outside interfaces
-	toSetIn, toUnsetIn := diffIfaces(oldConfig.In, newConfig.In)
-	toSetOut, toUnsetOut := diffIfaces(oldConfig.Out, newConfig.Out)
-	if err := plugin.disableNatInterfaces(append(toUnsetIn, toUnsetOut...), true); err != nil {
+	toSetIn, toSetOut, toUnsetIn, toUnsetOut := diffInterfaces(oldConfig.NatInterface, newConfig.NatInterface)
+	plugin.Log.Warnf("IN: to set: %v, to unset: %v, OUT: to set: %v, to unset: %v", toSetIn, toUnsetIn, toSetOut, toUnsetOut)
+	if err := plugin.disableNatInterfaces(toUnsetIn); err != nil {
 		return err
 	}
-	if err := plugin.enableNatInterfaces(append(toSetIn, toSetOut...), true); err != nil {
+	if err := plugin.disableNatInterfaces(toUnsetOut); err != nil {
+		return err
+	}
+	if err := plugin.enableNatInterfaces(toSetIn); err != nil {
+		return err
+	}
+	if err := plugin.enableNatInterfaces(toSetOut); err != nil {
 		return err
 	}
 
@@ -219,15 +212,9 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (err error) {
 	plugin.Log.Info("Deleting NAT global config")
 
-	// Inside interfaces
-	if len(config.In) > 0 {
-		if err := plugin.disableNatInterfaces(config.In, true); err != nil {
-			return err
-		}
-	}
-	// Outside interfaces
-	if len(config.Out) > 0 {
-		if err := plugin.disableNatInterfaces(config.Out, false); err != nil {
+	// Inside/outside interfaces
+	if len(config.NatInterface) > 0 {
+		if err := plugin.disableNatInterfaces(config.NatInterface); err != nil {
 			return err
 		}
 	}
@@ -383,21 +370,36 @@ func (plugin *NatConfigurator) DumpLbStaticMapping() ([]*vppdump.Nat44StaticMapp
 }
 
 // enables set of interfaces as inside/outside in NAT
-func (plugin *NatConfigurator) enableNatInterfaces(interfaces []string, isInside bool) (err error) {
-	for _, iface := range interfaces {
-		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface)
+func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
+	for _, natInterface := range natInterfaces {
+		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(natInterface.Name)
 		if !found {
-			plugin.Log.Debugf("Interface %v missing, cannot enable NAT", iface)
-			plugin.notEnabledIfs[iface] = isInside // cache as inside/outside interface
+			plugin.Log.Debugf("Interface %v missing, cannot enable NAT", natInterface.Name)
+			plugin.notEnabledIfs = append(plugin.notEnabledIfs, natInterface) // cache interface
 		} else {
-			if err = vppcalls.EnableNat44Interface(iface, ifIdx, isInside, plugin.Log, plugin.vppChan,
+			// enable nat interface
+			if err = vppcalls.EnableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
 				measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
 				return
 			}
-			if isInside {
-				plugin.Log.Debugf("Interface %v enabled for NAT as inside", iface)
+			if natInterface.IsInside {
+				plugin.Log.Debugf("Interface %v enabled for NAT as inside", natInterface.Name)
 			} else {
-				plugin.Log.Debugf("Interface %v enabled for NAT as outside", iface)
+				plugin.Log.Debugf("Interface %v enabled for NAT as outside", natInterface.Name)
+			}
+			// Enable/disable interface output feature. At first, check the current state (VPP does not like enablig
+			// output feature if it is already enabled)
+			isEnabled, dumpErr := vppdump.Nat44SingleInterfaceOutputFeatureDump(ifIdx, plugin.Log, plugin.vppChan,
+				measure.GetTimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}, plugin.Stopwatch))
+			if dumpErr != nil {
+				err = dumpErr
+				return
+			}
+			if (!isEnabled && natInterface.OutputFeature) || (isEnabled && !natInterface.OutputFeature) {
+				if err = vppcalls.SetNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside, natInterface.OutputFeature,
+					plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44InterfaceAddDelOutputFeature{}, plugin.Stopwatch)); err != nil {
+					return
+				}
 			}
 		}
 	}
@@ -406,21 +408,22 @@ func (plugin *NatConfigurator) enableNatInterfaces(interfaces []string, isInside
 }
 
 // disables set of interfaces in NAT
-func (plugin *NatConfigurator) disableNatInterfaces(interfaces []string, isInside bool) (err error) {
-	for _, iface := range interfaces {
-		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(iface)
+func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
+	for _, natInterface := range natInterfaces {
+		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(natInterface.Name)
 		if !found {
-			plugin.Log.Debugf("Interface %v missing, cannot disable NAT", iface)
-			plugin.notDisabledIfs[iface] = isInside // cache as inside/outside interface
+			plugin.Log.Debugf("Interface %v missing, cannot disable NAT", natInterface)
+			plugin.notDisabledIfs = append(plugin.notDisabledIfs, natInterface) // cache interface
 		} else {
-			if err = vppcalls.DisableNat44Interface(iface, ifIdx, isInside, plugin.Log, plugin.vppChan,
+			// disable interface
+			if err = vppcalls.DisableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
 				measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
 				return
 			}
-			if isInside {
-				plugin.Log.Debugf("Interface %v disabled for NAT as inside", iface)
+			if natInterface.IsInside {
+				plugin.Log.Debugf("Interface %v disabled for NAT as inside", natInterface)
 			} else {
-				plugin.Log.Debugf("Interface %v disabled for NAT as outside", iface)
+				plugin.Log.Debugf("Interface %v disabled for NAT as outside", natInterface)
 			}
 		}
 	}
@@ -642,30 +645,40 @@ func (plugin *NatConfigurator) removeStaticEntry(ctx *vppcalls.StaticMappingCont
 	return
 }
 
-// looks for new and obsolete interfaces
-func diffIfaces(oldIfs, newIfs []string) (toSet, toUnset []string) {
+// looks for new and obsolete IN interfaces
+func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterface) (toSetIn, toSetOut, toUnsetIn, toUnsetOut []*nat.Nat44Global_NatInterface) {
 	// Find new interfaces
 	for _, newIf := range newIfs {
 		var found bool
 		for _, oldIf := range oldIfs {
-			if newIf == oldIf {
+			if newIf.Name == oldIf.Name && newIf.IsInside == oldIf.IsInside && newIf.OutputFeature == oldIf.OutputFeature {
 				found = true
+				break
 			}
 		}
 		if !found {
-			toSet = append(toSet, newIf)
+			if newIf.IsInside {
+				toSetIn = append(toSetIn, newIf)
+			} else {
+				toSetOut = append(toSetOut, newIf)
+			}
 		}
 	}
 	// Find obsolete interfaces
 	for _, oldIf := range oldIfs {
 		var found bool
 		for _, newIf := range newIfs {
-			if oldIf == newIf {
+			if oldIf.Name == newIf.Name && oldIf.IsInside == newIf.IsInside && oldIf.OutputFeature == newIf.OutputFeature {
 				found = true
+				break
 			}
 		}
 		if !found {
-			toUnset = append(toUnset, oldIf)
+			if oldIf.IsInside {
+				toUnsetIn = append(toUnsetIn, oldIf)
+			} else {
+				toUnsetOut = append(toUnsetOut, oldIf)
+			}
 		}
 	}
 

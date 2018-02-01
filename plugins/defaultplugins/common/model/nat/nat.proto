@@ -6,16 +6,12 @@ package nat;
 message Nat44Global {
     uint32 vrfId = 1;                           /* VRF (table) ID */ 
     bool forwarding = 2;                        /* Enable/disable forwarding */
-    message InInterface {                       /* Local network interfaces enabled for NAT44 */
-        string name = 1;                        /* interface name */
-        bool outputFeature = 2;                 /* enable/disable output feature */
+    message NatInterface {                      /* Local network interfaces enabled for NAT44 */
+        string name = 1;                        /* Interface name */
+        bool isInside = 2;                      /* Distinguis between inside/outside interface */
+        bool outputFeature = 3;                 /* Enable/disable output feature */
     }
-    repeated InInterface in_interface = 3;
-    message OutInterface {                      /* External network interfaces enabled for NAT44 */
-        string name = 1;                        /* interface name */
-        bool outputFeature = 2;                 /* enable/disable output feature */
-    }
-    repeated OutInterface out_interface = 4;
+    repeated NatInterface nat_interface = 3;
     message AddressPool {
         string FirstSrcAddress = 1;             /* starting address of the source IPv4 pool range */
         string LastSrcAddres = 2;               /* ending address of the source IPv4 pool range. Optional parameter */

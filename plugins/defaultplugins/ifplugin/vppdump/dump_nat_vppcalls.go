@@ -291,6 +291,64 @@ func Nat44InterfaceDump(log logging.Logger, vppChan *govppapi.Channel, timeLog m
 	return
 }
 
+// Nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
+func Nat44InterfaceOutputFeatureDump(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (interfaces []*Nat44Interface, err error) {
+	// Nat44InterfaceDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &bin_api.Nat44InterfaceOutputFeatureDump{}
+	reqContext := vppChan.SendMultiRequest(req)
+
+	for {
+		msg := &bin_api.Nat44InterfaceOutputFeatureDetails{}
+		stop, replyErr := reqContext.ReceiveReply(msg)
+		if replyErr != nil {
+			err = fmt.Errorf("failed to dump NAT44 interface: %v", replyErr)
+			return
+		}
+		if stop {
+			break
+		}
+
+		interfaces = append(interfaces, &Nat44Interface{
+			IfIdx: msg.SwIfIndex,
+			IsInside: func(isInside uint8) bool {
+				if isInside == 1 {
+					return true
+				}
+				return false
+			}(msg.IsInside),
+		})
+	}
+
+	log.Debugf("NAT44 interface with output feature dump complete, found %d entries", len(interfaces))
+
+	return
+}
+
+// Nat44SingleInterfaceOutputFeatureDump returns true if interface output feature is enabled for interface, false otherwise
+func Nat44SingleInterfaceOutputFeatureDump(swIfIdx uint32, log logging.Logger, vppChan *govppapi.Channel,
+	timeLog measure.StopWatchEntry) (isEnabled bool, err error) {
+	// Dump all output-feature enabled interfaces
+	interfaces, err := Nat44InterfaceOutputFeatureDump(log, vppChan, timeLog)
+	if err != nil {
+		return isEnabled, err
+	}
+
+	for _, natInterface := range interfaces {
+		if natInterface.IfIdx == swIfIdx {
+			return true, nil
+		}
+	}
+
+	return
+}
+
 // Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
 func Nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (isEnabled bool, err error) {
 	// Nat44ForwardingIsEnabled time measurement

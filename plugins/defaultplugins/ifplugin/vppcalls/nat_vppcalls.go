@@ -136,6 +136,49 @@ func DisableNat44Interface(ifName string, ifIdx uint32, isInside bool, log loggi
 	return nil
 }
 
+// SetNat44InterfaceOutput enables or disables NAT output feature for provided interface
+func SetNat44InterfaceOutput(ifName string, ifIdx uint32, isInside bool, enable bool, log logging.Logger, vppChan *govppapi.Channel,
+	timeLog measure.StopWatchEntry) error {
+	// Nat44InterfaceAddDelOutputFeature time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	req := &nat.Nat44InterfaceAddDelOutputFeature{
+		SwIfIndex: ifIdx,
+		IsInside: func(isInside bool) uint8 {
+			if isInside {
+				return 1
+			}
+			return 0
+		}(isInside),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(enable),
+	}
+
+	reply := &nat.Nat44InterfaceAddDelOutputFeatureReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("enabling NAT output feature for interface %v returned %d", ifName, reply.Retval)
+	}
+
+	return nil
+
+	log.Debugf("NAT output feature enabled for interface %v", ifName)
+
+	return nil
+}
+
 // AddNat44AddressPool sets new NAT address pool
 func AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool, log logging.Logger,
 	vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {

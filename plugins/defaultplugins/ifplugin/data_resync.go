@@ -428,6 +428,10 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	if err != nil {
 		plugin.Log.Errorf("iface dump: %v", err)
 	}
+	interfacesOf, err := vppdump.Nat44InterfaceOutputFeatureDump(plugin.Log, plugin.vppChan, nil)
+	if err != nil {
+		plugin.Log.Errorf("iface of dump: %v", err)
+	}
 	staticMappings, err := vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, nil)
 	if err != nil {
 		plugin.Log.Errorf("sm dump: %v", err)
@@ -444,6 +448,11 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 
 	plugin.Log.Warn("Interfaces:")
 	for i, iface := range interfaces {
+		plugin.Log.Warnf("%v: IfIdx:%v, inside:%v", i, iface.IfIdx, iface.IsInside)
+	}
+
+	plugin.Log.Warn("Interfaces of:")
+	for i, iface := range interfacesOf {
 		plugin.Log.Warnf("%v: IfIdx:%v, inside:%v", i, iface.IfIdx, iface.IsInside)
 	}
 
@@ -481,6 +490,12 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 		return fmt.Errorf("failed to dump NAT44 interfaces: %v", err)
 	}
 
+	ifsOutputFeature, err := vppdump.Nat44InterfaceOutputFeatureDump(plugin.Log, plugin.vppChan,
+		measure.GetTimeLog(&bin_api_nat.Nat44InterfaceDump{}, plugin.Stopwatch))
+	if err != nil {
+		return fmt.Errorf("failed to dump NAT44 interfaces: %v", err)
+	}
+
 	// Reconstruct existing global config
 	var vrf uint32
 	var vppAddressPools []*nat.Nat44Global_AddressPool
@@ -492,30 +507,37 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 		vrf = addressPool.VrfID // VRF ID is the same for every entry in address pool
 	}
 
-	var vppInInterfaces []string
-	var vppOutInterfaces []string
-	for _, vppIface := range interfaces {
+	var natInterfaces []*nat.Nat44Global_NatInterface
+	for _, natInterface := range interfaces {
 		// Look for interface
-		ifName, _, found := plugin.SwIfIndexes.LookupName(vppIface.IfIdx)
+		ifName, _, found := plugin.SwIfIndexes.LookupName(natInterface.IfIdx)
 		if !found {
-			plugin.Log.Warnf("NAT44 interface dump: interface %v not found in the mapping", vppIface.IfIdx)
+			plugin.Log.Warnf("NAT44 interface dump: interface %v not found in the mapping", natInterface.IfIdx)
 			continue
 		}
-		if vppIface.IsInside {
-			vppInInterfaces = append(vppInInterfaces, ifName)
-			continue
+		// Find output feature value
+		var outputFeature bool
+		for _, ifOutputFeature := range ifsOutputFeature {
+			if natInterface.IfIdx == ifOutputFeature.IfIdx && natInterface.IsInside == ifOutputFeature.IsInside {
+				outputFeature = true
+			}
 		}
-		vppOutInterfaces = append(vppOutInterfaces, ifName)
+		natInterfaces = append(natInterfaces, &nat.Nat44Global_NatInterface{
+			Name:          ifName,
+			IsInside:      natInterface.IsInside,
+			OutputFeature: outputFeature,
+		})
 	}
 
 	// VPP global config
 	vppNatGlobal := &nat.Nat44Global{
-		AddressPool: vppAddressPools,
-		VrfId:       vrf,
-		Forwarding:  forwarding,
-		In:          vppInInterfaces,
-		Out:         vppOutInterfaces,
+		AddressPool:  vppAddressPools,
+		VrfId:        vrf,
+		Forwarding:   forwarding,
+		NatInterface: natInterfaces,
 	}
+
+	plugin.Log.Warnf("Interfaces: %v", vppNatGlobal.NatInterface)
 
 	// Modify will made all the diffs needed
 	return plugin.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal)

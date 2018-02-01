@@ -47,8 +47,7 @@ func (x Nat44DNat_DNatConfig_Mapping_Protocol) String() string {
 type Nat44Global struct {
 	VrfId        uint32                      `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
 	Forwarding   bool                        `protobuf:"varint,2,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	InInterface  []*Nat44Global_InInterface  `protobuf:"bytes,3,rep,name=in_interface" json:"in_interface,omitempty"`
-	OutInterface []*Nat44Global_OutInterface `protobuf:"bytes,4,rep,name=out_interface" json:"out_interface,omitempty"`
+	NatInterface []*Nat44Global_NatInterface `protobuf:"bytes,3,rep,name=nat_interface" json:"nat_interface,omitempty"`
 	AddressPool  []*Nat44Global_AddressPool  `protobuf:"bytes,5,rep,name=address_pool" json:"address_pool,omitempty"`
 }
 
@@ -56,16 +55,9 @@ func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
 func (m *Nat44Global) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global) ProtoMessage()    {}
 
-func (m *Nat44Global) GetInInterface() []*Nat44Global_InInterface {
+func (m *Nat44Global) GetNatInterface() []*Nat44Global_NatInterface {
 	if m != nil {
-		return m.InInterface
-	}
-	return nil
-}
-
-func (m *Nat44Global) GetOutInterface() []*Nat44Global_OutInterface {
-	if m != nil {
-		return m.OutInterface
+		return m.NatInterface
 	}
 	return nil
 }
@@ -77,23 +69,15 @@ func (m *Nat44Global) GetAddressPool() []*Nat44Global_AddressPool {
 	return nil
 }
 
-type Nat44Global_InInterface struct {
+type Nat44Global_NatInterface struct {
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	OutputFeature bool   `protobuf:"varint,2,opt,name=outputFeature,proto3" json:"outputFeature,omitempty"`
+	IsInside      bool   `protobuf:"varint,2,opt,name=isInside,proto3" json:"isInside,omitempty"`
+	OutputFeature bool   `protobuf:"varint,3,opt,name=outputFeature,proto3" json:"outputFeature,omitempty"`
 }
 
-func (m *Nat44Global_InInterface) Reset()         { *m = Nat44Global_InInterface{} }
-func (m *Nat44Global_InInterface) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_InInterface) ProtoMessage()    {}
-
-type Nat44Global_OutInterface struct {
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	OutputFeature bool   `protobuf:"varint,2,opt,name=outputFeature,proto3" json:"outputFeature,omitempty"`
-}
-
-func (m *Nat44Global_OutInterface) Reset()         { *m = Nat44Global_OutInterface{} }
-func (m *Nat44Global_OutInterface) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_OutInterface) ProtoMessage()    {}
+func (m *Nat44Global_NatInterface) Reset()         { *m = Nat44Global_NatInterface{} }
+func (m *Nat44Global_NatInterface) String() string { return proto.CompactTextString(m) }
+func (*Nat44Global_NatInterface) ProtoMessage()    {}
 
 type Nat44Global_AddressPool struct {
 	FirstSrcAddress string `protobuf:"bytes,1,opt,proto3" json:"FirstSrcAddress,omitempty"`
