@@ -49,6 +49,7 @@ var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	Learn:   1,
 	ArpTerm: 1,
 	MacAge:  45,
+	BdTag:   []byte(dummyBridgeDomainName),
 	IsAdd:   1,
 }
 

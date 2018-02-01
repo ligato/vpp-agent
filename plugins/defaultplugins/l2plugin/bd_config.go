@@ -171,7 +171,7 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 		plugin.Log.Infof("Bridge domain %v modify done.", newBdConfig.Name)
 	} else {
 		// Modify without recreation
-		bdidx, _, found := plugin.BdIndices.LookupIdx(oldBdConfig.Name)
+		bdIdx, _, found := plugin.BdIndices.LookupIdx(oldBdConfig.Name)
 		if !found {
 			// If old config is missing, the diff cannot be done. Bridge domain will be created as a new one. This
 			// case should NOT happen, it means that the agent's state is inconsistent.
@@ -182,25 +182,25 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 
 		// Update interfaces.
 		toSet, toUnset := plugin.calculateIfaceDiff(newBdConfig.Interfaces, oldBdConfig.Interfaces)
-		vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig, bdidx, toUnset, plugin.SwIfIndices, plugin.Log,
+		vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig, bdIdx, toUnset, plugin.SwIfIndices, plugin.Log,
 			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
-		vppcalls.SetInterfacesToBridgeDomain(newBdConfig, bdidx, toSet, plugin.SwIfIndices, plugin.Log,
+		vppcalls.SetInterfacesToBridgeDomain(newBdConfig, bdIdx, toSet, plugin.SwIfIndices, plugin.Log,
 			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
 
 		// Update ARP termination table.
 		toAdd, toRemove := plugin.calculateARPDiff(newBdConfig.ArpTerminationTable, oldBdConfig.ArpTerminationTable)
 		ipMacAddDelTimeLog := measure.GetTimeLog(l2ba.BdIPMacAddDel{}, plugin.Stopwatch)
 		for _, entry := range toAdd {
-			vppcalls.VppAddArpTerminationTableEntry(bdidx, entry.PhysAddress, entry.IpAddress, plugin.Log,
+			vppcalls.VppAddArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress, plugin.Log,
 				plugin.vppChan, ipMacAddDelTimeLog)
 		}
 		for _, entry := range toRemove {
-			vppcalls.VppRemoveArpTerminationTableEntry(bdidx, entry.PhysAddress, entry.IpAddress, plugin.Log,
+			vppcalls.VppRemoveArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress, plugin.Log,
 				plugin.vppChan, ipMacAddDelTimeLog)
 		}
 
 		// Push change to bridge domain state.
-		errLookup := plugin.PropagateBdDetailsToStatus(bdidx, newBdConfig.Name)
+		errLookup := plugin.PropagateBdDetailsToStatus(bdIdx, newBdConfig.Name)
 		if errLookup != nil {
 			plugin.Log.WithField("bdName", newBdConfig.Name).Error(errLookup)
 			return errLookup
