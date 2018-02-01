@@ -108,7 +108,7 @@ test-cover-xml: test-cover
 	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
 
 # Get generator tools
-get-generators: dep-install
+get-generators:
 	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 	go install -v ./vendor/github.com/ungerik/pkgreflect
 
