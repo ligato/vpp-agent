@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
-	"github.com/sirupsen/logrus"
 )
 
 // Num protocol representation
@@ -468,10 +467,6 @@ func handleNat44StaticMapping(ctx *StaticMappingContext, vrf uint32, twiceNat, i
 		}(isAdd),
 	}
 
-	log.Warnf("addronly %v, localIP/port %v/%v, ext IP/Port %v/%v, proto %v, extIface %v, vrf %v, twiceNat %v, isAdd %v",
-		req.AddrOnly, req.LocalIPAddress, req.LocalPort, req.ExternalIPAddress, req.ExternalPort, req.Protocol, req.ExternalSwIfIndex,
-		req.VrfID, req.TwiceNat, req.IsAdd)
-
 	reply := &nat.Nat44AddDelStaticMappingReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -571,17 +566,23 @@ func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, vrf uint32, twiceNa
 // Calls VPP binary API to add/remove identity mapping
 func handleNat44IdentityMapping(ip []byte, protocol uint8, port uint16, ifIdx, vrf uint32, isAdd bool, vppChan *govppapi.Channel) error {
 	req := &nat.Nat44AddDelIdentityMapping{
-		AddrOnly: func(port uint16) uint8 {
+		AddrOnly: func(port uint16, ip []byte) uint8 {
 			// Set addr only if port is set to zero
-			if port == 0 {
+			if port == 0 || ip == nil {
 				return 1
 			}
 			return 0
-		}(port),
+		}(port, ip),
 		IPAddress: ip,
 		Port:      port,
 		Protocol:  protocol,
-		VrfID:     vrf,
+		SwIfIndex: func(ifIdx uint32) uint32 {
+			if ifIdx == 0 {
+				return 0xffffffff // means no interface
+			}
+			return ifIdx
+		}(ifIdx),
+		VrfID: vrf,
 		IsAdd: func(isAdd bool) uint8 {
 			if isAdd {
 				return 1
@@ -590,16 +591,11 @@ func handleNat44IdentityMapping(ip []byte, protocol uint8, port uint16, ifIdx, v
 		}(isAdd),
 	}
 
-	if ifIdx == 0 {
-		req.SwIfIndex = 0xffffffff // means no interface
-	}
-
-	logrus.Warnf("sending data addronly:%v, proto:%v, ifIdx:%v, ip:%v, port:%v, vrf:%v", req.AddrOnly, req.Protocol, req.SwIfIndex, req.IPAddress, req.Port, req.VrfID)
 	reply := &nat.Nat44AddDelIdentityMappingReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	logrus.Warnf("data send %v", req)
+
 	if 0 != reply.Retval {
 		return fmt.Errorf("adding NAT44 identity mapping returned %d", reply.Retval)
 	}

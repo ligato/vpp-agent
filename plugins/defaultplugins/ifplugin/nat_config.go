@@ -300,7 +300,7 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 		plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 		plugin.NatIndexSeq++
 
-		plugin.Log.Debugf("DNAT identity (lb)mapping configured (ID: %v)", mappingIdentifier)
+		plugin.Log.Debugf("DNAT identity mapping configured (ID: %v)", mappingIdentifier)
 	}
 
 	// Register DNAT configuration
@@ -391,24 +391,14 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 	return nil
 }
 
-// DumpAddressPools returns a list of all configured NAT address pools
-func (plugin *NatConfigurator) DumpAddressPools() ([]*vppdump.Nat44AddressPool, error) {
-	return vppdump.Nat44AddressDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
+// DumpNatGlobal returns the current NAT44 global config
+func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
+	return vppdump.Nat44GlobalConfigDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 }
 
-// DumpInterfaces returns a list of all enabled interfaces
-func (plugin *NatConfigurator) DumpInterfaces() ([]*vppdump.Nat44Interface, error) {
-	return vppdump.Nat44InterfaceDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
-}
-
-// DumpStaticMapping returns a list of static mappings
-func (plugin *NatConfigurator) DumpStaticMapping() ([]*vppdump.Nat44StaticMappingEntry, error) {
-	return vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
-}
-
-// DumpLbStaticMapping returns a list of static mappings with load balancer
-func (plugin *NatConfigurator) DumpLbStaticMapping() ([]*vppdump.Nat44StaticMappingEntry, error) {
-	return vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan, measure.GetTimeLog(&bin_api.Nat44AddressDump{}, plugin.Stopwatch))
+// DumpNatDNat returns the current NAT44 DNAT config
+func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
+	return vppdump.NAT44DNatDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 }
 
 // enables set of interfaces as inside/outside in NAT
@@ -673,8 +663,6 @@ func (plugin *NatConfigurator) removeStaticEntry(ctx *vppcalls.StaticMappingCont
 // handler for single identity mapping entry
 func (plugin *NatConfigurator) handleIdentityMapping(addressInterface string, ipAddress string, port, vrf uint32,
 	proto nat.Protocol, isAdd bool) (err error) {
-	var parsedIP net.IP
-
 	// Verify interface if exists
 	var ifIdx uint32
 	if addressInterface != "" {
@@ -690,12 +678,12 @@ func (plugin *NatConfigurator) handleIdentityMapping(addressInterface string, ip
 	if ifIdx != 0 {
 		// Case with interface
 		if isAdd {
-			return plugin.configureIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+			return plugin.configureIdentityEntry(nil, proto, uint16(port), ifIdx, vrf)
 		}
-		return plugin.removeIdentityEntry(parsedIP, proto, uint16(port), ifIdx, vrf)
+		return plugin.removeIdentityEntry(nil, proto, uint16(port), ifIdx, vrf)
 	}
 	// Case with IP (optionally port). Verify and parse input IP/port
-	parsedIP = net.ParseIP(ipAddress).To4()
+	parsedIP := net.ParseIP(ipAddress).To4()
 	if parsedIP == nil {
 		return fmt.Errorf("unable to parse IP address %v", ipAddress)
 	}

@@ -16,15 +16,12 @@ package ifplugin
 
 import (
 	"fmt"
-	"strconv"
-
 	"net"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/idxvpp/persist"
-	bin_api_nat "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
+	_ "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
@@ -419,125 +416,12 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 
 // ResyncNatGlobal writes NAT address pool config to the the empty VPP
 func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
-
-	addresses, err := vppdump.Nat44AddressDump(plugin.Log, plugin.vppChan, nil)
-	if err != nil {
-		plugin.Log.Errorf("address dump: %v", err)
-	}
-	interfaces, err := vppdump.Nat44InterfaceDump(plugin.Log, plugin.vppChan, nil)
-	if err != nil {
-		plugin.Log.Errorf("iface dump: %v", err)
-	}
-	interfacesOf, err := vppdump.Nat44InterfaceOutputFeatureDump(plugin.Log, plugin.vppChan, nil)
-	if err != nil {
-		plugin.Log.Errorf("iface of dump: %v", err)
-	}
-	staticMappings, err := vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan, nil)
-	if err != nil {
-		plugin.Log.Errorf("sm dump: %v", err)
-	}
-	lbStaticMappings, err := vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan, nil)
-	if err != nil {
-		plugin.Log.Errorf("lbsm dump: %v", err)
-	}
-
-	plugin.Log.Warn("Addresses:")
-	for i, address := range addresses {
-		plugin.Log.Warnf("%v: IP:%v, twice-nat:%v, vrf:%v", i, address.IPAddress, address.TwiceNat, address.VrfID)
-	}
-
-	plugin.Log.Warn("Interfaces:")
-	for i, iface := range interfaces {
-		plugin.Log.Warnf("%v: IfIdx:%v, inside:%v", i, iface.IfIdx, iface.IsInside)
-	}
-
-	plugin.Log.Warn("Interfaces of:")
-	for i, iface := range interfacesOf {
-		plugin.Log.Warnf("%v: IfIdx:%v, inside:%v", i, iface.IfIdx, iface.IsInside)
-	}
-
-	plugin.Log.Warn("Static mappings:")
-	for i, staticMapping := range staticMappings {
-		plugin.Log.Warnf("%v: lcIP:%v:%v, exIP:%v:%v, exIdx:%v, proto:%v, addrOnly:%v, twice-nat:%v, vrf:%v ", i, staticMapping.LocalIPs[0].LocalIP, staticMapping.LocalIPs[0].LocalPort, staticMapping.ExternalIP,
-			staticMapping.ExternalPort, staticMapping.ExternalIfIdx, staticMapping.Protocol, staticMapping.AddressOnly, staticMapping.TwiceNat, staticMapping.VrfID)
-	}
-
-	plugin.Log.Warn("LB-Static mappings:")
-	for i, lbStaticMapping := range lbStaticMappings {
-		plugin.Log.Warnf("%v: exIP:%v:%v, exIdx:%v, proto:%v, addrOnly:%v, twice-nat:%v, vrf:%v ", i, lbStaticMapping.ExternalIP,
-			lbStaticMapping.ExternalPort, lbStaticMapping.ExternalIfIdx, lbStaticMapping.Protocol, lbStaticMapping.AddressOnly, lbStaticMapping.TwiceNat, lbStaticMapping.VrfID)
-		for _, local := range lbStaticMapping.LocalIPs {
-			plugin.Log.Warnf("	IP:%v:%v, prob.:%v", local.LocalIP, local.LocalPort, local.Probability)
-		}
-	}
-
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC nat global config.")
 
-	// Dump existing global configuration (forwarding, address pool and interfaces)
-	forwarding, err := vppdump.Nat44IsForwardingEnabled(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44ForwardingIsEnabled{}, plugin.Stopwatch))
+	vppNatGlobal, err := vppdump.Nat44GlobalConfigDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
-		return fmt.Errorf("failed to dump NAT44 forwarding: %v", err)
+		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
-	addressPools, err := vppdump.Nat44AddressDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44AddressDump{}, plugin.Stopwatch))
-	if err != nil {
-		return fmt.Errorf("failed to dump NAT44 address pools: %v", err)
-	}
-	interfaces, err = vppdump.Nat44InterfaceDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44InterfaceDump{}, plugin.Stopwatch))
-	if err != nil {
-		return fmt.Errorf("failed to dump NAT44 interfaces: %v", err)
-	}
-
-	ifsOutputFeature, err := vppdump.Nat44InterfaceOutputFeatureDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44InterfaceDump{}, plugin.Stopwatch))
-	if err != nil {
-		return fmt.Errorf("failed to dump NAT44 interfaces: %v", err)
-	}
-
-	// Reconstruct existing global config
-	var vrf uint32
-	var vppAddressPools []*nat.Nat44Global_AddressPool
-	for _, addressPool := range addressPools {
-		vppAddressPools = append(vppAddressPools, &nat.Nat44Global_AddressPool{
-			FirstSrcAddress: addressPool.IPAddress,
-			TwiceNat:        addressPool.TwiceNat,
-		})
-		vrf = addressPool.VrfID // VRF ID is the same for every entry in address pool
-	}
-
-	var natInterfaces []*nat.Nat44Global_NatInterface
-	for _, natInterface := range interfaces {
-		// Look for interface
-		ifName, _, found := plugin.SwIfIndexes.LookupName(natInterface.IfIdx)
-		if !found {
-			plugin.Log.Warnf("NAT44 interface dump: interface %v not found in the mapping", natInterface.IfIdx)
-			continue
-		}
-		// Find output feature value
-		var outputFeature bool
-		for _, ifOutputFeature := range ifsOutputFeature {
-			if natInterface.IfIdx == ifOutputFeature.IfIdx && natInterface.IsInside == ifOutputFeature.IsInside {
-				outputFeature = true
-			}
-		}
-		natInterfaces = append(natInterfaces, &nat.Nat44Global_NatInterface{
-			Name:          ifName,
-			IsInside:      natInterface.IsInside,
-			OutputFeature: outputFeature,
-		})
-	}
-
-	// VPP global config
-	vppNatGlobal := &nat.Nat44Global{
-		AddressPool:  vppAddressPools,
-		VrfId:        vrf,
-		Forwarding:   forwarding,
-		NatInterface: natInterfaces,
-	}
-
-	plugin.Log.Warnf("Interfaces: %v", vppNatGlobal.NatInterface)
 
 	// Modify will made all the diffs needed
 	return plugin.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal)
@@ -553,23 +437,15 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC DNAT config.")
 
-	// Read existing DNAT configuration from the VPP
-	vppDNatMappings, err := vppdump.Nat44StaticMappingDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44StaticMappingDump{}, plugin.Stopwatch))
+	vppDNat, err := vppdump.NAT44DNatDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
-	vppDNatLbMappings, err := vppdump.Nat44StaticMappingLbDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44LbStaticMappingDump{}, plugin.Stopwatch))
-	if err != nil {
-		return err
+	if len(vppDNat.DnatConfig) == 0 {
+		return nil
 	}
-
-	vppDNatIdMappings, err := vppdump.Nat44IdentityMappingDump(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(&bin_api_nat.Nat44IdentityMappingDump{}, plugin.Stopwatch))
-	if err != nil {
-		return err
-	}
+	// For now, there is only one DNAT config
+	vppDNatConfig := vppDNat.DnatConfig[0]
 
 	// Correlate with existing config
 	for _, nbDNat := range nbDNatConfig {
@@ -578,7 +454,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 			continue
 		} else {
 			// Compare all VPP mappings with the NB, register existing ones
-			plugin.resolveMappings(nbDNat, vppDNatMappings, vppDNatLbMappings, vppDNatIdMappings)
+			plugin.resolveMappings(nbDNat, vppDNatConfig.VrfId, vppDNatConfig.SNatEnabled, vppDNatConfig.Mapping, vppDNatConfig.IdMapping)
 			// Configure all missing DNAT mappings
 			for _, nbMapping := range nbDNat.Mapping {
 				mappingIdentifier := getStMappingIdentifier(nbMapping, nbDNat.VrfId)
@@ -600,6 +476,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 					// Register new DNAT mapping
 					plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 					plugin.NatIndexSeq++
+					plugin.Log.Debugf("NAT44 resync: new (lb)static mapping %v configured", mappingIdentifier)
 				}
 			}
 			// Configure all missing DNAT identity mappings
@@ -617,6 +494,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 					// Register new DNAT mapping
 					plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 					plugin.NatIndexSeq++
+					plugin.Log.Debugf("NAT44 resync: new identity mapping %v configured", mappingIdentifier)
 				}
 			}
 			// At this point, the DNAT is completely configured and can be registered
@@ -627,44 +505,27 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 	}
 
 	// The last step is to remove obsolete mappings
-	// Static mapping
-	for _, vppMapping := range vppDNatMappings {
-		// Get interface name
-		ifName, _, found := plugin.SwIfIndexes.LookupName(vppMapping.ExternalIfIdx)
-		if !found {
-			plugin.Log.Errorf("NAT44 resync: failed to remove mapping, interface %v is missing", vppMapping.ExternalIfIdx)
-			continue
-		}
-		data := plugin.getModelConfig(vppMapping, ifName)
+	for _, vppMapping := range vppDNatConfig.Mapping {
+		// Static mapping
+		if len(vppMapping.LocalIp) == 1 {
 
-		if err := plugin.handleStaticMapping(vppMapping.ExternalIP, ifName, vppMapping.VrfID,
-			vppMapping.TwiceNat, data, false); err != nil {
-			plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
-			continue
-		}
-	}
-
-	// Lb-static mapping
-	for _, vppLbMapping := range vppDNatLbMappings {
-		data := plugin.getModelConfig(vppLbMapping, "")
-
-		if err := plugin.handleStaticMappingLb(vppLbMapping.VrfID, vppLbMapping.TwiceNat, data, false); err != nil {
-			plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
-			continue
+			if err := plugin.handleStaticMapping(vppMapping.ExternalIP, vppMapping.ExternalInterface, vppDNatConfig.VrfId,
+				vppDNatConfig.SNatEnabled, vppMapping, false); err != nil {
+				plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
+				continue
+			}
+		} else {
+			// Lb-static mapping
+			if err := plugin.handleStaticMappingLb(vppDNatConfig.VrfId, vppDNatConfig.SNatEnabled, vppMapping, false); err != nil {
+				plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
+				continue
+			}
 		}
 	}
-
-	// Identity mapping
-	for _, vppIdMapping := range vppDNatIdMappings {
-		// Get interface name
-		ifName, _, found := plugin.SwIfIndexes.LookupName(vppIdMapping.IfIdx)
-		if !found {
-			plugin.Log.Errorf("NAT44 resync: failed to remove mapping, interface %v is missing", vppIdMapping.IfIdx)
-			continue
-		}
-
-		if err := plugin.handleIdentityMapping(ifName, vppIdMapping.IPAddress, vppIdMapping.Port, vppIdMapping.VrfID,
-			vppIdMapping.Protocol, false); err != nil {
+	for _, vppIdMapping := range vppDNatConfig.IdMapping {
+		// Identity mapping
+		if err := plugin.handleIdentityMapping(vppIdMapping.AddressedInterface, vppIdMapping.IpAddress, vppIdMapping.Port,
+			vppDNatConfig.VrfId, vppIdMapping.Protocol, false); err != nil {
 			plugin.Log.Errorf("NAT44 resync: failed to remove identity mapping: %v", err)
 			continue
 		}
@@ -676,11 +537,11 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 }
 
 // Looks for the same mapping in the VPP, register existing ones
-func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings, vppLbMappings []*vppdump.Nat44StaticMappingEntry, vppIdMappings []*vppdump.Nat44IdentityMappingEntry) {
+func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig, vppVfID uint32, vppSNat bool,
+	vppMappings []*nat.Nat44DNat_DNatConfig_Mapping, vppIdMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Store VRF and SNAT values (they are the same for every mapping in DNAT config)
-	vrf := nbDNatConfig.VrfId
-	sNat := nbDNatConfig.SNatEnabled
+	nbVrf := nbDNatConfig.VrfId
+	nbSNat := nbDNatConfig.SNatEnabled
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.Mapping {
 		if len(nbMapping.LocalIp) > 1 {
@@ -688,7 +549,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 		MappingCompare:
 			for vppIndex, vppLbMapping := range vppMappings {
 				// Compare VRF/SNAT fields
-				if vrf != vppLbMapping.VrfID || sNat != vppLbMapping.TwiceNat {
+				if nbVrf != vppVfID || nbSNat != vppSNat {
 					continue
 				}
 				// Compare external IP/Port
@@ -700,11 +561,11 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					continue
 				}
 				// Compare Local IP/Port and probability addresses
-				if len(nbMapping.LocalIp) != len(vppLbMapping.LocalIPs) {
+				if len(nbMapping.LocalIp) != len(vppLbMapping.LocalIp) {
 					continue
 				}
 				for _, nbLocal := range nbMapping.LocalIp {
-					for _, vppLocal := range vppLbMapping.LocalIPs {
+					for _, vppLocal := range vppLbMapping.LocalIp {
 						if nbLocal.LocalIP != vppLocal.LocalIP || nbLocal.LocalPort != vppLocal.LocalPort ||
 							nbLocal.Probability != vppLocal.Probability {
 							continue MappingCompare
@@ -712,7 +573,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					}
 				}
 				// At this point, the NB mapping matched the VPP one, so register it
-				mappingIdentifier := getStMappingIdentifier(nbMapping, vrf)
+				mappingIdentifier := getStMappingIdentifier(nbMapping, nbVrf)
 				plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 				plugin.NatIndexSeq++
 
@@ -724,7 +585,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			// No load balancer
 			for vppIndex, vppMapping := range vppMappings {
 				// Compare VRF/SNAT fields
-				if vrf != vppMapping.VrfID || sNat != vppMapping.TwiceNat {
+				if nbVrf != vppVfID || nbSNat != vppSNat {
 					continue
 				}
 				// Compare external IP/Port and interface
@@ -732,12 +593,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					continue
 				}
 				// Compare external interface
-				nbExIfIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbMapping.ExternalInterface)
-				if !found {
-					plugin.Log.Errorf("NAT44 resync: interface %v not found", nbMapping.ExternalInterface)
-					continue
-				}
-				if nbExIfIdx != vppMapping.ExternalIfIdx {
+				if nbMapping.ExternalInterface != vppMapping.ExternalInterface {
 					continue
 				}
 				// Compare protocol
@@ -745,19 +601,19 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					continue
 				}
 				// Compare Local IP/Port and probability addresses (there is only one local IP address in this case)
-				if len(nbMapping.LocalIp) != 1 || len(vppMapping.LocalIPs) != 1 {
+				if len(nbMapping.LocalIp) != 1 || len(vppMapping.LocalIp) != 1 {
 					plugin.Log.Warnf("NAT44 resync: mapping without load balancer contains more than 1 local IP address")
 					continue
 				}
 				nbLocal := nbMapping.LocalIp[0]
-				vppLocal := vppMapping.LocalIPs[0]
+				vppLocal := vppMapping.LocalIp[0]
 				if nbLocal.LocalIP != vppLocal.LocalIP || nbLocal.LocalPort != vppLocal.LocalPort ||
 					nbLocal.Probability != vppLocal.Probability {
 					continue
 				}
 
 				// At this point, the NB mapping matched the VPP one, so register it
-				mappingIdentifier := getStMappingIdentifier(nbMapping, vrf)
+				mappingIdentifier := getStMappingIdentifier(nbMapping, nbVrf)
 				plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 				plugin.NatIndexSeq++
 
@@ -771,16 +627,11 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 	for _, nbIdMapping := range nbDNatConfig.IdMapping {
 		for vppIdIndex, vppIdMapping := range vppIdMappings {
 			// Compare VRF and address interface
-			nbExIfIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbIdMapping.AddressedInterface)
-			if !found {
-				plugin.Log.Errorf("NAT44 resync: interface %v not found", nbIdMapping.AddressedInterface)
-				continue
-			}
-			if vrf != vppIdMapping.VrfID || nbExIfIdx != vppIdMapping.IfIdx {
+			if nbVrf != vppVfID || nbIdMapping.AddressedInterface != vppIdMapping.AddressedInterface {
 				continue
 			}
 			// Compare IP and port values
-			if nbIdMapping.IpAddress != vppIdMapping.IPAddress || nbIdMapping.Port != vppIdMapping.Port {
+			if nbIdMapping.IpAddress != vppIdMapping.IpAddress || nbIdMapping.Port != vppIdMapping.Port {
 				continue
 			}
 			// Compare protocol
@@ -789,7 +640,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			}
 
 			// At this point, the NB mapping matched the VPP one, so register it
-			mappingIdentifier := getIdMappingIdentifier(nbIdMapping, vrf)
+			mappingIdentifier := getIdMappingIdentifier(nbIdMapping, nbVrf)
 			plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 			plugin.NatIndexSeq++
 
@@ -797,22 +648,5 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			vppIdMappings = append(vppIdMappings[:vppIdIndex], vppIdMappings[vppIdIndex+1:]...)
 			plugin.Log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
-	}
-}
-
-// Reconstruct NAT44 DNat static mapping configuration
-func (plugin *NatConfigurator) getModelConfig(vppMapping *vppdump.Nat44StaticMappingEntry, ifName string) *nat.Nat44DNat_DNatConfig_Mapping {
-	var localIPs []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP
-	for _, localIP := range vppMapping.LocalIPs {
-		localIPs = append(localIPs, &nat.Nat44DNat_DNatConfig_Mapping_LocalIP{
-			LocalIP: localIP.LocalIP + "/" + strconv.Itoa(int(localIP.LocalPort)),
-		})
-	}
-
-	return &nat.Nat44DNat_DNatConfig_Mapping{
-		ExternalInterface: ifName,
-		ExternalIP:        vppMapping.ExternalIP + "/" + strconv.Itoa(int(vppMapping.ExternalPort)),
-		Protocol:          vppMapping.Protocol,
-		LocalIp:           localIPs,
 	}
 }

@@ -1221,7 +1221,7 @@ func createDNat(db keyval.ProtoBroker) {
 	// Static mapping
 	var mapping []*nat.Nat44DNat_DNatConfig_Mapping
 	entry := &nat.Nat44DNat_DNatConfig_Mapping{
-		//ExternalInterface: "tap1",
+		ExternalInterface: "tap1",
 		ExternalIP: "192.168.0.1",
 		ExternalPort: 8989,
 		LocalIp:    localIPs,
