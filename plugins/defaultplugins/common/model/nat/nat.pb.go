@@ -45,49 +45,49 @@ func (x Protocol) String() string {
 
 // NAT44 global config
 type Nat44Global struct {
-	Forwarding   bool                        `protobuf:"varint,2,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	NatInterface []*Nat44Global_NatInterface `protobuf:"bytes,3,rep,name=nat_interface" json:"nat_interface,omitempty"`
-	AddressPool  []*Nat44Global_AddressPool  `protobuf:"bytes,5,rep,name=address_pool" json:"address_pool,omitempty"`
+	Forwarding    bool                         `protobuf:"varint,2,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
+	NatInterfaces []*Nat44Global_NatInterfaces `protobuf:"bytes,3,rep,name=nat_interfaces" json:"nat_interfaces,omitempty"`
+	AddressPools  []*Nat44Global_AddressPools  `protobuf:"bytes,5,rep,name=address_pools" json:"address_pools,omitempty"`
 }
 
 func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
 func (m *Nat44Global) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global) ProtoMessage()    {}
 
-func (m *Nat44Global) GetNatInterface() []*Nat44Global_NatInterface {
+func (m *Nat44Global) GetNatInterfaces() []*Nat44Global_NatInterfaces {
 	if m != nil {
-		return m.NatInterface
+		return m.NatInterfaces
 	}
 	return nil
 }
 
-func (m *Nat44Global) GetAddressPool() []*Nat44Global_AddressPool {
+func (m *Nat44Global) GetAddressPools() []*Nat44Global_AddressPools {
 	if m != nil {
-		return m.AddressPool
+		return m.AddressPools
 	}
 	return nil
 }
 
-type Nat44Global_NatInterface struct {
+type Nat44Global_NatInterfaces struct {
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	IsInside      bool   `protobuf:"varint,2,opt,name=isInside,proto3" json:"isInside,omitempty"`
 	OutputFeature bool   `protobuf:"varint,3,opt,name=outputFeature,proto3" json:"outputFeature,omitempty"`
 }
 
-func (m *Nat44Global_NatInterface) Reset()         { *m = Nat44Global_NatInterface{} }
-func (m *Nat44Global_NatInterface) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_NatInterface) ProtoMessage()    {}
+func (m *Nat44Global_NatInterfaces) Reset()         { *m = Nat44Global_NatInterfaces{} }
+func (m *Nat44Global_NatInterfaces) String() string { return proto.CompactTextString(m) }
+func (*Nat44Global_NatInterfaces) ProtoMessage()    {}
 
-type Nat44Global_AddressPool struct {
-	FirstSrcAddress string `protobuf:"bytes,1,opt,proto3" json:"FirstSrcAddress,omitempty"`
-	LastSrcAddres   string `protobuf:"bytes,2,opt,proto3" json:"LastSrcAddres,omitempty"`
+type Nat44Global_AddressPools struct {
+	FirstSrcAddress string `protobuf:"bytes,1,opt,name=firstSrcAddress,proto3" json:"firstSrcAddress,omitempty"`
+	LastSrcAddress  string `protobuf:"bytes,2,opt,name=lastSrcAddress,proto3" json:"lastSrcAddress,omitempty"`
 	VrfId           uint32 `protobuf:"varint,3,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
 	TwiceNat        bool   `protobuf:"varint,4,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
 }
 
-func (m *Nat44Global_AddressPool) Reset()         { *m = Nat44Global_AddressPool{} }
-func (m *Nat44Global_AddressPool) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_AddressPool) ProtoMessage()    {}
+func (m *Nat44Global_AddressPools) Reset()         { *m = Nat44Global_AddressPools{} }
+func (m *Nat44Global_AddressPools) String() string { return proto.CompactTextString(m) }
+func (*Nat44Global_AddressPools) ProtoMessage()    {}
 
 // Many-to-one (SNAT) setup
 type Nat44SNat struct {
@@ -130,61 +130,65 @@ func (m *Nat44DNat) GetDnatConfig() []*Nat44DNat_DNatConfig {
 }
 
 type Nat44DNat_DNatConfig struct {
-	Label     string                                  `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	Mapping   []*Nat44DNat_DNatConfig_Mapping         `protobuf:"bytes,4,rep,name=mapping" json:"mapping,omitempty"`
-	IdMapping []*Nat44DNat_DNatConfig_IdentityMapping `protobuf:"bytes,6,rep,name=id_mapping" json:"id_mapping,omitempty"`
+	Label      string                                   `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	StMappings []*Nat44DNat_DNatConfig_StaticMappigs    `protobuf:"bytes,4,rep,name=st_mappings" json:"st_mappings,omitempty"`
+	IdMappings []*Nat44DNat_DNatConfig_IdentityMappings `protobuf:"bytes,6,rep,name=id_mappings" json:"id_mappings,omitempty"`
 }
 
 func (m *Nat44DNat_DNatConfig) Reset()         { *m = Nat44DNat_DNatConfig{} }
 func (m *Nat44DNat_DNatConfig) String() string { return proto.CompactTextString(m) }
 func (*Nat44DNat_DNatConfig) ProtoMessage()    {}
 
-func (m *Nat44DNat_DNatConfig) GetMapping() []*Nat44DNat_DNatConfig_Mapping {
+func (m *Nat44DNat_DNatConfig) GetStMappings() []*Nat44DNat_DNatConfig_StaticMappigs {
 	if m != nil {
-		return m.Mapping
+		return m.StMappings
 	}
 	return nil
 }
 
-func (m *Nat44DNat_DNatConfig) GetIdMapping() []*Nat44DNat_DNatConfig_IdentityMapping {
+func (m *Nat44DNat_DNatConfig) GetIdMappings() []*Nat44DNat_DNatConfig_IdentityMappings {
 	if m != nil {
-		return m.IdMapping
+		return m.IdMappings
 	}
 	return nil
 }
 
-type Nat44DNat_DNatConfig_Mapping struct {
-	VrfId             uint32                                  `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
-	ExternalInterface string                                  `protobuf:"bytes,2,opt,name=externalInterface,proto3" json:"externalInterface,omitempty"`
-	ExternalIP        string                                  `protobuf:"bytes,3,opt,name=externalIP,proto3" json:"externalIP,omitempty"`
-	ExternalPort      uint32                                  `protobuf:"varint,4,opt,name=externalPort,proto3" json:"externalPort,omitempty"`
-	LocalIp           []*Nat44DNat_DNatConfig_Mapping_LocalIP `protobuf:"bytes,5,rep,name=local_ip" json:"local_ip,omitempty"`
-	Protocol          Protocol                                `protobuf:"varint,6,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
-	TwiceNat          bool                                    `protobuf:"varint,7,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
+type Nat44DNat_DNatConfig_StaticMappigs struct {
+	VrfId             uint32                                         `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
+	ExternalInterface string                                         `protobuf:"bytes,2,opt,name=externalInterface,proto3" json:"externalInterface,omitempty"`
+	ExternalIP        string                                         `protobuf:"bytes,3,opt,name=externalIP,proto3" json:"externalIP,omitempty"`
+	ExternalPort      uint32                                         `protobuf:"varint,4,opt,name=externalPort,proto3" json:"externalPort,omitempty"`
+	LocalIps          []*Nat44DNat_DNatConfig_StaticMappigs_LocalIPs `protobuf:"bytes,5,rep,name=local_ips" json:"local_ips,omitempty"`
+	Protocol          Protocol                                       `protobuf:"varint,6,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
+	TwiceNat          bool                                           `protobuf:"varint,7,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
 }
 
-func (m *Nat44DNat_DNatConfig_Mapping) Reset()         { *m = Nat44DNat_DNatConfig_Mapping{} }
-func (m *Nat44DNat_DNatConfig_Mapping) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_DNatConfig_Mapping) ProtoMessage()    {}
+func (m *Nat44DNat_DNatConfig_StaticMappigs) Reset()         { *m = Nat44DNat_DNatConfig_StaticMappigs{} }
+func (m *Nat44DNat_DNatConfig_StaticMappigs) String() string { return proto.CompactTextString(m) }
+func (*Nat44DNat_DNatConfig_StaticMappigs) ProtoMessage()    {}
 
-func (m *Nat44DNat_DNatConfig_Mapping) GetLocalIp() []*Nat44DNat_DNatConfig_Mapping_LocalIP {
+func (m *Nat44DNat_DNatConfig_StaticMappigs) GetLocalIps() []*Nat44DNat_DNatConfig_StaticMappigs_LocalIPs {
 	if m != nil {
-		return m.LocalIp
+		return m.LocalIps
 	}
 	return nil
 }
 
-type Nat44DNat_DNatConfig_Mapping_LocalIP struct {
+type Nat44DNat_DNatConfig_StaticMappigs_LocalIPs struct {
 	LocalIP     string `protobuf:"bytes,1,opt,name=localIP,proto3" json:"localIP,omitempty"`
 	LocalPort   uint32 `protobuf:"varint,3,opt,name=localPort,proto3" json:"localPort,omitempty"`
 	Probability uint32 `protobuf:"varint,2,opt,name=probability,proto3" json:"probability,omitempty"`
 }
 
-func (m *Nat44DNat_DNatConfig_Mapping_LocalIP) Reset()         { *m = Nat44DNat_DNatConfig_Mapping_LocalIP{} }
-func (m *Nat44DNat_DNatConfig_Mapping_LocalIP) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_DNatConfig_Mapping_LocalIP) ProtoMessage()    {}
+func (m *Nat44DNat_DNatConfig_StaticMappigs_LocalIPs) Reset() {
+	*m = Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{}
+}
+func (m *Nat44DNat_DNatConfig_StaticMappigs_LocalIPs) String() string {
+	return proto.CompactTextString(m)
+}
+func (*Nat44DNat_DNatConfig_StaticMappigs_LocalIPs) ProtoMessage() {}
 
-type Nat44DNat_DNatConfig_IdentityMapping struct {
+type Nat44DNat_DNatConfig_IdentityMappings struct {
 	VrfId              uint32   `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
 	AddressedInterface string   `protobuf:"bytes,2,opt,name=addressedInterface,proto3" json:"addressedInterface,omitempty"`
 	IpAddress          string   `protobuf:"bytes,3,opt,name=ipAddress,proto3" json:"ipAddress,omitempty"`
@@ -192,9 +196,9 @@ type Nat44DNat_DNatConfig_IdentityMapping struct {
 	Protocol           Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
 }
 
-func (m *Nat44DNat_DNatConfig_IdentityMapping) Reset()         { *m = Nat44DNat_DNatConfig_IdentityMapping{} }
-func (m *Nat44DNat_DNatConfig_IdentityMapping) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_DNatConfig_IdentityMapping) ProtoMessage()    {}
+func (m *Nat44DNat_DNatConfig_IdentityMappings) Reset()         { *m = Nat44DNat_DNatConfig_IdentityMappings{} }
+func (m *Nat44DNat_DNatConfig_IdentityMappings) String() string { return proto.CompactTextString(m) }
+func (*Nat44DNat_DNatConfig_IdentityMappings) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("nat.Protocol", Protocol_name, Protocol_value)

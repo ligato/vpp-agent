@@ -11,19 +11,19 @@ enum Protocol {                                 /* Available protocols. */
 /* NAT44 global config */
 message Nat44Global {
     bool forwarding = 2;                        /* Enable/disable forwarding. */
-    message NatInterface {                      /* Local network interfaces enabled for NAT44. */
+    message NatInterfaces {                     /* Local network interfaces enabled for NAT44. */
         string name = 1;                        /* Interface name. */
         bool isInside = 2;                      /* Distinguis between inside/outside interface. */
         bool outputFeature = 3;                 /* Enable/disable output feature. */
     }
-    repeated NatInterface nat_interface = 3;
-    message AddressPool {
-        string FirstSrcAddress = 1;             /* Starting address of the source IPv4 pool range. */
-        string LastSrcAddres = 2;               /* Ending address of the source IPv4 pool range. Optional parameter. */
+    repeated NatInterfaces nat_interfaces = 3;
+    message AddressPools {
+        string firstSrcAddress = 1;             /* Starting address of the source IPv4 pool range. */
+        string lastSrcAddress = 2;               /* Ending address of the source IPv4 pool range. Optional parameter. */
         uint32 vrfId = 3;                       /* VRF (table) ID. */
         bool twiceNat = 4;                      /* Enable/disable twice NAT. */
     }
-    repeated AddressPool address_pool = 5;
+    repeated AddressPools address_pools = 5;
 }
 
 /* Many-to-one (SNAT) setup */
@@ -40,24 +40,24 @@ message Nat44DNat {
     message DNatConfig {                        /* DNat configuration list. */
         string label = 1;                       /* Unique identifier of the DNAT config. */
 
-        message Mapping {                       /* A list of static mappings in DNAT. */
+        message StaticMappigs {                 /* A list of static mappings in DNAT. */
             uint32 vrfId = 1;                   /* VRF (table) ID. */
             string externalInterface = 2;       /* External interface may be used together with IP addresses. */
             string externalIP = 3;              /* External address.  */
             uint32 externalPort = 4;            /* Port (do not set for address mapping). */
-            message LocalIP {           
+            message LocalIPs {
                 string localIP = 1;             /* Local IP address). */
-                uint32 localPort = 3;                /* port (do not set for address mapping). */
+                uint32 localPort = 3;           /* port (do not set for address mapping). */
                 uint32 probability = 2;         /* Probability mode. */
             }   
-            repeated LocalIP local_ip = 5;      /* List of local IP addresses. If there is more than one entry,
+            repeated LocalIPs local_ips = 5;    /* List of local IP addresses. If there is more than one entry,
                                                    Load ballancer is enabled. */
             Protocol protocol = 6;              /* Protocol used for static mapping. */
             bool twiceNat = 7;                  /* Enable/disable twice NAT. */
         }   
-        repeated Mapping mapping = 4;
+        repeated StaticMappigs st_mappings = 4;
 
-        message IdentityMapping {                /* A list of identity mappings in DNAT. */
+        message IdentityMappings {               /* A list of identity mappings in DNAT. */
             uint32 vrfId = 1;                    /* VRF (table) ID. */
             string addressedInterface = 2;       /* Name of the DHCP addressed interface, preffered before IP address. */
             string ipAddress = 3;                /* IP address. */
@@ -65,7 +65,7 @@ message Nat44DNat {
             Protocol protocol = 5;               /* Protocol used for identity mapping. */
 
         }
-        repeated IdentityMapping id_mapping = 6;
+        repeated IdentityMappings id_mappings= 6;
     }      
     repeated DNatConfig dnat_config = 1;                              
 }

@@ -1098,44 +1098,46 @@ func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 func setNatGlobalConfig(db keyval.ProtoBroker) {
 	natGlobal := &nat.Nat44Global{}
 	natGlobal.Forwarding = false
-	natGlobal.NatInterface = make([]*nat.Nat44Global_NatInterface, 3)
-	natGlobal.NatInterface[0] = &nat.Nat44Global_NatInterface{
+	natGlobal.NatInterfaces = make([]*nat.Nat44Global_NatInterfaces, 3)
+	natGlobal.NatInterfaces[0] = &nat.Nat44Global_NatInterfaces{
 		Name:          "tap1",
 		IsInside:      false,
 		OutputFeature: false,
 	}
-	natGlobal.NatInterface[1] = &nat.Nat44Global_NatInterface{
+	natGlobal.NatInterfaces[1] = &nat.Nat44Global_NatInterfaces{
 		Name:          "tap2",
 		IsInside:      false,
 		OutputFeature: false,
 	}
-	natGlobal.NatInterface[2] = &nat.Nat44Global_NatInterface{
+	natGlobal.NatInterfaces[2] = &nat.Nat44Global_NatInterfaces{
 		Name:          "tap3",
 		IsInside:      false,
 		OutputFeature: false,
 	}
-	natGlobal.AddressPool = make([]*nat.Nat44Global_AddressPool, 3)
-	natGlobal.AddressPool[0] = &nat.Nat44Global_AddressPool{
+	natGlobal.AddressPools = make([]*nat.Nat44Global_AddressPools, 3)
+	natGlobal.AddressPools[0] = &nat.Nat44Global_AddressPools{
 		VrfId:           0,
 		FirstSrcAddress: "192.168.0.1",
 		TwiceNat:        false,
 	}
-	natGlobal.AddressPool[1] = &nat.Nat44Global_AddressPool{
+	natGlobal.AddressPools[1] = &nat.Nat44Global_AddressPools{
 		VrfId:           0,
 		FirstSrcAddress: "175.124.0.1",
-		LastSrcAddres:   "175.124.0.3",
+		LastSrcAddress:  "175.124.0.3",
 		TwiceNat:        false,
 	}
-	natGlobal.AddressPool[2] = &nat.Nat44Global_AddressPool{
+	natGlobal.AddressPools[2] = &nat.Nat44Global_AddressPools{
 		VrfId:           0,
 		FirstSrcAddress: "10.10.0.1",
-		LastSrcAddres:   "10.10.0.2",
+		LastSrcAddress:  "10.10.0.2",
 		TwiceNat:        false,
 	}
 
 	log.Println(natGlobal)
 
 	db.Put(nat.GlobalConfigKey(), natGlobal)
+
+	log.Println(nat.GlobalConfigKey())
 }
 
 func deleteNatGlobalConfig(db keyval.ProtoBroker) {
@@ -1154,14 +1156,14 @@ func createSNat(db keyval.ProtoBroker) {
 
 func createDNat(db keyval.ProtoBroker) {
 	// Local IP list
-	var localIPs []*nat.Nat44DNat_DNatConfig_Mapping_LocalIP
-	localIP := &nat.Nat44DNat_DNatConfig_Mapping_LocalIP{
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs
+	localIP := &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{
 		LocalIP:     "172.124.0.2",
 		LocalPort:   6500,
 		Probability: 40,
 	}
 	localIPs = append(localIPs, localIP)
-	localIP = &nat.Nat44DNat_DNatConfig_Mapping_LocalIP{
+	localIP = &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{
 		LocalIP:     "172.125.10.5",
 		LocalPort:   2300,
 		Probability: 40,
@@ -1169,21 +1171,21 @@ func createDNat(db keyval.ProtoBroker) {
 	localIPs = append(localIPs, localIP)
 
 	// Static mapping
-	var mapping []*nat.Nat44DNat_DNatConfig_Mapping
-	entry := &nat.Nat44DNat_DNatConfig_Mapping{
+	var mapping []*nat.Nat44DNat_DNatConfig_StaticMappigs
+	entry := &nat.Nat44DNat_DNatConfig_StaticMappigs{
 		VrfId:             0,
 		ExternalInterface: "tap1",
 		ExternalIP:        "192.168.0.1",
 		ExternalPort:      8989,
-		LocalIp:           localIPs,
+		LocalIps:          localIPs,
 		Protocol:          1,
 		TwiceNat:          false,
 	}
 	mapping = append(mapping, entry)
 
 	// Identity mapping
-	var idMapping []*nat.Nat44DNat_DNatConfig_IdentityMapping
-	idEntry := &nat.Nat44DNat_DNatConfig_IdentityMapping{
+	var idMapping []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	idEntry := &nat.Nat44DNat_DNatConfig_IdentityMappings{
 		VrfId: 0,
 		//AddressedInterface: "tap1",
 		IpAddress: "10.10.0.1",
@@ -1194,9 +1196,9 @@ func createDNat(db keyval.ProtoBroker) {
 
 	// DNat config
 	dNat := &nat.Nat44DNat_DNatConfig{
-		Label:     "dnat1",
-		Mapping:   mapping,
-		IdMapping: idMapping,
+		Label:      "dnat1",
+		StMappings: mapping,
+		IdMappings: idMapping,
 	}
 
 	log.Println(dNat)
