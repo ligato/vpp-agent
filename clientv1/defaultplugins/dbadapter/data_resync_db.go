@@ -15,8 +15,6 @@
 package dbadapter
 
 import (
-	"strconv"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
@@ -168,7 +166,7 @@ func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
-	key := nat.GlobalConfigKey(strconv.Itoa(int(nat44.VrfId)))
+	key := nat.GlobalConfigKey()
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -177,7 +175,7 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.Dat
 
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
-	key := nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label)
+	key := nat.DNatKey(nat44.Label)
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

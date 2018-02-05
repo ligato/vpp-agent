@@ -14,37 +14,26 @@
 
 package nat
 
-import (
-	"strings"
-)
-
 const (
-	// VRF placeholder
-	vrfPlaceholder = "vrf/{vrf}"
 	// natPrefix
 	prefix = "vpp/config/v1/nat/"
 	// globalConfigPrefix is relative prefix for global config
-	globalConfigPrefix = prefix + "/global/"
+	globalConfig = prefix + "/global/"
 	// sNatPrefix is relative prefix for SNAT setup
 	sNatPrefix = prefix + "/snat/"
 	// dNatPrefix is relative prefix for DNAT setup
 	dNatPrefix = prefix + "/dnat/"
-	// globalConfigKeyTemplate is prefix for global config with vrf placeholder
-	globalConfigKeyTemplate = prefix + "/global/" + vrfPlaceholder
-	// sNatKeyTemplate is prefix for SNAT setup with vrf placeholder
-	sNatKeyTemplate = prefix + "/snat/" + vrfPlaceholder
-	// dNatKeyTemplate is prefix for DNAT setup with vrf placeholder
-	dNatKeyTemplate = prefix + "/dnat/" + vrfPlaceholder
 )
 
 // GlobalConfigPrefix returns the prefix used in ETCD to store NAT global config
 func GlobalConfigPrefix() string {
-	return globalConfigPrefix
+	return globalConfig
 }
 
-// GlobalConfigKey returns the key used in ETCD to store NAT global config
-func GlobalConfigKey(vrf string) string {
-	return strings.Replace(globalConfigKeyTemplate, vrfPlaceholder, vrf, 1)
+// GlobalConfigKey returns the key used in ETCD to store NAT global config. Global config can be stored only once,
+// so the prefix == key
+func GlobalConfigKey() string {
+	return globalConfig
 }
 
 // SNatPrefix returns the prefix used in ETCD to store SNAT config
@@ -53,8 +42,8 @@ func SNatPrefix() string {
 }
 
 // SNatKey returns the key used in ETCD to store SNAT config
-func SNatKey(vrf string, label string) string {
-	return strings.Replace(sNatKeyTemplate, vrfPlaceholder, vrf, 1) + label
+func SNatKey(label string) string {
+	return sNatPrefix + label
 }
 
 // DNatPrefix returns the prefix used in ETCD to store NAT DNAT config
@@ -63,6 +52,6 @@ func DNatPrefix() string {
 }
 
 // DNatKey returns the key used in ETCD to store DNAT config
-func DNatKey(vrf string, label string) string {
-	return strings.Replace(dNatKeyTemplate, vrfPlaceholder, vrf, 1) + label
+func DNatKey(label string) string {
+	return dNatPrefix + label
 }

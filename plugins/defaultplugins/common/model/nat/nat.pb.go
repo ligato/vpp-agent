@@ -45,7 +45,6 @@ func (x Protocol) String() string {
 
 // NAT44 global config
 type Nat44Global struct {
-	VrfId        uint32                      `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
 	Forwarding   bool                        `protobuf:"varint,2,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
 	NatInterface []*Nat44Global_NatInterface `protobuf:"bytes,3,rep,name=nat_interface" json:"nat_interface,omitempty"`
 	AddressPool  []*Nat44Global_AddressPool  `protobuf:"bytes,5,rep,name=address_pool" json:"address_pool,omitempty"`
@@ -82,7 +81,8 @@ func (*Nat44Global_NatInterface) ProtoMessage()    {}
 type Nat44Global_AddressPool struct {
 	FirstSrcAddress string `protobuf:"bytes,1,opt,proto3" json:"FirstSrcAddress,omitempty"`
 	LastSrcAddres   string `protobuf:"bytes,2,opt,proto3" json:"LastSrcAddres,omitempty"`
-	TwiceNat        bool   `protobuf:"varint,3,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
+	VrfId           uint32 `protobuf:"varint,3,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
+	TwiceNat        bool   `protobuf:"varint,4,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
 }
 
 func (m *Nat44Global_AddressPool) Reset()         { *m = Nat44Global_AddressPool{} }
@@ -130,11 +130,9 @@ func (m *Nat44DNat) GetDnatConfig() []*Nat44DNat_DNatConfig {
 }
 
 type Nat44DNat_DNatConfig struct {
-	Label       string                                  `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	VrfId       uint32                                  `protobuf:"varint,2,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
-	SNatEnabled bool                                    `protobuf:"varint,3,opt,proto3" json:"SNatEnabled,omitempty"`
-	Mapping     []*Nat44DNat_DNatConfig_Mapping         `protobuf:"bytes,4,rep,name=mapping" json:"mapping,omitempty"`
-	IdMapping   []*Nat44DNat_DNatConfig_IdentityMapping `protobuf:"bytes,6,rep,name=id_mapping" json:"id_mapping,omitempty"`
+	Label     string                                  `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Mapping   []*Nat44DNat_DNatConfig_Mapping         `protobuf:"bytes,4,rep,name=mapping" json:"mapping,omitempty"`
+	IdMapping []*Nat44DNat_DNatConfig_IdentityMapping `protobuf:"bytes,6,rep,name=id_mapping" json:"id_mapping,omitempty"`
 }
 
 func (m *Nat44DNat_DNatConfig) Reset()         { *m = Nat44DNat_DNatConfig{} }
@@ -156,11 +154,13 @@ func (m *Nat44DNat_DNatConfig) GetIdMapping() []*Nat44DNat_DNatConfig_IdentityMa
 }
 
 type Nat44DNat_DNatConfig_Mapping struct {
-	ExternalInterface string                                  `protobuf:"bytes,1,opt,name=externalInterface,proto3" json:"externalInterface,omitempty"`
-	ExternalIP        string                                  `protobuf:"bytes,2,opt,name=externalIP,proto3" json:"externalIP,omitempty"`
-	ExternalPort      uint32                                  `protobuf:"varint,3,opt,name=externalPort,proto3" json:"externalPort,omitempty"`
-	LocalIp           []*Nat44DNat_DNatConfig_Mapping_LocalIP `protobuf:"bytes,4,rep,name=local_ip" json:"local_ip,omitempty"`
-	Protocol          Protocol                                `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
+	VrfId             uint32                                  `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
+	ExternalInterface string                                  `protobuf:"bytes,2,opt,name=externalInterface,proto3" json:"externalInterface,omitempty"`
+	ExternalIP        string                                  `protobuf:"bytes,3,opt,name=externalIP,proto3" json:"externalIP,omitempty"`
+	ExternalPort      uint32                                  `protobuf:"varint,4,opt,name=externalPort,proto3" json:"externalPort,omitempty"`
+	LocalIp           []*Nat44DNat_DNatConfig_Mapping_LocalIP `protobuf:"bytes,5,rep,name=local_ip" json:"local_ip,omitempty"`
+	Protocol          Protocol                                `protobuf:"varint,6,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
+	TwiceNat          bool                                    `protobuf:"varint,7,opt,name=twiceNat,proto3" json:"twiceNat,omitempty"`
 }
 
 func (m *Nat44DNat_DNatConfig_Mapping) Reset()         { *m = Nat44DNat_DNatConfig_Mapping{} }
@@ -185,10 +185,11 @@ func (m *Nat44DNat_DNatConfig_Mapping_LocalIP) String() string { return proto.Co
 func (*Nat44DNat_DNatConfig_Mapping_LocalIP) ProtoMessage()    {}
 
 type Nat44DNat_DNatConfig_IdentityMapping struct {
-	AddressedInterface string   `protobuf:"bytes,1,opt,name=addressedInterface,proto3" json:"addressedInterface,omitempty"`
-	IpAddress          string   `protobuf:"bytes,2,opt,name=ipAddress,proto3" json:"ipAddress,omitempty"`
-	Port               uint32   `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol           Protocol `protobuf:"varint,4,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
+	VrfId              uint32   `protobuf:"varint,1,opt,name=vrfId,proto3" json:"vrfId,omitempty"`
+	AddressedInterface string   `protobuf:"bytes,2,opt,name=addressedInterface,proto3" json:"addressedInterface,omitempty"`
+	IpAddress          string   `protobuf:"bytes,3,opt,name=ipAddress,proto3" json:"ipAddress,omitempty"`
+	Port               uint32   `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol           Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.Protocol" json:"protocol,omitempty"`
 }
 
 func (m *Nat44DNat_DNatConfig_IdentityMapping) Reset()         { *m = Nat44DNat_DNatConfig_IdentityMapping{} }

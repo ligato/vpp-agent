@@ -129,9 +129,9 @@ type DeleteDSL interface {
 	// StnRule adds a request to delete an existing Stn rule.
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
-	NAT44Global(vrf string) DeleteDSL
+	NAT44Global() DeleteDSL
 	// NAT44DNat adds a request to delete a new DNAT configuration
-	NAT44DNat(vrf, label string) DeleteDSL
+	NAT44DNat(label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

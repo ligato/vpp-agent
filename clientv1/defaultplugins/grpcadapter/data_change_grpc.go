@@ -46,7 +46,7 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*id*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
 		map[string] /*name*/ *stn.StnRule{},
-		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 
 		map[string] /*name*/ *struct{}{},
@@ -62,7 +62,7 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*key*/ *l3.ArpTable_ArpTableEntry{},
 		map[string] /*name*/ *stn.StnRule{},
-		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 	}
 }
@@ -201,13 +201,13 @@ func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
-	dsl.parent.txnPutNatGlobal[strconv.Itoa(int(nat44.VrfId))] = nat44
+	dsl.parent.txnPutNatGlobal["global"] = nat44
 	return dsl
 }
 
 // NAT44DNat adds a request to create a new DNAT configuration
 func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
-	dsl.parent.txnPutDNat[nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label)] = nat44
+	dsl.parent.txnPutDNat[nat.DNatKey(nat44.Label)] = nat44
 	return dsl
 }
 
@@ -322,14 +322,14 @@ func (dsl *DeleteDSL) StnRule(name string) defaultplugins.DeleteDSL {
 }
 
 // NAT44Global adds a request to remove global configuration for NAT44
-func (dsl *DeleteDSL) NAT44Global(vrf string) defaultplugins.DeleteDSL {
-	dsl.parent.txnPutNatGlobal[vrf] = nil
+func (dsl *DeleteDSL) NAT44Global() defaultplugins.DeleteDSL {
+	dsl.parent.txnPutNatGlobal["global"] = nil
 	return dsl
 }
 
 // NAT44DNat adds a request to delete a new DNAT configuration
-func (dsl *DeleteDSL) NAT44DNat(vrf, label string) defaultplugins.DeleteDSL {
-	dsl.parent.txnPutDNat[nat.DNatKey(vrf, label)] = nil
+func (dsl *DeleteDSL) NAT44DNat(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnPutDNat[nat.DNatKey(label)] = nil
 	return dsl
 }
 

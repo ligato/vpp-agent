@@ -301,14 +301,14 @@ func (dsl *DeleteDSL) StnRule(ruleName string) linux.DeleteDSL {
 }
 
 // NAT44Global adds a request to remove global configuration for NAT44
-func (dsl *DeleteDSL) NAT44Global(vrf string) linux.DeleteDSL {
-	dsl.vppDelete.NAT44Global(vrf)
+func (dsl *DeleteDSL) NAT44Global() linux.DeleteDSL {
+	dsl.vppDelete.NAT44Global()
 	return dsl
 }
 
 // NAT44DNat adds a request to delete a new DNAT configuration
-func (dsl *DeleteDSL) NAT44DNat(vrf, label string) linux.DeleteDSL {
-	dsl.vppDelete.NAT44DNat(vrf, label)
+func (dsl *DeleteDSL) NAT44DNat(label string) linux.DeleteDSL {
+	dsl.vppDelete.NAT44DNat(label)
 	return dsl
 }
 

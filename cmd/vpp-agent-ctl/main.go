@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/namsral/flag"
@@ -554,60 +553,9 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
 	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
 
-	ifs.Interface[1] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[1].Name = "tap2"
-	ifs.Interface[1].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[1].Enabled = true
-	ifs.Interface[1].PhysAddress = "09:9e:df:66:54:42"
-	ifs.Interface[1].Mtu = 555
-	ifs.Interface[1].IpAddresses = make([]string, 1)
-	//ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[1].IpAddresses[0] = "192.168.2.2/24"
-	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
-	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
-	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
-	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
-	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[1].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap2"}
-
-	ifs.Interface[2] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[2].Name = "tap3"
-	ifs.Interface[2].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[2].Enabled = true
-	ifs.Interface[2].PhysAddress = "09:9e:df:66:54:43"
-	ifs.Interface[2].Mtu = 555
-	ifs.Interface[2].IpAddresses = make([]string, 1)
-	//ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[2].IpAddresses[0] = "192.168.2.3/24"
-	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
-	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
-	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
-	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
-	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[2].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap3"}
-
-	ifs.Interface[3] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[3].Name = "tap4"
-	ifs.Interface[3].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[3].Enabled = true
-	ifs.Interface[3].PhysAddress = "09:9e:df:66:54:44"
-	ifs.Interface[3].Mtu = 555
-	ifs.Interface[3].IpAddresses = make([]string, 1)
-	//ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[3].IpAddresses[0] = "192.168.2.4/24"
-	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
-	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
-	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
-	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
-	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[3].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap4"}
-
 	log.Println(ifs)
 
 	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-	db.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
-	db.Put(interfaces.InterfaceKey(ifs.Interface[2].Name), ifs.Interface[2])
-	db.Put(interfaces.InterfaceKey(ifs.Interface[3].Name), ifs.Interface[3])
 
 }
 
@@ -1150,46 +1098,48 @@ func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 func setNatGlobalConfig(db keyval.ProtoBroker) {
 	natGlobal := &nat.Nat44Global{}
 	natGlobal.Forwarding = false
-	natGlobal.VrfId = 0
 	natGlobal.NatInterface = make([]*nat.Nat44Global_NatInterface, 3)
 	natGlobal.NatInterface[0] = &nat.Nat44Global_NatInterface{
-		Name: "tap1",
-		IsInside: false,
+		Name:          "tap1",
+		IsInside:      false,
 		OutputFeature: false,
 	}
 	natGlobal.NatInterface[1] = &nat.Nat44Global_NatInterface{
-		Name: "tap2",
-		IsInside: false,
+		Name:          "tap2",
+		IsInside:      false,
 		OutputFeature: false,
 	}
 	natGlobal.NatInterface[2] = &nat.Nat44Global_NatInterface{
-		Name: "tap3",
-		IsInside: false,
+		Name:          "tap3",
+		IsInside:      false,
 		OutputFeature: false,
 	}
 	natGlobal.AddressPool = make([]*nat.Nat44Global_AddressPool, 3)
 	natGlobal.AddressPool[0] = &nat.Nat44Global_AddressPool{
+		VrfId:           0,
 		FirstSrcAddress: "192.168.0.1",
-		TwiceNat: false,
+		TwiceNat:        false,
 	}
 	natGlobal.AddressPool[1] = &nat.Nat44Global_AddressPool{
+		VrfId:           0,
 		FirstSrcAddress: "175.124.0.1",
-		LastSrcAddres: "175.124.0.3",
-		TwiceNat: false,
+		LastSrcAddres:   "175.124.0.3",
+		TwiceNat:        false,
 	}
 	natGlobal.AddressPool[2] = &nat.Nat44Global_AddressPool{
+		VrfId:           0,
 		FirstSrcAddress: "10.10.0.1",
-		LastSrcAddres: "10.10.0.2",
-		TwiceNat: false,
+		LastSrcAddres:   "10.10.0.2",
+		TwiceNat:        false,
 	}
 
 	log.Println(natGlobal)
 
-	db.Put(nat.GlobalConfigKey(strconv.Itoa(int(0))), natGlobal)
+	db.Put(nat.GlobalConfigKey(), natGlobal)
 }
 
 func deleteNatGlobalConfig(db keyval.ProtoBroker) {
-	db.Delete(nat.GlobalConfigKey(strconv.Itoa(int(0))))
+	db.Delete(nat.GlobalConfigKey())
 }
 
 func createSNat(db keyval.ProtoBroker) {
@@ -1199,7 +1149,7 @@ func createSNat(db keyval.ProtoBroker) {
 
 	log.Println(sNat)
 
-	db.Put(nat.SNatKey(strconv.Itoa(int(0)), sNat.Label), sNat)
+	db.Put(nat.SNatKey(sNat.Label), sNat)
 }
 
 func createDNat(db keyval.ProtoBroker) {
@@ -1221,45 +1171,45 @@ func createDNat(db keyval.ProtoBroker) {
 	// Static mapping
 	var mapping []*nat.Nat44DNat_DNatConfig_Mapping
 	entry := &nat.Nat44DNat_DNatConfig_Mapping{
+		VrfId:             0,
 		ExternalInterface: "tap1",
-		ExternalIP: "192.168.0.1",
-		ExternalPort: 8989,
-		LocalIp:    localIPs,
-		Protocol:   1,
+		ExternalIP:        "192.168.0.1",
+		ExternalPort:      8989,
+		LocalIp:           localIPs,
+		Protocol:          1,
+		TwiceNat:          false,
 	}
 	mapping = append(mapping, entry)
 
 	// Identity mapping
 	var idMapping []*nat.Nat44DNat_DNatConfig_IdentityMapping
 	idEntry := &nat.Nat44DNat_DNatConfig_IdentityMapping{
+		VrfId: 0,
 		//AddressedInterface: "tap1",
 		IpAddress: "10.10.0.1",
-		Port: 2525,
-		Protocol:   0,
+		Port:      2525,
+		Protocol:  0,
 	}
 	idMapping = append(idMapping, idEntry)
 
 	// DNat config
 	dNat := &nat.Nat44DNat_DNatConfig{
-		Label:       "dnat1",
-		VrfId:       0,
-		SNatEnabled: false,
-		Mapping:     mapping,
-		IdMapping:   idMapping,
+		Label:     "dnat1",
+		Mapping:   mapping,
+		IdMapping: idMapping,
 	}
 
 	log.Println(dNat)
 
-	db.Put(nat.DNatKey(strconv.Itoa(int(dNat.VrfId)), dNat.Label), dNat)
+	db.Put(nat.DNatKey(dNat.Label), dNat)
 }
 
 func deleteDNat(db keyval.ProtoBroker) {
 	dNat := &nat.Nat44DNat_DNatConfig{
 		Label: "dnat1",
-		VrfId: 0,
 	}
 
 	log.Println(dNat)
 
-	db.Delete(nat.DNatKey(strconv.Itoa(int(dNat.VrfId)), dNat.Label))
+	db.Delete(nat.DNatKey(dNat.Label))
 }

@@ -2,34 +2,34 @@ syntax = "proto3";
 
 package nat;
 
-enum Protocol {                                 /* Available protocols */
+enum Protocol {                                 /* Available protocols. */
     TCP = 0;
     UDP = 1;
-    ICMP = 2;                                   /* ICMP is not permitted for load ballanced entries */
+    ICMP = 2;                                   /* ICMP is not permitted for load ballanced entries. */
 };
 
 /* NAT44 global config */
 message Nat44Global {
-    uint32 vrfId = 1;                           /* VRF (table) ID */ 
-    bool forwarding = 2;                        /* Enable/disable forwarding */
-    message NatInterface {                      /* Local network interfaces enabled for NAT44 */
-        string name = 1;                        /* Interface name */
-        bool isInside = 2;                      /* Distinguis between inside/outside interface */
-        bool outputFeature = 3;                 /* Enable/disable output feature */
+    bool forwarding = 2;                        /* Enable/disable forwarding. */
+    message NatInterface {                      /* Local network interfaces enabled for NAT44. */
+        string name = 1;                        /* Interface name. */
+        bool isInside = 2;                      /* Distinguis between inside/outside interface. */
+        bool outputFeature = 3;                 /* Enable/disable output feature. */
     }
     repeated NatInterface nat_interface = 3;
     message AddressPool {
-        string FirstSrcAddress = 1;             /* starting address of the source IPv4 pool range */
-        string LastSrcAddres = 2;               /* ending address of the source IPv4 pool range. Optional parameter */
-        bool twiceNat = 3;                   
+        string FirstSrcAddress = 1;             /* Starting address of the source IPv4 pool range. */
+        string LastSrcAddres = 2;               /* Ending address of the source IPv4 pool range. Optional parameter. */
+        uint32 vrfId = 3;                       /* VRF (table) ID. */
+        bool twiceNat = 4;                      /* Enable/disable twice NAT. */
     }
     repeated AddressPool address_pool = 5;
 }
 
 /* Many-to-one (SNAT) setup */
 message Nat44SNat {
-    message SNatConfig {                        /* DNat configuration list */
-        string label = 1;                       /* unique identifier of the DNAT config */
+    message SNatConfig {                        /* DNat configuration list. */
+        string label = 1;                       /* Unique identifier of the DNAT config. */
         //tbd
     }
     repeated SNatConfig snat_config = 1;
@@ -37,31 +37,32 @@ message Nat44SNat {
 
 /* One-to-many (DNAT) setup */
 message Nat44DNat {
-    message DNatConfig {                        /* DNat configuration list */
-        string label = 1;                       /* unique identifier of the DNAT config */
-        uint32 vrfId = 2;                       /* VRF (table) ID */
-        bool SNatEnabled = 3;                   /* Enable/Disable SNat, enables 'twice-nat' for the mapping */
-    
-        message Mapping {
-            string externalInterface = 1;       /* external interface may be used together with IP addresses */ 
-            string externalIP = 2;              /* external address  */
-            uint32 externalPort = 3;                    /* port (do not set for address mapping) */
+    message DNatConfig {                        /* DNat configuration list. */
+        string label = 1;                       /* Unique identifier of the DNAT config. */
+
+        message Mapping {                       /* A list of static mappings in DNAT. */
+            uint32 vrfId = 1;                   /* VRF (table) ID. */
+            string externalInterface = 2;       /* External interface may be used together with IP addresses. */
+            string externalIP = 3;              /* External address.  */
+            uint32 externalPort = 4;            /* Port (do not set for address mapping). */
             message LocalIP {           
-                string localIP = 1;             /* local IP address) */
-                uint32 localPort = 3;                /* port (do not set for address mapping) */
-                uint32 probability = 2;         /* probability mode */ 
+                string localIP = 1;             /* Local IP address). */
+                uint32 localPort = 3;                /* port (do not set for address mapping). */
+                uint32 probability = 2;         /* Probability mode. */
             }   
-            repeated LocalIP local_ip = 4;      /* list of local IP addresses. If there is more than one entry,
-                                                   load ballancer is enabled */
-            Protocol protocol = 5;              /* protocol used for static mapping */
+            repeated LocalIP local_ip = 5;      /* List of local IP addresses. If there is more than one entry,
+                                                   Load ballancer is enabled. */
+            Protocol protocol = 6;              /* Protocol used for static mapping. */
+            bool twiceNat = 7;                  /* Enable/disable twice NAT. */
         }   
         repeated Mapping mapping = 4;
 
-        message IdentityMapping {
-            string addressedInterface = 1;       /* name of the DHCP addressed interface, preffered before IP address */
-            string ipAddress = 2;                /* ip address */
-            uint32 port = 3;                     /* port (do not set for address mapping) */
-            Protocol protocol = 4;               /* protocol used for identity mapping */
+        message IdentityMapping {                /* A list of identity mappings in DNAT. */
+            uint32 vrfId = 1;                    /* VRF (table) ID. */
+            string addressedInterface = 2;       /* Name of the DHCP addressed interface, preffered before IP address. */
+            string ipAddress = 3;                /* IP address. */
+            uint32 port = 4;                     /* Port (do not set for address mapping). */
+            Protocol protocol = 5;               /* Protocol used for identity mapping. */
 
         }
         repeated IdentityMapping id_mapping = 6;

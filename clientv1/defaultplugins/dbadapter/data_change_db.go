@@ -15,8 +15,6 @@
 package dbadapter
 
 import (
-	"strconv"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
@@ -156,13 +154,13 @@ func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(nat.GlobalConfigKey(strconv.Itoa(int(nat44.VrfId))), nat44)
+	dsl.parent.txn.Put(nat.GlobalConfigKey(), nat44)
 	return dsl
 }
 
 // NAT44DNat adds a request to create a new DNAT configuration
 func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label), nat44)
+	dsl.parent.txn.Put(nat.DNatKey(nat44.Label), nat44)
 	return dsl
 }
 
@@ -259,14 +257,14 @@ func (dsl *DeleteDSL) StnRule(ruleName string) defaultplugins.DeleteDSL {
 }
 
 // NAT44Global adds a request to remove global configuration for NAT44
-func (dsl *DeleteDSL) NAT44Global(vrf string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(vrf)
+func (dsl *DeleteDSL) NAT44Global() defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.GlobalConfigKey())
 	return dsl
 }
 
 // NAT44DNat adds a request to delete a new DNAT configuration
-func (dsl *DeleteDSL) NAT44DNat(vrf, label string) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(nat.DNatKey(vrf, label))
+func (dsl *DeleteDSL) NAT44DNat(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.DNatKey(label))
 	return dsl
 }
 

@@ -47,7 +47,7 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
 		map[string] /*name*/ *stn.StnRule{},
-		map[string] /*value*/ *nat.Nat44Global{},
+		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
 	}
 }
@@ -69,7 +69,7 @@ type DataResyncDSL struct {
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
 	txnPutStn         map[string] /*value*/ *stn.StnRule
-	txnPutNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnPutNatGlobal   map[string] /*label*/ *nat.Nat44Global
 	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
 }
 
@@ -164,13 +164,13 @@ func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
-	dsl.txnPutNatGlobal[strconv.Itoa(int(nat44.VrfId))] = nat44
+	dsl.txnPutNatGlobal["global"] = nat44
 	return dsl
 }
 
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
-	dsl.txnPutDNat[nat.DNatKey(strconv.Itoa(int(nat44.VrfId)), nat44.Label)] = nat44
+	dsl.txnPutDNat[nat.DNatKey(nat44.Label)] = nat44
 	return dsl
 }
 
