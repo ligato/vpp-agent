@@ -84,11 +84,10 @@
     "etcdserver/api/v3rpc/rpctypes",
     "etcdserver/etcdserverpb",
     "mvcc/mvccpb",
-    "pkg/tlsutil",
-    "pkg/types"
+    "pkg/tlsutil"
   ]
-  revision = "1b3ac99e8a431b381e633802cc42fe70e663baf5"
-  version = "v3.2.15"
+  revision = "66722b1ada68fcd5227db853ee92003169a975c8"
+  version = "v3.2.0"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -166,8 +165,7 @@
 [[projects]]
   name = "github.com/fsouza/go-dockerclient"
   packages = ["."]
-  revision = "2ff310040c161b75fa19fb9b287a90a6e03c0012"
-  version = "1.1"
+  revision = "9e921e30db8bcc1221fa0485ad9ce5b195fb4445"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -208,14 +206,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/golang/protobuf"
-  packages = [
-    "proto",
-    "protoc-gen-go/descriptor",
-    "ptypes",
-    "ptypes/any",
-    "ptypes/duration",
-    "ptypes/timestamp"
-  ]
+  packages = ["proto"]
   revision = "c65a0412e71e8b9b3bfd22925720d23c0f054237"
 
 [[projects]]
@@ -241,6 +232,12 @@
   name = "github.com/hailocab/go-hostpool"
   packages = ["."]
   revision = "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-cleanhttp"
+  packages = ["."]
+  revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
 
 [[projects]]
   branch = "master"
@@ -309,7 +306,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "aa078b4c978baf600f44632c2f64db875aaeb437"
+  revision = "d27ff7d747310a942c61fb39725463b4cdf540cb"
 
 [[projects]]
   branch = "master"
@@ -568,43 +565,23 @@
   revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [[projects]]
-  branch = "master"
-  name = "google.golang.org/genproto"
-  packages = [
-    "googleapis/api/annotations",
-    "googleapis/rpc/status"
-  ]
-  revision = "14790a1795ea4c3387aaf24aed670ddb51f18292"
-
-[[projects]]
   name = "google.golang.org/grpc"
   packages = [
     ".",
-    "balancer",
-    "balancer/base",
-    "balancer/roundrobin",
     "codes",
-    "connectivity",
     "credentials",
-    "encoding",
-    "grpclb/grpc_lb_v1/messages",
     "grpclog",
-    "health/grpc_health_v1",
     "internal",
     "keepalive",
     "metadata",
     "naming",
     "peer",
-    "resolver",
-    "resolver/dns",
-    "resolver/passthrough",
     "stats",
-    "status",
     "tap",
     "transport"
   ]
-  revision = "6b51017f791ae1cfbec89c52efdf444b13b550ef"
-  version = "v1.9.2"
+  revision = "8050b9cbc271307e5a716a9d782803d09b0d6f2d"
+  version = "v1.2.1"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
@@ -621,6 +598,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9d9eb94d0d644b8321c5ad1ec010b7e796c45fd2dbc205f81d37edb1aa5dc505"
+  inputs-digest = "4b1994db8f852f2418b2992dd65be02a0d72f03f93d77919a6fbebaa4bb2d3c2"
   solver-name = "gps-cdcl"
   solver-version = 1
