@@ -3,29 +3,27 @@ syntax = "proto3";
 package interfaces;
 
 message LinuxInterfaces {
-    enum InterfaceType {
+    enum InterfaceType {                    /* Available interface types */
         VETH = 0;
+        AUTO_TAP = 1;
     };
 
     message Interface {
-        string name = 1;
+        string name = 1;                    /* Unique name of the interface used the etcd key */
         string description = 2;
         InterfaceType type = 3;
         bool enabled = 4;
-        string phys_address = 5;
-        uint32 mtu = 6;
-        string host_if_name = 7; /* name of the interface in the host OS */
+        repeated string ip_addresses = 8;   /* IP address in format <ipAddress>/<ipPrefix> */
+        string phys_address = 5;            /* MAC address */
+        uint32 mtu = 6;                     /* Maximum transmission unit value */
+        string host_if_name = 7;            /* Name of the interface in the host OS */
 
-        // Required format is "ipAddress/ipPrefix"
-        repeated string ip_addresses = 10;
-
-        // Linux network namespace to attach the interface into.
-        message Namespace {
+        message Namespace {                 /* Linux network namespace to attach the interface into. */
             enum NamespaceType {
-                PID_REF_NS = 0; // Attach to namespace of a given process.
-                MICROSERVICE_REF_NS = 1; // Attach to namespace of a docker container running given microservice.
-                NAMED_NS = 2;   // Attach to named namespace.
-                FILE_REF_NS = 3;   // Attach to namespace referenced by a file handle.
+                PID_REF_NS = 0;             /* Attach to namespace of a given process. */
+                MICROSERVICE_REF_NS = 1;    /* Attach to namespace of a docker container running given microservice. */
+                NAMED_NS = 2;               /* Attach to named namespace. */
+                FILE_REF_NS = 3;            /* Attach to namespace referenced by a file handle.*/
             }
             NamespaceType type = 1;
             uint32 pid = 2;
@@ -35,10 +33,7 @@ message LinuxInterfaces {
         }
         Namespace namespace = 50;
 
-        message Veth {
-            string peer_if_name = 1;
-        }
-        Veth veth = 105;
+        string peer_if_name = 9;            /* Name of the peer (other end of the linux veth or tap in the VPP) */
     };
     repeated Interface interface = 1;
 };

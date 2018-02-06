@@ -173,8 +173,12 @@ func main() {
 			createVeth(db, veth1, veth2, "ns1", "d2:74:8c:12:67:d2", "192.168.22.1/24",
 				"2001:db8:0:0:0:ff00:89e3:bb42/48")
 		case "-cvth2":
-			createVeth(db, veth2, veth1, "ns2", "92:c7:42:67:ab:cd", "192.168.22.2/24",
+			createVeth(db, veth2, veth1, "ns3", "92:c7:42:67:ab:cd", "192.168.22.5/24",
 				"2001:842:0:0:0:ff00:13c7:1245/48")
+		case "-cltap":
+			createLinuxTap(db)
+		case "-dltap":
+			deleteLinuxTap(db)
 		case "-dvth1":
 			delete(db, linuxIntf.InterfaceKey(veth1))
 		case "-dvth2":
@@ -654,18 +658,53 @@ func createVeth(db keyval.ProtoBroker, ifname string, peerIfName string, ns stri
 	ifs.Interface[0].IpAddresses = make([]string, 1)
 	ifs.Interface[0].IpAddresses[0] = ipv4Addr
 
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv6Addr
+	//ifs.Interface[0].Enabled = true
+	//ifs.Interface[0].Mtu = 1500
+	//ifs.Interface[0].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipv6Addr
 
-	ifs.Interface[0].Veth = new(linuxIntf.LinuxInterfaces_Interface_Veth)
-	ifs.Interface[0].Veth.PeerIfName = peerIfName
+	ifs.Interface[0].PeerIfName = peerIfName
 
 	log.Println(ifs)
 
 	db.Put(linuxIntf.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
 }
+func createLinuxTap(db keyval.ProtoBroker) {
+	ifs := linuxIntf.LinuxInterfaces{}
+	ifs.Interface = make([]*linuxIntf.LinuxInterfaces_Interface, 1)
+
+	ifs.Interface[0] = new(linuxIntf.LinuxInterfaces_Interface)
+	ifs.Interface[0].Name = "tap1"
+	ifs.Interface[0].Type = linuxIntf.LinuxInterfaces_AUTO_TAP
+	ifs.Interface[0].Enabled = true
+	ifs.Interface[0].PhysAddress = "92:c7:42:67:ab:dd"
+
+	ifs.Interface[0].Namespace = new(linuxIntf.LinuxInterfaces_Interface_Namespace)
+	ifs.Interface[0].Namespace.Type = linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS
+	ifs.Interface[0].Namespace.Name = "ns2"
+
+	ifs.Interface[0].Enabled = true
+	ifs.Interface[0].Mtu = 1155
+	ifs.Interface[0].IpAddresses = make([]string, 1)
+	ifs.Interface[0].IpAddresses[0] = "172.52.45.96"
+
+	ifs.Interface[0].PeerIfName = "tap1"
+
+	log.Println(ifs)
+
+	db.Put(linuxIntf.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+}
+
+func deleteLinuxTap(db keyval.ProtoBroker) {
+	ifs := linuxIntf.LinuxInterfaces{}
+	ifs.Interface = make([]*linuxIntf.LinuxInterfaces_Interface, 1)
+
+	ifs.Interface[0] = new(linuxIntf.LinuxInterfaces_Interface)
+	ifs.Interface[0].Name = "tap1"
+
+	db.Delete(linuxIntf.InterfaceKey(ifs.Interface[0].Name))
+}
+
 
 func createMemif(db keyval.ProtoBroker, ifname string, ipAddr string, master bool) {
 	key := interfaces.InterfaceKey(ifname)
