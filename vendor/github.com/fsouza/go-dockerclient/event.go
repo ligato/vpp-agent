@@ -216,7 +216,7 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 				return
 			}
 			eventState.updateLastSeen(ev)
-			eventState.sendEvent(ev)
+			go eventState.sendEvent(ev)
 		case err = <-eventState.errC:
 			if err == ErrNoListeners {
 				eventState.disableEventMonitoring()
@@ -274,10 +274,7 @@ func (eventState *eventMonitoringState) sendEvent(event *APIEvents) {
 		}
 
 		for _, listener := range eventState.listeners {
-			select {
-			case listener <- event:
-			default:
-			}
+			listener <- event
 		}
 	}
 }
@@ -345,12 +342,11 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 			if event.Time == 0 {
 				continue
 			}
-			transformEvent(&event)
-			c.eventMonitor.RLock()
-			if c.eventMonitor.enabled && c.eventMonitor.C == eventChan {
-				eventChan <- &event
+			if !c.eventMonitor.isEnabled() || c.eventMonitor.C != eventChan {
+				return
 			}
-			c.eventMonitor.RUnlock()
+			transformEvent(&event)
+			eventChan <- &event
 		}
 	}(res, conn)
 	return nil

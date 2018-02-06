@@ -17,9 +17,9 @@ package namespace
 import (
 	"bytes"
 
-	"github.com/coreos/etcd/clientv3"
-
 	"golang.org/x/net/context"
+
+	"github.com/coreos/etcd/clientv3"
 )
 
 type leasePrefix struct {

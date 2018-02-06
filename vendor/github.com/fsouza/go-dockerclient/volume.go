@@ -131,7 +131,7 @@ func (c *Client) RemoveVolume(name string) error {
 				return ErrVolumeInUse
 			}
 		}
-		return err
+		return nil
 	}
 	defer resp.Body.Close()
 	return nil
