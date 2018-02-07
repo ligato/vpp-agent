@@ -4,7 +4,21 @@
 VPP v18.04-rc0~90-gd95c39e
 cn-infra v1.1
 
-### TBD..
+### New Features
+  * TBD
+
+### Fixes
+  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+    together with other commands.
+
+### Dependencies
+  * Migrated from glide to dep
+
+### Docker Images
+  * VPP compilation now skips building of Java/C++ APIs,
+    this saves build time and final image size.
+  * Development image now runs VPP in debug mode with
+    various debug options added in [VPP config file](docker/dev_vpp_agent/vpp.conf).
 
 ## Known Issues
 - VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
@@ -24,7 +38,7 @@ cn-infra v1.0.8
     - added support for virtio-based TAPv2 interfaces.
     - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
     setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
-- [l2plugin](plugins/defaultplugins/l2plugin)      
+- [l2plugin](plugins/defaultplugins/l2plugin)
     - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
     setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
 
@@ -37,7 +51,7 @@ cn-infra v1.0.8
 - [l3plugin](plugins/defaultplugins/l3plugin)
     - removed strict configuration order for VPP ARP entries and routes. Both ARP entry or route can 
     be configured without interface already present.
-- [l4plugin](plugins/defaultplugins/l4plugin)    
+- [l4plugin](plugins/defaultplugins/l4plugin)
    - removed strict configuration order for application namespaces. Application namespace can 
     be configured without interface already present.
 
@@ -45,7 +59,7 @@ cn-infra v1.0.8
 - added API for ARP entries, L4 features, Application namespaces and STN rules.
 
 ### Logging
-- consolidated and improved logging in defaultplugins and linuxplugins.    
+- consolidated and improved logging in defaultplugins and linuxplugins.
 
 ### Bugfix
 - fixed skip-resync parameter if defaultplugins.conf is not provided.
@@ -90,10 +104,10 @@ cn-infra v1.0.7
 ### Linuxplugin
 - [l3plugin](plugins/linuxplugin/l3plugin)
   - route configuration do not return error if required interface is missing. Instead, the 
-  route data are internally stored and configured when the interface appears.      
+  route data are internally stored and configured when the interface appears.
      
 ### GOVPP
-- delay flag removed from GoVPP plugin    
+- delay flag removed from GoVPP plugin
 
 ### Documentation
 - improved in multiple vpp-agent packages
