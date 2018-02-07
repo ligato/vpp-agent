@@ -15,19 +15,14 @@
 package probe
 
 import (
-	"net/http"
-
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/unrolled/render"
 )
 
 const (
 	defaultPluginName string = "PROMETHEUS"
 
-	// DefaultMetricsPath default Prometheus metrics URL
-	DefaultMetricsPath string = "/metrics"
 	// DefaultHealthPath default Prometheus health metrics URL
 	DefaultHealthPath string = "/health"
 
@@ -70,63 +65,55 @@ const (
 
 // PrometheusPlugin struct holds all plugin-related data.
 type PrometheusPlugin struct {
-	Deps
-	healthRegistry *prometheus.Registry
+	PrometheusDeps
 }
 
 // Init may create a new (custom) instance of HTTP if the injected instance uses
 // different HTTP port than requested.
 func (p *PrometheusPlugin) Init() (err error) {
 
-	p.healthRegistry = prometheus.NewRegistry()
-
-	p.registerGauge(
-		Namespace,
-		Subsystem,
-		ServiceHealthName,
-		ServiceHealthHelp,
-		prometheus.Labels{ServiceLabel: p.getServiceLabel()},
-		p.getServiceHealth,
-	)
-
-	agentStatus := p.StatusCheck.GetAgentStatus()
-	p.registerGauge(
-		Namespace,
-		Subsystem,
-		ServiceInfoName,
-		ServiceInfoHelp,
-		prometheus.Labels{
-			ServiceLabel:      p.getServiceLabel(),
-			BuildVersionLabel: agentStatus.BuildVersion,
-			BuildDateLabel:    agentStatus.BuildDate},
-		func() float64 { return 1 },
-	)
+	if p.Prometheus != nil && p.StatusCheck != nil {
+		err := p.Prometheus.NewRegistry(DefaultHealthPath, promhttp.HandlerOpts{})
+		if err != nil {
+			return err
+		}
+		p.Prometheus.RegisterGaugeFunc(
+			DefaultHealthPath,
+			Namespace,
+			Subsystem,
+			ServiceHealthName,
+			ServiceHealthHelp,
+			prometheus.Labels{ServiceLabel: p.getServiceLabel()},
+			p.getServiceHealth,
+		)
+		agentStatus := p.StatusCheck.GetAgentStatus()
+		p.Prometheus.RegisterGaugeFunc(
+			DefaultHealthPath,
+			Namespace,
+			Subsystem,
+			ServiceInfoName,
+			ServiceInfoHelp,
+			prometheus.Labels{
+				ServiceLabel:      p.getServiceLabel(),
+				BuildVersionLabel: agentStatus.BuildVersion,
+				BuildDateLabel:    agentStatus.BuildDate},
+			func() float64 { return 1 },
+		)
+	}
 
 	return nil
 }
 
 // AfterInit registers HTTP handlers.
 func (p *PrometheusPlugin) AfterInit() error {
-	if p.HTTP != nil {
-		if p.StatusCheck != nil {
-			p.Log.Info("Starting Prometheus metrics handlers")
-			p.HTTP.RegisterHTTPHandler(DefaultMetricsPath, p.metricsHandler, "GET")
-			p.HTTP.RegisterHTTPHandler(DefaultHealthPath, p.healthMetricsHandler, "GET")
-			p.Log.Infof("Serving %s on port %d", DefaultMetricsPath, p.HTTP.GetPort())
-			p.Log.Infof("Serving %s on port %d", DefaultHealthPath, p.HTTP.GetPort())
-		} else {
-			p.Log.Info("Unable to register Prometheus metrics handlers, StatusCheck is nil")
-		}
-	} else {
-		p.Log.Info("Unable to register Prometheus metrics handlers, HTTP is nil")
-	}
 
 	//TODO: Need improvement - instead of the exposing the map directly need to use in-memory mapping
 	if p.StatusCheck != nil {
 		allPluginStatusMap := p.StatusCheck.GetAllPluginStatus()
 		for k, v := range allPluginStatusMap {
 			p.Log.Infof("k=%v, v=%v, state=%v", k, v, v.State)
-			p.registerGauge(
+			p.Prometheus.RegisterGaugeFunc(
+				DefaultHealthPath,
 				Namespace,
 				Subsystem,
 				DependencyHealthName,
@@ -148,16 +135,6 @@ func (p *PrometheusPlugin) AfterInit() error {
 // Close shutdowns HTTP if a custom instance was created in Init().
 func (p *PrometheusPlugin) Close() error {
 	return nil
-}
-
-// metricsHandler handles Prometheus metrics collection.
-func (p *PrometheusPlugin) metricsHandler(formatter *render.Render) http.HandlerFunc {
-	return promhttp.Handler().ServeHTTP
-}
-
-// healthMetricsHandler handles custom health metrics for Prometheus.
-func (p *PrometheusPlugin) healthMetricsHandler(formatter *render.Render) http.HandlerFunc {
-	return promhttp.HandlerFor(p.healthRegistry, promhttp.HandlerOpts{}).ServeHTTP
 }
 
 // getServiceHealth returns agent health status
@@ -182,61 +159,6 @@ func (p *PrometheusPlugin) getDependencyHealth(pluginName string, pluginStatus *
 	}
 }
 
-// registerGauge registers custom gauge with specific valueFunc to report status when invoked.
-func (p *PrometheusPlugin) registerGauge(namespace string, subsystem string, name string, help string,
-	labels prometheus.Labels, valueFunc func() float64) {
-	gaugeName := name
-	if subsystem != "" {
-		gaugeName = subsystem + "_" + gaugeName
-	}
-	if namespace != "" {
-		gaugeName = namespace + "_" + gaugeName
-	}
-	if err := p.healthRegistry.Register(prometheus.NewGaugeFunc(
-		prometheus.GaugeOpts{
-			// Namespace, Subsystem, and Name are components of the fully-qualified
-			// name of the Metric (created by joining these components with
-			// "_"). Only Name is mandatory, the others merely help structuring the
-			// name. Note that the fully-qualified name of the metric must be a
-			// valid Prometheus metric name.
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      name,
-
-			// Help provides information about this metric. Mandatory!
-			//
-			// Metrics with the same fully-qualified name must have the same Help
-			// string.
-			Help: help,
-
-			// ConstLabels are used to attach fixed labels to this metric. Metrics
-			// with the same fully-qualified name must have the same label names in
-			// their ConstLabels.
-			//
-			// Note that in most cases, labels have a value that varies during the
-			// lifetime of a process. Those labels are usually managed with a metric
-			// vector collector (like CounterVec, GaugeVec, UntypedVec). ConstLabels
-			// serve only special purposes. One is for the special case where the
-			// value of a label does not change during the lifetime of a process,
-			// e.g. if the revision of the running binary is put into a
-			// label. Another, more advanced purpose is if more than one Collector
-			// needs to collect Metrics with the same fully-qualified name. In that
-			// case, those Metrics must differ in the values of their
-			// ConstLabels. See the Collector examples.
-			//
-			// If the value of a label never changes (not even between binaries),
-			// that label most likely should not be a label at all (but part of the
-			// metric name).
-			ConstLabels: labels,
-		},
-		valueFunc,
-	)); err == nil {
-		p.Log.Infof("GaugeFunc('%s') registered.", gaugeName)
-	} else {
-		p.Log.Errorf("GaugeFunc('%s') registration failed: %s", gaugeName, err)
-	}
-}
-
 // String returns plugin name if it was injected, defaultPluginName otherwise.
 func (p *PrometheusPlugin) String() string {
 	if len(string(p.PluginName)) > 0 {
@@ -247,8 +169,8 @@ func (p *PrometheusPlugin) String() string {
 
 func (p *PrometheusPlugin) getServiceLabel() string {
 	serviceLabel := p.String()
-	if p.Deps.ServiceLabel != nil {
-		serviceLabel = p.Deps.ServiceLabel.GetAgentLabel()
+	if p.ServiceLabel != nil {
+		serviceLabel = p.ServiceLabel.GetAgentLabel()
 	}
 	return serviceLabel
 }

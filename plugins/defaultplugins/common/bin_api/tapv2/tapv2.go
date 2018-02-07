@@ -6,36 +6,128 @@ package tapv2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x2805f518
+const VlAPIVersion = 0x64ccbac
 
 // TapCreateV2 represents the VPP binary API message 'tap_create_v2'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 6:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 24:
 //
-//        ["tap_create_v2",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "id"],
-//            ["u8", "use_random_mac"],
-//            ["u8", "mac_address", 6],
-//            ["u16", "tx_ring_sz"],
-//            ["u16", "rx_ring_sz"],
-//            ["u8", "host_namespace_set"],
-//            ["u8", "host_namespace", 64],
-//            ["u8", "host_mac_addr_set"],
-//            ["u8", "host_mac_addr", 6],
-//            ["u8", "host_if_name_set"],
-//            ["u8", "host_if_name", 64],
-//            ["u8", "host_bridge_set"],
-//            ["u8", "host_bridge", 64],
-//            ["u8", "host_ip4_addr_set"],
-//            ["u8", "host_ip4_addr", 4],
-//            ["u8", "host_ip4_prefix_len"],
-//            ["u8", "host_ip6_addr_set"],
-//            ["u8", "host_ip6_addr", 16],
-//            ["u8", "host_ip6_prefix_len"],
-//            {"crc" : "0x7bee52ea"}
-//        ],
+//            "tap_create_v2",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "id"
+//            ],
+//            [
+//                "u8",
+//                "use_random_mac"
+//            ],
+//            [
+//                "u8",
+//                "mac_address",
+//                6
+//            ],
+//            [
+//                "u16",
+//                "tx_ring_sz"
+//            ],
+//            [
+//                "u16",
+//                "rx_ring_sz"
+//            ],
+//            [
+//                "u8",
+//                "host_namespace_set"
+//            ],
+//            [
+//                "u8",
+//                "host_namespace",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_mac_addr_set"
+//            ],
+//            [
+//                "u8",
+//                "host_mac_addr",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "host_if_name_set"
+//            ],
+//            [
+//                "u8",
+//                "host_if_name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_bridge_set"
+//            ],
+//            [
+//                "u8",
+//                "host_bridge",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_addr_set"
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_addr",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_prefix_len"
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_addr_set"
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_addr",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_prefix_len"
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_gw_set"
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_gw",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_gw_set"
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_gw",
+//                16
+//            ],
+//            {
+//                "crc": "0xf980a23f"
+//            }
 //
 type TapCreateV2 struct {
 	ID               uint32
@@ -57,6 +149,10 @@ type TapCreateV2 struct {
 	HostIP6AddrSet   uint8
 	HostIP6Addr      []byte `struc:"[16]byte"`
 	HostIP6PrefixLen uint8
+	HostIP4GwSet     uint8
+	HostIP4Gw        []byte `struc:"[4]byte"`
+	HostIP6GwSet     uint8
+	HostIP6Gw        []byte `struc:"[16]byte"`
 }
 
 func (*TapCreateV2) GetMessageName() string {
@@ -66,22 +162,35 @@ func (*TapCreateV2) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*TapCreateV2) GetCrcString() string {
-	return "7bee52ea"
+	return "f980a23f"
 }
 func NewTapCreateV2() api.Message {
 	return &TapCreateV2{}
 }
 
 // TapCreateV2Reply represents the VPP binary API message 'tap_create_v2_reply'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 31:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 143:
 //
-//        ["tap_create_v2_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0x270f4223"}
-//        ],
+//            "tap_create_v2_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0xfda5941f"
+//            }
 //
 type TapCreateV2Reply struct {
 	Retval    int32
@@ -95,22 +204,35 @@ func (*TapCreateV2Reply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*TapCreateV2Reply) GetCrcString() string {
-	return "270f4223"
+	return "fda5941f"
 }
 func NewTapCreateV2Reply() api.Message {
 	return &TapCreateV2Reply{}
 }
 
 // TapDeleteV2 represents the VPP binary API message 'tap_delete_v2'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 38:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 165:
 //
-//        ["tap_delete_v2",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0x8ad048ce"}
-//        ],
+//            "tap_delete_v2",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x529cb13f"
+//            }
 //
 type TapDeleteV2 struct {
 	SwIfIndex uint32
@@ -123,21 +245,31 @@ func (*TapDeleteV2) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*TapDeleteV2) GetCrcString() string {
-	return "8ad048ce"
+	return "529cb13f"
 }
 func NewTapDeleteV2() api.Message {
 	return &TapDeleteV2{}
 }
 
 // TapDeleteV2Reply represents the VPP binary API message 'tap_delete_v2_reply'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 45:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 187:
 //
-//        ["tap_delete_v2_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x8d573700"}
-//        ],
+//            "tap_delete_v2_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type TapDeleteV2Reply struct {
 	Retval int32
@@ -150,21 +282,31 @@ func (*TapDeleteV2Reply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*TapDeleteV2Reply) GetCrcString() string {
-	return "8d573700"
+	return "e8d4e804"
 }
 func NewTapDeleteV2Reply() api.Message {
 	return &TapDeleteV2Reply{}
 }
 
 // SwInterfaceTapV2Dump represents the VPP binary API message 'sw_interface_tap_v2_dump'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 51:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 205:
 //
-//        ["sw_interface_tap_v2_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0x35c03e1a"}
-//        ],
+//            "sw_interface_tap_v2_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type SwInterfaceTapV2Dump struct {
 }
@@ -176,33 +318,86 @@ func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SwInterfaceTapV2Dump) GetCrcString() string {
-	return "35c03e1a"
+	return "51077d14"
 }
 func NewSwInterfaceTapV2Dump() api.Message {
 	return &SwInterfaceTapV2Dump{}
 }
 
 // SwInterfaceTapV2Details represents the VPP binary API message 'sw_interface_tap_v2_details'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 57:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 223:
 //
-//        ["sw_interface_tap_v2_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u32", "id"],
-//            ["u8", "dev_name", 64],
-//            ["u16", "tx_ring_sz"],
-//            ["u16", "rx_ring_sz"],
-//            ["u8", "host_mac_addr", 6],
-//            ["u8", "host_if_name", 64],
-//            ["u8", "host_namespace", 64],
-//            ["u8", "host_bridge", 64],
-//            ["u8", "host_ip4_addr", 4],
-//            ["u8", "host_ip4_prefix_len"],
-//            ["u8", "host_ip6_addr", 16],
-//            ["u8", "host_ip6_prefix_len"],
-//            {"crc" : "0x0340f455"}
-//        ]
+//            "sw_interface_tap_v2_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "id"
+//            ],
+//            [
+//                "u8",
+//                "dev_name",
+//                64
+//            ],
+//            [
+//                "u16",
+//                "tx_ring_sz"
+//            ],
+//            [
+//                "u16",
+//                "rx_ring_sz"
+//            ],
+//            [
+//                "u8",
+//                "host_mac_addr",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "host_if_name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_namespace",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_bridge",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_addr",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "host_ip4_prefix_len"
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_addr",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "host_ip6_prefix_len"
+//            ],
+//            {
+//                "crc": "0xb4c58229"
+//            }
 //
 type SwInterfaceTapV2Details struct {
 	SwIfIndex        uint32
@@ -227,7 +422,7 @@ func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SwInterfaceTapV2Details) GetCrcString() string {
-	return "0340f455"
+	return "b4c58229"
 }
 func NewSwInterfaceTapV2Details() api.Message {
 	return &SwInterfaceTapV2Details{}

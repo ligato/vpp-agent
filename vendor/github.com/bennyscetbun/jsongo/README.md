@@ -9,10 +9,12 @@ jsongo
 
 ***If you want an easy way to turn your json into a structure you should use the "[Print](#print)" function after unmarshalling json in a JSONNODE***
 
+***[2017/11/30] Project is not dead. We are using it quite often. We haven't found any necessary update***
+
 You can find the doc on godoc.org [![GoDoc](https://godoc.org/github.com/bennyscetbun/jsongo?status.png)](https://godoc.org/github.com/bennyscetbun/jsongo)
 
 
-##JsonNode
+## JsonNode
 
 JsonNode is the basic Structure that you must use when using jsongo. It can either be a:
 - Map (jsongo.TypeMap)
@@ -22,15 +24,15 @@ JsonNode is the basic Structure that you must use when using jsongo. It can eith
 
 *When a JSONNode Type is set you cant change it without using Unset() first*
 ____
-###Val
-####Synopsis:
+### Val
+#### Synopsis:
 turn this JSONNode to TypeValue and set that value
 ```go
 func (that *JSONNode) Val(val interface{}) 
 ```
 
-####Examples
-#####code:
+#### Examples
+##### code:
 ```go
 package main
 
@@ -44,11 +46,11 @@ func main() {
 	root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 42
 ```
-#####code:
+##### code:
 ```go
 package main
 
@@ -66,7 +68,7 @@ func main() {
 	root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 {
   "Member1": "The answer",
@@ -74,15 +76,15 @@ func main() {
 }
 ```
 _____
-###Array
-####Synopsis:
+### Array
+#### Synopsis:
  Turn this JSONNode to a TypeArray and/or set the array size (reducing size will make you loose data)
 ```go
 func (that *JSONNode) Array(size int) *[]JSONNode
 ```
 
-####Examples
-#####code:
+#### Examples
+##### code:
 ```go
 package main
 
@@ -99,7 +101,7 @@ func main() {
 	root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 [
   0,
@@ -108,7 +110,7 @@ func main() {
   3
 ]
 ```
-#####code:
+##### code:
 ```go
 package main
 
@@ -126,7 +128,7 @@ func main() {
 	root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 [
   0,
@@ -134,15 +136,15 @@ func main() {
 ]
 ```
 ____
-###Map
-####Synopsis:
+### Map
+#### Synopsis:
 Turn this JSONNode to a TypeMap and/or Create a new element for key if necessary and return it
 ```go
 func (that *JSONNode) Map(key string) *JSONNode
 ```
 
-####Examples
-#####code:
+#### Examples
+##### code:
 ```go
 package main
 
@@ -157,7 +159,7 @@ func main() {
 	root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 {
   "here": "you should be",
@@ -165,8 +167,8 @@ func main() {
 }
 ```
 ____
-###At
-####Synopsis:
+### At
+#### Synopsis:
 Helps you move through your node by building them on the fly
 
 *val can be string or int only*
@@ -178,8 +180,8 @@ Helps you move through your node by building them on the fly
 func (that *JSONNode) At(val ...interface{}) *JSONNode
 ```
 
-####Examples
-#####code:
+#### Examples
+##### code:
 ```go
 package main
 
@@ -193,7 +195,7 @@ func main() {
     root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 [
   null,
@@ -205,7 +207,7 @@ func main() {
   }
 ]
 ```
-#####code:
+##### code:
 ```go
 package main
 
@@ -223,7 +225,7 @@ func main() {
     root.DebugPrint("")
 }
 ```
-#####output:
+##### output:
 ```
 [
   null,
@@ -247,8 +249,8 @@ func main() {
 ]
 ```
 ____
-###Print
-####Synopsis:
+### Print
+#### Synopsis:
 Helps you build your code by printing a go structure from the json you ve just unmarshaled
 
 ```go
@@ -256,11 +258,11 @@ func (that *JSONNode) Print()
 ```
 
 ____
-###Other Function
+### Other Function
 There is plenty of other function, you should check the complete doc [![GoDoc](https://godoc.org/github.com/bennyscetbun/jsongo?status.png)](https://godoc.org/github.com/bennyscetbun/jsongo)
 
-####A last Example for fun
-#####code:
+#### A last Example for fun
+##### code:
 ```go
 package main
 
@@ -292,7 +294,7 @@ func main() {
 	ShowOnlyValue(&root)
 }
 ```
-#####output:
+##### output:
 ```
 Of that
 do with that?
@@ -300,15 +302,15 @@ Let the dog out
 ```
 _____
 _____
-##Json Marshal/Unmarshal
+## Json Marshal/Unmarshal
 
 One of the main purpose of jsongo was to create Json from data without using static structure or map[string]interface.
 
 You can use the full power of the [encoding/json](http://golang.org/pkg/encoding/json/) package with jsongo.
 
-###Marshal
-####Example
-#####code:
+### Marshal
+#### Example
+##### code:
 ```go
 package main
 
@@ -340,7 +342,7 @@ func main() {
 	fmt.Printf("%s\n", tojson)
 }
 ```
-#####output:
+##### output:
 ```
 {
   "A": {
@@ -359,7 +361,7 @@ func main() {
 }
 ```
 ____
-###Unmarshal
+### Unmarshal
 Unmarshal using JSONNode follow some simple rules:
 - Any TypeUndefined JSONNode will be set to the right type, any other type wont be changed
 - Array will grow if necessary
@@ -374,8 +376,8 @@ You can set a node as "DontExpand" with the UnmarshalDontExpand function and tho
 - Values set to nil "*.Val(nil)*" will be turn into the type decide by Json
 - It will respect any current mapping and will return errors if needed
 
-####Example of full expand
-#####code:
+#### Example of full expand
+##### code:
 ```go
 package main
 
@@ -410,7 +412,7 @@ func main() {
 	root.DebugProspect(0, "\t")
 }
 ```
-#####output:
+##### output:
 ```
 Is of Type: TypeMap
 A:
@@ -442,8 +444,8 @@ B:
         Value of type: string
         Oh Yeah
 ```
-####Example expand with mapping
-#####code:
+#### Example expand with mapping
+##### code:
 ```go
 package main
 
@@ -483,7 +485,7 @@ func main() {
 	root.DebugProspect(0, "\t")
 }
 ```
-#####output:
+##### output:
 ```
 Is of Type: TypeMap
 A:
@@ -509,8 +511,8 @@ B:
         Value of type: string
         Oh Yeah
 ```
-####Example expand with some UnmarshalDontExpand
-#####code:
+#### Example expand with some UnmarshalDontExpand
+##### code:
 ```go
 package main
 
@@ -550,7 +552,7 @@ func main() {
 	root.DebugProspect(0, "\t")
 }
 ```
-#####output:
+##### output:
 ```
 Is of Type: TypeMap
 A:

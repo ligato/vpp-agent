@@ -1,6 +1,7 @@
 glide.lock
 .idea/*
 cmd/vpp-agent/vpp-agent
+cmd/vpp-agent-grpc/vpp-agent-grpc
 cmd/vpp-agent-ctl/vpp-agent-ctl
 cmd/agentctl/agentctl
 examples/govpp_call/govpp_call

@@ -521,26 +521,18 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
 		"bd_indexes", bdidx.IndexMetadata))
 
-	// Interface to bridge domain indices - desired state
-	plugin.ifToBdDesIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_des_indexes", nil)
-
-	// Interface to bridge domain indices - current state
-
-	plugin.ifToBdRealIndexes = nametoidx.NewNameToIdx(bdLogger, plugin.PluginName, "if_to_bd_real_indexes", nil)
-
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("BDConfigurator", bdLogger)
 	}
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{
-		Log:                bdLogger,
-		GoVppmux:           plugin.GoVppmux,
-		SwIfIndexes:        plugin.swIfIndexes,
-		BdIndexes:          plugin.bdIndexes,
-		BridgeDomainIDSeq:  1,
-		IfToBdIndexes:      plugin.ifToBdDesIndexes,
-		IfToBdRealStateIdx: plugin.ifToBdRealIndexes,
-		Stopwatch:          stopwatch,
+		Log:               bdLogger,
+		GoVppmux:          plugin.GoVppmux,
+		ServiceLabel:      plugin.ServiceLabel,
+		SwIfIndices:       plugin.swIfIndexes,
+		BdIndices:         plugin.bdIndexes,
+		BridgeDomainIDSeq: 1,
+		Stopwatch:         stopwatch,
 	}
 
 	// Bridge domain state and state updater

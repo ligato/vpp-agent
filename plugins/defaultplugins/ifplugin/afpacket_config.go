@@ -84,7 +84,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 }
 
 // ModifyAfPacketInterface updates the cache with afpacket configurations and tells InterfaceConfigurator if the interface
-// nees to be recreated for the changes to be applied.
+// needs to be recreated for the changes to be applied.
 func (plugin *AFPacketConfigurator) ModifyAfPacketInterface(newConfig *intf.Interfaces_Interface,
 	oldConfig *intf.Interfaces_Interface) (recreate bool, err error) {
 

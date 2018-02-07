@@ -20,13 +20,13 @@ package ifplugin
 
 import (
 	"fmt"
+	"net"
 
 	"context"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
@@ -103,7 +103,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 		return err
 	}
 	if !doVPPCall {
-		plugin.Log.Warnf("There is no interface for rule: %+v. Waiting for interface.", rule.Interface)
+		plugin.Log.Debugf("There is no interface for rule: %+v. Waiting for interface.", rule.Interface)
 		plugin.indexSTNRule(rule, true)
 	} else {
 		plugin.Log.Debugf("adding STN rule: %+v", rule)
@@ -113,9 +113,9 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 			return errVppCall
 		}
 		plugin.indexSTNRule(rule, false)
-	}
 
-	plugin.Log.Infof("STN rule %v configured", rule)
+		plugin.Log.Infof("STN rule %v configured", rule)
+	}
 
 	return nil
 }
@@ -176,6 +176,11 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelS
 	return nil
 }
 
+// Dump STN rules configured on the VPP
+func (plugin *StnConfigurator) Dump() ([]*stn.StnRuleDetails, error) {
+	return vppcalls.DumpStnRules(plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnRulesDump{}, plugin.Stopwatch))
+}
+
 // Close GOVPP channel.
 func (plugin *StnConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
@@ -203,8 +208,9 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 		return
 	}
 
-	parsedIP, _, err := addrs.ParseIPWithPrefix(stnInput.IpAddress)
-	if err != nil {
+	parsedIP := net.ParseIP(stnInput.IpAddress)
+	if parsedIP == nil {
+		err = fmt.Errorf("unable to parse IP %v", stnInput.IpAddress)
 		return
 	}
 
@@ -212,7 +218,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 	ifIndex, _, exists := index.LookupIdx(ifName)
 
 	stnRule = &vppcalls.StnRule{
-		IPAddress: *parsedIP,
+		IPAddress: parsedIP,
 		IfaceIdx:  ifIndex,
 	}
 
@@ -224,7 +230,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 }
 
 func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface bool) {
-	idx := stnIdentifier(rule.Interface)
+	idx := StnIdentifier(rule.Interface)
 	if withoutIface {
 		plugin.StnUnstoredIndexes.RegisterName(idx, plugin.StnUnstoredIndexSeq, rule)
 		plugin.StnUnstoredIndexSeq++
@@ -234,7 +240,7 @@ func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface
 }
 
 func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.StnRule) {
-	idx := stnIdentifier(iface)
+	idx := StnIdentifier(iface)
 	rule = nil
 	withoutIface = false
 
@@ -259,7 +265,7 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 }
 
 func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (rule *modelStn.StnRule) {
-	idx := stnIdentifier(iface)
+	idx := StnIdentifier(iface)
 	rule = nil
 
 	var ruleIface interface{}
@@ -281,8 +287,8 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	return
 }
 
-// Creates unique identifier which serves as a name in name to index mapping
-func stnIdentifier(iface string) string {
+// StnIdentifier creates unique identifier which serves as a name in name to index mapping
+func StnIdentifier(iface string) string {
 	id := fmt.Sprintf("stn-iface-%v", iface)
 	return id
 }

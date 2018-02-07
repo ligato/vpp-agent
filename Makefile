@@ -1,253 +1,185 @@
-include Makeroutines.mk
+VERSION	:= $(shell git describe --always --tags --dirty)
+COMMIT	:= $(shell git rev-parse HEAD)
+DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
-VERSION=$(shell git describe --tags --dirty)
-COMMIT=$(shell git rev-parse HEAD)
-DATE=$(shell date +'%Y-%m-%dT%H:%M%:z')
-LDFLAGS=-ldflags '-X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildVersion=$(VERSION) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.CommitHash=$(COMMIT) -X github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core.BuildDate=$(DATE)'
-COVER_DIR=/tmp/
+CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
+LDFLAGS	= -ldflags '-X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)'
 
-# generate go structures from proto files
-define generate_sources
-	$(call install_generators)
-	@echo "# installing generic"
-	@cd vendor/github.com/taylorchu/generic/cmd/generic/ && go install -v
-	@cd vendor/github.com/ungerik/pkgreflect/ && go install -v
-	@echo "# installing gomock"
-	@cd vendor/github.com/golang/mock/gomock && go install -v
-	@cd vendor/github.com/golang/mock/mockgen && go install -v
-	@echo "# generating sources"
-	@cd plugins/linuxplugin && go generate
-	@cd plugins/defaultplugins/aclplugin && go generate
-	@cd plugins/defaultplugins/ifplugin && go generate
-	@cd plugins/defaultplugins/l2plugin && go generate
-	@cd plugins/defaultplugins/l3plugin && go generate
-	@cd plugins/defaultplugins/l4plugin && go generate
-	@cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/session && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
-	@cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
-	@echo "# done"
-endef
+COVER_DIR ?= /tmp/
 
-# install-only binaries
-define install_only
-	@echo "# installing vpp-agent"
-	@cd cmd/vpp-agent && go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	@echo "# installing vpp-agent-ctl"
-	@cd cmd/vpp-agent-ctl && go install -v -tags="${GO_BUILD_TAGS}"
-	@echo "# installing agentctl"
-    @cd cmd/agentctl && go install -v -tags="${GO_BUILD_TAGS}"
-	@echo "# done"
-endef
+# Build all
+build: cmd examples
 
-# run all tests
-define test_only
-	@echo "# running unit tests"
-	@go test ./cmd/agentctl/utils
-	@go test ./idxvpp/nametoidx
-    @go test ./plugins/defaultplugins/l2plugin/bdidx
-    @go test ./plugins/defaultplugins/l2plugin/vppcalls
-    @go test ./plugins/defaultplugins/l2plugin/vppdump
-    @go test ./plugins/defaultplugins/ifplugin/vppcalls
-	@echo "# done"
-endef
+# Clean all
+clean: clean-cmd clean-examples
 
-# run all tests with coverage
-define test_cover_only
-	@echo "# running unit tests with coverage analysis"
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	@go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	@echo "# merging coverage results"
-    @cd vendor/github.com/wadey/gocovmerge && go install -v
-    @gocovmerge   \
-            ${COVER_DIR}coverage_unit1.out \
-            ${COVER_DIR}coverage_unit2.out \
-            ${COVER_DIR}coverage_l2plugin_bdidx.out    > ${COVER_DIR}coverage.out \
-            ${COVER_DIR}coverage_l2plugin_vppcalls.out > ${COVER_DIR}coverage.out \
-            ${COVER_DIR}coverage_l2plugin_vppdump.out  > ${COVER_DIR}coverage.out \
-            ${COVER_DIR}coverage_ifplugin_vppcalls.out > ${COVER_DIR}coverage.out
-    @echo "# coverage data generated into ${COVER_DIR}coverage.out"
-    @echo "# done"
-endef
-
-# run all tests with coverage and display HTML report
-define test_cover_html
-    $(call test_cover_only)
-    @go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-    @echo "# coverage report generated into ${COVER_DIR}coverage.html"
-    @go tool cover -html=${COVER_DIR}coverage.out
-endef
-
-# run all tests with coverage and display XML report
-define test_cover_xml
-	$(call test_cover_only)
-    @gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-    @echo "# coverage report generated into ${COVER_DIR}coverage.xml"
-endef
-
-# run code analysis
-define lint_only
-    @echo "# running code analysis"
-    @./scripts/static_analysis.sh golint vet
-    @echo "# done"
-endef
-
-# run code formatter
-define format_only
-    @echo "# formatting the code"
-    @./scripts/gofmt.sh
-    @echo "# done"
-endef
-
-# build examples only
-define build_examples_only
-    @echo "# building examples"
-    @cd examples/govpp_call && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/idx_bd_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/idx_iface_cache && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/idx_mapping_lookup && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/localclient_linux && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @cd examples/localclient_vpp && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @echo "# done"
-endef
-
-# build vpp agent only
-define build_vpp_agent_only
-    @echo "# building vpp agent"
-    @cd cmd/vpp-agent && go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-    @echo "# done"
-endef
-
-# verify that links in markdown files are valid
-# requires npm install -g markdown-link-check
-define check_links_only
-    @echo "# checking links"
-    @./scripts/check_links.sh
-    @echo "# done"
-endef
-
-# build vpp-agent-ctl only
-define build_vpp_agent_ctl_only
-    @echo "# building vpp-agent-ctl"
-    @cd cmd/vpp-agent-ctl && go build -v -i -tags="${GO_BUILD_TAGS}"
-    @echo "# done"
-endef
-
-# build-only agentctl
-define build_agentctl_only
- 	@echo "# building agentctl"
- 	@cd cmd/agentctl && go build -v -i -tags="${GO_BUILD_TAGS}"
- 	@echo "# done"
-endef
-
-# clean examples only
-define clean_examples_only
-    @echo "# cleaning examples"
-    @rm -f examples/govpp_call/govpp_call
-    @rm -f examples/idx_bd_cache/idx_bd_cache
-    @rm -f examples/idx_iface_cache/idx_iface_cache
-    @rm -f examples/idx_mapping_lookup/idx_mapping_lookup
-    @rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-    @rm -f examples/localclient_linux/localclient_linux
-    @rm -r examples/localclient_vpp/localclient_vpp
-    @echo "# done"
-endef
-
-# build all binaries
-build:
-	$(call build_examples_only)
-	$(call build_vpp_agent_only)
-	$(call build_vpp_agent_ctl_only)
-	$(call build_agentctl_only)
-
-# build vpp-agent
-vpp-agent:
-	$(call build_vpp_agent_only)
-
-# build vpp-agent-ctl
-vpp-agent-ctl:
-	$(call build_vpp_agent_ctl_only)
-
-# build agentctl
-agentctl:
-	$(call build_agentctl_only)
-
-# build examples
-example:
-	$(call build_examples_only)
-
-# install binaries
+# Install commands
 install:
-	$(call install_only)
+	@echo "# installing commands"
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-grpc
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
+	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
-# install dependencies
-install-dep:
-	$(call install_dependencies)
+# Build commands
+cmd:
+	@echo "# building commands"
+	cd cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
+	cd cmd/vpp-agent-grpc	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent-ctl	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	cd cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
 
-# update dependencies
-update-dep:
-	$(call update_dependencies)
+# Clean commands
+clean-cmd:
+	@echo "# cleaning binaries"
+	rm -f ./cmd/vpp-agent/vpp-agent
+	rm -f ./cmd/vpp-agent-ctl/vpp-agent-grpc
+	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
+	rm -f ./cmd/agentctl/agentctl
 
-# generate structures
-generate:
-	$(call generate_sources)
+# Build examples
+examples:
+	@echo "# building examples"
+	cd examples/govpp_call 			&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_bd_cache 		&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_iface_cache 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_lookup 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_veth_cache		&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 
-# run tests
+# Clean examples
+clean-examples:
+	@echo "# cleaning examples"
+	rm -f examples/govpp_call/govpp_call
+	rm -f examples/idx_bd_cache/idx_bd_cache
+	rm -f examples/idx_iface_cache/idx_iface_cache
+	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
+	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
+	rm -f examples/idx_veth_cache/idx_veth_cache
+	rm -f examples/localclient_linux/localclient_linux
+	rm -r examples/localclient_vpp/localclient_vpp
+
+# Run tests
 test:
-	$(call test_only)
+	@echo "# running scenario tests"
+	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
+	@echo "# running unit tests"
+	go test ./cmd/agentctl/utils
+	go test ./idxvpp/nametoidx
+	go test ./plugins/defaultplugins/l2plugin/bdidx
+	go test ./plugins/defaultplugins/l2plugin/vppcalls
+	go test ./plugins/defaultplugins/l2plugin/vppdump
+	go test ./plugins/defaultplugins/ifplugin/vppcalls
 
-# run tests with coverage report
-test-cover:
-	$(call test_cover_only)
+# Get coverage report tools
+get-covtools:
+	go get -v github.com/wadey/gocovmerge
 
-# run tests with HTML coverage report
-test-cover-html:
-	$(call test_cover_html)
+# Run coverage report
+test-cover: get-covtools
+	@echo "# running unit tests with coverage analysis"
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	@echo "# merging coverage results"
+	gocovmerge \
+			${COVER_DIR}coverage_scenario.out \
+			${COVER_DIR}coverage_unit1.out \
+			${COVER_DIR}coverage_unit2.out \
+			${COVER_DIR}coverage_l2plugin_bdidx.out \
+			${COVER_DIR}coverage_l2plugin_vppcalls.out \
+			${COVER_DIR}coverage_l2plugin_vppdump.out  \
+			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+		> ${COVER_DIR}coverage.out
+	@echo "# coverage data generated into ${COVER_DIR}coverage.out"
 
-# run tests with XML coverage report
-test-cover-xml:
-	$(call test_cover_xml)
+test-cover-html: test-cover
+	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
+	@echo "# coverage report generated into ${COVER_DIR}coverage.html"
 
-# run & print code analysis
-lint:
-	$(call lint_only)
+test-cover-xml: test-cover
+	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
+	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
 
-# format the code
+# Get generator tools
+get-generators:
+	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	go install -v ./vendor/github.com/ungerik/pkgreflect
+
+# Generate sources
+generate: get-generators
+	@echo "# generating sources"
+	cd plugins/linuxplugin && go generate
+	cd plugins/defaultplugins/aclplugin && go generate
+	cd plugins/defaultplugins/ifplugin && go generate
+	cd plugins/defaultplugins/l2plugin && go generate
+	cd plugins/defaultplugins/l3plugin && go generate
+	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/linuxplugin/ifplugin && go generate
+	cd plugins/linuxplugin/l3plugin && go generate
+	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
+
+# Get dependency manager tool
+get-dep:
+	go get -v github.com/golang/dep/cmd/dep
+
+# Install the project's dependencies
+dep-install: get-dep
+	@echo "# installing project's dependencies"
+	dep ensure
+
+# Update the locked versions of all dependencies
+dep-update: get-dep
+	@echo "# updating all dependencies"
+	dep ensure -update
+
+# Get linter tools
+get-linters:
+	@echo "# installing linters"
+	go get -v github.com/alecthomas/gometalinter
+	gometalinter --install
+
+# Run linters
+lint: get-linters
+	@echo "# running code analysis"
+	./scripts/static_analysis.sh golint vet
+
+# Format code
 format:
-	$(call format_only)
+	@echo "# formatting the code"
+	./scripts/gofmt.sh
 
-# validate links in markdown files
-check_links:
-	$(call check_links_only)
+# Get link check tool
+get-linkcheck:
+	sudo apt-get install npm
+	npm install -g markdown-link-check
 
-# clean
-clean:
-	$(call clean_examples_only)
-	rm -f cmd/vpp-agent/vpp-agent
-	rm -f cmd/vpp-agent-ctl/vpp-agent-ctl
-	rm -f cmd/agentctl/agentctl
-	@echo "# cleanup completed"
+# Validate links in markdown files
+check-links: get-linkcheck
+	./scripts/check_links.sh
 
-# run all targets
-all:
-	$(call lint_only)
-	$(call build_vpp_agent_only)
-	$(call build_vpp_agent_ctl_only)
-	$(call test_only)
-	$(call install_only)
-
-.PHONY: build update-dep install-dep test lint clean
+.PHONY: build clean \
+	install cmd examples clean-examples test \
+	get-covtools test-cover test-cover-html test-cover-xml \
+	get-generators generate \
+	get-dep dep-install dep-update \
+	get-linters lint format \
+	get-linkcheck check-links

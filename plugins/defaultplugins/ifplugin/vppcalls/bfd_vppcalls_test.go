@@ -119,7 +119,7 @@ func TestAddBfdUDPSession(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&bfd.BfdUDPAddReply{})
 
-	err := vppcalls.AddBfdUDPSession(dummyAddBfdUDPSession, testDataInDummySwIfIndex, testDataInDummyBfdIndex, logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
+	err := vppcalls.AddBfdUDPSession(dummyAddBfdUDPSession, 42, testDataInDummyBfdIndex, logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := ctx.MockChannel.Msg.(*bfd.BfdUDPAdd)

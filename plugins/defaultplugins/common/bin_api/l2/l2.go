@@ -6,18 +6,32 @@ package l2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xdbcb1039
+const VlAPIVersion = 0xa24bb933
 
 // MacEntry represents the VPP binary API data type 'mac_entry'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 3:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1249:
 //
-//        ["mac_entry",
-//            ["u32", "sw_if_index"],
-//            ["u8", "mac_addr", 6],
-//            ["u8", "is_del"],
-//            ["u8", "spare"],
-//            {"crc" : "0xa741caef"}
-//        ],
+//            "mac_entry",
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "mac_addr",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "is_del"
+//            ],
+//            [
+//                "u8",
+//                "spare"
+//            ],
+//            {
+//                "crc": "0x4ffc6b5e"
+//            }
 //
 type MacEntry struct {
 	SwIfIndex uint32
@@ -30,18 +44,28 @@ func (*MacEntry) GetTypeName() string {
 	return "mac_entry"
 }
 func (*MacEntry) GetCrcString() string {
-	return "a741caef"
+	return "4ffc6b5e"
 }
 
 // BridgeDomainSwIf represents the VPP binary API data type 'bridge_domain_sw_if'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 10:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1272:
 //
-//        ["bridge_domain_sw_if",
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "shg"],
-//            {"crc" : "0x89a002d4"}
-//        ]
+//            "bridge_domain_sw_if",
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "shg"
+//            ],
+//            {
+//                "crc": "0xa06dd426"
+//            }
 //
 type BridgeDomainSwIf struct {
 	Context   uint32
@@ -53,19 +77,32 @@ func (*BridgeDomainSwIf) GetTypeName() string {
 	return "bridge_domain_sw_if"
 }
 func (*BridgeDomainSwIf) GetCrcString() string {
-	return "89a002d4"
+	return "a06dd426"
 }
 
 // L2XconnectDetails represents the VPP binary API message 'l2_xconnect_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 18:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 121:
 //
-//        ["l2_xconnect_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u32", "rx_sw_if_index"],
-//            ["u32", "tx_sw_if_index"],
-//            {"crc" : "0x8983dff7"}
-//        ],
+//            "l2_xconnect_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "rx_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "tx_sw_if_index"
+//            ],
+//            {
+//                "crc": "0x722e2378"
+//            }
 //
 type L2XconnectDetails struct {
 	RxSwIfIndex uint32
@@ -79,21 +116,31 @@ func (*L2XconnectDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2XconnectDetails) GetCrcString() string {
-	return "8983dff7"
+	return "722e2378"
 }
 func NewL2XconnectDetails() api.Message {
 	return &L2XconnectDetails{}
 }
 
 // L2XconnectDump represents the VPP binary API message 'l2_xconnect_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 25:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 143:
 //
-//        ["l2_xconnect_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0x794eaafb"}
-//        ],
+//            "l2_xconnect_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type L2XconnectDump struct {
 }
@@ -105,26 +152,52 @@ func (*L2XconnectDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2XconnectDump) GetCrcString() string {
-	return "794eaafb"
+	return "51077d14"
 }
 func NewL2XconnectDump() api.Message {
 	return &L2XconnectDump{}
 }
 
 // L2FibTableDetails represents the VPP binary API message 'l2_fib_table_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 31:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 161:
 //
-//        ["l2_fib_table_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "mac", 6],
-//            ["u32", "sw_if_index"],
-//            ["u8", "static_mac"],
-//            ["u8", "filter_mac"],
-//            ["u8", "bvi_mac"],
-//            {"crc" : "0x584508c6"}
-//        ],
+//            "l2_fib_table_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "mac",
+//                6
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "static_mac"
+//            ],
+//            [
+//                "u8",
+//                "filter_mac"
+//            ],
+//            [
+//                "u8",
+//                "bvi_mac"
+//            ],
+//            {
+//                "crc": "0xc7392706"
+//            }
 //
 type L2FibTableDetails struct {
 	BdID      uint32
@@ -142,22 +215,35 @@ func (*L2FibTableDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2FibTableDetails) GetCrcString() string {
-	return "584508c6"
+	return "c7392706"
 }
 func NewL2FibTableDetails() api.Message {
 	return &L2FibTableDetails{}
 }
 
 // L2FibTableDump represents the VPP binary API message 'l2_fib_table_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 42:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 200:
 //
-//        ["l2_fib_table_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            {"crc" : "0xedcbdcf6"}
-//        ],
+//            "l2_fib_table_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            {
+//                "crc": "0xc25fdce6"
+//            }
 //
 type L2FibTableDump struct {
 	BdID uint32
@@ -170,21 +256,31 @@ func (*L2FibTableDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2FibTableDump) GetCrcString() string {
-	return "edcbdcf6"
+	return "c25fdce6"
 }
 func NewL2FibTableDump() api.Message {
 	return &L2FibTableDump{}
 }
 
 // L2FibClearTable represents the VPP binary API message 'l2_fib_clear_table'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 49:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 222:
 //
-//        ["l2_fib_clear_table",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0x40dc61e3"}
-//        ],
+//            "l2_fib_clear_table",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type L2FibClearTable struct {
 }
@@ -196,21 +292,31 @@ func (*L2FibClearTable) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2FibClearTable) GetCrcString() string {
-	return "40dc61e3"
+	return "51077d14"
 }
 func NewL2FibClearTable() api.Message {
 	return &L2FibClearTable{}
 }
 
 // L2FibClearTableReply represents the VPP binary API message 'l2_fib_clear_table_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 55:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 240:
 //
-//        ["l2_fib_clear_table_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x0425b038"}
-//        ],
+//            "l2_fib_clear_table_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2FibClearTableReply struct {
 	Retval int32
@@ -223,21 +329,31 @@ func (*L2FibClearTableReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2FibClearTableReply) GetCrcString() string {
-	return "0425b038"
+	return "e8d4e804"
 }
 func NewL2FibClearTableReply() api.Message {
 	return &L2FibClearTableReply{}
 }
 
 // L2fibFlushAll represents the VPP binary API message 'l2fib_flush_all'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 61:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 258:
 //
-//        ["l2fib_flush_all",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            {"crc" : "0xabc3e39e"}
-//        ],
+//            "l2fib_flush_all",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type L2fibFlushAll struct {
 }
@@ -249,21 +365,31 @@ func (*L2fibFlushAll) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibFlushAll) GetCrcString() string {
-	return "abc3e39e"
+	return "51077d14"
 }
 func NewL2fibFlushAll() api.Message {
 	return &L2fibFlushAll{}
 }
 
 // L2fibFlushAllReply represents the VPP binary API message 'l2fib_flush_all_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 67:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 276:
 //
-//        ["l2fib_flush_all_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xef3a3245"}
-//        ],
+//            "l2fib_flush_all_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2fibFlushAllReply struct {
 	Retval int32
@@ -276,22 +402,35 @@ func (*L2fibFlushAllReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2fibFlushAllReply) GetCrcString() string {
-	return "ef3a3245"
+	return "e8d4e804"
 }
 func NewL2fibFlushAllReply() api.Message {
 	return &L2fibFlushAllReply{}
 }
 
 // L2fibFlushBd represents the VPP binary API message 'l2fib_flush_bd'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 73:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 294:
 //
-//        ["l2fib_flush_bd",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            {"crc" : "0x82b7f182"}
-//        ],
+//            "l2fib_flush_bd",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            {
+//                "crc": "0xc25fdce6"
+//            }
 //
 type L2fibFlushBd struct {
 	BdID uint32
@@ -304,21 +443,31 @@ func (*L2fibFlushBd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibFlushBd) GetCrcString() string {
-	return "82b7f182"
+	return "c25fdce6"
 }
 func NewL2fibFlushBd() api.Message {
 	return &L2fibFlushBd{}
 }
 
 // L2fibFlushBdReply represents the VPP binary API message 'l2fib_flush_bd_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 80:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 316:
 //
-//        ["l2fib_flush_bd_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xa68d5609"}
-//        ],
+//            "l2fib_flush_bd_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2fibFlushBdReply struct {
 	Retval int32
@@ -331,22 +480,35 @@ func (*L2fibFlushBdReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2fibFlushBdReply) GetCrcString() string {
-	return "a68d5609"
+	return "e8d4e804"
 }
 func NewL2fibFlushBdReply() api.Message {
 	return &L2fibFlushBdReply{}
 }
 
 // L2fibFlushInt represents the VPP binary API message 'l2fib_flush_int'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 86:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 334:
 //
-//        ["l2fib_flush_int",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            {"crc" : "0xa1216623"}
-//        ],
+//            "l2fib_flush_int",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x529cb13f"
+//            }
 //
 type L2fibFlushInt struct {
 	SwIfIndex uint32
@@ -359,21 +521,31 @@ func (*L2fibFlushInt) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibFlushInt) GetCrcString() string {
-	return "a1216623"
+	return "529cb13f"
 }
 func NewL2fibFlushInt() api.Message {
 	return &L2fibFlushInt{}
 }
 
 // L2fibFlushIntReply represents the VPP binary API message 'l2fib_flush_int_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 93:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 356:
 //
-//        ["l2fib_flush_int_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xaacfc0d0"}
-//        ],
+//            "l2fib_flush_int_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2fibFlushIntReply struct {
 	Retval int32
@@ -386,28 +558,60 @@ func (*L2fibFlushIntReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2fibFlushIntReply) GetCrcString() string {
-	return "aacfc0d0"
+	return "e8d4e804"
 }
 func NewL2fibFlushIntReply() api.Message {
 	return &L2fibFlushIntReply{}
 }
 
 // L2fibAddDel represents the VPP binary API message 'l2fib_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 99:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 374:
 //
-//        ["l2fib_add_del",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u8", "mac", 6],
-//            ["u32", "bd_id"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "is_add"],
-//            ["u8", "static_mac"],
-//            ["u8", "filter_mac"],
-//            ["u8", "bvi_mac"],
-//            {"crc" : "0x9aa5be9e"}
-//        ],
+//            "l2fib_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "mac",
+//                6
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u8",
+//                "static_mac"
+//            ],
+//            [
+//                "u8",
+//                "filter_mac"
+//            ],
+//            [
+//                "u8",
+//                "bvi_mac"
+//            ],
+//            {
+//                "crc": "0x34ced3eb"
+//            }
 //
 type L2fibAddDel struct {
 	Mac       []byte `struc:"[6]byte"`
@@ -426,21 +630,31 @@ func (*L2fibAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2fibAddDel) GetCrcString() string {
-	return "9aa5be9e"
+	return "34ced3eb"
 }
 func NewL2fibAddDel() api.Message {
 	return &L2fibAddDel{}
 }
 
 // L2fibAddDelReply represents the VPP binary API message 'l2fib_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 112:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 421:
 //
-//        ["l2fib_add_del_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x1be0875a"}
-//        ],
+//            "l2fib_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2fibAddDelReply struct {
 	Retval int32
@@ -453,26 +667,51 @@ func (*L2fibAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2fibAddDelReply) GetCrcString() string {
-	return "1be0875a"
+	return "e8d4e804"
 }
 func NewL2fibAddDelReply() api.Message {
 	return &L2fibAddDelReply{}
 }
 
 // WantL2MacsEvents represents the VPP binary API message 'want_l2_macs_events'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 118:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 439:
 //
-//        ["want_l2_macs_events",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "learn_limit"],
-//            ["u8", "scan_delay"],
-//            ["u8", "max_macs_in_event"],
-//            ["u8", "enable_disable"],
-//            ["u32", "pid"],
-//            {"crc" : "0xc043c52c"}
-//        ],
+//            "want_l2_macs_events",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "learn_limit"
+//            ],
+//            [
+//                "u8",
+//                "scan_delay"
+//            ],
+//            [
+//                "u8",
+//                "max_macs_in_event"
+//            ],
+//            [
+//                "u8",
+//                "enable_disable"
+//            ],
+//            [
+//                "u32",
+//                "pid"
+//            ],
+//            {
+//                "crc": "0x94e63394"
+//            }
 //
 type WantL2MacsEvents struct {
 	LearnLimit     uint32
@@ -489,21 +728,31 @@ func (*WantL2MacsEvents) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantL2MacsEvents) GetCrcString() string {
-	return "c043c52c"
+	return "94e63394"
 }
 func NewWantL2MacsEvents() api.Message {
 	return &WantL2MacsEvents{}
 }
 
 // WantL2MacsEventsReply represents the VPP binary API message 'want_l2_macs_events_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 129:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 477:
 //
-//        ["want_l2_macs_events_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x97d6535f"}
-//        ],
+//            "want_l2_macs_events_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type WantL2MacsEventsReply struct {
 	Retval int32
@@ -516,23 +765,41 @@ func (*WantL2MacsEventsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantL2MacsEventsReply) GetCrcString() string {
-	return "97d6535f"
+	return "e8d4e804"
 }
 func NewWantL2MacsEventsReply() api.Message {
 	return &WantL2MacsEventsReply{}
 }
 
 // L2MacsEvent represents the VPP binary API message 'l2_macs_event'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 135:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 495:
 //
-//        ["l2_macs_event",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "pid"],
-//            ["u32", "n_macs"],
-//            ["vl_api_mac_entry_t", "mac", 0, "n_macs"],
-//            {"crc" : "0x2a1cc4f5"}
-//        ],
+//            "l2_macs_event",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "pid"
+//            ],
+//            [
+//                "u32",
+//                "n_macs"
+//            ],
+//            [
+//                "vl_api_mac_entry_t",
+//                "mac",
+//                0,
+//                "n_macs"
+//            ],
+//            {
+//                "crc": "0x4e5ab0c8"
+//            }
 //
 type L2MacsEvent struct {
 	Pid   uint32
@@ -547,24 +814,43 @@ func (*L2MacsEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
 }
 func (*L2MacsEvent) GetCrcString() string {
-	return "2a1cc4f5"
+	return "4e5ab0c8"
 }
 func NewL2MacsEvent() api.Message {
 	return &L2MacsEvent{}
 }
 
 // L2Flags represents the VPP binary API message 'l2_flags'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 143:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 523:
 //
-//        ["l2_flags",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "is_set"],
-//            ["u32", "feature_bitmap"],
-//            {"crc" : "0x987fb8e1"}
-//        ],
+//            "l2_flags",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_set"
+//            ],
+//            [
+//                "u32",
+//                "feature_bitmap"
+//            ],
+//            {
+//                "crc": "0x0e889fb9"
+//            }
 //
 type L2Flags struct {
 	SwIfIndex     uint32
@@ -579,22 +865,35 @@ func (*L2Flags) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2Flags) GetCrcString() string {
-	return "987fb8e1"
+	return "0e889fb9"
 }
 func NewL2Flags() api.Message {
 	return &L2Flags{}
 }
 
 // L2FlagsReply represents the VPP binary API message 'l2_flags_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 152:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 553:
 //
-//        ["l2_flags_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            ["u32", "resulting_feature_bitmap"],
-//            {"crc" : "0xbd749594"}
-//        ],
+//            "l2_flags_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "resulting_feature_bitmap"
+//            ],
+//            {
+//                "crc": "0x29b2a2b3"
+//            }
 //
 type L2FlagsReply struct {
 	Retval                 int32
@@ -608,23 +907,39 @@ func (*L2FlagsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2FlagsReply) GetCrcString() string {
-	return "bd749594"
+	return "29b2a2b3"
 }
 func NewL2FlagsReply() api.Message {
 	return &L2FlagsReply{}
 }
 
 // BridgeDomainSetMacAge represents the VPP binary API message 'bridge_domain_set_mac_age'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 159:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 575:
 //
-//        ["bridge_domain_set_mac_age",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "mac_age"],
-//            {"crc" : "0xf58c37aa"}
-//        ],
+//            "bridge_domain_set_mac_age",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "mac_age"
+//            ],
+//            {
+//                "crc": "0xb537ad7b"
+//            }
 //
 type BridgeDomainSetMacAge struct {
 	BdID   uint32
@@ -638,21 +953,31 @@ func (*BridgeDomainSetMacAge) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BridgeDomainSetMacAge) GetCrcString() string {
-	return "f58c37aa"
+	return "b537ad7b"
 }
 func NewBridgeDomainSetMacAge() api.Message {
 	return &BridgeDomainSetMacAge{}
 }
 
 // BridgeDomainSetMacAgeReply represents the VPP binary API message 'bridge_domain_set_mac_age_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 167:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 601:
 //
-//        ["bridge_domain_set_mac_age_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xc127a682"}
-//        ],
+//            "bridge_domain_set_mac_age_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type BridgeDomainSetMacAgeReply struct {
 	Retval int32
@@ -665,30 +990,68 @@ func (*BridgeDomainSetMacAgeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BridgeDomainSetMacAgeReply) GetCrcString() string {
-	return "c127a682"
+	return "e8d4e804"
 }
 func NewBridgeDomainSetMacAgeReply() api.Message {
 	return &BridgeDomainSetMacAgeReply{}
 }
 
 // BridgeDomainAddDel represents the VPP binary API message 'bridge_domain_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 173:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 619:
 //
-//        ["bridge_domain_add_del",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "flood"],
-//            ["u8", "uu_flood"],
-//            ["u8", "forward"],
-//            ["u8", "learn"],
-//            ["u8", "arp_term"],
-//            ["u8", "mac_age"],
-//            ["u8", "bd_tag", 64],
-//            ["u8", "is_add"],
-//            {"crc" : "0xe9894b51"}
-//        ],
+//            "bridge_domain_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "flood"
+//            ],
+//            [
+//                "u8",
+//                "uu_flood"
+//            ],
+//            [
+//                "u8",
+//                "forward"
+//            ],
+//            [
+//                "u8",
+//                "learn"
+//            ],
+//            [
+//                "u8",
+//                "arp_term"
+//            ],
+//            [
+//                "u8",
+//                "mac_age"
+//            ],
+//            [
+//                "u8",
+//                "bd_tag",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0x6f668fd9"
+//            }
 //
 type BridgeDomainAddDel struct {
 	BdID    uint32
@@ -709,21 +1072,31 @@ func (*BridgeDomainAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BridgeDomainAddDel) GetCrcString() string {
-	return "e9894b51"
+	return "6f668fd9"
 }
 func NewBridgeDomainAddDel() api.Message {
 	return &BridgeDomainAddDel{}
 }
 
 // BridgeDomainAddDelReply represents the VPP binary API message 'bridge_domain_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 188:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 674:
 //
-//        ["bridge_domain_add_del_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xd5e138e4"}
-//        ],
+//            "bridge_domain_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type BridgeDomainAddDelReply struct {
 	Retval int32
@@ -736,22 +1109,35 @@ func (*BridgeDomainAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BridgeDomainAddDelReply) GetCrcString() string {
-	return "d5e138e4"
+	return "e8d4e804"
 }
 func NewBridgeDomainAddDelReply() api.Message {
 	return &BridgeDomainAddDelReply{}
 }
 
 // BridgeDomainDump represents the VPP binary API message 'bridge_domain_dump'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 194:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 692:
 //
-//        ["bridge_domain_dump",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            {"crc" : "0x68d5401d"}
-//        ],
+//            "bridge_domain_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            {
+//                "crc": "0xc25fdce6"
+//            }
 //
 type BridgeDomainDump struct {
 	BdID uint32
@@ -764,31 +1150,74 @@ func (*BridgeDomainDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BridgeDomainDump) GetCrcString() string {
-	return "68d5401d"
+	return "c25fdce6"
 }
 func NewBridgeDomainDump() api.Message {
 	return &BridgeDomainDump{}
 }
 
 // BridgeDomainDetails represents the VPP binary API message 'bridge_domain_details'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 201:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 714:
 //
-//        ["bridge_domain_details",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "flood"],
-//            ["u8", "uu_flood"],
-//            ["u8", "forward"],
-//            ["u8", "learn"],
-//            ["u8", "arp_term"],
-//            ["u8", "mac_age"],
-//            ["u8", "bd_tag", 64],
-//            ["u32", "bvi_sw_if_index"],
-//            ["u32", "n_sw_ifs"],
-//            ["vl_api_bridge_domain_sw_if_t", "sw_if_details", 0, "n_sw_ifs"],
-//            {"crc" : "0xff7d2b54"}
-//        ],
+//            "bridge_domain_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "flood"
+//            ],
+//            [
+//                "u8",
+//                "uu_flood"
+//            ],
+//            [
+//                "u8",
+//                "forward"
+//            ],
+//            [
+//                "u8",
+//                "learn"
+//            ],
+//            [
+//                "u8",
+//                "arp_term"
+//            ],
+//            [
+//                "u8",
+//                "mac_age"
+//            ],
+//            [
+//                "u8",
+//                "bd_tag",
+//                64
+//            ],
+//            [
+//                "u32",
+//                "bvi_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "n_sw_ifs"
+//            ],
+//            [
+//                "vl_api_bridge_domain_sw_if_t",
+//                "sw_if_details",
+//                0,
+//                "n_sw_ifs"
+//            ],
+//            {
+//                "crc": "0x5527b45f"
+//            }
 //
 type BridgeDomainDetails struct {
 	BdID         uint32
@@ -811,24 +1240,43 @@ func (*BridgeDomainDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BridgeDomainDetails) GetCrcString() string {
-	return "ff7d2b54"
+	return "5527b45f"
 }
 func NewBridgeDomainDetails() api.Message {
 	return &BridgeDomainDetails{}
 }
 
 // BridgeFlags represents the VPP binary API message 'bridge_flags'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 217:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 775:
 //
-//        ["bridge_flags",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "is_set"],
-//            ["u32", "feature_bitmap"],
-//            {"crc" : "0xc1d50251"}
-//        ],
+//            "bridge_flags",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "is_set"
+//            ],
+//            [
+//                "u32",
+//                "feature_bitmap"
+//            ],
+//            {
+//                "crc": "0x6b81f158"
+//            }
 //
 type BridgeFlags struct {
 	BdID          uint32
@@ -843,22 +1291,35 @@ func (*BridgeFlags) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BridgeFlags) GetCrcString() string {
-	return "c1d50251"
+	return "6b81f158"
 }
 func NewBridgeFlags() api.Message {
 	return &BridgeFlags{}
 }
 
 // BridgeFlagsReply represents the VPP binary API message 'bridge_flags_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 226:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 805:
 //
-//        ["bridge_flags_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            ["u32", "resulting_feature_bitmap"],
-//            {"crc" : "0xfa6b7397"}
-//        ],
+//            "bridge_flags_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "resulting_feature_bitmap"
+//            ],
+//            {
+//                "crc": "0x29b2a2b3"
+//            }
 //
 type BridgeFlagsReply struct {
 	Retval                 int32
@@ -872,26 +1333,51 @@ func (*BridgeFlagsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BridgeFlagsReply) GetCrcString() string {
-	return "fa6b7397"
+	return "29b2a2b3"
 }
 func NewBridgeFlagsReply() api.Message {
 	return &BridgeFlagsReply{}
 }
 
 // L2InterfaceVlanTagRewrite represents the VPP binary API message 'l2_interface_vlan_tag_rewrite'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 233:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 827:
 //
-//        ["l2_interface_vlan_tag_rewrite",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u32", "vtr_op"],
-//            ["u32", "push_dot1q"],
-//            ["u32", "tag1"],
-//            ["u32", "tag2"],
-//            {"crc" : "0xb9dcbd39"}
-//        ],
+//            "l2_interface_vlan_tag_rewrite",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "vtr_op"
+//            ],
+//            [
+//                "u32",
+//                "push_dot1q"
+//            ],
+//            [
+//                "u32",
+//                "tag1"
+//            ],
+//            [
+//                "u32",
+//                "tag2"
+//            ],
+//            {
+//                "crc": "0xb90be6b4"
+//            }
 //
 type L2InterfaceVlanTagRewrite struct {
 	SwIfIndex uint32
@@ -908,21 +1394,31 @@ func (*L2InterfaceVlanTagRewrite) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2InterfaceVlanTagRewrite) GetCrcString() string {
-	return "b9dcbd39"
+	return "b90be6b4"
 }
 func NewL2InterfaceVlanTagRewrite() api.Message {
 	return &L2InterfaceVlanTagRewrite{}
 }
 
 // L2InterfaceVlanTagRewriteReply represents the VPP binary API message 'l2_interface_vlan_tag_rewrite_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 244:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 865:
 //
-//        ["l2_interface_vlan_tag_rewrite_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x901eddfb"}
-//        ],
+//            "l2_interface_vlan_tag_rewrite_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2InterfaceVlanTagRewriteReply struct {
 	Retval int32
@@ -935,28 +1431,61 @@ func (*L2InterfaceVlanTagRewriteReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2InterfaceVlanTagRewriteReply) GetCrcString() string {
-	return "901eddfb"
+	return "e8d4e804"
 }
 func NewL2InterfaceVlanTagRewriteReply() api.Message {
 	return &L2InterfaceVlanTagRewriteReply{}
 }
 
 // L2InterfacePbbTagRewrite represents the VPP binary API message 'l2_interface_pbb_tag_rewrite'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 250:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 883:
 //
-//        ["l2_interface_pbb_tag_rewrite",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u32", "vtr_op"],
-//            ["u16", "outer_tag"],
-//            ["u8", "b_dmac", 6],
-//            ["u8", "b_smac", 6],
-//            ["u16", "b_vlanid"],
-//            ["u32", "i_sid"],
-//            {"crc" : "0xb7706c15"}
-//        ],
+//            "l2_interface_pbb_tag_rewrite",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "vtr_op"
+//            ],
+//            [
+//                "u16",
+//                "outer_tag"
+//            ],
+//            [
+//                "u8",
+//                "b_dmac",
+//                6
+//            ],
+//            [
+//                "u8",
+//                "b_smac",
+//                6
+//            ],
+//            [
+//                "u16",
+//                "b_vlanid"
+//            ],
+//            [
+//                "u32",
+//                "i_sid"
+//            ],
+//            {
+//                "crc": "0x6cf815f9"
+//            }
 //
 type L2InterfacePbbTagRewrite struct {
 	SwIfIndex uint32
@@ -975,21 +1504,31 @@ func (*L2InterfacePbbTagRewrite) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2InterfacePbbTagRewrite) GetCrcString() string {
-	return "b7706c15"
+	return "6cf815f9"
 }
 func NewL2InterfacePbbTagRewrite() api.Message {
 	return &L2InterfacePbbTagRewrite{}
 }
 
 // L2InterfacePbbTagRewriteReply represents the VPP binary API message 'l2_interface_pbb_tag_rewrite_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 263:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 931:
 //
-//        ["l2_interface_pbb_tag_rewrite_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x2d083312"}
-//        ],
+//            "l2_interface_pbb_tag_rewrite_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2InterfacePbbTagRewriteReply struct {
 	Retval int32
@@ -1002,24 +1541,43 @@ func (*L2InterfacePbbTagRewriteReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2InterfacePbbTagRewriteReply) GetCrcString() string {
-	return "2d083312"
+	return "e8d4e804"
 }
 func NewL2InterfacePbbTagRewriteReply() api.Message {
 	return &L2InterfacePbbTagRewriteReply{}
 }
 
 // L2PatchAddDel represents the VPP binary API message 'l2_patch_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 269:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 949:
 //
-//        ["l2_patch_add_del",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "rx_sw_if_index"],
-//            ["u32", "tx_sw_if_index"],
-//            ["u8", "is_add"],
-//            {"crc" : "0x9b10029a"}
-//        ],
+//            "l2_patch_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "rx_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "tx_sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0x62506e63"
+//            }
 //
 type L2PatchAddDel struct {
 	RxSwIfIndex uint32
@@ -1034,21 +1592,31 @@ func (*L2PatchAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2PatchAddDel) GetCrcString() string {
-	return "9b10029a"
+	return "62506e63"
 }
 func NewL2PatchAddDel() api.Message {
 	return &L2PatchAddDel{}
 }
 
 // L2PatchAddDelReply represents the VPP binary API message 'l2_patch_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 278:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 979:
 //
-//        ["l2_patch_add_del_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0xa85e37be"}
-//        ],
+//            "l2_patch_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2PatchAddDelReply struct {
 	Retval int32
@@ -1061,24 +1629,43 @@ func (*L2PatchAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2PatchAddDelReply) GetCrcString() string {
-	return "a85e37be"
+	return "e8d4e804"
 }
 func NewL2PatchAddDelReply() api.Message {
 	return &L2PatchAddDelReply{}
 }
 
 // SwInterfaceSetL2Xconnect represents the VPP binary API message 'sw_interface_set_l2_xconnect'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 284:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 997:
 //
-//        ["sw_interface_set_l2_xconnect",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "rx_sw_if_index"],
-//            ["u32", "tx_sw_if_index"],
-//            ["u8", "enable"],
-//            {"crc" : "0x48a4c4c8"}
-//        ],
+//            "sw_interface_set_l2_xconnect",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "rx_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "tx_sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "enable"
+//            ],
+//            {
+//                "crc": "0x95de3988"
+//            }
 //
 type SwInterfaceSetL2Xconnect struct {
 	RxSwIfIndex uint32
@@ -1093,21 +1680,31 @@ func (*SwInterfaceSetL2Xconnect) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SwInterfaceSetL2Xconnect) GetCrcString() string {
-	return "48a4c4c8"
+	return "95de3988"
 }
 func NewSwInterfaceSetL2Xconnect() api.Message {
 	return &SwInterfaceSetL2Xconnect{}
 }
 
 // SwInterfaceSetL2XconnectReply represents the VPP binary API message 'sw_interface_set_l2_xconnect_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 293:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1027:
 //
-//        ["sw_interface_set_l2_xconnect_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x6e45eed4"}
-//        ],
+//            "sw_interface_set_l2_xconnect_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type SwInterfaceSetL2XconnectReply struct {
 	Retval int32
@@ -1120,26 +1717,51 @@ func (*SwInterfaceSetL2XconnectReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SwInterfaceSetL2XconnectReply) GetCrcString() string {
-	return "6e45eed4"
+	return "e8d4e804"
 }
 func NewSwInterfaceSetL2XconnectReply() api.Message {
 	return &SwInterfaceSetL2XconnectReply{}
 }
 
 // SwInterfaceSetL2Bridge represents the VPP binary API message 'sw_interface_set_l2_bridge'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 299:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1045:
 //
-//        ["sw_interface_set_l2_bridge",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "rx_sw_if_index"],
-//            ["u32", "bd_id"],
-//            ["u8", "shg"],
-//            ["u8", "bvi"],
-//            ["u8", "enable"],
-//            {"crc" : "0x36c739e8"}
-//        ],
+//            "sw_interface_set_l2_bridge",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "rx_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "shg"
+//            ],
+//            [
+//                "u8",
+//                "bvi"
+//            ],
+//            [
+//                "u8",
+//                "enable"
+//            ],
+//            {
+//                "crc": "0x95b4e4cf"
+//            }
 //
 type SwInterfaceSetL2Bridge struct {
 	RxSwIfIndex uint32
@@ -1156,21 +1778,31 @@ func (*SwInterfaceSetL2Bridge) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SwInterfaceSetL2Bridge) GetCrcString() string {
-	return "36c739e8"
+	return "95b4e4cf"
 }
 func NewSwInterfaceSetL2Bridge() api.Message {
 	return &SwInterfaceSetL2Bridge{}
 }
 
 // SwInterfaceSetL2BridgeReply represents the VPP binary API message 'sw_interface_set_l2_bridge_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 310:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1083:
 //
-//        ["sw_interface_set_l2_bridge_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x347e08d9"}
-//        ],
+//            "sw_interface_set_l2_bridge_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type SwInterfaceSetL2BridgeReply struct {
 	Retval int32
@@ -1183,26 +1815,53 @@ func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SwInterfaceSetL2BridgeReply) GetCrcString() string {
-	return "347e08d9"
+	return "e8d4e804"
 }
 func NewSwInterfaceSetL2BridgeReply() api.Message {
 	return &SwInterfaceSetL2BridgeReply{}
 }
 
 // BdIPMacAddDel represents the VPP binary API message 'bd_ip_mac_add_del'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 316:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1101:
 //
-//        ["bd_ip_mac_add_del",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "bd_id"],
-//            ["u8", "is_add"],
-//            ["u8", "is_ipv6"],
-//            ["u8", "ip_address", 16],
-//            ["u8", "mac_address", 6],
-//            {"crc" : "0xad819817"}
-//        ],
+//            "bd_ip_mac_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "ip_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "mac_address",
+//                6
+//            ],
+//            {
+//                "crc": "0x79f42817"
+//            }
 //
 type BdIPMacAddDel struct {
 	BdID       uint32
@@ -1219,21 +1878,31 @@ func (*BdIPMacAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BdIPMacAddDel) GetCrcString() string {
-	return "ad819817"
+	return "79f42817"
 }
 func NewBdIPMacAddDel() api.Message {
 	return &BdIPMacAddDel{}
 }
 
 // BdIPMacAddDelReply represents the VPP binary API message 'bd_ip_mac_add_del_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 327:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1141:
 //
-//        ["bd_ip_mac_add_del_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x55bab3b4"}
-//        ],
+//            "bd_ip_mac_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type BdIPMacAddDelReply struct {
 	Retval int32
@@ -1246,23 +1915,39 @@ func (*BdIPMacAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BdIPMacAddDelReply) GetCrcString() string {
-	return "55bab3b4"
+	return "e8d4e804"
 }
 func NewBdIPMacAddDelReply() api.Message {
 	return &BdIPMacAddDelReply{}
 }
 
 // L2InterfaceEfpFilter represents the VPP binary API message 'l2_interface_efp_filter'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 333:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1159:
 //
-//        ["l2_interface_efp_filter",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u32", "enable_disable"],
-//            {"crc" : "0x07c9d601"}
-//        ],
+//            "l2_interface_efp_filter",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "enable_disable"
+//            ],
+//            {
+//                "crc": "0xdabbaf12"
+//            }
 //
 type L2InterfaceEfpFilter struct {
 	SwIfIndex     uint32
@@ -1276,21 +1961,31 @@ func (*L2InterfaceEfpFilter) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*L2InterfaceEfpFilter) GetCrcString() string {
-	return "07c9d601"
+	return "dabbaf12"
 }
 func NewL2InterfaceEfpFilter() api.Message {
 	return &L2InterfaceEfpFilter{}
 }
 
 // L2InterfaceEfpFilterReply represents the VPP binary API message 'l2_interface_efp_filter_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 341:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1185:
 //
-//        ["l2_interface_efp_filter_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x0f4bb0c0"}
-//        ],
+//            "l2_interface_efp_filter_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type L2InterfaceEfpFilterReply struct {
 	Retval int32
@@ -1303,23 +1998,39 @@ func (*L2InterfaceEfpFilterReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*L2InterfaceEfpFilterReply) GetCrcString() string {
-	return "0f4bb0c0"
+	return "e8d4e804"
 }
 func NewL2InterfaceEfpFilterReply() api.Message {
 	return &L2InterfaceEfpFilterReply{}
 }
 
 // SwInterfaceSetVpath represents the VPP binary API message 'sw_interface_set_vpath'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 347:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1203:
 //
-//        ["sw_interface_set_vpath",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "client_index"],
-//            ["u32", "context"],
-//            ["u32", "sw_if_index"],
-//            ["u8", "enable"],
-//            {"crc" : "0x1bc2fd5e"}
-//        ],
+//            "sw_interface_set_vpath",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "enable"
+//            ],
+//            {
+//                "crc": "0xa36fadc0"
+//            }
 //
 type SwInterfaceSetVpath struct {
 	SwIfIndex uint32
@@ -1333,21 +2044,31 @@ func (*SwInterfaceSetVpath) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SwInterfaceSetVpath) GetCrcString() string {
-	return "1bc2fd5e"
+	return "a36fadc0"
 }
 func NewSwInterfaceSetVpath() api.Message {
 	return &SwInterfaceSetVpath{}
 }
 
 // SwInterfaceSetVpathReply represents the VPP binary API message 'sw_interface_set_vpath_reply'.
-// Generated from '/usr/share/vpp/api/l2.api.json', line 355:
+// Generated from '/usr/share/vpp/api/l2.api.json', line 1229:
 //
-//        ["sw_interface_set_vpath_reply",
-//            ["u16", "_vl_msg_id"],
-//            ["u32", "context"],
-//            ["i32", "retval"],
-//            {"crc" : "0x828dbe62"}
-//        ]
+//            "sw_interface_set_vpath_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type SwInterfaceSetVpathReply struct {
 	Retval int32
@@ -1360,7 +2081,7 @@ func (*SwInterfaceSetVpathReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SwInterfaceSetVpathReply) GetCrcString() string {
-	return "828dbe62"
+	return "e8d4e804"
 }
 func NewSwInterfaceSetVpathReply() api.Message {
 	return &SwInterfaceSetVpathReply{}

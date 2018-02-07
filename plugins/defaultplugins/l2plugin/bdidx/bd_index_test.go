@@ -31,6 +31,8 @@ const (
 	bdName2    = "bd2"
 	ifaceAName = "interfaceA"
 	ifaceBName = "interfaceB"
+	ifaceCName = "interfaceC"
+	ifaceDName = "interfaceD"
 
 	idx0 uint32 = 0
 	idx1 uint32 = 1
@@ -145,24 +147,36 @@ func TestLookupByIfaceName(t *testing.T) {
 	_, bdIndex, bridgeDomains := testInitialization(t,
 		map[string][]string{
 			bdName0: {ifaceAName, ifaceBName},
-			bdName1: {ifaceAName},
-			bdName2: {ifaceBName}})
+			bdName1: {ifaceCName},
+			bdName2: {ifaceDName}})
 
-	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
-	bdIndex.RegisterName(bridgeDomains[1].Name, idx1, bridgeDomains[1])
-	bdIndex.RegisterName(bridgeDomains[2].Name, idx2, bridgeDomains[2])
+	// Assign correct index to every bridge domain
+	for _, bridgeDomain := range bridgeDomains {
+		if bridgeDomain.Name == bdName0 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx0, bridgeDomain)
+		} else if bridgeDomain.Name == bdName1 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx1, bridgeDomain)
+		} else {
+			bdIndex.RegisterName(bridgeDomain.Name, idx2, bridgeDomain)
+		}
+	}
 
 	//return all bridge domains to which ifaceAName belongs
-	foundBridgeDomains := bdIndex.LookupNameByIfaceName(ifaceAName)
-	Expect(foundBridgeDomains).To(HaveLen(2))
-	Expect(foundBridgeDomains).To(ContainElement(bdName0))
-	Expect(foundBridgeDomains).To(ContainElement(bdName1))
+	bdIdx, _, _, exists := bdIndex.LookupBdForInterface(ifaceAName)
+	Expect(exists).To(BeTrue())
+	Expect(bdIdx).To(BeEquivalentTo(0))
 
-	//return all bridge domains to which ifaceBName belongs
-	foundBridgeDomains = bdIndex.LookupNameByIfaceName(ifaceBName)
-	Expect(foundBridgeDomains).To(HaveLen(2))
-	Expect(foundBridgeDomains).To(ContainElement(bdName0))
-	Expect(foundBridgeDomains).To(ContainElement(bdName2))
+	bdIdx, _, _, exists = bdIndex.LookupBdForInterface(ifaceBName)
+	Expect(exists).To(BeTrue())
+	Expect(bdIdx).To(BeEquivalentTo(0))
+
+	bdIdx, _, _, exists = bdIndex.LookupBdForInterface(ifaceCName)
+	Expect(exists).To(BeTrue())
+	Expect(bdIdx).To(BeEquivalentTo(1))
+
+	bdIdx, _, _, exists = bdIndex.LookupBdForInterface(ifaceDName)
+	Expect(exists).To(BeTrue())
+	Expect(bdIdx).To(BeEquivalentTo(2))
 }
 
 func prepareBridgeDomainData(bdName string, ifaces []string) *l2.BridgeDomains_BridgeDomain {

@@ -20,12 +20,11 @@ import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"golang.org/x/net/context"
-	"net"
 )
 
 // GRPCSvcPlugin registers VPP GRPC services in *grpc.Server.
@@ -202,12 +201,7 @@ func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *vppsvc.De
 	localReq := localclient.DataChangeRequest("vppsvc")
 	localReqDel := localReq.Delete()
 	for _, route := range request.Route {
-		_, dst, err := net.ParseCIDR(route.DstAddr)
-		if err != nil {
-			localReqDel.StaticRoute(route.VRF, dst, net.ParseIP(route.NextHopAddr))
-		} else {
-			svc.Log.Error("error parsing static route ", route.DstAddr)
-		}
+		localReqDel.StaticRoute(route.VRF, route.DstAddr, route.NextHopAddr)
 	}
 
 	err := localReq.Send().ReceiveReply()

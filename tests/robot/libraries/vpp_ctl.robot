@@ -115,7 +115,7 @@ vpp_ctl: Put Bridge Domain
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Loopback Interface
-    [Arguments]    ${node}    ${name}    ${mac}    ${mtu}=1500    ${enabled}=true
+    [Arguments]    ${node}    ${name}    ${mac}    ${mtu}=1500    ${enabled}=true   ${vrf}=0
     Log Many    ${node}    ${name}    ${mac}    ${mtu}    ${enabled}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/loopback_interface.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
@@ -614,3 +614,14 @@ vpp_ctl: Delete L2XConnect
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
     [Return]    ${out}
+
+vpp_ctl: Put TAPv2 Interface With IP
+    [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true    ${vrf}=0
+    Log Many    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}    ${mtu}    ${enabled}    ${vrf}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tapv2_interface_with_ip.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.

@@ -16,11 +16,15 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
+	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP.
-func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.Logger) error {
+func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging.Logger) error {
 	log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
 	defer func() {
@@ -29,15 +33,55 @@ func (plugin *ACLConfigurator) Resync(acls []*acl.AccessLists_Acl, log logging.L
 		}
 	}()
 
-	var wasError error
-
-	// Create VPP ACLs.
-	log.Debugf("Configuring %v new ACLs", len(acls))
-	for _, aclInput := range acls {
-		plugin.ConfigureACL(aclInput)
+	// Retrieve existing ACL config
+	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(&acl_api.ACLDump{}, plugin.Stopwatch))
+	if err != nil {
+		return err
 	}
 
-	log.WithField("cfg", plugin).Debug("RESYNC ACLs end. ", wasError)
+	// Remove all configured VPP ACLs
+	// Note: due to unablity to dump ACL interfaces, it is not currently possible to correctly
+	// calculate difference between configs
+	var wasErr error
+	for _, vppACL := range vppACLs {
 
-	return wasError
+		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
+		// Check what type of rules is in the ACL
+		ipRulesExist := checkIPRules(vppACL.ACLDetails.Rules)
+
+		if ipRulesExist {
+			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
+				measure.GetTimeLog(&acl_api.ACLDel{}, plugin.Stopwatch)); err != nil {
+				log.Error(err)
+				wasErr = err
+			}
+			continue
+		} else {
+			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
+				measure.GetTimeLog(&acl_api.MacipACLAdd{}, plugin.Stopwatch)); err != nil {
+				log.Error(err)
+				wasErr = err
+			}
+		}
+	}
+
+	// Configure new ACLs
+	for _, nbACL := range nbACLs {
+		if err := plugin.ConfigureACL(nbACL); err != nil {
+			plugin.Log.Error(err)
+			wasErr = err
+		}
+	}
+
+	return wasErr
+}
+
+// Method checks first rule whether it is IP rule type and returns true in such a case
+func checkIPRules(rules []*acl.AccessLists_Acl_Rule) bool {
+	if len(rules) > 0 {
+		if rules[0].Matches != nil && rules[0].Matches.IpRule != nil {
+			return true
+		}
+	}
+	return false
 }

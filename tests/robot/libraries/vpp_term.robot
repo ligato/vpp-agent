@@ -91,18 +91,25 @@ vpp_term: Show Bridge-Domain Detail
     [Return]           ${out}
 
 vpp_term: Check Ping
-    [Arguments]        ${node}    ${ip}
-    Log Many           ${node}    ${ip}
-    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip}    delay=10s
+    [Arguments]        ${node}    ${ip}     ${count}=5
+    Log Many           ${node}    ${ip}     ${count}
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
 vpp_term: Check Ping Within Interface
-    [Arguments]        ${node}    ${ip}    ${source}
-    Log Many           ${node}    ${ip}    ${source}
-    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} source ${source}    delay=10s
+    [Arguments]        ${node}    ${ip}    ${source}     ${count}=5
+    Log Many           ${node}    ${ip}    ${source}     ${count}
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} source ${source} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
+
+vpp_term: Check No Ping Within Interface
+    [Arguments]        ${node}    ${ip}    ${source}     ${count}=5
+    Log Many           ${node}    ${ip}    ${source}     ${count}
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} source ${source} repeat ${count}   delay=10s
+    Should Not Contain     ${out}    from ${ip}
+    Should Contain    ${out}    100% packet loss
 
 vpp_term: Check Interface Presence
     [Arguments]        ${node}     ${mac}    ${status}=${TRUE}
@@ -281,3 +288,39 @@ vpp_term: Show Interface Mode
     ${out}=            vpp_term: Issue Command  ${node}    show mode
     [Return]           ${out}
 
+vpp_term: Check TAPv2 Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tapv2 interface.
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    Log                  ${tap_int_state}
+    ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
+    ${ipv4_string}=      Get From List    ${ipv4}    0
+    Log                  ${ipv4}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Show Trace
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Show Trace
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    show trace
+    [Return]           ${out}
+
+
+vpp_term: Add Trace Memif
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Show Trace
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input 10
+    [Return]           ${out}

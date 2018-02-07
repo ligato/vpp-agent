@@ -25,6 +25,7 @@ const (
 type Table struct {
 	entries  [256]uint16
 	reversed bool
+	noXOR    bool
 }
 
 // IBMTable is the table for the IBM polynomial.
@@ -47,9 +48,17 @@ func MakeTable(poly uint16) *Table {
 	return makeTable(poly)
 }
 
-// MakeTable returns the Table constructed from the specified polynomial.
+// MakeBitsReversedTable returns the Table constructed from the specified polynomial.
 func MakeBitsReversedTable(poly uint16) *Table {
 	return makeBitsReversedTable(poly)
+}
+
+// MakeTableNoXOR returns the Table constructed from the specified polynomial.
+// Updates happen without XOR in and XOR out.
+func MakeTableNoXOR(poly uint16) *Table {
+	tab := makeTable(poly)
+	tab.noXOR = true
+	return tab
 }
 
 // makeTable returns the Table constructed from the specified polynomial.
@@ -107,10 +116,20 @@ func update(crc uint16, tab *Table, p []byte) uint16 {
 	return ^crc
 }
 
+func updateNoXOR(crc uint16, tab *Table, p []byte) uint16 {
+	for _, v := range p {
+		crc = tab.entries[byte(crc)^v] ^ (crc >> 8)
+	}
+
+	return crc
+}
+
 // Update returns the result of adding the bytes in p to the crc.
 func Update(crc uint16, tab *Table, p []byte) uint16 {
 	if tab.reversed {
 		return updateBitsReversed(crc, tab, p)
+	} else if tab.noXOR {
+		return updateNoXOR(crc, tab, p)
 	} else {
 		return update(crc, tab, p)
 	}

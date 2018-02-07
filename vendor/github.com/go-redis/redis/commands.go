@@ -11,7 +11,7 @@ func readTimeout(timeout time.Duration) time.Duration {
 	if timeout == 0 {
 		return 0
 	}
-	return timeout + time.Second
+	return timeout + 10*time.Second
 }
 
 func usePrecise(dur time.Duration) bool {
@@ -41,6 +41,9 @@ func formatSec(dur time.Duration) int64 {
 type Cmdable interface {
 	Pipeline() Pipeliner
 	Pipelined(fn func(Pipeliner) error) ([]Cmder, error)
+
+	TxPipelined(fn func(Pipeliner) error) ([]Cmder, error)
+	TxPipeline() Pipeliner
 
 	ClientGetName() *StringCmd
 	Echo(message interface{}) *StringCmd
@@ -140,6 +143,7 @@ type Cmdable interface {
 	SInterStore(destination string, keys ...string) *IntCmd
 	SIsMember(key string, member interface{}) *BoolCmd
 	SMembers(key string) *StringSliceCmd
+	SMembersMap(key string) *StringStructMapCmd
 	SMove(source, destination string, member interface{}) *BoolCmd
 	SPop(key string) *StringCmd
 	SPopN(key string, count int64) *StringSliceCmd
@@ -159,6 +163,7 @@ type Cmdable interface {
 	ZIncrXX(key string, member Z) *FloatCmd
 	ZCard(key string) *IntCmd
 	ZCount(key, min, max string) *IntCmd
+	ZLexCount(key, min, max string) *IntCmd
 	ZIncrBy(key string, increment float64, member string) *FloatCmd
 	ZInterStore(destination string, store ZStore, keys ...string) *IntCmd
 	ZRange(key string, start, stop int64) *StringSliceCmd
@@ -190,7 +195,7 @@ type Cmdable interface {
 	ConfigGet(parameter string) *SliceCmd
 	ConfigResetStat() *StatusCmd
 	ConfigSet(parameter, value string) *StatusCmd
-	DbSize() *IntCmd
+	DBSize() *IntCmd
 	FlushAll() *StatusCmd
 	FlushAllAsync() *StatusCmd
 	FlushDB() *StatusCmd
@@ -210,6 +215,7 @@ type Cmdable interface {
 	ScriptKill() *StatusCmd
 	ScriptLoad(script string) *StringCmd
 	DebugObject(key string) *StringCmd
+	Publish(channel string, message interface{}) *IntCmd
 	PubSubChannels(pattern string) *StringSliceCmd
 	PubSubNumSub(channels ...string) *StringIntMapCmd
 	PubSubNumPat() *IntCmd
@@ -234,7 +240,9 @@ type Cmdable interface {
 	GeoAdd(key string, geoLocation ...*GeoLocation) *IntCmd
 	GeoPos(key string, members ...string) *GeoPosCmd
 	GeoRadius(key string, longitude, latitude float64, query *GeoRadiusQuery) *GeoLocationCmd
+	GeoRadiusRO(key string, longitude, latitude float64, query *GeoRadiusQuery) *GeoLocationCmd
 	GeoRadiusByMember(key, member string, query *GeoRadiusQuery) *GeoLocationCmd
+	GeoRadiusByMemberRO(key, member string, query *GeoRadiusQuery) *GeoLocationCmd
 	GeoDist(key string, member1, member2, unit string) *FloatCmd
 	GeoHash(key string, members ...string) *StringSliceCmd
 	Command() *CommandsInfoCmd
@@ -669,6 +677,7 @@ func (c *cmdable) DecrBy(key string, decrement int64) *IntCmd {
 	return cmd
 }
 
+// Redis `GET key` command. It returns redis.Nil error when key does not exist.
 func (c *cmdable) Get(key string) *StringCmd {
 	cmd := NewStringCmd("get", key)
 	c.process(cmd)
@@ -1156,8 +1165,16 @@ func (c *cmdable) SIsMember(key string, member interface{}) *BoolCmd {
 	return cmd
 }
 
+// Redis `SMEMBERS key` command output as a slice
 func (c *cmdable) SMembers(key string) *StringSliceCmd {
 	cmd := NewStringSliceCmd("smembers", key)
+	c.process(cmd)
+	return cmd
+}
+
+// Redis `SMEMBERS key` command output as a map
+func (c *cmdable) SMembersMap(key string) *StringStructMapCmd {
+	cmd := NewStringStructMapCmd("smembers", key)
 	c.process(cmd)
 	return cmd
 }
@@ -1346,6 +1363,12 @@ func (c *cmdable) ZCard(key string) *IntCmd {
 
 func (c *cmdable) ZCount(key, min, max string) *IntCmd {
 	cmd := NewIntCmd("zcount", key, min, max)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) ZLexCount(key, min, max string) *IntCmd {
+	cmd := NewIntCmd("zlexcount", key, min, max)
 	c.process(cmd)
 	return cmd
 }
@@ -1675,7 +1698,12 @@ func (c *cmdable) ConfigSet(parameter, value string) *StatusCmd {
 	return cmd
 }
 
+// Deperecated. Use DBSize instead.
 func (c *cmdable) DbSize() *IntCmd {
+	return c.DBSize()
+}
+
+func (c *cmdable) DBSize() *IntCmd {
 	cmd := NewIntCmd("dbsize")
 	c.process(cmd)
 	return cmd
@@ -1695,9 +1723,7 @@ func (c *cmdable) FlushAllAsync() *StatusCmd {
 
 // Deprecated. Use FlushDB instead.
 func (c *cmdable) FlushDb() *StatusCmd {
-	cmd := NewStatusCmd("flushdb")
-	c.process(cmd)
-	return cmd
+	return c.FlushDB()
 }
 
 func (c *cmdable) FlushDB() *StatusCmd {
@@ -1865,8 +1891,8 @@ func (c *cmdable) DebugObject(key string) *StringCmd {
 //------------------------------------------------------------------------------
 
 // Publish posts the message to the channel.
-func (c *cmdable) Publish(channel, message string) *IntCmd {
-	cmd := NewIntCmd("PUBLISH", channel, message)
+func (c *cmdable) Publish(channel string, message interface{}) *IntCmd {
+	cmd := NewIntCmd("publish", channel, message)
 	c.process(cmd)
 	return cmd
 }
@@ -2061,8 +2087,20 @@ func (c *cmdable) GeoRadius(key string, longitude, latitude float64, query *GeoR
 	return cmd
 }
 
+func (c *cmdable) GeoRadiusRO(key string, longitude, latitude float64, query *GeoRadiusQuery) *GeoLocationCmd {
+	cmd := NewGeoLocationCmd(query, "georadius_ro", key, longitude, latitude)
+	c.process(cmd)
+	return cmd
+}
+
 func (c *cmdable) GeoRadiusByMember(key, member string, query *GeoRadiusQuery) *GeoLocationCmd {
 	cmd := NewGeoLocationCmd(query, "georadiusbymember", key, member)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) GeoRadiusByMemberRO(key, member string, query *GeoRadiusQuery) *GeoLocationCmd {
+	cmd := NewGeoLocationCmd(query, "georadiusbymember_ro", key, member)
 	c.process(cmd)
 	return cmd
 }

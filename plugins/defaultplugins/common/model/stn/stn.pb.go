@@ -19,9 +19,9 @@ import proto "github.com/gogo/protobuf/proto"
 var _ = proto.Marshal
 
 type StnRule struct {
+	RuleName  string `protobuf:"bytes,3,opt,name=rule_name,proto3" json:"rule_name,omitempty"`
 	IpAddress string `protobuf:"bytes,1,opt,name=ip_address,proto3" json:"ip_address,omitempty"`
 	Interface string `protobuf:"bytes,2,opt,name=interface,proto3" json:"interface,omitempty"`
-	RuleName  string `protobuf:"bytes,3,opt,name=rule_name,proto3" json:"rule_name,omitempty"`
 }
 
 func (m *StnRule) Reset()         { *m = StnRule{} }
