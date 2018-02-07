@@ -219,7 +219,9 @@ var (
 		HostIfName:  "veth11",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
-		PeerIfName:  "veth12",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth12",
+		},
 		IpAddresses: []string{"10.0.0.1/24"},
 	}
 
@@ -229,7 +231,9 @@ var (
 		HostIfName:  "veth11",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
-		PeerIfName:  "veth12",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth12",
+		},
 		IpAddresses: []string{"10.0.0.1/24"},
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
@@ -243,7 +247,9 @@ var (
 		HostIfName: "veth12",
 		Type:       linux_intf.LinuxInterfaces_VETH,
 		Enabled:    true,
-		PeerIfName: "veth11",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth11",
+		},
 	}
 
 	// veth12WithMtu is like veth12, but MTU is reconfigured.
@@ -252,7 +258,9 @@ var (
 		HostIfName: "veth12",
 		Type:       linux_intf.LinuxInterfaces_VETH,
 		Enabled:    true,
-		PeerIfName: "veth11",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth11",
+		},
 		Mtu:        1000,
 	}
 
@@ -262,7 +270,9 @@ var (
 		HostIfName:  "veth21",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
-		PeerIfName:  "veth22",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth22",
+		},
 		IpAddresses: []string{"10.0.0.2/24"},
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
@@ -276,7 +286,9 @@ var (
 		HostIfName: "veth22",
 		Type:       linux_intf.LinuxInterfaces_VETH,
 		Enabled:    true,
-		PeerIfName: "veth21",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth21",
+		},
 	}
 
 	// afpacket1 is attached to veth12 interface through the AF_PACKET socket.

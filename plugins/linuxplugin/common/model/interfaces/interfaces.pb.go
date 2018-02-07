@@ -89,7 +89,8 @@ type LinuxInterfaces_Interface struct {
 	Mtu         uint32                               `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	HostIfName  string                               `protobuf:"bytes,7,opt,name=host_if_name,proto3" json:"host_if_name,omitempty"`
 	Namespace   *LinuxInterfaces_Interface_Namespace `protobuf:"bytes,50,opt,name=namespace" json:"namespace,omitempty"`
-	PeerIfName  string                               `protobuf:"bytes,9,opt,name=peer_if_name,proto3" json:"peer_if_name,omitempty"`
+	Veth        *LinuxInterfaces_Interface_Veth      `protobuf:"bytes,51,opt,name=veth" json:"veth,omitempty"`
+	Tap         *LinuxInterfaces_Interface_Tap       `protobuf:"bytes,52,opt,name=tap" json:"tap,omitempty"`
 }
 
 func (m *LinuxInterfaces_Interface) Reset()         { *m = LinuxInterfaces_Interface{} }
@@ -99,6 +100,20 @@ func (*LinuxInterfaces_Interface) ProtoMessage()    {}
 func (m *LinuxInterfaces_Interface) GetNamespace() *LinuxInterfaces_Interface_Namespace {
 	if m != nil {
 		return m.Namespace
+	}
+	return nil
+}
+
+func (m *LinuxInterfaces_Interface) GetVeth() *LinuxInterfaces_Interface_Veth {
+	if m != nil {
+		return m.Veth
+	}
+	return nil
+}
+
+func (m *LinuxInterfaces_Interface) GetTap() *LinuxInterfaces_Interface_Tap {
+	if m != nil {
+		return m.Tap
 	}
 	return nil
 }
@@ -114,6 +129,22 @@ type LinuxInterfaces_Interface_Namespace struct {
 func (m *LinuxInterfaces_Interface_Namespace) Reset()         { *m = LinuxInterfaces_Interface_Namespace{} }
 func (m *LinuxInterfaces_Interface_Namespace) String() string { return proto.CompactTextString(m) }
 func (*LinuxInterfaces_Interface_Namespace) ProtoMessage()    {}
+
+type LinuxInterfaces_Interface_Veth struct {
+	PeerIfName string `protobuf:"bytes,1,opt,name=peer_if_name,proto3" json:"peer_if_name,omitempty"`
+}
+
+func (m *LinuxInterfaces_Interface_Veth) Reset()         { *m = LinuxInterfaces_Interface_Veth{} }
+func (m *LinuxInterfaces_Interface_Veth) String() string { return proto.CompactTextString(m) }
+func (*LinuxInterfaces_Interface_Veth) ProtoMessage()    {}
+
+type LinuxInterfaces_Interface_Tap struct {
+	TapPeer string `protobuf:"bytes,1,opt,name=tap_peer,proto3" json:"tap_peer,omitempty"`
+}
+
+func (m *LinuxInterfaces_Interface_Tap) Reset()         { *m = LinuxInterfaces_Interface_Tap{} }
+func (m *LinuxInterfaces_Interface_Tap) String() string { return proto.CompactTextString(m) }
+func (*LinuxInterfaces_Interface_Tap) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("interfaces.LinuxInterfaces_InterfaceType", LinuxInterfaces_InterfaceType_name, LinuxInterfaces_InterfaceType_value)

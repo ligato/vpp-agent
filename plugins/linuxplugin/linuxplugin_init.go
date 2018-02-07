@@ -169,7 +169,7 @@ func (plugin *Plugin) initIF() error {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	return plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.msChan)
+	return plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.ifVPPIndices, plugin.msChan)
 }
 
 // Initialize linux L3 plugin
@@ -221,10 +221,11 @@ func (plugin *Plugin) AfterInit() error {
 	} else {
 		plugin.ifVPPIndices = nil
 	}
-	// If initialized, subscribe watcher to indiex changes
+	// If initialized, subscribe watcher to index changes and pass indexes to configurator
 	if plugin.ifVPPIndices != nil {
 		plugin.ifVPPIndices.WatchNameToIdx(plugin.PluginName, plugin.ifVPPIdxWatchCh)
 		plugin.Log.Debug("ifVPPIndices watch registration finished")
+		plugin.ifConfigurator.VppIfIndices = plugin.ifVPPIndices
 	}
 
 	return nil

@@ -16,7 +16,8 @@ message LinuxInterfaces {
         repeated string ip_addresses = 8;   /* IP address in format <ipAddress>/<ipPrefix> */
         string phys_address = 5;            /* MAC address */
         uint32 mtu = 6;                     /* Maximum transmission unit value */
-        string host_if_name = 7;            /* Name of the interface in the host OS */
+        string host_if_name = 7;            /* Name of the interface in the host OS. If not set, the host name
+                                               is the same as interface name */
 
         message Namespace {                 /* Linux network namespace to attach the interface into. */
             enum NamespaceType {
@@ -33,7 +34,14 @@ message LinuxInterfaces {
         }
         Namespace namespace = 50;
 
-        string peer_if_name = 9;            /* Name of the peer (other end of the linux veth or tap in the VPP) */
+        message Veth {
+            string peer_if_name = 1;         /* Name of the peer (other end of the linux veth) */
+        }
+        Veth veth = 51;
+        message Tap {
+            string tap_peer = 1;             /* TAP peer name (expected to be created by the VPP TAP) */
+        }
+        Tap tap = 52;
     };
     repeated Interface interface = 1;
 };

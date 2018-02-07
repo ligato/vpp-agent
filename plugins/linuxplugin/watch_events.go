@@ -73,9 +73,9 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 		case vppIdxEv := <-plugin.ifVPPIdxWatchCh:
 			if vppIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveDeletedInterface(vppIdxEv.Name, vppIdxEv.Idx)
+				plugin.ifConfigurator.ResolveDeletedVPPInterface(vppIdxEv.Name, vppIdxEv.Idx)
 			} else {
-				plugin.ifConfigurator.ResolveCreatedInterface(vppIdxEv.Name, vppIdxEv.Idx)
+				plugin.ifConfigurator.ResolveCreatedVPPInterface(vppIdxEv.Name, vppIdxEv.Idx)
 			}
 
 		case <-ctx.Done():

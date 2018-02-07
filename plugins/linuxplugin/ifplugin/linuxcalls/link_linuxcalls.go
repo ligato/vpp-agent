@@ -58,22 +58,6 @@ func InterfaceExists(ifName string, timeLog measure.StopWatchEntry) (bool, error
 	return false, err
 }
 
-// DeleteInterface removes interface <ifName>.
-func DeleteInterface(ifName string, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	link, err := netlink.LinkByName(ifName)
-	if err != nil {
-		return err
-	}
-	return netlink.LinkDel(link)
-}
-
 // RenameInterface changes the name of the interface <ifName> to <newName>.
 func RenameInterface(ifName string, newName string, timeLog measure.StopWatchEntry) error {
 	start := time.Now()

@@ -291,7 +291,9 @@ var (
 		Name:        "veth1",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
-		PeerIfName:  "veth12DefaultNs",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth12DefaultNs",
+		},
 		IpAddresses: []string{"10.0.0.1/24"},
 	}
 	// veth12DefaultNs is one member of the veth11-veth12DefaultNs VETH pair, put into the default namespace
@@ -299,14 +301,18 @@ var (
 		Name:       "veth12DefaultNs",
 		Type:       linux_intf.LinuxInterfaces_VETH,
 		Enabled:    true,
-		PeerIfName: "veth11",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth11",
+		},
 	}
 	// veth11DefaultNs is one member of the veth21-veth22 VETH pair, put into the ns1.
 	veth21Ns1 = linux_intf.LinuxInterfaces_Interface{
 		Name:        "veth11",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
-		PeerIfName:  "veth12DefaultNs",
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth12DefaultNs",
+		},
 		IpAddresses: []string{"10.0.0.1/24"},
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
@@ -318,7 +324,9 @@ var (
 		Name:        "veth21",
 		Type:        linux_intf.LinuxInterfaces_VETH,
 		Enabled:     true,
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 		PeerIfName:  "veth22",
+		},
 		IpAddresses: []string{"10.0.0.2/24"},
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
