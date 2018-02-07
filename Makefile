@@ -121,6 +121,8 @@ generate: get-generators
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/linuxplugin/ifplugin && go generate
+	cd plugins/linuxplugin/l3plugin && go generate
 	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
