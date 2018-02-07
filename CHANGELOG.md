@@ -6,17 +6,13 @@ cn-infra v1.1
 
 ### Improvements
 - [aclplugin](plugins/defaultplugins/aclplugin) 
-  * Improved resync of ACL entries. Every new ACL entry is correctly configured in the VPP and all obosolete entries are read
-    and removed. 
+  * Improved resync of ACL entries. Every new ACL entry is correctly configured in the VPP and all obosolete entries are read and removed. 
 - [ifplugin](plugins/defaultplugins/ifplugin) 
-  * Improved resync of interfaces, BFD sessions, authentication keys, echo functions and STN. Better resolution of persistence 
-    config for interfaces. 
+  * Improved resync of interfaces, BFD sessions, authentication keys, echo functions and STN. Better resolution of persistence config for interfaces. 
 - [l2plugin](plugins/defaultplugins/l2plugin) 
-  * Improved resync of bridge domains, FIB entries and xConnect pairs. Resync now better correlates configuration present
-    on the VPP with the NB setup.
+  * Improved resync of bridge domains, FIB entries and xConnect pairs. Resync now better correlates configuration present on the VPP with the NB setup.
 - (Linux) [ifplugin](plugins/linuxplugin/l3plugin) 
-  * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are
-    fullfiled. 
+  * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
   * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
