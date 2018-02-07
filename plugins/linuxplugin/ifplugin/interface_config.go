@@ -372,6 +372,16 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 	return nil
 }
 
+// ResolveCreatedInterface handles newly created VPP interface
+func (plugin *LinuxInterfaceConfigurator) ResolveCreatedInterface(vppIfName string, vppIfIdx uint32) error {
+	return nil
+}
+
+// ResolveCreatedInterface handles removed VPP interface
+func (plugin *LinuxInterfaceConfigurator) ResolveDeletedInterface(vppIfName string, vppIfIdx uint32) error {
+	return nil
+}
+
 // Validate and configure TAP linux interface. TAP interface is not created here, it is added to default namespace
 // when it's VPP end is configured
 func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxInterfaceConfig, previousNs *interfaces.LinuxInterfaces_Interface_Namespace) error {

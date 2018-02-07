@@ -21,13 +21,15 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/utils/safeclose"
-
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+
+	ifaceVPPIdx "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin"
@@ -45,6 +47,8 @@ type Plugin struct {
 	ifIndexes          ifaceidx.LinuxIfIndexRW
 	ifConfigurator     *ifplugin.LinuxInterfaceConfigurator
 	ifIndexesWatchChan chan ifaceidx.LinuxIfIndexDto
+	ifVPPIndices       ifaceVPPIdx.SwIfIndex
+	ifVPPIdxWatchCh    chan ifaceVPPIdx.SwIfIdxDto
 
 	// ARPs
 	arpIndexes      l3idx.LinuxARPIndexRW
@@ -72,6 +76,15 @@ type Plugin struct {
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
+	VPP					vppPluginAPI
+}
+
+// vppPluginAPI enables method to receive interface indices from default plugin API
+type vppPluginAPI interface {
+	// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding VPP
+	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
+	// VPP interfaces.
+	GetSwIfIndexes() ifaceVPPIdx.SwIfIndex
 }
 
 // LinuxConfig holds the linuxplugin configuration.
@@ -120,6 +133,7 @@ func (plugin *Plugin) Init() error {
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.msChan = make(chan *ifplugin.MicroserviceCtx)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
+	plugin.ifVPPIdxWatchCh = make(chan ifaceVPPIdx.SwIfIdxDto, 100)
 
 	// Create plugin context and save cancel function into the plugin handle.
 	var ctx context.Context
@@ -199,8 +213,20 @@ func (plugin *Plugin) initL3() error {
 	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtCachedIndexes)
 }
 
-// AfterInit runs subscribeWatcher
+// AfterInit initializes and subscribes VPP interface index watcher
 func (plugin *Plugin) AfterInit() error {
+	// Get pointer to the map with VPP interface indices (this needs to be done in after init)
+	if plugin.VPP != nil {
+		plugin.ifVPPIndices = plugin.VPP.GetSwIfIndexes()
+	} else {
+		plugin.ifVPPIndices = nil
+	}
+	// If initialized, subscribe watcher to indiex changes
+	if plugin.ifVPPIndices != nil {
+		plugin.ifVPPIndices.WatchNameToIdx(plugin.PluginName, plugin.ifVPPIdxWatchCh)
+		plugin.Log.Debug("ifVPPIndices watch registration finished")
+	}
+
 	return nil
 }
 
