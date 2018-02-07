@@ -18,7 +18,6 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
@@ -38,8 +37,8 @@ func main() {
 
 	f := rpc.FlavorVppRPC{}
 	f.Inject()
-	f.GRPC.Config = &grpc.Config{Endpoint: rest.DefaultIP + ":9111"} //set default port (overridable using grpc.conf)
-	agent := core.NewAgent(log.DefaultLogger(), 15*time.Second, f.Plugins()...)
+	f.GRPC.Config = &grpc.Config{Endpoint: rest.DefaultIP + ":9111"} // set default port (overridable using grpc.conf)
+	agent := core.NewAgent(&f)
 
 	err := core.EventLoopWithInterrupt(agent, nil)
 	if err != nil {

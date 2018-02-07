@@ -147,7 +147,7 @@ func main() {
 		case "-cxc":
 			createL2xConnect(db, ifName1, ifName2)
 		case "-dxc":
-			delete(db, l2.XConnectKey(ifName1))
+			delete(db, l2.XConnectKey("tap3"))
 		case "-caf":
 			createAfPacket(db, afpacket1, "lo", "b4:e6:1c:a1:0d:31", "",
 				"fdcd:f7fb:995c::/48")
@@ -201,7 +201,7 @@ func main() {
 		case "-dlrt":
 			delete(db, l32.StaticRouteKey("route1"))
 		case "-stna":
-			createStnRule(db, ifName1, "10.1.1.3/32")
+			createStnRule(db, ifName1, "10.1.1.3")
 		case "-stnd":
 			delete(db, stn.Key("rule1"))
 		default:
@@ -244,7 +244,7 @@ func createACL(db keyval.ProtoBroker) {
 	// Ipv4Rule
 	accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
 	accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.2/32"
+	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.1/32"
 	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "10.20.0.1/24"
 
 	//// Ipv6Rule
@@ -524,27 +524,78 @@ func listAllAgentKeys(db *etcdv3.BytesConnectionEtcd) {
 func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	// fill in data - option 1
 	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
+	ifs.Interface = make([]*interfaces.Interfaces_Interface, 4)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = ifname
+	ifs.Interface[0].Name = "tap1"
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = "06:9e:df:66:54:41"
+	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:41"
 	ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 3)
-	ifs.Interface[0].IpAddresses[0] = ipAddr
-	ifs.Interface[0].IpAddresses[1] = "192.168.2.5/24"
-	ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	ifs.Interface[0].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[0].IpAddresses[0] = "192.168.2.9/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
 	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
 	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
 	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifname}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
+
+	ifs.Interface[1] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[1].Name = "tap2"
+	ifs.Interface[1].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[1].Enabled = true
+	ifs.Interface[1].PhysAddress = "09:9e:df:66:54:42"
+	ifs.Interface[1].Mtu = 555
+	ifs.Interface[1].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[1].IpAddresses[0] = "192.168.2.2/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[1].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap2"}
+
+	ifs.Interface[2] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[2].Name = "tap3"
+	ifs.Interface[2].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[2].Enabled = true
+	ifs.Interface[2].PhysAddress = "09:9e:df:66:54:43"
+	ifs.Interface[2].Mtu = 555
+	ifs.Interface[2].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[2].IpAddresses[0] = "192.168.2.3/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[2].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap3"}
+
+	ifs.Interface[3] = new(interfaces.Interfaces_Interface)
+	ifs.Interface[3].Name = "tap4"
+	ifs.Interface[3].Type = interfaces.InterfaceType_TAP_INTERFACE
+	ifs.Interface[3].Enabled = true
+	ifs.Interface[3].PhysAddress = "09:9e:df:66:54:44"
+	ifs.Interface[3].Mtu = 555
+	ifs.Interface[3].IpAddresses = make([]string, 1)
+	//ifs.Interface[0].IpAddresses[0] = ipAddr
+	ifs.Interface[3].IpAddresses[0] = "192.168.2.4/24"
+	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
+	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
+	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
+	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
+	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
+	ifs.Interface[3].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap4"}
 
 	log.Println(ifs)
 
 	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[2].Name), ifs.Interface[2])
+	db.Put(interfaces.InterfaceKey(ifs.Interface[3].Name), ifs.Interface[3])
 
 }
 
@@ -745,8 +796,8 @@ func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
 
 	bd.BridgeDomains[0].Interfaces = make([]*l2.BridgeDomains_BridgeDomain_Interfaces, 1)
 	bd.BridgeDomains[0].Interfaces[0] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
-	bd.BridgeDomains[0].Interfaces[0].Name = "tap2"
-	bd.BridgeDomains[0].Interfaces[0].BridgedVirtualInterface = false
+	bd.BridgeDomains[0].Interfaces[0].Name = "tap1"
+	bd.BridgeDomains[0].Interfaces[0].BridgedVirtualInterface = true
 
 	//bd.BridgeDomains[0].Interfaces[1] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
 	//bd.BridgeDomains[0].Interfaces[1].Name = "tap2"
@@ -809,10 +860,11 @@ func addStaticFibTableEntry(db keyval.ProtoBroker, bdName string, iface string) 
 	fibTable := l2.FibTableEntries{}
 	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
 	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].OutgoingInterface = iface
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
+	fibTable.FibTableEntry[0].OutgoingInterface = "tap1"
+	fibTable.FibTableEntry[0].BridgeDomain = "bd2"
+	fibTable.FibTableEntry[0].PhysAddress = "ff:65:f1:59:8E:BC"
 	fibTable.FibTableEntry[0].BridgedVirtualInterface = false
+	fibTable.FibTableEntry[0].StaticConfig = true
 
 	log.Println(fibTable)
 
@@ -823,8 +875,8 @@ func deleteStaticFibTableEntry(db keyval.ProtoBroker, bdName string) {
 	fibTable := l2.FibTableEntries{}
 	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
 	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
+	fibTable.FibTableEntry[0].PhysAddress = "06:9e:df:66:54:41"
+	fibTable.FibTableEntry[0].BridgeDomain = "bd2"
 
 	log.Println(fibTable)
 
@@ -835,8 +887,8 @@ func createL2xConnect(db keyval.ProtoBroker, ifnameRx string, ifnameTx string) {
 	xcp := l2.XConnectPairs{}
 	xcp.XConnectPairs = make([]*l2.XConnectPairs_XConnectPair, 1)
 	xcp.XConnectPairs[0] = new(l2.XConnectPairs_XConnectPair)
-	xcp.XConnectPairs[0].ReceiveInterface = ifnameRx
-	xcp.XConnectPairs[0].TransmitInterface = ifnameTx
+	xcp.XConnectPairs[0].ReceiveInterface = "tap1"
+	xcp.XConnectPairs[0].TransmitInterface = "tap2"
 
 	log.Println(xcp)
 
@@ -1075,8 +1127,8 @@ func disableL4Features(db keyval.ProtoBroker) {
 func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 	stnRule := stn.StnRule{
 		RuleName:  "rule1",
-		IpAddress: ipAddress,
-		Interface: ifName,
+		IpAddress: ifName,
+		Interface: ipAddress,
 	}
 
 	log.Println(stnRule)

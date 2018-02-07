@@ -49,6 +49,7 @@ var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	Learn:   1,
 	ArpTerm: 1,
 	MacAge:  45,
+	BdTag:   []byte(dummyBridgeDomainName),
 	IsAdd:   1,
 }
 
@@ -107,15 +108,10 @@ func TestVppUpdateBridgeDomain(t *testing.T) {
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(ctx.MockChannel.Msgs).To(HaveLen(2))
-
-	//delete msg
-	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
-	Expect(ok).To(BeTrue())
-	Expect(msg).To(Equal(deleteTestDataOutBd))
+	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
 
 	//add msg
-	msg, ok = ctx.MockChannel.Msgs[1].(*l2ba.BridgeDomainAddDel)
+	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
 	Expect(ok).To(BeTrue())
 	Expect(msg).To(Equal(updateTestDataOutBd))
 }

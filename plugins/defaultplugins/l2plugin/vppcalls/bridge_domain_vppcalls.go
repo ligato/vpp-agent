@@ -47,6 +47,7 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 	req.UuFlood = boolToUint(bridgeDomain.UnknownUnicastFlood)
 	req.Forward = boolToUint(bridgeDomain.Forward)
 	req.MacAge = uint8(bridgeDomain.MacAge)
+	req.BdTag = []byte(bridgeDomain.Name)
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)
@@ -65,13 +66,6 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
 	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
-	if oldBdIdx != 0 {
-		err := VppDeleteBridgeDomain(oldBdIdx, log, vppChan, measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, stopwatch))
-		if err != nil {
-			return err
-		}
-	}
-
 	// BridgeDomainAddDel time measurement
 	start := time.Now()
 	defer func() {

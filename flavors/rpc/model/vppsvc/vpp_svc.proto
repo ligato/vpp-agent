@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package vppsvc;
 
-import "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces/interfaces.proto";
-import "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2/l2.proto";
-import "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/model/l3/l3.proto";
-import "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/model/acl/acl.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3/l3.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
 
 // ChangeConfigService is a service to submit individual changes in the configuration of the vpp-agent
 service ChangeConfigService {

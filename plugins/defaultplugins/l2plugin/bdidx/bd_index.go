@@ -32,8 +32,8 @@ type BDIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *l2.BridgeDomains_BridgeDomain, exists bool)
 
-	// LookupNameByIP returns names of items that contains given IP address in metadata
-	LookupNameByIfaceName(ifaceName string) []string
+	// LookupBdForInterface looks up for bridge domain the interface belongs to
+	LookupBdForInterface(ifName string) (bdIdx uint32, metadata *l2.BridgeDomains_BridgeDomain, bvi bool, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
@@ -44,7 +44,7 @@ type BDIndexRW interface {
 	BDIndex
 
 	// RegisterName adds new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomains_BridgeDomain)
+	RegisterName(name string, idx uint32, metadata *l2.BridgeDomains_BridgeDomain)
 
 	// UnregisterName removes an item identified by name from mapping
 	UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool)
@@ -73,13 +73,13 @@ func NewBDIndex(mapping idxvpp.NameToIdxRW) BDIndexRW {
 }
 
 // GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the bdIndex.
-func (swi *bdIndex) GetMapping() idxvpp.NameToIdxRW {
-	return swi.mapping
+func (bdi *bdIndex) GetMapping() idxvpp.NameToIdxRW {
+	return bdi.mapping
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (swi *bdIndex) RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomains_BridgeDomain) {
-	swi.mapping.RegisterName(name, idx, ifMeta)
+func (bdi *bdIndex) RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomains_BridgeDomain) {
+	bdi.mapping.RegisterName(name, idx, ifMeta)
 }
 
 // IndexMetadata creates indices for metadata. Index for IPAddress will be created.
@@ -102,35 +102,50 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 }
 
 // UnregisterName removes an item identified by name from mapping.
-func (swi *bdIndex) UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
-	idx, meta, exists := swi.mapping.UnregisterName(name)
-	return idx, swi.castMetadata(meta), exists
+func (bdi *bdIndex) UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
+	idx, meta, exists := bdi.mapping.UnregisterName(name)
+	return idx, bdi.castMetadata(meta), exists
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.
-func (swi *bdIndex) LookupIdx(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
-	idx, meta, exists := swi.mapping.LookupIdx(name)
+func (bdi *bdIndex) LookupIdx(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
+	idx, meta, exists := bdi.mapping.LookupIdx(name)
 	if exists {
-		metadata = swi.castMetadata(meta)
+		metadata = bdi.castMetadata(meta)
 	}
 	return idx, metadata, exists
 }
 
 // LookupName looks up previously stored item identified by name in mapping.
-func (swi *bdIndex) LookupName(idx uint32) (name string, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
-	name, meta, exists := swi.mapping.LookupName(idx)
+func (bdi *bdIndex) LookupName(idx uint32) (name string, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
+	name, meta, exists := bdi.mapping.LookupName(idx)
 	if exists {
-		metadata = swi.castMetadata(meta)
+		metadata = bdi.castMetadata(meta)
 	}
 	return name, metadata, exists
 }
 
-// LookupNameByIP returns names of items that contain given IP address in metadata.
-func (swi *bdIndex) LookupNameByIfaceName(ifaceName string) []string {
-	return swi.mapping.LookupNameByMetadata(ifaceNameIndexKey, ifaceName)
+// LookupBdForInterface returns a bridge domain which contains provided interface
+func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, bvi bool, exists bool) {
+	bdNames := bdi.mapping.ListNames()
+	for _, bdName := range bdNames {
+		bdIdx, meta, exists := bdi.mapping.LookupIdx(bdName)
+		if exists && meta != nil {
+			bd = bdi.castMetadata(meta)
+			if bd != nil {
+				for _, iface := range bd.Interfaces {
+					if iface.Name == ifName {
+						return bdIdx, bd, iface.BridgedVirtualInterface, true
+					}
+				}
+			}
+		}
+	}
+
+	return bdIdx, nil, bvi, false
 }
 
-func (swi *bdIndex) castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomain {
+func (bdi *bdIndex) castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomain {
 	ifMeta, ok := meta.(*l2.BridgeDomains_BridgeDomain)
 	if !ok {
 		return nil
@@ -139,14 +154,14 @@ func (swi *bdIndex) castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomai
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
-func (swi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
+func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
-	swi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
+	bdi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {
 		for c := range ch {
 			pluginChannel <- ChangeDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
-				Metadata:                swi.castMetadata(c.Metadata),
+				Metadata:                bdi.castMetadata(c.Metadata),
 			}
 
 		}

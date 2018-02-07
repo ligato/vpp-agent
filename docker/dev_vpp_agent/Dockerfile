@@ -30,17 +30,21 @@ RUN /bin/bash -c "\
         yes | make install-dep && \
         make bootstrap && \
         make dpdk-install-dev && \
-        make build && \
-        make pkg-deb && \
+        make vpp_configure_args_vpp='--disable-japi --disable-vom' build && \
+        make vpp_configure_args_vpp='--disable-japi --disable-vom' pkg-deb && \
         cd build-root && \
-        rm -rf .ccache; \
+        rm -rf .ccache \
+          build-vpp-native/vpp/vpp-api/vom \
+          build-vpp_debug-native/vpp/vpp-api/vom && \
+        ln -s /opt/vpp-agent/dev/vpp/build-root/install-vpp_debug-native/vpp/bin/vpp /usr/bin/vpp_debug; \
     fi; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb"
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
 # install Go
-RUN wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.9.2.linux-amd64.tar.gz && \
-    rm -f go1.9.2.linux-amd64.tar.gz
+ENV GOLANG_VERSION 1.9.3
+RUN wget -O go.tgz "https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" && \
+    tar -C /usr/local -xzf go.tgz && \
+    rm go.tgz
 
 # build & install Protobuf & gogo protobuf compiler
 RUN apt-get install -y \

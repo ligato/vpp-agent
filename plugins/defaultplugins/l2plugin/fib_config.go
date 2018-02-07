@@ -17,9 +17,6 @@ package l2plugin
 import (
 	"fmt"
 
-	"net"
-	"time"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -27,7 +24,6 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
@@ -225,74 +221,6 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, cal
 	}, plugin.Log)
 }
 
-// LookupFIBEntries iterates over all FIBs belonging to a provided bridge domain ID
-// and registers any missing configuration for them.
-func (plugin *FIBConfigurator) LookupFIBEntries(bridgeDomain uint32) error {
-	plugin.Log.Infof("Looking up FIB entries")
-	// L2FibTableDump time measurement
-	start := time.Now()
-	defer func() {
-		if plugin.Stopwatch != nil {
-			timeLog := measure.GetTimeLog(l2ba.L2FibTableDump{}, plugin.Stopwatch)
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	req := &l2ba.L2FibTableDump{}
-	req.BdID = bridgeDomain
-	reqContext := plugin.syncVppChannel.SendMultiRequest(req)
-	for {
-		msg := &l2ba.L2FibTableDetails{}
-		stop, err := reqContext.ReceiveReply(msg)
-		if err != nil {
-			return err
-		}
-		if stop {
-			break
-		}
-		// Store name if missing.
-		macStr := net.HardwareAddr(msg.Mac).String()
-		_, _, found := plugin.FibIndexes.LookupIdx(macStr)
-		if !found {
-			// Metadata resolution
-			// Interface
-			interfaceName, _, ifFound := plugin.SwIfIndexes.LookupName(msg.SwIfIndex)
-			if !ifFound {
-				plugin.Log.Errorf("Interface required for metadata not found, cannot be registered")
-				continue
-			}
-			// Bridge domain
-			domainName, _, bdFound := plugin.BdIndexes.LookupName(bridgeDomain)
-			if !bdFound {
-				// Shouldn't happen
-				continue
-			}
-			// BVI
-			var bvi bool
-			if msg.BviMac == 1 {
-				bvi = true
-			} else {
-				bvi = false
-			}
-			// Static config
-			var static bool
-			if msg.StaticMac == 1 {
-				static = true
-			} else {
-				static = false
-			}
-			plugin.Log.Debug("Registering FIB table entry with MAC ", macStr)
-			meta := &FIBMeta{interfaceName, domainName, bvi, static}
-			plugin.FibIndexes.RegisterName(macStr, plugin.FibIndexSeq, meta)
-			plugin.FibIndexSeq++
-		} else {
-			plugin.Log.Debugf("FIB table entry with MAC %v already registered", macStr)
-		}
-	}
-
-	return nil
-}
-
 // ResolveCreatedInterface uses FIB cache to additionally configure any FIB entries for this interface. Bridge domain
 // is checked for existence. If resolution is successful, new FIB entry is configured, registered and removed from cache.
 func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32,
@@ -485,7 +413,7 @@ func (plugin *FIBConfigurator) validateInterfaceBDPair(interfaceName string, bri
 		plugin.Log.Errorf("Interface %v registered as a pair with bridge domain but no meta found", interfaceName)
 		return false
 	}
-	wantedIndex := meta.(*BridgeDomainMeta).BridgeDomainIndex
+	wantedIndex := meta.(*BridgeDomainMeta).bdIdx
 	if bridgeDomainIndex == wantedIndex {
 		return true
 	}

@@ -64,6 +64,15 @@ func GetTimeLog(n interface{}, s *Stopwatch) *TimeLog {
 	return s.timeLog(n)
 }
 
+// TimeLog returns a pointer to the TimeLog object related to the provided name (derived from the <n> parameter).
+// If stopwatch instance is nil, returns nil
+func (st *Stopwatch) TimeLog(n interface{}) *TimeLog {
+	if st == nil {
+		return nil
+	}
+	return st.timeLog(n)
+}
+
 // looks over stopwatch timeTable map in order to find a TimeLog object for provided name. If the object does not exist,
 // it is created anew, stored in the map and returned
 func (st *Stopwatch) timeLog(n interface{}) *TimeLog {
