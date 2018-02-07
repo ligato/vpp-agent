@@ -1,3 +1,15 @@
+# Release v1.2 (2018-02-07)
+
+## Compatibility
+VPP v18.04-rc0~90-gd95c39e
+cn-infra v1.1
+
+### TBD..
+
+## Known Issues
+- VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
+- VPP-Agent might not properly handle initialization across plugins (this is not occuring currently, but needs to be tested more)
+
 # Release v1.1 (2018-01-22)
 
 ## Compatibility
