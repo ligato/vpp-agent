@@ -1,10 +1,47 @@
+# Release v1.2 (2018-02-07)
+
+## Compatibility
+VPP v18.04-rc0~90-gd95c39e
+cn-infra v1.1
+
+### Improvements
+- [aclplugin](plugins/defaultplugins/aclplugin) 
+  * Improved resync of ACL entries. Every new ACL entry is correctly configured in the VPP and all obosolete entries are read and removed. 
+- [ifplugin](plugins/defaultplugins/ifplugin) 
+  * Improved resync of interfaces, BFD sessions, authentication keys, echo functions and STN. Better resolution of persistence config for interfaces. 
+- [l2plugin](plugins/defaultplugins/l2plugin) 
+  * Improved resync of bridge domains, FIB entries and xConnect pairs. Resync now better correlates configuration present on the VPP with the NB setup.
+- (Linux) [ifplugin](plugins/linuxplugin/l3plugin) 
+  * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
+
+### Fixes
+  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+    together with other commands.
+
+### Dependencies
+  * Migrated from glide to dep
+
+### Docker Images
+  * VPP compilation now skips building of Java/C++ APIs,
+    this saves build time and final image size.
+  * Development image now runs VPP in debug mode with
+    various debug options added in [VPP config file](docker/dev_vpp_agent/vpp.conf).
+
+## Bugfix
+- Fixed interface assignment in ACLs
+- Fixed bridge domain BVI modification resolution
+
+## Known Issues
+- VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
+- VPP-Agent might not properly handle initialization across plugins (this is not occuring currently, but needs to be tested more)
+
 # Release v1.1 (2018-01-22)
 
 ## Compatibility
 VPP version v18.04-rc0~33-gb59bd65
 cn-infra v1.0.8
 
-# New Features
+### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
     - added support for un-numbered interfaces. Interface can be marked as un-numbered with information 
     about another interface containing required IP address. Un-numbered interface does not need to have 
@@ -12,11 +49,11 @@ cn-infra v1.0.8
     - added support for virtio-based TAPv2 interfaces.
     - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
     setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
-- [l2plugin](plugins/defaultplugins/l2plugin)      
+- [l2plugin](plugins/defaultplugins/l2plugin)
     - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
     setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
 
-# Improvements
+### Improvements
 - [ifplugin](plugins/defaultplugins/ifplugin)
     - default MTU value was removed in order to be able to just pass empty MTU field. MTU now can be 
     set only in interface configuration (preffered) or defined in defaultplugins.conf. If none of them
@@ -25,37 +62,33 @@ cn-infra v1.0.8
 - [l3plugin](plugins/defaultplugins/l3plugin)
     - removed strict configuration order for VPP ARP entries and routes. Both ARP entry or route can 
     be configured without interface already present.
-- [l4plugin](plugins/defaultplugins/l4plugin)    
+- [l4plugin](plugins/defaultplugins/l4plugin)
    - removed strict configuration order for application namespaces. Application namespace can 
     be configured without interface already present.
-    
-#Localclient
+
+### Localclient
 - added API for ARP entries, L4 features, Application namespaces and STN rules.
 
-# Logging
-- consolidated and improved logging in defaultplugins and linuxplugins.    
+### Logging
+- consolidated and improved logging in defaultplugins and linuxplugins.
 
-# Bugfix
+### Bugfix
 - fixed skip-resync parameter if defaultplugins.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
 - microservice and veth-interface related events are synchronized.
 
-# Known Issues
+## Known Issues
 - VPP can occasionally cause deadlock during checksum calculation (https://jira.fd.io/browse/VPP-1134)
 - VPP-Agent might not properly handle initialization across plugins (this is not occuring currently, but needs to be tested more)
 
 # Release v1.0.8 (2017-11-21)
 
 ## Compatibility
-VPP version v18.01-rc0-309-g70bfcaf
+VPP v18.01-rc0-309-g70bfcaf
+cn-infra v1.0.7
 
-## Major Themes
-
-- [cn-infra]
-    - updated to version 1.0.7
-    
-# New Features
+### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
    - ability to configure STN rules.  See respective
    [readme](plugins/defaultplugins/ifplugin/README.md) in interface plugin for more details.
@@ -69,7 +102,7 @@ VPP version v18.01-rc0-309-g70bfcaf
    - support for VPP plugins/l3plugin ARP configuration. The configurator can perform the
    basic CRUD operation with ARP config.
    
-# Defaultplugins
+### Defaultplugins
 - [ifplugin](plugins/defaultplugins/ifplugin)
   - added possibility to add interface to any VRF table.
 - [resync](plugins/defaultplugins/data_resync.go)
@@ -79,49 +112,48 @@ VPP version v18.01-rc0-309-g70bfcaf
 - API contains new Method `DisableResync(keyPrefix ...string)`. One or more ETCD key prefixes 
   can be used as a parameter to disable resync for that specific key(s).
      
-# Linuxplugin
+### Linuxplugin
 - [l3plugin](plugins/linuxplugin/l3plugin)
   - route configuration do not return error if required interface is missing. Instead, the 
-  route data are internally stored and configured when the interface appears.      
+  route data are internally stored and configured when the interface appears.
      
-## GOVPP
-- delay flag removed from GoVPP plugin    
+### GOVPP
+- delay flag removed from GoVPP plugin
 
-## Documentation
+### Documentation
 - improved in multiple vpp-agent packages
 
-## Minor fixes/improvements
+### Minor fixes/improvements
 - removed deadlinks from README files
 
 # Release v1.0.7 (2017-10-30)
 
 ## Compatibility
 VPP version v18.01-rc0~154-gfc1c612
+cn-infra v1.0.6
 
-## Major Themes
+### Major Themes
 
-- [cn-infra]
-    - updated to version 1.0.6
-    
 - [Default VPP plugin](plugins/defaultplugins)
     - added resync strategies. Resync of VPP plugins (defaultplugins) can be set using 
     defaultpluigns config file; Resync can be set to full (always resync everything) or
     dependent on VPP configuration (if there is none, skip resync). Resync can be also 
     forced to skip using parameter. See appropriate changelog in 
     [Defaultplugins](plugins/defaultplugins) for details.
-    
-# New Features
+
+### New Features
 
 - [Linuxplugins L3Plugin](plugins/linuxplugin/l3plugin)
     - added support for basic CRUD operations with static Address resolution protocol 
-    entries and static Routes. 
-        
+    entries and static Routes.
+
 # Release v1.0.6 (2017-10-17)
 
-## Major Themes
+## Compatibility
+cn-infra v1.0.5
 
-- [cn-infra]
-    - updated to version 1.0.5
+### Major Themes
+
 - [LinuxPlugin](plugins/linuxplugin)
    - Configuration of vEth interfaces modified. Veth configuration defines
    two names: symbolic used internally and the one used in host OS.
@@ -132,10 +164,10 @@ VPP version v18.01-rc0~154-gfc1c612
 
 ## Compatibility
 VPP version v17.10-rc0~334-gce41a5c
+cn-infra v1.0.4
 
-## Major Themes
-- [cn-infra]
-    - updated to version 1.0.4
+### Major Themes
+
 - [GoVppMux](plugins/govppmux)
     - configuration file for govpp added
 - [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
@@ -147,7 +179,7 @@ VPP version v17.10-rc0~334-gce41a5c
 
 # Release v1.0.4 (2017-09-08)
 
-## Major Themes
+### Major Themes
 
 - [Kafka Partitions](vendor/github.com/ligato/cn-infra/messaging/kafka)
     - Implemented new methods that allow to specificy partitions & offset parameters:
@@ -161,7 +193,7 @@ VPP version v17.10-rc0~334-gce41a5c
 
 # Release v1.0.3 (2017-09-05)
 
-## Major Themes
+### Major Themes
 
 Enabled support for wathing data store `OfDifferentAgent()` - see:
 * [examples/idx_iface_cache](examples/idx_iface_cache/main.go)
@@ -176,7 +208,10 @@ VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 
 # Release v1.0.2 (2017-08-28)
 
-## Major Themes
+## Compatibility
+VPP version v17.10-rc0~203
+
+### Major Themes
 
 Algorithms for applying northbound configuration (stored in ETCD key value data store)
 to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins):
@@ -227,6 +262,3 @@ For doing this there is [VPP Agent client version 1](clientv1):
 A rarely occurring problem during startup with binary API connectivity.
 VPP rejects binary API connectivity when VPP Agent tries to connect
 too early (plan fix this behavior in next release).
-
-## Compatibility
-VPP version v17.10-rc0~203
