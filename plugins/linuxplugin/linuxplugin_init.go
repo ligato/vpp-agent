@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/vishvananda/netlink"
 
 	ifaceVPPIdx "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 
@@ -44,11 +45,13 @@ type Plugin struct {
 	Deps
 
 	// interfaces
-	ifIndexes          ifaceidx.LinuxIfIndexRW
-	ifConfigurator     *ifplugin.LinuxInterfaceConfigurator
-	ifIndexesWatchChan chan ifaceidx.LinuxIfIndexDto
-	ifVPPIndices       ifaceVPPIdx.SwIfIndex
-	ifVPPIdxWatchCh    chan ifaceVPPIdx.SwIfIdxDto
+	ifIndexes           ifaceidx.LinuxIfIndexRW
+	ifConfigurator      *ifplugin.LinuxInterfaceConfigurator
+	ifIndexesWatchChan  chan ifaceidx.LinuxIfIndexDto
+	ifLinuxStateUpdater *ifplugin.LinuxInterfaceStateUpdater
+	ifStateChan         chan *ifplugin.LinuxInterfaceStateNotification
+	ifLinuxNotifChan    chan netlink.LinkUpdate
+	ifLinuxDoneChan     chan struct{}
 
 	// ARPs
 	arpIndexes      l3idx.LinuxARPIndexRW
@@ -76,7 +79,7 @@ type Plugin struct {
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
-	VPP					vppPluginAPI
+	VPP                   vppPluginAPI
 }
 
 // vppPluginAPI enables method to receive interface indices from default plugin API
@@ -129,11 +132,11 @@ func (plugin *Plugin) Init() error {
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
+	plugin.ifStateChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.msChan = make(chan *ifplugin.MicroserviceCtx)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
-	plugin.ifVPPIdxWatchCh = make(chan ifaceVPPIdx.SwIfIdxDto, 100)
 
 	// Create plugin context and save cancel function into the plugin handle.
 	var ctx context.Context
@@ -142,7 +145,7 @@ func (plugin *Plugin) Init() error {
 	// Run event handler go routines
 	go plugin.watchEvents(ctx)
 
-	err = plugin.initIF()
+	err = plugin.initIF(ctx)
 	if err != nil {
 		return err
 	}
@@ -156,7 +159,7 @@ func (plugin *Plugin) Init() error {
 }
 
 // Initialize linux interface plugin
-func (plugin *Plugin) initIF() error {
+func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init Linux interface plugin")
 	// Interface indexes
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
@@ -169,7 +172,17 @@ func (plugin *Plugin) initIF() error {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	return plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.ifVPPIndices, plugin.msChan)
+	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.ifIndexes, plugin.msChan); err != nil {
+		return err
+	}
+
+	// Linux interface state updater
+	ifStateLogger := plugin.Log.NewLogger("-if-state")
+
+	plugin.ifLinuxNotifChan = make(chan netlink.LinkUpdate, 10)
+	plugin.ifLinuxDoneChan = make(chan struct{})
+	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{Log: ifStateLogger}
+	return plugin.ifLinuxStateUpdater.Init(ctx, plugin.ifIndexes, plugin.ifStateChan, plugin.ifLinuxNotifChan, plugin.ifLinuxDoneChan)
 }
 
 // Initialize linux L3 plugin
@@ -211,24 +224,6 @@ func (plugin *Plugin) initL3() error {
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}
 	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtCachedIndexes)
-}
-
-// AfterInit initializes and subscribes VPP interface index watcher
-func (plugin *Plugin) AfterInit() error {
-	// Get pointer to the map with VPP interface indices (this needs to be done in after init)
-	if plugin.VPP != nil {
-		plugin.ifVPPIndices = plugin.VPP.GetSwIfIndexes()
-	} else {
-		plugin.ifVPPIndices = nil
-	}
-	// If initialized, subscribe watcher to index changes and pass indexes to configurator
-	if plugin.ifVPPIndices != nil {
-		plugin.ifVPPIndices.WatchNameToIdx(plugin.PluginName, plugin.ifVPPIdxWatchCh)
-		plugin.Log.Debug("ifVPPIndices watch registration finished")
-		plugin.ifConfigurator.VppIfIndices = plugin.ifVPPIndices
-	}
-
-	return nil
 }
 
 // Close cleans up the resources.

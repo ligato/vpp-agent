@@ -71,13 +71,6 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			}
 			linuxIdxEv.Done()
 
-		case vppIdxEv := <-plugin.ifVPPIdxWatchCh:
-			if vppIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveDeletedVPPInterface(vppIdxEv.Name, vppIdxEv.Idx)
-			} else {
-				plugin.ifConfigurator.ResolveCreatedVPPInterface(vppIdxEv.Name, vppIdxEv.Idx)
-			}
-
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
 			return

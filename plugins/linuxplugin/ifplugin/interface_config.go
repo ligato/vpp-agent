@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
-	interfaces2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	vppIfIdx "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/vishvananda/netlink"
 
@@ -109,13 +109,11 @@ type LinuxInterfaceConfigurator struct {
 	/* veth pre-configure namespace */
 	vethCfgNamespace *interfaces.LinuxInterfaces_Interface_Namespace
 
-	/* state data (TBD: will be moved to LinuxInterfaceStateUpdater) */
-	ifWatcherRunning bool
-	ifWatcherNotifCh chan netlink.LinkUpdate
-	ifWatcherDoneCh  chan struct{}
-
 	/* channel to send microservice updates */
 	microserviceChan chan *MicroserviceCtx
+
+	/* interface state */
+	ifStateChan chan *LinuxInterfaceStateNotification
 
 	/* VPP interface indices */
 	VppIfIndices vppIfIdx.SwIfIndex
@@ -125,13 +123,13 @@ type LinuxInterfaceConfigurator struct {
 }
 
 // Init linuxplugin and start go routines.
-func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW, ifVPPIndices vppIfIdx.SwIfIndex,
-	msChan chan *MicroserviceCtx) (err error) {
+func (plugin *LinuxInterfaceConfigurator) Init(stateChan chan *LinuxInterfaceStateNotification,
+	ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) (err error) {
 	plugin.Log.Debug("Initializing Linux Interface configurator")
 	plugin.ifIndexes = ifIndexes
-	//plugin.VppIfIndices = ifVPPIndices
 
 	// Init channel
+	plugin.ifStateChan = stateChan
 	plugin.microserviceChan = msChan
 
 	// Allocate caches.
@@ -154,11 +152,10 @@ func (plugin *LinuxInterfaceConfigurator) Init(ifIndexes ifaceidx.LinuxIfIndexRW
 	plugin.ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.trackMicroservices(plugin.ctx)
 
-	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
-	plugin.ifWatcherDoneCh = make(chan struct{})
-
 	// Create cfg namespace
 	err = plugin.prepareVethConfigNamespace()
+
+	go plugin.processLinuxInterfaceChanges()
 
 	return err
 }
@@ -170,6 +167,8 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
+	safeclose.Close(plugin.ifStateChan)
+
 	return wasErr
 }
 
@@ -177,8 +176,6 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 // the name-to-index mapping. Furthermore, it triggers goroutine that will watch for newly added interfaces (by another party)
 // unless it is already running.
 func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
-	plugin.startIfWatcher()
-
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
@@ -344,7 +341,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(linuxIf *interfac
 // Validate, create and configure VETH type linux interface
 func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerConfig *LinuxInterfaceConfig) error {
 	plugin.Log.WithFields(logging.Fields{"name": ifConfig.config.Name, "hostName": ifConfig.config.HostIfName,
-	"peer": ifConfig.config.Veth.PeerIfName}).Debug("Configuring new Veth interface")
+		"peer": ifConfig.config.Veth.PeerIfName}).Debug("Configuring new Veth interface")
 	// Create VETH after both end's configs and target namespaces are available.
 	if peerConfig == nil {
 		plugin.Log.Infof("cannot configure linux interface %v: peer interface %v is not configured yet",
@@ -390,56 +387,6 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 	return nil
 }
 
-// ResolveCreatedInterface handles newly created VPP interface
-func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(vppIfName string, vppIfIdx uint32) error {
-	plugin.Log.Debugf("Linux interface configurator: found new VPP interface %v (index %v)", vppIfName, vppIfIdx)
-	_, ifMeta, found := plugin.VppIfIndices.LookupName(vppIfIdx)
-	if !found {
-		plugin.Log.Warnf("Added VPP interface %s was not found in the mapping", vppIfName)
-		return nil
-	}
-	if ifMeta == nil {
-		plugin.Log.Warnf("Added VPP interface %s was found in the mapping, but there is not info about config", vppIfName)
-		return nil
-	}
-	// Currently, plugin cares only about the TAP VPP interfaces
-	if ifMeta.Type == interfaces2.InterfaceType_TAP_INTERFACE {
-		plugin.Log.Infof("Found new TAP VPP interface %s", vppIfName)
-
-		// Look for TAP which is using this interface as the other end
-		for ifName, ifConfig := range plugin.intfByName {
-			if ifConfig == nil || ifConfig.config == nil {
-				plugin.Log.Warnf("Cached config for interface %v is empty", ifName)
-				continue
-			}
-			if ifConfig.config.HostIfName == vppIfName {
-				// Host interface was found, configure linux TAP
-				return plugin.configureTapInterface(ifConfig)
-			}
-		}
-	}
-
-	return nil
-}
-
-// ResolveCreatedInterface handles removed VPP interface
-func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(vppIfName string, vppIfIdx uint32) error {
-	plugin.Log.Debugf("Linux interface configurator: removed VPP interface %v (index %v)", vppIfName, vppIfIdx)
-	// Find wheteher removed interface belongs to something
-	for ifName, ifConfig := range plugin.intfByName {
-		if ifConfig == nil || ifConfig.config == nil {
-			plugin.Log.Warnf("Cached config for interface %v is empty", ifName)
-			continue
-		}
-		if ifConfig.config.HostIfName == vppIfName {
-			// Removed interface is a host to the particular linux config (keep interface in the cache)
-			return plugin.deleteTapInterface(ifConfig)
-		}
-	}
-
-	return nil
-}
-
 // Validate and configure TAP linux interface. TAP interface is not created here, it is added to default namespace
 // when it's VPP end is configured
 func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxInterfaceConfig) error {
@@ -481,7 +428,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 	// Rename the host according to configuration
 	if err := linuxcalls.RenameInterface(ifConfig.config.Tap.TapPeer, ifConfig.config.HostIfName,
 		measure.GetTimeLog("linux-interface-rename", plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("failed to rename interface %s: %v", ifConfig.config.Tap.TapPeer, err )
+		return fmt.Errorf("failed to rename interface %s: %v", ifConfig.config.Tap.TapPeer, err)
 	}
 
 	return plugin.configureLinuxInterface(nsMgmtCtx, ifConfig.config)
@@ -749,11 +696,11 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	}
 	if err := linuxcalls.RenameInterface(ifConfig.config.HostIfName, ifConfig.config.Tap.TapPeer,
 		measure.GetTimeLog("linux-interface-rename", plugin.Stopwatch)); err != nil {
-		return fmt.Errorf("failed to rename interface %s: %v", ifConfig.config.HostIfName, err )
+		return fmt.Errorf("failed to rename interface %s: %v", ifConfig.config.HostIfName, err)
 	}
 
 	// Move back to default namespace
-	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TapPeer, &interfaces.LinuxInterfaces_Interface_Namespace{} , plugin.Log, plugin.Stopwatch)
+	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TapPeer, &interfaces.LinuxInterfaces_Interface_Namespace{}, plugin.Log, plugin.Stopwatch)
 	if err != nil {
 		return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.config.HostIfName, "nil", err)
 	}
@@ -835,6 +782,43 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *linuxc
 	}
 
 	return nil
+}
+
+func (plugin *LinuxInterfaceConfigurator) processLinuxInterfaceChanges() {
+	plugin.Log.Warnf("Linux interface state watcher started")
+
+	for {
+		state := <-plugin.ifStateChan
+
+		ifName := state.attributes.Name
+		plugin.Log.Warnf("Linux interface configurator: found new linux interface %v (index %v)", ifName)
+
+		// TAP case:
+		if state.interfaceType == tapTun {
+			// Do not process already registered interfaces
+			_, _, exists := plugin.ifIndexes.LookupIdx(ifName)
+			if exists {
+				return
+			}
+			plugin.Log.Infof("Found new TAP interface %s", ifName)
+
+			// Look for TAP which is using this interface as the other end
+			for _, ifConfig := range plugin.intfByName {
+				if ifConfig == nil || ifConfig.config == nil {
+					plugin.Log.Warnf("Cached config for interface %v is empty", ifName)
+					continue
+				}
+				plugin.Log.Warnf("ifName %v, tapPerr %v", ifName, ifConfig.config.Tap.TapPeer)
+				if ifConfig.config.Tap.TapPeer == ifName {
+					// Host interface was found, configure linux TAP
+					err := plugin.configureTapInterface(ifConfig)
+					if err != nil {
+						plugin.Log.Error(err)
+					}
+				}
+			}
+		}
+	}
 }
 
 // getInterfaceConfig returns cached configuration of a given interface.
@@ -1155,56 +1139,6 @@ func (plugin *LinuxInterfaceConfigurator) processTerminatedMicroservice(nsMgmtCt
 		plugin.removeObsoleteVeth(nsMgmtCtx, iface.config.Name, iface.config.HostIfName, iface.config.Namespace)
 		plugin.removeObsoleteVeth(nsMgmtCtx, iface.peer.config.Name, iface.peer.config.HostIfName, iface.peer.config.Namespace)
 	}
-}
-
-// TODO: this will become Init method of LinuxInterfaceStateUpdater
-func (plugin *LinuxInterfaceConfigurator) startIfWatcher() error {
-	if !plugin.ifWatcherRunning {
-		plugin.ifWatcherRunning = true
-		err := netlink.LinkSubscribe(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
-		if err != nil {
-			return err
-		}
-		go plugin.watchLinuxInterfaces(plugin.ctx)
-	}
-	return nil
-}
-
-// TODO: move to LinuxInterfaceStateUpdater and use channels to communicate with LinuxInterfaceConfigurator.
-func (plugin *LinuxInterfaceConfigurator) watchLinuxInterfaces(ctx context.Context) {
-	plugin.wg.Add(1)
-	defer plugin.wg.Done()
-
-	for {
-		select {
-		case linkNotif := <-plugin.ifWatcherNotifCh:
-			plugin.processLinkNotification(linkNotif)
-
-		case <-ctx.Done():
-			close(plugin.ifWatcherDoneCh)
-			return
-		}
-	}
-}
-
-// TODO: move to LinuxInterfaceStateUpdater
-func (plugin *LinuxInterfaceConfigurator) processLinkNotification(link netlink.Link) {
-	linkAttrs := link.Attrs()
-
-	plugin.cfgLock.Lock()
-	defer plugin.cfgLock.Unlock()
-
-	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v", linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
-
-	// Register newly added interface only if it is not already managed by this plugin.
-	_, _, known := plugin.ifIndexes.LookupIdx(linkAttrs.Name)
-	if !known {
-		plugin.Log.WithFields(logging.Fields{"name": linkAttrs.Name, "idx": linkAttrs.Index}).
-			Debugf("Found new Linux interface")
-		plugin.ifIndexes.RegisterName(linkAttrs.Name, uint32(linkAttrs.Index), nil)
-	}
-
-	// TODO: process state data
 }
 
 // If hostIfName is not set, symbolic name will be used.
