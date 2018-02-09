@@ -18,8 +18,8 @@ package linuxcalls
 
 import (
 	"fmt"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
 )
 
 // ToGenericArpNs converts arp-type namespace to generic type namespace. Such an object can be used to call common

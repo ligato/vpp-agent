@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 
 	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"

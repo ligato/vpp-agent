@@ -19,7 +19,7 @@ package linuxcalls
 import (
 	"strconv"
 
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 
 	"fmt"
 	"net"

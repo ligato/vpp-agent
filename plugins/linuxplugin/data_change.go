@@ -16,8 +16,8 @@ package linuxplugin
 
 import (
 	"github.com/ligato/cn-infra/datasync"
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 // DataChangeIface propagates data change to the ifConfigurator.

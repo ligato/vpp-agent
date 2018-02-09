@@ -20,8 +20,8 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 // DataResyncReq is used to transfer expected configuration of the Linux network stack to the plugins.
