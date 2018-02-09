@@ -69,22 +69,23 @@ func (plugin *LinuxRouteConfigurator) Close() error {
 
 // ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
 // the route in the host network stack through Netlink API.
-func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) error {
+func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) (err error) {
 	plugin.Log.Infof("Configuring linux static route %v", route.Name)
-	var err error
 
 	// Prepare route object
 	netLinkRoute := &netlink.Route{}
 
-	// Find interface
-	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
-	if !foundIface {
-		plugin.Log.Infof("Static route %v requires non-existing interface %v, moving to cache", route.Name, route.Interface)
-		plugin.rtCachedIndexes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
-		plugin.RouteIdxSeq++
-		return nil
+	if route.Interface != "" {
+		// Find interface
+		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
+		if !foundIface {
+			plugin.Log.Infof("Static route %v requires non-existing interface %v, moving to cache", route.Name, route.Interface)
+			plugin.rtCachedIndexes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
+			plugin.RouteIdxSeq++
+			return nil
+		}
+		netLinkRoute.LinkIndex = int(idx)
 	}
-	netLinkRoute.LinkIndex = int(idx)
 
 	// default route
 	if route.Default {
@@ -115,6 +116,10 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	defer revertNs()
 
 	err = linuxcalls.AddStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Errorf("adding static route %q failed: %v (%+v)", route.Name, err, netLinkRoute)
+		return err
+	}
 
 	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.RouteIdxSeq, route)
 	plugin.RouteIdxSeq++
@@ -122,7 +127,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	plugin.Log.Infof("Linux static route %v configured", route.Name)
 
-	return err
+	return nil
 }
 
 // ModifyLinuxStaticRoute applies changes in the NB configuration of a Linux static route into the host network stack
@@ -134,15 +139,17 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	// Prepare route object
 	netLinkRoute := &netlink.Route{}
 
-	// Find interface
-	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(newRoute.Interface)
-	if !foundIface {
-		plugin.Log.Infof("Modified static route %v requires non-existing interface %v, moving to cache", newRoute.Name, newRoute.Interface)
-		plugin.rtCachedIndexes.RegisterName(newRoute.Name, plugin.RouteIdxSeq, newRoute)
-		plugin.RouteIdxSeq++
-		return nil
+	if newRoute.Interface != "" {
+		// Find interface
+		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(newRoute.Interface)
+		if !foundIface {
+			plugin.Log.Infof("Modified static route %v requires non-existing interface %v, moving to cache", newRoute.Name, newRoute.Interface)
+			plugin.rtCachedIndexes.RegisterName(newRoute.Name, plugin.RouteIdxSeq, newRoute)
+			plugin.RouteIdxSeq++
+			return nil
+		}
+		netLinkRoute.LinkIndex = int(idx)
 	}
-	netLinkRoute.LinkIndex = int(idx)
 
 	// If the namespace of the new route was changed, the old route needs to be removed and the new one created in the
 	// new namespace
@@ -196,11 +203,11 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 
 	// Remove old route and create a new one
 	if err = plugin.DeleteLinuxStaticRoute(oldRoute); err != nil {
-		plugin.Log.Error(err)
+		plugin.Log.Errorf("deleting static route %q failed: %v (%+v)", oldRoute.Name, err, oldRoute)
 		return err
 	}
 	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("add-linux-route", plugin.Stopwatch)); err != nil {
-		plugin.Log.Error(err)
+		plugin.Log.Errorf("adding static route %q failed: %v (%+v)", newRoute.Name, err, netLinkRoute)
 		return err
 	}
 
@@ -217,12 +224,14 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	// Prepare route object
 	netLinkRoute := &netlink.Route{}
 
-	// Find interface
-	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
-	if !foundIface {
-		return fmt.Errorf("cannot delete static route %v, interface %v not found", route.Name, route.Interface)
+	if route.Interface != "" {
+		// Find interface
+		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
+		if !foundIface {
+			return fmt.Errorf("cannot delete static route %v, interface %v not found", route.Name, route.Interface)
+		}
+		netLinkRoute.LinkIndex = int(idx)
 	}
-	netLinkRoute.LinkIndex = int(idx)
 
 	// Destination IP address
 	if route.DstIpAddr != "" {
@@ -265,6 +274,10 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	defer revertNs()
 
 	err = linuxcalls.DeleteStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("del-linux-route", plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Errorf("deleting static route %q failed: %v (%+v)", route.Name, err, netLinkRoute)
+		return err
+	}
 
 	_, _, found := plugin.rtIndexes.UnregisterName(routeIdentifier(netLinkRoute))
 	if !found {
@@ -274,7 +287,7 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 
 	plugin.Log.Infof("Linux static route %v removed", route.Name)
 
-	return err
+	return nil
 }
 
 // LookupLinuxRoutes reads all routes and registers them if needed
