@@ -133,6 +133,10 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 
 	// Create a new ARP entry in interface namespace
 	err = linuxcalls.AddArpEntry(arpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("add-arp-entry", plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Errorf("adding arp entry %q failed: %v (%+v)", arpEntry.Name, err, neigh)
+		return err
+	}
 
 	// Register created ARP entry
 	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.ArpIdxSeq, arpEntry)
@@ -141,13 +145,12 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 
 	plugin.Log.Infof("Linux ARP entry %v configured", arpEntry.Name)
 
-	return err
+	return nil
 }
 
 // ModifyLinuxStaticArpEntry applies changes in the NB configuration of a Linux ARP through Netlink API.
-func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.LinuxStaticArpEntries_ArpEntry, oldArpEntry *l3.LinuxStaticArpEntries_ArpEntry) error {
+func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.LinuxStaticArpEntries_ArpEntry, oldArpEntry *l3.LinuxStaticArpEntries_ArpEntry) (err error) {
 	plugin.Log.Infof("Modifying Linux ARP entry %v", newArpEntry.Name)
-	var err error
 
 	// If the namespace of the new ARP entry was changed, the old entry needs to be removed and the new one created
 	// in the new namespace
@@ -213,16 +216,19 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	defer revertNs()
 
 	err = linuxcalls.ModifyArpEntry(newArpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("modify-arp-entry", plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Errorf("modifying arp entry %q failed: %v (%+v)", newArpEntry.Name, err, neigh)
+		return err
+	}
 
 	plugin.Log.Infof("Linux ARP entry %v modified", newArpEntry.Name)
 
-	return err
+	return nil
 }
 
 // DeleteLinuxStaticArpEntry reacts to a removed NB configuration of a Linux ARP entry.
-func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.LinuxStaticArpEntries_ArpEntry) error {
+func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.LinuxStaticArpEntries_ArpEntry) (err error) {
 	plugin.Log.Infof("Deleting Linux ARP entry %v", arpEntry.Name)
-	var err error
 
 	// Prepare ARP entry object
 	neigh := &netlink.Neigh{}
@@ -278,6 +284,10 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 
 	// Remove the ARP entry from the interface namespace
 	err = linuxcalls.DeleteArpEntry(arpEntry.Name, neigh, plugin.Log, measure.GetTimeLog("del-arp-entry", plugin.Stopwatch))
+	if err != nil {
+		plugin.Log.Errorf("deleting arp entry %q failed: %v (%+v)", arpEntry.Name, err, neigh)
+		return err
+	}
 
 	_, _, found = plugin.arpIndexes.UnregisterName(arpIdentifier(neigh))
 	if !found {
@@ -288,7 +298,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 
 	plugin.Log.Infof("Linux ARP entry %v removed", arpEntry.Name)
 
-	return err
+	return nil
 }
 
 // LookupLinuxArpEntries reads all ARP entries from all interfaces and registers them if needed
