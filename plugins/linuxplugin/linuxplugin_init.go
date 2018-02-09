@@ -27,8 +27,6 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/vishvananda/netlink"
 
-	ifaceVPPIdx "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
@@ -79,15 +77,6 @@ type Plugin struct {
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
-	VPP                   vppPluginAPI
-}
-
-// vppPluginAPI enables method to receive interface indices from default plugin API
-type vppPluginAPI interface {
-	// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding VPP
-	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
-	// VPP interfaces.
-	GetSwIfIndexes() ifaceVPPIdx.SwIfIndex
 }
 
 // LinuxConfig holds the linuxplugin configuration.

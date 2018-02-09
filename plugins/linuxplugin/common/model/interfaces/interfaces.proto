@@ -38,10 +38,6 @@ message LinuxInterfaces {
             string peer_if_name = 1;         /* Name of the peer (other end of the linux veth) */
         }
         Veth veth = 51;
-        message Tap {
-            string tap_peer = 1;             /* TAP peer name (expected to be created by the VPP TAP) */
-        }
-        Tap tap = 52;
     };
     repeated Interface interface = 1;
 };

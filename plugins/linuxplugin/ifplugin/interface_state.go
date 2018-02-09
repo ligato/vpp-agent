@@ -28,6 +28,7 @@ import (
 type LinuxInterfaceStateNotification struct {
 	// State of the network interface
 	interfaceType string
+	interfaceState netlink.LinkOperState
 	attributes    *netlink.LinkAttrs
 }
 
@@ -74,7 +75,9 @@ func (plugin *LinuxInterfaceStateUpdater) Close() error {
 func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 	if !plugin.stateWatcherRunning {
 		plugin.stateWatcherRunning = true
-		err := netlink.LinkSubscribe(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
+		err := netlink.LinkSubscribeWithOptions(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh, netlink.LinkSubscribeOptions{
+			ListExisting: true,
+		})
 		if err != nil {
 			return err
 		}
@@ -91,7 +94,6 @@ func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Conte
 	for {
 		select {
 		case linkNotif := <-plugin.ifWatcherNotifCh:
-			plugin.Log.Warnf("Notification received: %v", linkNotif)
 			plugin.processLinkNotification(linkNotif)
 
 		case <-ctx.Done():
@@ -104,7 +106,7 @@ func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Conte
 func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
 	linkAttrs := link.Attrs()
 
-	if linkAttrs == nil {
+	if linkAttrs == nil{
 		return
 	}
 
@@ -117,6 +119,7 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 	// Prepare linux link notification
 	linkNotif := &LinuxInterfaceStateNotification{
 		interfaceType: link.Type(),
+		interfaceState: linkAttrs.OperState,
 		attributes:    link.Attrs(),
 	}
 
