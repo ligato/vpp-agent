@@ -4,7 +4,7 @@ The `linuxplugin` is a core Agent Plugin for the management of a subset of the L
 network configuration. Currently, only the VETH (virtual ethernet pair) interface is supported.
 
 The plugin watches the northbound configuration of Linux network interfaces,
-which is modelled by [interfaces proto file](ifplugin/model/interfaces/interfaces.proto)
+which is modelled by [interfaces proto file](common/model/interfaces/interfaces.proto)
 and stored in ETCD under the following key:
 
 ```

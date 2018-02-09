@@ -43,8 +43,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 var (

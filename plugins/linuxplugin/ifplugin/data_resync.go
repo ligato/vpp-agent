@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 )
 
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
