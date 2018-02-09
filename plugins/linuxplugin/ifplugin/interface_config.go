@@ -475,12 +475,14 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	}
 
 	// Set interface MAC address
-	err = linuxcalls.SetInterfaceMac(ifConfig.HostIfName, ifConfig.PhysAddress, nil)
-	if err != nil {
-		wasErr = fmt.Errorf("cannot assign MAC '%s': %v", ifConfig.PhysAddress, err)
-		plugin.Log.Error(wasErr)
+	if ifConfig.PhysAddress != "" {
+		err = linuxcalls.SetInterfaceMac(ifConfig.HostIfName, ifConfig.PhysAddress, nil)
+		if err != nil {
+			wasErr = fmt.Errorf("cannot assign MAC '%s': %v", ifConfig.PhysAddress, err)
+			plugin.Log.Error(wasErr)
+		}
+		plugin.Log.Debugf("MAC '%s' set to interface %s", ifConfig.PhysAddress, ifConfig.HostIfName)
 	}
-	plugin.Log.Debugf("MAC '%s' set to interface %s", ifConfig.PhysAddress, ifConfig.HostIfName)
 
 	// Set interface IP addresses
 	ipAddresses, err := addrs.StrAddrsToStruct(ifConfig.IpAddresses)
@@ -506,8 +508,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 
 	idx := GetLinuxInterfaceIndex(ifConfig.HostIfName)
 	if idx < 0 {
-		wasErr = fmt.Errorf("failed to get index of the Linux interface %s", ifConfig.HostIfName)
-		plugin.Log.Error(wasErr)
+		return fmt.Errorf("failed to get index of the Linux interface %s", ifConfig.HostIfName)
 	}
 
 	// Register interface with its original name and store host name in metadate

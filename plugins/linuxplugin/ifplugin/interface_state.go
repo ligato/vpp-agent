@@ -114,7 +114,7 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	plugin.Log.Warnf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v",
+	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v",
 		linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
 
 	// Prepare linux link notification

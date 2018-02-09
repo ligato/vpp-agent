@@ -84,12 +84,12 @@ type LinuxInterfaces_Interface struct {
 	Description string                               `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Type        LinuxInterfaces_InterfaceType        `protobuf:"varint,3,opt,name=type,proto3,enum=interfaces.LinuxInterfaces_InterfaceType" json:"type,omitempty"`
 	Enabled     bool                                 `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	IpAddresses []string                             `protobuf:"bytes,8,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
-	PhysAddress string                               `protobuf:"bytes,5,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
-	Mtu         uint32                               `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
-	HostIfName  string                               `protobuf:"bytes,7,opt,name=host_if_name,proto3" json:"host_if_name,omitempty"`
-	Namespace   *LinuxInterfaces_Interface_Namespace `protobuf:"bytes,50,opt,name=namespace" json:"namespace,omitempty"`
-	Veth        *LinuxInterfaces_Interface_Veth      `protobuf:"bytes,51,opt,name=veth" json:"veth,omitempty"`
+	IpAddresses []string                             `protobuf:"bytes,5,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
+	PhysAddress string                               `protobuf:"bytes,6,opt,name=phys_address,proto3" json:"phys_address,omitempty"`
+	Mtu         uint32                               `protobuf:"varint,7,opt,name=mtu,proto3" json:"mtu,omitempty"`
+	HostIfName  string                               `protobuf:"bytes,8,opt,name=host_if_name,proto3" json:"host_if_name,omitempty"`
+	Namespace   *LinuxInterfaces_Interface_Namespace `protobuf:"bytes,9,opt,name=namespace" json:"namespace,omitempty"`
+	Veth        *LinuxInterfaces_Interface_Veth      `protobuf:"bytes,10,opt,name=veth" json:"veth,omitempty"`
 }
 
 func (m *LinuxInterfaces_Interface) Reset()         { *m = LinuxInterfaces_Interface{} }
