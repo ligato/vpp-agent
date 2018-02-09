@@ -19,26 +19,23 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/vishvananda/netlink"
 )
 
-// LinuxInterfaceStateNotification aggregates status UP/DOWN/DELETED/UNKNOWN with
-// the details (state) about the interfaces including counters.
+// LinuxInterfaceStateNotification aggregates operational status derived from netlink with
+// the details (state) about the interface.
 type LinuxInterfaceStateNotification struct {
 	// State of the network interface
-	interfaceType string
+	interfaceType  string
 	interfaceState netlink.LinkOperState
-	attributes    *netlink.LinkAttrs
+	attributes     *netlink.LinkAttrs
 }
 
 // LinuxInterfaceStateUpdater processes all linux interface state data
 type LinuxInterfaceStateUpdater struct {
-	Log logging.Logger
-
-	// Linux interface indices
-	ifIndexes ifaceidx.LinuxIfIndexRW
-
+	Log     logging.Logger
 	cfgLock sync.Mutex
 
 	// Go routine management
@@ -51,11 +48,10 @@ type LinuxInterfaceStateUpdater struct {
 	ifWatcherDoneCh     chan struct{}
 }
 
+// Init channels for interface state watcher, start it in separate go routine and subscribe to default namespace
 func (plugin *LinuxInterfaceStateUpdater) Init(ctx context.Context, ifIndexes ifaceidx.LinuxIfIndexRW,
 	stateChan chan *LinuxInterfaceStateNotification, notifChan chan netlink.LinkUpdate, notifDone chan struct{}) error {
 	plugin.Log.Debug("Initializing Linux Interface State Updater")
-	// IfIndices
-	plugin.ifIndexes = ifIndexes
 
 	// Channels
 	plugin.ifStateChan = stateChan
@@ -68,10 +64,13 @@ func (plugin *LinuxInterfaceStateUpdater) Init(ctx context.Context, ifIndexes if
 	return plugin.subscribeInterfaceState()
 }
 
+// Close watcher channel (state chan is closed in LinuxInterfaceConfigurator)
 func (plugin *LinuxInterfaceStateUpdater) Close() error {
-	return nil
+	_, err := safeclose.CloseAll(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
+	return err
 }
 
+// Subscribe to linux default namespace
 func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 	if !plugin.stateWatcherRunning {
 		plugin.stateWatcherRunning = true
@@ -85,6 +84,7 @@ func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 	return nil
 }
 
+// Watch linux interfaces and send events to processing
 func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 	plugin.Log.Warnf("Watching on linux link notifications")
 
@@ -103,10 +103,11 @@ func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Conte
 	}
 }
 
+// Prepare notification and send it to the state channel
 func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
 	linkAttrs := link.Attrs()
 
-	if linkAttrs == nil{
+	if linkAttrs == nil {
 		return
 	}
 
@@ -118,9 +119,9 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 
 	// Prepare linux link notification
 	linkNotif := &LinuxInterfaceStateNotification{
-		interfaceType: link.Type(),
+		interfaceType:  link.Type(),
 		interfaceState: linkAttrs.OperState,
-		attributes:    link.Attrs(),
+		attributes:     link.Attrs(),
 	}
 
 	select {
