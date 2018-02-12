@@ -46,6 +46,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/dhcp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
@@ -100,6 +101,7 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 		return err
 	}
 
+	// Init AF-packet configurator
 	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, SwIfIndexes: plugin.swIfIndexes, Stopwatch: plugin.Stopwatch}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
@@ -206,6 +208,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// configure optional vrf
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	// configure DHCP client
+	if iface.SetDhcpClient {
+		if err := vppcalls.SetInterfaceAsDHCPClient(ifIdx, iface.Name, plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(dhcp.DhcpClientConfig{}, plugin.Stopwatch)); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -508,6 +518,23 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		}
 	}
 
+	// reconfigure DHCP
+	if oldConfig.SetDhcpClient != newConfig.SetDhcpClient {
+		if newConfig.SetDhcpClient {
+			if err := vppcalls.SetInterfaceAsDHCPClient(ifIdx, newConfig.Name, plugin.Log, plugin.vppCh,
+				measure.GetTimeLog(dhcp.DhcpClientConfig{}, plugin.Stopwatch)); err != nil {
+				plugin.Log.Error(err)
+				wasError = err
+			}
+		} else {
+			if err := vppcalls.UnsetInterfaceAsDHCPClient(ifIdx, newConfig.Name, plugin.Log, plugin.vppCh,
+				measure.GetTimeLog(dhcp.DhcpClientConfig{}, plugin.Stopwatch)); err != nil {
+				plugin.Log.Error(err)
+				wasError = err
+			}
+		}
+	}
+
 	// ip address
 	newAddrs, err := addrs.StrAddrsToStruct(newConfig.IpAddresses)
 	if err != nil {
@@ -673,18 +700,30 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface)
 	}
 
-	// unregister name to init mapping (following triggers notifications for all subscribers)
-	ifIdx, prev, found := plugin.swIfIndexes.UnregisterName(iface.Name)
-	if !found {
-		plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
-		return nil
-	}
+	// unregister name to init mapping (following triggers notifications for all subscribers, skip physical interfaces)
+	if iface.Type != intf.InterfaceType_ETHERNET_CSMACD {
+		ifIdx, prev, found := plugin.swIfIndexes.UnregisterName(iface.Name)
+		if !found {
+			plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
+			return nil
+		}
 
-	// delete from unnumbered map (if the interface is present)
-	delete(plugin.uIfaceCache, iface.Name)
+		// delete from unnumbered map (if the interface is present)
+		delete(plugin.uIfaceCache, iface.Name)
 
-	if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
-		return err
+		if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
+			return err
+		}
+	} else {
+		// Find index of the Physical interface and un-configure it
+		ifIdx, prev, found := plugin.swIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
+			return nil
+		}
+		if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
+			return err
+		}
 	}
 
 	plugin.Log.Infof("Interface %v removed", iface.Name)
@@ -700,7 +739,17 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetFlags{}, plugin.Stopwatch))
 	if nil != err {
+		plugin.Log.Error(err)
 		wasError = err
+	}
+
+	// Remove DHCP if it was set
+	if oldConfig.SetDhcpClient {
+		if err := vppcalls.UnsetInterfaceAsDHCPClient(ifIdx, oldConfig.Name, plugin.Log, plugin.vppCh,
+			measure.GetTimeLog(dhcp.DhcpClientConfig{}, plugin.Stopwatch)); err != nil {
+			plugin.Log.Error(err)
+			wasError = err
+		}
 	}
 
 	// let's try to do following even if previously error occurred
