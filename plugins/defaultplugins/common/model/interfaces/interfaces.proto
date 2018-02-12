@@ -30,6 +30,7 @@ message Interfaces {
         uint32 mtu = 6;
         uint32 vrf = 7;
         string container_ip_address = 8;
+        bool set_dhcp_client = 9;
 
         // Required format is "ipAddress/ipPrefix"
         repeated string ip_addresses = 10;
