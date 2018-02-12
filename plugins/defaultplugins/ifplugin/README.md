@@ -192,6 +192,54 @@ To remove any part of BFD configuration, just add `d` before vpp-agent-ctl suffi
 `-dbfds` to remove BFD session). Keep in mind that authentication key cannot be removed (or modified)
 if it is used in any BFD session.
 
+### Network address translation
+
+NAT configuration can be set up on the VPP using `ifplugin`.
+
+NAT is moddeled by [nat proto file](../common/model/nat/nat.proto). Model is divided to two parts; the 
+general configuration with defined interfaces and IP address pools, and DNAT configuration with a set of
+static/identity mappings. 
+
+NAT global configuration is stored under single key. There is no unique name/label to distinguish different
+configurations (only one global setting can be stored in the ETCD at a time): 
+```
+/vnf-agent/{agent-lanbel}/vpp/config/v1/nat/global/
+```
+
+NAT DNAT case has the following key:
+```
+/vnf-agent/vpp1/vpp/config/v1/nat/dnat/{label}
+```
+
+**JSON configuration example with vpp-agent-ctl**
+
+To inset NAT global config into ETCD in JSON format, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
+with `nat-global.json` file. Use the following command:
+```
+vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/nat/global/" json/nat-global.json
+```
+
+To put DNAT configuration, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) with 
+```
+vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/nat/dnat/dnat1" json/nat-dnat.json
+```
+
+**Inbuilt configuration example with vpp-agent-ctl**
+
+The `vpp-agent-ctl` binary also ships with some simple predefined
+ietf-interface configurations. This is intended solely for testing
+purposes.
+
+To create a global NAT config, run:
+```
+vpp-agent-ctl -natg
+```
+
+To create a DNAT config, run:
+```
+vpp-agent-ctl -dnat
+```
+
 ### STN Rules
 
 `iflplugin` is also able to configure STN rules.

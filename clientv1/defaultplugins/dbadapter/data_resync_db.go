@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -158,6 +159,24 @@ func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.Dat
 func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
 	key := stn.Key(val.RuleName)
 	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44Global adds a request to RESYNC global configuration for NAT44
+func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
+	key := nat.GlobalConfigKey()
+	dsl.txn.Put(key, nat44)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// NAT44DNat adds a request to RESYNC a new DNAT configuration
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
+	key := nat.DNatKey(nat44.Label)
+	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl

@@ -30,6 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -61,6 +62,12 @@ type DataResyncReq struct {
 	AppNamespaces []*l4.AppNamespaces_AppNamespace
 	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
 	StnRules []*stn.StnRule
+	// NatGlobal is a definition of global NAT config
+	Nat44Global *nat.Nat44Global
+	// Nat44SNat is a list of all SNAT configurations expected to be in VPP after RESYNC
+	Nat44SNat []*nat.Nat44SNat_SNatConfig
+	// Nat44DNat is a list of all DNAT configurations expected to be in VPP after RESYNC
+	Nat44DNat []*nat.Nat44DNat_DNatConfig
 }
 
 // NewDataResyncReq is a constructor.
@@ -79,6 +86,9 @@ func NewDataResyncReq() *DataResyncReq {
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
 		StnRules:            []*stn.StnRule{},
+		Nat44Global:         &nat.Nat44Global{},
+		Nat44SNat:           []*nat.Nat44SNat_SNatConfig{},
+		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
 	}
 }
 
@@ -158,6 +168,15 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
 		resyncErrs = append(resyncErrs, err)
 	}
+	if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
+	if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
@@ -215,6 +234,15 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
 			numStns := appendResyncStnRules(resyncData, req)
 			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
+		} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+			resyncNatGlobal(resyncData, req)
+			plugin.Log.Debug("Received RESYNC NAT global config")
+		} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+			numSNats := appendResyncSNat(resyncData, req)
+			plugin.Log.Debug("Received RESYNC SNAT configs ", numSNats)
+		} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+			numDNats := appendResyncDNat(resyncData, req)
+			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -474,6 +502,51 @@ func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq
 	return num
 }
 
+func resyncNatGlobal(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	natGlobalData, stop := resyncData.GetNext()
+	if stop {
+		return
+	}
+	value := &nat.Nat44Global{}
+	if err := natGlobalData.GetValue(value); err == nil {
+		req.Nat44Global = value
+	}
+}
+
+func appendResyncSNat(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if sNatData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &nat.Nat44SNat_SNatConfig{}
+			err := sNatData.GetValue(value)
+			if err == nil {
+				req.Nat44SNat = append(req.Nat44SNat, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+	num := 0
+	for {
+		if dNatData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &nat.Nat44DNat_DNatConfig{}
+			err := dNatData.GetValue(value)
+			if err == nil {
+				req.Nat44DNat = append(req.Nat44DNat, value)
+				num++
+			}
+		}
+	}
+	return num
+}
+
 // All registration for above channel select (it ensures proper order during initialization) are put here.
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
@@ -500,6 +573,9 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),
 			stn.KeyPrefix(),
+			nat.GlobalConfigPrefix(),
+			nat.SNatPrefix(),
+			nat.DNatPrefix(),
 		)
 	if err != nil {
 		return err

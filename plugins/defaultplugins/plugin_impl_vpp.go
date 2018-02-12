@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
@@ -119,6 +120,14 @@ type Plugin struct {
 	// xConnect fields
 	xcConfigurator *l2plugin.XConnectConfigurator
 	xcIndexes      idxvpp.NameToIdxRW
+
+	// NAT fields
+	natConfigurator      *ifplugin.NatConfigurator
+	sNatIndices          idxvpp.NameToIdxRW
+	sNatMappingIndices   idxvpp.NameToIdxRW
+	dNatIndices          idxvpp.NameToIdxRW
+	dNatStMappingIndices idxvpp.NameToIdxRW
+	dNatIdMappingIndices idxvpp.NameToIdxRW
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
@@ -239,6 +248,16 @@ func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
 // DumpACL returns a list of all configured ACL entires
 func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	return plugin.aclConfigurator.DumpACL()
+}
+
+// DumpNat44Global returns the current NAT44 global config
+func (plugin *Plugin) DumpNat44Global() (*nat.Nat44Global, error) {
+	return plugin.natConfigurator.DumpNatGlobal()
+}
+
+// DumpNat44DNat returns the current NAT44 DNAT config
+func (plugin *Plugin) DumpNat44DNat() (*nat.Nat44DNat, error) {
+	return plugin.natConfigurator.DumpNatDNat()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
@@ -388,6 +407,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	stnLogger := plugin.Log.NewLogger("-stn-conf")
+	natLogger := plugin.Log.NewLogger("-nat-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -471,9 +491,36 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		StnAllIndexSeq:      1,
 		Stopwatch:           stopwatch,
 	}
-	plugin.stnConfigurator.Init()
+	if err := plugin.stnConfigurator.Init(); err != nil {
+		return err
+	}
 
 	plugin.Log.Debug("stnConfigurator Initialized")
+
+	// NAT indices
+	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
+	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
+	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
+	plugin.dNatStMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-st-mapping-indices", nil)
+	plugin.dNatIdMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-id-mapping-indices", nil)
+
+	plugin.natConfigurator = &ifplugin.NatConfigurator{
+		Log:                  natLogger,
+		GoVppmux:             plugin.GoVppmux,
+		SwIfIndexes:          plugin.swIfIndexes,
+		SNatIndices:          plugin.sNatIndices,
+		SNatMappingIndices:   plugin.sNatMappingIndices,
+		DNatIndices:          plugin.dNatIndices,
+		DNatStMappingIndices: plugin.dNatStMappingIndices,
+		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
+		NatIndexSeq:          1,
+		Stopwatch:            stopwatch,
+	}
+	if err := plugin.natConfigurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("Configurator Initialized")
 
 	return nil
 }
@@ -756,7 +803,7 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator)
 
 	return err
 }

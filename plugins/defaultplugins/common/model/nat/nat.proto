@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package nat;
+
+enum Protocol {                                 /* Available protocols. */
+    TCP = 0;
+    UDP = 1;
+    ICMP = 2;                                   /* ICMP is not permitted for load ballanced entries. */
+};
+
+/* NAT44 global config */
+message Nat44Global {
+    bool forwarding = 2;                        /* Enable/disable forwarding. */
+    message NatInterfaces {                     /* Local network interfaces enabled for NAT44. */
+        string name = 1;                        /* Interface name. */
+        bool isInside = 2;                      /* Distinguis between inside/outside interface. */
+        bool outputFeature = 3;                 /* Enable/disable output feature. */
+    }
+    repeated NatInterfaces nat_interfaces = 3;
+    message AddressPools {
+        string firstSrcAddress = 1;             /* Starting address of the source IPv4 pool range. */
+        string lastSrcAddress = 2;               /* Ending address of the source IPv4 pool range. Optional parameter. */
+        uint32 vrfId = 3;                       /* VRF (table) ID. */
+        bool twiceNat = 4;                      /* Enable/disable twice NAT. */
+    }
+    repeated AddressPools address_pools = 5;
+}
+
+/* Many-to-one (SNAT) setup */
+message Nat44SNat {
+    message SNatConfig {                        /* DNat configuration list. */
+        string label = 1;                       /* Unique identifier of the DNAT config. */
+        //tbd
+    }
+    repeated SNatConfig snat_config = 1;
+}
+
+/* One-to-many (DNAT) setup */
+message Nat44DNat {
+    message DNatConfig {                        /* DNat configuration list. */
+        string label = 1;                       /* Unique identifier of the DNAT config. */
+
+        message StaticMappigs {                 /* A list of static mappings in DNAT. */
+            uint32 vrfId = 1;                   /* VRF (table) ID. */
+            string externalInterface = 2;       /* External interface may be used together with IP addresses. */
+            string externalIP = 3;              /* External address.  */
+            uint32 externalPort = 4;            /* Port (do not set for address mapping). */
+            message LocalIPs {
+                string localIP = 1;             /* Local IP address). */
+                uint32 localPort = 3;           /* port (do not set for address mapping). */
+                uint32 probability = 2;         /* Probability mode. */
+            }   
+            repeated LocalIPs local_ips = 5;    /* List of local IP addresses. If there is more than one entry,
+                                                   Load ballancer is enabled. */
+            Protocol protocol = 6;              /* Protocol used for static mapping. */
+            bool twiceNat = 7;                  /* Enable/disable twice NAT. */
+        }   
+        repeated StaticMappigs st_mappings = 4;
+
+        message IdentityMappings {               /* A list of identity mappings in DNAT. */
+            uint32 vrfId = 1;                    /* VRF (table) ID. */
+            string addressedInterface = 2;       /* Name of the DHCP addressed interface, preffered before IP address. */
+            string ipAddress = 3;                /* IP address. */
+            uint32 port = 4;                     /* Port (do not set for address mapping). */
+            Protocol protocol = 5;               /* Protocol used for identity mapping. */
+
+        }
+        repeated IdentityMappings id_mappings= 6;
+    }      
+    repeated DNatConfig dnat_config = 1;                              
+}

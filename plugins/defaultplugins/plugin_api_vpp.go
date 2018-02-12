@@ -19,6 +19,7 @@ package defaultplugins
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
@@ -80,4 +81,10 @@ type API interface {
 
 	// DumpACL returns a list of all configured ACLs.
 	DumpACL() (acls []*acl.AccessLists_Acl, err error)
+
+	// DumpNat44Global returns the current NAT44 global config
+	DumpNat44Global() (*nat.Nat44Global, error)
+
+	// DumpNat44DNat returns the current NAT44 DNAT config
+	DumpNat44DNat() (*nat.Nat44DNat, error)
 }

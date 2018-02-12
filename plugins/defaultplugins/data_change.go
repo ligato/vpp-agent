@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -209,6 +210,45 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+		// Global NAT config
+		var value, prevValue nat.Nat44Global
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeNatGlobal(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+		// SNAT config
+		var value, prevValue nat.Nat44SNat_SNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeSNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+		// DNAT config
+		var value, prevValue nat.Nat44DNat_DNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeDNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -372,6 +412,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
 }
 
+// DataChangeStnRule propagates data change to the stn configurator
 func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
@@ -381,4 +422,40 @@ func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue
 		return plugin.stnConfigurator.Modify(prevValue, value)
 	}
 	return plugin.stnConfigurator.Add(value)
+}
+
+// dataChangeNatGlobal propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.PutDel) error {
+	plugin.Log.Debug("natGlobalChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+	}
+	return plugin.natConfigurator.SetNatGlobalConfig(value)
+}
+
+// dataChangeSNat propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.PutDel) error {
+	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteSNat(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifySNat(prevValue, value)
+	}
+	return plugin.natConfigurator.ConfigureSNat(value)
+}
+
+// dataChangeDNat propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteDNat(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifyDNat(prevValue, value)
+	}
+	return plugin.natConfigurator.ConfigureDNat(value)
 }

@@ -16,6 +16,7 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
@@ -157,6 +158,20 @@ func (dsl *DataResyncDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace)
 // StnRule adds Stn rule to the RESYNC request.
 func (dsl *DataResyncDSL) StnRule(stn *vpp_stn.StnRule) linux.DataResyncDSL {
 	dsl.vppDataResync.StnRule(stn)
+	return dsl
+}
+
+// NAT44Global adds a request to RESYNC global configuration for NAT44
+func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linux.DataResyncDSL {
+	dsl.vppDataResync.NAT44Global(nat44)
+
+	return dsl
+}
+
+// NAT44DNat adds a request to RESYNC a new DNAT configuration
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linux.DataResyncDSL {
+	dsl.vppDataResync.NAT44DNat(nat44)
+
 	return dsl
 }
 

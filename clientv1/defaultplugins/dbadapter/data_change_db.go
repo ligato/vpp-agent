@@ -15,8 +15,6 @@
 package dbadapter
 
 import (
-	"strconv"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
@@ -26,6 +24,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -153,6 +152,18 @@ func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 	return dsl
 }
 
+// NAT44Global adds a request to set global configuration for NAT44
+func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(nat.GlobalConfigKey(), nat44)
+	return dsl
+}
+
+// NAT44DNat adds a request to create a new DNAT configuration
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(nat.DNatKey(nat44.Label), nat44)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() defaultplugins.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -178,8 +189,8 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.Dele
 
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKey uint32) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.AuthKeysKey(strconv.Itoa(int(bfdKey))))
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKey string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(bfd.AuthKeysKey(bfdKey))
 	return dsl
 }
 
@@ -242,6 +253,18 @@ func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 // StnRule adds request to delete Stn rule.
 func (dsl *DeleteDSL) StnRule(ruleName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(stn.Key(ruleName))
+	return dsl
+}
+
+// NAT44Global adds a request to remove global configuration for NAT44
+func (dsl *DeleteDSL) NAT44Global() defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.GlobalConfigKey())
+	return dsl
+}
+
+// NAT44DNat adds a request to delete a new DNAT configuration
+func (dsl *DeleteDSL) NAT44DNat(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.DNatKey(label))
 	return dsl
 }
 

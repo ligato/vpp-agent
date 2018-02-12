@@ -17,6 +17,7 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
@@ -176,6 +177,18 @@ func (dsl *PutDSL) StnRule(stn *vpp_stn.StnRule) linux.PutDSL {
 	return dsl
 }
 
+// NAT44Global adds a request to set global configuration for NAT44
+func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) linux.PutDSL {
+	dsl.vppPut.NAT44Global(nat44)
+	return dsl
+}
+
+// NAT44DNat adds a request to create a new DNAT configuration
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linux.PutDSL {
+	dsl.vppPut.NAT44DNat(nat44)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linux.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -220,7 +233,7 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linux.DeleteDSL {
 
 // BfdAuthKeys adds a request to delete an existing VPP bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKey uint32) linux.DeleteDSL {
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKey string) linux.DeleteDSL {
 	dsl.vppDelete.BfdAuthKeys(bfdKey)
 	return dsl
 }
@@ -284,6 +297,18 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linux.DeleteDSL {
 // StnRule adds a request to delete an existing VPP Stn rule.
 func (dsl *DeleteDSL) StnRule(ruleName string) linux.DeleteDSL {
 	dsl.vppDelete.StnRule(ruleName)
+	return dsl
+}
+
+// NAT44Global adds a request to remove global configuration for NAT44
+func (dsl *DeleteDSL) NAT44Global() linux.DeleteDSL {
+	dsl.vppDelete.NAT44Global()
+	return dsl
+}
+
+// NAT44DNat adds a request to delete a new DNAT configuration
+func (dsl *DeleteDSL) NAT44DNat(label string) linux.DeleteDSL {
+	dsl.vppDelete.NAT44DNat(label)
 	return dsl
 }
 

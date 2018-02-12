@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -60,6 +61,10 @@ type DataResyncDSL interface {
 	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) DataResyncDSL
 	// StnRule adds Stn rule to the RESYNC request.
 	StnRule(stn *stn.StnRule) DataResyncDSL
+	// NAT44Global adds a request to RESYNC global configuration for NAT44
+	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
+	// NAT44DNat adds a request to RESYNC a new DNAT configuration
+	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply

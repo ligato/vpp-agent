@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -80,6 +81,10 @@ type PutDSL interface {
 	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update Stn rule.
 	StnRule(stn *stn.StnRule) PutDSL
+	// NAT44Global adds a request to set global configuration for NAT44
+	NAT44Global(nat *nat.Nat44Global) PutDSL
+	// NAT44DNat adds a request to create a new DNAT configuration
+	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -99,7 +104,7 @@ type DeleteDSL interface {
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 	// detection key.
-	BfdAuthKeys(bfdKey uint32) DeleteDSL
+	BfdAuthKeys(bfdKey string) DeleteDSL
 	// BfdEchoFunction adds a request to delete an existing bidirectional
 	// forwarding detection echo function.
 	BfdEchoFunction(bfdEchoName string) DeleteDSL
@@ -123,6 +128,10 @@ type DeleteDSL interface {
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// StnRule adds a request to delete an existing Stn rule.
 	StnRule(ruleName string) DeleteDSL
+	// NAT44Global adds a request to remove global configuration for NAT44
+	NAT44Global() DeleteDSL
+	// NAT44DNat adds a request to delete a new DNAT configuration
+	NAT44DNat(label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
