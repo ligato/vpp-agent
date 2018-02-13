@@ -176,7 +176,7 @@ func (*DhcpComplEvent) GetMessageName() string {
 	return "dhcp_compl_event"
 }
 func (*DhcpComplEvent) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.EventMessage
 }
 func (*DhcpComplEvent) GetCrcString() string {
 	return "28c60f01"

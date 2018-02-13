@@ -570,6 +570,7 @@ func createEthernet(db keyval.ProtoBroker, ifname string, ipv4Addr string, ipv6A
 	ifs.Interface[0].PhysAddress = ""
 
 	// Ipv4
+	ifs.Interface[0].SetDhcpClient = false
 	ifs.Interface[0].Enabled = true
 	ifs.Interface[0].Mtu = 1500
 	ifs.Interface[0].IpAddresses = make([]string, 1)

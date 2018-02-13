@@ -121,6 +121,7 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect

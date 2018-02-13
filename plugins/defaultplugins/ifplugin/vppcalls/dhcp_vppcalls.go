@@ -34,7 +34,7 @@ func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, log logging.Logger,
 		}
 	}()
 
-	if err = handleInterfaceAsDHCP(ifIdx, hostName, log, vppChan, true); err != nil {
+	if err = handleInterfaceDHCP(ifIdx, hostName, log, vppChan, true); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, log logging.Logge
 		}
 	}()
 
-	if err = handleInterfaceAsDHCP(ifIdx, hostName, log, vppChan, false); err != nil {
+	if err = handleInterfaceDHCP(ifIdx, hostName, log, vppChan, false); err != nil {
 		return err
 	}
 
@@ -62,15 +62,26 @@ func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, log logging.Logge
 	return err
 }
 
-func handleInterfaceAsDHCP(ifIdx uint32, hostName string, log logging.Logger, vppChan *govppapi.Channel, isAdd bool) error {
+// SubscribeDHCPNotifications registers provided event channel to receive DHCP events
+func SubscribeDHCPNotifications(eventChan chan govppapi.Message, vppChan *govppapi.Channel) (*govppapi.NotifSubscription, error) {
+	if eventChan != nil {
+		return vppChan.SubscribeNotification(eventChan, dhcp.NewDhcpComplEvent)
+	} else {
+		return nil, fmt.Errorf("provided channel is nil")
+	}
+}
+
+func handleInterfaceDHCP(ifIdx uint32, hostName string, log logging.Logger, vppChan *govppapi.Channel, isAdd bool) error {
 	req := &dhcp.DhcpClientConfig{
 		SwIfIndex: ifIdx,
+		Hostname:  []byte(hostName),
 		IsAdd: func(isAdd bool) uint8 {
 			if isAdd {
 				return 1
 			}
 			return 0
 		}(isAdd),
+		WantDhcpEvent: 1,
 	}
 
 	reply := &dhcp.DhcpClientConfigReply{}
@@ -85,5 +96,4 @@ func handleInterfaceAsDHCP(ifIdx uint32, hostName string, log logging.Logger, vp
 	log.WithFields(logging.Fields{"hostName": hostName, "ifIdx": ifIdx}).Debug("Interface set as DHCP client")
 
 	return nil
-
 }

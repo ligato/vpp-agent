@@ -73,6 +73,7 @@ type InterfaceConfigurator struct {
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
 
 	swIfIndexes ifaceidx.SwIfIndexRW
+	dhcpIndices ifaceidx.DhcpIndexRW
 
 	uIfaceCache map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
 
@@ -82,13 +83,17 @@ type InterfaceConfigurator struct {
 
 	vppCh *govppapi.Channel
 
+	// Notification channels
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
+	dhcpChan  chan govppapi.Message // channel to receive DHCP notifications
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
+func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, dhcpIndices ifaceidx.DhcpIndexRW,
+	mtu uint32, notifChan chan govppapi.Message) (err error) {
 	plugin.Log.Debug("Initializing Interface configurator")
 	plugin.swIfIndexes = swIfIndexes
+	plugin.dhcpIndices = dhcpIndices
 	plugin.notifChan = notifChan
 	plugin.mtu = mtu
 
@@ -106,13 +111,18 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	plugin.uIfaceCache = make(map[string]string)
+	plugin.dhcpChan = make(chan govppapi.Message, 1)
 
-	return nil
+	_, err = vppcalls.SubscribeDHCPNotifications(plugin.dhcpChan, plugin.vppCh)
+	go plugin.watchDHCPNotifications()
+
+	return err
 }
 
 // Close GOVPP channel
 func (plugin *InterfaceConfigurator) Close() error {
-	return safeclose.Close(plugin.vppCh)
+	_, err := safeclose.CloseAll(plugin.vppCh, plugin.dhcpChan)
+	return err
 }
 
 // PropagateIfDetailsToStatus looks up all VPP interfaces
@@ -532,6 +542,9 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 				plugin.Log.Error(err)
 				wasError = err
 			}
+			// Remove from dhcp mapping
+			plugin.dhcpIndices.UnregisterName(newConfig.Name)
+			plugin.Log.Debugf("Interface %v unset as DHCP client", oldConfig.Name)
 		}
 	}
 
@@ -750,6 +763,9 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 			plugin.Log.Error(err)
 			wasError = err
 		}
+		// Remove from dhcp mapping
+		plugin.dhcpIndices.UnregisterName(oldConfig.Name)
+		plugin.Log.Debugf("Interface %v unset as DHCP client", oldConfig.Name)
 	}
 
 	// let's try to do following even if previously error occurred
@@ -873,4 +889,56 @@ func (plugin *InterfaceConfigurator) deleteContainerIPAddress(oldConfig *intf.In
 	}
 	return vppcalls.DelContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
 		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
+}
+
+// watch and process DHCP notifications. DHCP configuration is registered to dhcp mapping for every interface
+func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
+	plugin.Log.Debug("Started watcher on DHCP notifications")
+
+	for {
+		select {
+		case notification := <-plugin.dhcpChan:
+			switch dhcpNotif := notification.(type) {
+			case *dhcp.DhcpComplEvent:
+				var ipAddr, rIPAddr net.IP = dhcpNotif.HostAddress, dhcpNotif.RouterAddress
+				var hwAddr net.HardwareAddr = dhcpNotif.HostMac
+				var ipStr, rIPStr string
+
+				name := string(bytes.Trim(dhcpNotif.Hostname, "\x00"))
+
+				if dhcpNotif.IsIpv6 == 1 {
+					ipStr = ipAddr.To16().String()
+					rIPStr = rIPAddr.To16().String()
+				} else {
+					ipStr = ipAddr[:4].To4().String()
+					rIPStr = rIPAddr[:4].To4().String()
+				}
+
+				plugin.Log.Debugf("DHCP assigned %v to interface %q (router address %v)", ipStr, name, rIPStr)
+
+				ifIdx, _, found := plugin.swIfIndexes.LookupIdx(name)
+				if !found {
+					plugin.Log.Warnf("Expected interface %v not found in the mapping", name)
+					continue
+				}
+
+				// Register DHCP config
+				plugin.dhcpIndices.RegisterName(name, ifIdx, &ifaceidx.DHCPSettings{
+					IfName: name,
+					IsIPv6: func(isIPv6 uint8) bool {
+						if isIPv6 == 1 {
+							return true
+						}
+						return false
+					}(dhcpNotif.IsIpv6),
+					IPAddress:     ipStr,
+					Mask:          uint32(dhcpNotif.MaskWidth),
+					PhysAddress:   hwAddr.String(),
+					RouterAddress: rIPStr,
+				})
+
+				plugin.Log.Debugf("Registered dhcp metadata for interface %v", name)
+			}
+		}
+	}
 }
