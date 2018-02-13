@@ -210,6 +210,12 @@ func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
 	return plugin.swIfIndexes
 }
 
+// GetDHCPIndices gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
+// This mapping is helpful if other plugins need to know about the DHCP configuration set by VPP.
+func (plugin *Plugin) GetDHCPIndices() ifaceidx.DhcpIndex {
+	return plugin.dhcpIndices
+}
+
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
 func (plugin *Plugin) GetBfdSessionIndexes() idxvpp.NameToIdx {
 	return plugin.bfdSessionIndexes
