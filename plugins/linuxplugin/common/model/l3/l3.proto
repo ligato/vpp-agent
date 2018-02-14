@@ -67,7 +67,17 @@ message LinuxStaticArpEntries {
         Namespace namespace = 2;
 
         string interface = 3;               /* interface to which this neighbour is attached */
-        uint32 family = 4;                  /* IP family, if not set it will be determined from the ip address */
+
+        message IpFamily {
+            enum Family {
+                IPV4 = 0;
+                IPV6 = 1;
+                ALL = 2;
+                MPLS = 3;
+            }
+            Family family = 1;
+        }
+        IpFamily ip_family = 4;             /* IP family, if not set it will be determined from the ip address */
 
         message NudState {
             enum NudStateType {

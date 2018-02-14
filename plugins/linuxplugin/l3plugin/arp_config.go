@@ -118,7 +118,7 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	neigh.State = arpStateParser(arpEntry.State)
 
 	// Set ip family
-	neigh.Family = int(arpEntry.Family)
+	neigh.Family = getIPFamily(arpEntry.IpFamily)
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
@@ -202,7 +202,7 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	neigh.State = arpStateParser(newArpEntry.State)
 
 	// Set ip family
-	neigh.Family = int(newArpEntry.Family)
+	neigh.Family = getIPFamily(newArpEntry.IpFamily)
 
 	// Prepare namespace of related interface
 	nsMgmtCtx := common.NewNamespaceMgmtCtx()
@@ -428,6 +428,26 @@ func arpStateParser(stateType *l3.LinuxStaticArpEntries_ArpEntry_NudState) int {
 	default:
 		return netlink.NUD_PERMANENT
 	}
+}
+
+// returns IP family netlink representation
+func getIPFamily(family *l3.LinuxStaticArpEntries_ArpEntry_IpFamily) (arpIPFamily int) {
+	if family == nil {
+		return
+	}
+	if family.Family == l3.LinuxStaticArpEntries_ArpEntry_IpFamily_IPV4 {
+		arpIPFamily = netlink.FAMILY_V4
+	}
+	if family.Family == l3.LinuxStaticArpEntries_ArpEntry_IpFamily_IPV6 {
+		arpIPFamily = netlink.FAMILY_V6
+	}
+	if family.Family == l3.LinuxStaticArpEntries_ArpEntry_IpFamily_ALL {
+		arpIPFamily = netlink.FAMILY_ALL
+	}
+	if family.Family == l3.LinuxStaticArpEntries_ArpEntry_IpFamily_MPLS {
+		arpIPFamily = netlink.FAMILY_MPLS
+	}
+	return
 }
 
 func compareARPLinkIdxAndIP(arp1 *netlink.Neigh, arp2 *netlink.Neigh) bool {
