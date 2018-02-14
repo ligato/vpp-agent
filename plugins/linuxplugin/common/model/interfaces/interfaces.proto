@@ -38,6 +38,11 @@ message LinuxInterfaces {
             string peer_if_name = 1;         /* Name of the peer (other end of the linux veth) */
         }
         Veth veth = 10;
+
+        message Tap {
+            string temp_if_name = 1;         /* Temporary name of the peer */
+        }
+        Tap tap = 11;
     };
     repeated Interface interface = 1;
 };

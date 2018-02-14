@@ -226,7 +226,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		// TAP (auto) interface looks for existing interface with the same host name (cached without peer)
+		// TAP (auto) interface looks for existing interface with the same host name or temp name (cached without peer)
 		ifConfig := plugin.addToCache(linuxIf, nil)
 
 		return plugin.configureTapInterface(ifConfig)
@@ -415,10 +415,19 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 		return nil
 	}
 
-	// Try to find interface in default namespace
+	// Check if TAP temporary name is defined
+	if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
+		plugin.Log.Debugf("Tap interface %v temporary name not defined", ifConfig.config.HostIfName)
+		// In such a case, set temp name as host (look for interface named as host name)
+		ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
+			TempIfName: ifConfig.config.HostIfName,
+		}
+	}
+
+	// Try to find temp interface in default namespace.
 	var found bool
 	for _, linuxIf := range linuxIfs {
-		if ifConfig.config.HostIfName == linuxIf.Attrs().Name {
+		if ifConfig.config.Tap.TempIfName == linuxIf.Attrs().Name {
 			if linuxIf.Type() == tapTun {
 				found = true
 				break
@@ -432,6 +441,27 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 			ifConfig.config.HostIfName)
 		return nil
 	}
+
+	// Move interface to the proper namespace.
+	ns := ifConfig.config.Namespace
+	if ns != nil && ns.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
+		ns = plugin.convertMicroserviceNsToPidNs(ns.Microservice)
+		if ns == nil {
+			return &unavailableMicroserviceErr{}
+		}
+	}
+
+	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TempIfName, ifConfig.config.Namespace, plugin.Log, plugin.Stopwatch)
+	if err != nil {
+		return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.config.Tap.TempIfName, ifConfig.config.Namespace, err)
+	}
+
+	// Continue configuring interface in its namespace.
+	revertNs, err := plugin.switchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to switch network namespace: %v", err)
+	}
+	defer revertNs()
 
 	return plugin.configureLinuxInterface(nsMgmtCtx, ifConfig.config)
 }
@@ -451,9 +481,32 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 		}
 	}
 
-	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
-	if err != nil {
-		return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.HostIfName, ifConfig.Namespace, err)
+	// Use temp name to move TAP interface to namespace and rename it if necessary
+	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
+		// Use temporary name to set interface to different namespace
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		if err != nil {
+			return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.Tap.TempIfName, ifConfig.Namespace, err)
+		}
+		if ifConfig.HostIfName != ifConfig.Tap.TempIfName {
+			// Rename to the actual host name
+			if err := linuxcalls.RenameInterface(ifConfig.Tap.TempIfName, ifConfig.HostIfName,
+				measure.GetTimeLog("rename-linux-interface", plugin.Stopwatch)); err != nil {
+				plugin.Log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.Tap.TempIfName,
+					ifConfig.HostIfName, err)
+				return err
+			}
+		} else {
+			plugin.Log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.HostIfName)
+		}
+	}
+	// Use host name to move VETH interface to namespace
+	if ifConfig.Type == interfaces.LinuxInterfaces_VETH {
+		// Use host name to set interface to namespace
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		if err != nil {
+			return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.HostIfName, ifConfig.Namespace, err)
+		}
 	}
 
 	// Continue configuring interface in its namespace.
@@ -512,7 +565,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	}
 
 	// Register interface with its original name and store host name in metadate
-	plugin.ifIndexes.RegisterName(ifConfig.Name, uint32(idx), &interfaces.LinuxInterfaces_Interface{Name: ifConfig.Name, HostIfName: ifConfig.HostIfName})
+	plugin.ifIndexes.RegisterName(ifConfig.Name, uint32(idx), ifConfig)
 	plugin.Log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": idx}).
 		Info("An entry added into ifState.")
 
@@ -696,10 +749,36 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	}
 
 	// Move back to default namespace
-	err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
-		plugin.Log, plugin.Stopwatch)
-	if err != nil {
-		return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.HostIfName, "default", err)
+	if ifConfig.config.Type == interfaces.LinuxInterfaces_AUTO_TAP {
+		// Rename to its original name (if possible)
+		if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
+			plugin.Log.Warnf("Cannot restore linux TAP %v interface state, original name (temp) is not available", ifConfig.config.HostIfName)
+			ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
+				TempIfName: ifConfig.config.HostIfName,
+			}
+		}
+		if ifConfig.config.Tap.TempIfName == ifConfig.config.HostIfName {
+			plugin.Log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.config.HostIfName)
+		} else {
+			if err := linuxcalls.RenameInterface(ifConfig.config.HostIfName, ifConfig.config.Tap.TempIfName,
+				measure.GetTimeLog("rename-linux-interface", plugin.Stopwatch)); err != nil {
+
+				plugin.Log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.config.HostIfName,
+					ifConfig.config.Tap.TempIfName, err)
+				wasErr = err
+			}
+		}
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
+			plugin.Log, plugin.Stopwatch)
+		if err != nil {
+			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.Tap.TempIfName, "default", err)
+		}
+	} else {
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
+			plugin.Log, plugin.Stopwatch)
+		if err != nil {
+			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.HostIfName, "default", err)
+		}
 	}
 
 	// Unregister TAP from the in-memory map
