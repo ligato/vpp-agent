@@ -97,6 +97,32 @@ func (x LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType) String() string 
 	return proto.EnumName(LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_name, int32(x))
 }
 
+type LinuxStaticArpEntries_ArpEntry_IpFamily_Family int32
+
+const (
+	LinuxStaticArpEntries_ArpEntry_IpFamily_IPV4 LinuxStaticArpEntries_ArpEntry_IpFamily_Family = 0
+	LinuxStaticArpEntries_ArpEntry_IpFamily_IPV6 LinuxStaticArpEntries_ArpEntry_IpFamily_Family = 1
+	LinuxStaticArpEntries_ArpEntry_IpFamily_ALL  LinuxStaticArpEntries_ArpEntry_IpFamily_Family = 2
+	LinuxStaticArpEntries_ArpEntry_IpFamily_MPLS LinuxStaticArpEntries_ArpEntry_IpFamily_Family = 3
+)
+
+var LinuxStaticArpEntries_ArpEntry_IpFamily_Family_name = map[int32]string{
+	0: "IPV4",
+	1: "IPV6",
+	2: "ALL",
+	3: "MPLS",
+}
+var LinuxStaticArpEntries_ArpEntry_IpFamily_Family_value = map[string]int32{
+	"IPV4": 0,
+	"IPV6": 1,
+	"ALL":  2,
+	"MPLS": 3,
+}
+
+func (x LinuxStaticArpEntries_ArpEntry_IpFamily_Family) String() string {
+	return proto.EnumName(LinuxStaticArpEntries_ArpEntry_IpFamily_Family_name, int32(x))
+}
+
 type LinuxStaticArpEntries_ArpEntry_NudState_NudStateType int32
 
 const (
@@ -211,7 +237,7 @@ type LinuxStaticArpEntries_ArpEntry struct {
 	Name      string                                    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Namespace *LinuxStaticArpEntries_ArpEntry_Namespace `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
 	Interface string                                    `protobuf:"bytes,3,opt,name=interface,proto3" json:"interface,omitempty"`
-	Family    uint32                                    `protobuf:"varint,4,opt,name=family,proto3" json:"family,omitempty"`
+	IpFamily  *LinuxStaticArpEntries_ArpEntry_IpFamily  `protobuf:"bytes,4,opt,name=ip_family" json:"ip_family,omitempty"`
 	State     *LinuxStaticArpEntries_ArpEntry_NudState  `protobuf:"bytes,5,opt,name=state" json:"state,omitempty"`
 	IpAddr    string                                    `protobuf:"bytes,6,opt,name=ip_addr,proto3" json:"ip_addr,omitempty"`
 	HwAddress string                                    `protobuf:"bytes,7,opt,name=hw_address,proto3" json:"hw_address,omitempty"`
@@ -224,6 +250,13 @@ func (*LinuxStaticArpEntries_ArpEntry) ProtoMessage()    {}
 func (m *LinuxStaticArpEntries_ArpEntry) GetNamespace() *LinuxStaticArpEntries_ArpEntry_Namespace {
 	if m != nil {
 		return m.Namespace
+	}
+	return nil
+}
+
+func (m *LinuxStaticArpEntries_ArpEntry) GetIpFamily() *LinuxStaticArpEntries_ArpEntry_IpFamily {
+	if m != nil {
+		return m.IpFamily
 	}
 	return nil
 }
@@ -249,6 +282,16 @@ func (m *LinuxStaticArpEntries_ArpEntry_Namespace) Reset() {
 func (m *LinuxStaticArpEntries_ArpEntry_Namespace) String() string { return proto.CompactTextString(m) }
 func (*LinuxStaticArpEntries_ArpEntry_Namespace) ProtoMessage()    {}
 
+type LinuxStaticArpEntries_ArpEntry_IpFamily struct {
+	Family LinuxStaticArpEntries_ArpEntry_IpFamily_Family `protobuf:"varint,1,opt,name=family,proto3,enum=l3.LinuxStaticArpEntries_ArpEntry_IpFamily_Family" json:"family,omitempty"`
+}
+
+func (m *LinuxStaticArpEntries_ArpEntry_IpFamily) Reset() {
+	*m = LinuxStaticArpEntries_ArpEntry_IpFamily{}
+}
+func (m *LinuxStaticArpEntries_ArpEntry_IpFamily) String() string { return proto.CompactTextString(m) }
+func (*LinuxStaticArpEntries_ArpEntry_IpFamily) ProtoMessage()    {}
+
 type LinuxStaticArpEntries_ArpEntry_NudState struct {
 	Type LinuxStaticArpEntries_ArpEntry_NudState_NudStateType `protobuf:"varint,1,opt,name=type,proto3,enum=l3.LinuxStaticArpEntries_ArpEntry_NudState_NudStateType" json:"type,omitempty"`
 }
@@ -263,5 +306,6 @@ func init() {
 	proto.RegisterEnum("l3.LinuxStaticRoutes_Route_Namespace_NamespaceType", LinuxStaticRoutes_Route_Namespace_NamespaceType_name, LinuxStaticRoutes_Route_Namespace_NamespaceType_value)
 	proto.RegisterEnum("l3.LinuxStaticRoutes_Route_Scope_ScopeType", LinuxStaticRoutes_Route_Scope_ScopeType_name, LinuxStaticRoutes_Route_Scope_ScopeType_value)
 	proto.RegisterEnum("l3.LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType", LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_name, LinuxStaticArpEntries_ArpEntry_Namespace_NamespaceType_value)
+	proto.RegisterEnum("l3.LinuxStaticArpEntries_ArpEntry_IpFamily_Family", LinuxStaticArpEntries_ArpEntry_IpFamily_Family_name, LinuxStaticArpEntries_ArpEntry_IpFamily_Family_value)
 	proto.RegisterEnum("l3.LinuxStaticArpEntries_ArpEntry_NudState_NudStateType", LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_name, LinuxStaticArpEntries_ArpEntry_NudState_NudStateType_value)
 }

@@ -1009,6 +1009,8 @@ func createLinuxArp(db keyval.ProtoBroker) {
 	linuxArpEntries.ArpEntry[0].HwAddress = "ab:cd:ef:01:02:03"
 	linuxArpEntries.ArpEntry[0].State = new(l32.LinuxStaticArpEntries_ArpEntry_NudState)
 	linuxArpEntries.ArpEntry[0].State.Type = l32.LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT
+	linuxArpEntries.ArpEntry[0].IpFamily = new(l32.LinuxStaticArpEntries_ArpEntry_IpFamily)
+	linuxArpEntries.ArpEntry[0].IpFamily.Family = l32.LinuxStaticArpEntries_ArpEntry_IpFamily_IPV4
 
 	log.Println(linuxArpEntries)
 
