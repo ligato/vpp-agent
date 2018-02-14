@@ -57,18 +57,52 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		return []error{err}
 	}
 
-	// Register default and ethernet interfaces
+	// Register default interface and handle physical interfaces. Other configurable interfaces are added to map for
+	// further processing
 	configurableVppIfs := make(map[uint32]*vppdump.Interface, 0)
 	for vppIfIdx, vppIf := range vppIfs {
-		if vppIfIdx == 0 || vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
+		if vppIfIdx == 0 {
+			// Register default interface (do not add to configurable interfaces)
 			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
 			continue
 		}
-		// fill map of all configurable VPP interfaces (skip default & ethernet interfaces)
+		// Handle physical interfaces
+		if vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
+			var nbIfConfig *intf.Interfaces_Interface
+			var found bool
+			// Look for nb equivalent
+			for _, nbIf := range nbIfs {
+				if nbIf.Type == intf.InterfaceType_ETHERNET_CSMACD && nbIf.Name == vppIf.VPPInternalName {
+					nbIfConfig = nbIf
+					found = true
+					break
+				}
+			}
+			// If interface configuration exists in the NB, call modify to update the device
+			if found {
+				if err = plugin.ModifyVPPInterface(nbIfConfig, &vppIf.Interfaces_Interface); err != nil {
+					plugin.Log.Errorf("Error while modifying physical interface: %v", err)
+					errs = append(errs, err)
+				}
+			} else {
+				// If not, remove configuration from physical device (the device itself cannot be removed)
+				if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
+					plugin.Log.Errorf("Error while removing configuration from physical interface: %v", err)
+					errs = append(errs, err)
+				}
+			}
+			// In both cases, register interface
+			if nbIfConfig == nil {
+				nbIfConfig = &vppIf.Interfaces_Interface
+			}
+			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, nbIfConfig)
+
+		}
+		// Otherwise put to the map of all configurable VPP interfaces (except default & ethernet interfaces)
 		configurableVppIfs[vppIfIdx] = vppIf
 	}
 
-	// Handle case where persistent mapping is not available
+	// Handle case where persistent mapping is not available for configurable interfaces
 	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
 		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
 		// In such a case, there is nothing to correlate with. All existing interfaces will be removed
@@ -137,8 +171,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		// If interface index is not registered yet, remove it
 		_, _, found := plugin.swIfIndexes.LookupName(vppIfIdx)
 		if !found {
-			// To keep interface state consistent, interface has to be
-			// temporary registered before removal
+			// Remove configuration
 			vppAgentIf := &vppIf.Interfaces_Interface
 			vppAgentIf.Name = vppIf.VPPInternalName
 			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)

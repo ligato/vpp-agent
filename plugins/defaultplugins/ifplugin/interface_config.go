@@ -171,7 +171,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		var exists bool
 		if ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name); !exists {
-			return errors.New("it is not yet supported to add (whitelist) a new physical interface")
+			plugin.Log.Warnf("It is not yet supported to add (whitelist) a new physical interface")
+			return nil
 		}
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		var pending bool
@@ -739,7 +740,8 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.DeleteLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
-		return errors.New("it is not yet supported to remove (blacklist) physical interface")
+		plugin.Log.Debugf("Interface removal skipped: cannot remove (blacklist) physical interface") // Not an error
+		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
 	}
