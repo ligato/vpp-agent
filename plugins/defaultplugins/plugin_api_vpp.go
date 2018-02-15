@@ -42,6 +42,10 @@ type API interface {
 	//
 	GetSwIfIndexes() ifaceidx.SwIfIndex
 
+	// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
+	// This mapping is helpful if other plugins need to know about the DHCP configuration given to interface.
+	GetDHCPIndices() ifaceidx.DhcpIndex
+
 	// GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
 	// The mapping consists of the interface (its name), generated index and the BFDSessionMeta with an authentication key
 	// used for the particular session.

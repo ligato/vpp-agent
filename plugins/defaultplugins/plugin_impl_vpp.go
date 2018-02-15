@@ -85,6 +85,7 @@ type Plugin struct {
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	swIfIndexes          ifaceidx.SwIfIndexRW
+	dhcpIndices          ifaceidx.DhcpIndexRW
 	linuxIfIndexes       ifaceLinux.LinuxIfIndex
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -207,6 +208,12 @@ func (plugin *Plugin) DisableResync(keyPrefix ...string) {
 // This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
 func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
 	return plugin.swIfIndexes
+}
+
+// GetDHCPIndices gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
+// This mapping is helpful if other plugins need to know about the DHCP configuration set by VPP.
+func (plugin *Plugin) GetDHCPIndices() ifaceidx.DhcpIndex {
+	return plugin.dhcpIndices
 }
 
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
@@ -411,6 +418,9 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
+	// DHCP indices
+	plugin.dhcpIndices = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
+		"dhcp_indices", ifaceidx.IndexDHCPMetadata))
 
 	// Get pointer to the map with Linux interface indices.
 	if plugin.Linux != nil {
@@ -455,7 +465,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		Linux:        plugin.Linux,
 		Stopwatch:    stopwatch,
 	}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.dhcpIndices, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
