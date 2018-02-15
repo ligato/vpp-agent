@@ -21,13 +21,14 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/utils/safeclose"
-
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/vishvananda/netlink"
+
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin"
@@ -42,9 +43,13 @@ type Plugin struct {
 	Deps
 
 	// interfaces
-	ifIndexes          ifaceidx.LinuxIfIndexRW
-	ifConfigurator     *ifplugin.LinuxInterfaceConfigurator
-	ifIndexesWatchChan chan ifaceidx.LinuxIfIndexDto
+	ifIndexes           ifaceidx.LinuxIfIndexRW
+	ifConfigurator      *ifplugin.LinuxInterfaceConfigurator
+	ifIndexesWatchChan  chan ifaceidx.LinuxIfIndexDto
+	ifLinuxStateUpdater *ifplugin.LinuxInterfaceStateUpdater
+	ifStateChan         chan *ifplugin.LinuxInterfaceStateNotification
+	ifLinuxNotifChan    chan netlink.LinkUpdate
+	ifLinuxDoneChan     chan struct{}
 
 	// ARPs
 	arpIndexes      l3idx.LinuxARPIndexRW
@@ -116,6 +121,7 @@ func (plugin *Plugin) Init() error {
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
+	plugin.ifStateChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.msChan = make(chan *ifplugin.MicroserviceCtx)
@@ -128,7 +134,7 @@ func (plugin *Plugin) Init() error {
 	// Run event handler go routines
 	go plugin.watchEvents(ctx)
 
-	err = plugin.initIF()
+	err = plugin.initIF(ctx)
 	if err != nil {
 		return err
 	}
@@ -142,7 +148,7 @@ func (plugin *Plugin) Init() error {
 }
 
 // Initialize linux interface plugin
-func (plugin *Plugin) initIF() error {
+func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init Linux interface plugin")
 	// Interface indexes
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
@@ -155,7 +161,17 @@ func (plugin *Plugin) initIF() error {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	return plugin.ifConfigurator.Init(plugin.ifIndexes, plugin.msChan)
+	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.ifIndexes, plugin.msChan); err != nil {
+		return err
+	}
+
+	// Linux interface state updater
+	ifStateLogger := plugin.Log.NewLogger("-if-state")
+
+	plugin.ifLinuxNotifChan = make(chan netlink.LinkUpdate, 10)
+	plugin.ifLinuxDoneChan = make(chan struct{})
+	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{Log: ifStateLogger}
+	return plugin.ifLinuxStateUpdater.Init(ctx, plugin.ifIndexes, plugin.ifStateChan, plugin.ifLinuxNotifChan, plugin.ifLinuxDoneChan)
 }
 
 // Initialize linux L3 plugin
@@ -197,11 +213,6 @@ func (plugin *Plugin) initL3() error {
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}
 	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtCachedIndexes)
-}
-
-// AfterInit runs subscribeWatcher
-func (plugin *Plugin) AfterInit() error {
-	return nil
 }
 
 // Close cleans up the resources.
