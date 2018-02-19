@@ -215,10 +215,10 @@ var (
 
 	// veth11DefaultNs is one member of the veth11-veth12 VETH pair, put into the default namespace and NOT attached to VPP.
 	veth11DefaultNs = linux_intf.LinuxInterfaces_Interface{
-		Name:        "veth11",
-		HostIfName:  "veth11",
-		Type:        linux_intf.LinuxInterfaces_VETH,
-		Enabled:     true,
+		Name:       "veth11",
+		HostIfName: "veth11",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
@@ -227,10 +227,10 @@ var (
 
 	// veth11Ns1 is veth11DefaultNs moved to the namespace "ns1".
 	veth11Ns1 = linux_intf.LinuxInterfaces_Interface{
-		Name:        "veth11",
-		HostIfName:  "veth11",
-		Type:        linux_intf.LinuxInterfaces_VETH,
-		Enabled:     true,
+		Name:       "veth11",
+		HostIfName: "veth11",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
@@ -261,15 +261,15 @@ var (
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth11",
 		},
-		Mtu:        1000,
+		Mtu: 1000,
 	}
 
 	// veth21Ns2 is one member of the veth21-veth22 VETH pair, put into the namespace "ns2" and NOT attached to VPP.
 	veth21Ns2 = linux_intf.LinuxInterfaces_Interface{
-		Name:        "veth21",
-		HostIfName:  "veth21",
-		Type:        linux_intf.LinuxInterfaces_VETH,
-		Enabled:     true,
+		Name:       "veth21",
+		HostIfName: "veth21",
+		Type:       linux_intf.LinuxInterfaces_VETH,
+		Enabled:    true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth22",
 		},

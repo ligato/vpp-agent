@@ -705,7 +705,6 @@ func deleteLinuxTap(db keyval.ProtoBroker) {
 	db.Delete(linuxIntf.InterfaceKey(ifs.Interface[0].Name))
 }
 
-
 func createMemif(db keyval.ProtoBroker, ifname string, ipAddr string, master bool) {
 	key := interfaces.InterfaceKey(ifname)
 	iface := interfaces.Interfaces_Interface{
