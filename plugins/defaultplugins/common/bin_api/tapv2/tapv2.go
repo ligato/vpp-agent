@@ -6,10 +6,10 @@ package tapv2
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x64ccbac
+const VlAPIVersion = 0x90a5cd6e
 
 // TapCreateV2 represents the VPP binary API message 'tap_create_v2'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 24:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 18:
 //
 //            "tap_create_v2",
 //            [
@@ -169,7 +169,7 @@ func NewTapCreateV2() api.Message {
 }
 
 // TapCreateV2Reply represents the VPP binary API message 'tap_create_v2_reply'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 143:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 137:
 //
 //            "tap_create_v2_reply",
 //            [
@@ -211,7 +211,7 @@ func NewTapCreateV2Reply() api.Message {
 }
 
 // TapDeleteV2 represents the VPP binary API message 'tap_delete_v2'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 165:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 159:
 //
 //            "tap_delete_v2",
 //            [
@@ -252,7 +252,7 @@ func NewTapDeleteV2() api.Message {
 }
 
 // TapDeleteV2Reply represents the VPP binary API message 'tap_delete_v2_reply'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 187:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 181:
 //
 //            "tap_delete_v2_reply",
 //            [
@@ -289,7 +289,7 @@ func NewTapDeleteV2Reply() api.Message {
 }
 
 // SwInterfaceTapV2Dump represents the VPP binary API message 'sw_interface_tap_v2_dump'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 205:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 199:
 //
 //            "sw_interface_tap_v2_dump",
 //            [
@@ -325,7 +325,7 @@ func NewSwInterfaceTapV2Dump() api.Message {
 }
 
 // SwInterfaceTapV2Details represents the VPP binary API message 'sw_interface_tap_v2_details'.
-// Generated from '/usr/share/vpp/api/tapv2.api.json', line 223:
+// Generated from '/usr/share/vpp/api/tapv2.api.json', line 217:
 //
 //            "sw_interface_tap_v2_details",
 //            [

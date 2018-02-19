@@ -6,10 +6,10 @@ package acl
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x1db2ece9
+const VlAPIVersion = 0x23798edb
 
 // ACLRule represents the VPP binary API data type 'acl_rule'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 836:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 863:
 //
 //            "acl_rule",
 //            [
@@ -94,7 +94,7 @@ func (*ACLRule) GetCrcString() string {
 }
 
 // MacipACLRule represents the VPP binary API data type 'macip_acl_rule'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 896:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 923:
 //
 //            "macip_acl_rule",
 //            [
@@ -145,7 +145,7 @@ func (*MacipACLRule) GetCrcString() string {
 }
 
 // ACLPluginGetVersion represents the VPP binary API message 'acl_plugin_get_version'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 87:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 60:
 //
 //            "acl_plugin_get_version",
 //            [
@@ -181,7 +181,7 @@ func NewACLPluginGetVersion() api.Message {
 }
 
 // ACLPluginGetVersionReply represents the VPP binary API message 'acl_plugin_get_version_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 105:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 78:
 //
 //            "acl_plugin_get_version_reply",
 //            [
@@ -223,7 +223,7 @@ func NewACLPluginGetVersionReply() api.Message {
 }
 
 // ACLPluginControlPing represents the VPP binary API message 'acl_plugin_control_ping'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 127:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 100:
 //
 //            "acl_plugin_control_ping",
 //            [
@@ -259,7 +259,7 @@ func NewACLPluginControlPing() api.Message {
 }
 
 // ACLPluginControlPingReply represents the VPP binary API message 'acl_plugin_control_ping_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 145:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 118:
 //
 //            "acl_plugin_control_ping_reply",
 //            [
@@ -306,7 +306,7 @@ func NewACLPluginControlPingReply() api.Message {
 }
 
 // ACLAddReplace represents the VPP binary API message 'acl_add_replace'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 171:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 144:
 //
 //            "acl_add_replace",
 //            [
@@ -365,7 +365,7 @@ func NewACLAddReplace() api.Message {
 }
 
 // ACLAddReplaceReply represents the VPP binary API message 'acl_add_replace_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 208:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 181:
 //
 //            "acl_add_replace_reply",
 //            [
@@ -407,7 +407,7 @@ func NewACLAddReplaceReply() api.Message {
 }
 
 // ACLDel represents the VPP binary API message 'acl_del'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 230:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 203:
 //
 //            "acl_del",
 //            [
@@ -448,7 +448,7 @@ func NewACLDel() api.Message {
 }
 
 // ACLDelReply represents the VPP binary API message 'acl_del_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 252:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 225:
 //
 //            "acl_del_reply",
 //            [
@@ -485,7 +485,7 @@ func NewACLDelReply() api.Message {
 }
 
 // ACLInterfaceAddDel represents the VPP binary API message 'acl_interface_add_del'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 270:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 243:
 //
 //            "acl_interface_add_del",
 //            [
@@ -541,7 +541,7 @@ func NewACLInterfaceAddDel() api.Message {
 }
 
 // ACLInterfaceAddDelReply represents the VPP binary API message 'acl_interface_add_del_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 304:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 277:
 //
 //            "acl_interface_add_del_reply",
 //            [
@@ -578,7 +578,7 @@ func NewACLInterfaceAddDelReply() api.Message {
 }
 
 // ACLInterfaceSetACLList represents the VPP binary API message 'acl_interface_set_acl_list'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 322:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 295:
 //
 //            "acl_interface_set_acl_list",
 //            [
@@ -636,7 +636,7 @@ func NewACLInterfaceSetACLList() api.Message {
 }
 
 // ACLInterfaceSetACLListReply represents the VPP binary API message 'acl_interface_set_acl_list_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 358:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 331:
 //
 //            "acl_interface_set_acl_list_reply",
 //            [
@@ -673,7 +673,7 @@ func NewACLInterfaceSetACLListReply() api.Message {
 }
 
 // ACLDump represents the VPP binary API message 'acl_dump'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 376:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 349:
 //
 //            "acl_dump",
 //            [
@@ -714,7 +714,7 @@ func NewACLDump() api.Message {
 }
 
 // ACLDetails represents the VPP binary API message 'acl_details'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 398:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 371:
 //
 //            "acl_details",
 //            [
@@ -769,7 +769,7 @@ func NewACLDetails() api.Message {
 }
 
 // ACLInterfaceListDump represents the VPP binary API message 'acl_interface_list_dump'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 431:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 404:
 //
 //            "acl_interface_list_dump",
 //            [
@@ -810,7 +810,7 @@ func NewACLInterfaceListDump() api.Message {
 }
 
 // ACLInterfaceListDetails represents the VPP binary API message 'acl_interface_list_details'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 453:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 426:
 //
 //            "acl_interface_list_details",
 //            [
@@ -864,7 +864,7 @@ func NewACLInterfaceListDetails() api.Message {
 }
 
 // MacipACLAdd represents the VPP binary API message 'macip_acl_add'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 485:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 458:
 //
 //            "macip_acl_add",
 //            [
@@ -918,7 +918,7 @@ func NewMacipACLAdd() api.Message {
 }
 
 // MacipACLAddReply represents the VPP binary API message 'macip_acl_add_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 518:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 491:
 //
 //            "macip_acl_add_reply",
 //            [
@@ -960,7 +960,7 @@ func NewMacipACLAddReply() api.Message {
 }
 
 // MacipACLAddReplace represents the VPP binary API message 'macip_acl_add_replace'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 540:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 513:
 //
 //            "macip_acl_add_replace",
 //            [
@@ -1019,7 +1019,7 @@ func NewMacipACLAddReplace() api.Message {
 }
 
 // MacipACLAddReplaceReply represents the VPP binary API message 'macip_acl_add_replace_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 577:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 550:
 //
 //            "macip_acl_add_replace_reply",
 //            [
@@ -1061,7 +1061,7 @@ func NewMacipACLAddReplaceReply() api.Message {
 }
 
 // MacipACLDel represents the VPP binary API message 'macip_acl_del'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 599:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 572:
 //
 //            "macip_acl_del",
 //            [
@@ -1102,7 +1102,7 @@ func NewMacipACLDel() api.Message {
 }
 
 // MacipACLDelReply represents the VPP binary API message 'macip_acl_del_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 621:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 594:
 //
 //            "macip_acl_del_reply",
 //            [
@@ -1139,7 +1139,7 @@ func NewMacipACLDelReply() api.Message {
 }
 
 // MacipACLInterfaceAddDel represents the VPP binary API message 'macip_acl_interface_add_del'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 639:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 612:
 //
 //            "macip_acl_interface_add_del",
 //            [
@@ -1190,7 +1190,7 @@ func NewMacipACLInterfaceAddDel() api.Message {
 }
 
 // MacipACLInterfaceAddDelReply represents the VPP binary API message 'macip_acl_interface_add_del_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 669:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 642:
 //
 //            "macip_acl_interface_add_del_reply",
 //            [
@@ -1227,7 +1227,7 @@ func NewMacipACLInterfaceAddDelReply() api.Message {
 }
 
 // MacipACLDump represents the VPP binary API message 'macip_acl_dump'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 687:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 660:
 //
 //            "macip_acl_dump",
 //            [
@@ -1268,7 +1268,7 @@ func NewMacipACLDump() api.Message {
 }
 
 // MacipACLDetails represents the VPP binary API message 'macip_acl_details'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 709:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 682:
 //
 //            "macip_acl_details",
 //            [
@@ -1323,7 +1323,7 @@ func NewMacipACLDetails() api.Message {
 }
 
 // MacipACLInterfaceGet represents the VPP binary API message 'macip_acl_interface_get'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 742:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 715:
 //
 //            "macip_acl_interface_get",
 //            [
@@ -1359,7 +1359,7 @@ func NewMacipACLInterfaceGet() api.Message {
 }
 
 // MacipACLInterfaceGetReply represents the VPP binary API message 'macip_acl_interface_get_reply'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 760:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 733:
 //
 //            "macip_acl_interface_get_reply",
 //            [
@@ -1403,7 +1403,7 @@ func NewMacipACLInterfaceGetReply() api.Message {
 }
 
 // MacipACLInterfaceListDump represents the VPP binary API message 'macip_acl_interface_list_dump'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 784:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 757:
 //
 //            "macip_acl_interface_list_dump",
 //            [
@@ -1444,7 +1444,7 @@ func NewMacipACLInterfaceListDump() api.Message {
 }
 
 // MacipACLInterfaceListDetails represents the VPP binary API message 'macip_acl_interface_list_details'.
-// Generated from '/usr/share/vpp/api/acl.api.json', line 806:
+// Generated from '/usr/share/vpp/api/acl.api.json', line 779:
 //
 //            "macip_acl_interface_list_details",
 //            [
@@ -1490,4 +1490,99 @@ func (*MacipACLInterfaceListDetails) GetCrcString() string {
 }
 func NewMacipACLInterfaceListDetails() api.Message {
 	return &MacipACLInterfaceListDetails{}
+}
+
+// ACLInterfaceSetEtypeWhitelist represents the VPP binary API message 'acl_interface_set_etype_whitelist'.
+// Generated from '/usr/share/vpp/api/acl.api.json', line 807:
+//
+//            "acl_interface_set_etype_whitelist",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "count"
+//            ],
+//            [
+//                "u8",
+//                "n_input"
+//            ],
+//            [
+//                "u16",
+//                "whitelist",
+//                0,
+//                "count"
+//            ],
+//            {
+//                "crc": "0xf515efc5"
+//            }
+//
+type ACLInterfaceSetEtypeWhitelist struct {
+	SwIfIndex uint32
+	Count     uint8 `struc:"sizeof=Whitelist"`
+	NInput    uint8
+	Whitelist []uint16
+}
+
+func (*ACLInterfaceSetEtypeWhitelist) GetMessageName() string {
+	return "acl_interface_set_etype_whitelist"
+}
+func (*ACLInterfaceSetEtypeWhitelist) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*ACLInterfaceSetEtypeWhitelist) GetCrcString() string {
+	return "f515efc5"
+}
+func NewACLInterfaceSetEtypeWhitelist() api.Message {
+	return &ACLInterfaceSetEtypeWhitelist{}
+}
+
+// ACLInterfaceSetEtypeWhitelistReply represents the VPP binary API message 'acl_interface_set_etype_whitelist_reply'.
+// Generated from '/usr/share/vpp/api/acl.api.json', line 843:
+//
+//            "acl_interface_set_etype_whitelist_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type ACLInterfaceSetEtypeWhitelistReply struct {
+	Retval int32
+}
+
+func (*ACLInterfaceSetEtypeWhitelistReply) GetMessageName() string {
+	return "acl_interface_set_etype_whitelist_reply"
+}
+func (*ACLInterfaceSetEtypeWhitelistReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*ACLInterfaceSetEtypeWhitelistReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewACLInterfaceSetEtypeWhitelistReply() api.Message {
+	return &ACLInterfaceSetEtypeWhitelistReply{}
 }

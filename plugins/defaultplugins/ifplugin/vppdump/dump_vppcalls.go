@@ -126,6 +126,39 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	return ifs, nil
 }
 
+// DumpMemifSocketDetails dumps memif socket details from the VPP
+func DumpMemifSocketDetails(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]uint32, error) {
+	// MemifSocketFilenameDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	memifSocketMap := make(map[string]uint32)
+
+	reqCtx := vppChan.SendMultiRequest(&memif.MemifSocketFilenameDump{})
+	for {
+		socketDetails := &memif.MemifSocketFilenameDetails{}
+		stop, err := reqCtx.ReceiveReply(socketDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			log.Error(err)
+			return memifSocketMap, err
+		}
+
+		filename := string(bytes.Trim(socketDetails.SocketFilename, "\x00"))
+		memifSocketMap[filename] = socketDetails.SocketID
+	}
+
+	log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
+
+	return memifSocketMap, nil
+}
+
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
 func dumpIPAddressDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
@@ -206,6 +239,12 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		}
 	}()
 
+	// Dump all memif sockets
+	memifSocketMap, err := DumpMemifSocketDetails(log, vppChan, timeLog)
+	if err != nil {
+		return err
+	}
+
 	reqCtx := vppChan.SendMultiRequest(&memif.MemifDump{})
 	for {
 		memifDetails := &memif.MemifDetails{}
@@ -226,9 +265,18 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 			Mode:   memifModetoNB(memifDetails.Mode),
 			Id:     memifDetails.ID,
 			//TODO Secret - not available in the binary API
-			SocketFilename: string(bytes.Trim(memifDetails.SocketFilename, "\x00")),
-			RingSize:       memifDetails.RingSize,
-			BufferSize:     uint32(memifDetails.BufferSize),
+			SocketFilename: func(socketMap map[string]uint32) (filename string) {
+				for filename, id := range socketMap {
+					if memifDetails.SocketID == id {
+						return filename
+					}
+				}
+				// Socket for configured memif should exist
+				log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
+				return
+			}(memifSocketMap),
+			RingSize:   memifDetails.RingSize,
+			BufferSize: uint32(memifDetails.BufferSize),
 			// TODO: RxQueues, TxQueues - not available in the binary API
 		}
 		ifs[memifDetails.SwIfIndex].Type = ifnb.InterfaceType_MEMORY_INTERFACE

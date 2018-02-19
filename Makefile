@@ -126,8 +126,10 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/stn && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
