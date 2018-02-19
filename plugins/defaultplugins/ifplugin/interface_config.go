@@ -55,6 +55,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -75,7 +76,8 @@ type InterfaceConfigurator struct {
 	swIfIndexes ifaceidx.SwIfIndexRW
 	dhcpIndices ifaceidx.DhcpIndexRW
 
-	uIfaceCache map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+	uIfaceCache  map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+	memifScCache map[string]uint32 // memif socket filename/ID cache (all known sockets). Note: do not remove items from the map
 
 	mtu uint32 // default MTU value can be read from config
 
@@ -111,6 +113,12 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, dhcp
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	plugin.uIfaceCache = make(map[string]string)
+	// Obtain registered socket filenames
+	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.Log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
 	plugin.dhcpChan = make(chan govppapi.Message, 1)
 
 	_, err = vppcalls.SubscribeDHCPNotifications(plugin.dhcpChan, plugin.vppCh)
@@ -175,7 +183,11 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	case intf.InterfaceType_TAP_INTERFACE:
 		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, measure.GetTimeLog(tap.TapConnect{}, plugin.Stopwatch))
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh, measure.GetTimeLog(memif.MemifCreate{}, plugin.Stopwatch))
+		id, err := plugin.resolveMemifSocketFilename(iface.Memif)
+		if err != nil {
+			return err
+		}
+		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, id, plugin.vppCh, measure.GetTimeLog(memif.MemifCreate{}, plugin.Stopwatch))
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, iface.Vrf, plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnelReply{}, plugin.Stopwatch))
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
@@ -836,6 +848,26 @@ func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName,
 	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
 
 	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName)
+}
+
+// returns memif socket filename ID. Registers it if does not exists yet
+func (plugin *InterfaceConfigurator) resolveMemifSocketFilename(memifIf *intf.Interfaces_Interface_Memif) (uint32, error) {
+	if memifIf.SocketFilename == "" {
+		return 0, fmt.Errorf("memif configuration does not contain socket file name")
+	}
+	registeredID, ok := plugin.memifScCache[memifIf.SocketFilename]
+	if !ok {
+		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
+		registeredID = uint32(len(plugin.memifScCache))
+		err := vppcalls.RegisterMemifSocketFilename([]byte(memifIf.SocketFilename), registeredID, plugin.vppCh,
+			measure.GetTimeLog(memif.MemifSocketFilenameAddDel{}, plugin.Stopwatch))
+		if err != nil {
+			return 0, fmt.Errorf("error registering socket file name %s (ID %d): %v", memifIf.SocketFilename, registeredID, err)
+		}
+		plugin.memifScCache[memifIf.SocketFilename] = registeredID
+		plugin.Log.Debugf("Memif socket filename %s registered under ID %d", memifIf.SocketFilename, registeredID)
+	}
+	return registeredID, nil
 }
 
 func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {

@@ -26,7 +26,7 @@ import (
 )
 
 // AddMemifInterface calls MemifCreate bin API.
-func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// MemifCreate time measurement
 	start := time.Now()
 	defer func() {
@@ -46,7 +46,7 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, vppChan *govppa
 	}
 	req.Mode = uint8(memIntf.Mode)
 	req.Secret = []byte(memIntf.Secret)
-	req.SocketFilename = []byte(memIntf.SocketFilename)
+	req.SocketID = socketID
 	req.BufferSize = uint16(memIntf.BufferSize)
 	req.RingSize = memIntf.RingSize
 	req.RxQueues = uint8(memIntf.RxQueues)
@@ -98,5 +98,34 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure
 	}
 
 	return nil
+}
 
+// RegisterMemifSocketFilename registers new socket file name with provided ID.
+func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+	// MemifSocketFilenameAddDel time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	// Prepare the message.
+	req := &memif.MemifSocketFilenameAddDel{}
+	req.SocketFilename = filename
+	req.SocketID = id
+	req.IsAdd = 1 // sockets can be added only
+
+	reply := &memif.MemifSocketFilenameAddDelReply{}
+	err := vppChan.SendRequest(req).ReceiveReply(reply)
+
+	if err != nil {
+		return err
+	}
+
+	if 0 != reply.Retval {
+		return fmt.Errorf("add memif socket filename returned %d", reply.Retval)
+	}
+
+	return nil
 }
