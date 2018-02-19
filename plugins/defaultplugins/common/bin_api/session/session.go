@@ -6,10 +6,10 @@ package session
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x26da6a93
+const VlAPIVersion = 0x2d672775
 
 // ApplicationAttach represents the VPP binary API message 'application_attach'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 94:
+// Generated from '/usr/share/vpp/api/session.api.json', line 63:
 //
 //            "application_attach",
 //            [
@@ -67,7 +67,7 @@ func NewApplicationAttach() api.Message {
 }
 
 // ApplicationAttachReply represents the VPP binary API message 'application_attach_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 130:
+// Generated from '/usr/share/vpp/api/session.api.json', line 99:
 //
 //            "application_attach_reply",
 //            [
@@ -125,7 +125,7 @@ func NewApplicationAttachReply() api.Message {
 }
 
 // ApplicationDetach represents the VPP binary API message 'application_detach'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 165:
+// Generated from '/usr/share/vpp/api/session.api.json', line 134:
 //
 //            "application_detach",
 //            [
@@ -161,7 +161,7 @@ func NewApplicationDetach() api.Message {
 }
 
 // ApplicationDetachReply represents the VPP binary API message 'application_detach_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 183:
+// Generated from '/usr/share/vpp/api/session.api.json', line 152:
 //
 //            "application_detach_reply",
 //            [
@@ -198,7 +198,7 @@ func NewApplicationDetachReply() api.Message {
 }
 
 // MapAnotherSegment represents the VPP binary API message 'map_another_segment'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 201:
+// Generated from '/usr/share/vpp/api/session.api.json', line 170:
 //
 //            "map_another_segment",
 //            [
@@ -245,7 +245,7 @@ func NewMapAnotherSegment() api.Message {
 }
 
 // MapAnotherSegmentReply represents the VPP binary API message 'map_another_segment_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 228:
+// Generated from '/usr/share/vpp/api/session.api.json', line 197:
 //
 //            "map_another_segment_reply",
 //            [
@@ -281,8 +281,87 @@ func NewMapAnotherSegmentReply() api.Message {
 	return &MapAnotherSegmentReply{}
 }
 
+// UnmapSegment represents the VPP binary API message 'unmap_segment'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 215:
+//
+//            "unmap_segment",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            {
+//                "crc": "0x15ffd8c6"
+//            }
+//
+type UnmapSegment struct {
+	SegmentName []byte `struc:"[128]byte"`
+}
+
+func (*UnmapSegment) GetMessageName() string {
+	return "unmap_segment"
+}
+func (*UnmapSegment) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*UnmapSegment) GetCrcString() string {
+	return "15ffd8c6"
+}
+func NewUnmapSegment() api.Message {
+	return &UnmapSegment{}
+}
+
+// UnmapSegmentReply represents the VPP binary API message 'unmap_segment_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 238:
+//
+//            "unmap_segment_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type UnmapSegmentReply struct {
+	Retval int32
+}
+
+func (*UnmapSegmentReply) GetMessageName() string {
+	return "unmap_segment_reply"
+}
+func (*UnmapSegmentReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*UnmapSegmentReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewUnmapSegmentReply() api.Message {
+	return &UnmapSegmentReply{}
+}
+
 // BindURI represents the VPP binary API message 'bind_uri'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 246:
+// Generated from '/usr/share/vpp/api/session.api.json', line 256:
 //
 //            "bind_uri",
 //            [
@@ -329,7 +408,7 @@ func NewBindURI() api.Message {
 }
 
 // BindURIReply represents the VPP binary API message 'bind_uri_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 273:
+// Generated from '/usr/share/vpp/api/session.api.json', line 283:
 //
 //            "bind_uri_reply",
 //            [
@@ -366,7 +445,7 @@ func NewBindURIReply() api.Message {
 }
 
 // UnbindURI represents the VPP binary API message 'unbind_uri'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 291:
+// Generated from '/usr/share/vpp/api/session.api.json', line 301:
 //
 //            "unbind_uri",
 //            [
@@ -408,7 +487,7 @@ func NewUnbindURI() api.Message {
 }
 
 // UnbindURIReply represents the VPP binary API message 'unbind_uri_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 314:
+// Generated from '/usr/share/vpp/api/session.api.json', line 324:
 //
 //            "unbind_uri_reply",
 //            [
@@ -445,7 +524,7 @@ func NewUnbindURIReply() api.Message {
 }
 
 // ConnectURI represents the VPP binary API message 'connect_uri'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 332:
+// Generated from '/usr/share/vpp/api/session.api.json', line 342:
 //
 //            "connect_uri",
 //            [
@@ -498,7 +577,7 @@ func NewConnectURI() api.Message {
 }
 
 // ConnectURIReply represents the VPP binary API message 'connect_uri_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 364:
+// Generated from '/usr/share/vpp/api/session.api.json', line 374:
 //
 //            "connect_uri_reply",
 //            [
@@ -535,7 +614,7 @@ func NewConnectURIReply() api.Message {
 }
 
 // AcceptSession represents the VPP binary API message 'accept_session'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 382:
+// Generated from '/usr/share/vpp/api/session.api.json', line 392:
 //
 //            "accept_session",
 //            [
@@ -571,6 +650,10 @@ func NewConnectURIReply() api.Message {
 //                "vpp_event_queue_address"
 //            ],
 //            [
+//                "u64",
+//                "server_event_queue_address"
+//            ],
+//            [
 //                "u16",
 //                "port"
 //            ],
@@ -584,18 +667,19 @@ func NewConnectURIReply() api.Message {
 //                16
 //            ],
 //            {
-//                "crc": "0x44be3d5f"
+//                "crc": "0xbd57a498"
 //            }
 //
 type AcceptSession struct {
-	ListenerHandle       uint64
-	Handle               uint64
-	ServerRxFifo         uint64
-	ServerTxFifo         uint64
-	VppEventQueueAddress uint64
-	Port                 uint16
-	IsIP4                uint8
-	IP                   []byte `struc:"[16]byte"`
+	ListenerHandle          uint64
+	Handle                  uint64
+	ServerRxFifo            uint64
+	ServerTxFifo            uint64
+	VppEventQueueAddress    uint64
+	ServerEventQueueAddress uint64
+	Port                    uint16
+	IsIP4                   uint8
+	IP                      []byte `struc:"[16]byte"`
 }
 
 func (*AcceptSession) GetMessageName() string {
@@ -605,14 +689,14 @@ func (*AcceptSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AcceptSession) GetCrcString() string {
-	return "44be3d5f"
+	return "bd57a498"
 }
 func NewAcceptSession() api.Message {
 	return &AcceptSession{}
 }
 
 // AcceptSessionReply represents the VPP binary API message 'accept_session_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 433:
+// Generated from '/usr/share/vpp/api/session.api.json', line 447:
 //
 //            "accept_session_reply",
 //            [
@@ -654,7 +738,7 @@ func NewAcceptSessionReply() api.Message {
 }
 
 // DisconnectSession represents the VPP binary API message 'disconnect_session'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 455:
+// Generated from '/usr/share/vpp/api/session.api.json', line 469:
 //
 //            "disconnect_session",
 //            [
@@ -695,16 +779,12 @@ func NewDisconnectSession() api.Message {
 }
 
 // DisconnectSessionReply represents the VPP binary API message 'disconnect_session_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 477:
+// Generated from '/usr/share/vpp/api/session.api.json', line 491:
 //
 //            "disconnect_session_reply",
 //            [
 //                "u16",
 //                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
 //            ],
 //            [
 //                "u32",
@@ -719,7 +799,7 @@ func NewDisconnectSession() api.Message {
 //                "handle"
 //            ],
 //            {
-//                "crc": "0xfaf37b87"
+//                "crc": "0xd6960a03"
 //            }
 //
 type DisconnectSessionReply struct {
@@ -731,17 +811,17 @@ func (*DisconnectSessionReply) GetMessageName() string {
 	return "disconnect_session_reply"
 }
 func (*DisconnectSessionReply) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.ReplyMessage
 }
 func (*DisconnectSessionReply) GetCrcString() string {
-	return "faf37b87"
+	return "d6960a03"
 }
 func NewDisconnectSessionReply() api.Message {
 	return &DisconnectSessionReply{}
 }
 
 // ResetSession represents the VPP binary API message 'reset_session'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 503:
+// Generated from '/usr/share/vpp/api/session.api.json', line 513:
 //
 //            "reset_session",
 //            [
@@ -782,7 +862,7 @@ func NewResetSession() api.Message {
 }
 
 // ResetSessionReply represents the VPP binary API message 'reset_session_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 525:
+// Generated from '/usr/share/vpp/api/session.api.json', line 535:
 //
 //            "reset_session_reply",
 //            [
@@ -828,7 +908,7 @@ func NewResetSessionReply() api.Message {
 }
 
 // BindSock represents the VPP binary API message 'bind_sock'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 551:
+// Generated from '/usr/share/vpp/api/session.api.json', line 561:
 //
 //            "bind_sock",
 //            [
@@ -896,7 +976,7 @@ func NewBindSock() api.Message {
 }
 
 // UnbindSock represents the VPP binary API message 'unbind_sock'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 595:
+// Generated from '/usr/share/vpp/api/session.api.json', line 605:
 //
 //            "unbind_sock",
 //            [
@@ -937,7 +1017,7 @@ func NewUnbindSock() api.Message {
 }
 
 // UnbindSockReply represents the VPP binary API message 'unbind_sock_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 617:
+// Generated from '/usr/share/vpp/api/session.api.json', line 627:
 //
 //            "unbind_sock_reply",
 //            [
@@ -974,7 +1054,7 @@ func NewUnbindSockReply() api.Message {
 }
 
 // ConnectSock represents the VPP binary API message 'connect_sock'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 635:
+// Generated from '/usr/share/vpp/api/session.api.json', line 645:
 //
 //            "connect_sock",
 //            [
@@ -1047,7 +1127,7 @@ func NewConnectSock() api.Message {
 }
 
 // ConnectSockReply represents the VPP binary API message 'connect_sock_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 683:
+// Generated from '/usr/share/vpp/api/session.api.json', line 693:
 //
 //            "connect_sock_reply",
 //            [
@@ -1084,7 +1164,7 @@ func NewConnectSockReply() api.Message {
 }
 
 // BindSockReply represents the VPP binary API message 'bind_sock_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 701:
+// Generated from '/usr/share/vpp/api/session.api.json', line 711:
 //
 //            "bind_sock_reply",
 //            [
@@ -1163,7 +1243,7 @@ func NewBindSockReply() api.Message {
 }
 
 // ConnectSession represents the VPP binary API message 'connect_session'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 753:
+// Generated from '/usr/share/vpp/api/session.api.json', line 763:
 //
 //            "connect_session",
 //            [
@@ -1199,7 +1279,7 @@ func NewConnectSession() api.Message {
 }
 
 // ConnectSessionReply represents the VPP binary API message 'connect_session_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 771:
+// Generated from '/usr/share/vpp/api/session.api.json', line 781:
 //
 //            "connect_session_reply",
 //            [
@@ -1231,6 +1311,10 @@ func NewConnectSession() api.Message {
 //                "vpp_event_queue_address"
 //            ],
 //            [
+//                "u64",
+//                "client_event_queue_address"
+//            ],
+//            [
 //                "u32",
 //                "segment_size"
 //            ],
@@ -1257,21 +1341,22 @@ func NewConnectSession() api.Message {
 //                "lcl_port"
 //            ],
 //            {
-//                "crc": "0xda89af27"
+//                "crc": "0xfad9041d"
 //            }
 //
 type ConnectSessionReply struct {
-	Retval               int32
-	Handle               uint64
-	ServerRxFifo         uint64
-	ServerTxFifo         uint64
-	VppEventQueueAddress uint64
-	SegmentSize          uint32
-	SegmentNameLength    uint8
-	SegmentName          []byte `struc:"[128]byte"`
-	LclIP                []byte `struc:"[16]byte"`
-	IsIP4                uint8
-	LclPort              uint16
+	Retval                  int32
+	Handle                  uint64
+	ServerRxFifo            uint64
+	ServerTxFifo            uint64
+	VppEventQueueAddress    uint64
+	ClientEventQueueAddress uint64
+	SegmentSize             uint32
+	SegmentNameLength       uint8
+	SegmentName             []byte `struc:"[128]byte"`
+	LclIP                   []byte `struc:"[16]byte"`
+	IsIP4                   uint8
+	LclPort                 uint16
 }
 
 func (*ConnectSessionReply) GetMessageName() string {
@@ -1281,14 +1366,14 @@ func (*ConnectSessionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ConnectSessionReply) GetCrcString() string {
-	return "da89af27"
+	return "fad9041d"
 }
 func NewConnectSessionReply() api.Message {
 	return &ConnectSessionReply{}
 }
 
 // SessionEnableDisable represents the VPP binary API message 'session_enable_disable'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 831:
+// Generated from '/usr/share/vpp/api/session.api.json', line 845:
 //
 //            "session_enable_disable",
 //            [
@@ -1329,7 +1414,7 @@ func NewSessionEnableDisable() api.Message {
 }
 
 // SessionEnableDisableReply represents the VPP binary API message 'session_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 853:
+// Generated from '/usr/share/vpp/api/session.api.json', line 867:
 //
 //            "session_enable_disable_reply",
 //            [
@@ -1366,7 +1451,7 @@ func NewSessionEnableDisableReply() api.Message {
 }
 
 // AppNamespaceAddDel represents the VPP binary API message 'app_namespace_add_del'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 871:
+// Generated from '/usr/share/vpp/api/session.api.json', line 885:
 //
 //            "app_namespace_add_del",
 //            [
@@ -1433,7 +1518,7 @@ func NewAppNamespaceAddDel() api.Message {
 }
 
 // AppNamespaceAddDelReply represents the VPP binary API message 'app_namespace_add_del_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 914:
+// Generated from '/usr/share/vpp/api/session.api.json', line 928:
 //
 //            "app_namespace_add_del_reply",
 //            [
@@ -1475,7 +1560,7 @@ func NewAppNamespaceAddDelReply() api.Message {
 }
 
 // SessionRuleAddDel represents the VPP binary API message 'session_rule_add_del'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 936:
+// Generated from '/usr/share/vpp/api/session.api.json', line 950:
 //
 //            "session_rule_add_del",
 //            [
@@ -1579,7 +1664,7 @@ func NewSessionRuleAddDel() api.Message {
 }
 
 // SessionRuleAddDelReply represents the VPP binary API message 'session_rule_add_del_reply'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 1009:
+// Generated from '/usr/share/vpp/api/session.api.json', line 1023:
 //
 //            "session_rule_add_del_reply",
 //            [
@@ -1616,7 +1701,7 @@ func NewSessionRuleAddDelReply() api.Message {
 }
 
 // SessionRulesDump represents the VPP binary API message 'session_rules_dump'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 1027:
+// Generated from '/usr/share/vpp/api/session.api.json', line 1041:
 //
 //            "session_rules_dump",
 //            [
@@ -1652,7 +1737,7 @@ func NewSessionRulesDump() api.Message {
 }
 
 // SessionRulesDetails represents the VPP binary API message 'session_rules_details'.
-// Generated from '/usr/share/vpp/api/session.api.json', line 1045:
+// Generated from '/usr/share/vpp/api/session.api.json', line 1059:
 //
 //            "session_rules_details",
 //            [

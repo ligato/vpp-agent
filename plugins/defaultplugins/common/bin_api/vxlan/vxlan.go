@@ -6,10 +6,10 @@ package vxlan
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x7e91f077
+const VlAPIVersion = 0xf1a28701
 
 // VxlanAddDelTunnel represents the VPP binary API message 'vxlan_add_del_tunnel'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 24:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 18:
 //
 //            "vxlan_add_del_tunnel",
 //            [
@@ -31,6 +31,10 @@ const VlAPIVersion = 0x7e91f077
 //            [
 //                "u8",
 //                "is_ipv6"
+//            ],
+//            [
+//                "u32",
+//                "instance"
 //            ],
 //            [
 //                "u8",
@@ -59,12 +63,13 @@ const VlAPIVersion = 0x7e91f077
 //                "vni"
 //            ],
 //            {
-//                "crc": "0xa704db4a"
+//                "crc": "0x00f4bdd0"
 //            }
 //
 type VxlanAddDelTunnel struct {
 	IsAdd          uint8
 	IsIpv6         uint8
+	Instance       uint32
 	SrcAddress     []byte `struc:"[16]byte"`
 	DstAddress     []byte `struc:"[16]byte"`
 	McastSwIfIndex uint32
@@ -80,14 +85,14 @@ func (*VxlanAddDelTunnel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*VxlanAddDelTunnel) GetCrcString() string {
-	return "a704db4a"
+	return "00f4bdd0"
 }
 func NewVxlanAddDelTunnel() api.Message {
 	return &VxlanAddDelTunnel{}
 }
 
 // VxlanAddDelTunnelReply represents the VPP binary API message 'vxlan_add_del_tunnel_reply'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 76:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 74:
 //
 //            "vxlan_add_del_tunnel_reply",
 //            [
@@ -129,7 +134,7 @@ func NewVxlanAddDelTunnelReply() api.Message {
 }
 
 // VxlanTunnelDump represents the VPP binary API message 'vxlan_tunnel_dump'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 98:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 96:
 //
 //            "vxlan_tunnel_dump",
 //            [
@@ -170,7 +175,7 @@ func NewVxlanTunnelDump() api.Message {
 }
 
 // VxlanTunnelDetails represents the VPP binary API message 'vxlan_tunnel_details'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 120:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 118:
 //
 //            "vxlan_tunnel_details",
 //            [
@@ -184,6 +189,10 @@ func NewVxlanTunnelDump() api.Message {
 //            [
 //                "u32",
 //                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "instance"
 //            ],
 //            [
 //                "u8",
@@ -216,11 +225,12 @@ func NewVxlanTunnelDump() api.Message {
 //                "is_ipv6"
 //            ],
 //            {
-//                "crc": "0x024fa31f"
+//                "crc": "0xce38e127"
 //            }
 //
 type VxlanTunnelDetails struct {
 	SwIfIndex      uint32
+	Instance       uint32
 	SrcAddress     []byte `struc:"[16]byte"`
 	DstAddress     []byte `struc:"[16]byte"`
 	McastSwIfIndex uint32
@@ -237,14 +247,14 @@ func (*VxlanTunnelDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*VxlanTunnelDetails) GetCrcString() string {
-	return "024fa31f"
+	return "ce38e127"
 }
 func NewVxlanTunnelDetails() api.Message {
 	return &VxlanTunnelDetails{}
 }
 
 // SwInterfaceSetVxlanBypass represents the VPP binary API message 'sw_interface_set_vxlan_bypass'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 168:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 170:
 //
 //            "sw_interface_set_vxlan_bypass",
 //            [
@@ -295,7 +305,7 @@ func NewSwInterfaceSetVxlanBypass() api.Message {
 }
 
 // SwInterfaceSetVxlanBypassReply represents the VPP binary API message 'sw_interface_set_vxlan_bypass_reply'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 198:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 200:
 //
 //            "sw_interface_set_vxlan_bypass_reply",
 //            [

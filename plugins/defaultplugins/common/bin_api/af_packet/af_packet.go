@@ -6,10 +6,10 @@ package af_packet
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0x8957ca8b
+const VlAPIVersion = 0xd2739d4
 
 // AfPacketCreate represents the VPP binary API message 'af_packet_create'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 23:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 17:
 //
 //            "af_packet_create",
 //            [
@@ -62,7 +62,7 @@ func NewAfPacketCreate() api.Message {
 }
 
 // AfPacketCreateReply represents the VPP binary API message 'af_packet_create_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 55:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 49:
 //
 //            "af_packet_create_reply",
 //            [
@@ -104,7 +104,7 @@ func NewAfPacketCreateReply() api.Message {
 }
 
 // AfPacketDelete represents the VPP binary API message 'af_packet_delete'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 77:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 71:
 //
 //            "af_packet_delete",
 //            [
@@ -146,7 +146,7 @@ func NewAfPacketDelete() api.Message {
 }
 
 // AfPacketDeleteReply represents the VPP binary API message 'af_packet_delete_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 100:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 94:
 //
 //            "af_packet_delete_reply",
 //            [
@@ -183,7 +183,7 @@ func NewAfPacketDeleteReply() api.Message {
 }
 
 // AfPacketSetL4CksumOffload represents the VPP binary API message 'af_packet_set_l4_cksum_offload'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 118:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 112:
 //
 //            "af_packet_set_l4_cksum_offload",
 //            [
@@ -229,7 +229,7 @@ func NewAfPacketSetL4CksumOffload() api.Message {
 }
 
 // AfPacketSetL4CksumOffloadReply represents the VPP binary API message 'af_packet_set_l4_cksum_offload_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 144:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 138:
 //
 //            "af_packet_set_l4_cksum_offload_reply",
 //            [

@@ -6,10 +6,10 @@ package vpe
 import "git.fd.io/govpp.git/api"
 
 // VlApiVersion contains version of the API.
-const VlAPIVersion = 0xe02a02b0
+const VlAPIVersion = 0x28882bcf
 
 // ControlPing represents the VPP binary API message 'control_ping'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 48:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 32:
 //
 //            "control_ping",
 //            [
@@ -45,7 +45,7 @@ func NewControlPing() api.Message {
 }
 
 // ControlPingReply represents the VPP binary API message 'control_ping_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 66:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 50:
 //
 //            "control_ping_reply",
 //            [
@@ -92,7 +92,7 @@ func NewControlPingReply() api.Message {
 }
 
 // Cli represents the VPP binary API message 'cli'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 92:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 76:
 //
 //            "cli",
 //            [
@@ -133,7 +133,7 @@ func NewCli() api.Message {
 }
 
 // CliInband represents the VPP binary API message 'cli_inband'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 114:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 98:
 //
 //            "cli_inband",
 //            [
@@ -181,7 +181,7 @@ func NewCliInband() api.Message {
 }
 
 // CliReply represents the VPP binary API message 'cli_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 142:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 126:
 //
 //            "cli_reply",
 //            [
@@ -223,7 +223,7 @@ func NewCliReply() api.Message {
 }
 
 // CliInbandReply represents the VPP binary API message 'cli_inband_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 164:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 148:
 //
 //            "cli_inband_reply",
 //            [
@@ -272,7 +272,7 @@ func NewCliInbandReply() api.Message {
 }
 
 // GetNodeIndex represents the VPP binary API message 'get_node_index'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 192:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 176:
 //
 //            "get_node_index",
 //            [
@@ -314,7 +314,7 @@ func NewGetNodeIndex() api.Message {
 }
 
 // GetNodeIndexReply represents the VPP binary API message 'get_node_index_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 215:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 199:
 //
 //            "get_node_index_reply",
 //            [
@@ -356,7 +356,7 @@ func NewGetNodeIndexReply() api.Message {
 }
 
 // AddNodeNext represents the VPP binary API message 'add_node_next'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 237:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 221:
 //
 //            "add_node_next",
 //            [
@@ -404,7 +404,7 @@ func NewAddNodeNext() api.Message {
 }
 
 // AddNodeNextReply represents the VPP binary API message 'add_node_next_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 265:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 249:
 //
 //            "add_node_next_reply",
 //            [
@@ -446,7 +446,7 @@ func NewAddNodeNextReply() api.Message {
 }
 
 // ShowVersion represents the VPP binary API message 'show_version'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 287:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 271:
 //
 //            "show_version",
 //            [
@@ -482,7 +482,7 @@ func NewShowVersion() api.Message {
 }
 
 // ShowVersionReply represents the VPP binary API message 'show_version_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 305:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 289:
 //
 //            "show_version_reply",
 //            [
@@ -543,7 +543,7 @@ func NewShowVersionReply() api.Message {
 }
 
 // GetNodeGraph represents the VPP binary API message 'get_node_graph'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 343:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 327:
 //
 //            "get_node_graph",
 //            [
@@ -579,7 +579,7 @@ func NewGetNodeGraph() api.Message {
 }
 
 // GetNodeGraphReply represents the VPP binary API message 'get_node_graph_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 361:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 345:
 //
 //            "get_node_graph_reply",
 //            [
@@ -621,7 +621,7 @@ func NewGetNodeGraphReply() api.Message {
 }
 
 // GetNextIndex represents the VPP binary API message 'get_next_index'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 383:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 367:
 //
 //            "get_next_index",
 //            [
@@ -669,7 +669,7 @@ func NewGetNextIndex() api.Message {
 }
 
 // GetNextIndexReply represents the VPP binary API message 'get_next_index_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 411:
+// Generated from '/usr/share/vpp/api/vpe.api.json', line 395:
 //
 //            "get_next_index_reply",
 //            [
