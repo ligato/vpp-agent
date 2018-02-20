@@ -135,7 +135,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.ifConfigurator.ResolveCreatedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
 				// TODO propagate error
 			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(ifName, hostIfName)
+				plugin.ifConfigurator.ResolveDeletedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
 				// TODO propagate error
 			}
 			linuxIfIdxEv.Done()

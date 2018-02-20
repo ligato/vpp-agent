@@ -48,6 +48,57 @@ func InterfaceAdminUp(ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatc
 	return interfaceSetFlags(ifIdx, true, vppChan)
 }
 
+// SetInterfaceTag registers new interface index/tag pair
+func SetInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
+	// SwInterfaceTagAddDel time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	return handleInterfaceTag(tag, ifIdx, true, vppChan)
+}
+
+// RemoveInterfaceTag un-registers new interface index/tag pair
+func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
+	// SwInterfaceTagAddDel time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	return handleInterfaceTag(tag, ifIdx, false, vppChan)
+}
+
+func handleInterfaceTag(tag string, ifIdx uint32, add bool, vppChan VPPChannel) error {
+	// Prepare the message.
+	req := &interfaces.SwInterfaceTagAddDel{
+		SwIfIndex: ifIdx,
+		Tag:       []byte(tag),
+		IsAdd: func(isAdd bool) uint8 {
+			if isAdd {
+				return 1
+			}
+			return 0
+		}(add),
+	}
+
+	reply := &interfaces.SwInterfaceTagAddDelReply{}
+	err := vppChan.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("interface tag %v (index %v) add/del returned %v", tag, ifIdx, reply.Retval)
+	}
+
+	return nil
+}
+
 func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
 	// Prepare the message.
 	req := &interfaces.SwInterfaceSetFlags{

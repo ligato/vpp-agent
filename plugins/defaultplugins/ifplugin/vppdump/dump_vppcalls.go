@@ -72,6 +72,7 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 		iface := &Interface{
 			VPPInternalName: string(bytes.Trim(ifDetails.InterfaceName, "\x00")),
 			Interfaces_Interface: ifnb.Interfaces_Interface{
+				Name:        string(bytes.Trim(ifDetails.Tag, "\x00")),
 				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
@@ -85,6 +86,7 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 			},
 		}
 		ifs[ifDetails.SwIfIndex] = iface
+		log.Warnf("dumped interface tag: %v (type %v)", iface.Name, iface.Type)
 
 		if iface.Type == ifnb.InterfaceType_AF_PACKET_INTERFACE {
 			err := dumpAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)

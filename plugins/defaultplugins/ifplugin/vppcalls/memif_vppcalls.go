@@ -25,7 +25,8 @@ import (
 )
 
 // AddMemifInterface calls MemifCreate bin API.
-func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+func AddMemifInterface(ifName string, memIntf *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel,
+	timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// MemifCreate time measurement
 	start := time.Now()
 	defer func() {
@@ -67,11 +68,11 @@ func AddMemifInterface(memIntf *intf.Interfaces_Interface_Memif, socketID uint32
 		return 0, fmt.Errorf("add memif interface returned %d", reply.Retval)
 	}
 
-	return reply.SwIfIndex, nil
+	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, timeLog)
 }
 
 // DeleteMemifInterface calls MemifDelete bin API.
-func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func DeleteMemifInterface(ifName string, idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// MemifDelete time measurement
 	start := time.Now()
 	defer func() {
@@ -92,7 +93,7 @@ func DeleteMemifInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure
 		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
 	}
 
-	return nil
+	return RemoveInterfaceTag(ifName, idx, vppChan, timeLog)
 }
 
 // RegisterMemifSocketFilename registers new socket file name with provided ID.
