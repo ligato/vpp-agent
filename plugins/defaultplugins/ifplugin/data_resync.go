@@ -20,9 +20,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/idxvpp/persist"
 	_ "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -52,153 +49,61 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		return []error{err}
 	}
 
-	// Read persistent mapping
-	persistentIfs := nametoidx.NewNameToIdx(plugin.Log, core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
-	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), persistentIfs)
-	if err != nil {
-		return []error{err}
-	}
-
-	// Register default interface and handle physical interfaces. Other configurable interfaces are added to map for
-	// further processing
-	configurableVppIfs := make(map[uint32]*vppdump.Interface, 0)
+	// Iterate over VPP interfaces and try to correlate NB config
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
 			// Register default interface (do not add to configurable interfaces)
 			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
+			plugin.Log.Debug("RESYNC interfaces: registered interface with index 0")
 			continue
 		}
-		// Handle physical interfaces
-		if vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
-			var nbIfConfig *intf.Interfaces_Interface
-			var found bool
-			// Look for nb equivalent
-			for _, nbIf := range nbIfs {
-				if nbIf.Type == intf.InterfaceType_ETHERNET_CSMACD && nbIf.Name == vppIf.VPPInternalName {
-					nbIfConfig = nbIf
-					found = true
-					break
-				}
-			}
-			// If interface configuration exists in the NB, check if modification is required to call
-			if found {
-				if plugin.isIfModified(nbIfConfig, &vppIf.Interfaces_Interface) {
-					if err = plugin.ModifyVPPInterface(nbIfConfig, &vppIf.Interfaces_Interface); err != nil {
-						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
-						errs = append(errs, err)
-					}
-				}
-			} else {
-				// If not, remove configuration from physical device (the device itself cannot be removed)
-				if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
-					plugin.Log.Errorf("Error while removing configuration from physical interface: %v", err)
-					errs = append(errs, err)
-				}
-			}
-			// In both cases, register interface
-			if nbIfConfig == nil {
-				nbIfConfig = &vppIf.Interfaces_Interface
-			}
-			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, nbIfConfig)
-
+		if vppIf.Name == "" {
+			plugin.Log.Warnf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			continue
 		}
-		// Otherwise put to the map of all configurable VPP interfaces (except default & ethernet interfaces)
-		configurableVppIfs[vppIfIdx] = vppIf
-	}
-
-	// Handle case where persistent mapping is not available for configurable interfaces
-	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
-		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
-		// Try correlate interfaces heuristically
-		for vppIfIdx, vppIf := range configurableVppIfs {
-			// Look for simillar NB config
-			correlatedNb := plugin.correlateInterfaces(nbIfs, vppIf)
-			if correlatedNb != nil {
-				if plugin.isIfModified(correlatedNb, &vppIf.Interfaces_Interface) {
-					if err = plugin.ModifyVPPInterface(correlatedNb, &vppIf.Interfaces_Interface); err != nil {
-						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
-						errs = append(errs, err)
-					}
-				}
-			} else {
-				// VPP interface cannot be correlated and will be removed.
-				vppAgentIf := &vppIf.Interfaces_Interface
-				vppAgentIf.Name = vppIf.VPPInternalName
-				if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-					plugin.Log.Errorf("Error while removing interface: %v", err)
-					errs = append(errs, err)
-				}
-			}
-		}
-		// Configure all new and un-correlated interfaces
+		var correlated bool
 		for _, nbIf := range nbIfs {
-			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.Log.Errorf("Error while configuring interface: %v", err)
-				errs = append(errs, err)
-			}
-		}
-		return
-	}
-
-	// Find correlation between VPP, ETCD NB and persistent mapping. Update existing interfaces
-	// and configure new ones
-	plugin.Log.Debugf("Using persistent mapping to resync %v interfaces", len(configurableVppIfs))
-	for _, nbIf := range nbIfs {
-		persistIdx, _, found := persistentIfs.LookupIdx(nbIf.Name)
-		if found {
-			// last interface ID is known. Let's verify that there is an interface
-			// with the same ID on the vpp
-			var ifPresent bool
-			var ifVppData *intf.Interfaces_Interface
-			for vppIfIdx, vppIf := range configurableVppIfs {
-				// Check at least interface type
-				if vppIfIdx == persistIdx && vppIf.Type == nbIf.Type {
-					ifPresent = true
-					ifVppData = &vppIf.Interfaces_Interface
-				}
-			}
-			if ifPresent && ifVppData != nil {
-				// Interface exists on the vpp. Agent assumes that the configured interface
-				// correlates with the NB one (needs to be registered manually)
-				plugin.swIfIndexes.RegisterName(nbIf.Name, persistIdx, nbIf)
-				plugin.Log.Debugf("Registered existing interface %v with index %v", nbIf.Name, persistIdx)
-				// Calculate diff to evaluate whether the diff is needed
-				if plugin.isIfModified(nbIf, ifVppData) {
-					if err := plugin.ModifyVPPInterface(nbIf, ifVppData); err != nil {
-						plugin.Log.Errorf("Error while modifying interface: %v", err)
+			if vppIf.Name == nbIf.Name {
+				correlated = true
+				// Calculate whether modification is needed
+				if plugin.isIfModified(nbIf, &vppIf.Interfaces_Interface) {
+					plugin.Log.Debugf("RESYNC interfaces: %v changed and will be modified", vppIf.Name)
+					if err = plugin.ModifyVPPInterface(nbIf, &vppIf.Interfaces_Interface); err != nil {
+						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
 						errs = append(errs, err)
 					}
 				}
-			} else {
-				// Interface exists in mapping but not in vpp.
-				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-					plugin.Log.Errorf("Error while configuring interface: %v", err)
-					errs = append(errs, err)
-				}
+				// Register interface
+				plugin.swIfIndexes.RegisterName(vppIf.Name, vppIfIdx, nbIf)
+				plugin.Log.Debugf("RESYNC interfaces: registered interface %s with index %d", nbIf.Name, vppIfIdx)
 			}
-		} else {
-			// a new interface (missing in persistent mapping)
+		}
+		if !correlated {
+			// VPP interface is obsolete and will be removed (un-configured if physical interface)
+			plugin.Log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
+			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
+				plugin.Log.Errorf("Error while removing configuration from physical interface: %v", err)
+				errs = append(errs, err)
+			}
+			// Also if it is a physical device, register it
+			if vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
+				plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
+				plugin.Log.Debugf("RESYNC interfaces: registered physical interface %s with index %d", vppIf.VPPInternalName, vppIfIdx)
+			}
+
+		}
+	}
+
+	// Last step is to configure all new interfaces
+	for _, nbIf := range nbIfs {
+		// If interface is registered, it was already handled
+		_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
+		if !found {
+			plugin.Log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
 				plugin.Log.Errorf("Error while configuring interface: %v", err)
 				errs = append(errs, err)
 			}
-		}
-	}
-
-	// Remove obsolete config
-	for vppIfIdx, vppIf := range configurableVppIfs {
-		// If interface index is not registered yet, remove it
-		_, _, found := plugin.swIfIndexes.LookupName(vppIfIdx)
-		if !found {
-			// Remove configuration
-			vppAgentIf := &vppIf.Interfaces_Interface
-			vppAgentIf.Name = vppIf.VPPInternalName
-			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
-			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-				plugin.Log.Errorf("Error while removing interface: %v", err)
-				errs = append(errs, err)
-			}
-			plugin.Log.Debugf("Removed unknown interface with index %v", vppIfIdx)
 		}
 	}
 
@@ -694,52 +599,6 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			plugin.Log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}
-}
-
-// Try to parse existing VPP interface with provided set of NB interfaces. If interfaces are the same type,
-// two parameters are compared:
-//	1. If both interfaces contain the same set of IP addresses, they are considered equal and will be correlated
-//  2. If first condition is false, compare MAC addresses; if both interfaces have the same MAC address,
-//     they will be also considered as correlated
-// Otherwise interfrace cannot be parsed and will be recreated
-func (plugin *InterfaceConfigurator) correlateInterfaces(nbIfs []*intf.Interfaces_Interface, vppIf *vppdump.Interface) *intf.Interfaces_Interface {
-	// find the best match
-	for nbIfIdx, nbIf := range nbIfs {
-		if nbIf.Type != vppIf.Type {
-			continue
-		}
-		// First attempt: match IP address
-		if len(nbIf.IpAddresses) == len(vppIf.IpAddresses) {
-			ipMatch := func(nbIPs, vppIPs []string) bool {
-				for _, nbIP := range nbIPs {
-					var ipFound bool
-					for _, vppIP := range vppIPs {
-						if nbIP == vppIP {
-							ipFound = true
-							break
-						}
-					}
-					if !ipFound {
-						return false
-					}
-				}
-				return true
-			}(nbIf.IpAddresses, vppIf.IpAddresses)
-			if ipMatch {
-				// Remove NB config (so agent knows it was already used)
-				nbIfs = append(nbIfs[:nbIfIdx], nbIfs[nbIfIdx+1:]...)
-				return nbIf
-			}
-		}
-		// Second attempt: match MAC
-		if nbIf.PhysAddress == vppIf.PhysAddress {
-			// Remove NB config (so agent knows it was already used)
-			nbIfs = append(nbIfs[:nbIfIdx], nbIfs[nbIfIdx+1:]...)
-			return nbIf
-		}
-	}
-
-	return nil
 }
 
 // Compares two interfaces. If there is any difference, returns true, false otherwise
