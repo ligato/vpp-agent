@@ -34,6 +34,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
 
+// Default VPP MTU value
+const defaultVPPMtu = 9216
+
 // Interface is the wrapper structure for the interface northbound API structure.
 type Interface struct {
 	VPPInternalName string `json:"vpp_internal_name"`
@@ -72,6 +75,13 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
+				Mtu: func(vppMtu uint16) uint32 {
+					// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
+					if vppMtu == defaultVPPMtu {
+						return 0
+					}
+					return uint32(vppMtu)
+				}(ifDetails.LinkMtu),
 			},
 		}
 		ifs[ifDetails.SwIfIndex] = iface

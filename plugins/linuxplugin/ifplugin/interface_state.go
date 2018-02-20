@@ -74,9 +74,7 @@ func (plugin *LinuxInterfaceStateUpdater) Close() error {
 func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 	if !plugin.stateWatcherRunning {
 		plugin.stateWatcherRunning = true
-		err := netlink.LinkSubscribeWithOptions(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh, netlink.LinkSubscribeOptions{
-			ListExisting: true,
-		})
+		err := netlink.LinkSubscribe(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
 		if err != nil {
 			return err
 		}
@@ -86,7 +84,7 @@ func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 
 // Watch linux interfaces and send events to processing
 func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
-	plugin.Log.Warnf("Watching on linux link notifications")
+	plugin.Log.Debugf("Watching on linux link notifications")
 
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()

@@ -17,16 +17,18 @@
 package linuxcalls
 
 import (
+	"bytes"
 	"net"
 
 	"time"
 
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
 // AddInterfaceIP calls AddrAdd Netlink API.
-func AddInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
+func AddInterfaceIP(log logging.Logger, ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -38,6 +40,20 @@ func AddInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEnt
 	if err != nil {
 		return err
 	}
+
+	exAddrList, err := netlink.AddrList(link, netlink.FAMILY_ALL)
+	if err != nil {
+		return err
+	}
+
+	// The check is basically because of link local addresses which sometimes cannot be reassigned
+	for _, exAddr := range exAddrList {
+		if bytes.Compare(exAddr.IP, addr.IP) == 0 {
+			log.Debugf("Cannot assign %v to interface %v, IP already exists", addr.IP.String(), ifName)
+			return nil
+		}
+	}
+
 	address := &netlink.Addr{IPNet: addr}
 	return netlink.AddrAdd(link, address)
 }

@@ -15,8 +15,10 @@
 package ifplugin
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -78,11 +80,13 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 					break
 				}
 			}
-			// If interface configuration exists in the NB, call modify to update the device
+			// If interface configuration exists in the NB, check if modification is required to call
 			if found {
-				if err = plugin.ModifyVPPInterface(nbIfConfig, &vppIf.Interfaces_Interface); err != nil {
-					plugin.Log.Errorf("Error while modifying physical interface: %v", err)
-					errs = append(errs, err)
+				if plugin.isIfModified(nbIfConfig, &vppIf.Interfaces_Interface) {
+					if err = plugin.ModifyVPPInterface(nbIfConfig, &vppIf.Interfaces_Interface); err != nil {
+						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
+						errs = append(errs, err)
+					}
 				}
 			} else {
 				// If not, remove configuration from physical device (the device itself cannot be removed)
@@ -105,18 +109,28 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	// Handle case where persistent mapping is not available for configurable interfaces
 	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
 		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
-		// In such a case, there is nothing to correlate with. All existing interfaces will be removed
+		// Try correlate interfaces heuristically
 		for vppIfIdx, vppIf := range configurableVppIfs {
-			// register interface before deletion (to keep state consistent)
-			vppAgentIf := &vppIf.Interfaces_Interface
-			vppAgentIf.Name = vppIf.VPPInternalName
-			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
-			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-				plugin.Log.Errorf("Error while removing interface: %v", err)
-				errs = append(errs, err)
+			// Look for simillar NB config
+			correlatedNb := plugin.correlateInterfaces(nbIfs, vppIf)
+			if correlatedNb != nil {
+				if plugin.isIfModified(correlatedNb, &vppIf.Interfaces_Interface) {
+					if err = plugin.ModifyVPPInterface(correlatedNb, &vppIf.Interfaces_Interface); err != nil {
+						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
+						errs = append(errs, err)
+					}
+				}
+			} else {
+				// VPP interface cannot be correlated and will be removed.
+				vppAgentIf := &vppIf.Interfaces_Interface
+				vppAgentIf.Name = vppIf.VPPInternalName
+				if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
+					plugin.Log.Errorf("Error while removing interface: %v", err)
+					errs = append(errs, err)
+				}
 			}
 		}
-		// Configure NB interfaces
+		// Configure all new and un-correlated interfaces
 		for _, nbIf := range nbIfs {
 			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
 				plugin.Log.Errorf("Error while configuring interface: %v", err)
@@ -144,12 +158,17 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 				}
 			}
 			if ifPresent && ifVppData != nil {
-				// Interface exists on the vpp. Agent assumes that the the configured interface
+				// Interface exists on the vpp. Agent assumes that the configured interface
 				// correlates with the NB one (needs to be registered manually)
 				plugin.swIfIndexes.RegisterName(nbIf.Name, persistIdx, nbIf)
 				plugin.Log.Debugf("Registered existing interface %v with index %v", nbIf.Name, persistIdx)
-				// todo calculate diff before modifying
-				plugin.ModifyVPPInterface(nbIf, ifVppData)
+				// Calculate diff to evaluate whether the diff is needed
+				if plugin.isIfModified(nbIf, ifVppData) {
+					if err := plugin.ModifyVPPInterface(nbIf, ifVppData); err != nil {
+						plugin.Log.Errorf("Error while modifying interface: %v", err)
+						errs = append(errs, err)
+					}
+				}
 			} else {
 				// Interface exists in mapping but not in vpp.
 				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
@@ -675,4 +694,190 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			plugin.Log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}
+}
+
+// Try to parse existing VPP interface with provided set of NB interfaces. If interfaces are the same type,
+// two parameters are compared:
+//	1. If both interfaces contain the same set of IP addresses, they are considered equal and will be correlated
+//  2. If first condition is false, compare MAC addresses; if both interfaces have the same MAC address,
+//     they will be also considered as correlated
+// Otherwise interfrace cannot be parsed and will be recreated
+func (plugin *InterfaceConfigurator) correlateInterfaces(nbIfs []*intf.Interfaces_Interface, vppIf *vppdump.Interface) *intf.Interfaces_Interface {
+	// find the best match
+	for nbIfIdx, nbIf := range nbIfs {
+		if nbIf.Type != vppIf.Type {
+			continue
+		}
+		// First attempt: match IP address
+		if len(nbIf.IpAddresses) == len(vppIf.IpAddresses) {
+			ipMatch := func(nbIPs, vppIPs []string) bool {
+				for _, nbIP := range nbIPs {
+					var ipFound bool
+					for _, vppIP := range vppIPs {
+						if nbIP == vppIP {
+							ipFound = true
+							break
+						}
+					}
+					if !ipFound {
+						return false
+					}
+				}
+				return true
+			}(nbIf.IpAddresses, vppIf.IpAddresses)
+			if ipMatch {
+				// Remove NB config (so agent knows it was already used)
+				nbIfs = append(nbIfs[:nbIfIdx], nbIfs[nbIfIdx+1:]...)
+				return nbIf
+			}
+		}
+		// Second attempt: match MAC
+		if nbIf.PhysAddress == vppIf.PhysAddress {
+			// Remove NB config (so agent knows it was already used)
+			nbIfs = append(nbIfs[:nbIfIdx], nbIfs[nbIfIdx+1:]...)
+			return nbIf
+		}
+	}
+
+	return nil
+}
+
+// Compares two interfaces. If there is any difference, returns true, false otherwise
+func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) (isModified bool) {
+	isModified = true
+
+	// Type
+	if nbIf.Type != vppIf.Type {
+		return isModified
+	}
+	// Enabled, VRF, container IP
+	if nbIf.Enabled != vppIf.Enabled || nbIf.Vrf != vppIf.Vrf || nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
+		return isModified
+	}
+	// DHCP, MTU.
+	if nbIf.SetDhcpClient != vppIf.SetDhcpClient || nbIf.Mtu != vppIf.Mtu {
+		return isModified
+	}
+	// MAC address (compare only if it is set in the NB)
+	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
+		return isModified
+	}
+	// IP address count. First, remove IPv6 link local addresses
+	for ipIdx, ipAddress := range vppIf.IpAddresses {
+		if strings.HasPrefix(ipAddress, "fe80") {
+			vppIf.IpAddresses = append(vppIf.IpAddresses[:ipIdx], vppIf.IpAddresses[ipIdx+1:]...)
+		}
+	}
+	if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
+		return isModified
+	}
+	// Value of IP addresses
+	for _, nbIP := range nbIf.IpAddresses {
+		// For every IP there has to be a match
+		var match bool
+		for _, vppIP := range vppIf.IpAddresses {
+			pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
+			if err != nil {
+				plugin.Log.Error(err)
+				continue
+			}
+			pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
+			if err != nil {
+				plugin.Log.Error(err)
+				continue
+			}
+			if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
+				match = true
+				break
+			}
+		}
+		if !match {
+			return isModified
+		}
+	}
+	// RxMode settings
+	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
+		return isModified
+	}
+	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
+		// RxMode fields
+		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode || nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID ||
+			nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
+			return isModified
+
+		}
+	}
+	// Unnumbered settings
+	if nbIf.Unnumbered == nil && vppIf.Unnumbered != nil || nbIf.Unnumbered != nil && vppIf.Unnumbered == nil {
+		return isModified
+	}
+	if nbIf.Unnumbered != nil && vppIf.Unnumbered != nil {
+		// Unnumbered fields
+		if nbIf.Unnumbered.IsUnnumbered != vppIf.Unnumbered.IsUnnumbered || nbIf.Unnumbered.InterfaceWithIP != nbIf.Unnumbered.InterfaceWithIP {
+			return isModified
+		}
+	}
+
+	switch nbIf.Type {
+	case intf.InterfaceType_AF_PACKET_INTERFACE:
+		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
+			return isModified
+		}
+		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
+			// AF-packet host name
+			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
+				return isModified
+			}
+		}
+	case intf.InterfaceType_MEMORY_INTERFACE:
+		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
+			return isModified
+		}
+		if nbIf.Memif != nil && vppIf.Memif != nil {
+			// Memif ID and socket
+			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename || nbIf.Memif.Id != vppIf.Memif.Id {
+				return isModified
+			}
+			// Master, mode
+			if nbIf.Memif.Master != vppIf.Memif.Master || nbIf.Memif.Mode != vppIf.Memif.Mode {
+				return isModified
+			}
+			// Rx & Tx queues
+			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues || nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
+				return isModified
+			}
+			// todo secret, buffer size and ring size is not compared VPP always returns 0 for buffer size
+			// and 1 for ring size. Secret cannot be dumped at all
+		}
+	case intf.InterfaceType_TAP_INTERFACE:
+		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
+			return isModified
+		}
+		if nbIf.Tap != nil && vppIf.Tap != nil {
+			// Tap version
+			if nbIf.Tap.Version == 2 && nbIf.Tap != vppIf.Tap {
+				return isModified
+			}
+			// Namespace and host name
+			if nbIf.Tap.Namespace != vppIf.Tap.Namespace || nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
+				return isModified
+			}
+			// Tx & Rx ring size
+			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize || nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
+				return isModified
+			}
+		}
+	case intf.InterfaceType_VXLAN_TUNNEL:
+		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
+			return isModified
+		}
+		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
+			// VxLAN fields
+			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni || nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress || nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
+				return isModified
+			}
+		}
+	}
+	isModified = false
+	return
 }

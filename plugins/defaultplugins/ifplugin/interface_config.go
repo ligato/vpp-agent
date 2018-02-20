@@ -183,7 +183,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	case intf.InterfaceType_TAP_INTERFACE:
 		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, measure.GetTimeLog(tap.TapConnect{}, plugin.Stopwatch))
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		id, err := plugin.resolveMemifSocketFilename(iface.Memif)
+		var id uint32 // Memif socket id
+		id, err = plugin.resolveMemifSocketFilename(iface.Memif)
 		if err != nil {
 			return err
 		}
