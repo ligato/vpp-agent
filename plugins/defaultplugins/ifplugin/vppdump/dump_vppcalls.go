@@ -85,8 +85,11 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 				}(ifDetails.LinkMtu),
 			},
 		}
+		// Fill name for physical interfaces (they are mostly without tag)
+		if iface.Type == ifnb.InterfaceType_ETHERNET_CSMACD {
+			iface.Name = iface.VPPInternalName
+		}
 		ifs[ifDetails.SwIfIndex] = iface
-		log.Debugf("interface dump received tag %v (interface type %v)", iface.Name, iface.Type)
 
 		if iface.Type == ifnb.InterfaceType_AF_PACKET_INTERFACE {
 			err := dumpAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)

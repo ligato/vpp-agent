@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	_ "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -29,11 +31,18 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 )
 
-// Resync writes interfaces to the VPP
-//
-// - resyncs the VPP
-// - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
-// - deletes obsolate status data
+const ifTempName = "temp-if-name"
+
+// Resync writes interfaces to the VPP. VPP interfaces are usually configured with tag, which corresponds with interface
+// name (exceptions are physical devices, but their name is always equal to vpp internal name). Resync consists of
+// following steps:
+// 1. Dump all VPP interfaces
+// 2. Every VPP interface looks for NB counterpart using tag (name). If found, it is calculated whether modification is
+//    needed. Otherwise, the interface is only registered. If interface does not contain tag, it is stored for now and
+//    resolved later. Tagged interfaces without NB config are removed.
+// 3. Untagged interfaces are correlated heuristically (mac address, ip addresses, unnumbered configuration). If correlation
+//    is found, interface is modified if needed and registered.
+// 4. All remaining NB interfaces are configured
 func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 	// Calculate and log interface resync
@@ -49,54 +58,108 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		return []error{err}
 	}
 
+	// Cache for untagged interfaces
+	unnamedVppIfs := make(map[uint32]*intf.Interfaces_Interface)
+
 	// Iterate over VPP interfaces and try to correlate NB config
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
-			// Register default interface (do not add to configurable interfaces)
-			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
-			plugin.Log.Debug("RESYNC interfaces: registered interface with index 0")
+			// Register interface before removal (to keep state consistent)
+			if err := plugin.registerInterface(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+				errs = append(errs, err)
+			}
 			continue
 		}
 		if vppIf.Name == "" {
-			plugin.Log.Warnf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			// If interface has no name, it is stored as unnamed and resolved later
+			plugin.Log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			unnamedVppIfs[vppIfIdx] = &vppIf.Interfaces_Interface
 			continue
 		}
 		var correlated bool
 		for _, nbIf := range nbIfs {
 			if vppIf.Name == nbIf.Name {
 				correlated = true
+				// Register interface to mapping and VPP tag/index
+				if err := plugin.registerInterface(vppIf.Name, vppIfIdx, nbIf); err != nil {
+					errs = append(errs, err)
+				}
 				// Calculate whether modification is needed
 				if plugin.isIfModified(nbIf, &vppIf.Interfaces_Interface) {
-					plugin.Log.Debugf("RESYNC interfaces: %v changed and will be modified", vppIf.Name)
+					plugin.Log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Name)
 					if err = plugin.ModifyVPPInterface(nbIf, &vppIf.Interfaces_Interface); err != nil {
-						plugin.Log.Errorf("Error while modifying physical interface: %v", err)
+						plugin.Log.Errorf("Error while modifying interface: %v", err)
 						errs = append(errs, err)
 					}
+				} else {
+					plugin.Log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Name)
 				}
-				// Register interface
-				plugin.swIfIndexes.RegisterName(vppIf.Name, vppIfIdx, nbIf)
-				plugin.Log.Debugf("RESYNC interfaces: registered interface %s with index %d", nbIf.Name, vppIfIdx)
+				break
 			}
 		}
 		if !correlated {
-			// VPP interface is obsolete and will be removed (un-configured if physical interface)
-			plugin.Log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
-			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
-				plugin.Log.Errorf("Error while removing configuration from physical interface: %v", err)
+			// Register interface before removal (to keep state consistent)
+			if err := plugin.registerInterface(vppIf.Name, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
 				errs = append(errs, err)
 			}
-			// Also if it is a physical device, register it
-			if vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
-				plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
-				plugin.Log.Debugf("RESYNC interfaces: registered physical interface %s with index %d", vppIf.VPPInternalName, vppIfIdx)
+			// VPP interface is obsolete and will be removed (un-configured if physical device)
+			plugin.Log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
+			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
+				plugin.Log.Errorf("Error while removing interface: %v", err)
+				errs = append(errs, err)
 			}
-
 		}
 	}
 
-	// Last step is to configure all new interfaces
+	// Now resolve untagged interfaces
+	for vppIfIdx, vppIf := range unnamedVppIfs {
+		// Try to find NB config which is not registered and correlates with VPP interface
+		var correlatedIf *intf.Interfaces_Interface
+		for _, nbIf := range nbIfs {
+			// Already registered interfaces cannot be correlated again
+			_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
+			if found {
+				continue
+			}
+			// Try to correlate heuristically
+			correlatedIf = plugin.correlateInterface(vppIf, nbIf)
+			if correlatedIf != nil {
+				break
+			}
+		}
+
+		if correlatedIf != nil {
+			// Register interface
+			if err := plugin.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
+				errs = append(errs, err)
+			}
+			// Calculate whether modification is needed
+			if plugin.isIfModified(correlatedIf, vppIf) {
+				plugin.Log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
+				if err = plugin.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
+					plugin.Log.Errorf("Error while modifying correlated interface: %v", err)
+					errs = append(errs, err)
+				}
+			} else {
+				plugin.Log.Debugf("RESYNC interfaces: correlated %v registered without additional changes", vppIf.Name)
+			}
+		} else {
+			// Register interface  with temporary name (will be unregistered during removal)
+			if err := plugin.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
+				errs = append(errs, err)
+			}
+			// VPP interface cannot be correlated and will be removed
+			plugin.Log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
+			if err = plugin.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
+				plugin.Log.Errorf("Error while removing interface: %v", err)
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	// Last step is to configure all new (not-yet-registered) interfaces
 	for _, nbIf := range nbIfs {
-		// If interface is registered, it was already handled
+		// If interface is registered, it was already processed
 		_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
 		if !found {
 			plugin.Log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
@@ -601,6 +664,59 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 	}
 }
 
+// Correlate interfaces according to MAC address, interface addresses or unnumbered configuration
+func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
+	// Correlate MAC address
+	if nbIf.PhysAddress != "" {
+		if nbIf.PhysAddress == vppIf.PhysAddress {
+			return nbIf
+		}
+	}
+	// Correlate IP addresses
+	if len(nbIf.IpAddresses) == len(vppIf.IpAddresses) {
+		ipMatch := true
+
+	ipComparison:
+		for _, nbIP := range nbIf.IpAddresses {
+			var ipFound bool
+			for _, vppIP := range vppIf.IpAddresses {
+				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
+					ipFound = true
+					break
+				}
+			}
+			if !ipFound {
+				// Break comparison if there is mismatch
+				ipMatch = false
+				break ipComparison
+			}
+		}
+
+		if ipMatch {
+			return nbIf
+		}
+	}
+	// Correlate unnumbered interface
+	if nbIf.Unnumbered != nil && vppIf.Unnumbered != nil {
+		if nbIf.Unnumbered.IsUnnumbered && vppIf.Unnumbered.IsUnnumbered && nbIf.Unnumbered.InterfaceWithIP == vppIf.Unnumbered.InterfaceWithIP {
+			return nbIf
+		}
+	}
+
+	// Otherwise there is no match between interfaces
+	return nil
+}
+
 // Compares two interfaces. If there is any difference, returns true, false otherwise
 func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
 	// Type
@@ -738,4 +854,15 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 
 	// At last, return false if interfaces are equal
 	return false
+}
+
+// Register interface to mapping and add tag/index to the VPP
+func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
+	plugin.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
+	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh,
+		measure.GetTimeLog(interfaces.SwInterfaceTagAddDel{}, plugin.Stopwatch)); err != nil {
+		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
+	}
+	plugin.Log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
+	return nil
 }

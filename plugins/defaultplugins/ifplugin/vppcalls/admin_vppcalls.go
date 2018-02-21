@@ -77,8 +77,15 @@ func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, timeLog me
 func handleInterfaceTag(tag string, ifIdx uint32, add bool, vppChan VPPChannel) error {
 	// Prepare the message.
 	req := &interfaces.SwInterfaceTagAddDel{
-		SwIfIndex: ifIdx,
-		Tag:       []byte(tag),
+		// For some reason, if deleting tag, the software interface index has to be 0 and only name should be set.
+		// Otherwise reply returns with error core -2 (incorrect sw_if_idx)
+		SwIfIndex: func(idx uint32, isAdd bool) uint32 {
+			if isAdd {
+				return ifIdx
+			}
+			return 0
+		}(ifIdx, add),
+		Tag: []byte(tag),
 		IsAdd: func(isAdd bool) uint8 {
 			if isAdd {
 				return 1
