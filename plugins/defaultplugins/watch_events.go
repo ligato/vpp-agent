@@ -95,6 +95,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case ifIdxEv := <-plugin.ifIdxWatchCh:
 			if !ifIdxEv.IsDelete() {
 				// Keep order.
+				plugin.aclConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.arpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
@@ -108,6 +109,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.routeConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			} else {
+				plugin.aclConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.arpConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
 				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {

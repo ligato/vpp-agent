@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
@@ -36,6 +36,21 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+// Interface attribute according to the configuration
+const (
+	INGRESS = "ingress"
+	EGRESS  = "egress"
+	L2      = "l2"
+)
+
+// ACLIfCacheEntry contains info about interface, aclID and whether it is MAC IP address. Used as a cache for missing
+// interfaces while configuring ACL
+type ACLIfCacheEntry struct {
+	ifName string
+	aclID  uint32
+	ifAttr string
+}
+
 // ACLConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of ACLs as modelled by the proto file "../model/acl/acl.proto" and stored
 // in ETCD under the key "/vnf-agent/{agent-label}/vpp/config/v1/acl/". Updates received from the northbound API
@@ -43,10 +58,12 @@ import (
 type ACLConfigurator struct {
 	Log            logging.Logger
 	GoVppmux       govppmux.API
-	ACLL3L4Indexes idxvpp.NameToIdxRW
-	ACLL2Indexes   idxvpp.NameToIdxRW // mapping for L2 ACLs
+	ACLL3L4Indexes aclidx.AclIndexRW
+	ACLL2Indexes   aclidx.AclIndexRW // mapping for L2 ACLs
 	SwIfIndexes    ifaceidx.SwIfIndex
 	Stopwatch      *measure.Stopwatch // timer used to measure and store time
+
+	ACLIfCache []*ACLIfCacheEntry // cache for ACL un-configured interfaces
 
 	vppcalls   *vppcalls.ACLInterfacesVppCalls
 	vppChannel *api.Channel
@@ -94,7 +111,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 			}
 			// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0).
 			agentACLIndex := vppACLIndex + 1
-			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, nil)
+			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 		} else {
 			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel,
@@ -104,24 +121,26 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 			}
 			// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0).
 			agentACLIndex := vppACLIndex + 1
-			plugin.ACLL3L4Indexes.RegisterName(acl.AclName, agentACLIndex, nil)
+			plugin.ACLL3L4Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 		}
 
 		// Set ACL to interfaces.
 		if acl.Interfaces != nil {
 			if isL2MacIP {
-				err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, acl.Interfaces.Ingress, plugin.Log)
+				aclIfIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
+				err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, aclIfIndices, plugin.Log)
 				if err != nil {
 					return err
 				}
 			} else {
-				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, acl.Interfaces.Ingress, plugin.Log)
+				aclIfInIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
+				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices, plugin.Log)
 				if err != nil {
 					return err
 				}
-
-				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, acl.Interfaces.Egress, plugin.Log)
+				aclIfEgIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
+				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices, plugin.Log)
 				if err != nil {
 					return err
 				}
@@ -189,14 +208,16 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		if isL2MacIP {
 			// Remove L2 ACL from old interfaces.
 			if oldACL.Interfaces != nil {
-				err := plugin.vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.Log)
+
+				err := plugin.vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Ingress), plugin.Log)
 				if err != nil {
 					return err
 				}
 			}
 			// Put L2 ACL to new interfaces.
 			if newACL.Interfaces != nil {
-				err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, newACL.Interfaces.Ingress, plugin.Log)
+				aclMacInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, L2)
+				err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, aclMacInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
@@ -205,24 +226,24 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		} else {
 			// Remove L3/L4 ACL from old interfaces.
 			if oldACL.Interfaces != nil {
-				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Ingress, plugin.Log)
+				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Ingress), plugin.Log)
 				if err != nil {
 					return err
 				}
-
-				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, oldACL.Interfaces.Egress, plugin.Log)
+				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Egress), plugin.Log)
 				if err != nil {
 					return err
 				}
 			}
 			// Put L3/L4 ACL to new interfaces.
 			if newACL.Interfaces != nil {
-				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, newACL.Interfaces.Ingress, plugin.Log)
+				aclInInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
+				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, aclInInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
-
-				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, newACL.Interfaces.Egress, plugin.Log)
+				aclEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, EGRESS)
+				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclEgInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
@@ -248,7 +269,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		// Remove interfaces from L2 ACL.
 		vppACLIndex := agentL2AclIndex - 1
 		if acl.Interfaces != nil {
-			err := plugin.vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.Log)
+			err := plugin.vppcalls.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Ingress), plugin.Log)
 			if err != nil {
 				return err
 			}
@@ -265,12 +286,12 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 		// Remove interfaces.
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
-			err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, acl.Interfaces.Ingress, plugin.Log)
+			err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Ingress), plugin.Log)
 			if err != nil {
 				return err
 			}
 
-			err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, acl.Interfaces.Egress, plugin.Log)
+			err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Egress), plugin.Log)
 			if err != nil {
 				return err
 			}
@@ -299,6 +320,146 @@ func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
 		acls = append(acls, aclWithIndex.ACLDetails)
 	}
 	return acls, nil
+}
+
+// Returns a list of existing ACL interfaces
+func (plugin *ACLConfigurator) getInterfaces(interfaces []string) []uint32 {
+	var configurableIfs []uint32
+	for _, name := range interfaces {
+		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(name)
+		if !found {
+			continue
+		}
+		configurableIfs = append(configurableIfs, ifIdx)
+	}
+	return configurableIfs
+}
+
+// ResolveCreatedInterface configures new interface for every ACL found in cache
+func (plugin *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("ACL configurator: resolving new interface %v", ifName)
+
+	// Iterate over cache in order to find out where the interface is used
+	var wasErr error
+	for entryIdx, aclCacheEntry := range plugin.ACLIfCache {
+		if aclCacheEntry.ifName == ifName {
+			var ifIndices []uint32
+			switch aclCacheEntry.ifAttr {
+			case L2:
+				if err := plugin.vppcalls.SetMacIPAclToInterface(aclCacheEntry.aclID, append(ifIndices, ifIdx), plugin.Log); err != nil {
+					plugin.Log.Error(err)
+					wasErr = err
+				}
+			case INGRESS:
+				if err := plugin.vppcalls.SetACLToInterfacesAsIngress(aclCacheEntry.aclID, append(ifIndices, ifIdx), plugin.Log); err != nil {
+					plugin.Log.Error(err)
+					wasErr = err
+				}
+			case EGRESS:
+				if err := plugin.vppcalls.SetACLToInterfacesAsEgress(aclCacheEntry.aclID, append(ifIndices, ifIdx), plugin.Log); err != nil {
+					plugin.Log.Error(err)
+					wasErr = err
+				}
+			default:
+				plugin.Log.Warnf("ACL interface is not defined as L2, ingress or egress")
+			}
+			// Remove from cache
+			plugin.Log.Debugf("New interface %s (%s) configured for ACL %d, removed from cache",
+				ifName, aclCacheEntry.ifAttr, aclCacheEntry.aclID)
+			plugin.ACLIfCache = append(plugin.ACLIfCache[:entryIdx], plugin.ACLIfCache[entryIdx+1:]...)
+		}
+	}
+
+	plugin.Log.Debugf("ACL configurator: new interface %v resolution done", ifName)
+
+	return wasErr
+}
+
+// ResolveDeletedInterface puts removed interface to cache, including acl index. Note: it's not needed to remove ACL
+// from interface manually, VPP handles it itself and such an behavior would cause errors (ACLs cannot be dumped
+// from non-existing interface)
+func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("ACL configurator: resolving deleted interface %v", ifName)
+
+	var wasErr error
+
+	// L3/L4 ingress/egress ACLs
+	for _, aclName := range plugin.ACLL3L4Indexes.GetMapping().ListNames() {
+		aclIdx, aclData, found := plugin.ACLL3L4Indexes.LookupIdx(aclName)
+		if !found {
+			plugin.Log.Warnf("ACL %v not found in the mapping", aclName)
+			continue
+		}
+		vppAclIdx := aclIdx - 1
+		if aclData != nil && aclData.Interfaces != nil {
+			// Look over ingress interfaces
+			for _, ingressIf := range aclData.Interfaces.Ingress {
+				if ingressIf == ifName {
+					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
+						ifName: ifName,
+						aclID:  vppAclIdx,
+						ifAttr: INGRESS,
+					})
+				}
+			}
+			// Look over egress interfaces
+			for _, ingressIf := range aclData.Interfaces.Egress {
+				if ingressIf == ifName {
+					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
+						ifName: ifName,
+						aclID:  vppAclIdx,
+						ifAttr: EGRESS,
+					})
+				}
+			}
+		}
+	}
+	// L2 ACLs
+	for _, aclName := range plugin.ACLL2Indexes.GetMapping().ListNames() {
+		aclIdx, aclData, found := plugin.ACLL2Indexes.LookupIdx(aclName)
+		if !found {
+			plugin.Log.Warnf("ACL %v not found in the mapping", aclName)
+			continue
+		}
+		vppAclIdx := aclIdx - 1
+		if aclData != nil && aclData.Interfaces != nil {
+			// Look over ingress interfaces
+			for _, ingressIf := range aclData.Interfaces.Ingress {
+				if ingressIf == ifName {
+					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
+						ifName: ifName,
+						aclID:  vppAclIdx,
+						ifAttr: L2,
+					})
+				}
+			}
+		}
+	}
+
+	plugin.Log.Debugf("ACL configurator: resolution done for removed interface %v", ifName)
+
+	return wasErr
+}
+
+// Returns a list of interfaces configurable on the ACL. If interface is missing, put it to the cache. It will be
+// configured when available
+func (plugin *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uint32, attr string) []uint32 {
+	var configurableIfs []uint32
+	for _, name := range interfaces {
+		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(name)
+		if !found {
+			// Put interface to cache
+			plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
+				ifName: name,
+				aclID:  acl,
+				ifAttr: attr,
+			})
+			plugin.Log.Debugf("Interface %s (%s) not found for ACL %v, moving to cache", name, attr, acl)
+			continue
+		}
+		configurableIfs = append(configurableIfs, ifIdx)
+	}
+	return configurableIfs
 }
 
 // Validate rules provided in ACL. Every rule has to contain actions and matches.

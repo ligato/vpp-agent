@@ -29,6 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
@@ -79,8 +80,8 @@ type Plugin struct {
 
 	// ACL plugin fields
 	aclConfigurator *aclplugin.ACLConfigurator
-	aclL3L4Indexes  idxvpp.NameToIdxRW
-	aclL2Indexes    idxvpp.NameToIdxRW
+	aclL3L4Indexes  aclidx.AclIndexRW
+	aclL2Indexes    aclidx.AclIndexRW
 
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
@@ -540,9 +541,8 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	// logger
 	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
-	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil)
-
-	plugin.aclL2Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil)
+	plugin.aclL3L4Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil))
+	plugin.aclL2Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
