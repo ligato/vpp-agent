@@ -40,7 +40,7 @@ const ifTempName = "temp-if-name"
 // 2. Every VPP interface looks for NB counterpart using tag (name). If found, it is calculated whether modification is
 //    needed. Otherwise, the interface is only registered. If interface does not contain tag, it is stored for now and
 //    resolved later. Tagged interfaces without NB config are removed.
-// 3. Untagged interfaces are correlated heuristically (mac address, ip addresses, unnumbered configuration). If correlation
+// 3. Untagged interfaces are correlated heuristically (mac address, ip addresses). If correlation
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
 func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
@@ -664,7 +664,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 	}
 }
 
-// Correlate interfaces according to MAC address, interface addresses or unnumbered configuration
+// Correlate interfaces according to MAC address, interface addresses
 func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
 	// Correlate MAC address
 	if nbIf.PhysAddress != "" {
@@ -706,12 +706,7 @@ func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interf
 			return nbIf
 		}
 	}
-	// Correlate unnumbered interface
-	if nbIf.Unnumbered != nil && vppIf.Unnumbered != nil {
-		if nbIf.Unnumbered.IsUnnumbered && vppIf.Unnumbered.IsUnnumbered && nbIf.Unnumbered.InterfaceWithIP == vppIf.Unnumbered.InterfaceWithIP {
-			return nbIf
-		}
-	}
+	// todo correlate also unnumbered interfaces if possible
 
 	// Otherwise there is no match between interfaces
 	return nil
@@ -781,14 +776,9 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 	}
 	// Unnumbered settings
-	if nbIf.Unnumbered == nil && vppIf.Unnumbered != nil || nbIf.Unnumbered != nil && vppIf.Unnumbered == nil {
-		return true
-	}
-	if nbIf.Unnumbered != nil && vppIf.Unnumbered != nil {
-		// Unnumbered fields
-		if nbIf.Unnumbered.IsUnnumbered != vppIf.Unnumbered.IsUnnumbered || nbIf.Unnumbered.InterfaceWithIP != nbIf.Unnumbered.InterfaceWithIP {
-			return true
-		}
+	// todo unnumbered data cannot be dumped
+	if nbIf.Unnumbered != nil {
+		plugin.Log.Debugf("RESYNC interfaces: interface %v is unnumbered, result of the comparison may not be correct", nbIf.Name)
 	}
 
 	switch nbIf.Type {
