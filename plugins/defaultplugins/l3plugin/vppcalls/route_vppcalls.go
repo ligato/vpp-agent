@@ -45,22 +45,18 @@ const (
 	NextHopViaLabelUnset uint32 = 0xfffff + 1
 
 	// ClassifyTableIndexUnset is a default value for field classify_table_index in ip_add_del_route binary message.
-	ClassifyTableIndexUnset uint32 = ^uint32(0)
+	ClassifyTableIndexUnset = ^uint32(0)
 
 	// NextHopOutgoingIfUnset constant has to be assigned into the field next_hop_outgoing_interface
 	// in ip_add_del_route binary message if outgoing interface for next hop is not defined.
-	NextHopOutgoingIfUnset uint32 = ^uint32(0)
+	NextHopOutgoingIfUnset = ^uint32(0)
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLog measure.StopWatchEntry) error {
-	// IPAddDelRoute time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &ip.IPAddDelRoute{}
 	if delete {
@@ -86,8 +82,7 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 	req.DstAddressLength = byte(prefix)
 
 	// Next hop address and parameters
-	nextHopAddr := route.NextHopAddr
-	req.NextHopAddress = []byte(nextHopAddr)
+	req.NextHopAddress = []byte(route.NextHopAddr)
 	req.NextHopSwIfIndex = route.OutIface
 	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopPreference = uint8(route.Preference)
@@ -108,21 +103,21 @@ func vppAddDelRoute(route *Route, vppChan *govppapi.Channel, delete bool, timeLo
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("IPAddDelRoute returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
 // VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppAddRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func VppAddRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
 		return err
 	}
-	return vppAddDelRoute(route, vppChan, false, timeLog)
+	return vppAddDelRoute(route, vppChan, false, stopwatch)
 }
 
 // VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppDelRoute(route *Route, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	return vppAddDelRoute(route, vppChan, true, timeLog)
+func VppDelRoute(route *Route, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return vppAddDelRoute(route, vppChan, true, stopwatch)
 }

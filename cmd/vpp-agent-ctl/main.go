@@ -454,8 +454,8 @@ func createRoute(db keyval.ProtoBroker) {
 	routes := l3.StaticRoutes{
 		Route: []*l3.StaticRoutes_Route{
 			{
-				VrfId:             0,
-				DstIpAddr:         "10.1.1.3/32",
+				VrfID:             0,
+				DstIPAddr:         "10.1.1.3/32",
 				NextHopAddr:       "192.168.1.13",
 				Weight:            6,
 				OutgoingInterface: "tap1",
@@ -463,7 +463,7 @@ func createRoute(db keyval.ProtoBroker) {
 		},
 	}
 
-	key := l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr)
+	key := l3.RouteKey(routes.Route[0].VrfID, routes.Route[0].DstIPAddr, routes.Route[0].NextHopAddr)
 	db.Put(key, routes.Route[0])
 	log.Printf("Adding route %v", key)
 }

@@ -126,18 +126,16 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
 	plugin.Log.Debugf("adding ARP: %+v", *arp)
 
 	// Create and register new arp entry
-	err = vppcalls.VppAddArp(arp, plugin.vppChan,
-		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
-	if err != nil {
+	if err = vppcalls.VppAddArp(arp, plugin.vppChan, plugin.Stopwatch); err != nil {
 		return err
 	}
+
 	// Register configured ARP
 	plugin.ARPIndexes.RegisterName(arpID, plugin.ARPIndexSeq, entry)
 	plugin.ARPIndexSeq++
 	plugin.Log.Debugf("ARP entry %v registered", arpID)
 
 	plugin.Log.Infof("ARP entry %v configured", arpID)
-
 	return nil
 }
 
@@ -153,7 +151,6 @@ func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevE
 	}
 
 	plugin.Log.Infof("ARP entry %v modified to %v", *prevEntry, *entry)
-
 	return nil
 }
 
@@ -204,9 +201,7 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error
 	plugin.Log.Debugf("deleting ARP: %+v", arp)
 
 	// Delete and un-register new arp
-	err = vppcalls.VppDelArp(arp, plugin.vppChan,
-		measure.GetTimeLog(ip.IPNeighborAddDel{}, plugin.Stopwatch))
-	if err != nil {
+	if err = vppcalls.VppDelArp(arp, plugin.vppChan, plugin.Stopwatch); err != nil {
 		return err
 	}
 	_, _, found = plugin.ARPIndexes.UnregisterName(arpID)
@@ -217,7 +212,6 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error
 	}
 
 	plugin.Log.Infof("ARP entry %v removed", arpID)
-
 	return nil
 }
 

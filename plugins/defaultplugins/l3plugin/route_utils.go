@@ -88,15 +88,15 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, swIndex uint32, log loggi
 		log.Infof("Route input is empty")
 		return nil, nil
 	}
-	if routeInput.DstIpAddr == "" {
+	if routeInput.DstIPAddr == "" {
 		log.Infof("Route does not contain destination address")
 		return nil, nil
 	}
-	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)
+	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIPAddr)
 	if err != nil {
 		return nil, err
 	}
-	vrfID := routeInput.VrfId
+	vrfID := routeInput.VrfID
 
 	nextHopIP := net.ParseIP(routeInput.NextHopAddr)
 	if isIpv6 {
