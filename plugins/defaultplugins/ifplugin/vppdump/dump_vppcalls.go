@@ -351,7 +351,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    2,
-			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
+			HostIfName: string(bytes.Trim(tapDetails.HostIfName, "\x00")),
 			// Other parameters are not not yet part of the dump.
 
 		}

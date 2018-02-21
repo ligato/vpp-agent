@@ -714,26 +714,53 @@ func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interf
 
 // Compares two interfaces. If there is any difference, returns true, false otherwise
 func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
+	plugin.Log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
 	// Type
 	if nbIf.Type != vppIf.Type {
+		plugin.Log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
+			nbIf.Type, vppIf.Type)
 		return true
 	}
-	// Enabled state, VRF value, container IP address
-	if nbIf.Enabled != vppIf.Enabled || nbIf.Vrf != vppIf.Vrf || nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
+	// Enabled
+	if nbIf.Enabled != vppIf.Enabled {
+		plugin.Log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
+			nbIf.Enabled, vppIf.Enabled)
 		return true
 	}
-	// DHCP setup, MTU value.
-	if nbIf.SetDhcpClient != vppIf.SetDhcpClient || nbIf.Mtu != vppIf.Mtu {
+	// VRF
+	if nbIf.Vrf != vppIf.Vrf {
+		plugin.Log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
+			nbIf.Vrf, vppIf.Vrf)
+		return true
+	}
+	// Container IP address
+	if nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
+		plugin.Log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
+			nbIf.ContainerIpAddress, vppIf.ContainerIpAddress)
+		return true
+	}
+	// DHCP setup
+	if nbIf.SetDhcpClient != vppIf.SetDhcpClient {
+		plugin.Log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
+			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
+		return true
+	}
+	//  MTU value
+	if nbIf.Mtu != vppIf.Mtu {
+		plugin.Log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
+			nbIf.Mtu, vppIf.Mtu)
 		return true
 	}
 	// MAC address (compare only if it is set in the NB configuration)
 	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
+		plugin.Log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)",
+			nbIf.PhysAddress, vppIf.PhysAddress)
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
 	// todo unnumbered data cannot be dumped
 	if nbIf.Unnumbered != nil {
-		plugin.Log.Debugf("RESYNC interfaces: interface %v is unnumbered, result of the comparison may not be correct", nbIf.Name)
+		plugin.Log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
 		vppIf.IpAddresses = nil
 	} else {
 		// Remove IPv6 link local addresses (default values)
@@ -744,6 +771,8 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 		// Compare IP address count
 		if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
+			plugin.Log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
+				len(nbIf.IpAddresses), len(vppIf.IpAddresses))
 			return true
 		}
 		// Compare every single IP address. If equal, every address should have identical counterpart
@@ -766,18 +795,36 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 				}
 			}
 			if !ipFound {
+				plugin.Log.Debugf("Interface RESYNC comparison: VPP does not contain IP %s", nbIP)
 				return true
 			}
 		}
 	}
 	// RxMode settings
 	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
+		plugin.Log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
+			nbIf.RxModeSettings, vppIf.RxModeSettings)
 		return true
 	}
 	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
-		// RxMode fields
-		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode || nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID ||
-			nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
+		// RxMode
+		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode {
+			plugin.Log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
+				nbIf.RxModeSettings.RxMode, vppIf.RxModeSettings.RxMode)
+			return true
+
+		}
+		// QueueID
+		if nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID {
+			plugin.Log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
+				nbIf.RxModeSettings.QueueID, vppIf.RxModeSettings.QueueID)
+			return true
+
+		}
+		// QueueIDValid
+		if nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
+			plugin.Log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
+				nbIf.RxModeSettings.QueueIDValid, vppIf.RxModeSettings.QueueIDValid)
 			return true
 
 		}
@@ -786,29 +833,60 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 	switch nbIf.Type {
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
+				nbIf.Afpacket, vppIf.Afpacket)
 			return true
 		}
 		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
 			// AF-packet host name
 			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
+				plugin.Log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
+					nbIf.Afpacket.HostIfName, vppIf.Afpacket.HostIfName)
 				return true
 			}
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
+				nbIf.Memif, vppIf.Memif)
 			return true
 		}
 		if nbIf.Memif != nil && vppIf.Memif != nil {
-			// Memif ID and socket
-			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename || nbIf.Memif.Id != vppIf.Memif.Id {
+			// Memif ID
+			if nbIf.Memif.Id != vppIf.Memif.Id {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
+					nbIf.Memif.Id, vppIf.Memif.Id)
 				return true
 			}
-			// Master, mode
-			if nbIf.Memif.Master != vppIf.Memif.Master || nbIf.Memif.Mode != vppIf.Memif.Mode {
+
+			// Memif socket
+			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
+					nbIf.Memif.SocketFilename, vppIf.Memif.SocketFilename)
 				return true
 			}
-			// Rx & Tx queues
-			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues || nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
+			// Master
+			if nbIf.Memif.Master != vppIf.Memif.Master {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
+					nbIf.Memif.Master, vppIf.Memif.Master)
+				return true
+			}
+			// Mode
+			if nbIf.Memif.Mode != vppIf.Memif.Mode {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
+					nbIf.Memif.Mode, vppIf.Memif.Mode)
+				return true
+			}
+			// Rx queues
+			if nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
+				plugin.Log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
+					nbIf.Memif.RxQueues, vppIf.Memif.RxQueues)
+				return true
+			}
+			// Tx queues
+			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues {
+				plugin.Log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
+					nbIf.Memif.TxQueues, vppIf.Memif.TxQueues)
 				return true
 			}
 			// todo secret, buffer size and ring size is not compared. VPP always returns 0 for buffer size
@@ -816,29 +894,65 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 	case intf.InterfaceType_TAP_INTERFACE:
 		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
+				nbIf.Tap, vppIf.Tap)
 			return true
 		}
 		if nbIf.Tap != nil && vppIf.Tap != nil {
 			// Tap version
 			if nbIf.Tap.Version == 2 && nbIf.Tap.Version != vppIf.Tap.Version {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
+					nbIf.Tap.Version, vppIf.Tap.Version)
 				return true
 			}
 			// Namespace and host name
-			if nbIf.Tap.Namespace != vppIf.Tap.Namespace || nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
+			if nbIf.Tap.Namespace != vppIf.Tap.Namespace {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
+					nbIf.Tap.Namespace, vppIf.Tap.Namespace)
 				return true
 			}
-			// Tx & Rx ring size
-			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize || nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
+			// Namespace and host name
+			if nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
+					nbIf.Tap.HostIfName, vppIf.Tap.HostIfName)
+				return true
+			}
+			// Rx ring size
+			if nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
+					nbIf.Tap.RxRingSize, vppIf.Tap.RxRingSize)
+				return true
+			}
+			// Tx ring size
+			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
+					nbIf.Tap.TxRingSize, vppIf.Tap.TxRingSize)
 				return true
 			}
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
+				nbIf.Vxlan, vppIf.Vxlan)
 			return true
 		}
 		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
-			// VxLAN fields
-			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni || nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress || nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
+			// VxLAN Vni
+			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
+					nbIf.Vxlan.Vni, vppIf.Vxlan.Vni)
+				return true
+			}
+			// VxLAN Src Address
+			if nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
+					nbIf.Vxlan.SrcAddress, vppIf.Vxlan.SrcAddress)
+				return true
+			}
+			// VxLAN Dst Address
+			if nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
+					nbIf.Vxlan.DstAddress, vppIf.Vxlan.DstAddress)
 				return true
 			}
 		}
