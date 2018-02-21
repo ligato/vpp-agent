@@ -21,6 +21,7 @@ import (
 // ResyncAppNs configures app namespaces to the empty VPP
 func (plugin *L4Configurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC application namespaces begin. ")
+
 	// Calculate and log application namespaces resync
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -31,8 +32,7 @@ func (plugin *L4Configurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppN
 	var wasError error
 	if len(appNamespaces) > 0 {
 		for _, appNs := range appNamespaces {
-			err := plugin.ConfigureAppNamespace(appNs)
-			if err != nil {
+			if err := plugin.ConfigureAppNamespace(appNs); err != nil {
 				plugin.Log.Error(err)
 				wasError = err
 			}
@@ -46,6 +46,7 @@ func (plugin *L4Configurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppN
 // ResyncFeatures sets initital L4Features flag
 func (plugin *L4Configurator) ResyncFeatures(l4Features *l4.L4Features) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC L4Features begin. ")
+
 	// Calculate and log L4Features resync
 	defer func() {
 		if plugin.Stopwatch != nil {
@@ -55,8 +56,7 @@ func (plugin *L4Configurator) ResyncFeatures(l4Features *l4.L4Features) error {
 
 	var wasError error
 	if l4Features != nil {
-		err := plugin.ConfigureL4FeatureFlag(l4Features)
-		if err != nil {
+		if err := plugin.ConfigureL4FeatureFlag(l4Features); err != nil {
 			plugin.Log.Error(err)
 			wasError = err
 		}

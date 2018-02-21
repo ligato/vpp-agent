@@ -734,13 +734,13 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
 	}
 	plugin.l4Configurator = &l4plugin.L4Configurator{
-		Log:                l4Logger,
-		GoVppmux:           plugin.GoVppmux,
-		AppNsIndexes:       plugin.namespaceIndexes,
-		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
-		AppNsIdxSeq:        1,
-		SwIfIndexes:        plugin.swIfIndexes,
-		Stopwatch:          stopwatch,
+		Log:          l4Logger,
+		GoVppmux:     plugin.GoVppmux,
+		AppNsIndexes: plugin.namespaceIndexes,
+		AppNsCached:  plugin.notConfAppNsIndexes,
+		AppNsIdxSeq:  1,
+		SwIfIndexes:  plugin.swIfIndexes,
+		Stopwatch:    stopwatch,
 	}
 	err := plugin.l4Configurator.Init()
 	if err != nil {
