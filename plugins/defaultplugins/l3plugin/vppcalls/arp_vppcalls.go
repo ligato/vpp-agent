@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -73,8 +72,7 @@ func vppAddDelArp(entry *ArpEntry, vppChan *govppapi.Channel, delete bool, timeL
 
 	// Send message
 	reply := &ip.IPNeighborAddDelReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

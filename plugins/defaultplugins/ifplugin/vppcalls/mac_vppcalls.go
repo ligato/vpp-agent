@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -46,15 +45,13 @@ func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppCha
 	req.MacAddress = mac
 
 	reply := &interfaces.SwInterfaceSetMacAddressReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("adding MAC address returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
 
+	log.WithFields(logging.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
 	return nil
 }

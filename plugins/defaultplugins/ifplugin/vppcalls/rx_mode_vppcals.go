@@ -46,16 +46,14 @@ func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSett
 	log.Debug("set rxModeSettings: ", rxModeSettings)
 
 	reply := &interfaces.SwInterfaceSetRxModeReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("setting rxModeSettings returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"RxModeType": rxModeSettings}).Debug("RxModeType ", rxModeSettings, "for interface ", ifIdx, " was set.")
 
+	log.WithFields(logging.Fields{"RxModeType": rxModeSettings}).Debug("RxModeType ", rxModeSettings, "for interface ", ifIdx, " was set.")
 	return nil
 
 }

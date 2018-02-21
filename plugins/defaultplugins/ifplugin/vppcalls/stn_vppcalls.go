@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -63,16 +62,14 @@ func AddStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppap
 	log.Debug("stn rule add req: IPAdress: ", req.IPAddress, "interface: ", req.SwIfIndex)
 
 	reply := &stn.StnAddDelRuleReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("stn rule adding returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule added.")
 
+	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule added.")
 	return nil
 
 }
@@ -108,16 +105,14 @@ func DelStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppap
 
 	// send the message
 	reply := &stn.StnAddDelRuleReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("stn rule del returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule removed.")
 
+	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule removed.")
 	return nil
 }
 

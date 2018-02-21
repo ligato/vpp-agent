@@ -58,12 +58,11 @@ func SetInterfacesToBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx uint32
 			log.Debugf("Interface %v set as BVI", bdIface.Name)
 		}
 		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-		err := vppChan.SendRequest(req).ReceiveReply(reply)
-		if err != nil {
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 			log.Errorf("Error while assigning interface %v to bd %v: %v", bdIface.Name, bd.Name, err)
 			continue
 		}
-		if 0 != reply.Retval {
+		if reply.Retval != 0 {
 			log.Errorf("Unexpected return value %v while assigning interface %v (idx %v) to bd %v", reply.Retval, bdIface.Name, ifIdx, bd.Name)
 			continue
 		}
@@ -99,12 +98,11 @@ func UnsetInterfacesFromBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx ui
 			Enable:      0,
 		}
 		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-		err := vppChan.SendRequest(req).ReceiveReply(reply)
-		if err != nil {
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 			log.Errorf("Error while removing interface %v from bd %v: %v", bdIface.Name, bd.Name, err)
 			continue
 		}
-		if 0 != reply.Retval {
+		if reply.Retval != 0 {
 			log.Errorf("Unexpected return value %v while removing interface %v from bd %v", reply.Retval, bdIface.Name, bd.Name)
 			continue
 		}
@@ -134,11 +132,10 @@ func SetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32,
 	}
 
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 	}
 	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain.")

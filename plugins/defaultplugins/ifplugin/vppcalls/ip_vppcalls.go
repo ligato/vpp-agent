@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -60,16 +59,14 @@ func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, log logging.Logger, vppChan *
 	log.Debug("add req: IsIpv6: ", req.IsIpv6, " len(req.Address)=", len(req.Address))
 
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("adding IP address returned %d", reply.Retval)
 	}
-	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
 
+	log.WithFields(logging.Fields{"IPAddress": addr.IP, "mask": addr.Mask, "ifIdx": ifIdx}).Debug("IP address added.")
 	return nil
 
 }

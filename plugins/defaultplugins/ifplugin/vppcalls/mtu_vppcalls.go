@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -41,15 +40,13 @@ func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govp
 	req.Mtu = uint16(mtu)
 
 	reply := &interfaces.SwInterfaceSetMtuReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("setting up interface MTU returned %d", reply.Retval)
 	}
-	log.Debugf("MTU %v set to interface %v.", mtu, ifIdx)
 
+	log.Debugf("MTU %v set to interface %v.", mtu, ifIdx)
 	return nil
 }

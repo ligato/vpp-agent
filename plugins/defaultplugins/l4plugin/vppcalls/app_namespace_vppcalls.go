@@ -15,6 +15,8 @@
 package vppcalls
 
 import (
+	"fmt"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
@@ -34,15 +36,12 @@ func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byt
 	}
 
 	reply := &session.AppNamespaceAddDelReply{}
-
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		log.WithFields(logging.Fields{"Error": err, "AppNamespace": string(id)}).Error("Error while configuring AppNamespace")
 		return 0, err
 	}
 	if reply.Retval != 0 {
-		log.WithField("Return value", reply.Retval).Error("Unexpected return value")
-		return 0, err
+		return 0, fmt.Errorf("adding app namespace returned %v", reply.Retval)
 	}
 
 	appnsIndex = reply.AppnsIndex

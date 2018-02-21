@@ -54,7 +54,7 @@ func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomai
 	if err != nil {
 		return fmt.Errorf("adding bridge domain failed with error %v", err)
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf("adding bridge domain returned %d", reply.Retval)
 	}
 
@@ -120,7 +120,7 @@ func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan VPPChannel,
 		log.WithFields(logging.Fields{"Error": err}).Error("Error while removing bridge domain")
 		return err
 	}
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
 	}
 

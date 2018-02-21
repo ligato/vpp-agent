@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -65,13 +64,12 @@ func prepareMessageForVpp(ifIdx uint32, addr *net.IPNet, isIpv6 bool, isAdd uint
 	req.IsAdd = isAdd
 	prefix, _ := addr.Mask.Size()
 	req.Plen = byte(prefix)
-	isIpv4 := !isIpv6
-	if isIpv4 {
-		req.IP = []byte(addr.IP.To4())
-		req.IsIP4 = 1
-	} else {
+	if isIpv6 {
 		req.IP = []byte(addr.IP.To16())
 		req.IsIP4 = 0
+	} else {
+		req.IP = []byte(addr.IP.To4())
+		req.IsIP4 = 1
 	}
 	return req
 }
@@ -82,16 +80,14 @@ func sendAndLogMessageForVpp(ifIdx uint32, req *ip.IPContainerProxyAddDel, logAc
 
 	// send the message
 	reply := &ip.IPContainerProxyAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
+	if reply.Retval != 0 {
 		return fmt.Errorf(logActionType, "ing IP address returned %d", reply.Retval)
 	}
+
 	log.WithFields(logging.Fields{"isIpv4": req.IsIP4, "prefix": req.Plen, "address": req.IP, "if_index": ifIdx}).
 		Debug("Container IP address ", logActionType, "ed.")
-
 	return nil
 }

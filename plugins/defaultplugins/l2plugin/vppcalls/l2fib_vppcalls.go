@@ -18,13 +18,12 @@ import (
 	"container/list"
 	"fmt"
 	"net"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
-
-	"time"
 )
 
 // FibLogicalReq groups multiple fields so that all of them do not enumerate in one function call (request, reply/callback).
@@ -107,8 +106,8 @@ func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger)
 	req.Mac = mac
 	req.BdID = logicalReq.BDIdx
 	req.SwIfIndex = logicalReq.SwIfIdx
-	req.BviMac = parseBoolToUint8(logicalReq.BVI)
-	req.StaticMac = parseBoolToUint8(logicalReq.Static)
+	req.BviMac = boolToUint(logicalReq.BVI)
+	req.StaticMac = boolToUint(logicalReq.Static)
 	if logicalReq.Delete {
 		req.IsAdd = 0
 	} else {
@@ -160,12 +159,4 @@ func (fib *L2FibVppCalls) WatchFIBReplies(log logging.Logger) {
 			}
 		}
 	}
-}
-
-// Parse true=1 false=0
-func parseBoolToUint8(input bool) uint8 {
-	if input == true {
-		return 1
-	}
-	return 0
 }
