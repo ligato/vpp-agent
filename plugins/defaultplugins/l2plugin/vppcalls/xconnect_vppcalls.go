@@ -24,57 +24,53 @@ import (
 )
 
 // VppSetL2XConnect creates xConnect between two existing interfaces.
-func VppSetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
-	// SwInterfaceSetL2Xconnect time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func VppSetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	log.Debug("Setting up L2 xConnect pair for ", txIfaceIdx, rxIfaceIdx)
 
-	req := &l2ba.SwInterfaceSetL2Xconnect{}
-	req.TxSwIfIndex = transmitIfaceIndex
-	req.RxSwIfIndex = receiveIfaceIndex
-	req.Enable = 1
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &l2ba.SwInterfaceSetL2Xconnect{
+		Enable:      1,
+		TxSwIfIndex: txIfaceIdx,
+		RxSwIfIndex: rxIfaceIdx,
+	}
 
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("creating xConnect returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect created.")
+	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).Debug("L2xConnect created")
 	return nil
 }
 
 // VppUnsetL2XConnect removes xConnect between two interfaces.
-func VppUnsetL2XConnect(receiveIfaceIndex uint32, transmitIfaceIndex uint32, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	log.Debug("Setting up L2 xConnect pair for ", transmitIfaceIndex, receiveIfaceIndex)
-	// SwInterfaceSetL2Xconnect time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func VppUnsetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	log.Debug("Setting up L2 xConnect pair for ", txIfaceIdx, rxIfaceIdx)
 
-	req := &l2ba.SwInterfaceSetL2Xconnect{}
-	req.RxSwIfIndex = receiveIfaceIndex
-	req.TxSwIfIndex = transmitIfaceIndex
-	req.Enable = 0
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &l2ba.SwInterfaceSetL2Xconnect{
+		Enable:      0,
+		TxSwIfIndex: txIfaceIdx,
+		RxSwIfIndex: rxIfaceIdx,
+	}
 
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("removing xConnect returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"RxIface": receiveIfaceIndex, "TxIface": transmitIfaceIndex}).Debug("L2xConnect removed.")
+	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).Debug("L2xConnect removed")
 	return nil
 }
