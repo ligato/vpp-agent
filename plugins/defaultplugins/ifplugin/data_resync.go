@@ -478,12 +478,12 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 				if !found {
 					// Configure missing mapping
 					if len(nbMapping.LocalIps) == 1 {
-						if err := plugin.handleStaticMapping(nbMapping, true); err != nil {
+						if err := plugin.handleStaticMapping(nbMapping, "", true); err != nil {
 							plugin.Log.Errorf("NAT44 resync: failed to configure static mapping: %v", err)
 							continue
 						}
 					} else {
-						if err := plugin.handleStaticMappingLb(nbMapping, true); err != nil {
+						if err := plugin.handleStaticMappingLb(nbMapping, "", true); err != nil {
 							plugin.Log.Errorf("NAT44 resync: failed to configure lb-static mapping: %v", err)
 							continue
 						}
@@ -500,7 +500,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 				_, _, found := plugin.DNatIdMappingIndices.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
-					if err := plugin.handleIdentityMapping(nbIdMapping, true); err != nil {
+					if err := plugin.handleIdentityMapping(nbIdMapping, "", true); err != nil {
 						plugin.Log.Errorf("NAT44 resync: failed to configure identity mapping: %v", err)
 						continue
 					}
@@ -523,13 +523,13 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 		// Static mapping
 		if len(vppMapping.LocalIps) == 1 {
 
-			if err := plugin.handleStaticMapping(vppMapping, false); err != nil {
+			if err := plugin.handleStaticMapping(vppMapping, "", false); err != nil {
 				plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
 				continue
 			}
 		} else {
 			// Lb-static mapping
-			if err := plugin.handleStaticMappingLb(vppMapping, false); err != nil {
+			if err := plugin.handleStaticMappingLb(vppMapping, "", false); err != nil {
 				plugin.Log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
 				continue
 			}
@@ -537,7 +537,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 	}
 	for _, vppIdMapping := range vppDNatConfig.IdMappings {
 		// Identity mapping
-		if err := plugin.handleIdentityMapping(vppIdMapping, false); err != nil {
+		if err := plugin.handleIdentityMapping(vppIdMapping, "", false); err != nil {
 			plugin.Log.Errorf("NAT44 resync: failed to remove identity mapping: %v", err)
 			continue
 		}
@@ -550,7 +550,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 
 // Looks for the same mapping in the VPP, register existing ones
 func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings []*nat.Nat44DNat_DNatConfig_StaticMappigs, vppIdMappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) {
+	vppMappings []*nat.Nat44DNat_DNatConfig_StaticMappings, vppIdMappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) {
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.StMappings {
 		if len(nbMapping.LocalIps) > 1 {

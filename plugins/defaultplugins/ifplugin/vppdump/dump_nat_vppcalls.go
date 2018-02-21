@@ -15,8 +15,10 @@
 package vppdump
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -80,7 +82,7 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *
 	if err != nil {
 		return nil, err
 	}
-	natStLbMapping, err := nat44StaticMappingLbDump(log, vppChan, stopwatch)
+	natStLbMappings, err := nat44StaticMappingLbDump(log, vppChan, stopwatch)
 	if err != nil {
 		return nil, err
 	}
@@ -89,21 +91,100 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *
 		return nil, err
 	}
 
-	// Append static mappings
-	natStMappings = append(natStMappings, natStLbMapping...)
+	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 
-	// Reconstruct DNat config object
-	var dNatConfigs []*nat.Nat44DNat_DNatConfig
-	dNatConfig := &nat.Nat44DNat_DNatConfig{
-		StMappings: natStMappings,
-		IdMappings: natIdMappings,
+	// Sort static mappings to DNAT configurations using tag/label
+	for tag, data := range natStMappings {
+		// Get DNAT label from tag
+		label := getDnatLabel(tag, log)
+		if label == "" {
+			// Cannot assign without label
+			continue
+		}
+		// Find DNAT with the same label
+		var found bool
+		for _, dNatCfg := range dNatCfgs {
+			if dNatCfg.Label == label {
+				// Assign mapping to config
+				dNatCfg.StMappings = append(dNatCfg.StMappings, data)
+			}
+		}
+		if !found {
+			// Create new DNAT config
+			newDnatCfg := &nat.Nat44DNat_DNatConfig{
+				Label:      label,
+				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
+				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
+			}
+			// Add new DNAT cfg to the pool
+			dNatCfgs = append(dNatCfgs, newDnatCfg)
+			// Add mapping
+			newDnatCfg.StMappings = append(newDnatCfg.StMappings, data)
+		}
 	}
-	// Currently it is not possible to distinguish which mapping belongs to which DNAT configuration, so everything
-	// is returned as a one config
-	dNatConfigs = append(dNatConfigs, dNatConfig)
+
+	// Sort static mappings to DNAT configurations using tag/label
+	for tag, data := range natStLbMappings {
+		// Get DNAT label from tag
+		label := getDnatLabel(tag, log)
+		if label == "" {
+			// Cannot assign without label
+			continue
+		}
+		// Find DNAT with the same label
+		var found bool
+		for _, dNatCfg := range dNatCfgs {
+			if dNatCfg.Label == label {
+				// Assign mapping to config
+				dNatCfg.StMappings = append(dNatCfg.StMappings, data)
+			}
+		}
+		if !found {
+			// Create new DNAT config
+			newDnatCfg := &nat.Nat44DNat_DNatConfig{
+				Label:      label,
+				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
+				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
+			}
+			// Add new DNAT cfg to the pool
+			dNatCfgs = append(dNatCfgs, newDnatCfg)
+			// Add mapping
+			newDnatCfg.StMappings = append(newDnatCfg.StMappings, data)
+		}
+	}
+
+	// Sort static mappings to DNAT configurations using tag/label
+	for tag, data := range natIdMappings {
+		// Get DNAT label from tag
+		label := getDnatLabel(tag, log)
+		if label == "" {
+			// Cannot assign without label
+			continue
+		}
+		// Find DNAT with the same label
+		var found bool
+		for _, dNatCfg := range dNatCfgs {
+			if dNatCfg.Label == label {
+				// Assign mapping to config
+				dNatCfg.IdMappings = append(dNatCfg.IdMappings, data)
+			}
+		}
+		if !found {
+			// Create new DNAT config
+			newDnatCfg := &nat.Nat44DNat_DNatConfig{
+				Label:      label,
+				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
+				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
+			}
+			// Add new DNAT cfg to the pool
+			dNatCfgs = append(dNatCfgs, newDnatCfg)
+			// Add mapping
+			newDnatCfg.IdMappings = append(newDnatCfg.IdMappings, data)
+		}
+	}
 
 	return &nat.Nat44DNat{
-		DnatConfig: dNatConfigs,
+		DnatConfig: dNatCfgs,
 	}, nil
 }
 
@@ -141,13 +222,14 @@ func nat44AddressDump(log logging.Logger, vppChan *govppapi.Channel,
 	return
 }
 
-// nat44StaticMappingDump returns a list of static mapping entries
+// nat44StaticMappingDump returns a map of static mapping tag/data pairs
 func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries []*nat.Nat44DNat_DNatConfig_StaticMappigs, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
 	req := &bin_api.Nat44StaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
 
@@ -160,11 +242,15 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 		if stop {
 			break
 		}
-		var locals []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs
+		var locals []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
 		lcIPAddress := net.IP(msg.LocalIPAddress)
 		exIPAddress := net.IP(msg.ExternalIPAddress)
 
-		entries = append(entries, &nat.Nat44DNat_DNatConfig_StaticMappigs{
+		// Parse tag (key)
+		tag := string(bytes.Trim(msg.Tag, "\x00"))
+
+		// Fill data (value)
+		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMappings{
 			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
@@ -175,13 +261,13 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 			}(msg.ExternalSwIfIndex),
 			ExternalIP:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
-			LocalIps: append(locals, &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{ // single-value
+			LocalIps: append(locals, &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{ // single-value
 				LocalIP:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
 			Protocol: getNatProtocol(msg.Protocol, log),
 			TwiceNat: uintToBool(msg.TwiceNat),
-		})
+		}
 	}
 
 	log.Debugf("NAT44 static mapping dump complete, found %d entries", len(entries))
@@ -189,15 +275,17 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 	return entries, nil
 }
 
-// nat44StaticMappingLbDump returns a list of static mapping entries with load balancer
+// nat44StaticMappingLbDump returns a map of static mapping tag/data pairs with load balancer
 func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries []*nat.Nat44DNat_DNatConfig_StaticMappigs, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
+
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
 
 	for {
 		msg := &bin_api.Nat44LbStaticMappingDetails{}
@@ -209,19 +297,22 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
 			break
 		}
 
+		// Parse tag (key)
+		tag := string(bytes.Trim(msg.Tag, "\x00"))
+
 		// Prepare localIPs
-		var locals []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs
+		var locals []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
 		for _, localIPVal := range msg.Locals {
 			localIP := net.IP(localIPVal.Addr)
-			locals = append(locals, &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{
+			locals = append(locals, &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
 				LocalIP:     localIP.To4().String(),
 				LocalPort:   uint32(localIPVal.Port),
 				Probability: uint32(localIPVal.Probability),
 			})
 		}
-
 		exIPAddress := net.IP(msg.ExternalAddr)
-		entries = append(entries, &nat.Nat44DNat_DNatConfig_StaticMappigs{
+
+		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMappings{
 			VrfId:        msg.VrfID,
 			ExternalIP:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
@@ -233,7 +324,7 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
 				}
 				return false
 			}(msg.TwiceNat),
-		})
+		}
 	}
 
 	log.Debugf("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
@@ -241,9 +332,9 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
 	return entries, nil
 }
 
-// nat44IdentityMappingDump returns a list of static mapping entries with load balancer
+// nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
 func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries []*nat.Nat44DNat_DNatConfig_IdentityMappings, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -263,7 +354,11 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 
 		ipAddress := net.IP(msg.IPAddress)
 
-		entries = append(entries, &nat.Nat44DNat_DNatConfig_IdentityMappings{
+		// Parse tag (key)
+		tag := string(bytes.Trim(msg.Tag, "\x00"))
+
+		// Fill data (value)
+		entries[tag] = &nat.Nat44DNat_DNatConfig_IdentityMappings{
 			VrfId: msg.VrfID,
 			AddressedInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
@@ -275,7 +370,7 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 			IpAddress: ipAddress.To4().String(),
 			Port:      uint32(msg.Port),
 			Protocol:  getNatProtocol(msg.Protocol, log),
-		})
+		}
 	}
 
 	log.Debugf("NAT44 identity mapping dump complete, found %d entries", len(entries))
@@ -399,4 +494,18 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
+}
+
+// Obtain DNAT label from provided tag
+func getDnatLabel(tag string, log logging.Logger) (label string) {
+	parts := strings.Split(tag, "-")
+	// Tag should be in format label-mappingType-index
+	if len(parts) == 0 {
+		log.Errorf("Unable to obtain DNAT label, incorrect mapping tag format: '%s'", tag)
+		return
+	}
+	if len(parts) != 3 {
+		log.Warnf("Mapping tag has unexpected format: %s. Resolved DNAT label may not be correct", tag)
+	}
+	return parts[0]
 }

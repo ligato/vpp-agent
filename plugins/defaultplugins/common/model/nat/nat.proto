@@ -40,7 +40,7 @@ message Nat44DNat {
     message DNatConfig {                        /* DNat configuration list. */
         string label = 1;                       /* Unique identifier of the DNAT config. */
 
-        message StaticMappigs {                 /* A list of static mappings in DNAT. */
+        message StaticMappings {                /* A list of static mappings in DNAT. */
             uint32 vrfId = 1;                   /* VRF (table) ID. */
             string externalInterface = 2;       /* External interface may be used together with IP addresses. */
             string externalIP = 3;              /* External address.  */
@@ -55,7 +55,7 @@ message Nat44DNat {
             Protocol protocol = 6;              /* Protocol used for static mapping. */
             bool twiceNat = 7;                  /* Enable/disable twice NAT. */
         }   
-        repeated StaticMappigs st_mappings = 4;
+        repeated StaticMappings st_mappings = 4;
 
         message IdentityMappings {               /* A list of identity mappings in DNAT. */
             uint32 vrfId = 1;                    /* VRF (table) ID. */

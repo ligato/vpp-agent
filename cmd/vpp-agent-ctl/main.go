@@ -1196,14 +1196,14 @@ func createSNat(db keyval.ProtoBroker) {
 
 func createDNat(db keyval.ProtoBroker) {
 	// Local IP list
-	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs
-	localIP := &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
+	localIP := &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
 		LocalIP:     "172.124.0.2",
 		LocalPort:   6500,
 		Probability: 40,
 	}
 	localIPs = append(localIPs, localIP)
-	localIP = &nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs{
+	localIP = &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
 		LocalIP:     "172.125.10.5",
 		LocalPort:   2300,
 		Probability: 40,
@@ -1211,8 +1211,8 @@ func createDNat(db keyval.ProtoBroker) {
 	localIPs = append(localIPs, localIP)
 
 	// Static mapping
-	var mapping []*nat.Nat44DNat_DNatConfig_StaticMappigs
-	entry := &nat.Nat44DNat_DNatConfig_StaticMappigs{
+	var mapping []*nat.Nat44DNat_DNatConfig_StaticMappings
+	entry := &nat.Nat44DNat_DNatConfig_StaticMappings{
 		VrfId:             0,
 		ExternalInterface: "tap1",
 		ExternalIP:        "192.168.0.1",
