@@ -602,38 +602,36 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 }
 
 // Compares two interfaces. If there is any difference, returns true, false otherwise
-func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) (isModified bool) {
-	isModified = true
-
+func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
 	// Type
 	if nbIf.Type != vppIf.Type {
-		return isModified
+		return true
 	}
-	// Enabled, VRF, container IP
+	// Enabled state, VRF value, container IP address
 	if nbIf.Enabled != vppIf.Enabled || nbIf.Vrf != vppIf.Vrf || nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
-		return isModified
+		return true
 	}
-	// DHCP, MTU.
+	// DHCP setup, MTU value.
 	if nbIf.SetDhcpClient != vppIf.SetDhcpClient || nbIf.Mtu != vppIf.Mtu {
-		return isModified
+		return true
 	}
-	// MAC address (compare only if it is set in the NB)
+	// MAC address (compare only if it is set in the NB configuration)
 	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
-		return isModified
+		return true
 	}
-	// IP address count. First, remove IPv6 link local addresses
+	// Remove IPv6 link local addresses (default values)
 	for ipIdx, ipAddress := range vppIf.IpAddresses {
 		if strings.HasPrefix(ipAddress, "fe80") {
 			vppIf.IpAddresses = append(vppIf.IpAddresses[:ipIdx], vppIf.IpAddresses[ipIdx+1:]...)
 		}
 	}
+	// Compare IP address count
 	if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
-		return isModified
+		return true
 	}
-	// Value of IP addresses
+	// Compare every single IP address. If equal, every address should have identical counterpart
 	for _, nbIP := range nbIf.IpAddresses {
-		// For every IP there has to be a match
-		var match bool
+		var ipFound bool
 		for _, vppIP := range vppIf.IpAddresses {
 			pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
 			if err != nil {
@@ -646,97 +644,98 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 				continue
 			}
 			if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
-				match = true
+				ipFound = true
 				break
 			}
 		}
-		if !match {
-			return isModified
+		if !ipFound {
+			return true
 		}
 	}
 	// RxMode settings
 	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
-		return isModified
+		return true
 	}
 	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
 		// RxMode fields
 		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode || nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID ||
 			nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
-			return isModified
+			return true
 
 		}
 	}
 	// Unnumbered settings
 	if nbIf.Unnumbered == nil && vppIf.Unnumbered != nil || nbIf.Unnumbered != nil && vppIf.Unnumbered == nil {
-		return isModified
+		return true
 	}
 	if nbIf.Unnumbered != nil && vppIf.Unnumbered != nil {
 		// Unnumbered fields
 		if nbIf.Unnumbered.IsUnnumbered != vppIf.Unnumbered.IsUnnumbered || nbIf.Unnumbered.InterfaceWithIP != nbIf.Unnumbered.InterfaceWithIP {
-			return isModified
+			return true
 		}
 	}
 
 	switch nbIf.Type {
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
-			return isModified
+			return true
 		}
 		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
 			// AF-packet host name
 			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
-				return isModified
+				return true
 			}
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
-			return isModified
+			return true
 		}
 		if nbIf.Memif != nil && vppIf.Memif != nil {
 			// Memif ID and socket
 			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename || nbIf.Memif.Id != vppIf.Memif.Id {
-				return isModified
+				return true
 			}
 			// Master, mode
 			if nbIf.Memif.Master != vppIf.Memif.Master || nbIf.Memif.Mode != vppIf.Memif.Mode {
-				return isModified
+				return true
 			}
 			// Rx & Tx queues
 			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues || nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
-				return isModified
+				return true
 			}
-			// todo secret, buffer size and ring size is not compared VPP always returns 0 for buffer size
-			// and 1 for ring size. Secret cannot be dumped at all
+			// todo secret, buffer size and ring size is not compared. VPP always returns 0 for buffer size
+			// and 1 for ring size. Secret cannot be dumped at all.
 		}
 	case intf.InterfaceType_TAP_INTERFACE:
 		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
-			return isModified
+			return true
 		}
 		if nbIf.Tap != nil && vppIf.Tap != nil {
 			// Tap version
 			if nbIf.Tap.Version == 2 && nbIf.Tap != vppIf.Tap {
-				return isModified
+				return true
 			}
 			// Namespace and host name
 			if nbIf.Tap.Namespace != vppIf.Tap.Namespace || nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
-				return isModified
+				return true
 			}
 			// Tx & Rx ring size
 			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize || nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
-				return isModified
+				return true
 			}
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
-			return isModified
+			return true
 		}
 		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
 			// VxLAN fields
 			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni || nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress || nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
-				return isModified
+				return true
 			}
 		}
 	}
-	isModified = false
-	return
+
+	// At last, return false if interfaces are equal
+	return false
 }

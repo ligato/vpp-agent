@@ -86,7 +86,7 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 			},
 		}
 		ifs[ifDetails.SwIfIndex] = iface
-		log.Warnf("dumped interface tag: %v (type %v)", iface.Name, iface.Type)
+		log.Debugf("interface dump received tag %v (interface type %v)", iface.Name, iface.Type)
 
 		if iface.Type == ifnb.InterfaceType_AF_PACKET_INTERFACE {
 			err := dumpAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)
