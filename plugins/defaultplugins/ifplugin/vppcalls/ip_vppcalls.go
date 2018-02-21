@@ -165,7 +165,7 @@ func UnsetUnnumberedIP(uIfIdx uint32, log logging.Logger, vppChan *govppapi.Chan
 	req.UnnumberedSwIfIndex = uIfIdx
 	req.IsAdd = 0
 
-	log.Debug("unset un-numbered interface %v ", uIfIdx)
+	log.Debugf("unset un-numbered interface %v ", uIfIdx)
 
 	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
 	err := vppChan.SendRequest(req).ReceiveReply(reply)

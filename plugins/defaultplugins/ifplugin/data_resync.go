@@ -730,37 +730,44 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
 		return true
 	}
-	// Remove IPv6 link local addresses (default values)
-	for ipIdx, ipAddress := range vppIf.IpAddresses {
-		if strings.HasPrefix(ipAddress, "fe80") {
-			vppIf.IpAddresses = append(vppIf.IpAddresses[:ipIdx], vppIf.IpAddresses[ipIdx+1:]...)
-		}
-	}
-	// Compare IP address count
-	if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
-		return true
-	}
-	// Compare every single IP address. If equal, every address should have identical counterpart
-	for _, nbIP := range nbIf.IpAddresses {
-		var ipFound bool
-		for _, vppIP := range vppIf.IpAddresses {
-			pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
-			if err != nil {
-				plugin.Log.Error(err)
-				continue
-			}
-			pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
-			if err != nil {
-				plugin.Log.Error(err)
-				continue
-			}
-			if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
-				ipFound = true
-				break
+	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
+	// todo unnumbered data cannot be dumped
+	if nbIf.Unnumbered != nil {
+		plugin.Log.Debugf("RESYNC interfaces: interface %v is unnumbered, result of the comparison may not be correct", nbIf.Name)
+		vppIf.IpAddresses = nil
+	} else {
+		// Remove IPv6 link local addresses (default values)
+		for ipIdx, ipAddress := range vppIf.IpAddresses {
+			if strings.HasPrefix(ipAddress, "fe80") {
+				vppIf.IpAddresses = append(vppIf.IpAddresses[:ipIdx], vppIf.IpAddresses[ipIdx+1:]...)
 			}
 		}
-		if !ipFound {
+		// Compare IP address count
+		if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
 			return true
+		}
+		// Compare every single IP address. If equal, every address should have identical counterpart
+		for _, nbIP := range nbIf.IpAddresses {
+			var ipFound bool
+			for _, vppIP := range vppIf.IpAddresses {
+				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
+					ipFound = true
+					break
+				}
+			}
+			if !ipFound {
+				return true
+			}
 		}
 	}
 	// RxMode settings
@@ -774,11 +781,6 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 			return true
 
 		}
-	}
-	// Unnumbered settings
-	// todo unnumbered data cannot be dumped
-	if nbIf.Unnumbered != nil {
-		plugin.Log.Debugf("RESYNC interfaces: interface %v is unnumbered, result of the comparison may not be correct", nbIf.Name)
 	}
 
 	switch nbIf.Type {
@@ -818,7 +820,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 		if nbIf.Tap != nil && vppIf.Tap != nil {
 			// Tap version
-			if nbIf.Tap.Version == 2 && nbIf.Tap != vppIf.Tap {
+			if nbIf.Tap.Version == 2 && nbIf.Tap.Version != vppIf.Tap.Version {
 				return true
 			}
 			// Namespace and host name
