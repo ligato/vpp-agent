@@ -20,38 +20,33 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 )
 
 // SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
-func SetInterfaceMac(ifIdx uint32, macAddress string, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceSetMacAddress time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func SetInterfaceMac(ifIdx uint32, macAddress string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	mac, macErr := net.ParseMAC(macAddress)
-	if macErr != nil {
-		return macErr
+	mac, err := net.ParseMAC(macAddress)
+	if err != nil {
+		return err
 	}
 
-	req := &interfaces.SwInterfaceSetMacAddress{}
-	req.SwIfIndex = ifIdx
-	req.MacAddress = mac
+	req := &interfaces.SwInterfaceSetMacAddress{
+		SwIfIndex:  ifIdx,
+		MacAddress: mac,
+	}
 
 	reply := &interfaces.SwInterfaceSetMacAddressReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("adding MAC address returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"MAC address": mac.String(), "ifIdx": ifIdx}).Debug("MAC address added")
 	return nil
 }

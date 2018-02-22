@@ -39,9 +39,9 @@ func (m *StaticRoutes) GetRoute() []*StaticRoutes_Route {
 }
 
 type StaticRoutes_Route struct {
-	VrfId             uint32 `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
+	VrfID             uint32 `protobuf:"varint,1,opt,name=vrf_id,proto3" json:"vrf_id,omitempty"`
 	Description       string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	DstIpAddr         string `protobuf:"bytes,3,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
+	DstIPAddr         string `protobuf:"bytes,3,opt,name=dst_ip_addr,proto3" json:"dst_ip_addr,omitempty"`
 	NextHopAddr       string `protobuf:"bytes,4,opt,name=next_hop_addr,proto3" json:"next_hop_addr,omitempty"`
 	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,proto3" json:"outgoing_interface,omitempty"`
 	Weight            uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`

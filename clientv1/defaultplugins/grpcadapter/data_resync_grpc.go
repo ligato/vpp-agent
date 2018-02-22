@@ -124,7 +124,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
+	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfID, val.DstIPAddr, val.NextHopAddr)] = val
 
 	return dsl
 }

@@ -19,81 +19,41 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/dhcp"
 )
 
-// SetInterfaceAsDHCPClient sets provided interface as a DHCP client
-func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) (err error) {
-	// DhcpClientConfig time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	if err = handleInterfaceDHCP(ifIdx, hostName, log, vppChan, true); err != nil {
-		return err
-	}
-
-	log.Debugf("Interface %v set as DHCP client", hostName)
-
-	return err
-}
-
-// UnsetInterfaceAsDHCPClient un-sets interface as DHCP client
-func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) (err error) {
-	// DhcpClientConfig time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	if err = handleInterfaceDHCP(ifIdx, hostName, log, vppChan, false); err != nil {
-		return err
-	}
-
-	log.Debugf("Interface %v is no longer a DHCP client", hostName)
-
-	return err
-}
-
-// SubscribeDHCPNotifications registers provided event channel to receive DHCP events
-func SubscribeDHCPNotifications(eventChan chan govppapi.Message, vppChan *govppapi.Channel) (*govppapi.NotifSubscription, error) {
-	if eventChan != nil {
-		return vppChan.SubscribeNotification(eventChan, dhcp.NewDhcpComplEvent)
-	} else {
-		return nil, fmt.Errorf("provided channel is nil")
-	}
-}
-
-func handleInterfaceDHCP(ifIdx uint32, hostName string, log logging.Logger, vppChan *govppapi.Channel, isAdd bool) error {
 	req := &dhcp.DhcpClientConfig{
-		SwIfIndex: ifIdx,
-		Hostname:  []byte(hostName),
-		IsAdd: func(isAdd bool) uint8 {
-			if isAdd {
-				return 1
-			}
-			return 0
-		}(isAdd),
+		SwIfIndex:     ifIdx,
+		Hostname:      []byte(hostName),
 		WantDhcpEvent: 1,
+	}
+	if isAdd {
+		req.IsAdd = 1
 	}
 
 	reply := &dhcp.DhcpClientConfigReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
-		return fmt.Errorf("setting up interface as DHCP client returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-	log.WithFields(logging.Fields{"hostName": hostName, "ifIdx": ifIdx}).Debug("Interface set as DHCP client")
 
 	return nil
+}
+
+// SetInterfaceAsDHCPClient sets provided interface as a DHCP client
+func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+	return handleInterfaceDHCP(ifIdx, hostName, true, vppChan, stopwatch)
+}
+
+// UnsetInterfaceAsDHCPClient un-sets interface as DHCP client
+func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+	return handleInterfaceDHCP(ifIdx, hostName, false, vppChan, stopwatch)
 }

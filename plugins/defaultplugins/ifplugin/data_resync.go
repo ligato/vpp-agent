@@ -20,8 +20,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	_ "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -386,8 +384,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.Log, plugin.vppChan,
-				nil); err != nil {
+			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
 				plugin.Log.Error(err)
 				wasErr = err
 			}
@@ -409,8 +406,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.Log, plugin.vppChan,
-				nil); err != nil {
+			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
 				plugin.Log.Error(err)
 				wasErr = err
 			}
@@ -965,8 +961,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 // Register interface to mapping and add tag/index to the VPP
 func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
 	plugin.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
-	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh,
-		measure.GetTimeLog(interfaces.SwInterfaceTagAddDel{}, plugin.Stopwatch)); err != nil {
+	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
 		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
 	}
 	plugin.Log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)

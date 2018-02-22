@@ -116,7 +116,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr), val)
+	dsl.parent.txn.Put(l3.RouteKey(val.VrfID, val.DstIPAddr, val.NextHopAddr), val)
 	return dsl
 }
 

@@ -285,10 +285,10 @@ func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResync
 	if err != nil {
 		return err
 	}
-	if vrfIndex != strconv.Itoa(int(route.VrfId)) {
+	if vrfIndex != strconv.Itoa(int(route.VrfID)) {
 		log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
-			intVrfKeyIndex, route.VrfId)
-		route.VrfId = uint32(intVrfKeyIndex)
+			intVrfKeyIndex, route.VrfID)
+		route.VrfID = uint32(intVrfKeyIndex)
 	}
 
 	req.StaticRoutes = append(req.StaticRoutes, route)

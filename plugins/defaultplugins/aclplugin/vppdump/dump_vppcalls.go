@@ -309,23 +309,13 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 }
 
 // DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
-func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (acl.AccessLists, uint8, error) {
-
+func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (acl.AccessLists, uint8, error) {
 	log.Info("DumpInterfaceAcls")
-	// ACLInterfaceListDump time measurement
 	alAcls := acl.AccessLists{
 		Acl: []*acl.AccessLists_Acl{},
 	}
 
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	res, err := vppcalls.DumpInterface(swIndex, vppChannel, timeLog)
+	res, err := vppcalls.DumpInterface(swIndex, vppChannel, stopwatch)
 	log.Infof("Res: %+v\n", res)
 	if err != nil {
 		return alAcls, 0, err
@@ -382,8 +372,8 @@ func getMACIPRuleDetails(rule acl_api.MacipACLRule) (aclRule *acl.AccessLists_Ac
 	}, nil
 }
 
-//getIPACLDetails gets details for a given IP ACL from VPP and translates
-//them from the binary VPP API format into the ACL Plugin's NB format.
+// getIPACLDetails gets details for a given IP ACL from VPP and translates
+// them from the binary VPP API format into the ACL Plugin's NB format.
 func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
 	req := &acl_api.ACLDump{}
 	req.ACLIndex = uint32(idx)
@@ -444,8 +434,8 @@ func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Matches_IpRul
 	case vppcalls.UDPProto:
 		ipRule.Udp = getUDPMatchRule(r)
 		break
-	case vppcalls.Icmpv4Proto:
-	case vppcalls.Icmpv6Proto:
+	case vppcalls.ICMPv4Proto:
+	case vppcalls.ICMPv6Proto:
 		ipRule.Icmp = getIcmpMatchRule(r)
 		break
 	default:

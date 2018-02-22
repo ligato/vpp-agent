@@ -21,15 +21,60 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/addrs"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
 
+func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BdIPMacAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &l2ba.BdIPMacAddDel{
+		BdID: bdID,
+	}
+
+	macAddr, err := net.ParseMAC(mac)
+	if err != nil {
+		return err
+	}
+	req.MacAddress = macAddr
+
+	isIpv6, err := addrs.IsIPv6(ip)
+	if err != nil {
+		return err
+	}
+	ipAddr := net.ParseIP(ip)
+	if isIpv6 {
+		req.IsIpv6 = 1
+		req.IPAddress = []byte(ipAddr.To16())
+	} else {
+		req.IsIpv6 = 0
+		req.IPAddress = []byte(ipAddr.To4())
+	}
+
+	if isAdd {
+		req.IsAdd = 1
+	} else {
+		req.IsAdd = 0
+	}
+
+	reply := &l2ba.BdIPMacAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return nil
+}
+
 // VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain.
-func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string,
-	log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
+func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Info("Adding ARP termination entry")
 
-	err := callBdIPMacAddDel(true, bdID, mac, ip, vppChan, timeLog)
+	err := callBdIPMacAddDel(true, bdID, mac, ip, vppChan, stopwatch)
 	if err != nil {
 		return err
 	}
@@ -41,60 +86,16 @@ func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string,
 }
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry from bridge domain
-func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger,
-	vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
+func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Info("Removing ARP termination entry")
 
-	err := callBdIPMacAddDel(false, bdID, mac, ip, vppChan, timeLog)
+	err := callBdIPMacAddDel(false, bdID, mac, ip, vppChan, stopwatch)
 	if err != nil {
 		return err
 	}
 
 	log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).
 		Debug("ARP termination entry removed")
-
-	return nil
-}
-
-func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string,
-	vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// BdIPMacAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	macAddr, err := net.ParseMAC(mac)
-	if err != nil {
-		return err
-	}
-	ipAddr := []byte(net.ParseIP(ip).To4())
-	if ipAddr == nil {
-		return fmt.Errorf("invalid IP address: %q", ipAddr)
-	}
-
-	req := &l2ba.BdIPMacAddDel{
-		BdID:       bdID,
-		IPAddress:  ipAddr,
-		MacAddress: macAddr,
-		IsIpv6:     0,
-	}
-	if isAdd {
-		req.IsAdd = 1
-	} else {
-		req.IsAdd = 0
-	}
-
-	reply := &l2ba.BdIPMacAddDelReply{}
-
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("vpp call %q returned: %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }

@@ -18,118 +18,92 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 )
 
 // VppAddBridgeDomain adds new bridge domain.
-func VppAddBridgeDomain(bdIdx uint32, bridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	log.Debug("Adding VPP bridge domain ", bridgeDomain.Name)
-	// BridgeDomainAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	req := &l2ba.BridgeDomainAddDel{}
-	req.BdID = bdIdx
-	req.IsAdd = 1
-
-	// Set bridge domain params.
-	req.Learn = boolToUint(bridgeDomain.Learn)
-	req.ArpTerm = boolToUint(bridgeDomain.ArpTermination)
-	req.Flood = boolToUint(bridgeDomain.Flood)
-	req.UuFlood = boolToUint(bridgeDomain.UnknownUnicastFlood)
-	req.Forward = boolToUint(bridgeDomain.Forward)
-	req.MacAge = uint8(bridgeDomain.MacAge)
-	req.BdTag = []byte(bridgeDomain.Name)
+	req := &l2ba.BridgeDomainAddDel{
+		IsAdd:   1,
+		BdID:    bdIdx,
+		Learn:   boolToUint(bd.Learn),
+		ArpTerm: boolToUint(bd.ArpTermination),
+		Flood:   boolToUint(bd.Flood),
+		UuFlood: boolToUint(bd.UnknownUnicastFlood),
+		Forward: boolToUint(bd.Forward),
+		MacAge:  uint8(bd.MacAge),
+		BdTag:   []byte(bd.Name),
+	}
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		return fmt.Errorf("adding bridge domain failed with error %v", err)
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("adding bridge domain returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"Name": bridgeDomain.Name, "Index": bdIdx}).Print("Bridge domain added.")
-	return nil
-}
-
-// VppUpdateBridgeDomain updates bridge domain parameters.
-func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
-	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
-	// BridgeDomainAddDel time measurement
-	start := time.Now()
-	defer func() {
-		timeLog := measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, stopwatch)
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	req := &l2ba.BridgeDomainAddDel{}
-	req.BdID = newBdIdx
-	req.IsAdd = 1
-
-	// Set bridge domain params.
-	req.Learn = boolToUint(newBridgeDomain.Learn)
-	req.ArpTerm = boolToUint(newBridgeDomain.ArpTermination)
-	req.Flood = boolToUint(newBridgeDomain.Flood)
-	req.UuFlood = boolToUint(newBridgeDomain.UnknownUnicastFlood)
-	req.Forward = boolToUint(newBridgeDomain.Forward)
-	req.MacAge = uint8(newBridgeDomain.MacAge)
-
-	reply := &l2ba.BridgeDomainAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		return fmt.Errorf("updating bridge domain failed with error %v", err)
-	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("updating bridge domain returned %d", reply.Retval)
-	}
-
-	log.WithFields(logging.Fields{"Name": newBridgeDomain.Name, "Index": newBdIdx}).Debug("Bridge domain Updated.")
 	return nil
 }
 
 // VppDeleteBridgeDomain removes existing bridge domain.
-func VppDeleteBridgeDomain(bdIdx uint32, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// BridgeDomainAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func VppDeleteBridgeDomain(bdIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	req := &l2ba.BridgeDomainAddDel{}
-	req.BdID = bdIdx
-	req.IsAdd = 0
+	req := &l2ba.BridgeDomainAddDel{
+		IsAdd: 0,
+		BdID:  bdIdx,
+	}
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		log.WithFields(logging.Fields{"Error": err}).Error("Error while removing bridge domain")
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func boolToUint(value bool) uint8 {
-	if value {
-		return 1
+/*
+// VppUpdateBridgeDomain updates bridge domain parameters.
+// TODO: removed, unused
+func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
+	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
+
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &l2ba.BridgeDomainAddDel{
+		IsAdd:   1,
+		BdID:    newBdIdx,
+		Learn:   boolToUint(newBridgeDomain.Learn),
+		ArpTerm: boolToUint(newBridgeDomain.ArpTermination),
+		Flood:   boolToUint(newBridgeDomain.Flood),
+		UuFlood: boolToUint(newBridgeDomain.UnknownUnicastFlood),
+		Forward: boolToUint(newBridgeDomain.Forward),
+		MacAge:  uint8(newBridgeDomain.MacAge),
 	}
-	return 0
-}
+
+	reply := &l2ba.BridgeDomainAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return fmt.Errorf("updating bridge domain failed with error %v", err)
+	}
+	if 0 != reply.Retval {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	log.WithFields(logging.Fields{"Name": newBridgeDomain.Name, "Index": newBdIdx}).Debug("Bridge domain Updated.")
+	return nil
+}*/

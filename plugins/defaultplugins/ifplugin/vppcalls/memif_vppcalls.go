@@ -25,34 +25,27 @@ import (
 )
 
 // AddMemifInterface calls MemifCreate bin API.
-func AddMemifInterface(ifName string, memIntf *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
-	// MemifCreate time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(memif.MemifCreate{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	// Prepare the message.
-	req := &memif.MemifCreate{}
-
-	req.ID = memIntf.Id
-	if memIntf.Master {
+	req := &memif.MemifCreate{
+		ID:         memIface.Id,
+		Mode:       uint8(memIface.Mode),
+		Secret:     []byte(memIface.Secret),
+		SocketID:   socketID,
+		BufferSize: uint16(memIface.BufferSize),
+		RingSize:   memIface.RingSize,
+		RxQueues:   uint8(memIface.RxQueues),
+		TxQueues:   uint8(memIface.TxQueues),
+	}
+	if memIface.Master {
 		req.Role = 0
 	} else {
 		req.Role = 1
 	}
-	req.Mode = uint8(memIntf.Mode)
-	req.Secret = []byte(memIntf.Secret)
-	req.SocketID = socketID
-	req.BufferSize = uint16(memIntf.BufferSize)
-	req.RingSize = memIntf.RingSize
-	req.RxQueues = uint8(memIntf.RxQueues)
-	req.TxQueues = uint8(memIntf.TxQueues)
-
-	/* TODO: temporary fix, waiting for https://gerrit.fd.io/r/#/c/7266/ */
+	// TODO: temporary fix, waiting for https://gerrit.fd.io/r/#/c/7266/
 	if req.RxQueues == 0 {
 		req.RxQueues = 1
 	}
@@ -65,62 +58,51 @@ func AddMemifInterface(ifName string, memIntf *intf.Interfaces_Interface_Memif, 
 		return 0, err
 	}
 	if reply.Retval != 0 {
-		return 0, fmt.Errorf("add memif interface returned %d", reply.Retval)
+		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, timeLog)
+	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, stopwatch)
 }
 
 // DeleteMemifInterface calls MemifDelete bin API.
-func DeleteMemifInterface(ifName string, idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// MemifDelete time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DeleteMemifInterface(ifName string, idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(memif.MemifDelete{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	// Prepare the message.
-	req := &memif.MemifDelete{}
-	req.SwIfIndex = idx
+	req := &memif.MemifDelete{
+		SwIfIndex: idx,
+	}
 
 	reply := &memif.MemifDeleteReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("deleting of interface returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return RemoveInterfaceTag(ifName, idx, vppChan, timeLog)
+	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
 }
 
 // RegisterMemifSocketFilename registers new socket file name with provided ID.
-func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// MemifSocketFilenameAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(memif.MemifSocketFilenameAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	// Prepare the message.
-	req := &memif.MemifSocketFilenameAddDel{}
-	req.SocketFilename = filename
-	req.SocketID = id
-	req.IsAdd = 1 // sockets can be added only
-
-	reply := &memif.MemifSocketFilenameAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-
-	if err != nil {
-		return err
+	req := &memif.MemifSocketFilenameAddDel{
+		SocketFilename: filename,
+		SocketID:       id,
+		IsAdd:          1, // sockets can be added only
 	}
 
-	if 0 != reply.Retval {
-		return fmt.Errorf("add memif socket filename returned %d", reply.Retval)
+	reply := &memif.MemifSocketFilenameAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

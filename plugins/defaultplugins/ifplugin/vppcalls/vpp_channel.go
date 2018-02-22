@@ -18,7 +18,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 )
 
-//VPPChannel is interface for send request to VPP channel
+// VPPChannel is interface for send request to VPP channel
 type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
+}
+
+func boolToUint(value bool) uint8 {
+	if value {
+		return 1
+	}
+	return 0
 }

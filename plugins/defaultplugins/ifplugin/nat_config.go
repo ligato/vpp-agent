@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
@@ -79,15 +78,15 @@ func (plugin *NatConfigurator) Init() (err error) {
 
 	// Init VPP API channel
 	if plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
-		return
+		return err
 	}
 
 	// Check VPP message compatibility
-	if err = plugin.checkMsgCompatibility(); err != nil {
-		return
+	if err := vppcalls.CheckMsgCompatibilityForNat(plugin.vppChan); err != nil {
+		return err
 	}
 
-	return
+	return nil
 }
 
 // Close used resources
@@ -96,13 +95,17 @@ func (plugin *NatConfigurator) Close() error {
 }
 
 // SetNatGlobalConfig configures common setup for all NAT use cases
-func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) (err error) {
+func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error {
 	plugin.Log.Info("Setting up NAT global config")
 
 	// Forwarding
-	if err = vppcalls.SetNat44Forwarding(config.Forwarding, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44ForwardingEnableDisable{}, plugin.Stopwatch)); err != nil {
-		return
+	if err := vppcalls.SetNat44Forwarding(config.Forwarding, plugin.vppChan, plugin.Stopwatch); err != nil {
+		return err
+	}
+	if config.Forwarding {
+		plugin.Log.Debugf("NAT forwarding enabled")
+	} else {
+		plugin.Log.Debugf("NAT forwarding disabled")
 	}
 
 	// Inside/outside interfaces
@@ -115,24 +118,24 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) (err 
 	}
 
 	// Address pool
-	for _, addressPool := range config.AddressPools {
-		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
+	for _, pool := range config.AddressPools {
+		if pool.FirstSrcAddress == "" && pool.LastSrcAddress == "" {
 			plugin.Log.Warn("Invalid address pool config, no IP address provided")
 			continue
 		}
 		var firstIP []byte
 		var lastIP []byte
-		if addressPool.FirstSrcAddress != "" {
-			firstIP = net.ParseIP(addressPool.FirstSrcAddress).To4()
+		if pool.FirstSrcAddress != "" {
+			firstIP = net.ParseIP(pool.FirstSrcAddress).To4()
 			if firstIP == nil {
-				plugin.Log.Errorf("unable to parse IP address %v", addressPool.FirstSrcAddress)
+				plugin.Log.Errorf("unable to parse IP address %v", pool.FirstSrcAddress)
 				continue
 			}
 		}
-		if addressPool.LastSrcAddress != "" {
-			lastIP = net.ParseIP(addressPool.LastSrcAddress).To4()
+		if pool.LastSrcAddress != "" {
+			lastIP = net.ParseIP(pool.LastSrcAddress).To4()
 			if lastIP == nil {
-				plugin.Log.Errorf("unable to parse IP address %v", addressPool.LastSrcAddress)
+				plugin.Log.Errorf("unable to parse IP address %v", pool.LastSrcAddress)
 				continue
 			}
 		}
@@ -144,15 +147,14 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) (err 
 		}
 
 		// Configure address pool
-		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelAddressRange{}, plugin.Stopwatch)); err != nil {
-			return
+		if err := vppcalls.AddNat44AddressPool(firstIP, lastIP, pool.VrfId, pool.TwiceNat, plugin.vppChan, plugin.Stopwatch); err != nil {
+			return err
 		}
 	}
 
 	plugin.Log.Debug("Setting up NAT global config done")
 
-	return
+	return nil
 }
 
 // ModifyNatGlobalConfig modifies common setup for all NAT use cases
@@ -161,9 +163,8 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 
 	// Forwarding
 	if oldConfig.Forwarding != newConfig.Forwarding {
-		if err = vppcalls.SetNat44Forwarding(newConfig.Forwarding, plugin.Log, plugin.vppChan,
-			measure.GetTimeLog(bin_api.Nat44ForwardingEnableDisable{}, plugin.Stopwatch)); err != nil {
-			return
+		if err := vppcalls.SetNat44Forwarding(newConfig.Forwarding, plugin.vppChan, plugin.Stopwatch); err != nil {
+			return err
 		}
 	}
 
@@ -393,8 +394,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 		} else {
 			if natInterface.OutputFeature {
 				// enable nat interface and output feature
-				if err = vppcalls.EnableNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside,
-					plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44InterfaceAddDelOutputFeature{}, plugin.Stopwatch)); err != nil {
+				if err = vppcalls.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.Stopwatch); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -404,8 +404,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 				}
 			} else {
 				// enable interface only
-				if err = vppcalls.EnableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
-					measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
+				if err = vppcalls.EnableNat44Interface(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.Stopwatch); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -430,8 +429,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 		} else {
 			if natInterface.OutputFeature {
 				// disable nat interface and output feature
-				if err = vppcalls.DisableNat44InterfaceOutput(natInterface.Name, ifIdx, natInterface.IsInside,
-					plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44InterfaceAddDelOutputFeature{}, plugin.Stopwatch)); err != nil {
+				if err = vppcalls.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.Stopwatch); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -441,8 +439,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 				}
 			} else {
 				// disable interface
-				if err = vppcalls.DisableNat44Interface(natInterface.Name, ifIdx, natInterface.IsInside, plugin.Log, plugin.vppChan,
-					measure.GetTimeLog(bin_api.Nat44InterfaceAddDelFeature{}, plugin.Stopwatch)); err != nil {
+				if err = vppcalls.DisableNat44Interface(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.Stopwatch); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -488,8 +485,7 @@ func (plugin *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_Ad
 		}
 
 		// configure address pool
-		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelAddressRange{}, plugin.Stopwatch)); err != nil {
+		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.Stopwatch); err != nil {
 			return
 		}
 	}
@@ -524,8 +520,7 @@ func (plugin *NatConfigurator) deleteAddressPool(addressPools []*nat.Nat44Global
 		}
 
 		// configure address pool
-		if err = vppcalls.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelAddressRange{}, plugin.Stopwatch)); err != nil {
+		if err = vppcalls.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.Stopwatch); err != nil {
 			return
 		}
 	}
@@ -535,7 +530,6 @@ func (plugin *NatConfigurator) deleteAddressPool(addressPools []*nat.Nat44Global
 
 // configures single static mapping entry with load balancer
 func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMappigs, add bool) (err error) {
-
 	// Parse external IP address
 	exIPAddrByte := net.ParseIP(staticMappingLb.ExternalIP).To4()
 	if exIPAddrByte == nil {
@@ -560,21 +554,9 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 	}
 
 	if add {
-		return plugin.configureStaticEntryLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat)
+		return vppcalls.AddNat44StaticMappingLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat, plugin.vppChan, plugin.Stopwatch)
 	}
-	return plugin.removeStaticEntryLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat)
-}
-
-// Configure static mapping with load balancer
-func (plugin *NatConfigurator) configureStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) error {
-	return vppcalls.AddNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch))
-}
-
-// Remove static mapping with load balancer
-func (plugin *NatConfigurator) removeStaticEntryLb(ctx *vppcalls.StaticMappingLbContext, vrf uint32, sNatEnabled bool) error {
-	return vppcalls.DelNat44StaticMappingLb(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelLbStaticMapping{}, plugin.Stopwatch))
+	return vppcalls.DelNat44StaticMappingLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat, plugin.vppChan, plugin.Stopwatch)
 }
 
 // handler for single static mapping entry
@@ -623,21 +605,9 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	}
 
 	if add {
-		return plugin.configureStaticEntry(ctx, staticMapping.VrfId, staticMapping.TwiceNat)
+		return vppcalls.AddNat44StaticMapping(ctx, staticMapping.VrfId, staticMapping.TwiceNat, plugin.vppChan, plugin.Stopwatch)
 	}
-	return plugin.removeStaticEntry(ctx, staticMapping.VrfId, staticMapping.TwiceNat)
-}
-
-// Configure static mapping
-func (plugin *NatConfigurator) configureStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) error {
-	return vppcalls.AddNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch))
-}
-
-// Remove static mapping
-func (plugin *NatConfigurator) removeStaticEntry(ctx *vppcalls.StaticMappingContext, vrf uint32, sNatEnabled bool) error {
-	return vppcalls.DelNat44StaticMapping(ctx, vrf, sNatEnabled, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(bin_api.Nat44AddDelStaticMapping{}, plugin.Stopwatch))
+	return vppcalls.DelNat44StaticMapping(ctx, staticMapping.VrfId, staticMapping.TwiceNat, plugin.vppChan, plugin.Stopwatch)
 }
 
 // handler for single identity mapping entry
@@ -648,18 +618,21 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 		var found bool
 		ifIdx, _, found = plugin.SwIfIndexes.LookupIdx(idMapping.AddressedInterface)
 		if !found {
-			// todo use cache to configure later
+			// TODO: use cache to configure later
 			plugin.Log.Warnf("Identity mapping config: provided interface %v does not exist", idMapping.AddressedInterface)
 			return
 		}
 	}
 
+	proto := getProtocol(idMapping.Protocol, plugin.Log)
+	port := uint16(idMapping.Port)
+
 	if ifIdx != 0 {
 		// Case with interface
 		if isAdd {
-			return plugin.configureIdentityEntry(nil, idMapping.Protocol, uint16(idMapping.Port), ifIdx, idMapping.VrfId)
+			return vppcalls.AddNat44IdentityMapping(nil, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
 		}
-		return plugin.removeIdentityEntry(nil, idMapping.Protocol, uint16(idMapping.Port), ifIdx, idMapping.VrfId)
+		return vppcalls.DelNat44IdentityMapping(nil, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
 	}
 	// Case with IP (optionally port). Verify and parse input IP/port
 	parsedIP := net.ParseIP(idMapping.IpAddress).To4()
@@ -669,21 +642,9 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 
 	// Configure/remove identity mapping
 	if isAdd {
-		return plugin.configureIdentityEntry(parsedIP, idMapping.Protocol, uint16(idMapping.Port), ifIdx, idMapping.VrfId)
+		return vppcalls.AddNat44IdentityMapping(parsedIP, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
 	}
-	return plugin.removeIdentityEntry(parsedIP, idMapping.Protocol, uint16(idMapping.Port), ifIdx, idMapping.VrfId)
-}
-
-// Configure identity mapping
-func (plugin *NatConfigurator) configureIdentityEntry(ip []byte, proto nat.Protocol, port uint16, ifIdx, vrf uint32) error {
-	return vppcalls.AddNat44IdentityMapping(ip, getProtocol(proto, plugin.Log), port, ifIdx, vrf,
-		plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelIdentityMapping{}, plugin.Stopwatch))
-}
-
-// Remove identity mapping
-func (plugin *NatConfigurator) removeIdentityEntry(ip []byte, proto nat.Protocol, port uint16, ifIdx, vrf uint32) error {
-	return vppcalls.DelNat44IdentityMapping(ip, getProtocol(proto, plugin.Log), port, ifIdx, vrf,
-		plugin.Log, plugin.vppChan, measure.GetTimeLog(bin_api.Nat44AddDelIdentityMapping{}, plugin.Stopwatch))
+	return vppcalls.DelNat44IdentityMapping(parsedIP, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
 }
 
 // looks for new and obsolete IN interfaces
@@ -758,27 +719,6 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, to
 	return
 }
 
-// checkMsgCompatibility verifies compatibility of used binary API calls
-func (plugin *NatConfigurator) checkMsgCompatibility() error {
-	msgs := []govppapi.Message{
-		&bin_api.Nat44AddDelAddressRange{},
-		&bin_api.Nat44AddDelAddressRangeReply{},
-		&bin_api.Nat44ForwardingEnableDisable{},
-		&bin_api.Nat44ForwardingEnableDisableReply{},
-		&bin_api.Nat44InterfaceAddDelFeature{},
-		&bin_api.Nat44InterfaceAddDelFeatureReply{},
-		&bin_api.Nat44AddDelStaticMapping{},
-		&bin_api.Nat44AddDelStaticMappingReply{},
-		&bin_api.Nat44AddDelLbStaticMapping{},
-		&bin_api.Nat44AddDelLbStaticMappingReply{},
-	}
-	err := plugin.vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		plugin.Log.Error(err)
-	}
-	return err
-}
-
 // returns a list of validated local IP addresses with port and probability value
 func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
 	for _, ipPort := range ipPorts {
@@ -804,18 +744,18 @@ func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs, log
 }
 
 // returns num representation of provided protocol value
-func getProtocol(protocol nat.Protocol, log logging.Logger) (proto uint8) {
-	if protocol == nat.Protocol_TCP {
-		proto = vppcalls.TCP
-	} else if protocol == nat.Protocol_UDP {
-		proto = vppcalls.UDP
-	} else if protocol == nat.Protocol_ICMP {
-		proto = vppcalls.ICMP
-	} else {
+func getProtocol(protocol nat.Protocol, log logging.Logger) uint8 {
+	switch protocol {
+	case nat.Protocol_TCP:
+		return vppcalls.TCP
+	case nat.Protocol_UDP:
+		return vppcalls.UDP
+	case nat.Protocol_ICMP:
+		return vppcalls.ICMP
+	default:
 		log.Warnf("Unknown protocol %v, defaulting to TCP", protocol)
-		proto = vppcalls.TCP
+		return vppcalls.TCP
 	}
-	return
 }
 
 // returns unique ID of the mapping

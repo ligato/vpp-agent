@@ -79,13 +79,15 @@ func (plugin *ACLConfigurator) Init() (err error) {
 		return err
 	}
 
-	err = vppcalls.CheckMsgCompatibilityForACL(plugin.Log, plugin.vppChannel)
+	if err := vppcalls.CheckMsgCompatibilityForACL(plugin.Log, plugin.vppChannel); err != nil {
+		return err
+	}
 
-	// todo possibly check acl plugin version on vpp using bin api acl_plugin_get_version
+	// TODO: possibly check acl plugin version on vpp using bin api acl_plugin_get_version
 
 	plugin.vppcalls = vppcalls.NewACLInterfacesVppCalls(plugin.vppChannel, plugin.SwIfIndexes, plugin.Stopwatch)
 
-	return err
+	return nil
 }
 
 // Close GOVPP channel.
@@ -104,8 +106,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 		var vppACLIndex uint32
 		var err error
 		if isL2MacIP {
-			vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(acl_api.MacipACLAdd{}, plugin.Stopwatch))
+			vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -114,8 +115,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
 			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 		} else {
-			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(acl_api.ACLAddReplace{}, plugin.Stopwatch))
+			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -155,10 +155,9 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 
 // ModifyACL modifies previously created access list. L2 access list is removed and recreated,
 // L3/L4 access list is modified directly. List of interfaces is refreshed as well.
-func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *acl.AccessLists_Acl) error {
+func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (err error) {
 	plugin.Log.Infof("Modifying ACL %v", oldACL.AclName)
 
-	var err error
 	if newACL.Rules != nil {
 		// Validate rules.
 		rules, isL2MacIP := plugin.validateRules(newACL.AclName, newACL.Rules)
@@ -181,13 +180,12 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 		}
 		if isL2MacIP {
 			// L2 ACL
-			err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.MacipACLDel{}, plugin.Stopwatch))
+			err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
 			plugin.ACLL2Indexes.UnregisterName(newACL.AclName)
-			newVppACLIndex, err := vppcalls.AddMacIPAcl(rules, newACL.AclName, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(acl_api.MacipACLAdd{}, plugin.Stopwatch))
+			newVppACLIndex, err := vppcalls.AddMacIPAcl(rules, newACL.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -196,8 +194,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 			plugin.ACLL2Indexes.RegisterName(newACL.AclName, newAgentACLIndex, nil)
 		} else {
 			// L3/L4 ACL can be modified directly.
-			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(acl_api.ACLAddReplace{}, plugin.Stopwatch))
+			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 			if err != nil {
 				return err
 			}
@@ -255,10 +252,9 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *ac
 }
 
 // DeleteACL removes existing ACL. To detach ACL from interfaces, list of interfaces has to be provided.
-func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
+func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 	plugin.Log.Infof("Deleting ACL %v", acl.AclName)
 
-	var err error
 	// Get ACL index. Keep in mind that all ACL Indices were incremented by 1.
 	agentL2AclIndex, _, l2AclFound := plugin.ACLL2Indexes.LookupIdx(acl.AclName)
 	agentL3L4AclIndex, _, l3l4AclFound := plugin.ACLL3L4Indexes.LookupIdx(acl.AclName)
@@ -275,7 +271,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 			}
 		}
 		// Remove ACL L2.
-		err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.MacipACLDel{}, plugin.Stopwatch))
+		err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 		if err != nil {
 			return err
 		}
@@ -297,7 +293,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 			}
 		}
 		// Remove ACL L3/L4.
-		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDel{}, plugin.Stopwatch))
+		err := vppcalls.DeleteIPAcl(vppACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 		if err != nil {
 			return err
 		}
@@ -309,13 +305,12 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) error {
 }
 
 // DumpACL returns all configured ACLs in proto format
-func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
+func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return nil, err
 	}
-	var acls []*acl.AccessLists_Acl
 	for _, aclWithIndex := range aclsWithIndex {
 		acls = append(acls, aclWithIndex.ACLDetails)
 	}
@@ -323,8 +318,7 @@ func (plugin *ACLConfigurator) DumpACL() ([]*acl.AccessLists_Acl, error) {
 }
 
 // Returns a list of existing ACL interfaces
-func (plugin *ACLConfigurator) getInterfaces(interfaces []string) []uint32 {
-	var configurableIfs []uint32
+func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableIfs []uint32) {
 	for _, name := range interfaces {
 		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(name)
 		if !found {
@@ -443,8 +437,7 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 
 // Returns a list of interfaces configurable on the ACL. If interface is missing, put it to the cache. It will be
 // configured when available
-func (plugin *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uint32, attr string) []uint32 {
-	var configurableIfs []uint32
+func (plugin *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uint32, attr string) (configurableIfs []uint32) {
 	for _, name := range interfaces {
 		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(name)
 		if !found {

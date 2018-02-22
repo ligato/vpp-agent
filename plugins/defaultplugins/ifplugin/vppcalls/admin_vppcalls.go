@@ -22,92 +22,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 )
 
-// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
-func InterfaceAdminDown(ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceSetFlags time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	return interfaceSetFlags(ifIdx, false, vppChan)
-}
-
-// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
-func InterfaceAdminUp(ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceSetFlags time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	return interfaceSetFlags(ifIdx, true, vppChan)
-}
-
-// SetInterfaceTag registers new interface index/tag pair
-func SetInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceTagAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	return handleInterfaceTag(tag, ifIdx, true, vppChan)
-}
-
-// RemoveInterfaceTag un-registers new interface index/tag pair
-func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceTagAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	return handleInterfaceTag(tag, ifIdx, false, vppChan)
-}
-
-func handleInterfaceTag(tag string, ifIdx uint32, add bool, vppChan VPPChannel) error {
-	// Prepare the message.
-	req := &interfaces.SwInterfaceTagAddDel{
-		// For some reason, if deleting tag, the software interface index has to be 0 and only name should be set.
-		// Otherwise reply returns with error core -2 (incorrect sw_if_idx)
-		SwIfIndex: func(idx uint32, isAdd bool) uint32 {
-			if isAdd {
-				return ifIdx
-			}
-			return 0
-		}(ifIdx, add),
-		Tag: []byte(tag),
-		IsAdd: func(isAdd bool) uint8 {
-			if isAdd {
-				return 1
-			}
-			return 0
-		}(add),
-	}
-
-	reply := &interfaces.SwInterfaceTagAddDelReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		return err
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("interface tag %v (index %v) add/del returned %v", tag, ifIdx, reply.Retval)
-	}
-
-	return nil
-}
-
-func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
-	// Prepare the message.
 	req := &interfaces.SwInterfaceSetFlags{
 		SwIfIndex: ifIdx,
 	}
@@ -122,8 +41,54 @@ func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel) error {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("setting of interface flags %+v returned %d", req, reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
+}
+
+// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
+func InterfaceAdminDown(ifIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	return interfaceSetFlags(ifIdx, false, vppChan, stopwatch)
+}
+
+// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
+func InterfaceAdminUp(ifIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	return interfaceSetFlags(ifIdx, true, vppChan, stopwatch)
+}
+
+func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &interfaces.SwInterfaceTagAddDel{
+		Tag:   []byte(tag),
+		IsAdd: boolToUint(isAdd),
+	}
+	// For some reason, if deleting tag, the software interface index has to be 0 and only name should be set.
+	// Otherwise reply returns with error core -2 (incorrect sw_if_idx)
+	if isAdd {
+		req.SwIfIndex = ifIdx
+	}
+
+	reply := &interfaces.SwInterfaceTagAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s %v (index %v) add/del returned %v", reply.GetMessageName(), tag, ifIdx, reply.Retval)
+	}
+
+	return nil
+}
+
+// SetInterfaceTag registers new interface index/tag pair
+func SetInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	return handleInterfaceTag(tag, ifIdx, true, vppChan, stopwatch)
+}
+
+// RemoveInterfaceTag un-registers new interface index/tag pair
+func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	return handleInterfaceTag(tag, ifIdx, false, vppChan, stopwatch)
 }

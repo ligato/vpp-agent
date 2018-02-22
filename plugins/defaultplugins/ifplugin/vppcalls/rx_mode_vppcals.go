@@ -19,41 +19,31 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // SetRxMode calls SwInterfaceSetRxMode bin
-func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings,
-	log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceSetRxMode time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	//prepare the message
-	req := &interfaces.SwInterfaceSetRxMode{}
-	req.SwIfIndex = ifIdx
-	req.Mode = uint8(rxModeSettings.RxMode)
-	req.QueueID = rxModeSettings.QueueID
-	req.QueueIDValid = uint8(rxModeSettings.QueueIDValid)
-
-	log.Debug("set rxModeSettings: ", rxModeSettings)
+	req := &interfaces.SwInterfaceSetRxMode{
+		SwIfIndex:    ifIdx,
+		Mode:         uint8(rxModeSettings.RxMode),
+		QueueID:      rxModeSettings.QueueID,
+		QueueIDValid: uint8(rxModeSettings.QueueIDValid),
+	}
 
 	reply := &interfaces.SwInterfaceSetRxModeReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("setting rxModeSettings returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"RxModeType": rxModeSettings}).Debug("RxModeType ", rxModeSettings, "for interface ", ifIdx, " was set.")
 	return nil
-
 }

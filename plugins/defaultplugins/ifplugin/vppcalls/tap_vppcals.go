@@ -27,14 +27,10 @@ import (
 )
 
 // AddTapInterface calls TapConnect bin API.
-func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (uint32, error) {
-	// TapConnect/TapCreateV2 time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(tap.TapConnect{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
@@ -44,83 +40,87 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 		err       error
 		retval    int32
 		swIfIndex uint32
+		msgName   string
 	)
-
 	if tapIf.Version == 2 {
 		// Configure fast virtio-based TAP interface
-		req := &tapv2.TapCreateV2{}
-		req.ID = ^uint32(0)
-		req.HostIfName = []byte(tapIf.HostIfName)
-		req.HostIfNameSet = 1
-		req.UseRandomMac = 1
+		req := &tapv2.TapCreateV2{
+			ID:            ^uint32(0),
+			HostIfName:    []byte(tapIf.HostIfName),
+			HostIfNameSet: 1,
+			UseRandomMac:  1,
+			RxRingSz:      uint16(tapIf.RxRingSize),
+			TxRingSz:      uint16(tapIf.TxRingSize),
+		}
 		if tapIf.Namespace != "" {
 			req.HostNamespace = []byte(tapIf.Namespace)
 			req.HostNamespaceSet = 1
 		}
-		req.RxRingSz = uint16(tapIf.RxRingSize)
-		req.TxRingSz = uint16(tapIf.TxRingSize)
 
 		reply := &tapv2.TapCreateV2Reply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
 		swIfIndex = reply.SwIfIndex
+		msgName = reply.GetMessageName()
 	} else {
 		// Configure the original TAP interface
-		req := &tap.TapConnect{}
-		req.TapName = []byte(tapIf.HostIfName)
-		req.UseRandomMac = 1
+		req := &tap.TapConnect{
+			TapName:      []byte(tapIf.HostIfName),
+			UseRandomMac: 1,
+		}
 
 		reply := &tap.TapConnectReply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
 		swIfIndex = reply.SwIfIndex
+		msgName = reply.GetMessageName()
 	}
 	if err != nil {
 		return 0, err
 	}
 	if retval != 0 {
-		return 0, fmt.Errorf("add tap interface returned %d", retval)
+		return 0, fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
-	return swIfIndex, SetInterfaceTag(ifName, swIfIndex, vppChan, timeLog)
+	return swIfIndex, SetInterfaceTag(ifName, swIfIndex, vppChan, stopwatch)
 }
 
 // DeleteTapInterface calls TapDelete bin API.
-func DeleteTapInterface(ifName string, idx uint32, version uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// TapDelete time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DeleteTapInterface(ifName string, idx uint32, version uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(tap.TapDelete{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	var (
-		err    error
-		retval int32
+		err     error
+		retval  int32
+		msgName string
 	)
-
 	if version == 2 {
-		req := &tapv2.TapDeleteV2{}
-		req.SwIfIndex = idx
+		req := &tapv2.TapDeleteV2{
+			SwIfIndex: idx,
+		}
 
 		reply := &tapv2.TapDeleteV2Reply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
+		msgName = reply.GetMessageName()
 	} else {
-		req := &tap.TapDelete{}
-		req.SwIfIndex = idx
+		req := &tap.TapDelete{
+			SwIfIndex: idx,
+		}
 
 		reply := &tap.TapDeleteReply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
+		msgName = reply.GetMessageName()
 	}
 	if err != nil {
 		return err
 	}
 	if retval != 0 {
-		return fmt.Errorf("deleting of interface returned %d", retval)
+		return fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
-	return RemoveInterfaceTag(ifName, idx, vppChan, timeLog)
+	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
 }

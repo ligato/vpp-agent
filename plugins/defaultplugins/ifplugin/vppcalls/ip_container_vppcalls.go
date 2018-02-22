@@ -16,12 +16,11 @@ package vppcalls
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 )
 
@@ -30,64 +29,48 @@ const (
 	removeContainerIP uint8 = 0
 )
 
-// AddContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=1
-func AddContainerIP(ifIdx uint32, addr *net.IPNet, isIpv6 bool, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// IPContainerProxyAddDelReply time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(ip.IPContainerProxyAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	req := prepareMessageForVpp(ifIdx, addr, isIpv6, addContainerIP)
-	return sendAndLogMessageForVpp(ifIdx, req, "creat", log, vppChan)
-}
+	req := &ip.IPContainerProxyAddDel{
+		SwIfIndex: ifIdx,
+		IsAdd:     isAdd,
+	}
 
-// DelContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=0
-func DelContainerIP(ifIdx uint32, addr *net.IPNet, isIpv6 bool, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
-	// IPContainerProxyAddDelReply time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	IPaddr, isIPv6, err := addrs.ParseIPWithPrefix(addr)
+	if err != nil {
+		return err
+	}
 
-	req := prepareMessageForVpp(ifIdx, addr, isIpv6, removeContainerIP)
-	return sendAndLogMessageForVpp(ifIdx, req, "delet", log, vppChan)
-}
-
-func prepareMessageForVpp(ifIdx uint32, addr *net.IPNet, isIpv6 bool, isAdd uint8) *ip.IPContainerProxyAddDel {
-	req := &ip.IPContainerProxyAddDel{}
-	req.SwIfIndex = ifIdx
-	req.IsAdd = isAdd
-	prefix, _ := addr.Mask.Size()
+	prefix, _ := IPaddr.Mask.Size()
 	req.Plen = byte(prefix)
-	if isIpv6 {
-		req.IP = []byte(addr.IP.To16())
+	if isIPv6 {
+		req.IP = []byte(IPaddr.IP.To16())
 		req.IsIP4 = 0
 	} else {
-		req.IP = []byte(addr.IP.To4())
+		req.IP = []byte(IPaddr.IP.To4())
 		req.IsIP4 = 1
 	}
-	return req
-}
 
-func sendAndLogMessageForVpp(ifIdx uint32, req *ip.IPContainerProxyAddDel, logActionType string, log logging.Logger, vppChan *govppapi.Channel) error {
-	log.WithFields(logging.Fields{"isIpv4": req.IsIP4, "prefix": req.Plen, "address": req.IP, "if_index": ifIdx}).
-		Debug("Container IP address ", logActionType, "ing...")
-
-	// send the message
 	reply := &ip.IPContainerProxyAddDelReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf(logActionType, "ing IP address returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"isIpv4": req.IsIP4, "prefix": req.Plen, "address": req.IP, "if_index": ifIdx}).
-		Debug("Container IP address ", logActionType, "ed.")
 	return nil
+}
+
+// AddContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=1
+func AddContainerIP(ifIdx uint32, addr string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return sendAndLogMessageForVpp(ifIdx, addr, addContainerIP, vppChan, stopwatch)
+}
+
+// DelContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=0
+func DelContainerIP(ifIdx uint32, addr string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP, vppChan, stopwatch)
 }

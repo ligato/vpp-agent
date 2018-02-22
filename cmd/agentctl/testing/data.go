@@ -138,8 +138,8 @@ func JSONData() utils.EtcdDump {
 	// L3 Fib data
 	l3FibTableEntries := []*l3.StaticRoutes_Route{}
 	l3FibTableEntry := &l3.StaticRoutes_Route{
-		VrfId:             1,
-		DstIpAddr:         "192.168.2.0/24",
+		VrfID:             1,
+		DstIPAddr:         "192.168.2.0/24",
 		NextHopAddr:       "192.168.1.1",
 		OutgoingInterface: "eth0",
 		Weight:            5,
