@@ -181,17 +181,18 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	switch iface.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, measure.GetTimeLog(tap.TapConnect{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddTapInterface(iface.Name, iface.Tap, plugin.vppCh, measure.GetTimeLog(tap.TapConnect{}, plugin.Stopwatch))
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		id, err := plugin.resolveMemifSocketFilename(iface.Memif)
+		var id uint32 // Memif socket id
+		id, err = plugin.resolveMemifSocketFilename(iface.Memif)
 		if err != nil {
 			return err
 		}
-		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, id, plugin.vppCh, measure.GetTimeLog(memif.MemifCreate{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddMemifInterface(iface.Name, iface.Memif, id, plugin.vppCh, measure.GetTimeLog(memif.MemifCreate{}, plugin.Stopwatch))
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, iface.Vrf, plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnelReply{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnelReply{}, plugin.Stopwatch))
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, measure.GetTimeLog(interfaces.CreateLoopback{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddLoopbackInterface(iface.Name, plugin.vppCh, measure.GetTimeLog(interfaces.CreateLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		var exists bool
 		if ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name); !exists {
@@ -706,7 +707,7 @@ func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interf
 	var err error
 
 	if oldConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
 	} else {
 		err = plugin.deleteVPPInterface(oldConfig, ifIdx)
 	}
@@ -722,7 +723,11 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	plugin.Log.Infof("Removing interface %v", iface.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
-		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface)
+		ifIdx, _, found := plugin.afPacketConfigurator.SwIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			return fmt.Errorf("cannot remove af packet interface %v, index not available from mapping", iface.Name)
+		}
+		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface, ifIdx)
 	}
 
 	// unregister name to init mapping (following triggers notifications for all subscribers, skip physical interfaces)
@@ -809,18 +814,18 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		err = vppcalls.DeleteTapInterface(ifIdx, oldConfig.Tap.Version, plugin.vppCh, measure.GetTimeLog(tap.TapDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteTapInterface(oldConfig.Name, ifIdx, oldConfig.Tap.Version, plugin.vppCh, measure.GetTimeLog(tap.TapDelete{}, plugin.Stopwatch))
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(memif.MemifDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteMemifInterface(oldConfig.Name, ifIdx, plugin.vppCh, measure.GetTimeLog(memif.MemifDelete{}, plugin.Stopwatch))
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnel{}, plugin.Stopwatch))
+		err = vppcalls.DeleteVxlanTunnel(oldConfig.Name, ifIdx, oldConfig.GetVxlan(), plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnel{}, plugin.Stopwatch))
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.DeleteLoopback{}, plugin.Stopwatch))
+		err = vppcalls.DeleteLoopbackInterface(oldConfig.Name, ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.DeleteLoopback{}, plugin.Stopwatch))
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		plugin.Log.Debugf("Interface removal skipped: cannot remove (blacklist) physical interface") // Not an error
 		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
 	}
 	if nil != err {
 		wasError = err
@@ -844,10 +849,10 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName,
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string) {
+func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) {
 	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
 
-	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName)
+	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)
 }
 
 // returns memif socket filename ID. Registers it if does not exists yet

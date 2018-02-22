@@ -34,6 +34,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
 
+// Default VPP MTU value
+const defaultVPPMtu = 9216
+
 // Interface is the wrapper structure for the interface northbound API structure.
 type Interface struct {
 	VPPInternalName string `json:"vpp_internal_name"`
@@ -69,10 +72,22 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 		iface := &Interface{
 			VPPInternalName: string(bytes.Trim(ifDetails.InterfaceName, "\x00")),
 			Interfaces_Interface: ifnb.Interfaces_Interface{
+				Name:        string(bytes.Trim(ifDetails.Tag, "\x00")),
 				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
+				Mtu: func(vppMtu uint16) uint32 {
+					// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
+					if vppMtu == defaultVPPMtu {
+						return 0
+					}
+					return uint32(vppMtu)
+				}(ifDetails.LinkMtu),
 			},
+		}
+		// Fill name for physical interfaces (they are mostly without tag)
+		if iface.Type == ifnb.InterfaceType_ETHERNET_CSMACD {
+			iface.Name = iface.VPPInternalName
 		}
 		ifs[ifDetails.SwIfIndex] = iface
 
@@ -336,7 +351,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    2,
-			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
+			HostIfName: string(bytes.Trim(tapDetails.HostIfName, "\x00")),
 			// Other parameters are not not yet part of the dump.
 
 		}

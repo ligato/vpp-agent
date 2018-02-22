@@ -15,12 +15,13 @@
 package ifplugin
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strings"
 
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/idxvpp/persist"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	_ "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -30,11 +31,18 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 )
 
-// Resync writes interfaces to the VPP
-//
-// - resyncs the VPP
-// - temporary: (checks wether sw_if_indexes are not obsolate - this will be swapped with master ID)
-// - deletes obsolate status data
+const ifTempName = "temp-if-name"
+
+// Resync writes interfaces to the VPP. VPP interfaces are usually configured with tag, which corresponds with interface
+// name (exceptions are physical devices, but their name is always equal to vpp internal name). Resync consists of
+// following steps:
+// 1. Dump all VPP interfaces
+// 2. Every VPP interface looks for NB counterpart using tag (name). If found, it is calculated whether modification is
+//    needed. Otherwise, the interface is only registered. If interface does not contain tag, it is stored for now and
+//    resolved later. Tagged interfaces without NB config are removed.
+// 3. Untagged interfaces are correlated heuristically (mac address, ip addresses). If correlation
+//    is found, interface is modified if needed and registered.
+// 4. All remaining NB interfaces are configured
 func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
 	// Calculate and log interface resync
@@ -50,136 +58,115 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		return []error{err}
 	}
 
-	// Read persistent mapping
-	persistentIfs := nametoidx.NewNameToIdx(plugin.Log, core.PluginName("defaultvppplugins-ifplugin"), "iface resync corr", nil)
-	err = persist.Marshalling(plugin.ServiceLabel.GetAgentLabel(), plugin.swIfIndexes.GetMapping(), persistentIfs)
-	if err != nil {
-		return []error{err}
-	}
+	// Cache for untagged interfaces
+	unnamedVppIfs := make(map[uint32]*intf.Interfaces_Interface)
 
-	// Register default interface and handle physical interfaces. Other configurable interfaces are added to map for
-	// further processing
-	configurableVppIfs := make(map[uint32]*vppdump.Interface, 0)
+	// Iterate over VPP interfaces and try to correlate NB config
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
-			// Register default interface (do not add to configurable interfaces)
-			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface)
+			// Register interface before removal (to keep state consistent)
+			if err := plugin.registerInterface(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+				errs = append(errs, err)
+			}
 			continue
 		}
-		// Handle physical interfaces
-		if vppIf.Type == intf.InterfaceType_ETHERNET_CSMACD {
-			var nbIfConfig *intf.Interfaces_Interface
-			var found bool
-			// Look for nb equivalent
-			for _, nbIf := range nbIfs {
-				if nbIf.Type == intf.InterfaceType_ETHERNET_CSMACD && nbIf.Name == vppIf.VPPInternalName {
-					nbIfConfig = nbIf
-					found = true
-					break
-				}
-			}
-			// If interface configuration exists in the NB, call modify to update the device
-			if found {
-				if err = plugin.ModifyVPPInterface(nbIfConfig, &vppIf.Interfaces_Interface); err != nil {
-					plugin.Log.Errorf("Error while modifying physical interface: %v", err)
-					errs = append(errs, err)
-				}
-			} else {
-				// If not, remove configuration from physical device (the device itself cannot be removed)
-				if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
-					plugin.Log.Errorf("Error while removing configuration from physical interface: %v", err)
-					errs = append(errs, err)
-				}
-			}
-			// In both cases, register interface
-			if nbIfConfig == nil {
-				nbIfConfig = &vppIf.Interfaces_Interface
-			}
-			plugin.swIfIndexes.RegisterName(vppIf.VPPInternalName, vppIfIdx, nbIfConfig)
-
+		if vppIf.Name == "" {
+			// If interface has no name, it is stored as unnamed and resolved later
+			plugin.Log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			unnamedVppIfs[vppIfIdx] = &vppIf.Interfaces_Interface
+			continue
 		}
-		// Otherwise put to the map of all configurable VPP interfaces (except default & ethernet interfaces)
-		configurableVppIfs[vppIfIdx] = vppIf
-	}
-
-	// Handle case where persistent mapping is not available for configurable interfaces
-	if len(persistentIfs.ListNames()) == 0 && len(configurableVppIfs) > 0 {
-		plugin.Log.Debug("Persistent mapping for interfaces is empty, %v VPP interfaces is unknown", len(configurableVppIfs))
-		// In such a case, there is nothing to correlate with. All existing interfaces will be removed
-		for vppIfIdx, vppIf := range configurableVppIfs {
-			// register interface before deletion (to keep state consistent)
-			vppAgentIf := &vppIf.Interfaces_Interface
-			vppAgentIf.Name = vppIf.VPPInternalName
-			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
-			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
+		var correlated bool
+		for _, nbIf := range nbIfs {
+			if vppIf.Name == nbIf.Name {
+				correlated = true
+				// Register interface to mapping and VPP tag/index
+				if err := plugin.registerInterface(vppIf.Name, vppIfIdx, nbIf); err != nil {
+					errs = append(errs, err)
+				}
+				// Calculate whether modification is needed
+				if plugin.isIfModified(nbIf, &vppIf.Interfaces_Interface) {
+					plugin.Log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Name)
+					if err = plugin.ModifyVPPInterface(nbIf, &vppIf.Interfaces_Interface); err != nil {
+						plugin.Log.Errorf("Error while modifying interface: %v", err)
+						errs = append(errs, err)
+					}
+				} else {
+					plugin.Log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Name)
+				}
+				break
+			}
+		}
+		if !correlated {
+			// Register interface before removal (to keep state consistent)
+			if err := plugin.registerInterface(vppIf.Name, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+				errs = append(errs, err)
+			}
+			// VPP interface is obsolete and will be removed (un-configured if physical device)
+			plugin.Log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
+			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
 				plugin.Log.Errorf("Error while removing interface: %v", err)
 				errs = append(errs, err)
 			}
 		}
-		// Configure NB interfaces
-		for _, nbIf := range nbIfs {
-			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.Log.Errorf("Error while configuring interface: %v", err)
-				errs = append(errs, err)
-			}
-		}
-		return
 	}
 
-	// Find correlation between VPP, ETCD NB and persistent mapping. Update existing interfaces
-	// and configure new ones
-	plugin.Log.Debugf("Using persistent mapping to resync %v interfaces", len(configurableVppIfs))
-	for _, nbIf := range nbIfs {
-		persistIdx, _, found := persistentIfs.LookupIdx(nbIf.Name)
-		if found {
-			// last interface ID is known. Let's verify that there is an interface
-			// with the same ID on the vpp
-			var ifPresent bool
-			var ifVppData *intf.Interfaces_Interface
-			for vppIfIdx, vppIf := range configurableVppIfs {
-				// Check at least interface type
-				if vppIfIdx == persistIdx && vppIf.Type == nbIf.Type {
-					ifPresent = true
-					ifVppData = &vppIf.Interfaces_Interface
-				}
+	// Now resolve untagged interfaces
+	for vppIfIdx, vppIf := range unnamedVppIfs {
+		// Try to find NB config which is not registered and correlates with VPP interface
+		var correlatedIf *intf.Interfaces_Interface
+		for _, nbIf := range nbIfs {
+			// Already registered interfaces cannot be correlated again
+			_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
+			if found {
+				continue
 			}
-			if ifPresent && ifVppData != nil {
-				// Interface exists on the vpp. Agent assumes that the the configured interface
-				// correlates with the NB one (needs to be registered manually)
-				plugin.swIfIndexes.RegisterName(nbIf.Name, persistIdx, nbIf)
-				plugin.Log.Debugf("Registered existing interface %v with index %v", nbIf.Name, persistIdx)
-				// todo calculate diff before modifying
-				plugin.ModifyVPPInterface(nbIf, ifVppData)
-			} else {
-				// Interface exists in mapping but not in vpp.
-				if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-					plugin.Log.Errorf("Error while configuring interface: %v", err)
+			// Try to correlate heuristically
+			correlatedIf = plugin.correlateInterface(vppIf, nbIf)
+			if correlatedIf != nil {
+				break
+			}
+		}
+
+		if correlatedIf != nil {
+			// Register interface
+			if err := plugin.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
+				errs = append(errs, err)
+			}
+			// Calculate whether modification is needed
+			if plugin.isIfModified(correlatedIf, vppIf) {
+				plugin.Log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
+				if err = plugin.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
+					plugin.Log.Errorf("Error while modifying correlated interface: %v", err)
 					errs = append(errs, err)
 				}
+			} else {
+				plugin.Log.Debugf("RESYNC interfaces: correlated %v registered without additional changes", vppIf.Name)
 			}
 		} else {
-			// a new interface (missing in persistent mapping)
-			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.Log.Errorf("Error while configuring interface: %v", err)
+			// Register interface  with temporary name (will be unregistered during removal)
+			if err := plugin.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
+				errs = append(errs, err)
+			}
+			// VPP interface cannot be correlated and will be removed
+			plugin.Log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
+			if err = plugin.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
+				plugin.Log.Errorf("Error while removing interface: %v", err)
 				errs = append(errs, err)
 			}
 		}
 	}
 
-	// Remove obsolete config
-	for vppIfIdx, vppIf := range configurableVppIfs {
-		// If interface index is not registered yet, remove it
-		_, _, found := plugin.swIfIndexes.LookupName(vppIfIdx)
+	// Last step is to configure all new (not-yet-registered) interfaces
+	for _, nbIf := range nbIfs {
+		// If interface is registered, it was already processed
+		_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
 		if !found {
-			// Remove configuration
-			vppAgentIf := &vppIf.Interfaces_Interface
-			vppAgentIf.Name = vppIf.VPPInternalName
-			// todo plugin.swIfIndexes.RegisterName(vppAgentIf.Name, vppIfIdx, vppAgentIf)
-			if err := plugin.deleteVPPInterface(vppAgentIf, vppIfIdx); err != nil {
-				plugin.Log.Errorf("Error while removing interface: %v", err)
+			plugin.Log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
+			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
+				plugin.Log.Errorf("Error while configuring interface: %v", err)
 				errs = append(errs, err)
 			}
-			plugin.Log.Debugf("Removed unknown interface with index %v", vppIfIdx)
 		}
 	}
 
@@ -675,4 +662,313 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			plugin.Log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}
+}
+
+// Correlate interfaces according to MAC address, interface addresses
+func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
+	// Correlate MAC address
+	if nbIf.PhysAddress != "" {
+		if nbIf.PhysAddress == vppIf.PhysAddress {
+			return nbIf
+		}
+	}
+	// Correlate IP addresses
+	if len(nbIf.IpAddresses) == len(vppIf.IpAddresses) {
+		ipMatch := true
+
+	ipComparison:
+		for _, nbIP := range nbIf.IpAddresses {
+			var ipFound bool
+			for _, vppIP := range vppIf.IpAddresses {
+				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
+					ipFound = true
+					break
+				}
+			}
+			if !ipFound {
+				// Break comparison if there is mismatch
+				ipMatch = false
+				break ipComparison
+			}
+		}
+
+		if ipMatch {
+			return nbIf
+		}
+	}
+	// todo correlate also unnumbered interfaces if possible
+
+	// Otherwise there is no match between interfaces
+	return nil
+}
+
+// Compares two interfaces. If there is any difference, returns true, false otherwise
+func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
+	plugin.Log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
+	// Type
+	if nbIf.Type != vppIf.Type {
+		plugin.Log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
+			nbIf.Type, vppIf.Type)
+		return true
+	}
+	// Enabled
+	if nbIf.Enabled != vppIf.Enabled {
+		plugin.Log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
+			nbIf.Enabled, vppIf.Enabled)
+		return true
+	}
+	// VRF
+	if nbIf.Vrf != vppIf.Vrf {
+		plugin.Log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
+			nbIf.Vrf, vppIf.Vrf)
+		return true
+	}
+	// Container IP address
+	if nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
+		plugin.Log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
+			nbIf.ContainerIpAddress, vppIf.ContainerIpAddress)
+		return true
+	}
+	// DHCP setup
+	if nbIf.SetDhcpClient != vppIf.SetDhcpClient {
+		plugin.Log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
+			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
+		return true
+	}
+	//  MTU value
+	if nbIf.Mtu != vppIf.Mtu {
+		plugin.Log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
+			nbIf.Mtu, vppIf.Mtu)
+		return true
+	}
+	// MAC address (compare only if it is set in the NB configuration)
+	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
+		plugin.Log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)",
+			nbIf.PhysAddress, vppIf.PhysAddress)
+		return true
+	}
+	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
+	// todo unnumbered data cannot be dumped
+	if nbIf.Unnumbered != nil {
+		plugin.Log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
+		vppIf.IpAddresses = nil
+	} else {
+		// Remove IPv6 link local addresses (default values)
+		for ipIdx, ipAddress := range vppIf.IpAddresses {
+			if strings.HasPrefix(ipAddress, "fe80") {
+				vppIf.IpAddresses = append(vppIf.IpAddresses[:ipIdx], vppIf.IpAddresses[ipIdx+1:]...)
+			}
+		}
+		// Compare IP address count
+		if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
+			plugin.Log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
+				len(nbIf.IpAddresses), len(vppIf.IpAddresses))
+			return true
+		}
+		// Compare every single IP address. If equal, every address should have identical counterpart
+		for _, nbIP := range nbIf.IpAddresses {
+			var ipFound bool
+			for _, vppIP := range vppIf.IpAddresses {
+				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
+				if err != nil {
+					plugin.Log.Error(err)
+					continue
+				}
+				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
+					ipFound = true
+					break
+				}
+			}
+			if !ipFound {
+				plugin.Log.Debugf("Interface RESYNC comparison: VPP does not contain IP %s", nbIP)
+				return true
+			}
+		}
+	}
+	// RxMode settings
+	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
+		plugin.Log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
+			nbIf.RxModeSettings, vppIf.RxModeSettings)
+		return true
+	}
+	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
+		// RxMode
+		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode {
+			plugin.Log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
+				nbIf.RxModeSettings.RxMode, vppIf.RxModeSettings.RxMode)
+			return true
+
+		}
+		// QueueID
+		if nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID {
+			plugin.Log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
+				nbIf.RxModeSettings.QueueID, vppIf.RxModeSettings.QueueID)
+			return true
+
+		}
+		// QueueIDValid
+		if nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
+			plugin.Log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
+				nbIf.RxModeSettings.QueueIDValid, vppIf.RxModeSettings.QueueIDValid)
+			return true
+
+		}
+	}
+
+	switch nbIf.Type {
+	case intf.InterfaceType_AF_PACKET_INTERFACE:
+		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
+				nbIf.Afpacket, vppIf.Afpacket)
+			return true
+		}
+		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
+			// AF-packet host name
+			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
+				plugin.Log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
+					nbIf.Afpacket.HostIfName, vppIf.Afpacket.HostIfName)
+				return true
+			}
+		}
+	case intf.InterfaceType_MEMORY_INTERFACE:
+		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
+				nbIf.Memif, vppIf.Memif)
+			return true
+		}
+		if nbIf.Memif != nil && vppIf.Memif != nil {
+			// Memif ID
+			if nbIf.Memif.Id != vppIf.Memif.Id {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
+					nbIf.Memif.Id, vppIf.Memif.Id)
+				return true
+			}
+
+			// Memif socket
+			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
+					nbIf.Memif.SocketFilename, vppIf.Memif.SocketFilename)
+				return true
+			}
+			// Master
+			if nbIf.Memif.Master != vppIf.Memif.Master {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
+					nbIf.Memif.Master, vppIf.Memif.Master)
+				return true
+			}
+			// Mode
+			if nbIf.Memif.Mode != vppIf.Memif.Mode {
+				plugin.Log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
+					nbIf.Memif.Mode, vppIf.Memif.Mode)
+				return true
+			}
+			// Rx queues
+			if nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
+				plugin.Log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
+					nbIf.Memif.RxQueues, vppIf.Memif.RxQueues)
+				return true
+			}
+			// Tx queues
+			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues {
+				plugin.Log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
+					nbIf.Memif.TxQueues, vppIf.Memif.TxQueues)
+				return true
+			}
+			// todo secret, buffer size and ring size is not compared. VPP always returns 0 for buffer size
+			// and 1 for ring size. Secret cannot be dumped at all.
+		}
+	case intf.InterfaceType_TAP_INTERFACE:
+		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
+				nbIf.Tap, vppIf.Tap)
+			return true
+		}
+		if nbIf.Tap != nil && vppIf.Tap != nil {
+			// Tap version
+			if nbIf.Tap.Version == 2 && nbIf.Tap.Version != vppIf.Tap.Version {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
+					nbIf.Tap.Version, vppIf.Tap.Version)
+				return true
+			}
+			// Namespace and host name
+			if nbIf.Tap.Namespace != vppIf.Tap.Namespace {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
+					nbIf.Tap.Namespace, vppIf.Tap.Namespace)
+				return true
+			}
+			// Namespace and host name
+			if nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
+					nbIf.Tap.HostIfName, vppIf.Tap.HostIfName)
+				return true
+			}
+			// Rx ring size
+			if nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
+					nbIf.Tap.RxRingSize, vppIf.Tap.RxRingSize)
+				return true
+			}
+			// Tx ring size
+			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize {
+				plugin.Log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
+					nbIf.Tap.TxRingSize, vppIf.Tap.TxRingSize)
+				return true
+			}
+		}
+	case intf.InterfaceType_VXLAN_TUNNEL:
+		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
+			plugin.Log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
+				nbIf.Vxlan, vppIf.Vxlan)
+			return true
+		}
+		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
+			// VxLAN Vni
+			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
+					nbIf.Vxlan.Vni, vppIf.Vxlan.Vni)
+				return true
+			}
+			// VxLAN Src Address
+			if nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
+					nbIf.Vxlan.SrcAddress, vppIf.Vxlan.SrcAddress)
+				return true
+			}
+			// VxLAN Dst Address
+			if nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
+				plugin.Log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
+					nbIf.Vxlan.DstAddress, vppIf.Vxlan.DstAddress)
+				return true
+			}
+		}
+	}
+
+	// At last, return false if interfaces are equal
+	return false
+}
+
+// Register interface to mapping and add tag/index to the VPP
+func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
+	plugin.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
+	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh,
+		measure.GetTimeLog(interfaces.SwInterfaceTagAddDel{}, plugin.Stopwatch)); err != nil {
+		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
+	}
+	plugin.Log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
+	return nil
 }

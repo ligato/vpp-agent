@@ -59,7 +59,7 @@ func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8)
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
-func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
+func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
 	defer func() {
@@ -87,11 +87,11 @@ func AddVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32,
 		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
 	}
 
-	return reply.SwIfIndex, nil
+	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, timeLog)
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
-func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
+func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
 	// VxlanAddDelTunnelReply time measurement
 	start := time.Now()
 	defer func() {
@@ -113,5 +113,5 @@ func DeleteVxlanTunnel(vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govp
 		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
 	}
 
-	return nil
+	return RemoveInterfaceTag(ifName, idx, vppChan, timeLog)
 }
