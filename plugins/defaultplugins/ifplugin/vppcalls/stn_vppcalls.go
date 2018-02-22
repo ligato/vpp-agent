@@ -20,7 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
@@ -32,26 +31,22 @@ type StnRule struct {
 	IfaceIdx  uint32
 }
 
-// AddStnRule calls StnAddDelRule bin API with IsAdd=1
-func AddStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// StnAddDelRule time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(stn.StnAddDelRule{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// prepare the message
-	req := &stn.StnAddDelRule{}
-	req.SwIfIndex = ifIdx
-	req.IsAdd = 1
+	req := &stn.StnAddDelRule{
+		SwIfIndex: ifIdx,
+		IsAdd:     boolToUint(isAdd),
+	}
 
-	v6, err := addrs.IsIPv6(addr.String())
+	isIPv6, err := addrs.IsIPv6(addr.String())
 	if err != nil {
 		return err
 	}
-	if v6 {
+	if isIPv6 {
 		req.IPAddress = []byte(addr.To16())
 		req.IsIP4 = 0
 	} else {
@@ -59,76 +54,37 @@ func AddStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppap
 		req.IsIP4 = 1
 	}
 
-	log.Debug("stn rule add req: IPAdress: ", req.IPAddress, "interface: ", req.SwIfIndex)
-
 	reply := &stn.StnAddDelRuleReply{}
 	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("stn rule adding returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule added.")
 	return nil
 
 }
 
-// DelStnRule calls StnAddDelRule bin API with IsAdd=00
-func DelStnRule(ifIdx uint32, addr *net.IP, log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) error {
-	// StnAddDelRuleReply time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+// AddStnRule calls StnAddDelRule bin API with IsAdd=1
+func AddStnRule(ifIdx uint32, addr *net.IP, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return addDelStnRule(ifIdx, addr, true, vppChan, stopwatch)
 
-	// prepare the message
-	req := &stn.StnAddDelRule{}
-	req.SwIfIndex = ifIdx
-	req.IsAdd = 0
+}
 
-	v6, err := addrs.IsIPv6(addr.String())
-	if err != nil {
-		return err
-	}
-	if v6 {
-		req.IPAddress = []byte(addr.To16())
-		req.IsIP4 = 0
-	} else {
-		req.IPAddress = []byte(addr.To4())
-		req.IsIP4 = 1
-	}
-
-	log.Debug("stn rule del req: IPAdress: ", req.IPAddress, "interface: ", req.SwIfIndex)
-
-	// send the message
-	reply := &stn.StnAddDelRuleReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("stn rule del returned %d", reply.Retval)
-	}
-
-	log.WithFields(logging.Fields{"IPAddress": addr, "ifIdx": ifIdx}).Debug("rule removed.")
-	return nil
+// DelStnRule calls StnAddDelRule bin API with IsAdd=0
+func DelStnRule(ifIdx uint32, addr *net.IP, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	return addDelStnRule(ifIdx, addr, false, vppChan, stopwatch)
 }
 
 // DumpStnRules returns a list of all STN rules configured on the VPP
-func DumpStnRules(log logging.Logger, vppChan *govppapi.Channel, timeLog *measure.TimeLog) ([]*stn.StnRuleDetails, error) {
-	// StnRulesDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DumpStnRules(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (rules []*stn.StnRuleDetails, err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &stn.StnRulesDump{}
 	reqCtx := vppChan.SendMultiRequest(req)
-	var stnRules []*stn.StnRuleDetails
 	for {
 		msg := &stn.StnRuleDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -136,13 +92,10 @@ func DumpStnRules(log logging.Logger, vppChan *govppapi.Channel, timeLog *measur
 			break
 		}
 		if err != nil {
-			log.Errorf("failed to dump STN rules: %v", err)
-			return stnRules, err
+			return nil, err
 		}
-		stnRules = append(stnRules, msg)
+		rules = append(rules, msg)
 	}
 
-	log.Debugf("%v configured STN rules found", len(stnRules))
-
-	return stnRules, nil
+	return rules, nil
 }

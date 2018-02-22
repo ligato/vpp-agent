@@ -19,10 +19,9 @@
 package ifplugin
 
 import (
+	"context"
 	"fmt"
 	"net"
-
-	"context"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
@@ -64,21 +63,19 @@ func (plugin *StnConfigurator) Init() (err error) {
 		return err
 	}
 
-	errCompatibility := plugin.checkMsgCompatibility()
-	if errCompatibility != nil {
-		return errCompatibility
+	// Check VPP message compatibility
+	if err := vppcalls.CheckMsgCompatibilityForStn(plugin.vppChan); err != nil {
+		return err
 	}
 
 	return nil
-
 }
 
 // ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
 func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
 	plugin.Log.Debugf("STN plugin: resolving deleted interface: %v", interfaceName)
-	rule := plugin.ruleFromIndex(interfaceName, true)
-	if rule != nil {
+	if rule := plugin.ruleFromIndex(interfaceName, true); rule != nil {
 		plugin.Delete(rule)
 	}
 }
@@ -87,8 +84,7 @@ func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
 // into VPP.
 func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
 	plugin.Log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
-	rule := plugin.ruleFromIndex(interfaceName, false)
-	if rule != nil {
+	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
 		plugin.Add(rule)
 	}
 }
@@ -108,9 +104,8 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 	} else {
 		plugin.Log.Debugf("adding STN rule: %+v", rule)
 		// Create and register new stn
-		errVppCall := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch))
-		if errVppCall != nil {
-			return errVppCall
+		if err := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.Stopwatch); err != nil {
+			return err
 		}
 		plugin.indexSTNRule(rule, false)
 
@@ -133,15 +128,14 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 		return nil
 	}
 
-	withoutIf, _ := plugin.removeRuleFromIndex(rule.Interface)
-
-	if withoutIf {
+	if withoutIf, _ := plugin.removeRuleFromIndex(rule.Interface); withoutIf {
 		plugin.Log.Debug("STN rule was not stored into VPP, removed only from indexes.")
 		return nil
 	}
 	plugin.Log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
+
 	// Remove rule
-	if err := vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnAddDelRule{}, plugin.Stopwatch)); err != nil {
+	if err := vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.Stopwatch); err != nil {
 		return err
 	}
 
@@ -162,8 +156,7 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelS
 		return fmt.Errorf("new stn rule is null")
 	}
 
-	err := plugin.Delete(ruleOld)
-	if err != nil {
+	if err := plugin.Delete(ruleOld); err != nil {
 		return err
 	}
 
@@ -178,7 +171,12 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelS
 
 // Dump STN rules configured on the VPP
 func (plugin *StnConfigurator) Dump() ([]*stn.StnRuleDetails, error) {
-	return vppcalls.DumpStnRules(plugin.Log, plugin.vppChan, measure.GetTimeLog(stn.StnRulesDump{}, plugin.Stopwatch))
+	rules, err := vppcalls.DumpStnRules(plugin.vppChan, plugin.Stopwatch)
+	if err != nil {
+		return nil, err
+	}
+	plugin.Log.Debugf("found %d configured STN rules", len(rules))
+	return rules, nil
 }
 
 // Close GOVPP channel.
@@ -189,11 +187,7 @@ func (plugin *StnConfigurator) Close() error {
 // checkStn will check the rule raw data and change it to internal data structure.
 // In case the rule contains a interface that doesn't exist yet, rule is stored into index map.
 func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifaceidx.SwIfIndex) (stnRule *vppcalls.StnRule, doVPPCall bool, err error) {
-
 	plugin.Log.Debugf("Checking stn rule: %+v", stnInput)
-
-	stnRule = nil
-	doVPPCall = false
 
 	if stnInput == nil {
 		err = fmt.Errorf("STN input is empty")
@@ -216,14 +210,13 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 
 	ifName := stnInput.Interface
 	ifIndex, _, exists := index.LookupIdx(ifName)
+	if exists {
+		doVPPCall = true
+	}
 
 	stnRule = &vppcalls.StnRule{
 		IPAddress: parsedIP,
 		IfaceIdx:  ifIndex,
-	}
-
-	if exists {
-		doVPPCall = true
 	}
 
 	return
@@ -241,10 +234,8 @@ func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface
 
 func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.StnRule) {
 	idx := StnIdentifier(iface)
-	rule = nil
-	withoutIface = false
 
-	//Removing rule from main index
+	// Removing rule from main index
 	_, ruleIface, exists := plugin.StnAllIndexes.LookupIdx(idx)
 	if exists {
 		plugin.StnAllIndexes.UnregisterName(idx)
@@ -254,7 +245,7 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 		}
 	}
 
-	//Removing rule from not stored rules index
+	// Removing rule from not stored rules index
 	_, _, existsWithout := plugin.StnUnstoredIndexes.LookupIdx(idx)
 	if existsWithout {
 		withoutIface = true
@@ -266,7 +257,6 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 
 func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (rule *modelStn.StnRule) {
 	idx := StnIdentifier(iface)
-	rule = nil
 
 	var ruleIface interface{}
 	var exists bool
@@ -279,28 +269,16 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	plugin.Log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
 	if exists {
 		stnRule, ok := ruleIface.(*modelStn.StnRule)
-		plugin.Log.Debugf("Getting rule: %+v", stnRule)
 		if ok {
 			rule = stnRule
 		}
+		plugin.Log.Debugf("Getting rule: %+v", stnRule)
 	}
+
 	return
 }
 
 // StnIdentifier creates unique identifier which serves as a name in name to index mapping
 func StnIdentifier(iface string) string {
-	id := fmt.Sprintf("stn-iface-%v", iface)
-	return id
-}
-
-func (plugin *StnConfigurator) checkMsgCompatibility() error {
-	msgs := []govppapi.Message{
-		&stn.StnAddDelRule{},
-		&stn.StnAddDelRuleReply{},
-	}
-	err := plugin.vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		plugin.Log.Error(err)
-	}
-	return err
+	return fmt.Sprintf("stn-iface-%v", iface)
 }

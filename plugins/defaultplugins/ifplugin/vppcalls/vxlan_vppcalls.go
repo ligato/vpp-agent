@@ -25,93 +25,70 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
-// AddDelVxlanTunnelReq prepares the request for bin API calls.
-func AddDelVxlanTunnelReq(vxlanIntf *intf.Interfaces_Interface_Vxlan, add uint8) (req *vxlan.VxlanAddDelTunnel, err error) {
-	req = &vxlan.VxlanAddDelTunnel{}
+func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	req.IsAdd = add
+	// this is temporary fix to solve creation of VRF table for VXLAN
+	if err := CreateVrfIfNeeded(encVrf, vppChan); err != nil {
+		return 0, err
+	}
 
-	address := net.ParseIP(vxlanIntf.SrcAddress).To4()
-	if address == nil {
-		address = net.ParseIP(vxlanIntf.SrcAddress).To16()
-		if nil == address {
-			return nil, fmt.Errorf("VXLAN source address is neither IPv4 nor IPv6 address")
+	req := &vxlan.VxlanAddDelTunnel{
+		IsAdd:          boolToUint(isAdd),
+		Vni:            iface.Vni,
+		DecapNextIndex: 0xFFFFFFFF,
+		EncapVrfID:     encVrf,
+	}
+
+	srcAddr := net.ParseIP(iface.SrcAddress).To4()
+	if srcAddr == nil {
+		srcAddr = net.ParseIP(iface.SrcAddress).To16()
+		if srcAddr == nil {
+			return 0, fmt.Errorf("invalid VXLAN source address")
 		}
 		req.IsIpv6 = 1
 	} else {
 		req.IsIpv6 = 0
 	}
-	req.SrcAddress = []byte(address)
+	req.SrcAddress = []byte(srcAddr)
 
+	var dstAddr net.IP
 	if req.IsIpv6 == 0 {
-		address = net.ParseIP(vxlanIntf.DstAddress).To4()
+		dstAddr = net.ParseIP(iface.DstAddress).To4()
 	} else {
-		address = net.ParseIP(vxlanIntf.DstAddress).To16()
+		dstAddr = net.ParseIP(iface.DstAddress).To16()
 	}
-	if address == nil {
-		return nil, fmt.Errorf("VXLAN destination and source addresses differ in IP version")
+	if dstAddr == nil {
+		return 0, fmt.Errorf("IP version mismatch for VXLAN destination and source IP addresses")
 	}
-	req.DstAddress = []byte(address)
+	req.DstAddress = []byte(dstAddr)
 
-	req.Vni = vxlanIntf.Vni
-	req.DecapNextIndex = 0xFFFFFFFF
-	return req, nil
+	reply := &vxlan.VxlanAddDelTunnelReply{}
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return 0, err
+	}
+	if reply.Retval != 0 {
+		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return reply.SwIfIndex, nil
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
-func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
-	// VxlanAddDelTunnelReply time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	// this is temporary fix to solve creation of VRF table for VXLAN
-	if err := CreateVrfIfNeeded(encapVrf, vppChan); err != nil {
-		return 0, err
-	}
-
-	req, err := AddDelVxlanTunnelReq(vxlanIntf, 1)
+func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+	swIfIdx, err := addDelVxlanTunnel(vxlanIntf, encapVrf, true, vppChan, stopwatch)
 	if err != nil {
 		return 0, err
 	}
-	req.EncapVrfID = encapVrf
-
-	reply := &vxlan.VxlanAddDelTunnelReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return 0, err
-	}
-	if reply.Retval != 0 {
-		return 0, fmt.Errorf("add VXLAN tunnel returned %d", reply.Retval)
-	}
-
-	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, timeLog)
+	return swIfIdx, SetInterfaceTag(ifName, swIfIdx, vppChan, stopwatch)
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
-func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// VxlanAddDelTunnelReply time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	req, err := AddDelVxlanTunnelReq(vxlanIntf, 0)
-	if err != nil {
+func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	if _, err := addDelVxlanTunnel(vxlanIntf, 0, false, vppChan, stopwatch); err != nil {
 		return err
 	}
-
-	reply := &vxlan.VxlanAddDelTunnelReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("deleting of VXLAN tunnel returned %d", reply.Retval)
-	}
-
-	return RemoveInterfaceTag(ifName, idx, vppChan, timeLog)
+	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
 }

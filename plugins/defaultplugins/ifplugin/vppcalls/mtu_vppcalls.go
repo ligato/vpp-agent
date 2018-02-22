@@ -19,34 +19,28 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 )
 
 // SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value.
-func SetInterfaceMtu(ifIdx uint32, mtu uint32, log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// SwInterfaceSetMtu time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.SwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	// Prepare the message.
-	req := &interfaces.SwInterfaceSetMtu{}
-	req.SwIfIndex = ifIdx
-	req.Mtu = uint16(mtu)
+	req := &interfaces.SwInterfaceSetMtu{
+		SwIfIndex: ifIdx,
+		Mtu:       uint16(mtu),
+	}
 
 	reply := &interfaces.SwInterfaceSetMtuReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
-		return fmt.Errorf("setting up interface MTU returned %d", reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.Debugf("MTU %v set to interface %v.", mtu, ifIdx)
 	return nil
 }

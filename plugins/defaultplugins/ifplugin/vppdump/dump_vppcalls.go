@@ -279,7 +279,7 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 			Master: memifDetails.Role == 0,
 			Mode:   memifModetoNB(memifDetails.Mode),
 			Id:     memifDetails.ID,
-			//TODO Secret - not available in the binary API
+			// TODO: Secret - not available in the binary API
 			SocketFilename: func(socketMap map[string]uint32) (filename string) {
 				for filename, id := range socketMap {
 					if memifDetails.SocketID == id {
