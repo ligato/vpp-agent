@@ -767,12 +767,14 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	}
 
 	// let's try to do following even if previously error occurred
-	if err := vppcalls.DelContainerIP(ifIdx, oldConfig.ContainerIpAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
-		plugin.Log.Error(err)
-		wasError = err
-	} else {
-		plugin.Log.WithFields(logging.Fields{"IPaddr": oldConfig.ContainerIpAddress, "ifIdx": ifIdx}).
-			Debug("Container IP address deleted")
+	if oldConfig.ContainerIpAddress != "" {
+		if err := vppcalls.DelContainerIP(ifIdx, oldConfig.ContainerIpAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Error(err)
+			wasError = err
+		} else {
+			plugin.Log.WithFields(logging.Fields{"IPaddr": oldConfig.ContainerIpAddress, "ifIdx": ifIdx}).
+				Debug("Container IP address deleted")
+		}
 	}
 
 	for i, oldIP := range oldConfig.IpAddresses {
