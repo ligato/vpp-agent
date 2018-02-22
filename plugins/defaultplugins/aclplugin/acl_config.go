@@ -155,7 +155,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 
 // ModifyACL modifies previously created access list. L2 access list is removed and recreated,
 // L3/L4 access list is modified directly. List of interfaces is refreshed as well.
-func (plugin *ACLConfigurator) ModifyACL(oldACL *acl.AccessLists_Acl, newACL *acl.AccessLists_Acl) (err error) {
+func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (err error) {
 	plugin.Log.Infof("Modifying ACL %v", oldACL.AclName)
 
 	if newACL.Rules != nil {
