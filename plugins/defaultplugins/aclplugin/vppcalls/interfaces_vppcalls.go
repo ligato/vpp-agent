@@ -34,19 +34,18 @@ type ACLInterfaceLogicalReq struct {
 
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
-	vppChan          *govppapi.Channel
-	swIfIndexes      ifaceidx.SwIfIndex
-	dumpACLStopwatch measure.StopWatchEntry
-	setACLStopwatch  measure.StopWatchEntry
+	vppChan         *govppapi.Channel
+	swIfIndexes     ifaceidx.SwIfIndex
+	stopwatch       *measure.Stopwatch
+	setACLStopwatch measure.StopWatchEntry
 }
 
 // NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
 func NewACLInterfacesVppCalls(vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
-		vppChan:          vppChan,
-		swIfIndexes:      swIfIndexes,
-		dumpACLStopwatch: measure.GetTimeLog(acl_api.ACLInterfaceListDump{}, stopwatch),
-		setACLStopwatch:  measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, stopwatch),
+		vppChan:         vppChan,
+		swIfIndexes:     swIfIndexes,
+		setACLStopwatch: measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, stopwatch),
 	}
 }
 
@@ -100,7 +99,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 		var ACLs []uint32
 
 		// All previously assigned ACLs have to be dumped and added to acl list
-		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.dumpACLStopwatch)
+		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.stopwatch)
 		if err != nil {
 			return err
 		}
@@ -164,7 +163,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		var ACLs []uint32
 
 		// All assigned ACLs have to be dumped
-		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.dumpACLStopwatch)
+		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.stopwatch)
 		if err != nil {
 			return err
 		}

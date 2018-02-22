@@ -20,7 +20,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
@@ -74,7 +73,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 			return 0, true, nil
 		}
 	}
-	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Name, afpacket.Afpacket, plugin.vppCh, measure.GetTimeLog(af_packet.AfPacketCreate{}, plugin.Stopwatch))
+	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Name, afpacket.Afpacket, plugin.vppCh, plugin.Stopwatch)
 	if err != nil {
 		plugin.addToCache(afpacket, true)
 		return 0, true, err
@@ -115,7 +114,7 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 
 	config, found := plugin.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
-		err = vppcalls.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket(), plugin.vppCh, measure.GetTimeLog(af_packet.AfPacketDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket(), plugin.vppCh, plugin.Stopwatch)
 		// unregister interface to let other plugins know that it is removed from the vpp
 		plugin.SwIfIndexes.UnregisterName(afpacket.Name)
 	}
