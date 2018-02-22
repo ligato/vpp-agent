@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
-	interfaces2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -30,7 +30,7 @@ const (
 	dummyHostIFName = "TestHostIfName"
 )
 
-var dummyAfPacket = &interfaces.Interfaces_Interface_Afpacket{
+var dummyAfPacket = &intf.Interfaces_Interface_Afpacket{
 	HostIfName: dummyHostIFName,
 }
 
@@ -49,7 +49,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
-	ctx.MockVpp.MockReply(&interfaces2.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
 	ifIndex, err := vppcalls.AddAfPacketInterface(dummyIfName, dummyAfPacket, ctx.MockChannel, nil)
 
@@ -70,7 +70,7 @@ func TestDeleteAfPacketInterface(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
-	ctx.MockVpp.MockReply(&interfaces2.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
 	err := vppcalls.DeleteAfPacketInterface(dummyIfName, 0, dummyAfPacket, ctx.MockChannel, nil)
 

@@ -47,10 +47,12 @@ func AddInterfaceIP(log logging.Logger, ifName string, addr *net.IPNet, timeLog 
 	}
 
 	// The check is basically because of link local addresses which sometimes cannot be reassigned
-	for _, exAddr := range exAddrList {
+	for ipIdx, exAddr := range exAddrList {
 		if bytes.Compare(exAddr.IP, addr.IP) == 0 {
 			log.Debugf("Cannot assign %v to interface %v, IP already exists", addr.IP.String(), ifName)
-			return nil
+			// Remove the address from the pool
+			exAddrList = append(exAddrList[:ipIdx], exAddrList[ipIdx+1:]...)
+			continue
 		}
 	}
 
