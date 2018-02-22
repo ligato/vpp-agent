@@ -791,7 +791,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 				}
 			}
 			if !ipFound {
-				plugin.Log.Debugf("Interface RESYNC comparison: VPP does not contain IP %s", nbIP)
+				plugin.Log.Debugf("Interface RESYNC comparison: VPP interface %s does not contain IP %s", nbIf.Name, nbIP)
 				return true
 			}
 		}
