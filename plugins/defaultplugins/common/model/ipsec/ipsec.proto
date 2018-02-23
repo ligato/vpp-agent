@@ -4,12 +4,44 @@ package ipsec;
 /* Security Policy Database (SPD */
 message SecurityPolicyDatabases {
     message SPD {
-        uint32 spd_id = 1;  /* SPD ID */
+        uint32 id = 1;  /* SPD ID */
 
+        /* Interface */
         message Interface {
             string name = 1;    /* interface name */
         }
-        repeated Interface interfaces = 100;    /* list of interfaces belonging to this SPD */
+        repeated Interface interfaces = 2;    /* list of interfaces belonging to this SPD */
+
+        /* Policy */
+        message Policy {
+            /* Policy action */
+            enum Action {
+                BYPASS = 0;
+                DISCARD = 1;
+                RESOLVE = 2;
+                PROTECT = 3;
+            }
+
+            uint32 spd_id = 1;
+            int32 priority = 2;
+            bool is_outbound = 3;
+
+            bool is_ipv6 = 4;
+            string remote_addr_start = 5;
+            string remote_addr_stop = 6;
+            string local_addr_start = 7;
+            string local_addr_stop = 8;
+
+            bool protocol = 9;
+            uint32 remote_port_start = 10;
+            uint32 remote_port_stop = 11;
+            uint32 local_port_start = 12;
+            uint32 local_port_stop = 13;
+
+            Action action = 14;
+            uint32 sa_id = 15;
+        }
+        repeated Policy policies = 3;   /* list of policies belonging to this SPD */
     }
     repeated SPD spds = 1;  /* list of all SPDs */
 }
@@ -33,32 +65,32 @@ enum CryptoAlgorithm {
     AES_CBC_256 = 3;
 }
 
-/* IPSec protocol */
-enum IPSecProtocol {
-    AH = 0;
-    ESP = 1;
-}
-
 /* Security Association (SA) */
 message SecurityAssociations {
+    /* IPSec protocol */
+    enum IPSecProtocol {
+        AH = 0;
+        ESP = 1;
+    }
+
     message SA {
-        uint32 id = 1;
+        uint32 id = 1; /* SA ID */
         uint32 spi = 2;
         IPSecProtocol protocol = 3;
 
         CryptoAlgorithm crypto_alg = 4;
-        string crypto_key = 6;
+        string crypto_key = 5;
 
-        IntegAlgorithm integ_alg = 7;
-        string integ_key = 9;
+        IntegAlgorithm integ_alg = 6;
+        string integ_key = 7;
 
-        bool use_esn = 10;          /* Use extended sequence number */
-        bool use_anti_replay = 11;  /* Use anti replay */
+        bool use_esn = 8;          /* Use extended sequence number */
+        bool use_anti_replay = 9;  /* Use anti replay */
 
-        bool is_tunnel = 12;
-        bool is_tunnel_ipv6 = 13;
-        string tunnel_src_addr = 14;
-        string tunnel_dst_addr = 15;
+        bool is_tunnel = 10;
+        bool is_tunnel_ipv6 = 11;
+        string tunnel_src_addr = 12;
+        string tunnel_dst_addr = 13;
     }
     repeated SA sas = 1;
 }
