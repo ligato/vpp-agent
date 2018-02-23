@@ -89,14 +89,14 @@ func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 
 // ConfigureRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Configuring new route %v -> %v", config.DstIPAddr, config.NextHopAddr)
+	plugin.Log.Infof("Configuring new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 
 	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
 	}
 
-	routeID := routeIdentifier(config.VrfID, config.DstIPAddr, config.NextHopAddr)
+	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
 
 	swIdx, err := resolveInterfaceSwIndex(config.OutgoingInterface, plugin.SwIfIndexes)
 	if err != nil {
@@ -128,15 +128,15 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 		plugin.Log.Infof("Route %v registered", routeID)
 	}
 
-	plugin.Log.Infof("Route %v -> %v configured", config.DstIPAddr, config.NextHopAddr)
+	plugin.Log.Infof("Route %v -> %v configured", config.DstIpAddr, config.NextHopAddr)
 	return nil
 }
 
 // ModifyRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIPAddr, oldConfig.NextHopAddr)
+	plugin.Log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 
-	routeID := routeIdentifier(oldConfig.VrfID, oldConfig.DstIPAddr, oldConfig.NextHopAddr)
+	routeID := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 
 	if newConfig.OutgoingInterface != "" {
 		_, _, existsNewOutgoing := plugin.SwIfIndexes.LookupIdx(newConfig.OutgoingInterface)
@@ -161,7 +161,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 
-	plugin.Log.Infof("Route %v -> %v modified", oldConfig.DstIPAddr, oldConfig.NextHopAddr)
+	plugin.Log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	return nil
 }
 
@@ -219,7 +219,7 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 		return err
 	}
 
-	newRouteIdentifier := routeIdentifier(newConfig.VrfID, newConfig.DstIPAddr, newConfig.NextHopAddr)
+	newRouteIdentifier := routeIdentifier(newConfig.VrfId, newConfig.DstIpAddr, newConfig.NextHopAddr)
 	plugin.RouteIndexes.RegisterName(newRouteIdentifier, plugin.RouteIndexSeq, newConfig)
 	plugin.RouteIndexSeq++
 
@@ -229,7 +229,7 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 
 // DeleteRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
-	plugin.Log.Infof("Removing route %v -> %v", config.DstIPAddr, config.NextHopAddr)
+	plugin.Log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
 	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
@@ -255,7 +255,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 		return err
 	}
 
-	routeIdentifier := routeIdentifier(config.VrfID, config.DstIPAddr, config.NextHopAddr)
+	routeIdentifier := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
 	_, _, found := plugin.RouteIndexes.UnregisterName(routeIdentifier)
 	if found {
 		plugin.Log.Infof("Route %v unregistered", routeIdentifier)
@@ -263,19 +263,19 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 		plugin.Log.Warnf("Unregister failed, route %v not found", routeIdentifier)
 	}
 
-	plugin.Log.Infof("Route %v -> %v removed", config.DstIPAddr, config.NextHopAddr)
+	plugin.Log.Infof("Route %v -> %v removed", config.DstIpAddr, config.NextHopAddr)
 	return nil
 }
 
 func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
-	if intVrfFromKey != int(config.VrfID) {
+	if intVrfFromKey != int(config.VrfId) {
 		if err != nil {
 			return err
 		}
 		plugin.Log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
-			intVrfFromKey, config.VrfID)
-		config.VrfID = uint32(intVrfFromKey)
+			intVrfFromKey, config.VrfId)
+		config.VrfId = uint32(intVrfFromKey)
 	}
 	return nil
 }
@@ -292,10 +292,10 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 		plugin.Log.WithFields(logging.Fields{
 			"ifName":    ifName,
 			"swIdx":     swIdx,
-			"vrfID":     route.VrfID,
-			"dstIPAddr": route.DstIPAddr,
+			"vrfID":     route.VrfId,
+			"dstIPAddr": route.DstIpAddr,
 		}).Debug("Remove routes from route cache - outgoing interface was added.")
-		vrf := strconv.FormatUint(uint64(route.VrfID), 10)
+		vrf := strconv.FormatUint(uint64(route.VrfId), 10)
 		plugin.recreateRoute(route, vrf)
 		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.RouteID)
 	}
@@ -329,15 +329,15 @@ func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx ui
 		plugin.Log.WithFields(logging.Fields{
 			"ifName":    ifName,
 			"swIdx":     swIdx,
-			"vrfID":     route.VrfID,
-			"dstIPAddr": route.DstIPAddr,
+			"vrfID":     route.VrfId,
+			"dstIPAddr": route.DstIpAddr,
 		}).Debug("Add routes to route cache - outgoing interface was deleted.")
 		plugin.moveRouteToCache(route)
 	}
 }
 
 func (plugin *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {
-	routeID := routeIdentifier(config.VrfID, config.DstIPAddr, config.NextHopAddr)
+	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
 	_, _, found := plugin.RouteIndexes.UnregisterName(routeID)
 	if found {
 		plugin.Log.Infof("Route %v unregistered", routeID)

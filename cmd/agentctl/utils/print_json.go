@@ -261,7 +261,7 @@ func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	fibRoot.Route = fibData.Routes
 	var keyset []string
 	for _, fib := range fibData.Routes {
-		keyset = append(keyset, l3.RouteKey(fib.VrfID, fib.DstIPAddr, fib.NextHopAddr))
+		keyset = append(keyset, l3.RouteKey(fib.VrfId, fib.DstIpAddr, fib.NextHopAddr))
 	}
 	sort.Strings(keyset)
 

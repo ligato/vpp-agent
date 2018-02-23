@@ -48,10 +48,10 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 			if vppRoute.OutIface != ifIdx {
 				continue
 			}
-			if vppRoute.DstAddr.String() != nbRoute.DstIPAddr {
+			if vppRoute.DstAddr.String() != nbRoute.DstIpAddr {
 				continue
 			}
-			if vppRoute.VrfID != nbRoute.VrfID {
+			if vppRoute.VrfID != nbRoute.VrfId {
 				continue
 			}
 			if vppRoute.Weight != nbRoute.Weight {
@@ -64,7 +64,7 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 				continue
 			}
 			// Register existing routes
-			routeID := routeIdentifier(nbRoute.VrfID, nbRoute.DstIPAddr, nbRoute.NextHopAddr)
+			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
 			plugin.RouteIndexes.RegisterName(routeID, plugin.RouteIndexSeq, nbRoute)
 			plugin.RouteIndexSeq++
 		}
@@ -75,11 +75,11 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	var wasError error
 	if len(nbRoutes) > 0 {
 		for _, nbRoute := range nbRoutes {
-			routeID := routeIdentifier(nbRoute.VrfID, nbRoute.DstIPAddr, nbRoute.NextHopAddr)
+			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
 			_, _, found := plugin.RouteIndexes.LookupIdx(routeID)
 			if !found {
 				// create new route if does not exist yet. VRF ID is already validated at this point.
-				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfID)); err != nil {
+				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
 					plugin.Log.Error(err)
 					wasError = err
 				}

@@ -124,6 +124,7 @@ func CheckMsgCompatibilityForNat(vppChan *govppapi.Channel) error {
 	return vppChan.CheckMessageCompatibility(msgs...)
 }
 
+// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
 func CheckMsgCompatibilityForStn(vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&stn.StnAddDelRule{},
