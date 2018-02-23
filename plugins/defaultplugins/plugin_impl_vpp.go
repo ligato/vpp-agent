@@ -35,6 +35,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
@@ -97,6 +98,9 @@ type Plugin struct {
 	stnConfigurator      *ifplugin.StnConfigurator
 	stnAllIndexes        idxvpp.NameToIdxRW
 	stnUnstoredIndexes   idxvpp.NameToIdxRW
+
+	// IPSec plugin fields
+	ipsecConfigurator *ipsecplugin.IPSecConfigurator
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -340,34 +344,30 @@ func (plugin *Plugin) Init() error {
 	// Run error handler.
 	go plugin.changePropagateError()
 
-	err = plugin.initIF(ctx)
-	if err != nil {
+	if err = plugin.initIF(ctx); err != nil {
 		return err
 	}
-	err = plugin.initACL(ctx)
-	if err != nil {
+	if err = plugin.initIPSec(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL2(ctx)
-	if err != nil {
+	if err = plugin.initACL(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL3(ctx)
-	if err != nil {
+	if err = plugin.initL2(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL4(ctx)
-	if err != nil {
+	if err = plugin.initL3(ctx); err != nil {
 		return err
 	}
-
-	err = plugin.initErrorHandler()
-	if err != nil {
+	if err = plugin.initL4(ctx); err != nil {
 		return err
 	}
 
-	err = plugin.subscribeWatcher()
-	if err != nil {
+	if err = plugin.initErrorHandler(); err != nil {
+		return err
+	}
+
+	if err = plugin.subscribeWatcher(); err != nil {
 		return err
 	}
 
@@ -533,6 +533,32 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("Configurator Initialized")
 
+	return nil
+}
+
+func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
+	plugin.Log.Infof("Init IPSec plugin")
+
+	// logger
+	ipsecLogger := plugin.Log.NewLogger("-ipsec-plugin")
+
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("IPSecConfigurator", ipsecLogger)
+	}
+	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
+		Log:         ipsecLogger,
+		GoVppmux:    plugin.GoVppmux,
+		SwIfIndexes: plugin.swIfIndexes,
+		Stopwatch:   stopwatch,
+	}
+
+	// Init IPSec plugin
+	if err = plugin.ipsecConfigurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("ipsecConfigurator Initialized")
 	return nil
 }
 

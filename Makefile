@@ -113,6 +113,7 @@ generate: get-generators
 	cd plugins/linuxplugin && go generate
 	cd plugins/defaultplugins/aclplugin && go generate
 	cd plugins/defaultplugins/ifplugin && go generate
+	cd plugins/defaultplugins/ipsecplugin && go generate
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
@@ -124,6 +125,7 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
