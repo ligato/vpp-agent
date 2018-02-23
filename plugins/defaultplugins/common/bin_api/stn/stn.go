@@ -5,9 +5,6 @@ package stn
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0xe6bb310b
-
 // StnAddDelRule represents the VPP binary API message 'stn_add_del_rule'.
 // Generated from '/usr/share/vpp/api/stn.api.json', line 11:
 //

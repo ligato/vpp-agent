@@ -5,9 +5,6 @@ package tapv2
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x90a5cd6e
-
 // TapCreateV2 represents the VPP binary API message 'tap_create_v2'.
 // Generated from '/usr/share/vpp/api/tapv2.api.json', line 18:
 //

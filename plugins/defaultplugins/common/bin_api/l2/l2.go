@@ -5,9 +5,6 @@ package l2
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x8a9f650b
-
 // MacEntry represents the VPP binary API data type 'mac_entry'.
 // Generated from '/usr/share/vpp/api/l2.api.json', line 1205:
 //

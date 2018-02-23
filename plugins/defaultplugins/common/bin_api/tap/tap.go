@@ -5,9 +5,6 @@ package tap
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0xd673040c
-
 // TapConnect represents the VPP binary API message 'tap_connect'.
 // Generated from '/usr/share/vpp/api/tap.api.json', line 21:
 //
