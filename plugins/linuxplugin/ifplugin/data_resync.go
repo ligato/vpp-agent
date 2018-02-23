@@ -35,6 +35,12 @@ const (
 	linkNotFoundErr = "Link not found"
 )
 
+// LinuxDataPair stores linux interface with matching NB configuration
+type LinuxDataPair struct {
+	linuxIfData netlink.Link
+	nbIfData    *interfaces.LinuxInterfaces_Interface
+}
+
 // Resync writes interfaces to Linux. Interface host name corresponds with Linux host interface name (but name can
 // be different). Resync consists of following steps:
 // 1. Iterate over all NB interfaces. Try to find interface with the same name in required namespace for every NB interface.
@@ -54,27 +60,69 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 
 	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
 
-	// Iterate over NB configuration. Look for similar interfaces in the namespace
+	// Cache for interfaces modified later (interface name/link data)
+	linkMap := make(map[string]*LinuxDataPair)
+
+	// Iterate over NB configuration. Look for interfaces with the same host name
 	for _, nbIf := range nbIfs {
 		plugin.handleOptionalHostIfName(nbIf)
 
-		switch nbIf.Type {
-		case interfaces.LinuxInterfaces_AUTO_TAP:
-			recreate, err := plugin.handleTapResync(nbIf, nsMgmtCtx)
-			if err != nil {
-				errs = append(errs, err)
-				continue
+		// Find linux equivalent for every NB interface and register it
+		linkIf, err := plugin.findLinuxInterface(nbIf, nsMgmtCtx)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if linkIf != nil {
+			// If interface was found, it will be compared and modified in the next step
+			plugin.Log.Debugf("RESYNC Linux interface %v: interface found in namespace", nbIf.Name)
+			linkMap[nbIf.Name] = &LinuxDataPair{
+				linuxIfData: linkIf,
+				nbIfData:    nbIf,
 			}
-			if recreate {
-				// If attempt to handle interface was not successful, create is as a new one
-				if err := plugin.ConfigureLinuxInterface(nbIf); err != nil {
-					errs = append(errs, err)
+		} else {
+			// If not, configure it
+			plugin.Log.Debugf("RESYNC Linux interface %v: interface not found and will be configured", nbIf.Name)
+			if err := plugin.ConfigureLinuxInterface(nbIf); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	// Process all interfaces waiting for modification. All NB interfaces are already registered at this point.
+	for linkName, linkDataPair := range linkMap {
+		linuxIf := plugin.reconstructIfConfig(linkDataPair.linuxIfData, linkDataPair.nbIfData.Namespace, linkName)
+
+		// For VETH, resolve peer
+		if linkDataPair.nbIfData.Type == interfaces.LinuxInterfaces_VETH {
+			// Search registered config for peer
+			var found bool
+			for _, cachedIfCfg := range plugin.intfByName {
+				if cachedIfCfg.config != nil && cachedIfCfg.config.Type == interfaces.LinuxInterfaces_VETH {
+					if cachedIfCfg.config.Veth != nil && cachedIfCfg.config.Veth.PeerIfName == linuxIf.HostIfName {
+						found = true
+						linuxIf.Veth = &interfaces.LinuxInterfaces_Interface_Veth{
+							PeerIfName: cachedIfCfg.config.HostIfName,
+						}
+					}
 				}
 			}
-		case interfaces.LinuxInterfaces_VETH:
-			// todo
+			if found {
+				plugin.Log.Debugf("RESYNC Linux interface %v: found peer %v", linkName, linuxIf.Veth.PeerIfName)
+			} else {
+				err := fmt.Errorf("RESYNC Linux interface %v: failed to obtain peer for veth", linkName)
+				errs = append(errs, err)
+			}
 		}
-
+		// Check if interface needs to be modified
+		if plugin.isLinuxIfModified(linkDataPair.nbIfData, linuxIf) {
+			plugin.Log.Debugf("RESYNC Linux interface %s: configuration changed, interface will be modified", linkName)
+			if err := plugin.ModifyLinuxInterface(linkDataPair.nbIfData, linuxIf); err != nil {
+				errs = append(errs, err)
+			}
+		} else {
+			plugin.Log.Debugf("RESYNC Linux interface %s: data was not changed", linkName)
+		}
 	}
 
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", errs)
@@ -82,126 +130,8 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 	return
 }
 
-// Resolve linux TAP interface type resync.
-func (plugin *LinuxInterfaceConfigurator) handleTapResync(nbTap *interfaces.LinuxInterfaces_Interface, nsMgmtCtx *linuxcalls.NamespaceMgmtCtx) (bool, error) {
-	plugin.Log.Debugf("RESYNC of TAP linux interface: %v", nbTap.HostIfName)
-
-	var err error
-	var linkIf netlink.Link
-
-	// Look for interface in default namespace. Use first temporary name, then host name (temporary name is optional)
-	if nbTap.Tap == nil {
-		nbTap.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
-			TempIfName: nbTap.HostIfName,
-		}
-	}
-	linkIf, err = netlink.LinkByName(nbTap.Tap.TempIfName)
-	if err != nil {
-		if err.Error() != linkNotFoundErr { // Link not found is not an error in this case
-			return false, fmt.Errorf("RESYNC Linux interface: failed to read interface %s", nbTap.HostIfName)
-		}
-		// Look for interface using host name
-		linkIf, err = netlink.LinkByName(nbTap.HostIfName)
-		if err != nil {
-			if err.Error() != linkNotFoundErr { // Link not found is not an error in this case
-				return false, fmt.Errorf("RESYNC Linux interface: failed to read interface %s", nbTap.HostIfName)
-			}
-		}
-	}
-	// If link exists, process it
-	if linkIf != nil {
-		// Reconstruct and register linux interface
-		linuxIf := plugin.reconstructIfConfig(linkIf, nbTap.Name)
-		plugin.registerLinuxInterface(uint32(linkIf.Attrs().Index), nbTap)
-		// Calculate whether modification is needed
-		if plugin.isLinuxIfModified(nbTap, linuxIf) {
-			plugin.Log.Debugf("RESYNC linux interfaces: modifying interface %v", nbTap.Name)
-			if err = plugin.ModifyLinuxInterface(nbTap, linuxIf); err != nil {
-				return false, fmt.Errorf("error while modifying linux interface: %v", err)
-			}
-		} else {
-			plugin.Log.Debugf("RESYNC linux interfaces: %v registered without additional changes", nbTap.Name)
-		}
-		return false, nil
-	}
-
-	// If interface was not found in default namespace, it can be already configured in its namespace
-	var revertNs func()
-	// Move to appropriate namespace
-	//TODO: interface could be moved to different namespace so all of them should be searched
-	if nbTap.Namespace != nil {
-		if nbTap.Namespace != nil {
-			if !plugin.isNamespaceAvailable(nbTap.Namespace) {
-				return false, fmt.Errorf("RESYNC Linux interface: cannot correlate %s, namespace is not available",
-					nbTap.HostIfName)
-			}
-			// Switch to namespace
-			var err error
-			revertNs, err = plugin.switchToNamespace(nsMgmtCtx, nbTap.Namespace)
-			if err != nil {
-				return false, fmt.Errorf("RESYNC Linux interface: cannot correlate %s, failed to switch to namespace %s",
-					nbTap.HostIfName, nbTap.Namespace.Name)
-			}
-		}
-	} else {
-		// Without namespace to look in, interface cannot be found
-		return true, nil
-	}
-
-	// Define defer func to revert namespace if needed
-	defer func(revertNs func()) {
-		if revertNs != nil {
-			revertNs()
-		}
-	}(revertNs)
-
-	// Look for interface in it's namespace using host name
-	linkIf, err = netlink.LinkByName(nbTap.HostIfName)
-	if err != nil {
-		// Link not found is not an error in this case
-		if err.Error() != "Link not found" {
-			return false, fmt.Errorf("RESYNC Linux interface: failed to read interface %s", nbTap.HostIfName)
-		}
-	}
-
-	if linkIf != nil {
-		// Reconstruct and register linux interface
-		linuxIf := plugin.reconstructIfConfig(linkIf, nbTap.Name)
-		plugin.registerLinuxInterface(uint32(linkIf.Attrs().Index), nbTap)
-		// Calculate whether modification is needed
-		if plugin.isLinuxIfModified(nbTap, linuxIf) {
-			plugin.Log.Debugf("RESYNC linux interfaces: modifying interface %v", nbTap.Name)
-			if err = plugin.ModifyLinuxInterface(nbTap, linuxIf); err != nil {
-				return false, fmt.Errorf("error while modifying linux interface: %v", err)
-
-			}
-		} else {
-			plugin.Log.Debugf("RESYNC linux interfaces: %v registered without additional changes", nbTap.Name)
-		}
-		return false, nil
-	} else {
-		// Interface was not found
-		return true, nil
-	}
-}
-
-// Register linux interface and add it to cache
-func (plugin *LinuxInterfaceConfigurator) registerLinuxInterface(linuxIfIdx uint32, nbIf *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
-	// Register interface with its name
-	plugin.ifIndexes.RegisterName(nbIf.Name, linuxIfIdx, nbIf)
-	// Add interface to cache
-	switch nbIf.Type {
-	case interfaces.LinuxInterfaces_AUTO_TAP:
-		return plugin.addToCache(nbIf, nil)
-	case interfaces.LinuxInterfaces_VETH:
-		peerConfig := plugin.getInterfaceConfig(nbIf.Veth.PeerIfName)
-		return plugin.addToCache(nbIf, peerConfig)
-	}
-	return nil
-}
-
-// Reconstruct interface configuration from netlink.Link data
-func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Link, name string) *interfaces.LinuxInterfaces_Interface {
+// Reconstruct common interface configuration from netlink.Link data
+func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Link, ns *interfaces.LinuxInterfaces_Interface_Namespace, name string) *interfaces.LinuxInterfaces_Interface {
 	linuxIfAttr := linuxIf.Attrs()
 	return &interfaces.LinuxInterfaces_Interface{
 		Name: name,
@@ -217,20 +147,7 @@ func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Li
 			}
 			return true
 		}(linuxIfAttr.OperState),
-		IpAddresses: func(linuxIf netlink.Link) []string {
-			addressList, err := netlink.AddrList(linuxIf, netlink.FAMILY_ALL)
-			if err != nil {
-				plugin.Log.Errorf("Failed to read linux interface %s address list: %v", linuxIf.Attrs().Name, err)
-				return nil
-			}
-			var addresses []string
-			for _, address := range addressList {
-				mask, _ := address.Mask.Size()
-				addrStr := address.IP.String() + "/" + strconv.Itoa(mask)
-				addresses = append(addresses, addrStr)
-			}
-			return addresses
-		}(linuxIf),
+		IpAddresses: plugin.getLinuxInterfaces(linuxIf, ns),
 		PhysAddress: func(hwAddr net.HardwareAddr) (mac string) {
 			if hwAddr != nil {
 				mac = hwAddr.String()
@@ -239,17 +156,50 @@ func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Li
 		}(linuxIfAttr.HardwareAddr),
 		Mtu:        uint32(linuxIfAttr.MTU),
 		HostIfName: linuxIfAttr.Name,
-		Veth: func(linuxIf netlink.Link) (veth *interfaces.LinuxInterfaces_Interface_Veth) {
-			vethIf, ok := linuxIf.(*netlink.Veth)
-			if ok && vethIf != nil {
-				//index, _ := netlink.VethPeerIndex(vethIf)
-				// todo try to find index according to nb
-			} else {
-				plugin.Log.Warnf("Veth %v has no peer interface", linuxIf.Attrs().Name)
-			}
-			return
-		}(linuxIf),
 	}
+}
+
+// Reads linux interface IP addresses
+func (plugin *LinuxInterfaceConfigurator) getLinuxInterfaces(linuxIf netlink.Link, ns *interfaces.LinuxInterfaces_Interface_Namespace) (addresses []string) {
+	// Move to proper namespace
+	var revertNs func()
+	if ns != nil {
+		if ns != nil {
+			if !plugin.isNamespaceAvailable(ns) {
+				plugin.Log.Errorf("RESYNC Linux interface %s: namespace is not available", linuxIf.Attrs().Name)
+				return
+			}
+			// Switch to namespace
+			var err error
+			revertNs, err = plugin.switchToNamespace(linuxcalls.NewNamespaceMgmtCtx(), ns)
+			if err != nil {
+				plugin.Log.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
+					linuxIf.Attrs().Name, ns.Name, err)
+				return
+			}
+		}
+	}
+
+	// Define defer func to revert namespace if needed
+	defer func(revertNs func()) {
+		if revertNs != nil {
+			revertNs()
+		}
+	}(revertNs)
+
+	addressList, err := netlink.AddrList(linuxIf, netlink.FAMILY_ALL)
+	if err != nil {
+		plugin.Log.Errorf("failed to read linux interface %s address list: %v", linuxIf.Attrs().Name, err)
+		return
+	}
+
+	for _, address := range addressList {
+		mask, _ := address.Mask.Size()
+		addrStr := address.IP.String() + "/" + strconv.Itoa(mask)
+		addresses = append(addresses, addrStr)
+	}
+
+	return addresses
 }
 
 // Compare interface fields in order to find differences.
@@ -342,4 +292,68 @@ func (plugin *LinuxInterfaceConfigurator) isLinuxIfModified(nbIf, linuxIf *inter
 	}
 
 	return false
+}
+
+// Looks for linux interface. Returns net.Link object if found
+func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.LinuxInterfaces_Interface, nsMgmtCtx *linuxcalls.NamespaceMgmtCtx) (netlink.Link, error) {
+	plugin.Log.Debugf("Looking for Linux interface %v", nbIf.HostIfName)
+
+	// Move to proper namespace
+	var revertNs func()
+	if nbIf.Namespace != nil {
+		if nbIf.Namespace != nil {
+			if !plugin.isNamespaceAvailable(nbIf.Namespace) {
+				return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
+			}
+			// Switch to namespace
+			var err error
+			revertNs, err = plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
+			if err != nil {
+				return nil, fmt.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
+					nbIf.HostIfName, nbIf.Namespace.Name, err)
+			}
+		}
+	}
+
+	// Define defer func to revert namespace if needed
+	defer func(revertNs func()) {
+		if revertNs != nil {
+			revertNs()
+		}
+	}(revertNs)
+
+	// Look for interface
+	linkIf, err := netlink.LinkByName(nbIf.HostIfName)
+	if err != nil {
+		// Link not found is not an error in this case
+		if err.Error() == "Link not found" {
+			// Interface was not found
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("RESYNC Linux interface %s: %v", nbIf.HostIfName, err)
+		}
+	}
+	if linkIf == nil || linkIf.Attrs() == nil {
+		return nil, fmt.Errorf("RESYNC Linux interface %v: link is nil", nbIf.HostIfName)
+	}
+
+	// Add interface to cache
+	plugin.registerLinuxInterface(uint32(linkIf.Attrs().Index), nbIf)
+
+	return linkIf, nil
+}
+
+// Register linux interface and add it to cache
+func (plugin *LinuxInterfaceConfigurator) registerLinuxInterface(linuxIfIdx uint32, nbIf *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
+	// Register interface with its name
+	plugin.ifIndexes.RegisterName(nbIf.Name, linuxIfIdx, nbIf)
+	// Add interface to cache
+	switch nbIf.Type {
+	case interfaces.LinuxInterfaces_AUTO_TAP:
+		return plugin.addToCache(nbIf, nil)
+	case interfaces.LinuxInterfaces_VETH:
+		peerConfig := plugin.getInterfaceConfig(nbIf.Veth.PeerIfName)
+		return plugin.addToCache(nbIf, peerConfig)
+	}
+	return nil
 }
