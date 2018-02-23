@@ -1,13 +1,23 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
-    default-jre default-jdk telnet netcat software-properties-common
+    default-jre default-jdk telnet netcat software-properties-common \
+    make autoconf automake libtool curl unzip \
+    golang-gogoprotobuf-dev \
+ && apt-get remove -y --purge gcc \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-    apt-get update && apt-get install -y gcc-7 && \
-    cd /usr/bin/ && rm gcc && ln -s gcc-7 gcc
+
+RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test \
+ && apt-get update \
+ && apt-get install -y gcc-7 g++-7 \
+ && cd /usr/bin/ \
+ && ln -s gcc-7 gcc \
+ && ln -s g++-7 g++ \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
@@ -42,21 +52,20 @@ RUN /bin/bash -c "\
 
 # install Go
 ENV GOLANG_VERSION 1.9.3
-RUN wget -O go.tgz "https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" && \
-    tar -C /usr/local -xzf go.tgz && \
-    rm go.tgz
+RUN wget -O go.tgz "https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" \
+ && tar -C /usr/local -xzf go.tgz \
+ && rm go.tgz
 
 # build & install Protobuf & gogo protobuf compiler
-RUN apt-get install -y \
-    make autoconf automake libtool curl make g++ unzip \
-    golang-gogoprotobuf-dev
-
-RUN git clone https://github.com/google/protobuf.git && \
-    cd protobuf && ./autogen.sh && ./configure && \
-    make -j4 && \
-    make install && \
-    ldconfig && \
-    cd .. && rm -rf protobuf
+RUN git clone https://github.com/google/protobuf.git \
+ && cd protobuf \
+ && ./autogen.sh \
+ && ./configure \
+ && make -j4 \
+ && make install \
+ && ldconfig \
+ && cd .. \
+ && rm -rf protobuf
 
 ARG AGENT_COMMIT
 

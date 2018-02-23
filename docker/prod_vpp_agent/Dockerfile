@@ -2,12 +2,14 @@ FROM ubuntu:16.04
 
 MAINTAINER jozef.mak@pantheon.tech
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update \
+ && apt-get install -y \
         # general tools
         iproute2 iputils-ping inetutils-traceroute \
         # vpp requirements
         openssl python libapr1 libnuma1 \
-        supervisor
+        supervisor \
+ && rm -rf /var/lib/apt/lists/*
 
 # use /opt/vpp-agent/dev as the working directory
 RUN mkdir -p /opt/vpp-agent/dev
