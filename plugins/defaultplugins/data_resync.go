@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -576,6 +577,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			nat.GlobalConfigPrefix(),
 			nat.SNatPrefix(),
 			nat.DNatPrefix(),
+			ipsec.KeyPrefix,
 		)
 	if err != nil {
 		return err
