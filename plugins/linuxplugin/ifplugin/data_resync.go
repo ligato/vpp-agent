@@ -32,7 +32,6 @@ import (
 const (
 	tap             = "tun"
 	veth            = "veth"
-	linkNotFoundErr = "Link not found"
 )
 
 // LinuxDataPair stores linux interface with matching NB configuration
@@ -48,7 +47,7 @@ type LinuxDataPair struct {
 // 3. If interface exists, it is correlated and modified if needed.
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
 func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_Interface) (errs []error) {
-	plugin.Log.Warn("RESYNC Linux interface begin.")
+	plugin.Log.Debugf("RESYNC Linux interface begin.")
 
 	start := time.Now()
 	defer func() {
@@ -162,30 +161,20 @@ func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Li
 // Reads linux interface IP addresses
 func (plugin *LinuxInterfaceConfigurator) getLinuxInterfaces(linuxIf netlink.Link, ns *interfaces.LinuxInterfaces_Interface_Namespace) (addresses []string) {
 	// Move to proper namespace
-	var revertNs func()
 	if ns != nil {
-		if ns != nil {
-			if !plugin.isNamespaceAvailable(ns) {
-				plugin.Log.Errorf("RESYNC Linux interface %s: namespace is not available", linuxIf.Attrs().Name)
-				return
-			}
-			// Switch to namespace
-			var err error
-			revertNs, err = plugin.switchToNamespace(linuxcalls.NewNamespaceMgmtCtx(), ns)
-			if err != nil {
-				plugin.Log.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
-					linuxIf.Attrs().Name, ns.Name, err)
-				return
-			}
+		if !plugin.isNamespaceAvailable(ns) {
+			plugin.Log.Errorf("RESYNC Linux interface %s: namespace is not available", linuxIf.Attrs().Name)
+			return
 		}
+		// Switch to namespace
+		revertNs, err := plugin.switchToNamespace(linuxcalls.NewNamespaceMgmtCtx(), ns)
+		if err != nil {
+			plugin.Log.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
+				linuxIf.Attrs().Name, ns.Name, err)
+			return
+		}
+		defer revertNs()
 	}
-
-	// Define defer func to revert namespace if needed
-	defer func(revertNs func()) {
-		if revertNs != nil {
-			revertNs()
-		}
-	}(revertNs)
 
 	addressList, err := netlink.AddrList(linuxIf, netlink.FAMILY_ALL)
 	if err != nil {
@@ -299,34 +288,25 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 	plugin.Log.Debugf("Looking for Linux interface %v", nbIf.HostIfName)
 
 	// Move to proper namespace
-	var revertNs func()
 	if nbIf.Namespace != nil {
 		if nbIf.Namespace != nil {
 			if !plugin.isNamespaceAvailable(nbIf.Namespace) {
 				return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
 			}
 			// Switch to namespace
-			var err error
-			revertNs, err = plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
+			revertNs, err := plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
 			if err != nil {
 				return nil, fmt.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
 					nbIf.HostIfName, nbIf.Namespace.Name, err)
 			}
+			defer revertNs()
 		}
 	}
-
-	// Define defer func to revert namespace if needed
-	defer func(revertNs func()) {
-		if revertNs != nil {
-			revertNs()
-		}
-	}(revertNs)
-
 	// Look for interface
 	linkIf, err := netlink.LinkByName(nbIf.HostIfName)
 	if err != nil {
 		// Link not found is not an error in this case
-		if err.Error() == "Link not found" {
+		if _, ok := err.(netlink.LinkNotFoundError); ok {
 			// Interface was not found
 			return nil, nil
 		} else {

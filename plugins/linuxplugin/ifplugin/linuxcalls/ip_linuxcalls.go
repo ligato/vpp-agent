@@ -47,19 +47,14 @@ func AddInterfaceIP(log logging.Logger, ifName string, addr *net.IPNet, timeLog 
 	}
 
 	// The check is because of link local addresses which sometimes cannot be reassigned
-	var ipExists bool
 	for _, exAddr := range exAddrList {
 		if bytes.Compare(exAddr.IP, addr.IP) == 0 {
-			ipExists = true
-			break
+			log.Debugf("Cannot assign %v to interface %v, IP already exists", addr.IP.String(), ifName)
+			return nil
 		}
 	}
-	if ipExists {
-		log.Debugf("Cannot assign %v to interface %v, IP already exists", addr.IP.String(), ifName)
-		return nil
-	} else {
-		return netlink.AddrAdd(link, &netlink.Addr{IPNet: addr})
-	}
+
+	return netlink.AddrAdd(link, &netlink.Addr{IPNet: addr})
 }
 
 // DelInterfaceIP calls AddrDel Netlink API.
