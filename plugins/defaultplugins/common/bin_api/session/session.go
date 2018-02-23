@@ -5,9 +5,6 @@ package session
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x2d672775
-
 // ApplicationAttach represents the VPP binary API message 'application_attach'.
 // Generated from '/usr/share/vpp/api/session.api.json', line 63:
 //

@@ -5,9 +5,6 @@ package vpe
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x28882bcf
-
 // ControlPing represents the VPP binary API message 'control_ping'.
 // Generated from '/usr/share/vpp/api/vpe.api.json', line 32:
 //

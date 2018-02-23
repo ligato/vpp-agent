@@ -5,9 +5,6 @@ package acl
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x23798edb
-
 // ACLRule represents the VPP binary API data type 'acl_rule'.
 // Generated from '/usr/share/vpp/api/acl.api.json', line 863:
 //

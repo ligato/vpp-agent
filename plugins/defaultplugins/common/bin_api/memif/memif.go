@@ -5,9 +5,6 @@ package memif
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x89bc86b1
-
 // MemifSocketFilenameAddDel represents the VPP binary API message 'memif_socket_filename_add_del'.
 // Generated from '/usr/share/vpp/api/memif.api.json', line 25:
 //

@@ -78,6 +78,4 @@ var Functions = map[string]reflect.Value{
 
 var Variables = map[string]reflect.Value{}
 
-var Consts = map[string]reflect.Value{
-	"VlAPIVersion": reflect.ValueOf(VlAPIVersion),
-}
+var Consts = map[string]reflect.Value{}

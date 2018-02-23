@@ -5,9 +5,6 @@ package stats
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x7c9986f4
-
 // IP4FibCounter represents the VPP binary API data type 'ip4_fib_counter'.
 // Generated from '/usr/share/vpp/api/stats.api.json', line 752:
 //

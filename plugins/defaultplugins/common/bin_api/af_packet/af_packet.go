@@ -5,9 +5,6 @@ package af_packet
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0xd2739d4
-
 // AfPacketCreate represents the VPP binary API message 'af_packet_create'.
 // Generated from '/usr/share/vpp/api/af_packet.api.json', line 17:
 //

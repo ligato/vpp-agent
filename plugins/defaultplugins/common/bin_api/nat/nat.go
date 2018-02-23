@@ -5,9 +5,6 @@ package nat
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x5bea979c
-
 // Nat44LbAddrPort represents the VPP binary API data type 'nat44_lb_addr_port'.
 // Generated from '/usr/share/vpp/api/nat.api.json', line 3327:
 //

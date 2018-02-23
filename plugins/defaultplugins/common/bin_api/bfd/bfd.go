@@ -5,9 +5,6 @@ package bfd
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0xa08db6b8
-
 // BfdUDPSetEchoSource represents the VPP binary API message 'bfd_udp_set_echo_source'.
 // Generated from '/usr/share/vpp/api/bfd.api.json', line 49:
 //

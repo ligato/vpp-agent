@@ -5,9 +5,6 @@ package vxlan
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0xf1a28701
-
 // VxlanAddDelTunnel represents the VPP binary API message 'vxlan_add_del_tunnel'.
 // Generated from '/usr/share/vpp/api/vxlan.api.json', line 18:
 //
