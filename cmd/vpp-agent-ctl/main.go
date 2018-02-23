@@ -1126,8 +1126,8 @@ func disableL4Features(db keyval.ProtoBroker) {
 func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
 	stnRule := stn.StnRule{
 		RuleName:  "rule1",
-		IpAddress: ifName,
-		Interface: ipAddress,
+		IpAddress: ipAddress,
+		Interface: ifName,
 	}
 
 	log.Println(stnRule)

@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
@@ -202,6 +203,11 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 		return
 	}
 
+	ipWithMask := strings.Split(stnInput.IpAddress, "/")
+	if len(ipWithMask) > 1 {
+		plugin.Log.Debugf("STN rule %v IP address mask is ignored", stnInput.RuleName)
+		stnInput.IpAddress = ipWithMask[0]
+	}
 	parsedIP := net.ParseIP(stnInput.IpAddress)
 	if parsedIP == nil {
 		err = fmt.Errorf("unable to parse IP %v", stnInput.IpAddress)
