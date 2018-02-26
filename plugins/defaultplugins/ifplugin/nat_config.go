@@ -19,6 +19,7 @@
 package ifplugin
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"strconv"
@@ -34,6 +35,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+)
+
+// Mapping labels
+const (
+	static   = "-static-"
+	staticLb = "-staticLb-"
+	identity = "-identity-"
+	dummyTag = "dummy-tag" // used for deletion where tag is not needed
 )
 
 // NatConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -184,7 +193,7 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 	}
 
 	// Address pool
-	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools)
+	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools, plugin.Log)
 	if err := plugin.deleteAddressPool(toRemove); err != nil {
 		return err
 	}
@@ -244,19 +253,23 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 
 	// Resolve static mapping
 	for mappingIdx, mappingEntry := range dNat.StMappings {
+		var tag string
 		localIPList := mappingEntry.LocalIps
 		if len(localIPList) == 0 {
 			plugin.Log.Errorf("cannot configure DNAT %v static mapping: no local address provided", mappingIdx)
 			continue
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
-			if err := plugin.handleStaticMapping(mappingEntry, true); err != nil {
+			tag = getMappingTag(dNat.Label, static, mappingIdx)
+			if err := plugin.handleStaticMapping(mappingEntry, tag, true); err != nil {
 				plugin.Log.Errorf("DNAT static mapping configuration failed: %v", err)
 				continue
 			}
 		} else {
 			// Case with load balance (more local addresses)
-			if err := plugin.handleStaticMappingLb(mappingEntry, true); err != nil {
+			// Case without load balance (one local address)
+			tag = getMappingTag(dNat.Label, staticLb, mappingIdx)
+			if err := plugin.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
 				plugin.Log.Errorf("DNAT static lb-mapping configuration failed: %v", err)
 				continue
 			}
@@ -266,7 +279,7 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 		plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 		plugin.NatIndexSeq++
 
-		plugin.Log.Debugf("DNAT static (lb)mapping configured (ID: %v)", mappingIdentifier)
+		plugin.Log.Debugf("DNAT static (lb)mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
 	}
 
 	// Resolve identity mapping
@@ -275,7 +288,9 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 			plugin.Log.Errorf("cannot configure DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
 			continue
 		}
-		if err := plugin.handleIdentityMapping(idMapping, true); err != nil {
+		// Case without load balance (one local address)
+		tag := getMappingTag(dNat.Label, identity, mappingIdx)
+		if err := plugin.handleIdentityMapping(idMapping, tag, true); err != nil {
 			plugin.Log.Error(err)
 			continue
 		}
@@ -285,7 +300,7 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 		plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
 		plugin.NatIndexSeq++
 
-		plugin.Log.Debugf("DNAT identity mapping configured (ID: %v)", mappingIdentifier)
+		plugin.Log.Debugf("DNAT identity mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
 	}
 
 	// Register DNAT configuration
@@ -328,13 +343,13 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 			continue
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
-			if err := plugin.handleStaticMapping(mappingEntry, false); err != nil {
+			if err := plugin.handleStaticMapping(mappingEntry, dummyTag, false); err != nil {
 				plugin.Log.Errorf("DNAT mapping removal failed: %v", err)
 				continue
 			}
 		} else {
 			// Case with load balance (more local addresses)
-			if err := plugin.handleStaticMappingLb(mappingEntry, false); err != nil {
+			if err := plugin.handleStaticMappingLb(mappingEntry, dummyTag, false); err != nil {
 				plugin.Log.Errorf("DNAT lb-mapping removal failed: %v", err)
 				continue
 			}
@@ -352,7 +367,7 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 			plugin.Log.Errorf("cannot remove DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
 			continue
 		}
-		if err := plugin.handleIdentityMapping(idMapping, false); err != nil {
+		if err := plugin.handleIdentityMapping(idMapping, dummyTag, false); err != nil {
 			plugin.Log.Error(err)
 			continue
 		}
@@ -529,7 +544,11 @@ func (plugin *NatConfigurator) deleteAddressPool(addressPools []*nat.Nat44Global
 }
 
 // configures single static mapping entry with load balancer
-func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMappigs, add bool) (err error) {
+func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMappings, tag string, add bool) (err error) {
+	// Validate tag
+	if tag == dummyTag && add {
+		plugin.Log.Warn("Static mapping will be configured with generic tag")
+	}
 	// Parse external IP address
 	exIPAddrByte := net.ParseIP(staticMappingLb.ExternalIP).To4()
 	if exIPAddrByte == nil {
@@ -543,10 +562,13 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 
 	// Address mapping with load balancer
 	ctx := &vppcalls.StaticMappingLbContext{
+		Tag:          tag,
 		ExternalIP:   exIPAddrByte,
 		ExternalPort: uint16(staticMappingLb.ExternalPort),
 		Protocol:     getProtocol(staticMappingLb.Protocol, plugin.Log),
 		LocalIPs:     getLocalIPs(staticMappingLb.LocalIps, plugin.Log),
+		Vrf:          staticMappingLb.VrfId,
+		TwiceNat:     staticMappingLb.TwiceNat,
 	}
 
 	if len(ctx.LocalIPs) == 0 {
@@ -554,15 +576,20 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 	}
 
 	if add {
-		return vppcalls.AddNat44StaticMappingLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat, plugin.vppChan, plugin.Stopwatch)
+		return vppcalls.AddNat44StaticMappingLb(ctx, plugin.vppChan, plugin.Stopwatch)
 	}
-	return vppcalls.DelNat44StaticMappingLb(ctx, staticMappingLb.VrfId, staticMappingLb.TwiceNat, plugin.vppChan, plugin.Stopwatch)
+	return vppcalls.DelNat44StaticMappingLb(ctx, plugin.vppChan, plugin.Stopwatch)
 }
 
 // handler for single static mapping entry
-func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMappigs, add bool) (err error) {
+func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMappings, tag string, add bool) (err error) {
 	var ifIdx uint32 = 0xffffffff // default value - means no external interface is set
 	var exIPAddr []byte
+
+	// Validate tag
+	if tag == dummyTag && add {
+		plugin.Log.Warn("Static mapping will be configured with generic tag")
+	}
 
 	// Parse local IP address and port
 	lcIPAddr := net.ParseIP(staticMapping.LocalIps[0].LocalIP).To4()
@@ -595,6 +622,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 
 	// Address mapping with load balancer
 	ctx := &vppcalls.StaticMappingContext{
+		Tag:           tag,
 		AddressOnly:   addrOnly,
 		LocalIP:       lcIPAddr,
 		LocalPort:     uint16(lcPort),
@@ -602,16 +630,18 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 		ExternalPort:  uint16(staticMapping.ExternalPort),
 		ExternalIfIdx: ifIdx,
 		Protocol:      getProtocol(staticMapping.Protocol, plugin.Log),
+		Vrf:           staticMapping.VrfId,
+		TwiceNat:      staticMapping.TwiceNat,
 	}
 
 	if add {
-		return vppcalls.AddNat44StaticMapping(ctx, staticMapping.VrfId, staticMapping.TwiceNat, plugin.vppChan, plugin.Stopwatch)
+		return vppcalls.AddNat44StaticMapping(ctx, plugin.vppChan, plugin.Stopwatch)
 	}
-	return vppcalls.DelNat44StaticMapping(ctx, staticMapping.VrfId, staticMapping.TwiceNat, plugin.vppChan, plugin.Stopwatch)
+	return vppcalls.DelNat44StaticMapping(ctx, plugin.vppChan, plugin.Stopwatch)
 }
 
 // handler for single identity mapping entry
-func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMappings, isAdd bool) (err error) {
+func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMappings, tag string, isAdd bool) (err error) {
 	// Verify interface if exists
 	var ifIdx uint32
 	if idMapping.AddressedInterface != "" {
@@ -624,27 +654,30 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 		}
 	}
 
-	proto := getProtocol(idMapping.Protocol, plugin.Log)
-	port := uint16(idMapping.Port)
-
-	if ifIdx != 0 {
-		// Case with interface
-		if isAdd {
-			return vppcalls.AddNat44IdentityMapping(nil, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
-		}
-		return vppcalls.DelNat44IdentityMapping(nil, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
+	// Identity mapping (common fields)
+	ctx := &vppcalls.IdentityMappingContext{
+		Tag:      tag,
+		Protocol: getProtocol(idMapping.Protocol, plugin.Log),
+		Port:     uint16(idMapping.Port),
+		IfIdx:    ifIdx,
+		Vrf:      idMapping.VrfId,
 	}
-	// Case with IP (optionally port). Verify and parse input IP/port
-	parsedIP := net.ParseIP(idMapping.IpAddress).To4()
-	if parsedIP == nil {
-		return fmt.Errorf("unable to parse IP address %v", idMapping.IpAddress)
+
+	if ctx.IfIdx == 0 {
+		// Case with IP (optionally port). Verify and parse input IP/port
+		parsedIP := net.ParseIP(idMapping.IpAddress).To4()
+		if parsedIP == nil {
+			return fmt.Errorf("unable to parse IP address %v", idMapping.IpAddress)
+		}
+		// Add IP address to context
+		ctx.IPAddress = parsedIP
 	}
 
 	// Configure/remove identity mapping
 	if isAdd {
-		return vppcalls.AddNat44IdentityMapping(parsedIP, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
+		return vppcalls.AddNat44IdentityMapping(ctx, plugin.vppChan, plugin.Stopwatch)
 	}
-	return vppcalls.DelNat44IdentityMapping(parsedIP, proto, port, ifIdx, idMapping.VrfId, plugin.vppChan, plugin.Stopwatch)
+	return vppcalls.DelNat44IdentityMapping(ctx, plugin.vppChan, plugin.Stopwatch)
 }
 
 // looks for new and obsolete IN interfaces
@@ -688,13 +721,22 @@ func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterfaces) (toSetIn, t
 }
 
 // looks for new and obsolete address pools
-func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
+func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools, log logging.Logger) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
 	// Find new address pools
 	for _, newAp := range newAPs {
+		// If new address pool is a range, add it
+		if newAp.LastSrcAddress != "" {
+			toAdd = append(toAdd, newAp)
+			continue
+		}
+		// Otherwise try to find the same address pool
 		var found bool
 		for _, oldAp := range oldAPs {
-			if newAp.FirstSrcAddress == oldAp.FirstSrcAddress && newAp.LastSrcAddress == oldAp.LastSrcAddress &&
-				newAp.TwiceNat == oldAp.TwiceNat && newAp.VrfId == oldAp.VrfId {
+			// Skip address pools
+			if oldAp.LastSrcAddress != "" {
+				continue
+			}
+			if newAp.FirstSrcAddress == oldAp.FirstSrcAddress && newAp.TwiceNat == oldAp.TwiceNat && newAp.VrfId == oldAp.VrfId {
 				found = true
 			}
 		}
@@ -704,10 +746,19 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, to
 	}
 	// Find obsolete address pools
 	for _, oldAp := range oldAPs {
+		// If new address pool is a range, remove it
+		if oldAp.LastSrcAddress != "" {
+			toRemove = append(toAdd, oldAp)
+			continue
+		}
+		// Otherwise try to find the same address pool
 		var found bool
 		for _, newAp := range newAPs {
-			if oldAp.FirstSrcAddress == newAp.FirstSrcAddress && oldAp.LastSrcAddress == newAp.LastSrcAddress &&
-				oldAp.TwiceNat == newAp.TwiceNat && oldAp.VrfId == newAp.VrfId {
+			// Skip address pools (they are already added)
+			if oldAp.LastSrcAddress != "" {
+				continue
+			}
+			if oldAp.FirstSrcAddress == newAp.FirstSrcAddress && oldAp.TwiceNat == newAp.TwiceNat && oldAp.VrfId == newAp.VrfId {
 				found = true
 			}
 		}
@@ -720,7 +771,7 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, to
 }
 
 // returns a list of validated local IP addresses with port and probability value
-func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappigs_LocalIPs, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
+func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
 	for _, ipPort := range ipPorts {
 		if ipPort.LocalPort == 0 {
 			log.Error("cannot set local IP/Port to mapping: port is missing")
@@ -759,7 +810,7 @@ func getProtocol(protocol nat.Protocol, log logging.Logger) uint8 {
 }
 
 // returns unique ID of the mapping
-func getStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMappigs) string {
+func getStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMappings) string {
 	extIP := strings.Replace(mapping.ExternalIP, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
 	locIP := strings.Replace(mapping.LocalIps[0].LocalIP, ".", "", -1)
@@ -771,5 +822,17 @@ func getStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMappigs) str
 func getIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMappings) string {
 	extIP := strings.Replace(mapping.IpAddress, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
+	if mapping.AddressedInterface == "" {
+		return extIP + "-noif-" + strconv.Itoa(int(mapping.VrfId))
+	}
 	return extIP + "-" + mapping.AddressedInterface + "-" + strconv.Itoa(int(mapping.VrfId))
+}
+
+// returns unique mapping tag
+func getMappingTag(label, mType string, index int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString(label)
+	buffer.WriteString(mType)
+	buffer.WriteString(strconv.Itoa(index))
+	return buffer.String()
 }

@@ -196,11 +196,11 @@ if it is used in any BFD session.
 
 NAT configuration can be set up on the VPP using `ifplugin`.
 
-NAT is moddeled by [nat proto file](../common/model/nat/nat.proto). Model is divided to two parts; the 
-general configuration with defined interfaces and IP address pools, and DNAT configuration with a set of
-static/identity mappings. 
+NAT is modelled by [nat proto file](../common/model/nat/nat.proto). Model is divided to two parts; the 
+general configuration with defined interfaces and enabled IP address pools, and DNAT configuration 
+with a set of static and/or identity mappings. 
 
-NAT global configuration is stored under single key. There is no unique name/label to distinguish different
+NAT global configuration is stored under single key. There is no unique name or label to distinguish different
 configurations (only one global setting can be stored in the ETCD at a time): 
 ```
 /vnf-agent/{agent-lanbel}/vpp/config/v1/nat/global/
@@ -214,12 +214,15 @@ NAT DNAT case has the following key:
 **JSON configuration example with vpp-agent-ctl**
 
 To inset NAT global config into ETCD in JSON format, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
-with `nat-global.json` file. Use the following command:
+with [nat-global.json](../../../cmd/vpp-agent-ctl/json/nat-global.json) file. 
+Use the following command:
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/nat/global/" json/nat-global.json
 ```
 
 To put DNAT configuration, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) with 
+[nat-dnat.json](../../../cmd/vpp-agent-ctl/json/nat-dnat.json) file.
+Use the following command:
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/nat/dnat/dnat1" json/nat-dnat.json
 ```
