@@ -46,12 +46,6 @@ const (
 	vethConfigNamespace = "veth-cfg-ns"
 )
 
-// Interface type string representations
-const (
-	veth   = "veth"
-	tapTun = "tun"
-)
-
 // MicroserviceCtx contains all data required to handle microservice changes
 type MicroserviceCtx struct {
 	nsMgmtCtx     *linuxcalls.NamespaceMgmtCtx
@@ -437,7 +431,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 	var found bool
 	for _, linuxIf := range linuxIfs {
 		if ifConfig.config.Tap.TempIfName == linuxIf.Attrs().Name {
-			if linuxIf.Type() == tapTun {
+			if linuxIf.Type() == tap {
 				found = true
 				break
 			}
@@ -856,7 +850,7 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 		linuxIfName := linuxIf.attributes.Name
 
 		switch {
-		case linuxIf.interfaceType == tapTun:
+		case linuxIf.interfaceType == tap:
 			if linuxIf.interfaceState == netlink.OperDown {
 				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
 				for _, indexedName := range plugin.ifIndexes.GetMapping().ListNames() {
@@ -886,7 +880,9 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 						plugin.Log.Warnf("Cached config for interface %v is empty", linuxIfName)
 						continue
 					}
-					if ifConfig.config.Tap.TempIfName == linuxIfName {
+
+					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == linuxIfName) ||
+						ifConfig.config.HostIfName == linuxIfName {
 						// Skip processed interfaces
 						_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
 						if exists {
