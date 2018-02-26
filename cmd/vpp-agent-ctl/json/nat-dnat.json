@@ -25,7 +25,6 @@
   "id_mappings": [
     {
       "vrfId": 0,
-      "addressedInterface": "tap1",
       "ipAddress": "192.168.0.1",
       "port": 8989,
       "protocol": 0
