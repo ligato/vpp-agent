@@ -193,7 +193,7 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 	}
 
 	// Address pool
-	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools)
+	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools, plugin.Log)
 	if err := plugin.deleteAddressPool(toRemove); err != nil {
 		return err
 	}
@@ -721,13 +721,22 @@ func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterfaces) (toSetIn, t
 }
 
 // looks for new and obsolete address pools
-func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
+func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools, log logging.Logger) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
 	// Find new address pools
 	for _, newAp := range newAPs {
+		// If new address pool is a range, add it
+		if newAp.LastSrcAddress != "" {
+			toAdd = append(toAdd, newAp)
+			continue
+		}
+		// Otherwise try to find the same address pool
 		var found bool
 		for _, oldAp := range oldAPs {
-			if newAp.FirstSrcAddress == oldAp.FirstSrcAddress && newAp.LastSrcAddress == oldAp.LastSrcAddress &&
-				newAp.TwiceNat == oldAp.TwiceNat && newAp.VrfId == oldAp.VrfId {
+			// Skip address pools
+			if oldAp.LastSrcAddress != "" {
+				continue
+			}
+			if newAp.FirstSrcAddress == oldAp.FirstSrcAddress && newAp.TwiceNat == oldAp.TwiceNat && newAp.VrfId == oldAp.VrfId {
 				found = true
 			}
 		}
@@ -737,10 +746,19 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, to
 	}
 	// Find obsolete address pools
 	for _, oldAp := range oldAPs {
+		// If new address pool is a range, remove it
+		if oldAp.LastSrcAddress != "" {
+			toRemove = append(toAdd, oldAp)
+			continue
+		}
+		// Otherwise try to find the same address pool
 		var found bool
 		for _, newAp := range newAPs {
-			if oldAp.FirstSrcAddress == newAp.FirstSrcAddress && oldAp.LastSrcAddress == newAp.LastSrcAddress &&
-				oldAp.TwiceNat == newAp.TwiceNat && oldAp.VrfId == newAp.VrfId {
+			// Skip address pools (they are already added)
+			if oldAp.LastSrcAddress != "" {
+				continue
+			}
+			if oldAp.FirstSrcAddress == newAp.FirstSrcAddress && oldAp.TwiceNat == newAp.TwiceNat && oldAp.VrfId == newAp.VrfId {
 				found = true
 			}
 		}
