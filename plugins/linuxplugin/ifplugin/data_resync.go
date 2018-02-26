@@ -30,8 +30,8 @@ import (
 
 // A List of known linux interface types which can be processed.
 const (
-	tap             = "tun"
-	veth            = "veth"
+	tap  = "tun"
+	veth = "veth"
 )
 
 // LinuxDataPair stores linux interface with matching NB configuration
@@ -249,8 +249,8 @@ func (plugin *LinuxInterfaceConfigurator) isLinuxIfModified(nbIf, linuxIf *inter
 			nbIf.PhysAddress, linuxIf.PhysAddress)
 		return true
 	}
-	// MTU
-	if nbIf.Mtu != linuxIf.Mtu {
+	// MTU (if NB value is set)
+	if nbIf.Mtu != 0 && nbIf.Mtu != linuxIf.Mtu {
 		plugin.Log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, Linux: %d)",
 			nbIf.Mtu, linuxIf.Mtu)
 		return true
