@@ -215,8 +215,8 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error
 	return nil
 }
 
-// ResolveRegisteredInterface handles case when new interface appears in the config
-func (plugin *ArpConfigurator) ResolveRegisteredInterface(interfaceName string) error {
+// RegisteredInterface handles case when new interface appears in the config
+func (plugin *ArpConfigurator) RegisteredInterface(interfaceName string, ifIdx uint32) error {
 	plugin.Log.Debugf("ARP configurator: resolving registered interface %s", interfaceName)
 	// find all entries which can be resolved
 	entriesToAdd := plugin.ARPCache.LookupNamesByInterface(interfaceName)
@@ -251,8 +251,8 @@ func (plugin *ArpConfigurator) ResolveRegisteredInterface(interfaceName string) 
 	return wasErr
 }
 
-// ResolveUnregisteredInterface handles case when interface is removed from the config
-func (plugin *ArpConfigurator) ResolveUnregisteredInterface(interfaceName string, interfaceIdx uint32) error {
+// UnregisteredInterface handles case when interface is removed from the config
+func (plugin *ArpConfigurator) UnregisteredInterface(interfaceName string, interfaceIdx uint32) error {
 	plugin.Log.Debugf("ARP configurator: resolving unregistered interface %s", interfaceName)
 
 	// Since the interface does not exist, all related ARP entries are 'un-assigned' on the VPP

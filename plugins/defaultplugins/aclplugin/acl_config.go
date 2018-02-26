@@ -329,8 +329,8 @@ func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableI
 	return configurableIfs
 }
 
-// ResolveRegisteredInterface configures registered (new) interface for every ACL found in cache
-func (plugin *ACLConfigurator) ResolveRegisteredInterface(ifName string, ifIdx uint32) error {
+// RegisteredInterface configures registered (new) interface for every ACL found in cache
+func (plugin *ACLConfigurator) RegisteredInterface(ifName string, ifIdx uint32) error {
 	plugin.Log.Debugf("ACL configurator: resolving registered interface %s", ifName)
 
 	// Iterate over cache in order to find out where the interface is used
@@ -369,10 +369,10 @@ func (plugin *ACLConfigurator) ResolveRegisteredInterface(ifName string, ifIdx u
 	return wasErr
 }
 
-// ResolveUnregisteredInterface puts unregistered interface to cache, including acl index. Note: it's not needed to
+// UnregisteredInterface puts unregistered interface to cache, including acl index. Note: it's not needed to
 // remove ACL from interface manually, VPP handles it itself and such an behavior would cause errors (ACLs cannot be dumped
 // from non-existing interface)
-func (plugin *ACLConfigurator) ResolveUnregisteredInterface(ifName string, ifIdx uint32) error {
+func (plugin *ACLConfigurator) UnregisteredInterface(ifName string, ifIdx uint32) error {
 	plugin.Log.Debugf("ACL configurator: resolving unregistered interface %s", ifName)
 
 	var wasErr error

@@ -72,9 +72,9 @@ func (plugin *StnConfigurator) Init() (err error) {
 	return nil
 }
 
-// ResolveUnregisteredInterface resolves when interface is deleted. If there exist a rule for this interface
+// UnregisteredInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
-func (plugin *StnConfigurator) ResolveUnregisteredInterface(interfaceName string) error {
+func (plugin *StnConfigurator) UnregisteredInterface(interfaceName string, ifIdx uint32) error {
 	plugin.Log.Debugf("STN plugin: resolving unregistered interface %s", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, true); rule != nil {
 		return plugin.Delete(rule)
@@ -82,9 +82,9 @@ func (plugin *StnConfigurator) ResolveUnregisteredInterface(interfaceName string
 	return nil
 }
 
-// ResolveRegisteredInterface will check rules and if there is one waiting for interfaces it will be written
+// RegisteredInterface will check rules and if there is one waiting for interfaces it will be written
 // into VPP.
-func (plugin *StnConfigurator) ResolveRegisteredInterface(interfaceName string) error {
+func (plugin *StnConfigurator) RegisteredInterface(interfaceName string, ifIdx uint32) error {
 	plugin.Log.Debugf("STN plugin: resolving registered interface %s", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
 		return plugin.Add(rule)

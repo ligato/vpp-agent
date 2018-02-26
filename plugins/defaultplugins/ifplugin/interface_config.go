@@ -824,8 +824,8 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	return wasError
 }
 
-// ResolveRegisteredLinuxInterface reacts to a newly created Linux interface.
-func (plugin *InterfaceConfigurator) ResolveRegisteredLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) error {
+// RegisteredLinuxInterface reacts to a newly created Linux interface.
+func (plugin *InterfaceConfigurator) RegisteredLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) error {
 	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName, "ifIdx": interfaceIndex}).Info("New Linux interface was registered")
 
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
@@ -836,8 +836,8 @@ func (plugin *InterfaceConfigurator) ResolveRegisteredLinuxInterface(interfaceNa
 	return nil
 }
 
-// ResolveUnregisteredLinuxInterface reacts to a removed Linux interface.
-func (plugin *InterfaceConfigurator) ResolveUnregisteredLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) error {
+// UnregisteredLinuxInterface reacts to a removed Linux interface.
+func (plugin *InterfaceConfigurator) UnregisteredLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) error {
 	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was unregistered")
 
 	return plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)

@@ -280,8 +280,8 @@ func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Rout
 	return nil
 }
 
-// ResolveRegisteredInterface is responsible for reconfiguring cached routes and then from removing them from route cache
-func (plugin *RouteConfigurator) ResolveRegisteredInterface(ifName string, swIdx uint32) error {
+// RegisteredInterface is responsible for reconfiguring cached routes and then from removing them from route cache
+func (plugin *RouteConfigurator) RegisteredInterface(ifName string, swIdx uint32) error {
 	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
 		return nil
@@ -319,8 +319,8 @@ func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf
 	plugin.ConfigureRoute(route, vrf)
 }
 
-// ResolveUnregisteredInterface is responsible for moving routes of deleted interface to cache
-func (plugin *RouteConfigurator) ResolveUnregisteredInterface(ifName string, swIdx uint32) error {
+// UnregisteredInterface is responsible for moving routes of deleted interface to cache
+func (plugin *RouteConfigurator) UnregisteredInterface(ifName string, swIdx uint32) error {
 	routesWithIndex := plugin.RouteIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
 		return nil

@@ -194,8 +194,8 @@ func (plugin *L4Configurator) DeleteAppNamespace(ns *l4.AppNamespaces_AppNamespa
 	return nil
 }
 
-// ResolveRegisteredInterface looks for application namespace this interface is assigned to and configures them
-func (plugin *L4Configurator) ResolveRegisteredInterface(interfaceName string, interfaceIndex uint32) error {
+// RegisteredInterface looks for application namespace this interface is assigned to and configures them
+func (plugin *L4Configurator) RegisteredInterface(interfaceName string, interfaceIndex uint32) error {
 	// If L4 features are not enabled, skip (and keep all in cache)
 	if !plugin.l4ftEnabled {
 		return nil
@@ -220,9 +220,8 @@ func (plugin *L4Configurator) ResolveRegisteredInterface(interfaceName string, i
 	return wasErr
 }
 
-// ResolveUnregisteredInterface looks for application namespace this interface is assigned to and removes
-func (plugin *L4Configurator) ResolveUnregisteredInterface(interfaceName string, interfaceIndex uint32) error {
-
+// UnregisteredInterface looks for application namespace this interface is assigned to and removes
+func (plugin *L4Configurator) UnregisteredInterface(interfaceName string, interfaceIndex uint32) error {
 	// Search mapping for configured application namespaces using the new interface
 	cachedAppNs := plugin.AppNsIndexes.LookupNamesByInterface(interfaceName)
 	if len(cachedAppNs) == 0 {

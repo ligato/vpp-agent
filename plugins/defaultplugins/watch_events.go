@@ -22,6 +22,30 @@ import (
 	"golang.org/x/net/context"
 )
 
+// IfMappingEventHandler defines functions for name-to-index mappings for interfaces
+type IfMappingEventHandler interface {
+	// RegisteredInterface handles registered (not necessarily created) interface for particular configurator
+	RegisteredInterface(ifName string, ifIdx uint32) error
+	// UnregisteredInterface handles unregistered (not necessarily removed) interface for particular configurator
+	UnregisteredInterface(ifName string, ifIdx uint32) error
+}
+
+// BDMappingEventHandler defines functions for name-to-index mappings for bridge domains
+type BDMappingEventHandler interface {
+	// RegisteredBridgeDomain handles registered (not necessarily created) bridge domain for particular configurator
+	RegisteredBridgeDomain(ifName string, ifIdx uint32, callback func(err error)) error
+	// UnregisteredBridgeDomain handles unregistered (not necessarily removed) bridge domain for particular configurator
+	UnregisteredBridgeDomain(ifName string, ifIdx uint32, callback func(err error)) error
+}
+
+// LinuxIfMappingEventHandler defines functions for name-to-index mappings for linux interfaces
+type LinuxIfMappingEventHandler interface {
+	// RegisteredInterface handles registered (not necessarily created) linux interface for particular configurator
+	RegisteredLinuxInterface(ifName, hostName string, ifIdx uint32) error
+	// UnregisteredInterface handles unregistered (not necessarily removed) linux interface for particular configurator
+	UnregisteredLinuxInterface(ifName, hostName string, ifIdx uint32) error
+}
+
 // WatchEvents goroutine is used to watch for changes in the northbound configuration & NameToIdxMapping notifications.
 func (plugin *Plugin) watchEvents(ctx context.Context) {
 	plugin.wg.Add(1)
@@ -93,62 +117,33 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			}
 
 		case ifIdxEv := <-plugin.ifIdxWatchCh:
+			// Keep order.
+			configurators := []IfMappingEventHandler{plugin.aclConfigurator, plugin.arpConfigurator, plugin.bdConfigurator,
+				plugin.xcConfigurator, plugin.l4Configurator, plugin.stnConfigurator, plugin.routeConfigurator}
+			for _, configurator := range configurators {
+				if ifIdxEv.IsDelete() {
+					if err := configurator.UnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+						plugin.Log.Error(err)
+					}
+				} else {
+					if err := configurator.RegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+						plugin.Log.Error(err)
+					}
+				}
+			}
+
 			if !ifIdxEv.IsDelete() {
-				// Keep order.
-				if err := plugin.aclConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.arpConfigurator.ResolveRegisteredInterface(ifIdxEv.Name); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.bdConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
 				plugin.fibConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				if err := plugin.xcConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.l4Configurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.stnConfigurator.ResolveRegisteredInterface(ifIdxEv.Name); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.routeConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-
 			} else {
-				if err := plugin.aclConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.arpConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.bdConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
-					plugin.Log.Error(err)
-				}
 				plugin.fibConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				if err := plugin.xcConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.l4Configurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.stnConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
-					plugin.Log.Error(err)
-				}
-				if err := plugin.routeConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
 			}
 			ifIdxEv.Done()
 
@@ -158,30 +153,38 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			if linuxIfIdxEv.Metadata != nil && linuxIfIdxEv.Metadata.HostIfName != "" {
 				hostIfName = linuxIfIdxEv.Metadata.HostIfName
 			}
-			if !linuxIfIdxEv.IsDelete() {
-				if err := plugin.ifConfigurator.ResolveRegisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
-				}
-			} else {
-				if err := plugin.ifConfigurator.ResolveUnregisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
-					plugin.Log.Error(err)
+			// Keep order.
+			configurators := []LinuxIfMappingEventHandler{plugin.ifConfigurator}
+			for _, configurator := range configurators {
+				if linuxIfIdxEv.IsDelete() {
+					if err := configurator.UnregisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
+						plugin.Log.Error(err)
+					}
+				} else {
+					if err := configurator.RegisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
+						plugin.Log.Error(err)
+					}
 				}
 			}
 			linuxIfIdxEv.Done()
 
 		case bdIdxEv := <-plugin.bdIdxWatchCh:
-			if !bdIdxEv.IsDelete() {
-				plugin.fibConfigurator.ResolveRegisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
-					if err != nil {
-						plugin.Log.Error(err)
-					}
-				})
-			} else {
-				plugin.fibConfigurator.ResolveUnregisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
-					if err != nil {
-						plugin.Log.Error(err)
-					}
-				})
+			// Keep order.
+			configurators := []BDMappingEventHandler{plugin.fibConfigurator}
+			for _, configurator := range configurators {
+				if !bdIdxEv.IsDelete() {
+					configurator.RegisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
+						if err != nil {
+							plugin.Log.Error(err)
+						}
+					})
+				} else {
+					configurator.UnregisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
+						if err != nil {
+							plugin.Log.Error(err)
+						}
+					})
+				}
 			}
 			bdIdxEv.Done()
 

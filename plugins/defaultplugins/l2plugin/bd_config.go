@@ -276,8 +276,8 @@ func (plugin *BDConfigurator) PropagateBdDetailsToStatus(bdID uint32, bdName str
 	return wasError
 }
 
-// ResolveRegisteredInterface looks for bridge domain this interface is assigned to and sets it up.
-func (plugin *BDConfigurator) ResolveRegisteredInterface(ifName string, ifIdx uint32) error {
+// RegisteredInterface looks for bridge domain this interface is assigned to and sets it up.
+func (plugin *BDConfigurator) RegisteredInterface(ifName string, ifIdx uint32) error {
 	plugin.Log.Infof("BD configurator: resolving registered interface %s", ifName)
 	// Find bridge domain where the interface should be assigned
 	bdIdx, bd, bvi, found := plugin.BdIndices.LookupBdForInterface(ifName)
@@ -297,8 +297,8 @@ func (plugin *BDConfigurator) ResolveRegisteredInterface(ifName string, ifIdx ui
 	return nil
 }
 
-// ResolveUnregisteredInterface is called by VPP if an interface is removed.
-func (plugin *BDConfigurator) ResolveUnregisteredInterface(ifName string) error {
+// UnregisteredInterface is called by VPP if an interface is removed.
+func (plugin *BDConfigurator) UnregisteredInterface(ifName string, ifIdx uint32) error {
 	plugin.Log.Infof("BD configurator: resolving unregistered interface %s", ifName)
 	// Find bridge domain the interface should be removed from
 	bdIdx, bd, _, found := plugin.BdIndices.LookupBdForInterface(ifName)
