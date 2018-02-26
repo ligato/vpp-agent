@@ -194,8 +194,8 @@ func (plugin *L4Configurator) DeleteAppNamespace(ns *l4.AppNamespaces_AppNamespa
 	return nil
 }
 
-// ResolveCreatedInterface looks for application namespace this interface is assigned to and configures them
-func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
+// ResolveRegisteredInterface looks for application namespace this interface is assigned to and configures them
+func (plugin *L4Configurator) ResolveRegisteredInterface(interfaceName string, interfaceIndex uint32) error {
 	// If L4 features are not enabled, skip (and keep all in cache)
 	if !plugin.l4ftEnabled {
 		return nil
@@ -208,7 +208,7 @@ func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, inte
 	}
 
 	var wasErr error
-	plugin.Log.Infof("L4 configurator: resolving new interface %v for %d app namespaces", interfaceName, len(cachedAppNs))
+	plugin.Log.Infof("L4 configurator: resolving registered interface %s for %d app namespaces", interfaceName, len(cachedAppNs))
 	for _, appNamespace := range cachedAppNs {
 		if err := plugin.configureAppNamespace(appNamespace, interfaceIndex); err != nil {
 			plugin.Log.Errorf("configuring app namespace %v failed: %v", appNamespace, err)
@@ -220,15 +220,15 @@ func (plugin *L4Configurator) ResolveCreatedInterface(interfaceName string, inte
 	return wasErr
 }
 
-// ResolveDeletedInterface looks for application namespace this interface is assigned to and removes
-func (plugin *L4Configurator) ResolveDeletedInterface(interfaceName string, interfaceIndex uint32) error {
+// ResolveUnregisteredInterface looks for application namespace this interface is assigned to and removes
+func (plugin *L4Configurator) ResolveUnregisteredInterface(interfaceName string, interfaceIndex uint32) error {
 
 	// Search mapping for configured application namespaces using the new interface
 	cachedAppNs := plugin.AppNsIndexes.LookupNamesByInterface(interfaceName)
 	if len(cachedAppNs) == 0 {
 		return nil
 	}
-	plugin.Log.Infof("L4 configurator: resolving deleted interface %v for %d app namespaces", interfaceName, len(cachedAppNs))
+	plugin.Log.Infof("L4 configurator: resolving unregistered interface %s for %d app namespaces", interfaceName, len(cachedAppNs))
 	for _, appNamespace := range cachedAppNs {
 		// TODO: remove namespace. Also check whether it can be done while L4Features are disabled
 		// Unregister from configured namespaces mapping

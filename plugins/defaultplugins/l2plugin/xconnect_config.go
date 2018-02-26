@@ -227,9 +227,9 @@ func (plugin *XConnectConfigurator) LookupXConnectPairs() error {
 	return nil
 }
 
-// ResolveCreatedInterface configures xconnect pairs that use the interface as rx or tx and have not been configured yet.
-func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
-	plugin.Log.Infof("XConnect configurator: resolving created interface %v", interfaceName)
+// ResolveRegisteredInterface configures xconnect pairs that use the interface as rx or tx and have not been configured yet.
+func (plugin *XConnectConfigurator) ResolveRegisteredInterface(interfaceName string, interfaceIndex uint32) error {
+	plugin.Log.Infof("XConnect configurator: resolving registered interface %s", interfaceName)
 	var err error
 
 	// Lookup for the interface in rx interfaces
@@ -244,9 +244,9 @@ func (plugin *XConnectConfigurator) ResolveCreatedInterface(interfaceName string
 	return err
 }
 
-// ResolveDeletedInterface deletes xconnect pairs that have not been deleted yet and use the interface as rx or tx.
-func (plugin *XConnectConfigurator) ResolveDeletedInterface(interfaceName string) error {
-	plugin.Log.Infof("XConnect configurator: resolving deleted interface %v", interfaceName)
+// ResolveUnregisteredInterface deletes xconnect pairs that have not been deleted yet and use the interface as rx or tx.
+func (plugin *XConnectConfigurator) ResolveUnregisteredInterface(interfaceName string) error {
+	plugin.Log.Infof("XConnect configurator: resolving unregistered interface %s", interfaceName)
 
 	var err error
 

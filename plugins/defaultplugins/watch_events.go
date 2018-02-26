@@ -49,7 +49,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			for key, vals := range resyncStatusEv.GetValues() {
 				plugin.Log.Debugf("trying to delete obsolete status for key %v begin ", key)
 				if strings.HasPrefix(key, interfaces.IfStatePrefix) {
-					keys := []string{}
+					var keys []string
 					for {
 						x, stop := vals.GetNext()
 						if stop {
@@ -64,7 +64,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 						}
 					}
 				} else if strings.HasPrefix(key, l2.BdStatePrefix) {
-					keys := []string{}
+					var keys []string
 					for {
 						x, stop := vals.GetNext()
 						if stop {
@@ -95,33 +95,60 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 		case ifIdxEv := <-plugin.ifIdxWatchCh:
 			if !ifIdxEv.IsDelete() {
 				// Keep order.
-				plugin.aclConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.arpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
-				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
+				if err := plugin.aclConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.arpConfigurator.ResolveRegisteredInterface(ifIdxEv.Name); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.bdConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				plugin.fibConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				plugin.xcConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.l4Configurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.stnConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
-				plugin.routeConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				// TODO propagate error
+				if err := plugin.xcConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.l4Configurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.stnConfigurator.ResolveRegisteredInterface(ifIdxEv.Name); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.routeConfigurator.ResolveRegisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+
 			} else {
-				plugin.aclConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.arpConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
-				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
+				if err := plugin.aclConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.arpConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.bdConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
+					plugin.Log.Error(err)
+				}
+				plugin.fibConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				plugin.xcConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
-				plugin.l4Configurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				plugin.stnConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
-				plugin.routeConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
-				// TODO propagate error
+				if err := plugin.xcConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.l4Configurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.stnConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name); err != nil {
+					plugin.Log.Error(err)
+				}
+				if err := plugin.routeConfigurator.ResolveUnregisteredInterface(ifIdxEv.Name, ifIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
 			}
 			ifIdxEv.Done()
 
@@ -132,29 +159,29 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				hostIfName = linuxIfIdxEv.Metadata.HostIfName
 			}
 			if !linuxIfIdxEv.IsDelete() {
-				plugin.ifConfigurator.ResolveCreatedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
-				// TODO propagate error
+				if err := plugin.ifConfigurator.ResolveRegisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
 			} else {
-				plugin.ifConfigurator.ResolveDeletedLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx)
-				// TODO propagate error
+				if err := plugin.ifConfigurator.ResolveUnregisteredLinuxInterface(ifName, hostIfName, linuxIfIdxEv.Idx); err != nil {
+					plugin.Log.Error(err)
+				}
 			}
 			linuxIfIdxEv.Done()
 
 		case bdIdxEv := <-plugin.bdIdxWatchCh:
 			if !bdIdxEv.IsDelete() {
-				plugin.fibConfigurator.ResolveCreatedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
+				plugin.fibConfigurator.ResolveRegisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				// TODO propagate error
 			} else {
-				plugin.fibConfigurator.ResolveDeletedBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
+				plugin.fibConfigurator.ResolveUnregisteredBridgeDomain(bdIdxEv.Name, bdIdxEv.Idx, func(err error) {
 					if err != nil {
 						plugin.Log.Error(err)
 					}
 				})
-				// TODO propagate error
 			}
 			bdIdxEv.Done()
 

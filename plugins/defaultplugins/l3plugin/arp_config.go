@@ -215,9 +215,9 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error
 	return nil
 }
 
-// ResolveCreatedInterface handles case when new interface appears in the config
-func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) error {
-	plugin.Log.Debugf("ARP configurator: resolving new interface %v", interfaceName)
+// ResolveRegisteredInterface handles case when new interface appears in the config
+func (plugin *ArpConfigurator) ResolveRegisteredInterface(interfaceName string) error {
+	plugin.Log.Debugf("ARP configurator: resolving registered interface %s", interfaceName)
 	// find all entries which can be resolved
 	entriesToAdd := plugin.ARPCache.LookupNamesByInterface(interfaceName)
 	entriesToRemove := plugin.ARPDeleted.LookupNamesByInterface(interfaceName)
@@ -251,9 +251,9 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 	return wasErr
 }
 
-// ResolveDeletedInterface handles case when interface is removed from the config
-func (plugin *ArpConfigurator) ResolveDeletedInterface(interfaceName string, interfaceIdx uint32) error {
-	plugin.Log.Debugf("ARP configurator: resolving deleted interface %v", interfaceName)
+// ResolveUnregisteredInterface handles case when interface is removed from the config
+func (plugin *ArpConfigurator) ResolveUnregisteredInterface(interfaceName string, interfaceIdx uint32) error {
+	plugin.Log.Debugf("ARP configurator: resolving unregistered interface %s", interfaceName)
 
 	// Since the interface does not exist, all related ARP entries are 'un-assigned' on the VPP
 	// but they cannot be removed using binary API. Nothing to do here.
