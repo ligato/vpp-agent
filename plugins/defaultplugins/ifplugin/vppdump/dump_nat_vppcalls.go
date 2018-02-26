@@ -75,117 +75,43 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 	}, nil
 }
 
-// NAT44NatDump
+// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
 func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (*nat.Nat44DNat, error) {
-	// Dump all necessary data to reconstruct DNAT configuration
+	// List od DNAT configs
+	var dNatCfgs []*nat.Nat44DNat_DNatConfig
+	var wasErr error
+
+	// Static mappings
 	natStMappings, err := nat44StaticMappingDump(swIfIndices, log, vppChan, stopwatch)
 	if err != nil {
-		return nil, err
+		log.Errorf("Failed to dump NAT44 static mappings: %v", err)
+		wasErr = err
 	}
+	for tag, data := range natStMappings {
+		processDNatData(tag, data, &dNatCfgs, log)
+	}
+	// Static mappings with load balancer
 	natStLbMappings, err := nat44StaticMappingLbDump(log, vppChan, stopwatch)
 	if err != nil {
-		return nil, err
+		log.Errorf("Failed to dump NAT44 static mappings with load balancer: %v", err)
+		wasErr = err
 	}
+	for tag, data := range natStLbMappings {
+		processDNatData(tag, data, &dNatCfgs, log)
+	}
+	// Identity mappings
 	natIdMappings, err := nat44IdentityMappingDump(swIfIndices, log, vppChan, stopwatch)
 	if err != nil {
-		return nil, err
+		log.Errorf("Failed to dump NAT44 identity mappings: %v", err)
+		wasErr = err
 	}
-
-	var dNatCfgs []*nat.Nat44DNat_DNatConfig
-
-	// Sort static mappings to DNAT configurations using tag/label
-	for tag, data := range natStMappings {
-		// Get DNAT label from tag
-		label := getDnatLabel(tag, log)
-		if label == "" {
-			// Cannot assign without label
-			continue
-		}
-		// Find DNAT with the same label
-		var found bool
-		for _, dNatCfg := range dNatCfgs {
-			if dNatCfg.Label == label {
-				// Assign mapping to config
-				dNatCfg.StMappings = append(dNatCfg.StMappings, data)
-			}
-		}
-		if !found {
-			// Create new DNAT config
-			newDnatCfg := &nat.Nat44DNat_DNatConfig{
-				Label:      label,
-				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
-				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
-			}
-			// Add new DNAT cfg to the pool
-			dNatCfgs = append(dNatCfgs, newDnatCfg)
-			// Add mapping
-			newDnatCfg.StMappings = append(newDnatCfg.StMappings, data)
-		}
-	}
-
-	// Sort static mappings to DNAT configurations using tag/label
-	for tag, data := range natStLbMappings {
-		// Get DNAT label from tag
-		label := getDnatLabel(tag, log)
-		if label == "" {
-			// Cannot assign without label
-			continue
-		}
-		// Find DNAT with the same label
-		var found bool
-		for _, dNatCfg := range dNatCfgs {
-			if dNatCfg.Label == label {
-				// Assign mapping to config
-				dNatCfg.StMappings = append(dNatCfg.StMappings, data)
-			}
-		}
-		if !found {
-			// Create new DNAT config
-			newDnatCfg := &nat.Nat44DNat_DNatConfig{
-				Label:      label,
-				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
-				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
-			}
-			// Add new DNAT cfg to the pool
-			dNatCfgs = append(dNatCfgs, newDnatCfg)
-			// Add mapping
-			newDnatCfg.StMappings = append(newDnatCfg.StMappings, data)
-		}
-	}
-
-	// Sort static mappings to DNAT configurations using tag/label
 	for tag, data := range natIdMappings {
-		// Get DNAT label from tag
-		label := getDnatLabel(tag, log)
-		if label == "" {
-			// Cannot assign without label
-			continue
-		}
-		// Find DNAT with the same label
-		var found bool
-		for _, dNatCfg := range dNatCfgs {
-			if dNatCfg.Label == label {
-				// Assign mapping to config
-				dNatCfg.IdMappings = append(dNatCfg.IdMappings, data)
-			}
-		}
-		if !found {
-			// Create new DNAT config
-			newDnatCfg := &nat.Nat44DNat_DNatConfig{
-				Label:      label,
-				StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
-				IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
-			}
-			// Add new DNAT cfg to the pool
-			dNatCfgs = append(dNatCfgs, newDnatCfg)
-			// Add mapping
-			newDnatCfg.IdMappings = append(newDnatCfg.IdMappings, data)
-		}
+		processDNatData(tag, data, &dNatCfgs, log)
 	}
 
 	return &nat.Nat44DNat{
 		DnatConfig: dNatCfgs,
-	}, nil
+	}, wasErr
 }
 
 // nat44AddressDump returns a list of NAT44 address pools configured in the VPP
@@ -282,10 +208,9 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
 		stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
-
-	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
 
 	for {
 		msg := &bin_api.Nat44LbStaticMappingDetails{}
@@ -339,6 +264,7 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 		stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_IdentityMappings)
 	req := &bin_api.Nat44IdentityMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
 
@@ -472,6 +398,44 @@ func nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, sto
 	log.Debugf("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
 
 	return isEnabled, nil
+}
+
+// Common function can process all static and identity mappings
+func processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DNatConfig, log logging.Logger) {
+	if tag == "" {
+		log.Errorf("Cannot process DNAT config without tag")
+		return
+	}
+	label := getDnatLabel(tag, log)
+
+	// Look for DNAT config using tag
+	var dNat *nat.Nat44DNat_DNatConfig
+	for _, dNatCfg := range *dNatCfgs {
+		if dNatCfg.Label == label {
+			dNat = dNatCfg
+		}
+	}
+
+	// Create new DNAT config if does not exist yet
+	if dNat == nil {
+		dNat = &nat.Nat44DNat_DNatConfig{
+			Label:      label,
+			StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
+			IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
+		}
+		*dNatCfgs = append(*dNatCfgs, dNat)
+		log.Debugf("Created new DNAT configuration %s", label)
+	}
+
+	// Add data to config
+	switch mapping := data.(type) {
+	case *nat.Nat44DNat_DNatConfig_StaticMappings:
+		log.Debugf("Static mapping added to DNAT %s", label)
+		dNat.StMappings = append(dNat.StMappings, mapping)
+	case *nat.Nat44DNat_DNatConfig_IdentityMappings:
+		log.Debugf("Identity mapping added to DNAT %s", label)
+		dNat.IdMappings = append(dNat.IdMappings, mapping)
+	}
 }
 
 // returns NAT numeric representation of provided protocol value

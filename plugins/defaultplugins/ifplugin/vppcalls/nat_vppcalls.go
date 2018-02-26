@@ -174,6 +174,7 @@ func handleNat44StaticMapping(ctx *StaticMappingContext, isAdd, addrOnly bool, v
 	}(time.Now())
 
 	req := &nat.Nat44AddDelStaticMapping{
+		Tag:               []byte(ctx.Tag),
 		LocalIPAddress:    ctx.LocalIP,
 		LocalPort:         ctx.LocalPort,
 		ExternalIPAddress: ctx.ExternalIP,
@@ -220,6 +221,7 @@ func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, isAdd bool, vppChan
 	}
 
 	req := &nat.Nat44AddDelLbStaticMapping{
+		Tag:          []byte(ctx.Tag),
 		Locals:       localAddrPorts,
 		LocalNum:     uint8(len(localAddrPorts)),
 		ExternalAddr: ctx.ExternalIP,
@@ -266,12 +268,7 @@ func handleNat44IdentityMapping(ctx *IdentityMappingContext, isAdd bool, vppChan
 			return ifIdx
 		}(ctx.IfIdx),
 		VrfID: ctx.IfIdx,
-		IsAdd: func(isAdd bool) uint8 {
-			if isAdd {
-				return 1
-			}
-			return 0
-		}(isAdd),
+		IsAdd: boolToUint(isAdd),
 	}
 
 	reply := &nat.Nat44AddDelIdentityMappingReply{}
