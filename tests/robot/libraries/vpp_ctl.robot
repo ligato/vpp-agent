@@ -241,6 +241,17 @@ vpp_ctl: Put TAP Interface With IP
     vpp_ctl: Put Json     ${uri}    ${data}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
+vpp_ctl: Put TAP Unnumbered Interface
+    [Arguments]    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tap_interface_unnumbered.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+
 vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
     Log Many    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}
