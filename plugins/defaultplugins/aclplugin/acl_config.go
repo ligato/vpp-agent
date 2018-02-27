@@ -239,7 +239,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 				if err != nil {
 					return err
 				}
-				aclEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, EGRESS)
+				aclEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
 				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclEgInterfaces, plugin.Log)
 				if err != nil {
 					return err
