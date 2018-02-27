@@ -14,6 +14,15 @@
  written in config as follows:
  
  `mtu: <value>`
+
+
+ *Status Publishers*
+
+ Status Publishers define list of data syncs to which status is published.
+
+ `status-publishers: [<datasync>, <datasync2>, ...]`
+
+ Currently supported data syncs for publishing state: `etcd` and `redis`.
  
  To run the vpp-agent with defaultplugins.conf:
  

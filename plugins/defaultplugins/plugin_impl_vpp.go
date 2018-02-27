@@ -115,12 +115,15 @@ type Plugin struct {
 type Deps struct {
 	// inject all below
 	local.PluginInfraDeps
+
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
 	Watch             datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             linuxpluginAPI
+
+	DataSyncs map[string]datasync.KeyProtoValWriter
 }
 
 type linuxpluginAPI interface {
@@ -132,7 +135,8 @@ type linuxpluginAPI interface {
 
 // DPConfig holds the value of maximum transmission unit in bytes.
 type DPConfig struct {
-	Mtu uint32 `json:"mtu"`
+	Mtu              uint32   `json:"mtu"`
+	StatusPublishers []string `json:"status-publishers"`
 }
 
 var (
@@ -152,20 +156,33 @@ func plugin() *Plugin {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing interface plugin")
 
-	plugin.fixNilPointers()
-
-	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 	config, err := plugin.retrieveMtuConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
+		publishers := &datasync.CompositeKVProtoWriter{}
+		for _, pub := range config.StatusPublishers {
+			db, found := plugin.Deps.DataSyncs[pub]
+			if !found {
+				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
+				continue
+			}
+			publishers.Adapters = append(publishers.Adapters, db)
+			plugin.Log.Infof("Added status publisher %q from config", pub)
+		}
+		plugin.Deps.PublishStatistics = publishers
+
 		plugin.ifMtu = config.Mtu
 		plugin.Log.Infof("Mtu read from config us set to %v", plugin.ifMtu)
 	} else {
 		plugin.ifMtu = defaultMtu
 		plugin.Log.Infof("Mtu config not found, set to default value %v", plugin.ifMtu)
 	}
+
+	plugin.fixNilPointers()
+
+	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// all channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
 	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)

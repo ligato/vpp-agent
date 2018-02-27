@@ -16,11 +16,11 @@ package defaultplugins
 
 import (
 	"context"
+
 	log "github.com/ligato/cn-infra/logging/logrus"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/model/l2"
 )
-
 
 // Resync deletes obsolete operation status of network interfaces in DB
 // Obsolete state is one that is not part of SwIfIndex
@@ -87,7 +87,7 @@ func (plugin *Plugin) resyncBdStateEvents(keys []string) error {
 		}
 		_, _, found := plugin.bdIndexes.LookupIdx(bdName)
 		if !found {
-			err := plugin.Publish.Put(key, nil)
+			err := plugin.PublishStatistics.Put(key, nil)
 			if err != nil {
 				return err
 			}
@@ -112,11 +112,11 @@ func (plugin *Plugin) publishBdStateEvents(ctx context.Context) {
 				key := l2.BridgeDomainStateKey(bdState.State.InternalName)
 				// Remove BD state
 				if bdState.State.Index == 0 && bdState.State.InternalName != "" {
-					plugin.Publish.Put(key, nil)
+					plugin.PublishStatistics.Put(key, nil)
 					log.DefaultLogger().Debugf("Bridge domain %v: state removed from ETCD", bdState.State.InternalName)
 					// Write/Update BD state
 				} else if bdState.State.Index != 0 {
-					plugin.Publish.Put(key, bdState.State)
+					plugin.PublishStatistics.Put(key, bdState.State)
 					log.DefaultLogger().Debugf("Bridge domain %v: state stored in ETCD", bdState.State.InternalName)
 				} else {
 					log.DefaultLogger().Warnf("Unable to process bridge domain state with Idx %v and Name %v",
