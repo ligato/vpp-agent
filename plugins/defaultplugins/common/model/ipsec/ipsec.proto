@@ -1,10 +1,11 @@
 syntax = "proto3";
 package ipsec;
 
-/* Security Policy Database (SPD */
+/* Security Policy Database (SPD) */
 message SecurityPolicyDatabases {
     message SPD {
-        uint32 id = 1;  /* SPD ID */
+        //uint32 id = 1;  /* SPD ID */
+        string name = 1;
 
         /* Interface */
         message Interface {
@@ -12,8 +13,24 @@ message SecurityPolicyDatabases {
         }
         repeated Interface interfaces = 2;    /* list of interfaces belonging to this SPD */
 
-        /* Policy */
-        message Policy {
+        /* Policy Entry */
+        message PolicyEntry {
+            //uint32 spd_id = 1;
+            int32 priority = 1;
+            bool is_outbound = 2;
+
+            bool is_ipv6 = 3;
+            string remote_addr_start = 4;
+            string remote_addr_stop = 5;
+            string local_addr_start = 6;
+            string local_addr_stop = 7;
+
+            bool protocol = 8;
+            uint32 remote_port_start = 9;
+            uint32 remote_port_stop = 10;
+            uint32 local_port_start = 11;
+            uint32 local_port_stop = 12;
+
             /* Policy action */
             enum Action {
                 BYPASS = 0;
@@ -21,66 +38,49 @@ message SecurityPolicyDatabases {
                 RESOLVE = 2;
                 PROTECT = 3;
             }
-
-            uint32 spd_id = 1;
-            int32 priority = 2;
-            bool is_outbound = 3;
-
-            bool is_ipv6 = 4;
-            string remote_addr_start = 5;
-            string remote_addr_stop = 6;
-            string local_addr_start = 7;
-            string local_addr_stop = 8;
-
-            bool protocol = 9;
-            uint32 remote_port_start = 10;
-            uint32 remote_port_stop = 11;
-            uint32 local_port_start = 12;
-            uint32 local_port_stop = 13;
-
-            Action action = 14;
-            uint32 sa_id = 15;
+            Action action = 13;
+            //uint32 sa_id = 14;
+            string sa = 14;
         }
-        repeated Policy policies = 3;   /* list of policies belonging to this SPD */
+        repeated PolicyEntry policy_entries = 3;   /* list of policy entries belonging to this SPD */
     }
     repeated SPD spds = 1;  /* list of all SPDs */
 }
 
-/* Cryptographic algorithm for authentication */
-enum IntegAlgorithm {
-    NONE = 0;
-    MD5_96 = 1;
-    SHA1_96 = 2;
-    SHA_256_96 = 3;
-    SHA_256_128 = 4;
-    SHA_384_192 = 5;
-    SHA_512_256 = 6;
-}
-
-/* Cryptographic algorithm for encryption */
-enum CryptoAlgorithm {
-    NONE = 0;
-    AES_CBC_128 = 1;
-    AES_CBC_192 = 2;
-    AES_CBC_256 = 3;
-}
-
 /* Security Association (SA) */
 message SecurityAssociations {
-    /* IPSec protocol */
-    enum IPSecProtocol {
-        AH = 0;
-        ESP = 1;
-    }
-
     message SA {
-        uint32 id = 1; /* SA ID */
+        //uint32 id = 1; /* SA ID */
+        string name = 1;
         uint32 spi = 2;
+
+        /* IPSec protocol */
+        enum IPSecProtocol {
+            AH = 0;
+            ESP = 1;
+        }
         IPSecProtocol protocol = 3;
 
+        /* Cryptographic algorithm for encryption */
+        enum CryptoAlgorithm {
+            NONE_CRYPTO = 0;
+            AES_CBC_128 = 1;
+            AES_CBC_192 = 2;
+            AES_CBC_256 = 3;
+        }
         CryptoAlgorithm crypto_alg = 4;
         string crypto_key = 5;
 
+        /* Cryptographic algorithm for authentication */
+        enum IntegAlgorithm {
+            NONE_INTEG = 0;
+            MD5_96 = 1;
+            SHA1_96 = 2;
+            SHA_256_96 = 3;
+            SHA_256_128 = 4;
+            SHA_384_192 = 5;
+            SHA_512_256 = 6;
+        }
         IntegAlgorithm integ_alg = 6;
         string integ_key = 7;
 
