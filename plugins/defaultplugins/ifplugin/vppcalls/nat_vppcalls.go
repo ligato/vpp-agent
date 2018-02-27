@@ -275,9 +275,8 @@ func handleNat44IdentityMapping(ctx *IdentityMappingContext, isAdd bool, vppChan
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
-		return fmt.Errorf("adding NAT44 identity mapping returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
