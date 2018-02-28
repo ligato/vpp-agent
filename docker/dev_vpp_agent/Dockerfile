@@ -23,36 +23,30 @@ RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
 
-ARG VPP_URL
 ARG VPP_COMMIT
 
-# build & install VPP
-# memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
 RUN /bin/bash -c "\
-    if [ -n '${VPP_URL}' ]; then \
-        wget ${VPP_URL} && \
-        tar -xvf vpp.tar.gz && \
-        cd vpp/build-root; \
-    elif [ -n '${VPP_COMMIT}' ]; then \
-        git clone https://gerrit.fd.io/r/vpp && \
-        cd vpp && \
-        git checkout ${VPP_COMMIT} && \
-        yes | make install-dep && \
-        make bootstrap && \
-        make dpdk-install-dev && \
-        make vpp_configure_args_vpp='--disable-japi --disable-vom' build && \
-        make vpp_configure_args_vpp='--disable-japi --disable-vom' pkg-deb && \
-        cd build-root && \
-        rm -rf .ccache \
-          build-vpp-native/vpp/vpp-api/vom \
-          build-vpp_debug-native/vpp/vpp-api/vom && \
-        ln -s /opt/vpp-agent/dev/vpp/build-root/install-vpp_debug-native/vpp/bin/vpp /usr/bin/vpp_debug; \
+    git clone https://gerrit.fd.io/r/vpp \
+    && cd vpp \
+    && git checkout ${VPP_COMMIT} \
+    && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"
+
+ARG VPP_DEBUG_DEB
+
+RUN /bin/bash -c "\
+    cd vpp; \
+    if [ -n '${VPP_DEBUG_DEB}' ]; then \
+        cd build-root \
+        && make PLATFORM=vpp TAG=vpp_debug install-deb; \
+    else \
+        make pkg-deb && \
+        cd build-root; \
     fi; \
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
 # install Go
-ENV GOLANG_VERSION 1.9.3
-RUN wget -O go.tgz "https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" \
+ENV GOLANG_VERSION 1.10
+RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
@@ -77,6 +71,7 @@ RUN ./build-agent.sh ${AGENT_COMMIT}
 COPY etcd.conf kafka.conf govpp.conf defaultplugins.conf linuxplugin.conf logs.conf ./
 COPY vpp.conf /etc/vpp/vpp.conf
 
+COPY runvpp.sh /usr/bin/runvpp
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
