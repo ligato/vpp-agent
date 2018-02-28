@@ -44,6 +44,15 @@ explicitly specify the agent and vpp commit numbers:
 sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg VPP_COMMIT=f3bcdbf071c98ed676591bd22c3d3f8601009fa8 --no-cache .
 ```
 
+### Building VPP .deb Packages in Debug or Release Mode
+You can build VPP .deb packages with debug or release mode. By default the image is built for release mode.
+The environmental variable `VPP_DEBUG_DEB=y` can be used to build VPP .deb packages with debug mode.
+
+To build the image with VPP .deb packages with debug mode:
+```
+VPP_DEBUG_DEB=y ./build.sh
+```
+
 #### Verifying a Created or Downloaded Image
 You can verify the newly built or downloaded image as follows:
 
@@ -103,7 +112,7 @@ To open another terminal into the image:
 sudo docker exec -it vpp_agent bash
 ```
 
-### VPP mode
+### Running VPP in Debug or Release Mode
 You can run VPP in debug or release mode. By default the image runs in release mode.
 The environmental variable `RUN_VPP_DEBUG=y` can be used to run VPP in debug mode.
 
@@ -112,7 +121,7 @@ To start the image with VPP in debug mode:
 sudo docker run -it --env RUN_VPP_DEBUG=y --rm --privileged dev_vpp_agent bash
 ```
 
-### VPP volume
+### Mounting VPP Build Using Volume
 You can run custom build of VPP by using volume mount. The VPP build in the image is located at `/opt/vpp-agent/dev/vpp`.
 
 To start the image with custom VPP build mounted from host:
