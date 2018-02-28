@@ -87,7 +87,7 @@ dev_vpp_agent_shrink                                  latest              bd2e76
 ```
 ---
 
-### Starting the Image
+## Starting the Image
 By default, the VPP & the Agent processes will be started automatically 
 in the container. This is useful e.g. for deployments with Kubernetes, 
 as described in [this README](../../k8s/dev-setup/README.md). However, this option is
@@ -101,6 +101,23 @@ sudo docker run -it --name vpp_agent --privileged --rm dev_vpp_agent bash
 To open another terminal into the image:
 ```
 sudo docker exec -it vpp_agent bash
+```
+
+### VPP mode
+You can run VPP in debug or release mode. By default the image runs in release mode.
+The environmental variable `RUN_VPP_DEBUG=y` can be used to run VPP in debug mode.
+
+To start the image with VPP in debug mode:
+```
+sudo docker run -it --env RUN_VPP_DEBUG=y --rm --privileged dev_vpp_agent bash
+```
+
+### VPP volume
+You can run custom build of VPP by using volume mount. The VPP build in the image is located at `/opt/vpp-agent/dev/vpp`.
+
+To start the image with custom VPP build mounted from host:
+```
+sudo docker run -it --volume $HOME/myvpp:/opt/vpp-agent/dev/vpp --rm --privileged dev_vpp_agent bash
 ```
 
 ### Running VPP and the Agent
