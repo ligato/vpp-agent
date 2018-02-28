@@ -759,7 +759,7 @@ func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	if err != nil {
 		return nil, err
 	} else if !found {
-		plugin.Log.Warn("defaultplugins config not found")
+		plugin.Log.Debug("defaultplugins config not found")
 		return nil, nil
 	}
 	plugin.Log.Debugf("defaultplugins config found: %+v", config)
