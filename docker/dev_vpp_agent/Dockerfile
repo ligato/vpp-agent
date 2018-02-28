@@ -23,23 +23,24 @@ RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
 
-ARG VPP_URL
 ARG VPP_COMMIT
 
-# build & install VPP
-# memif source: git clone -b memif https://github.com/vpp-dev/vpp vpp
 RUN /bin/bash -c "\
-    if [ -n '${VPP_URL}' ]; then \
-        wget ${VPP_URL} && \
-        tar -xvf vpp.tar.gz && \
-        cd vpp/build-root; \
-    elif [ -n '${VPP_COMMIT}' ]; then \
-        git clone https://gerrit.fd.io/r/vpp && \
-        cd vpp && \
-        git checkout ${VPP_COMMIT} && \
-        UNATTENDED=y make install-dep bootstrap dpdk-install-dev && \
-        make vpp_configure_args_vpp='--disable-japi --disable-vom' build pkg-deb && \
-        cd build-root && \
+    git clone https://gerrit.fd.io/r/vpp \
+    && cd vpp \
+    && git checkout ${VPP_COMMIT} \
+    && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"
+
+ARG VPP_DEBUG_DEB
+
+RUN /bin/bash -c "\
+    cd vpp; \
+    if [ -n '${VPP_DEBUG_DEB}' ]; then \
+        cd build-root \
+        && make PLATFORM=vpp TAG=vpp_debug install-deb; \
+    else \
+        make pkg-deb && \
+        cd build-root; \
     fi; \
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
