@@ -73,9 +73,15 @@ COPY vpp.conf /etc/vpp/vpp.conf
 
 COPY runvpp.sh /usr/bin/runvpp
 COPY supervisord.conf /etc/supervisord/supervisord.conf
+COPY agent_start.py /usr/bin/agent_start.py
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
+
+# start agent
+ENV START_AGENT "True"
+# kill supervisor if vpp or agent is closed
+ENV RETAIN_SUPERVISOR "False"
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
