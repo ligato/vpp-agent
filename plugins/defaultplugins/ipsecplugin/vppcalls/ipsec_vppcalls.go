@@ -47,6 +47,28 @@ func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *m
 	return nil
 }
 
+func interfaceAddDelSpd(spdID uint32, swIfIdx uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(ipsec_api.IpsecInterfaceAddDelSpd{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &ipsec_api.IpsecInterfaceAddDelSpd{
+		IsAdd:     boolToUint(isAdd),
+		SwIfIndex: swIfIdx,
+		SpdID:     spdID,
+	}
+
+	reply := &ipsec_api.IpsecInterfaceAddDelSpdReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return nil
+}
+
 func spdAddDelEntry(spdID uint32, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDelEntry{}).LogTimeEntry(time.Since(t))
@@ -95,18 +117,41 @@ func spdAddDelEntry(spdID uint32, saID uint32, spd *ipsec.SecurityPolicyDatabase
 	return nil
 }
 
-func interfaceAddDelSpd(spdID uint32, swIfIdx uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func sadAddDelEntry(spdID uint32, saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ipsec_api.IpsecInterfaceAddDelSpd{}).LogTimeEntry(time.Since(t))
+		stopwatch.TimeLog(ipsec_api.IpsecSadAddDelEntry{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &ipsec_api.IpsecInterfaceAddDelSpd{
-		IsAdd:     boolToUint(isAdd),
-		SwIfIndex: swIfIdx,
-		SpdID:     spdID,
+	req := &ipsec_api.IpsecSadAddDelEntry{
+		IsAdd:                     boolToUint(isAdd),
+		SadID:                     saID,
+		Spi:                       sa.Spi,
+		Protocol:                  uint8(sa.Protocol),
+		CryptoAlgorithm:           uint8(sa.CryptoAlg),
+		CryptoKey:                 []byte(sa.CryptoKey),
+		CryptoKeyLength:           uint8(len(sa.CryptoKey)),
+		IntegrityAlgorithm:        uint8(sa.IntegAlg),
+		IntegrityKey:              []byte(sa.IntegKey),
+		IntegrityKeyLength:        uint8(len(sa.IntegKey)),
+		UseExtendedSequenceNumber: boolToUint(sa.UseEsn),
+		UseAntiReplay:             boolToUint(sa.UseAntiReplay),
+		IsTunnel:                  boolToUint(sa.IsTunnel),
+	}
+	isIPv6, err := addrs.IsIPv6(sa.TunnelSrcAddr)
+	if err != nil {
+		return err
+	}
+	if isIPv6 {
+		req.IsTunnelIpv6 = 1
+		req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To16()
+		req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To16()
+	} else {
+		req.IsTunnelIpv6 = 0
+		req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To4()
+		req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To4()
 	}
 
-	reply := &ipsec_api.IpsecInterfaceAddDelSpdReply{}
+	reply := &ipsec_api.IpsecSadAddDelEntryReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
