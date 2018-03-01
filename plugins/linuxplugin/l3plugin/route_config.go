@@ -395,7 +395,7 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) (cached bool, err error) {
 	// Gateway
-	if !plugin.networkReachable(route.GwAddr) {
+	if !plugin.networkReachable(route.Namespace, route.GwAddr) {
 		plugin.rtCachedRoutes[route.GwAddr] = route
 		plugin.Log.Debugf("Default route %v cached, gateway is currently unreachable", route.Name)
 		return true, nil
@@ -549,8 +549,8 @@ func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoute
 }
 
 // Verifies whether address network is reachable.
-func (plugin *LinuxRouteConfigurator) networkReachable(ipAddress string) bool {
-	route, err := plugin.rtIndexes.LookupRouteByIP(ipAddress)
+func (plugin *LinuxRouteConfigurator) networkReachable(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) bool {
+	route, err := plugin.rtIndexes.LookupRouteByIP(ns, ipAddress)
 	if err != nil {
 		plugin.Log.Errorf("Failed to resolve accessibility of %s: %v", ipAddress, err)
 		return false

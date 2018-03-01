@@ -74,6 +74,19 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 
 	// First step is to find a linux equivalent for NB route config
 	for _, nbRoute := range nbRoutes {
+		// Route interface exists
+		if nbRoute.Interface != "" {
+			_, _, found := plugin.LinuxIfIdx.LookupIdx(nbRoute.Interface)
+			if !found {
+				// If route interface does not exist, cache it
+				plugin.Log.Debugf("RESYNC static route %v: interface %s does not exists, moving to cache",
+					nbRoute.Name, nbRoute.Interface)
+				plugin.rtCachedIndexes.RegisterName(nbRoute.Name, plugin.RouteIdxSeq, nbRoute)
+				plugin.RouteIdxSeq++
+				continue
+			}
+		}
+
 		// There can be several routes found according to matching parameters
 		linuxRtList, err := plugin.findLinuxRoutes(nbRoute, nsMgmtCtx)
 		if err != nil {
@@ -149,17 +162,27 @@ func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRou
 	}
 	// Look for routes using interface
 	if nbRoute.Interface != "" {
-		link, err := netlink.LinkByName(nbRoute.Interface)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read interface %s: %v", nbRoute.Interface, err)
-		}
-		linuxRts, err := netlink.RouteList(link, netlink.FAMILY_ALL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read linux route %s using interface %s: %v",
-				nbRoute.Name, nbRoute.Interface, err)
-		}
-		if linuxRts != nil {
-			linuxRoutes = append(linuxRoutes, linuxRts...)
+		// Look whether interface is registered
+		_, meta, found := plugin.LinuxIfIdx.LookupIdx(nbRoute.Interface)
+		if !found {
+			// Should not happen, was successfully checked before
+			plugin.Log.Errorf("Route %s interface %s is missing from the mapping", nbRoute.Name, nbRoute.Interface)
+		} else if meta == nil {
+			plugin.Log.Errorf("Interface %s data missing", nbRoute.Interface)
+		} else {
+			// Look for interface using host name
+			link, err := netlink.LinkByName(meta.HostIfName)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read interface %s: %v", meta.HostIfName, err)
+			}
+			linuxRts, err := netlink.RouteList(link, netlink.FAMILY_ALL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read linux route %s using interface %s: %v",
+					nbRoute.Name, meta.HostIfName, err)
+			}
+			if linuxRts != nil {
+				linuxRoutes = append(linuxRoutes, linuxRts...)
+			}
 		}
 	}
 
@@ -252,7 +275,7 @@ func (plugin *LinuxRouteConfigurator) transformRoute(linuxRt netlink.Route) *l3.
 		var found bool
 		ifName, _, found = plugin.LinuxIfIdx.LookupName(uint32(linuxRt.LinkIndex))
 		if !found {
-			plugin.Log.Warnf("Interface %d not found for route", linuxRt.LinkIndex)
+			plugin.Log.Debugf("Interface %d not found for route", linuxRt.LinkIndex)
 		}
 	}
 
