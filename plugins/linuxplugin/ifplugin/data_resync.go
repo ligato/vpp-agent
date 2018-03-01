@@ -124,6 +124,27 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 		}
 	}
 
+	// Register all interfaces in default namespace which were not already registered
+	linkList, err := netlink.LinkList()
+	if err != nil {
+		plugin.Log.Errorf("Failed to read linux interfaces: %v", err)
+		errs = append(errs, err)
+	}
+	for _, linuxIf := range linkList {
+		if linuxIf.Attrs() == nil {
+			continue
+		}
+		attrs := linuxIf.Attrs()
+		_, _, found := plugin.ifIndexes.LookupIdx(attrs.Name)
+		if !found {
+			// Register interface with name (other parameters can be read if needed)
+			plugin.ifIndexes.RegisterName(attrs.Name, uint32(attrs.Index), &interfaces.LinuxInterfaces_Interface{
+				Name:       attrs.Name,
+				HostIfName: attrs.Name,
+			})
+		}
+	}
+
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC Interface end. ", errs)
 
 	return
