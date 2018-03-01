@@ -44,8 +44,8 @@ explicitly specify the agent and vpp commit numbers:
 sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg VPP_COMMIT=f3bcdbf071c98ed676591bd22c3d3f8601009fa8 --no-cache .
 ```
 In addition, these environment variables can be set in Dockerfile:
-- `START_AGENT` - whether the vpp-agent should be started after start of the container (default is true)
-- `RETAIN_SUPERVISOR` - whether the supervisor should be killed 
+- `START_AGENT` - whether the vpp-agent should be started after start of the container (default is true, agent will be started)
+- `RETAIN_SUPERVISOR` - whether the supervisor should be killed (default is false, supervisor will be stopped)
 
 Their values can be also changed before image start with `docker -e` to have desired behavior
 
