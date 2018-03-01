@@ -133,16 +133,14 @@ func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRou
 
 	// Move to proper namespace
 	if nbRoute.Namespace != nil {
-		if nbRoute.Namespace != nil {
-			// Switch to namespace
-			routeNs := l3linuxcalls.ToGenericRouteNs(nbRoute.Namespace)
-			revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
-			if err != nil {
-				return nil, fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
-					nbRoute.Name, nbRoute.Namespace.Name, err)
-			}
-			defer revertNs()
+		// Switch to namespace
+		routeNs := l3linuxcalls.ToGenericRouteNs(nbRoute.Namespace)
+		revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+		if err != nil {
+			return nil, fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
+				nbRoute.Name, nbRoute.Namespace.Name, err)
 		}
+		defer revertNs()
 	}
 	var linuxRoutes []netlink.Route
 	// Look for routes using destination IP address
@@ -240,8 +238,7 @@ func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *
 		nbRoute.Scope = &l3.LinuxStaticRoutes_Route_Scope{
 			Type: l3.LinuxStaticRoutes_Route_Scope_LINK,
 		}
-	}
-	if nbRoute.Scope != nil && linuxRt.Scope != nil {
+	} else if linuxRt.Scope != nil {
 		if nbRoute.Scope.Type != linuxRt.Scope.Type {
 			plugin.Log.Debugf("Linux route %d: scope is different (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.Scope.Type, linuxRt.Scope.Type)

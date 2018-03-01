@@ -399,12 +399,11 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 		plugin.rtCachedRoutes[route.GwAddr] = route
 		plugin.Log.Debugf("Default route %v cached, gateway is currently unreachable", route.Name)
 		return true, nil
-	} else {
-		// Check if route was not cached before, eventually remove it
-		_, ok := plugin.rtCachedRoutes[route.GwAddr]
-		if ok {
-			delete(plugin.rtCachedRoutes, route.GwAddr)
-		}
+	}
+	// Check if route was not cached before, eventually remove it
+	_, ok := plugin.rtCachedRoutes[route.GwAddr]
+	if ok {
+		delete(plugin.rtCachedRoutes, route.GwAddr)
 	}
 	gateway := net.ParseIP(route.GwAddr)
 	if gateway == nil {
