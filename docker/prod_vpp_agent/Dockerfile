@@ -36,6 +36,7 @@ COPY etcd.conf .
 COPY kafka.conf .
 COPY govpp.conf .
 COPY vpp.conf /etc/vpp/vpp.conf
+COPY agent_start.py /usr/bin/agent_start.py
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 
 
@@ -46,6 +47,11 @@ COPY defaultplugins.conf /opt/vpp-agent/dev/defaultplugins.conf
 COPY linuxplugin.conf /opt/vpp-agent/dev/linuxplugin.conf
 
 WORKDIR /root/
+
+# start agent
+ENV START_AGENT "True"
+# kill supervisor if vpp or agent is closed
+ENV RETAIN_SUPERVISOR "False"
 
 # run supervisor as the default executable
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord/supervisord.conf"]
