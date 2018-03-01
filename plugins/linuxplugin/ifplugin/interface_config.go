@@ -465,14 +465,14 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 
 	// Use temporary/host name (according to type) to set interface to different namespace
 	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
-		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ns, plugin.Log, plugin.Stopwatch)
 		if err != nil {
-			return fmt.Errorf("failed to set TAP interface %s to namespace %s: %v", ifConfig.Tap.TempIfName, ifConfig.Namespace, err)
+			return fmt.Errorf("failed to set TAP interface %s to namespace %s: %v", ifConfig.Tap.TempIfName, ns, err)
 		}
 	} else {
-		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		err = linuxcalls.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ns, plugin.Log, plugin.Stopwatch)
 		if err != nil {
-			return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.HostIfName, ifConfig.Namespace, err)
+			return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.HostIfName, ns, err)
 		}
 	}
 	// Continue configuring interface in its namespace.
