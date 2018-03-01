@@ -15,13 +15,13 @@
 package l3idx
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
-
-const hostRouteNameKey = "hostRouteName"
 
 // LinuxRouteIndex provides read-only access to mapping between software route indexes and route names
 type LinuxRouteIndex interface {
@@ -39,6 +39,9 @@ type LinuxRouteIndex interface {
 
 	// LookupNameByHostIfName looks up the interface identified by the name used in HostOs
 	LookupNameByHostIfName(hostIfName string) []string
+
+	// LookupRouteByIP looks for static route, which network (destination) contains provided address
+	LookupRouteByIP(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) (*l3.LinuxStaticRoutes_Route, error)
 
 	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxRouteIndexDto)
@@ -112,6 +115,37 @@ func (linuxRouteIndex *linuxRouteIndex) LookupNamesByInterface(ifName string) []
 // LookupNameByIP returns names of items that contains given IP address in metadata
 func (linuxRouteIndex *linuxRouteIndex) LookupNameByHostIfName(hostARPName string) []string {
 	return linuxRouteIndex.mapping.LookupNameByMetadata(hostARPNameKey, hostARPName)
+}
+
+// LookupRouteByIP looks for static route, which network (destination) contains provided address
+func (linuxRouteIndex *linuxRouteIndex) LookupRouteByIP(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) (*l3.LinuxStaticRoutes_Route, error) {
+	for _, name := range linuxRouteIndex.mapping.ListNames() {
+		_, meta, found := linuxRouteIndex.LookupIdx(name)
+		if found && meta != nil {
+			route := linuxRouteIndex.castMetadata(meta)
+			// Skip default routes
+			if route.Default || route.DstIpAddr == "" {
+				continue
+			}
+			// Skip routes in different namespaces
+			if ns != nil && route.Namespace == nil || ns == nil && route.Namespace != nil {
+				continue
+			} else if ns != nil && route.Namespace != nil && ns.Name != route.Namespace.Name {
+				continue
+			}
+			if !route.Default && route.DstIpAddr != "" {
+				_, netIP, err := net.ParseCIDR(route.DstIpAddr)
+				if err != nil {
+					return nil, err
+				}
+				providedIP := net.ParseIP(ipAddress)
+				if netIP.Contains(providedIP) {
+					return route, nil
+				}
+			}
+		}
+	}
+	return nil, nil
 }
 
 // RegisterName adds new item into name-to-index mapping.

@@ -47,6 +47,8 @@ type LinuxRouteConfigurator struct {
 	RouteIdxSeq     uint32
 	rtIndexes       l3idx.LinuxRouteIndexRW
 	rtCachedIndexes l3idx.LinuxRouteIndexRW
+	// cache for default routes which cannot be created due to unreachable network
+	rtCachedRoutes map[string]*l3.LinuxStaticRoutes_Route
 
 	// Time measurement
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
@@ -59,6 +61,9 @@ func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW, rt
 	plugin.rtIndexes = rtIndexes
 	plugin.rtCachedIndexes = rtCachedIndexes
 
+	// Default route cache
+	plugin.rtCachedRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
+
 	return nil
 }
 
@@ -69,7 +74,7 @@ func (plugin *LinuxRouteConfigurator) Close() error {
 
 // ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
 // the route in the host network stack through Netlink API.
-func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) (err error) {
+func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) error {
 	plugin.Log.Infof("Configuring linux static route %v", route.Name)
 
 	// Prepare route object
@@ -89,14 +94,18 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	// default route
 	if route.Default {
-		err = plugin.createDefaultRoute(netLinkRoute, route)
+		cached, err := plugin.createDefaultRoute(netLinkRoute, route)
 		if err != nil {
 			plugin.Log.Error(err)
 			return err
 		}
+		if cached {
+			// If route was cached, skip rest of the resolution
+			return nil
+		}
 	} else {
 		// static route
-		err = plugin.createStaticRoute(netLinkRoute, route)
+		err := plugin.createStaticRoute(netLinkRoute, route)
 		if err != nil {
 			plugin.Log.Error(err)
 			return err
@@ -126,6 +135,11 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	plugin.Log.Debugf("Route %v registered", route.Name)
 
 	plugin.Log.Infof("Linux static route %v configured", route.Name)
+
+	// Retry default routes if some of them is not configurable
+	if !route.Default {
+		plugin.retryDefaultRoutes(route)
+	}
 
 	return nil
 }
@@ -171,9 +185,14 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 			// In this case old route has to be removed
 			replace = false
 		}
-		if err = plugin.createDefaultRoute(netLinkRoute, newRoute); err != nil {
+		cached, err := plugin.createDefaultRoute(netLinkRoute, newRoute)
+		if err != nil {
 			plugin.Log.Error(err)
 			return err
+		}
+		if cached {
+			// If route was cached, skip rest of the resolution
+			return nil
 		}
 	} else {
 		if oldRoute.DstIpAddr != newRoute.Interface {
@@ -212,6 +231,11 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	}
 
 	plugin.Log.Infof("Linux static route %v modified", newRoute.Name)
+
+	// Retry default routes if some of them is not configurable
+	if !newRoute.Default {
+		plugin.retryDefaultRoutes(newRoute)
+	}
 
 	return nil
 }
@@ -369,8 +393,24 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 }
 
 // Create default route object with gateway address. Destination address has to be set in such a case
-func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
-	var err error
+func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) (cached bool, err error) {
+	// Gateway
+	if !plugin.networkReachable(route.Namespace, route.GwAddr) {
+		plugin.rtCachedRoutes[route.GwAddr] = route
+		plugin.Log.Debugf("Default route %v cached, gateway is currently unreachable", route.Name)
+		return true, nil
+	}
+	// Check if route was not cached before, eventually remove it
+	_, ok := plugin.rtCachedRoutes[route.GwAddr]
+	if ok {
+		delete(plugin.rtCachedRoutes, route.GwAddr)
+	}
+	gateway := net.ParseIP(route.GwAddr)
+	if gateway == nil {
+		return false, fmt.Errorf("unable to create route %v as default, gateway is nil", route.Name)
+	}
+	netLinkRoute.Gw = gateway
+
 	// Destination address
 	dstIPAddr := route.DstIpAddr
 	if dstIPAddr == "" {
@@ -383,15 +423,8 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 	_, netLinkRoute.Dst, err = net.ParseCIDR(dstIPAddr)
 	if err != nil {
 		plugin.Log.Error(err)
-		return err
+		return false, err
 	}
-
-	// Gateway
-	gateway := net.ParseIP(route.GwAddr)
-	if gateway == nil {
-		return fmt.Errorf("unable to create route %v as default, gateway is nil", route.Name)
-	}
-	netLinkRoute.Gw = gateway
 
 	// Priority
 	if route.Metric != 0 {
@@ -399,7 +432,7 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 	}
 
 	plugin.Log.Debugf("created default route with gw ip %v", netLinkRoute.Gw)
-	return nil
+	return false, nil
 }
 
 // Create static route from provided data
@@ -473,6 +506,27 @@ func (plugin *LinuxRouteConfigurator) updateLinuxStaticRoute(netLinkRoute *netli
 	return linuxcalls.ModifyStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("modify-linux-route", plugin.Stopwatch))
 }
 
+// Tries to reconfigure cached default routes
+func (plugin *LinuxRouteConfigurator) retryDefaultRoutes(route *l3.LinuxStaticRoutes_Route) {
+	plugin.Log.Debug("Retrying to configure default routes")
+	for gwIP, defRoute := range plugin.rtCachedRoutes {
+		// Parse gateway and default address
+		gwIPParsed := net.ParseIP(gwIP)
+		_, dstNet, err := net.ParseCIDR(route.DstIpAddr)
+		if err != nil {
+			plugin.Log.Errorf("Error parsing IP address %s: %v", route.DstIpAddr, err)
+			continue
+		}
+		if dstNet.Contains(gwIPParsed) {
+			// default route can be configured
+			if err := plugin.ConfigureLinuxStaticRoute(defRoute); err != nil {
+				plugin.Log.Errorf("Error while configuring route %s: %v", route.Name, err)
+			}
+			delete(plugin.rtCachedRoutes, gwIP)
+		}
+	}
+}
+
 func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoutes_Route_Scope) netlink.Scope {
 	if scope == nil {
 		plugin.Log.Info("Scope type not defined, seting to default (link)")
@@ -491,6 +545,21 @@ func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoute
 		plugin.Log.Infof("Unknown scope type, setting to default (link): %v", scope.Type)
 		return netlink.SCOPE_LINK
 	}
+}
+
+// Verifies whether address network is reachable.
+func (plugin *LinuxRouteConfigurator) networkReachable(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) bool {
+	route, err := plugin.rtIndexes.LookupRouteByIP(ns, ipAddress)
+	if err != nil {
+		plugin.Log.Errorf("Failed to resolve accessibility of %s: %v", ipAddress, err)
+		return false
+	}
+	if route == nil {
+		plugin.Log.Debugf("IP address %s is not accessible", ipAddress)
+		return false
+	}
+	plugin.Log.Debugf("IP address %s is accessible", ipAddress)
+	return true
 }
 
 func routeIdentifier(route *netlink.Route) string {
