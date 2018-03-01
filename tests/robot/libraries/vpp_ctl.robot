@@ -514,7 +514,7 @@ vpp_ctl: Check ACL Reply
     List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 
- vpp_ctl: Put ARP
+vpp_ctl: Put ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
     Log Many    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
@@ -524,7 +524,7 @@ vpp_ctl: Check ACL Reply
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
- vpp_ctl: Get ARP As Json
+vpp_ctl: Get ARP As Json
     [Arguments]           ${node}  ${interface}
     Log Many              ${node}     ${interface}
     ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/arp/${interface}
