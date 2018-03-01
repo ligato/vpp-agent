@@ -58,8 +58,16 @@ Create And Chek Memif1 On Agent Libmemif 1
     Should Contain     ${out}     link: up
 
 Check Memif1 Interface On VPP1 Connected To LibMemif
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:62
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=slave  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+
+Modify Memif1 On VPP1 back
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=false    id=0    ip=${VPP1MEMIF_IP1}    prefix=24    socket=memif.sock
+    Sleep     ${SYNC_SLEEP}
+
+Check Memif1 on Vpp1 is connected
     vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=slave  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Sleep     ${SYNC_SLEEP}
 
 Check Ping VPP1 -> Agent Libmemif 1
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP1}
@@ -134,14 +142,14 @@ Add Libmemif Node Again
     Add Agent Libmemif Node    agent_libmemif_1
     Sleep    ${RESYNC_WAIT}
 
-Create And Check Memif1 On Agent Libmemif 1 After node restart
+Create And Check Memif1 On Agent Libmemif 1 After node restart2
     ${out_c}=      lmterm: Issue Command    agent_libmemif_1   conn 0 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
     Log Many      ${out_c}    ${out}
     Should Contain     ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain     ${out}     link: up
 
-Check Memif1 Interface On VPP1 Connected After Node Restart
+Check Memif1 Interface On VPP1 Connected After Node Restart2
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
     vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=slave  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
@@ -185,9 +193,10 @@ Check Memif1 Interface On VPP1 Connected After Second Libmemif Added
 
 Delete Memif1 Interface On VPP1
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif1
+    vpp_term: Show Interfaces    agent_vpp_1
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=62:61:61:61:61:61
 
-Check Memif 1 and Memif2 On Agent LibMemif 1
+Check LibMemif1 down and LibMemif2 down
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
     Should Contain      ${out}     interface ip: ${LIBMEMIF_IP2}
     Should Contain      ${out}     interface ip: ${LIBMEMIF_IP1}
@@ -196,22 +205,24 @@ Check Memif 1 and Memif2 On Agent LibMemif 1
 Add Memif2 Interface On VPP1
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:51:51    master=slave    id=1    ip=${VPP1MEMIF_IP2}    prefix=24    socket=memif.sock
     Sleep     ${SYNC_SLEEP}
+    Sleep     ${SYNC_SLEEP}
+    Sleep     ${SYNC_SLEEP}
 
 Check Memif2 Interface Created On VPP1
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:51:51
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=slave  id=1  ipv4=${VPP1MEMIF_IP2}/24  connecte
+    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=slave  id=1  ipv4=${VPP1MEMIF_IP2}/24   connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
-Check Memif 1 and Memif2 On Agent LibMemif 1
+Check LibMemif1 down and LibMemif2 up
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
     Should Contain      ${out}     interface ip: ${LIBMEMIF_IP2}
     Should Contain      ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain      ${out}     link: up
     Should Contain      ${out}     link: down
 
-Check Ping VPP1 Memif2 -> Agent Libmemif 1 After Delete and Create
+Check Ping VPP1 Memif2 -> Agent Libmemif2
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP2}
 
-Check Ping VPP1 Memif1 -> Agent Libmemif 1 After Delete and Create
+Check Ping VPP1 Memif1 -> Agent Libmemif1
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP1}
 
 

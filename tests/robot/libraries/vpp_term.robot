@@ -320,7 +320,40 @@ vpp_term: Show Trace
 
 vpp_term: Add Trace Memif
     [Arguments]        ${node}
-    [Documentation]    vpp_term: Show Trace
+    [Documentation]    vpp_term: Add Trace for memif interfaces
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input 10
     [Return]           ${out}
+
+vpp_term: Add Trace Afpacket
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Add Trace for afpacket interfaces
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    trace add af-packet-input 10
+    [Return]           ${out}
+
+vpp_term: Set VPP Tracing And Debugging
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Add More Tracing and debugging
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    clear hardware
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear interface
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear error
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear run
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace on
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace post-mortem-on
+    Log                ${out}
+    [Return]           ${out}
+
+vpp_term: Dump Trace
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Dump VPP Trace
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace save apitrace.trc
+    [Return]           ${out}
+
