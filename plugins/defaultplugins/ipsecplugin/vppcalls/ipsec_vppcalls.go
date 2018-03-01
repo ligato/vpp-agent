@@ -16,24 +16,27 @@ package vppcalls
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ipsec"
+	"github.com/ligato/cn-infra/utils/addrs"
+	ipsec_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ipsec"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 )
 
 func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ipsec.IpsecSpdAddDel{}).LogTimeEntry(time.Since(t))
+		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &ipsec.IpsecSpdAddDel{
+	req := &ipsec_api.IpsecSpdAddDel{
 		IsAdd: boolToUint(isAdd),
 		SpdID: spdID,
 	}
 
-	reply := &ipsec.IpsecSpdAddDelReply{}
+	reply := &ipsec_api.IpsecSpdAddDelReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -44,17 +47,44 @@ func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *m
 	return nil
 }
 
-func spdAddDelEntry(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func spdAddDelEntry(spdID uint32, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ipsec.IpsecSpdAddDelEntry{}).LogTimeEntry(time.Since(t))
+		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDelEntry{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &ipsec.IpsecSpdAddDelEntry{
-		IsAdd: boolToUint(isAdd),
-		SpdID: spdID,
+	req := &ipsec_api.IpsecSpdAddDelEntry{
+		IsAdd:           boolToUint(isAdd),
+		SpdID:           spdID,
+		Priority:        spd.Priority,
+		IsOutbound:      boolToUint(spd.IsOutbound),
+		IsIPAny:         boolToUint(spd.IsIpAny),
+		Protocol:        boolToUint(spd.Protocol),
+		RemotePortStart: uint16(spd.RemotePortStart),
+		RemotePortStop:  uint16(spd.RemotePortStop),
+		LocalPortStart:  uint16(spd.LocalPortStart),
+		LocalPortStop:   uint16(spd.LocalPortStop),
+		Policy:          uint8(spd.Action),
+		SaID:            saID,
+	}
+	isIPv6, err := addrs.IsIPv6(spd.RemoteAddrStart)
+	if err != nil {
+		return err
+	}
+	if isIPv6 {
+		req.IsIpv6 = 1
+		req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
+		req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
+		req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
+		req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
+	} else {
+		req.IsIpv6 = 0
+		req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
+		req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
+		req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
+		req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
 	}
 
-	reply := &ipsec.IpsecSpdAddDelEntryReply{}
+	reply := &ipsec_api.IpsecSpdAddDelEntryReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -67,16 +97,16 @@ func spdAddDelEntry(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwat
 
 func interfaceAddDelSpd(spdID uint32, swIfIdx uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ipsec.IpsecInterfaceAddDelSpd{}).LogTimeEntry(time.Since(t))
+		stopwatch.TimeLog(ipsec_api.IpsecInterfaceAddDelSpd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &ipsec.IpsecInterfaceAddDelSpd{
+	req := &ipsec_api.IpsecInterfaceAddDelSpd{
 		IsAdd:     boolToUint(isAdd),
 		SwIfIndex: swIfIdx,
 		SpdID:     spdID,
 	}
 
-	reply := &ipsec.IpsecInterfaceAddDelSpdReply{}
+	reply := &ipsec_api.IpsecInterfaceAddDelSpdReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -90,24 +120,24 @@ func interfaceAddDelSpd(spdID uint32, swIfIdx uint32, isAdd bool, vppChan *govpp
 // CheckMsgCompatibilityForIPSec verifies compatibility of used binary API calls
 func CheckMsgCompatibilityForIPSec(vppChan *govppapi.Channel) error {
 	msgs := []govppapi.Message{
-		&ipsec.IpsecSpdAddDel{},
-		&ipsec.IpsecSpdAddDelReply{},
-		&ipsec.IpsecInterfaceAddDelSpd{},
-		&ipsec.IpsecInterfaceAddDelSpdReply{},
-		&ipsec.IpsecSpdAddDelEntry{},
-		&ipsec.IpsecSpdAddDelEntryReply{},
-		&ipsec.IpsecSadAddDelEntry{},
-		&ipsec.IpsecSadAddDelEntryReply{},
-		&ipsec.IpsecSpdDump{},
-		&ipsec.IpsecSpdDetails{},
-		&ipsec.IpsecTunnelIfAddDel{},
-		&ipsec.IpsecTunnelIfAddDelReply{},
-		&ipsec.IpsecSaDump{},
-		&ipsec.IpsecSaDetails{},
-		&ipsec.IpsecTunnelIfSetKey{},
-		&ipsec.IpsecTunnelIfSetKeyReply{},
-		&ipsec.IpsecTunnelIfSetSa{},
-		&ipsec.IpsecTunnelIfSetSaReply{},
+		&ipsec_api.IpsecSpdAddDel{},
+		&ipsec_api.IpsecSpdAddDelReply{},
+		&ipsec_api.IpsecInterfaceAddDelSpd{},
+		&ipsec_api.IpsecInterfaceAddDelSpdReply{},
+		&ipsec_api.IpsecSpdAddDelEntry{},
+		&ipsec_api.IpsecSpdAddDelEntryReply{},
+		&ipsec_api.IpsecSadAddDelEntry{},
+		&ipsec_api.IpsecSadAddDelEntryReply{},
+		&ipsec_api.IpsecSpdDump{},
+		&ipsec_api.IpsecSpdDetails{},
+		&ipsec_api.IpsecTunnelIfAddDel{},
+		&ipsec_api.IpsecTunnelIfAddDelReply{},
+		&ipsec_api.IpsecSaDump{},
+		&ipsec_api.IpsecSaDetails{},
+		&ipsec_api.IpsecTunnelIfSetKey{},
+		&ipsec_api.IpsecTunnelIfSetKeyReply{},
+		&ipsec_api.IpsecTunnelIfSetSa{},
+		&ipsec_api.IpsecTunnelIfSetSaReply{},
 	}
 	return vppChan.CheckMessageCompatibility(msgs...)
 }
