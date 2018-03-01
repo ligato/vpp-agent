@@ -25,6 +25,8 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
+const vxlanInstanceUnset = ^uint32(0)
+
 func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
@@ -39,6 +41,7 @@ func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, is
 		IsAdd:          boolToUint(isAdd),
 		Vni:            iface.Vni,
 		DecapNextIndex: 0xFFFFFFFF,
+		Instance:       vxlanInstanceUnset,
 		EncapVrfID:     encVrf,
 	}
 
