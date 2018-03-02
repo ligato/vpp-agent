@@ -176,14 +176,14 @@ func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...datasync.DelOption
 }
 
 func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *clientv3.Event) {
+	var prevKvValue []byte
+	if ev.PrevKv != nil {
+		prevKvValue = ev.PrevKv.Value
+	}
 	if ev.Type == mvccpb.DELETE {
-		resp(NewBytesWatchDelResp(string(ev.Kv.Key), ev.Kv.ModRevision))
+		resp(NewBytesWatchDelResp(string(ev.Kv.Key), prevKvValue, ev.Kv.ModRevision))
 	} else if ev.IsCreate() || ev.IsModify() {
 		if ev.Kv.Value != nil {
-			var prevKvValue []byte
-			if ev.PrevKv != nil {
-				prevKvValue = ev.PrevKv.Value
-			}
 			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, prevKvValue, ev.Kv.ModRevision))
 			log.Debug("NewBytesWatchPutResp")
 		}
