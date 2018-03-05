@@ -22,8 +22,19 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 )
 
-const ipAddressIndexKey = "ipAddrKey"
-const hostIfNameKey = "hostIfName"
+// DefNs is name for default namespace
+const DefNs = "default-ns"
+
+const (
+	ipAddressIndexKey = "ipAddrKey"
+	hostIfNameKey     = "hostIfName"
+)
+
+// IndexedLinuxInterface is linux interface configuration with its system index. Used as a metadata object.
+type IndexedLinuxInterface struct {
+	Index uint32
+	Data  *interfaces.LinuxInterfaces_Interface
+}
 
 // LinuxIfIndex provides read-only access to mapping between software interface indices and interface names.
 type LinuxIfIndex interface {
@@ -31,10 +42,16 @@ type LinuxIfIndex interface {
 	GetMapping() idxvpp.NameToIdxRW
 
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupIdx(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool)
+	LookupIdx(name string) (idx uint32, metadata *IndexedLinuxInterface, exists bool)
+
+	// LookupIdxByNamespace looks up previously stored item identified by system index in mapping using namespace.
+	LookupIdxByNamespace(name string, ns string) (osIdx uint32, metadata *IndexedLinuxInterface, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupName(idx uint32) (name string, metadata *interfaces.LinuxInterfaces_Interface, exists bool)
+	LookupName(idx uint32) (name string, metadata *IndexedLinuxInterface, exists bool)
+
+	// LookupNameByNamespace looks up previously stored item identified by name in mapping using namespace.
+	LookupNameByNamespace(osIdx uint32, ns string) (name string, metadata *IndexedLinuxInterface, exists bool)
 
 	// LookupNameByHostIfName looks up the interface identified by the name used in HostOs.
 	LookupNameByHostIfName(hostIfName string) []string
@@ -49,17 +66,17 @@ type LinuxIfIndexRW interface {
 	LinuxIfIndex
 
 	// RegisterName adds new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, ifMeta *interfaces.LinuxInterfaces_Interface)
+	RegisterName(name string, idx uint32, ifMeta *IndexedLinuxInterface)
 
 	// UnregisterName removes an item identified by name from mapping.
-	UnregisterName(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool)
+	UnregisterName(name string) (idx uint32, metadata *IndexedLinuxInterface, exists bool)
 }
 
 // LinuxIfIndexDto represents an item sent through watch channel in linuxIfIndex.
 // In contrast to NameToIdxDto it contains typed metadata.
 type LinuxIfIndexDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
-	Metadata *interfaces.LinuxInterfaces_Interface
+	Metadata *IndexedLinuxInterface
 }
 
 // linuxIfIndex is type-safe implementation of mapping between Software interface index
@@ -78,8 +95,8 @@ func (linuxIfIdx *linuxIfIndex) GetMapping() idxvpp.NameToIdxRW {
 	return linuxIfIdx.mapping
 }
 
-// LookupIdx looks up previously stored item identified by index in mapping.
-func (linuxIfIdx *linuxIfIndex) LookupIdx(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool) {
+// LookupIdx looks up previously stored item identified by index in mapping. Returned index is internal (IfIdxSeq)
+func (linuxIfIdx *linuxIfIndex) LookupIdx(name string) (idx uint32, metadata *IndexedLinuxInterface, exists bool) {
 	idx, meta, exists := linuxIfIdx.mapping.LookupIdx(name)
 	if exists {
 		metadata = linuxIfIdx.castMetadata(meta)
@@ -87,11 +104,51 @@ func (linuxIfIdx *linuxIfIndex) LookupIdx(name string) (idx uint32, metadata *in
 	return idx, metadata, exists
 }
 
-// LookupName looks up previously stored item identified by name in mapping.
-func (linuxIfIdx *linuxIfIndex) LookupName(idx uint32) (name string, metadata *interfaces.LinuxInterfaces_Interface, exists bool) {
+// LookupIdxByNamespace looks up previously stored item identified by system index in mapping using namespace.
+// Returned index is an index representing interface in the host os.
+func (linuxIfIdx *linuxIfIndex) LookupIdxByNamespace(name string, namespace string) (osIdx uint32, metadata *IndexedLinuxInterface, exists bool) {
+	for _, ifName := range linuxIfIdx.mapping.ListNames() {
+		_, meta, exists := linuxIfIdx.mapping.LookupIdx(ifName)
+		if !exists || meta == nil {
+			continue
+		}
+		metadata = linuxIfIdx.castMetadata(meta)
+		if metadata == nil || metadata.Data == nil {
+			continue
+		}
+		// Compare name and namespace
+		if metadata.Data.Name == name && compareNs(metadata.Data.Namespace, namespace) {
+			return metadata.Index, metadata, exists
+		}
+	}
+	return osIdx, metadata, exists
+}
+
+// LookupName looks up previously stored item using internal index identified by name in mapping.
+func (linuxIfIdx *linuxIfIndex) LookupName(idx uint32) (name string, metadata *IndexedLinuxInterface, exists bool) {
 	name, meta, exists := linuxIfIdx.mapping.LookupName(idx)
 	if exists {
 		metadata = linuxIfIdx.castMetadata(meta)
+	}
+	return name, metadata, exists
+}
+
+// LookupIdxByNamespace looks up previously stored item identified by system index in mapping using namespace.
+// Returned index is an index representing interface in the host os.
+func (linuxIfIdx *linuxIfIndex) LookupNameByNamespace(osIdx uint32, namespace string) (name string, metadata *IndexedLinuxInterface, exists bool) {
+	for _, ifName := range linuxIfIdx.mapping.ListNames() {
+		_, meta, exists := linuxIfIdx.mapping.LookupIdx(ifName)
+		if !exists || meta == nil {
+			continue
+		}
+		metadata = linuxIfIdx.castMetadata(meta)
+		if metadata == nil || metadata.Data == nil {
+			continue
+		}
+		// Compare index and namespace
+		if metadata.Index == osIdx && compareNs(metadata.Data.Namespace, namespace) {
+			return metadata.Data.Name, metadata, exists
+		}
 	}
 	return name, metadata, exists
 }
@@ -102,12 +159,12 @@ func (linuxIfIdx *linuxIfIndex) LookupNameByHostIfName(hostIfName string) []stri
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (linuxIfIdx *linuxIfIndex) RegisterName(name string, idx uint32, ifMeta *interfaces.LinuxInterfaces_Interface) {
+func (linuxIfIdx *linuxIfIndex) RegisterName(name string, idx uint32, ifMeta *IndexedLinuxInterface) {
 	linuxIfIdx.mapping.RegisterName(name, idx, ifMeta)
 }
 
 // UnregisterName removes an item identified by name from mapping.
-func (linuxIfIdx *linuxIfIndex) UnregisterName(name string) (idx uint32, metadata *interfaces.LinuxInterfaces_Interface, exists bool) {
+func (linuxIfIdx *linuxIfIndex) UnregisterName(name string) (idx uint32, metadata *IndexedLinuxInterface, exists bool) {
 	idx, meta, exists := linuxIfIdx.mapping.UnregisterName(name)
 	return idx, linuxIfIdx.castMetadata(meta), exists
 }
@@ -132,28 +189,41 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 	log.DefaultLogger().Debug("IndexMetadata ", metaData)
 
 	indexes := map[string][]string{}
-	ifMeta, ok := metaData.(*interfaces.LinuxInterfaces_Interface)
+	ifMeta, ok := metaData.(*IndexedLinuxInterface)
 	if !ok || ifMeta == nil {
 		return indexes
 	}
 
-	ip := ifMeta.IpAddresses
+	ip := ifMeta.Data.IpAddresses
 	if ip != nil {
 		indexes[ipAddressIndexKey] = ip
 	}
 
-	if ifMeta.HostIfName != "" {
-		indexes[hostIfNameKey] = []string{ifMeta.HostIfName}
+	if ifMeta.Data.HostIfName != "" {
+		indexes[hostIfNameKey] = []string{ifMeta.Data.HostIfName}
 	} else {
-		indexes[hostIfNameKey] = []string{ifMeta.Name}
+		indexes[hostIfNameKey] = []string{ifMeta.Data.Name}
 	}
 	return indexes
 }
 
-func (linuxIfIdx *linuxIfIndex) castMetadata(meta interface{}) *interfaces.LinuxInterfaces_Interface {
-	if ifMeta, ok := meta.(*interfaces.LinuxInterfaces_Interface); ok {
+func (linuxIfIdx *linuxIfIndex) castMetadata(meta interface{}) *IndexedLinuxInterface {
+	if ifMeta, ok := meta.(*IndexedLinuxInterface); ok {
 		return ifMeta
 	}
 
 	return nil
+}
+
+func compareNs(ns1 *interfaces.LinuxInterfaces_Interface_Namespace, ns2 string) bool {
+	if ns2 == "" {
+		ns2 = DefNs
+	}
+	if ns1 == nil && ns2 != DefNs || ns1 != nil && ns2 == DefNs {
+		return false
+	}
+	if ns1 != nil && ns2 != DefNs && ns1.Name != ns2 {
+		return false
+	}
+	return true
 }

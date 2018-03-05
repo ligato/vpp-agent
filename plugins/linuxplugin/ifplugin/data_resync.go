@@ -24,6 +24,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
 	"github.com/vishvananda/netlink"
 )
@@ -135,13 +136,17 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 			continue
 		}
 		attrs := linuxIf.Attrs()
-		_, _, found := plugin.ifIndexes.LookupIdx(attrs.Name)
+		_, _, found := plugin.IfIndexes.LookupIdx(attrs.Name)
 		if !found {
 			// Register interface with name (other parameters can be read if needed)
-			plugin.ifIndexes.RegisterName(attrs.Name, uint32(attrs.Index), &interfaces.LinuxInterfaces_Interface{
-				Name:       attrs.Name,
-				HostIfName: attrs.Name,
+			plugin.IfIndexes.RegisterName(attrs.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
+				Index: uint32(attrs.Index),
+				Data: &interfaces.LinuxInterfaces_Interface{
+					Name:       attrs.Name,
+					HostIfName: attrs.Name,
+				},
 			})
+			plugin.IfIdxSeq++
 		}
 	}
 
@@ -310,18 +315,16 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 
 	// Move to proper namespace
 	if nbIf.Namespace != nil {
-		if nbIf.Namespace != nil {
-			if !plugin.isNamespaceAvailable(nbIf.Namespace) {
-				return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
-			}
-			// Switch to namespace
-			revertNs, err := plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
-			if err != nil {
-				return nil, fmt.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
-					nbIf.HostIfName, nbIf.Namespace.Name, err)
-			}
-			defer revertNs()
+		if !plugin.isNamespaceAvailable(nbIf.Namespace) {
+			return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
 		}
+		// Switch to namespace
+		revertNs, err := plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
+				nbIf.HostIfName, nbIf.Namespace.Name, err)
+		}
+		defer revertNs()
 	}
 	// Look for interface
 	linkIf, err := netlink.LinkByName(nbIf.HostIfName)
@@ -347,7 +350,11 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 // Register linux interface and add it to cache
 func (plugin *LinuxInterfaceConfigurator) registerLinuxInterface(linuxIfIdx uint32, nbIf *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
 	// Register interface with its name
-	plugin.ifIndexes.RegisterName(nbIf.Name, linuxIfIdx, nbIf)
+	plugin.IfIndexes.RegisterName(nbIf.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
+		Index: linuxIfIdx,
+		Data:  nbIf,
+	})
+	plugin.IfIdxSeq++
 	// Add interface to cache
 	switch nbIf.Type {
 	case interfaces.LinuxInterfaces_AUTO_TAP:
