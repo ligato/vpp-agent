@@ -87,9 +87,10 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	neigh := &netlink.Neigh{}
 
 	// Find interface
-	idx, _, found := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
-	if !found {
-		plugin.Log.Debugf("cannot create ARP entry %v due to missing interface %v, cached", arpEntry.Name, arpEntry.Interface)
+	_, ifData, found := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
+	if !found || ifData == nil {
+		plugin.Log.Debugf("cannot create ARP entry %s due to missing interface %s (found: %v, data: %v), cached",
+			arpEntry.Name, arpEntry.Interface, found, ifData)
 		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
 			arp:    arpEntry,
 			ifName: arpEntry.Interface,
@@ -97,7 +98,8 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 		}
 		return nil
 	}
-	neigh.LinkIndex = int(idx)
+
+	neigh.LinkIndex = int(ifData.Index)
 
 	// Set IP address
 	ipAddr := net.ParseIP(arpEntry.IpAddr)
@@ -177,11 +179,12 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	neigh := &netlink.Neigh{}
 
 	// Find interface
-	idx, _, found := plugin.LinuxIfIdx.LookupIdx(newArpEntry.Interface)
-	if !found {
-		return fmt.Errorf("cannot create ARP entry %v, interface %v not found", newArpEntry.Name, newArpEntry.Interface)
+	_, ifData, found := plugin.LinuxIfIdx.LookupIdx(newArpEntry.Interface)
+	if !found || ifData == nil {
+		return fmt.Errorf("cannot create ARP entry %s due to missing interface %s (found: %v, data: %v), cached",
+			newArpEntry.Name, newArpEntry.Interface, found, ifData)
 	}
-	neigh.LinkIndex = int(idx)
+	neigh.LinkIndex = int(ifData.Index)
 
 	// Set IP address
 	ipAddr := net.ParseIP(newArpEntry.IpAddr)
@@ -234,8 +237,8 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	neigh := &netlink.Neigh{}
 
 	// Find interface
-	idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
-	if !foundIface {
+	_, ifData, foundIface := plugin.LinuxIfIdx.LookupIdx(arpEntry.Interface)
+	if !foundIface || ifData == nil {
 		plugin.Log.Debugf("cannot remove ARP entry %v due to missing interface %v, cached", arpEntry.Name, arpEntry.Interface)
 		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
 			arp:    arpEntry,
@@ -243,7 +246,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 		}
 		return nil
 	}
-	neigh.LinkIndex = int(idx)
+	neigh.LinkIndex = int(ifData.Index)
 
 	// Set IP address
 	ipAddr := net.ParseIP(arpEntry.IpAddr)
@@ -264,7 +267,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	defer revertNs()
 
 	// Read all ARP entries configured for interface
-	entries, err := linuxcalls.ReadArpEntries(int(idx), noFamilyFilter, plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
+	entries, err := linuxcalls.ReadArpEntries(int(ifData.Index), noFamilyFilter, plugin.Log, measure.GetTimeLog("list-arp-entries", plugin.Stopwatch))
 	if err != nil {
 		return err
 	}
@@ -313,9 +316,14 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 
 	for _, entry := range entries {
 		plugin.Log.WithField("interface", entry.LinkIndex).Debugf("Found new static linux ARP entry")
-		_, _, found := plugin.arpIndexes.LookupIdx(arpIdentifier(&entry))
+		_, arp, found := plugin.arpIndexes.LookupIdx(arpIdentifier(&entry))
 		if !found {
-			ifName, _, _ := plugin.LinuxIfIdx.LookupName(uint32(entry.LinkIndex))
+			var ifName string
+			if arp == nil || arp.Namespace == nil {
+				ifName, _, _ = plugin.LinuxIfIdx.LookupNameByNamespace(uint32(entry.LinkIndex), ifaceidx.DefNs)
+			} else {
+				ifName, _, _ = plugin.LinuxIfIdx.LookupNameByNamespace(uint32(entry.LinkIndex), arp.Namespace.Name)
+			}
 			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.ArpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
 				// Register fields required to reconstruct ARP identifier
 				Interface: ifName,
