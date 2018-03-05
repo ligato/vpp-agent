@@ -839,7 +839,8 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator,
+		plugin.ipsecConfigurator)
 
 	return err
 }

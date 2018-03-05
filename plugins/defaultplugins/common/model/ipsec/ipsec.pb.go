@@ -183,22 +183,22 @@ func (*SecurityPolicyDatabases_SPD_Interface) ProtoMessage()    {}
 // Policy Entry
 type SecurityPolicyDatabases_SPD_PolicyEntry struct {
 	// uint32 spd_id = 1;
-	Priority        int32                                          `protobuf:"varint,1,opt,name=priority,proto3" json:"priority,omitempty"`
-	IsOutbound      bool                                           `protobuf:"varint,2,opt,name=is_outbound,proto3" json:"is_outbound,omitempty"`
-	IsIpv6          bool                                           `protobuf:"varint,3,opt,name=is_ipv6,proto3" json:"is_ipv6,omitempty"`
-	IsIpAny         bool                                           `protobuf:"varint,4,opt,name=is_ip_any,proto3" json:"is_ip_any,omitempty"`
-	RemoteAddrStart string                                         `protobuf:"bytes,5,opt,name=remote_addr_start,proto3" json:"remote_addr_start,omitempty"`
-	RemoteAddrStop  string                                         `protobuf:"bytes,6,opt,name=remote_addr_stop,proto3" json:"remote_addr_stop,omitempty"`
-	LocalAddrStart  string                                         `protobuf:"bytes,7,opt,name=local_addr_start,proto3" json:"local_addr_start,omitempty"`
-	LocalAddrStop   string                                         `protobuf:"bytes,8,opt,name=local_addr_stop,proto3" json:"local_addr_stop,omitempty"`
-	Protocol        bool                                           `protobuf:"varint,9,opt,name=protocol,proto3" json:"protocol,omitempty"`
-	RemotePortStart uint32                                         `protobuf:"varint,10,opt,name=remote_port_start,proto3" json:"remote_port_start,omitempty"`
-	RemotePortStop  uint32                                         `protobuf:"varint,11,opt,name=remote_port_stop,proto3" json:"remote_port_stop,omitempty"`
-	LocalPortStart  uint32                                         `protobuf:"varint,12,opt,name=local_port_start,proto3" json:"local_port_start,omitempty"`
-	LocalPortStop   uint32                                         `protobuf:"varint,13,opt,name=local_port_stop,proto3" json:"local_port_stop,omitempty"`
-	Action          SecurityPolicyDatabases_SPD_PolicyEntry_Action `protobuf:"varint,14,opt,name=action,proto3,enum=ipsec.SecurityPolicyDatabases_SPD_PolicyEntry_Action" json:"action,omitempty"`
+	Priority   int32 `protobuf:"varint,1,opt,name=priority,proto3" json:"priority,omitempty"`
+	IsOutbound bool  `protobuf:"varint,2,opt,name=is_outbound,proto3" json:"is_outbound,omitempty"`
+	// bool is_ipv6 = 3;
+	IsIpAny         bool                                           `protobuf:"varint,3,opt,name=is_ip_any,proto3" json:"is_ip_any,omitempty"`
+	RemoteAddrStart string                                         `protobuf:"bytes,4,opt,name=remote_addr_start,proto3" json:"remote_addr_start,omitempty"`
+	RemoteAddrStop  string                                         `protobuf:"bytes,5,opt,name=remote_addr_stop,proto3" json:"remote_addr_stop,omitempty"`
+	LocalAddrStart  string                                         `protobuf:"bytes,6,opt,name=local_addr_start,proto3" json:"local_addr_start,omitempty"`
+	LocalAddrStop   string                                         `protobuf:"bytes,7,opt,name=local_addr_stop,proto3" json:"local_addr_stop,omitempty"`
+	Protocol        bool                                           `protobuf:"varint,8,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	RemotePortStart uint32                                         `protobuf:"varint,9,opt,name=remote_port_start,proto3" json:"remote_port_start,omitempty"`
+	RemotePortStop  uint32                                         `protobuf:"varint,10,opt,name=remote_port_stop,proto3" json:"remote_port_stop,omitempty"`
+	LocalPortStart  uint32                                         `protobuf:"varint,11,opt,name=local_port_start,proto3" json:"local_port_start,omitempty"`
+	LocalPortStop   uint32                                         `protobuf:"varint,12,opt,name=local_port_stop,proto3" json:"local_port_stop,omitempty"`
+	Action          SecurityPolicyDatabases_SPD_PolicyEntry_Action `protobuf:"varint,13,opt,name=action,proto3,enum=ipsec.SecurityPolicyDatabases_SPD_PolicyEntry_Action" json:"action,omitempty"`
 	// uint32 sa_id = 14;
-	Sa string `protobuf:"bytes,15,opt,name=sa,proto3" json:"sa,omitempty"`
+	Sa string `protobuf:"bytes,14,opt,name=sa,proto3" json:"sa,omitempty"`
 }
 
 func (m *SecurityPolicyDatabases_SPD_PolicyEntry) Reset() {
@@ -234,10 +234,10 @@ type SecurityAssociations_SA struct {
 	IntegKey      string                                  `protobuf:"bytes,7,opt,name=integ_key,proto3" json:"integ_key,omitempty"`
 	UseEsn        bool                                    `protobuf:"varint,8,opt,name=use_esn,proto3" json:"use_esn,omitempty"`
 	UseAntiReplay bool                                    `protobuf:"varint,9,opt,name=use_anti_replay,proto3" json:"use_anti_replay,omitempty"`
-	IsTunnel      bool                                    `protobuf:"varint,10,opt,name=is_tunnel,proto3" json:"is_tunnel,omitempty"`
-	IsTunnelIpv6  bool                                    `protobuf:"varint,11,opt,name=is_tunnel_ipv6,proto3" json:"is_tunnel_ipv6,omitempty"`
-	TunnelSrcAddr string                                  `protobuf:"bytes,12,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
-	TunnelDstAddr string                                  `protobuf:"bytes,13,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
+	// bool is_tunnel = 10;
+	// bool is_tunnel_ipv6 = 11;
+	TunnelSrcAddr string `protobuf:"bytes,10,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
+	TunnelDstAddr string `protobuf:"bytes,11,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
 }
 
 func (m *SecurityAssociations_SA) Reset()         { *m = SecurityAssociations_SA{} }
