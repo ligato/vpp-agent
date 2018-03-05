@@ -68,6 +68,48 @@ func (plugin *IPSecConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
+// ConfigureSPD configures SPD
+func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
+	plugin.Log.Infof("Configuring SPD %v", spd.Name)
+
+	return nil
+}
+
+// ModifySPD
+func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, spd *ipsec.SecurityPolicyDatabases_SPD) error {
+	plugin.Log.Infof("Modifying SPD %v", spd.Name)
+
+	return nil
+}
+
+// DeleteSPD
+func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD) error {
+	plugin.Log.Infof("Deleting SPD %v", oldSpd.Name)
+
+	return nil
+}
+
+// ConfigureSA
+func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Infof("Configuring SA %v", sa.Name)
+
+	return nil
+}
+
+// ModifySA
+func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, sa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Infof("Modifying SA %v", sa.Name)
+
+	return nil
+}
+
+// DeleteSA
+func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Infof("Deleting SA %v", oldSa.Name)
+
+	return nil
+}
+
 // Resync
 func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA) error {
 	return nil
