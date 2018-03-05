@@ -96,7 +96,7 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 		Priority:        spd.Priority,
 		IsOutbound:      boolToUint(spd.IsOutbound),
 		IsIPAny:         boolToUint(spd.IsIpAny),
-		Protocol:        boolToUint(spd.Protocol),
+		Protocol:        uint8(spd.Protocol),
 		RemotePortStart: uint16(spd.RemotePortStart),
 		RemotePortStop:  uint16(spd.RemotePortStop),
 		LocalPortStart:  uint16(spd.LocalPortStart),

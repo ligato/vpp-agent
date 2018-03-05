@@ -26,7 +26,7 @@ message SecurityPolicyDatabases {
             string local_addr_start = 6;
             string local_addr_stop = 7;
 
-            bool protocol = 8;
+            uint32 protocol = 8;
             uint32 remote_port_start = 9;
             uint32 remote_port_stop = 10;
             uint32 local_port_start = 11;

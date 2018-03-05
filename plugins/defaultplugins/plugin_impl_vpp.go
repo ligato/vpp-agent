@@ -334,7 +334,7 @@ func (plugin *Plugin) Init() error {
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 
-	//FIXME Run the following go routines later than following init*() calls - just before Watch().
+	// FIXME: Run the following go routines later than following init*() calls - just before Watch().
 
 	// Run event handler go routines.
 	go plugin.publishIfStateEvents(ctx)
