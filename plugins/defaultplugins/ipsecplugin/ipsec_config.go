@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -44,6 +45,7 @@ type IPSecConfigurator struct {
 	SwIfIndexes ifaceidx.SwIfIndexRW
 
 	SpdIndexSeq uint32
+	SaIndexSeq  uint32
 }
 
 // Init members (channels...) and start go routines
@@ -64,4 +66,9 @@ func (plugin *IPSecConfigurator) Init() (err error) {
 // Close GOVPP channel
 func (plugin *IPSecConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
+}
+
+// Resync
+func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA) error {
+	return nil
 }

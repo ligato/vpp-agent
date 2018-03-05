@@ -18,4 +18,8 @@ package ipsec
 const (
 	// KeyPrefix is the relative key prefix for IPSec
 	KeyPrefix = "vpp/config/v1/ipsec/"
+	// KeyPrefixSPD is the relative key prefix for IPSec's Security Policy Databases
+	KeyPrefixSPD = KeyPrefix + "spd/"
+	// KeyPrefixSA is the relative key prefix for IPSec's Security Associations
+	KeyPrefixSA = KeyPrefix + "sa/"
 )
