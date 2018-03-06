@@ -674,7 +674,7 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
 func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin.NamespaceMgmtCtx, vethName string, hostIfName string, ns *interfaces.LinuxInterfaces_Interface_Namespace) error {
-	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": plugin.NsHandler.IfNsToString(ns)}).
+	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": plugin.NsHandler.IfaceNsToString(ns)}).
 		Debug("Attempting to remove obsolete VETH")
 
 	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, ns)

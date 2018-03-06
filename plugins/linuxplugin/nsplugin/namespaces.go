@@ -86,8 +86,8 @@ func (ns *Namespace) CompareNamespaces(nsToCompare *Namespace) int {
 	return 0
 }
 
-// GenericToIfNs converts generic namespace to interface-type namespace
-func (ns *Namespace) GenericToIfNs() (*intf.LinuxInterfaces_Interface_Namespace, error) {
+// GenericToIfaceNs converts generic namespace to interface-type namespace
+func (ns *Namespace) GenericToIfaceNs() (*intf.LinuxInterfaces_Interface_Namespace, error) {
 	if ns == nil {
 		return nil, fmt.Errorf("provided namespace is nil")
 	}
@@ -162,8 +162,8 @@ func (ns *Namespace) GenericNsToString() string {
 	}
 }
 
-// GenericNsToString returns a string representation of a namespace suitable for logging purposes.
-func (plugin *NsHandler) IfNsToString(namespace *intf.LinuxInterfaces_Interface_Namespace) string {
+// IfaceNsToString returns a string representation of a namespace suitable for logging purposes.
+func (plugin *NsHandler) IfaceNsToString(namespace *intf.LinuxInterfaces_Interface_Namespace) string {
 	if namespace != nil {
 		switch namespace.Type {
 		case intf.LinuxInterfaces_Interface_Namespace_PID_REF_NS:

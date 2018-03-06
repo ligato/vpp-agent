@@ -131,7 +131,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 		// Convert namespace
 		ifNs := plugin.convertMicroserviceNsToPidNs(namespace.Microservice)
 		// Back to interface ns type
-		namespace, err = ifNs.GenericToIfNs()
+		namespace, err = ifNs.GenericToIfaceNs()
 		if err != nil {
 			return err
 		}
@@ -174,7 +174,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	if err != nil {
 		return err
 	}
-	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": plugin.IfNsToString(namespace),
+	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": plugin.IfaceNsToString(namespace),
 		"dest-namespace-fd": int(ns)}).
 		Debug("Moved Linux interface across namespaces")
 
@@ -230,7 +230,7 @@ func (plugin *NsHandler) SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *intf
 		// Convert namespace
 		ifNs := plugin.convertMicroserviceNsToPidNs(ns.Microservice)
 		// Back to interface ns type
-		ns, err = ifNs.GenericToIfNs()
+		ns, err = ifNs.GenericToIfaceNs()
 		if err != nil {
 			return func() {}, err
 		}
@@ -416,7 +416,7 @@ func (plugin *NsHandler) prepareConfigNamespace() error {
 	if err != nil {
 		return err
 	}
-	plugin.configNs, err = ns.GenericToIfNs()
+	plugin.configNs, err = ns.GenericToIfaceNs()
 	return err
 }
 
