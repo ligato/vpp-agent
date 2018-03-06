@@ -85,22 +85,41 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 	plugin.SpdIndexes.RegisterName(spd.Name, spdID, nil)
 	plugin.Log.Infof("Registered SPD %v (%d)", spd.Name, spdID)
 
+	for _, iface := range spd.Interfaces {
+		plugin.Log.Infof("Assigning SPD to interface %v", iface)
+
+		swIfIdx, _, exists := plugin.SwIfIndexes.LookupIdx(iface.Name)
+		if !exists {
+			plugin.Log.Warnf("Interface %q for SPD %q not found, skipping assigning interface to SPD", iface.Name, spd.Name)
+			continue
+		}
+
+		if err := vppcalls.InterfaceAddSPD(spdID, swIfIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("assigning interface to SPD failed: %v", err)
+			continue
+		}
+
+		plugin.Log.Infof("Assigned SPD %q to interface %q", spd.Name, iface.Name)
+	}
+
 	for _, entry := range spd.PolicyEntries {
-		plugin.Log.Infof("Configuring SPD policy entry %v", entry)
+		plugin.Log.Infof("Adding SPD policy entry %v", entry)
 
 		var saID uint32
 		if entry.Sa != "" {
 			var exists bool
 			if saID, _, exists = plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
-				plugin.Log.Errorf("SA %q for SPD %q not found, skipping SPD configuration", entry.Sa, spd.Name)
+				plugin.Log.Warnf("SA %q for SPD %q not found, skipping SPD policy entry configuration", entry.Sa, spd.Name)
 				continue
 			}
 		}
 
 		if err := vppcalls.AddSPDEntry(spdID, saID, entry, plugin.vppCh, plugin.Stopwatch); err != nil {
-			return err
+			plugin.Log.Errorf("adding SPD policy entry failed: %v", err)
+			continue
 		}
-		plugin.Log.Infof("Configured SPD policy entry")
+
+		plugin.Log.Infof("Added SPD policy entry")
 	}
 
 	plugin.Log.Infof("Configured SPD %v", spd.Name)
