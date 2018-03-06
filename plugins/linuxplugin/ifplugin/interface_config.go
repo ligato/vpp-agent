@@ -87,7 +87,8 @@ type LinuxInterfaceConfigurator struct {
 	cfgLock sync.Mutex
 
 	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */
-	ifIndexes ifaceidx.LinuxIfIndexRW
+	IfIndexes ifaceidx.LinuxIfIndexRW
+	IfIdxSeq  uint32
 
 	/* interface caches (managed interfaces only) */
 	intfByName          map[string]*LinuxInterfaceConfig   /* interface name -> interface configuration */
@@ -123,9 +124,8 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linuxplugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(stateChan chan *LinuxInterfaceStateNotification,
-	ifIndexes ifaceidx.LinuxIfIndexRW, msChan chan *MicroserviceCtx) (err error) {
+	msChan chan *MicroserviceCtx) (err error) {
 	plugin.Log.Debug("Initializing Linux Interface configurator")
-	plugin.ifIndexes = ifIndexes
 
 	// Init channel
 	plugin.ifStateChan = stateChan
@@ -170,33 +170,6 @@ func (plugin *LinuxInterfaceConfigurator) Close() error {
 	safeclose.Close(plugin.ifStateChan)
 
 	return wasErr
-}
-
-// LookupLinuxInterfaces looks up all currently unmanaged Linux interfaces in the current namespace and registers them into
-// the name-to-index mapping. Furthermore, it triggers goroutine that will watch for newly added interfaces (by another party)
-// unless it is already running.
-func (plugin *LinuxInterfaceConfigurator) LookupLinuxInterfaces() error {
-	plugin.cfgLock.Lock()
-	defer plugin.cfgLock.Unlock()
-
-	intfs, err := net.Interfaces()
-	if err != nil {
-		return err
-	}
-	for _, inter := range intfs {
-		idx := GetLinuxInterfaceIndex(inter.Name)
-		if idx < 0 {
-			continue
-		}
-		res := plugin.ifIndexes.LookupNameByHostIfName(inter.Name)
-		if len(res) == 1 {
-			continue
-		}
-		plugin.Log.WithFields(logging.Fields{"name": inter.Name, "idx": idx}).Debug("Found new Linux interface")
-		plugin.ifIndexes.RegisterName(inter.Name, uint32(idx), &interfaces.LinuxInterfaces_Interface{
-			Name: inter.Name, HostIfName: inter.Name})
-	}
-	return nil
 }
 
 // ConfigureLinuxInterface reacts to a new northbound Linux interface config by creating and configuring
@@ -397,7 +370,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 
 	// Tap interfaces can be processed directly using config and also via linux interface events. This check
 	// should prevent to process the same interface multiple times.
-	_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
+	_, _, exists := plugin.IfIndexes.LookupIdx(ifConfig.config.Name)
 	if exists {
 		plugin.Log.Debugf("TAP interface %v already processed", ifConfig.config.Name)
 		return nil
@@ -545,7 +518,11 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *lin
 	}
 
 	// Register interface with its original name and store host name in metadata
-	plugin.ifIndexes.RegisterName(ifConfig.Name, uint32(idx), ifConfig)
+	plugin.IfIndexes.RegisterName(ifConfig.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
+		Index: uint32(idx),
+		Data:  ifConfig,
+	})
+	plugin.IfIdxSeq++
 	plugin.Log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": idx}).
 		Info("An entry added into ifState.")
 
@@ -674,8 +651,8 @@ func (plugin *LinuxInterfaceConfigurator) deleteVethInterface(ifConfig, peerConf
 	}
 
 	// Unregister both VETH ends from the in-memory map (following triggers notifications for all subscribers).
-	plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
-	plugin.ifIndexes.UnregisterName(peerConfig.config.Name)
+	plugin.IfIndexes.UnregisterName(ifConfig.config.Name)
+	plugin.IfIndexes.UnregisterName(peerConfig.config.Name)
 
 	plugin.Log.Infof("Linux Interface %v removed", ifConfig.config.Name)
 
@@ -762,7 +739,7 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	}
 
 	// Unregister TAP from the in-memory map
-	plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
+	plugin.IfIndexes.UnregisterName(ifConfig.config.Name)
 
 	return wasErr
 }
@@ -776,7 +753,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	defer revertNs()
 	if err != nil {
 		// Already removed as namespace no longer exists.
-		plugin.ifIndexes.UnregisterName(vethName)
+		plugin.IfIndexes.UnregisterName(vethName)
 		return nil
 	}
 	exists, err := linuxcalls.InterfaceExists(hostIfName, measure.GetTimeLog("iface_exists", plugin.Stopwatch))
@@ -786,7 +763,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 	}
 	if !exists {
 		// already removed
-		plugin.ifIndexes.UnregisterName(vethName)
+		plugin.IfIndexes.UnregisterName(vethName)
 		return nil
 	}
 	ifType, err := linuxcalls.GetInterfaceType(hostIfName, measure.GetTimeLog("get_iface_type", plugin.Stopwatch))
@@ -809,7 +786,7 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *linuxcal
 		plugin.Log.Error(err)
 		return err
 	}
-	plugin.ifIndexes.UnregisterName(vethName)
+	plugin.IfIndexes.UnregisterName(vethName)
 	return nil
 }
 
@@ -853,21 +830,26 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 		case linuxIf.interfaceType == tap:
 			if linuxIf.interfaceState == netlink.OperDown {
 				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
-				for _, indexedName := range plugin.ifIndexes.GetMapping().ListNames() {
-					_, ifConfigMeta, found := plugin.ifIndexes.LookupIdx(indexedName)
+				for _, indexedName := range plugin.IfIndexes.GetMapping().ListNames() {
+					_, ifConfigMeta, found := plugin.IfIndexes.LookupIdx(indexedName)
 					if !found {
 						// Should not happen
 						plugin.Log.Warnf("Interface %v not found in the mapping", indexedName)
 						continue
 					}
-					if ifConfigMeta.HostIfName == "" {
+					if ifConfigMeta == nil {
+						// Should not happen
+						plugin.Log.Warnf("Interface %v metadata does not exist", indexedName)
+						continue
+					}
+					if ifConfigMeta.Data.HostIfName == "" {
 						plugin.Log.Warnf("No info about host name for %v", indexedName)
 						continue
 					}
-					if ifConfigMeta.HostIfName == linuxIfName {
+					if ifConfigMeta.Data.HostIfName == linuxIfName {
 						// Registered Linux TAP interface was removed. However it should not be removed from cache
 						// because the configuration still exists in the VPP
-						plugin.ifIndexes.UnregisterName(linuxIfName)
+						plugin.IfIndexes.UnregisterName(linuxIfName)
 					}
 				}
 			} else {
@@ -884,7 +866,7 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == linuxIfName) ||
 						ifConfig.config.HostIfName == linuxIfName {
 						// Skip processed interfaces
-						_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
+						_, _, exists := plugin.IfIndexes.LookupIdx(ifConfig.config.Name)
 						if exists {
 							continue
 						}

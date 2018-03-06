@@ -18,9 +18,19 @@ package linuxcalls
 
 import (
 	"fmt"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
 )
+
+// ToGenericIfNs converts interface-type namespace to generic type namespace. Such an object can be used to call common
+// namespace-related methods
+func ToGenericIfNs(ns *interfaces.LinuxInterfaces_Interface_Namespace) *linuxcalls.Namespace {
+	if ns == nil {
+		return &linuxcalls.Namespace{}
+	}
+	return &linuxcalls.Namespace{Type: int32(ns.Type), Pid: ns.Pid, Microservice: ns.Microservice, Name: ns.Name, Filepath: ns.Filepath}
+}
 
 // ToGenericArpNs converts arp-type namespace to generic type namespace. Such an object can be used to call common
 // namespace-related methods
