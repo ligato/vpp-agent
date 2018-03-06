@@ -163,7 +163,7 @@ func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRou
 	}
 	var linuxRoutes []netlink.Route
 	// Look for routes using destination IP address
-	if nbRoute.DstIpAddr != "" {
+	if nbRoute.DstIpAddr != "" && plugin.networkReachable(nbRoute.Namespace, nbRoute.DstIpAddr) {
 		_, dstNetIP, err := net.ParseCIDR(nbRoute.DstIpAddr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse destination IP address %s: %v", nbRoute.DstIpAddr, err)
@@ -258,7 +258,7 @@ func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *
 				rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 			return false
 		}
-	} else {
+	} else if nbRoute.SrcIpAddr != "" && linuxRt.SrcIpAddr != "" && nbRoute.SrcIpAddr != linuxRt.SrcIpAddr {
 		plugin.Log.Debugf("Linux route %d: source address is different (NB: %s, Linux: %s)",
 			rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 		return false
