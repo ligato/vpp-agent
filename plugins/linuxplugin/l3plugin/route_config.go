@@ -28,9 +28,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
-	if_linuxcalls "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 )
 
@@ -45,6 +45,8 @@ const (
 // are applied through the Netlink AP
 type LinuxRouteConfigurator struct {
 	Log logging.Logger
+
+	NsHandler *nsplugin.NsHandler
 
 	LinuxIfIdx  ifaceidx.LinuxIfIndexRW
 	RouteIdxSeq uint32
@@ -132,9 +134,9 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	}
 
 	// Prepare and switch to namespace where the route belongs
-	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
-	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
-	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	routeNs := plugin.NsHandler.RouteNsToGeneric(route.Namespace)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(routeNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -205,8 +207,8 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	// the existing one
 	var replace bool
 
-	oldRouteNs := linuxcalls.ToGenericRouteNs(oldRoute.Namespace)
-	newRouteNs := linuxcalls.ToGenericRouteNs(newRoute.Namespace)
+	oldRouteNs := plugin.NsHandler.RouteNsToGeneric(oldRoute.Namespace)
+	newRouteNs := plugin.NsHandler.RouteNsToGeneric(newRoute.Namespace)
 	result := oldRouteNs.CompareNamespaces(newRouteNs)
 	if result != 0 || oldRoute.Interface != newRoute.Interface {
 		replace = true
@@ -239,11 +241,11 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 	}
 
 	// Prepare namespace of related interface
-	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
-	routeNs := linuxcalls.ToGenericRouteNs(newRoute.Namespace)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	routeNs := plugin.NsHandler.RouteNsToGeneric(newRoute.Namespace)
 
 	// route has to be created in the same namespace as the interface
-	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(routeNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -331,9 +333,9 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	netLinkRoute.Scope = plugin.parseRouteScope(route.Scope)
 
 	// Prepare and switch to the namespace where the route belongs
-	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
-	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
-	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	routeNs := plugin.NsHandler.RouteNsToGeneric(route.Namespace)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(routeNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -508,11 +510,11 @@ func (plugin *LinuxRouteConfigurator) createStaticRoute(netLinkRoute *netlink.Ro
 func (plugin *LinuxRouteConfigurator) recreateLinuxStaticRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
 	plugin.Log.Debugf("Route %s modification caused the route to be removed and crated again", route.Name)
 	// Prepare namespace of related interface
-	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
-	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	routeNs := plugin.NsHandler.RouteNsToGeneric(route.Namespace)
 
 	// route has to be created in the same namespace as the interface
-	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(routeNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
 		return err
@@ -572,10 +574,10 @@ func (plugin *LinuxRouteConfigurator) processAutoRoutes(ifName string, ifIdx uin
 
 	// Move to interface with the interface
 	if ifData.Data.Namespace != nil {
-		nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
+		nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 		// Switch to namespace
-		ifNs := linuxcalls.ToGenericIfNs(ifData.Data.Namespace)
-		revertNs, err := ifNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+		ifNs := plugin.NsHandler.IfNsToGeneric(ifData.Data.Namespace)
+		revertNs, err := plugin.NsHandler.SwitchNamespace(ifNs, nsMgmtCtx, plugin.Log)
 		if err != nil {
 			return fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
 				ifData.Data.Name, ifData.Data.Namespace.Name, err)
