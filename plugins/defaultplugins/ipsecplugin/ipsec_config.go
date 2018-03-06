@@ -44,10 +44,11 @@ type IPSecConfigurator struct {
 	vppCh    *govppapi.Channel
 
 	SwIfIndexes ifaceidx.SwIfIndexRW
-	SaIndexes   idxvpp.NameToIdxRW
 
-	SpdIndexSeq uint32
 	SaIndexSeq  uint32
+	SaIndexes   idxvpp.NameToIdxRW
+	SpdIndexSeq uint32
+	SpdIndexes  idxvpp.NameToIdxRW
 }
 
 // Init members (channels...) and start go routines
@@ -73,6 +74,36 @@ func (plugin *IPSecConfigurator) Close() error {
 // ConfigureSPD configures SPD
 func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
 	plugin.Log.Infof("Configuring SPD %v", spd.Name)
+
+	spdID := plugin.SpdIndexSeq
+	plugin.SpdIndexSeq++
+
+	if err := vppcalls.AddSPD(spdID, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SpdIndexes.RegisterName(spd.Name, spdID, nil)
+	plugin.Log.Infof("Registered SPD %v (%d)", spd.Name, spdID)
+
+	for _, entry := range spd.PolicyEntries {
+		plugin.Log.Infof("Configuring SPD policy entry %v", entry)
+
+		var saID uint32
+		if entry.Sa != "" {
+			var exists bool
+			if saID, _, exists = plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
+				plugin.Log.Errorf("SA %q for SPD %q not found, skipping SPD configuration", entry.Sa, spd.Name)
+				continue
+			}
+		}
+
+		if err := vppcalls.AddSPDEntry(spdID, saID, entry, plugin.vppCh, plugin.Stopwatch); err != nil {
+			return err
+		}
+		plugin.Log.Infof("Configured SPD policy entry")
+	}
+
+	plugin.Log.Infof("Configured SPD %v", spd.Name)
 
 	return nil
 }

@@ -104,22 +104,24 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 		Policy:          uint8(spd.Action),
 		SaID:            saID,
 	}
-	isIPv6, err := addrs.IsIPv6(spd.RemoteAddrStart)
-	if err != nil {
-		return err
-	}
-	if isIPv6 {
-		req.IsIpv6 = 1
-		req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
-		req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
-		req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
-		req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
-	} else {
-		req.IsIpv6 = 0
-		req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
-		req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
-		req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
-		req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
+	if spd.RemoteAddrStart != "" {
+		isIPv6, err := addrs.IsIPv6(spd.RemoteAddrStart)
+		if err != nil {
+			return err
+		}
+		if isIPv6 {
+			req.IsIpv6 = 1
+			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
+			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
+			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
+			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
+		} else {
+			req.IsIpv6 = 0
+			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
+			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
+			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
+			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
+		}
 	}
 
 	reply := &ipsec_api.IpsecSpdAddDelEntryReply{}
