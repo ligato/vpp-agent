@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
@@ -43,6 +44,7 @@ type IPSecConfigurator struct {
 	vppCh    *govppapi.Channel
 
 	SwIfIndexes ifaceidx.SwIfIndexRW
+	SaIndexes   idxvpp.NameToIdxRW
 
 	SpdIndexSeq uint32
 	SaIndexSeq  uint32
@@ -93,6 +95,16 @@ func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases
 func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Infof("Configuring SA %v", sa.Name)
 
+	saID := plugin.SaIndexSeq
+	plugin.SaIndexSeq++
+
+	if err := vppcalls.AddSAEntry(saID, sa, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SaIndexes.RegisterName(sa.Name, saID, nil)
+	plugin.Log.Infof("Registered SA %v (%d)", sa.Name, saID)
+
 	return nil
 }
 
@@ -107,10 +119,5 @@ func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, 
 func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Infof("Deleting SA %v", oldSa.Name)
 
-	return nil
-}
-
-// Resync
-func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA) error {
 	return nil
 }

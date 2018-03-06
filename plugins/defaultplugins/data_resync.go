@@ -254,7 +254,7 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numDNats := appendResyncDNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
-			numIPSecs := appendResyncIPSec(key, resyncData, req)
+			numIPSecs := appendResyncIPSec(resyncData, req)
 			plugin.Log.Debug("Received RESYNC IPSec configs ", numIPSecs)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
@@ -560,19 +560,18 @@ func appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) in
 	return num
 }
 
-func appendResyncIPSec(key string, resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	num := 0
+func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
 	for {
 		if data, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			if strings.HasPrefix(key, ipsec.KeyPrefixSPD) {
+			if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSPD) {
 				value := &ipsec.SecurityPolicyDatabases_SPD{}
 				if err := data.GetValue(value); err == nil {
 					req.IPSecSPDs = append(req.IPSecSPDs, value)
 					num++
 				}
-			} else if strings.HasPrefix(key, ipsec.KeyPrefixSA) {
+			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSA) {
 				value := &ipsec.SecurityAssociations_SA{}
 				if err := data.GetValue(value); err == nil {
 					req.IPSecSAs = append(req.IPSecSAs, value)
@@ -582,7 +581,7 @@ func appendResyncIPSec(key string, resyncData datasync.KeyValIterator, req *Data
 
 		}
 	}
-	return num
+	return
 }
 
 // All registration for above channel select (it ensures proper order during initialization) are put here.

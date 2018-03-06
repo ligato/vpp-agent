@@ -546,11 +546,16 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("IPSecConfigurator", ipsecLogger)
 	}
+	saIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
 	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
 		Log:         ipsecLogger,
 		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
 		Stopwatch:   stopwatch,
+		SaIndexSeq:  1,
+		SpdIndexSeq: 1,
+		SaIndexes:   saIndexes,
 	}
 
 	// Init IPSec plugin
