@@ -12,11 +12,13 @@ Execute On Machine     [Arguments]              ${machine}               ${comma
                        ...                      Output log is added to machine output log
                        Log Many                 ${machine}               ${command}               ${log}
                        Switch Connection        ${machine}
+                       ${currdate}=             Get Current Date
                        ${out}   ${stderr}=      Execute Command          ${command}    return_stderr=True
                        Log Many                 ${out}                   ${stderr}
                        ${status}=               Run Keyword And Return Status    Should Be Empty    ${stderr}
                        Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} on ${machine}    level=WARN
-                       Run Keyword If           '${log}'=='true'         Append To File    ${RESULTS_FOLDER}/output_${machine}.log    *** Command: ${command}${\n}${out}${\n}*** Error: ${stderr}${\n}
+                       Run Keyword If           '${log}'=='true'         Append To File    ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
+                       Run Keyword If           ${status}==False         Append To File    ${RESULTS_FOLDER}/output_${machine}.log    *** Error: ${stderr}${\n}
                        [Return]                 ${out}
 
 Write To Machine       [Arguments]              ${machine}               ${command}               ${delay}=${SSH_READ_DELAY}s
@@ -25,10 +27,11 @@ Write To Machine       [Arguments]              ${machine}               ${comma
                        ...                      Output log is added to machine output log
                        Log Many                 ${machine}               ${command}               ${delay}
                        Switch Connection        ${machine}
+                       ${currdate}=             Get Current Date
                        Write                    ${command}
                        ${out}=                  Read                     delay=${delay}
                        Log                      ${out}
-                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Command: ${command}${\n}${out}${\n}
+                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
                        [Return]                 ${out}
 
 Write To Machine Until Prompt
@@ -39,12 +42,13 @@ Write To Machine Until Prompt
                        Log                      Use 'Write To Container Until Prompt' instead of this kw    level=WARN
                        Log Many                 ${machine}    ${command}    ${prompt}    ${delay}
                        Switch Connection        ${machine}
+                       ${currdate}=             Get Current Date
                        Write                    ${command}
                        ${out}=                  Read Until               ${prompt}${${machine}_HOSTNAME}
                        Log                      ${out}
                        ${out2}=                 Read                     delay=${delay}
                        Log                      ${out2}
-                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Command: ${command}${\n}${out}${out2}${\n}
+                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
                        [Return]                 ${out}${out2}
 
 Write To Machine Until String
@@ -54,11 +58,12 @@ Write To Machine Until String
                        ...                      Output log is added to machine output log
                        Log Many                 ${machine}    ${command}    ${string}     ${delay}
                        Switch Connection        ${machine}
+                       ${currdate}=             Get Current Date
                        Write                    ${command}
                        ${out}=                  Read Until               ${string}
                        Log                      ${out}
                        ${out2}=                 Read                     delay=${delay}
                        Log                      ${out2}
-                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Command: ${command}${\n}${out}${out2}${\n}
+                       Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
                        [Return]                 ${out}${out2}
 
