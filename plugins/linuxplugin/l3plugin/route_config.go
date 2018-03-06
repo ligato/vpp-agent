@@ -275,6 +275,21 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	plugin.Log.Infof("Removing linux static route %v", route.Name)
 	var err error
 
+	// Check if route is in cache waiting on interface
+	if _, _, found := plugin.rtCachedIfRoutes.LookupIdx(route.Name); found {
+		plugin.rtCachedIfRoutes.UnregisterName(route.Name)
+		plugin.Log.Debugf("Route %s removed from interface cache", route.Name)
+		return nil
+	}
+	// Check if route is in cache waiting for gateway address reachability
+	for key, cachedRoute := range plugin.rtCachedGwRoutes {
+		if cachedRoute.Name == route.Name {
+			delete(plugin.rtCachedGwRoutes, key)
+			plugin.Log.Debugf("Route %s removed from gw cache", route.Name)
+			return nil
+		}
+	}
+
 	// Prepare route object
 	netLinkRoute := &netlink.Route{}
 
