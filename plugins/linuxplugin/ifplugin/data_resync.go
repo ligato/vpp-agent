@@ -66,6 +66,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 	// Iterate over NB configuration. Look for interfaces with the same host name
 	for _, nbIf := range nbIfs {
 		plugin.handleOptionalHostIfName(nbIf)
+		plugin.addInterfaceToCache(nbIf)
 
 		// Find linux equivalent for every NB interface and register it
 		linkIf, err := plugin.findLinuxInterface(nbIf, nsMgmtCtx)
@@ -316,7 +317,10 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 	// Move to proper namespace
 	if nbIf.Namespace != nil {
 		if !plugin.NsHandler.IsNamespaceAvailable(nbIf.Namespace) {
-			return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
+			// Not and error
+			plugin.Log.Debugf("Interface %s is not ready to be configured, namespace %s is not available",
+				nbIf.Name, nbIf.Namespace.Name)
+			return nil, nil
 		}
 		// Switch to namespace
 		revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, nbIf.Namespace)
@@ -347,15 +351,18 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 	return linkIf, nil
 }
 
-// Register linux interface and add it to cache
-func (plugin *LinuxInterfaceConfigurator) registerLinuxInterface(linuxIfIdx uint32, nbIf *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
+// Register linux interface
+func (plugin *LinuxInterfaceConfigurator) registerLinuxInterface(linuxIfIdx uint32, nbIf *interfaces.LinuxInterfaces_Interface) {
 	// Register interface with its name
 	plugin.IfIndexes.RegisterName(nbIf.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
 		Index: linuxIfIdx,
 		Data:  nbIf,
 	})
 	plugin.IfIdxSeq++
-	// Add interface to cache
+}
+
+// Add interface to cache
+func (plugin *LinuxInterfaceConfigurator) addInterfaceToCache(nbIf *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
 	switch nbIf.Type {
 	case interfaces.LinuxInterfaces_AUTO_TAP:
 		return plugin.addToCache(nbIf, nil)
