@@ -17,15 +17,18 @@
 package l3plugin
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
-	linuxcalls2 "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
+	if_linuxcalls "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
 	"github.com/vishvananda/netlink"
@@ -43,21 +46,30 @@ const (
 type LinuxRouteConfigurator struct {
 	Log logging.Logger
 
-	LinuxIfIdx      ifaceidx.LinuxIfIndexRW
-	RouteIdxSeq     uint32
-	rtIndexes       l3idx.LinuxRouteIndexRW
-	rtCachedIndexes l3idx.LinuxRouteIndexRW
+	LinuxIfIdx  ifaceidx.LinuxIfIndexRW
+	RouteIdxSeq uint32
+	// Index mapping for ETCD route configuration
+	rtIndexes l3idx.LinuxRouteIndexRW
+	// Index mapping for automatic interface routes (sometimes needed to evaluate network accessibility)
+	rtAutoIndexes l3idx.LinuxRouteIndexRW
+	// Cache for routes requiring interface which is missing
+	rtCachedIfRoutes l3idx.LinuxRouteIndexRW
+	// Cache for gateway routes which cannot be created at the time due to unreachable network
+	rtCachedGwRoutes map[string]*l3.LinuxStaticRoutes_Route
 
 	// Time measurement
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
-
 }
 
 // Init initializes static route configurator and starts goroutines
-func (plugin *LinuxRouteConfigurator) Init(rtIndexes l3idx.LinuxRouteIndexRW, rtCachedIndexes l3idx.LinuxRouteIndexRW) error {
+func (plugin *LinuxRouteConfigurator) Init(rtIndices, rtAutoIndices, rtCachedIndexes l3idx.LinuxRouteIndexRW) error {
 	plugin.Log.Debug("Initializing Linux Route configurator")
-	plugin.rtIndexes = rtIndexes
-	plugin.rtCachedIndexes = rtCachedIndexes
+	plugin.rtIndexes = rtIndices
+	plugin.rtAutoIndexes = rtAutoIndices
+	plugin.rtCachedIfRoutes = rtCachedIndexes
+
+	// Default route cache
+	plugin.rtCachedGwRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
 
 	return nil
 }
@@ -69,7 +81,7 @@ func (plugin *LinuxRouteConfigurator) Close() error {
 
 // ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
 // the route in the host network stack through Netlink API.
-func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) (err error) {
+func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStaticRoutes_Route) error {
 	plugin.Log.Infof("Configuring linux static route %v", route.Name)
 
 	// Prepare route object
@@ -77,37 +89,51 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	if route.Interface != "" {
 		// Find interface
-		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
-		if !foundIface {
+		_, ifData, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
+		if !foundIface || ifData == nil {
 			plugin.Log.Infof("Static route %v requires non-existing interface %v, moving to cache", route.Name, route.Interface)
-			plugin.rtCachedIndexes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
+			plugin.rtCachedIfRoutes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
 			plugin.RouteIdxSeq++
 			return nil
 		}
-		netLinkRoute.LinkIndex = int(idx)
+		netLinkRoute.LinkIndex = int(ifData.Index)
 	}
 
-	// default route
+	// Check gateway reachability
+	if route.Default || route.GwAddr != "" {
+		if !plugin.networkReachable(route.Namespace, route.GwAddr) {
+			plugin.rtCachedGwRoutes[route.GwAddr] = route
+			plugin.Log.Debugf("Default/Gateway route %v cached, gateway address %s is currently unreachable",
+				route.Name, route.GwAddr)
+			return nil
+		}
+	}
+
+	// Check if route was not cached before, eventually remove it
+	_, ok := plugin.rtCachedGwRoutes[route.GwAddr]
+	if ok {
+		delete(plugin.rtCachedGwRoutes, route.GwAddr)
+	}
+
+	// Default route
 	if route.Default {
-		err = plugin.createDefaultRoute(netLinkRoute, route)
+		err := plugin.createDefaultRoute(netLinkRoute, route)
 		if err != nil {
 			plugin.Log.Error(err)
 			return err
 		}
 	} else {
-		// static route
-		err = plugin.createStaticRoute(netLinkRoute, route)
+		// Static route
+		err := plugin.createStaticRoute(netLinkRoute, route)
 		if err != nil {
 			plugin.Log.Error(err)
 			return err
 		}
 	}
 
-	// Prepare namespace of related interface
-	nsMgmtCtx := linuxcalls2.NewNamespaceMgmtCtx()
+	// Prepare and switch to namespace where the route belongs
+	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
 	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
-
-	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
@@ -127,6 +153,11 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 
 	plugin.Log.Infof("Linux static route %v configured", route.Name)
 
+	// Retry default routes if some of them is not configurable now
+	if !route.Default {
+		plugin.retryDefaultRoutes(route)
+	}
+
 	return nil
 }
 
@@ -141,43 +172,60 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 
 	if newRoute.Interface != "" {
 		// Find interface
-		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(newRoute.Interface)
-		if !foundIface {
+		_, ifData, foundIface := plugin.LinuxIfIdx.LookupIdx(newRoute.Interface)
+		if !foundIface || ifData == nil {
 			plugin.Log.Infof("Modified static route %v requires non-existing interface %v, moving to cache", newRoute.Name, newRoute.Interface)
-			plugin.rtCachedIndexes.RegisterName(newRoute.Name, plugin.RouteIdxSeq, newRoute)
+			plugin.rtCachedIfRoutes.RegisterName(newRoute.Name, plugin.RouteIdxSeq, newRoute)
 			plugin.RouteIdxSeq++
 			return nil
 		}
-		netLinkRoute.LinkIndex = int(idx)
+		netLinkRoute.LinkIndex = int(ifData.Index)
+	}
+
+	// Check gateway reachability
+	if newRoute.Default || newRoute.GwAddr != "" {
+		if !plugin.networkReachable(newRoute.Namespace, newRoute.GwAddr) {
+			plugin.rtCachedGwRoutes[newRoute.GwAddr] = newRoute
+			plugin.Log.Debugf("Default/Gateway route %v cached, gateway address %s is currently unreachable",
+				newRoute.Name, newRoute.GwAddr)
+			return nil
+		}
+	}
+
+	// Check if route was not cached before, eventually remove it
+	_, ok := plugin.rtCachedGwRoutes[newRoute.GwAddr]
+	if ok {
+		delete(plugin.rtCachedGwRoutes, newRoute.GwAddr)
 	}
 
 	// If the namespace of the new route was changed, the old route needs to be removed and the new one created in the
 	// new namespace
 	// If interface or destination IP address was changed, the old entry needs to be removed and recreated as well.
-	// In such a case, ModifyRouteEntry (analogy to 'ip route replace') would create a new route instead of modifying
+	// Otherwise, ModifyRouteEntry (analogy to 'ip route replace') would create a new route instead of modifying
 	// the existing one
-	replace := true
+	var replace bool
 
 	oldRouteNs := linuxcalls.ToGenericRouteNs(oldRoute.Namespace)
 	newRouteNs := linuxcalls.ToGenericRouteNs(newRoute.Namespace)
 	result := oldRouteNs.CompareNamespaces(newRouteNs)
 	if result != 0 || oldRoute.Interface != newRoute.Interface {
-		replace = false
+		replace = true
 	}
 
 	// Default route
 	if newRoute.Default {
 		if !oldRoute.Default {
 			// In this case old route has to be removed
-			replace = false
+			replace = true
 		}
-		if err = plugin.createDefaultRoute(netLinkRoute, newRoute); err != nil {
+		err := plugin.createDefaultRoute(netLinkRoute, newRoute)
+		if err != nil {
 			plugin.Log.Error(err)
 			return err
 		}
 	} else {
 		if oldRoute.DstIpAddr != newRoute.Interface {
-			replace = false
+			replace = true
 		}
 		if err = plugin.createStaticRoute(netLinkRoute, newRoute); err != nil {
 			plugin.Log.Error(err)
@@ -185,12 +233,13 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 		}
 	}
 
+	// Static route will be removed and created anew
 	if replace {
-		return plugin.updateLinuxStaticRoute(netLinkRoute, newRoute)
+		return plugin.recreateLinuxStaticRoute(netLinkRoute, newRoute)
 	}
 
 	// Prepare namespace of related interface
-	nsMgmtCtx := linuxcalls2.NewNamespaceMgmtCtx()
+	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
 	routeNs := linuxcalls.ToGenericRouteNs(newRoute.Namespace)
 
 	// route has to be created in the same namespace as the interface
@@ -213,6 +262,11 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 
 	plugin.Log.Infof("Linux static route %v modified", newRoute.Name)
 
+	// Retry default routes if some of them is not configurable
+	if !newRoute.Default {
+		plugin.retryDefaultRoutes(newRoute)
+	}
+
 	return nil
 }
 
@@ -221,16 +275,31 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	plugin.Log.Infof("Removing linux static route %v", route.Name)
 	var err error
 
+	// Check if route is in cache waiting on interface
+	if _, _, found := plugin.rtCachedIfRoutes.LookupIdx(route.Name); found {
+		plugin.rtCachedIfRoutes.UnregisterName(route.Name)
+		plugin.Log.Debugf("Route %s removed from interface cache", route.Name)
+		return nil
+	}
+	// Check if route is in cache waiting for gateway address reachability
+	for key, cachedRoute := range plugin.rtCachedGwRoutes {
+		if cachedRoute.Name == route.Name {
+			delete(plugin.rtCachedGwRoutes, key)
+			plugin.Log.Debugf("Route %s removed from gw cache", route.Name)
+			return nil
+		}
+	}
+
 	// Prepare route object
 	netLinkRoute := &netlink.Route{}
 
 	if route.Interface != "" {
 		// Find interface
-		idx, _, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
-		if !foundIface {
+		_, ifData, foundIface := plugin.LinuxIfIdx.LookupIdx(route.Interface)
+		if !foundIface || ifData == nil {
 			return fmt.Errorf("cannot delete static route %v, interface %v not found", route.Name, route.Interface)
 		}
-		netLinkRoute.LinkIndex = int(idx)
+		netLinkRoute.LinkIndex = int(ifData.Index)
 	}
 
 	// Destination IP address
@@ -261,11 +330,9 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	// Scope
 	netLinkRoute.Scope = plugin.parseRouteScope(route.Scope)
 
-	// Prepare namespace of related interface
-	nsMgmtCtx := linuxcalls2.NewNamespaceMgmtCtx()
+	// Prepare and switch to the namespace where the route belongs
+	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
 	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
-
-	// route has to be created in the same namespace as the interface
 	revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
 	if err != nil {
 		plugin.Log.Error(err)
@@ -290,40 +357,18 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	return nil
 }
 
-// LookupLinuxRoutes reads all routes and registers them if needed
-func (plugin *LinuxRouteConfigurator) LookupLinuxRoutes() error {
-	plugin.Log.Infof("Browsing Linux routes")
-
-	// read all routes
-	routes, err := linuxcalls.ReadStaticRoutes(nil, noFamilyFilter, plugin.Log, nil)
-	if err != nil {
-		plugin.Log.Error(err)
-		return err
-	}
-	for _, rt := range routes {
-		plugin.Log.WithField("interface", rt.LinkIndex).Debugf("Found new static linux route")
-		_, _, found := plugin.rtIndexes.LookupIdx(routeIdentifier(&rt))
-		if !found {
-			plugin.rtIndexes.RegisterName(routeIdentifier(&rt), plugin.RouteIdxSeq, nil)
-			plugin.RouteIdxSeq++
-			plugin.Log.Debugf("route registered as %v", routeIdentifier(&rt))
-		}
-	}
-
-	return nil
-}
-
-// ResolveCreatedInterface manages cached static routes for new interface
+// ResolveCreatedInterface manages static routes for new interface. Linux interface also creates its own route which
+// can make other routes accessible and ready to create - the case is also resolved here.
 func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index uint32) error {
-	plugin.Log.Infof("Linux static route configurator: resolve new interface %v", name)
+	plugin.Log.Infof("Linux static route configurator: resolve new interface %v (idx %d)", name, index)
 
 	// Search mapping for cached routes using the new interface
-	cachedRoutes := plugin.rtCachedIndexes.LookupNamesByInterface(name)
+	cachedRoutes := plugin.rtCachedIfRoutes.LookupNamesByInterface(name)
 	if len(cachedRoutes) > 0 {
 		plugin.Log.Debugf("Found %v cached routes for interface %v", len(cachedRoutes), name)
-		// store default routes, they have to be configured as the last ones
+		// Store default routes, they have to be configured as the last ones
 		var defRoutes []*l3.LinuxStaticRoutes_Route
-		// static routes
+		// Static routes
 		for _, cachedRoute := range cachedRoutes {
 			if cachedRoute.Default {
 				defRoutes = append(defRoutes, cachedRoute)
@@ -334,33 +379,38 @@ func (plugin *LinuxRouteConfigurator) ResolveCreatedInterface(name string, index
 				return err
 			}
 			// Remove from cache
-			plugin.rtCachedIndexes.UnregisterName(cachedRoute.Name)
+			plugin.rtCachedIfRoutes.UnregisterName(cachedRoute.Name)
 		}
-		// default routes
+		// Default routes
 		for _, cachedDefaultRoute := range defRoutes {
 			if err := plugin.ConfigureLinuxStaticRoute(cachedDefaultRoute); err != nil {
 				plugin.Log.Warn(err)
 				return err
 			}
 			// Remove from cache
-			plugin.rtCachedIndexes.UnregisterName(cachedDefaultRoute.Name)
+			plugin.rtCachedIfRoutes.UnregisterName(cachedDefaultRoute.Name)
 		}
 	}
 
-	return nil
+	// Interface also created its own route, so try to re-configure default routes
+	err := plugin.processAutoRoutes(name, index)
+	if err != nil {
+		plugin.Log.Error(err)
+	}
+	return err
 }
 
 // ResolveDeletedInterface manages static routes for removed interface
 func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index uint32) error {
-	plugin.Log.Infof("Linux static route configurator: resolve deleted interface %v", name)
+	plugin.Log.Infof("Linux static route configurator: resolve deleted interface %v (idx %d)", name, index)
 
-	// Search mapping for configured application namespaces using the new interface
+	// Search mapping for configured linux routes using the new interface
 	confRoutes := plugin.rtIndexes.LookupNamesByInterface(name)
 	if len(confRoutes) > 0 {
 		plugin.Log.Debugf("Found %v routes belonging to the removed interface %v", len(confRoutes), name)
 		for _, rt := range confRoutes {
 			// Add to un-configured. If the interface will be recreated, all routes are configured back
-			plugin.rtCachedIndexes.RegisterName(rt.Name, plugin.RouteIdxSeq, rt)
+			plugin.rtCachedIfRoutes.RegisterName(rt.Name, plugin.RouteIdxSeq, rt)
 			plugin.RouteIdxSeq++
 		}
 	}
@@ -369,8 +419,14 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 }
 
 // Create default route object with gateway address. Destination address has to be set in such a case
-func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
-	var err error
+func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) (err error) {
+	// Gateway
+	gateway := net.ParseIP(route.GwAddr)
+	if gateway == nil {
+		fmt.Errorf("unable to create route %v as default, gateway is nil", route.Name)
+	}
+	netLinkRoute.Gw = gateway
+
 	// Destination address
 	dstIPAddr := route.DstIpAddr
 	if dstIPAddr == "" {
@@ -385,13 +441,6 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 		plugin.Log.Error(err)
 		return err
 	}
-
-	// Gateway
-	gateway := net.ParseIP(route.GwAddr)
-	if gateway == nil {
-		return fmt.Errorf("unable to create route %v as default, gateway is nil", route.Name)
-	}
-	netLinkRoute.Gw = gateway
 
 	// Priority
 	if route.Metric != 0 {
@@ -456,9 +505,10 @@ func (plugin *LinuxRouteConfigurator) createStaticRoute(netLinkRoute *netlink.Ro
 }
 
 // Update linux static route using modify (analogy to 'ip route replace')
-func (plugin *LinuxRouteConfigurator) updateLinuxStaticRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
+func (plugin *LinuxRouteConfigurator) recreateLinuxStaticRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) error {
+	plugin.Log.Debugf("Route %s modification caused the route to be removed and crated again", route.Name)
 	// Prepare namespace of related interface
-	nsMgmtCtx := linuxcalls2.NewNamespaceMgmtCtx()
+	nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
 	routeNs := linuxcalls.ToGenericRouteNs(route.Namespace)
 
 	// route has to be created in the same namespace as the interface
@@ -473,6 +523,182 @@ func (plugin *LinuxRouteConfigurator) updateLinuxStaticRoute(netLinkRoute *netli
 	return linuxcalls.ModifyStaticRoute(route.Name, netLinkRoute, plugin.Log, measure.GetTimeLog("modify-linux-route", plugin.Stopwatch))
 }
 
+// Tries to configure again cached default/gateway routes (as a reaction to the new route)
+func (plugin *LinuxRouteConfigurator) retryDefaultRoutes(route *l3.LinuxStaticRoutes_Route) {
+	plugin.Log.Debug("Retrying to configure default routes")
+	for gwIP, defRoute := range plugin.rtCachedGwRoutes {
+		// Filter routes from different namespaces
+		if defRoute.Namespace != nil && route.Namespace == nil || defRoute.Namespace == nil && route.Namespace != nil {
+			continue
+		}
+		if defRoute.Namespace != nil && route.Namespace != nil && defRoute.Namespace.Name != route.Namespace.Name {
+			continue
+		}
+
+		// Parse gateway and default address
+		gwIPParsed := net.ParseIP(gwIP)
+		_, dstNet, err := net.ParseCIDR(route.DstIpAddr)
+		if err != nil {
+			plugin.Log.Errorf("Error parsing IP address %s: %v", route.DstIpAddr, err)
+			continue
+		}
+
+		if dstNet.Contains(gwIPParsed) {
+			// Default/Gateway route can be now configured
+			if err := plugin.ConfigureLinuxStaticRoute(defRoute); err != nil {
+				plugin.Log.Errorf("Error while configuring route %s: %v", route.Name, err)
+			}
+			delete(plugin.rtCachedGwRoutes, gwIP)
+		} else {
+			plugin.Log.Warnf("%v is not within %v", gwIP, dstNet.IP)
+		}
+	}
+}
+
+// Handles automatic route created by adding interface. Method look for routes related to the interface and its
+// IP address in its namespace.
+// Note: read route's destination address does not contain mask. This value is determined from interfaces' IP address.
+// Automatic routes are store in separate mapping and their names are generated.
+func (plugin *LinuxRouteConfigurator) processAutoRoutes(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("Processing automatic interfaces for %s", ifName)
+	// Look for metadata
+	_, ifData, found := plugin.LinuxIfIdx.LookupIdx(ifName)
+	if !found {
+		return fmt.Errorf("interface %s not found in the mapping", ifName)
+	}
+	if ifData == nil || ifData.Data == nil {
+		return fmt.Errorf("interface %s data not found in the mapping", ifName)
+	}
+
+	// Move to interface with the interface
+	if ifData.Data.Namespace != nil {
+		nsMgmtCtx := if_linuxcalls.NewNamespaceMgmtCtx()
+		// Switch to namespace
+		ifNs := linuxcalls.ToGenericIfNs(ifData.Data.Namespace)
+		revertNs, err := ifNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+		if err != nil {
+			return fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
+				ifData.Data.Name, ifData.Data.Namespace.Name, err)
+		}
+		defer revertNs()
+	}
+
+	// Get interface
+	link, err := netlink.LinkByName(ifData.Data.HostIfName)
+	if err != nil {
+		return fmt.Errorf("cannot read linux interface %s (host %v): %v", ifName, ifData.Data.HostIfName, err)
+	}
+
+	// Read all routes belonging to the interface
+	linuxRts, err := netlink.RouteList(link, netlink.FAMILY_ALL)
+	if err != nil {
+		return fmt.Errorf("cannot read linux routes for interface %s (host %s): %v", ifName, ifData.Data.HostIfName, err)
+	}
+
+	// Iterate over link addresses and look for ones related to t
+	for rtIdx, linuxRt := range linuxRts {
+		if linuxRt.Dst == nil {
+			continue
+		}
+		route := plugin.transformRoute(linuxRt, ifData.Data.HostIfName)
+		// Route's destination address is read without mask. Use interface data to fill it.
+		var routeFound bool
+		for ipIdx, ifIP := range ifData.Data.IpAddresses {
+			_, ifDst, err := net.ParseCIDR(ifIP)
+			if err != nil {
+				return err
+			}
+			if bytes.Compare(linuxRt.Dst.IP, ifDst.IP) == 0 {
+				// Transform destination IP and namespace
+				route.DstIpAddr = ifData.Data.IpAddresses[ipIdx]
+				route.Namespace = transformNamespace(ifData.Data.Namespace)
+				routeFound = true
+			}
+		}
+		if !routeFound {
+			plugin.Log.Debugf("Route with IP %s skipped", linuxRt.Dst.IP.String())
+			continue
+		}
+		// Generate name
+		route.Name = ifName + strconv.Itoa(rtIdx)
+		// In case there is obsolete route with the same name, remove it
+		plugin.rtAutoIndexes.UnregisterName(route.Name)
+		plugin.rtAutoIndexes.RegisterName(route.Name, plugin.RouteIdxSeq, route)
+		plugin.RouteIdxSeq++
+
+		// Also try to configure default routes
+		plugin.retryDefaultRoutes(route)
+	}
+
+	return nil
+}
+
+// Transform linux netlink route type to proto message type
+func (plugin *LinuxRouteConfigurator) transformRoute(linuxRt netlink.Route, ifName string) *l3.LinuxStaticRoutes_Route {
+	var dstAddr, srcAddr, gwAddr string
+	// Destination address
+	if linuxRt.Dst != nil {
+		// Transform only IP (without mask)
+		dstAddr = linuxRt.Dst.IP.String()
+	}
+	// Source address
+	if linuxRt.Src != nil {
+		srcAddr = linuxRt.Src.String()
+	}
+	// Gateway address
+	if linuxRt.Gw != nil {
+		gwAddr = linuxRt.Gw.String()
+	}
+
+	if dstAddr == "" || dstAddr == ipv4AddrAny || dstAddr == ipv6AddrAny {
+		// Default route
+		return &l3.LinuxStaticRoutes_Route{
+			Default:   true,
+			Interface: ifName,
+			GwAddr:    gwAddr,
+			Metric:    uint32(linuxRt.Priority),
+		}
+	}
+	// Static route
+	return &l3.LinuxStaticRoutes_Route{
+		Interface: ifName,
+		DstIpAddr: dstAddr,
+		SrcIpAddr: srcAddr,
+		GwAddr:    gwAddr,
+		Scope:     plugin.parseLinuxRouteScope(linuxRt.Scope),
+		Metric:    uint32(linuxRt.Priority),
+		Table:     uint32(linuxRt.Table),
+	}
+}
+
+// Interface namespace type -> route namespace type
+func transformNamespace(ifNs *interfaces.LinuxInterfaces_Interface_Namespace) *l3.LinuxStaticRoutes_Route_Namespace {
+	if ifNs == nil {
+		return nil
+	}
+	return &l3.LinuxStaticRoutes_Route_Namespace{
+		Type: func(ifType interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType) l3.LinuxStaticRoutes_Route_Namespace_NamespaceType {
+			switch ifType {
+			case interfaces.LinuxInterfaces_Interface_Namespace_PID_REF_NS:
+				return l3.LinuxStaticRoutes_Route_Namespace_PID_REF_NS
+			case interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS:
+				return l3.LinuxStaticRoutes_Route_Namespace_MICROSERVICE_REF_NS
+			case interfaces.LinuxInterfaces_Interface_Namespace_NAMED_NS:
+				return l3.LinuxStaticRoutes_Route_Namespace_NAMED_NS
+			case interfaces.LinuxInterfaces_Interface_Namespace_FILE_REF_NS:
+				return l3.LinuxStaticRoutes_Route_Namespace_FILE_REF_NS
+			default:
+				return l3.LinuxStaticRoutes_Route_Namespace_PID_REF_NS
+			}
+		}(ifNs.Type),
+		Pid:          ifNs.Pid,
+		Microservice: ifNs.Microservice,
+		Name:         ifNs.Name,
+		Filepath:     ifNs.Filepath,
+	}
+}
+
+// Agent route scope -> netlink route scope
 func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoutes_Route_Scope) netlink.Scope {
 	if scope == nil {
 		plugin.Log.Info("Scope type not defined, seting to default (link)")
@@ -491,6 +717,24 @@ func (plugin *LinuxRouteConfigurator) parseRouteScope(scope *l3.LinuxStaticRoute
 		plugin.Log.Infof("Unknown scope type, setting to default (link): %v", scope.Type)
 		return netlink.SCOPE_LINK
 	}
+}
+
+// Verifies whether address network is reachable.
+func (plugin *LinuxRouteConfigurator) networkReachable(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) bool {
+	// Try for registered configuration routes
+	registeredRoute, err := plugin.rtIndexes.LookupRouteByIP(ns, ipAddress)
+	if err != nil {
+		plugin.Log.Errorf("Failed to resolve accessibility of %s (registered): %v", ipAddress, err)
+	}
+	// Try for registered automatic (interface-added) routes
+	autoRoute, err := plugin.rtAutoIndexes.LookupRouteByIP(ns, ipAddress)
+	if err != nil {
+		plugin.Log.Errorf("Failed to resolve accessibility of %s (auto): %v", ipAddress, err)
+	}
+	if registeredRoute != nil || autoRoute != nil {
+		return true
+	}
+	return false
 }
 
 func routeIdentifier(route *netlink.Route) string {

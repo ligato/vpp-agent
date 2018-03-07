@@ -18,6 +18,11 @@ def write_stderr(msg):
 
 def main():
     while 1:
+        # do not kill supervisor if retained
+        retain = os.environ['RETAIN_SUPERVISOR']
+        if retain=='true' or retain=='True':
+            write_stdout('\nSupervisor will be preserved\n')
+            continue
         # transition from ACKNOWLEDGED to READY
         write_stdout('READY\n')
 

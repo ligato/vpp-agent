@@ -94,8 +94,8 @@ Add L2XConnect1 for Memif and Loopback1
 
 Check L2XConnect1 Memif and Loopback1 in XConnect mode
     ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Should Contain     ${out}      l2 xconnect memif0/1 loop0
-    Should Contain     ${out}      l2 xconnect loop0 memif0/1
+    Should Contain     ${out}      l2 xconnect memif1/1 loop0
+    Should Contain     ${out}      l2 xconnect loop0 memif1/1
 
 Add L2XConnect2 for Tap and Loopback2
     vpp_ctl: Put L2XConnect  agent_vpp_1    vpp1_tap1    vpp1_loop2
@@ -103,8 +103,8 @@ Add L2XConnect2 for Tap and Loopback2
 
 Check L2XConnect2 and L2XConnect1 still configured
     ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Should Contain     ${out}      l2 xconnect memif0/1 loop0
-    Should Contain     ${out}      l2 xconnect loop0 memif0/1
+    Should Contain     ${out}      l2 xconnect memif1/1 loop0
+    Should Contain     ${out}      l2 xconnect loop0 memif1/1
     Should Contain     ${out}      l2 xconnect tapcli-0 loop1
     Should Contain     ${out}      l2 xconnect loop1 tapcli-0
 
@@ -119,7 +119,7 @@ Check L2XConnect1 Modified and L2XConnect2 still configured
     Should Contain     ${out}      l2 xconnect loop0 vxlan_tunnel0
     Should Contain     ${out}      l2 xconnect tapcli-0 loop1
     Should Contain     ${out}      l2 xconnect loop1 tapcli-0
-    Should Contain     ${out}      l3 memif0/1
+    Should Contain     ${out}      l3 memif1/1
 
 Delete L2XConnect1
     vpp_ctl: Delete L2XConnect      agent_vpp_1    vpp1_vxlan1
@@ -127,7 +127,7 @@ Delete L2XConnect1
 
 Check L2XConnect1 Deleted and L2XConnect2 still configured
     ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Should Contain     ${out}      l3 memif0/1
+    Should Contain     ${out}      l3 memif1/1
     Should Contain     ${out}      l3 loop0
     Should Contain     ${out}      l3 vxlan_tunnel0
     Should Contain     ${out}      l2 xconnect tapcli-0 loop1
@@ -140,7 +140,7 @@ Delete L2XConnect2
 
 Check L2XConnect1 and L2XConnect2 Deleted
     ${out}=      vpp_term: Show Interface Mode    agent_vpp_1
-    Should Contain     ${out}      l3 memif0/1
+    Should Contain     ${out}      l3 memif1/1
     Should Contain     ${out}      l3 loop0
     Should Contain     ${out}      l3 vxlan_tunnel0
     Should Contain     ${out}      l3 tapcli-0

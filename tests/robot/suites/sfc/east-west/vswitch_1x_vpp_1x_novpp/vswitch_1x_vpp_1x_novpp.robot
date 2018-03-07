@@ -39,11 +39,12 @@ Check Ping Agent1 -> VPP2
 
 Remove Agent Nodes
     Remove All Nodes
-
+    Sleep     ${SYNC_SLEEP}
 Start Agent Nodes Again
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
     Add Agent Node    agent_1
+    Sleep    ${SYNC_SLEEP}
     Sleep    ${SYNC_SLEEP}
 
 Check Interfaces After Resync
@@ -55,13 +56,6 @@ Check Ping VPP2 -> Agent1 After Resync
 Check Ping Agent1 -> VPP2 After Resync
     linux: Check Ping    agent_1    10.0.0.1
 
-Done
-    [Tags]    debug
-    No Operation
-
-Final Sleep For Manual Checking
-    [Tags]    debug
-    Sleep   ${FINAL_SLEEP}
 
 *** Keywords ***
 
