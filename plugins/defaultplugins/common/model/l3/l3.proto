@@ -33,19 +33,19 @@ message ArpTable {
 
 /* Proxy ARP ranges */
 message ProxyArpRanges {
-    message ProxyArpRange {
-        string range_ip_start = 1;                  /* low (starting) IP address of the proxy ARP range */
-        string range_ip_end = 2;                    /* high (last) IP address of the proxy ARP range  */
+    message Range {
+        string first_ip = 1;                /* first (starting) IP address of the proxy ARP range */
+        string last_ip = 2;                 /* last (ending) IP address of the proxy ARP range  */
     }
-    repeated ProxyArpRange proxy_arp_ranges = 100;  /* list of proxy arp ranges */
+    repeated Range ranges = 100;            /* list of proxy arp ranges */
 }
 
 /* Proxy ARP interfaces */
 message ProxyArpInterfaces {
-    message ProxyArpInterface {
-        string interface = 1;                               /* interface name */
+    message Interface {
+        string interface = 1;               /* name of the interface proxy arp is enabled for */
     }
-    repeated ProxyArpInterface proxy_arp_interfaces = 100;  /* list of proxy arp-enabled interfaces */
+    repeated Interface interfaces = 100;    /* list of proxy ARP-enabled interfaces */
 }
 
 /* STN (Steal The NIC) feature table */
