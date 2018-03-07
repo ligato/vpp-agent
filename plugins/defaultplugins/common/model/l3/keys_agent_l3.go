@@ -32,13 +32,13 @@ const (
 	// ArpEntryPrefix is the relative key prefix for ARP table entries.
 	ArpKey = ArpPrefix + "{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
-	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
+	ProxyARPRangePrefix = "vpp/config/v1/proxyarp/range/"
+	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
+	ProxyARPInterfacePrefix = "vpp/config/v1/proxyarp/interface/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
-	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
+	ProxyARPRangeKey = ProxyARPRangePrefix + "{first}/{last}"
 	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
-	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
-	// STNPrefix is the relative key prefix for STN entries.
-	STNPrefix = "vpp/config/v1/stn/{ip}"
+	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{if}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance.
@@ -54,6 +54,16 @@ func RouteKeyPrefix() string {
 // ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance.
 func ArpKeyPrefix() string {
 	return ArpPrefix
+}
+
+// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR ranges for vpp instance.
+func ProxyArpRangePrefix() string {
+	return ProxyARPRangePrefix
+}
+
+// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR interfaces for vpp instance.
+func ProxyArpInterfacePrefix() string {
+	return ProxyARPInterfacePrefix
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
@@ -102,4 +112,35 @@ func ParseArpKey(key string) (iface string, ipAddr string, err error) {
 		}
 	}
 	return "", "", fmt.Errorf("invalid ARP key")
+}
+
+func ProxyArpRangeKey(firstIP, lastIP string) string {
+	key := ProxyARPRangeKey
+	key = strings.Replace(key, "{first}", firstIP, 1)
+	key = strings.Replace(key, "{last}", lastIP, 1)
+	return key
+}
+
+func ParseProxyArpRangeKey(key string) (firstIP, lastIP string) {
+	if strings.HasPrefix(key, ProxyARPRangePrefix) {
+		suffix := strings.TrimPrefix(key, ProxyARPRangePrefix)
+		ips := strings.Split(suffix, "/")
+		if len(ips) == 2 {
+			return ips[0], ips[1]
+		}
+	}
+	return
+}
+
+func ProxyArpInterfaceKey(ifName string) string {
+	key := ProxyARPInterfaceKey
+	key = strings.Replace(key, "{inf}", ifName, 1)
+	return key
+}
+
+func ParseProxyArpInterfaceKey(key string) (ifName string) {
+	if strings.HasPrefix(key, ProxyARPInterfacePrefix) {
+		ifName = strings.TrimPrefix(key, ProxyARPInterfacePrefix)
+	}
+	return
 }
