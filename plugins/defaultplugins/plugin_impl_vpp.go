@@ -141,7 +141,8 @@ type Plugin struct {
 
 	// L3 proxy arp fields
 	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
-	proxyArpIndices      l3idx.ARPIndexRW
+	proxyArpIfIndices      l3idx.ARPIndexRW
+	proxyArpRngIndices		l3idx.ARPIndexRW
 
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
@@ -712,8 +713,10 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	}
 
 	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
-	// Proxy ARP configuration indices
-	plugin.proxyArpIndices = l3idx.NewARPIndex(nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_indices", nil))
+	// Proxy ARP interface configuration indices
+	plugin.proxyArpIfIndices = l3idx.NewARPIndex(nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_if_indices", nil))
+	// Proxy ARP range configuration indices
+	plugin.proxyArpRngIndices = l3idx.NewARPIndex(nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_rng_indices", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
@@ -721,7 +724,8 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{
 		Log:             proxyArpLogger,
 		GoVppmux:        plugin.GoVppmux,
-		ProxyArpIndices: plugin.proxyArpIndices,
+		ProxyArpIfIndices: plugin.proxyArpIfIndices,
+		ProxyArpRngIndices: plugin.proxyArpRngIndices,
 		ARPIndexSeq:     1,
 		SwIfIndexes:     plugin.swIfIndexes,
 		Stopwatch:       stopwatch,

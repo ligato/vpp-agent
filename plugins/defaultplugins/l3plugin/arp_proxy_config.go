@@ -34,8 +34,10 @@ type ProxyArpConfigurator struct {
 
 	GoVppmux govppmux.API
 
-	// ARPIndexes is a list of ARP entries which are successfully configured on the VPP
-	ProxyArpIndices l3idx.ARPIndexRW
+	// ProxyArpIndices is a list of proxy ARP interface entries which are successfully configured on the VPP
+	ProxyArpIfIndices l3idx.ARPIndexRW
+	// ProxyArpRngIndices is a list of proxy ARP range entries which are successfully configured on the VPP
+	ProxyArpRngIndices l3idx.ARPIndexRW
 
 	ARPIndexSeq uint32
 	SwIfIndexes ifaceidx.SwIfIndex
