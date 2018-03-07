@@ -121,26 +121,8 @@ func ProxyArpRangeKey(firstIP, lastIP string) string {
 	return key
 }
 
-func ParseProxyArpRangeKey(key string) (firstIP, lastIP string) {
-	if strings.HasPrefix(key, ProxyARPRangePrefix) {
-		suffix := strings.TrimPrefix(key, ProxyARPRangePrefix)
-		ips := strings.Split(suffix, "/")
-		if len(ips) == 2 {
-			return ips[0], ips[1]
-		}
-	}
-	return
-}
-
 func ProxyArpInterfaceKey(ifName string) string {
 	key := ProxyARPInterfaceKey
 	key = strings.Replace(key, "{inf}", ifName, 1)
 	return key
-}
-
-func ParseProxyArpInterfaceKey(key string) (ifName string) {
-	if strings.HasPrefix(key, ProxyARPInterfacePrefix) {
-		ifName = strings.TrimPrefix(key, ProxyARPInterfacePrefix)
-	}
-	return
 }
