@@ -325,6 +325,30 @@ vpp_term: Add Trace Memif
     ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input 10
     [Return]           ${out}
 
+
+vpp_term: Show STN Rules
+    [Arguments]        ${node}
+    [Documentation]    Show STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   show stn rules
+    [Return]           ${out}
+
+vpp_term: Check STN Rule State
+    [Arguments]        ${node}  ${interface}  ${ipv4}
+    Log Many    ${node}    ${ipv4}
+    [Documentation]    Check STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Show STN Rules    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    Log                ${internal_name}
+    ${ip_address}  ${iface}  ${next_node}  Parse STN Rule    ${out}
+    Log                ${ip_address}
+    Should Be Equal As Strings   ${ipv4}  ${ip_address}
+    Log                ${iface}
+    Should Be Equal As Strings   ${internal_name}  ${iface}
+    Log                ${next_node}
+    
 vpp_term: Add Trace Afpacket
     [Arguments]        ${node}
     [Documentation]    vpp_term: Add Trace for afpacket interfaces
@@ -356,4 +380,3 @@ vpp_term: Dump Trace
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}    api trace save apitrace.trc
     [Return]           ${out}
-

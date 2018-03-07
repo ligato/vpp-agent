@@ -636,3 +636,21 @@ vpp_ctl: Put TAPv2 Interface With IP
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+
+vpp_ctl: Put STN Rule
+    [Arguments]    ${node}    ${interface}    ${ip}    ${rule_name}
+    Log Many    ${node}    ${interface}    ${ip}    ${rule_name}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/stn_rule.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/stn/rules/${rule_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete STN Rule
+    [Arguments]    ${node}    ${rule_name}
+    Log Many     ${node}    ${rule_name}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/stn/rules/${rule_name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}
