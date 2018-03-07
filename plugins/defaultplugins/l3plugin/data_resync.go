@@ -110,3 +110,13 @@ func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpTableEntry) e
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp end. ", wasError)
 	return nil
 }
+
+// Resync confgures the empty VPP (overwrites the proxy arp entries)
+func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyArpInterfaces_Interface) error {
+	return nil
+}
+
+// Resync confgures the empty VPP (overwrites the proxy arp ranges)
+func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArpRanges_Range) error {
+	return nil
+}

@@ -18,6 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -48,5 +49,29 @@ func (plugin *ProxyArpConfigurator) Init() error {
 }
 
 func (plugin *ProxyArpConfigurator) Close() error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_Interface) error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.ProxyArpInterfaces_Interface) error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) DeleteInterface(pArpIf *l3.ProxyArpInterfaces_Interface) error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_Range) error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.ProxyArpRanges_Range) error {
+	return nil
+}
+
+func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_Range) error {
 	return nil
 }
