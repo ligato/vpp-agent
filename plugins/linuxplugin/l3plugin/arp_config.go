@@ -24,9 +24,9 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
-	common "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 )
 
@@ -41,6 +41,8 @@ const (
 // are applied through the Netlink AP
 type LinuxArpConfigurator struct {
 	Log logging.Logger
+
+	NsHandler *nsplugin.NsHandler
 
 	LinuxIfIdx ifaceidx.LinuxIfIndexRW
 	ArpIdxSeq  uint32
@@ -123,11 +125,11 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	neigh.Family = getIPFamily(arpEntry.IpFamily)
 
 	// Prepare namespace of related interface
-	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericArpNs(arpEntry.Namespace)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	arpNs := plugin.NsHandler.ArpNsToGeneric(arpEntry.Namespace)
 
 	// ARP entry has to be created in the same namespace as the interface
-	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(arpNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -160,8 +162,8 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	// ModifyArpEntry (analogy to 'ip neigh replace') would create a new entry instead of modifying the existing one
 	callReplace := true
 
-	oldArpNs := linuxcalls.ToGenericArpNs(oldArpEntry.Namespace)
-	newArpNs := linuxcalls.ToGenericArpNs(newArpEntry.Namespace)
+	oldArpNs := plugin.NsHandler.ArpNsToGeneric(oldArpEntry.Namespace)
+	newArpNs := plugin.NsHandler.ArpNsToGeneric(newArpEntry.Namespace)
 	result := oldArpNs.CompareNamespaces(newArpNs)
 	if result != 0 || oldArpEntry.Interface != newArpEntry.Interface || oldArpEntry.IpAddr != newArpEntry.IpAddr {
 		callReplace = false
@@ -208,11 +210,11 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	neigh.Family = getIPFamily(newArpEntry.IpFamily)
 
 	// Prepare namespace of related interface
-	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericArpNs(newArpEntry.Namespace)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	arpNs := plugin.NsHandler.ArpNsToGeneric(newArpEntry.Namespace)
 
 	// ARP entry has to be created in the same namespace as the interface
-	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(arpNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		return err
 	}
@@ -256,11 +258,11 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	neigh.IP = ipAddr
 
 	// Prepare namespace of related interface
-	nsMgmtCtx := common.NewNamespaceMgmtCtx()
-	arpNs := linuxcalls.ToGenericArpNs(arpEntry.Namespace)
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
+	arpNs := plugin.NsHandler.ArpNsToGeneric(arpEntry.Namespace)
 
 	// ARP entry has to be removed from the same namespace as the interface
-	revertNs, err := arpNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.NsHandler.SwitchNamespace(arpNs, nsMgmtCtx, plugin.Log)
 	if err != nil {
 		return err
 	}

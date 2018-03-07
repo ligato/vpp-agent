@@ -22,8 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 )
 
@@ -71,7 +70,7 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 		}
 	}()
 
-	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// First step is to find a linux equivalent for NB route config
 	for _, nbRoute := range nbRoutes {
@@ -147,14 +146,14 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 
 // Look for routes similar to provided NB config in respective namespace. Routes can be read using destination address
 // or interface. FOr every config, both ways are used.
-func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRoutes_Route, nsMgmtCtx *linuxcalls.NamespaceMgmtCtx) ([]netlink.Route, error) {
+func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRoutes_Route, nsMgmtCtx *nsplugin.NamespaceMgmtCtx) ([]netlink.Route, error) {
 	plugin.Log.Debugf("Looking for equivalent linux routes for %s", nbRoute.Name)
 
 	// Move to proper namespace
 	if nbRoute.Namespace != nil {
 		// Switch to namespace
-		routeNs := l3linuxcalls.ToGenericRouteNs(nbRoute.Namespace)
-		revertNs, err := routeNs.SwitchNamespace(nsMgmtCtx, plugin.Log)
+		routeNs := plugin.NsHandler.RouteNsToGeneric(nbRoute.Namespace)
+		revertNs, err := plugin.NsHandler.SwitchNamespace(routeNs, nsMgmtCtx, plugin.Log)
 		if err != nil {
 			return nil, fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
 				nbRoute.Name, nbRoute.Namespace.Name, err)

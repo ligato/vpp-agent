@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/flavors/local"
@@ -42,7 +43,7 @@ const PluginID core.PluginName = "linuxplugin"
 type Plugin struct {
 	Deps
 
-	// interfaces
+	// Interfaces
 	ifIndexes           ifaceidx.LinuxIfIndexRW
 	ifConfigurator      *ifplugin.LinuxInterfaceConfigurator
 	ifIndexesWatchChan  chan ifaceidx.LinuxIfIndexDto
@@ -55,15 +56,20 @@ type Plugin struct {
 	arpIndexes      l3idx.LinuxARPIndexRW
 	arpConfigurator *l3plugin.LinuxArpConfigurator
 
-	// static routes
+	// Static routes
 	rtIndexes         l3idx.LinuxRouteIndexRW
 	rtAutoIndexes     l3idx.LinuxRouteIndexRW
 	rtCachedIndexes   l3idx.LinuxRouteIndexRW
 	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
+	// Namespaces
+	nsHandler           *nsplugin.NsHandler
+	ifMicroserviceNotif chan *nsplugin.MicroserviceEvent
+
+	// Resync
 	resyncChan chan datasync.ResyncEvent
 	changeChan chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
-	msChan     chan *ifplugin.MicroserviceCtx
+	msChan     chan *nsplugin.MicroserviceCtx
 
 	watchDataReg datasync.WatchRegistration
 
@@ -125,7 +131,8 @@ func (plugin *Plugin) Init() error {
 	plugin.ifStateChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
-	plugin.msChan = make(chan *ifplugin.MicroserviceCtx)
+	plugin.msChan = make(chan *nsplugin.MicroserviceCtx)
+	plugin.ifMicroserviceNotif = make(chan *nsplugin.MicroserviceEvent, 100)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
 
 	// Create plugin context and save cancel function into the plugin handle.
@@ -134,6 +141,11 @@ func (plugin *Plugin) Init() error {
 
 	// Run event handler go routines
 	go plugin.watchEvents(ctx)
+
+	err = plugin.initNs()
+	if err != nil {
+		return err
+	}
 
 	err = plugin.initIF(ctx)
 	if err != nil {
@@ -146,6 +158,16 @@ func (plugin *Plugin) Init() error {
 	}
 
 	return plugin.subscribeWatcher()
+}
+
+// Initialize namespace handler plugin
+func (plugin *Plugin) initNs() error {
+	plugin.Log.Infof("Init Linux namespace handler")
+	nsLogger := plugin.Log.NewLogger("-ns-handler")
+	plugin.nsHandler = &nsplugin.NsHandler{
+		Log: nsLogger,
+	}
+	return plugin.nsHandler.Init(plugin.msChan, plugin.ifMicroserviceNotif)
 }
 
 // Initialize linux interface plugin
@@ -163,11 +185,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{
 		Log:       linuxLogger,
+		NsHandler: plugin.nsHandler,
 		IfIndexes: plugin.ifIndexes,
 		IfIdxSeq:  1,
 		Stopwatch: stopwatch,
 	}
-	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.msChan); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.ifMicroserviceNotif); err != nil {
 		return err
 	}
 
@@ -195,6 +218,7 @@ func (plugin *Plugin) initL3() error {
 	}
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{
 		Log:        linuxARPLogger,
+		NsHandler:  plugin.nsHandler,
 		LinuxIfIdx: plugin.ifIndexes,
 		ArpIdxSeq:  1,
 		Stopwatch:  stopwatch}
@@ -217,6 +241,7 @@ func (plugin *Plugin) initL3() error {
 	}
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{
 		Log:         linuxRouteLogger,
+		NsHandler:   plugin.nsHandler,
 		LinuxIfIdx:  plugin.ifIndexes,
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}

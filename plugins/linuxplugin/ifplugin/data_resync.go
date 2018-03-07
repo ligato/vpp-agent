@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 )
 
@@ -58,7 +58,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 		}
 	}()
 
-	nsMgmtCtx := linuxcalls.NewNamespaceMgmtCtx()
+	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// Cache for interfaces modified later (interface name/link data)
 	linkMap := make(map[string]*LinuxDataPair)
@@ -188,12 +188,12 @@ func (plugin *LinuxInterfaceConfigurator) reconstructIfConfig(linuxIf netlink.Li
 func (plugin *LinuxInterfaceConfigurator) getLinuxInterfaces(linuxIf netlink.Link, ns *interfaces.LinuxInterfaces_Interface_Namespace) (addresses []string) {
 	// Move to proper namespace
 	if ns != nil {
-		if !plugin.isNamespaceAvailable(ns) {
+		if !plugin.NsHandler.IsNamespaceAvailable(ns) {
 			plugin.Log.Errorf("RESYNC Linux interface %s: namespace is not available", linuxIf.Attrs().Name)
 			return
 		}
 		// Switch to namespace
-		revertNs, err := plugin.switchToNamespace(linuxcalls.NewNamespaceMgmtCtx(), ns)
+		revertNs, err := plugin.NsHandler.SwitchToNamespace(nsplugin.NewNamespaceMgmtCtx(), ns)
 		if err != nil {
 			plugin.Log.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
 				linuxIf.Attrs().Name, ns.Name, err)
@@ -310,16 +310,16 @@ func (plugin *LinuxInterfaceConfigurator) isLinuxIfModified(nbIf, linuxIf *inter
 }
 
 // Looks for linux interface. Returns net.Link object if found
-func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.LinuxInterfaces_Interface, nsMgmtCtx *linuxcalls.NamespaceMgmtCtx) (netlink.Link, error) {
+func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.LinuxInterfaces_Interface, nsMgmtCtx *nsplugin.NamespaceMgmtCtx) (netlink.Link, error) {
 	plugin.Log.Debugf("Looking for Linux interface %v", nbIf.HostIfName)
 
 	// Move to proper namespace
 	if nbIf.Namespace != nil {
-		if !plugin.isNamespaceAvailable(nbIf.Namespace) {
+		if !plugin.NsHandler.IsNamespaceAvailable(nbIf.Namespace) {
 			return nil, fmt.Errorf("RESYNC Linux interface %s: namespace is not available", nbIf.HostIfName)
 		}
 		// Switch to namespace
-		revertNs, err := plugin.switchToNamespace(nsMgmtCtx, nbIf.Namespace)
+		revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, nbIf.Namespace)
 		if err != nil {
 			return nil, fmt.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
 				nbIf.HostIfName, nbIf.Namespace.Name, err)
