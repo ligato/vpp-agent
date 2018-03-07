@@ -317,7 +317,9 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 	// Move to proper namespace
 	if nbIf.Namespace != nil {
 		if !plugin.NsHandler.IsNamespaceAvailable(nbIf.Namespace) {
-			// Interface is not ready to be configured (not and error)
+			// Not and error
+			plugin.Log.Debugf("Interface %s is not ready to be configured, namespace %s is not available",
+				nbIf.Name, nbIf.Namespace.Name)
 			return nil, nil
 		}
 		// Switch to namespace
