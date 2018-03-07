@@ -43,8 +43,10 @@ Execute In VPP
     ${out}   ${stderr}=      Execute Command    ${DOCKER_COMMAND} exec -it ${container} vppctl ${command}    return_stderr=True
     Log                      ${out}
     Log                      ${stderr}
+    ${currdate}=             Get Current Date
     ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
     Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
-    Append To File           ${RESULTS_FOLDER}/output_${container}_term.log    *** Command: ${command}${\n}${out}${\n}*** Error: ${stderr}${\n}
+    Append To File           ${RESULTS_FOLDER}/output_${container}_term.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
+    Run Keyword If           ${status}==False      Append To File           ${RESULTS_FOLDER}/output_${container}_term.log      *** Error: ${stderr}${\n}
     [Return]                 ${out}
 

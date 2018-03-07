@@ -57,6 +57,7 @@ type Plugin struct {
 
 	// static routes
 	rtIndexes         l3idx.LinuxRouteIndexRW
+	rtAutoIndexes     l3idx.LinuxRouteIndexRW
 	rtCachedIndexes   l3idx.LinuxRouteIndexRW
 	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
@@ -160,8 +161,13 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", linuxLogger)
 	}
-	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{Log: linuxLogger, Stopwatch: stopwatch}
-	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.ifIndexes, plugin.msChan); err != nil {
+	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{
+		Log:       linuxLogger,
+		IfIndexes: plugin.ifIndexes,
+		IfIdxSeq:  1,
+		Stopwatch: stopwatch,
+	}
+	if err := plugin.ifConfigurator.Init(plugin.ifStateChan, plugin.msChan); err != nil {
 		return err
 	}
 
@@ -199,6 +205,8 @@ func (plugin *Plugin) initL3() error {
 	// Route indexes
 	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_route_indexes", nil))
+	plugin.rtAutoIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+		"linux_auto_route_indexes", nil))
 	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
 		"linux_cached_route_indexes", nil))
 
@@ -212,7 +220,7 @@ func (plugin *Plugin) initL3() error {
 		LinuxIfIdx:  plugin.ifIndexes,
 		RouteIdxSeq: 1,
 		Stopwatch:   stopwatch}
-	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtCachedIndexes)
+	return plugin.routeConfigurator.Init(plugin.rtIndexes, plugin.rtAutoIndexes, plugin.rtCachedIndexes)
 }
 
 // Close cleans up the resources.

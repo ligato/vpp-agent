@@ -95,8 +95,8 @@ Start Two Agents And Then Configure One With Non Default VRF
 
     Sleep    10
 
-    List of interfaces On agent_vpp_1 Should Contain Interface memif0
-    List of interfaces On agent_vpp_2 Should Contain Interface memif0
+    List of interfaces On agent_vpp_1 Should Contain Interface memif1/1
+    List of interfaces On agent_vpp_2 Should Contain Interface memif1/1
     IP Fib Table 2 On agent_vpp_2 Should Contain Route With IP 10.1.1.2/32
 
     # try ping
