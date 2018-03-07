@@ -139,6 +139,10 @@ type Plugin struct {
 	arpConfigurator *l3plugin.ArpConfigurator
 	arpIndexes      l3idx.ARPIndexRW
 
+	// L3 proxy arp fields
+	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
+	proxyArpIndices      l3idx.ARPIndexRW
+
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
 	namespaceIndexes    nsidx.AppNsIndexRW
@@ -707,6 +711,22 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		Stopwatch:   stopwatch,
 	}
 
+	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
+	// Proxy ARP configuration indices
+	plugin.proxyArpIndices = l3idx.NewARPIndex(nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_indices", nil))
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
+	}
+	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{
+		Log:             proxyArpLogger,
+		GoVppmux:        plugin.GoVppmux,
+		ProxyArpIndices: plugin.proxyArpIndices,
+		ARPIndexSeq:     1,
+		SwIfIndexes:     plugin.swIfIndexes,
+		Stopwatch:       stopwatch,
+	}
+
 	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
@@ -717,6 +737,11 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
+
+	if err := plugin.proxyArpConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("proxyArpConfigurator Initialized")
 
 	return nil
 }
@@ -813,7 +838,8 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.proxyArpConfigurator,
+		plugin.natConfigurator)
 
 	return err
 }
