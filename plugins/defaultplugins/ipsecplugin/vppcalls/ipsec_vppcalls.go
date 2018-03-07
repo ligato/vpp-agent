@@ -15,6 +15,7 @@
 package vppcalls
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"time"
@@ -148,17 +149,26 @@ func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, 
 		stopwatch.TimeLog(ipsec_api.IpsecSadAddDelEntry{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	cryptoKey, err := hex.DecodeString(sa.CryptoKey)
+	if err != nil {
+		return err
+	}
+	integKey, err := hex.DecodeString(sa.IntegKey)
+	if err != nil {
+		return err
+	}
+
 	req := &ipsec_api.IpsecSadAddDelEntry{
 		IsAdd:                     boolToUint(isAdd),
 		SadID:                     saID,
 		Spi:                       sa.Spi,
 		Protocol:                  uint8(sa.Protocol),
 		CryptoAlgorithm:           uint8(sa.CryptoAlg),
-		CryptoKey:                 []byte(sa.CryptoKey),
-		CryptoKeyLength:           uint8(len(sa.CryptoKey)),
+		CryptoKey:                 cryptoKey,
+		CryptoKeyLength:           uint8(len(cryptoKey)),
 		IntegrityAlgorithm:        uint8(sa.IntegAlg),
-		IntegrityKey:              []byte(sa.IntegKey),
-		IntegrityKeyLength:        uint8(len(sa.IntegKey)),
+		IntegrityKey:              integKey,
+		IntegrityKeyLength:        uint8(len(integKey)),
 		UseExtendedSequenceNumber: boolToUint(sa.UseEsn),
 		UseAntiReplay:             boolToUint(sa.UseAntiReplay),
 	}
