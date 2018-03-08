@@ -94,7 +94,7 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 	plugin.Log.Infof("Registered SPD %v (%d)", spd.Name, spdID)
 
 	for _, iface := range spd.Interfaces {
-		plugin.Log.Infof("Assigning SPD to interface %v", iface)
+		plugin.Log.Debugf("Assigning SPD to interface %v", iface)
 
 		swIfIdx, _, exists := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !exists {
@@ -140,8 +140,17 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 }
 
 // ModifySPD
-func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, spd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.Log.Debugf("Modifying SPD %v", spd.Name)
+func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, newSpd *ipsec.SecurityPolicyDatabases_SPD) error {
+	plugin.Log.Debugf("Modifying SPD %v", oldSpd.Name)
+
+	if err := plugin.DeleteSPD(oldSpd); err != nil {
+		plugin.Log.Error("deleting old SPD failed:", err)
+		return err
+	}
+	if err := plugin.ConfigureSPD(newSpd); err != nil {
+		plugin.Log.Error("configuring new SPD failed:", err)
+		return err
+	}
 
 	return nil
 }
@@ -191,8 +200,17 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 }
 
 // ModifySA
-func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, sa *ipsec.SecurityAssociations_SA) error {
-	plugin.Log.Debugf("Modifying SA %v", sa.Name)
+func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, newSa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Debugf("Modifying SA %v", oldSa.Name)
+
+	if err := plugin.DeleteSA(oldSa); err != nil {
+		plugin.Log.Error("deleting old SPD failed:", err)
+		return err
+	}
+	if err := plugin.ConfigureSA(newSa); err != nil {
+		plugin.Log.Error("configuring new SPD failed:", err)
+		return err
+	}
 
 	return nil
 }
