@@ -81,7 +81,7 @@ func (plugin *IPSecConfigurator) Close() error {
 
 // ConfigureSPD configures SPD
 func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.Log.Infof("Configuring SPD %v", spd.Name)
+	plugin.Log.Debugf("Configuring SPD %v", spd.Name)
 
 	spdID := plugin.SpdIndexSeq
 	plugin.SpdIndexSeq++
@@ -141,14 +141,77 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 
 // ModifySPD
 func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, spd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.Log.Infof("Modifying SPD %v", spd.Name)
+	plugin.Log.Debugf("Modifying SPD %v", spd.Name)
 
 	return nil
 }
 
 // DeleteSPD
 func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.Log.Infof("Deleting SPD %v", oldSpd.Name)
+	plugin.Log.Debugf("Deleting SPD %v", oldSpd.Name)
+
+	spdID, _, exists := plugin.SpdIndexes.LookupIdx(oldSpd.Name)
+	if !exists {
+		plugin.Log.Warnf("SPD %q not found", oldSpd.Name)
+		return nil
+	}
+	if err := vppcalls.DelSPD(spdID, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	// remove cache entries related to the SPD
+	for i, entry := range plugin.SPDIfCache {
+		if entry.spdID == spdID {
+			plugin.Log.Debugf("Removing cache entry for assignment of SPD %q to interface %q", entry.spdID, entry.ifaceName)
+			plugin.SPDIfCache = append(plugin.SPDIfCache[:i], plugin.SPDIfCache[i+1:]...)
+		}
+	}
+
+	plugin.SpdIndexes.UnregisterName(oldSpd.Name)
+	plugin.Log.Infof("Deleted SPD %v", oldSpd.Name)
+
+	return nil
+}
+
+// ConfigureSA
+func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Debugf("Configuring SA %v", sa.Name)
+
+	saID := plugin.SaIndexSeq
+	plugin.SaIndexSeq++
+
+	if err := vppcalls.AddSAEntry(saID, sa, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SaIndexes.RegisterName(sa.Name, saID, nil)
+	plugin.Log.Infof("Registered SA %v (%d)", sa.Name, saID)
+
+	return nil
+}
+
+// ModifySA
+func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, sa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Debugf("Modifying SA %v", sa.Name)
+
+	return nil
+}
+
+// DeleteSA
+func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
+	plugin.Log.Debugf("Deleting SA %v", oldSa.Name)
+
+	saID, _, exists := plugin.SaIndexes.LookupIdx(oldSa.Name)
+	if !exists {
+		plugin.Log.Warnf("SA %q not found", oldSa.Name)
+		return nil
+	}
+	if err := vppcalls.DelSAEntry(saID, oldSa, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SaIndexes.UnregisterName(oldSa.Name)
+	plugin.Log.Infof("Deleted SA %v", oldSa.Name)
 
 	return nil
 }
@@ -173,35 +236,4 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 // ResolveDeletedInterface is responsible for..
 func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
 
-}
-
-// ConfigureSA
-func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
-	plugin.Log.Infof("Configuring SA %v", sa.Name)
-
-	saID := plugin.SaIndexSeq
-	plugin.SaIndexSeq++
-
-	if err := vppcalls.AddSAEntry(saID, sa, plugin.vppCh, plugin.Stopwatch); err != nil {
-		return err
-	}
-
-	plugin.SaIndexes.RegisterName(sa.Name, saID, nil)
-	plugin.Log.Infof("Registered SA %v (%d)", sa.Name, saID)
-
-	return nil
-}
-
-// ModifySA
-func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, sa *ipsec.SecurityAssociations_SA) error {
-	plugin.Log.Infof("Modifying SA %v", sa.Name)
-
-	return nil
-}
-
-// DeleteSA
-func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
-	plugin.Log.Infof("Deleting SA %v", oldSa.Name)
-
-	return nil
 }
