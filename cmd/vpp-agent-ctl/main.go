@@ -21,8 +21,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -45,80 +45,68 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	linuxIntf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-	l32 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
-var (
-	log          logging.Logger
-	serviceLabel servicelabel.Plugin
-)
+// VppAgentCtl is ctl context
+type VppAgentCtl struct {
+	log             logging.Logger
+	serviceLabel    servicelabel.Plugin
+	bytesConnection *etcdv3.BytesConnectionEtcd
+	broker          keyval.ProtoBroker
+}
 
 func main() {
-	log = logrus.DefaultLogger()
-	log.SetLevel(logging.InfoLevel)
+	var ctl VppAgentCtl
+	// Setup logger
+	ctl.log = logrus.DefaultLogger()
+	ctl.log.SetLevel(logging.InfoLevel)
+	// Parse service label
 	flag.CommandLine.ParseEnv(os.Environ())
+	ctl.serviceLabel.Init()
+	// Establish ETCD connection
+	ctl.bytesConnection, ctl.broker = ctl.createEtcdClient()
 
-	serviceLabel.Init()
+	ctl.do()
+}
 
-	bDB, db := createEtcdClient()
-
-	ifName1 := "tap1"
-	ifName2 := "tap2"
-	memif := "memif"
-	vxlan := "vxlan"
-	eth := "GigabitEthernet0/8/0"
-	loopback := "loop1"
-	bridgeDomain1 := "bd1"
-	afpacket1 := "afpacket1"
-	veth1 := "veth1"
-	veth2 := "veth2"
-
-	if len(os.Args) > 1 && os.Args[len(os.Args)-1] == "-list" {
-		listAllAgentKeys(bDB)
-	} else if len(os.Args) > 1 && os.Args[len(os.Args)-1] == "-dump" {
-		etcdDump(bDB, "")
-	} else if len(os.Args) > 2 && os.Args[len(os.Args)-2] == "-dump" {
-		etcdDump(bDB, os.Args[len(os.Args)-1])
-	} else if len(os.Args) > 3 && os.Args[len(os.Args)-3] == "-put" {
-		etcdPut(bDB, os.Args[len(os.Args)-2], os.Args[len(os.Args)-1])
-	} else if len(os.Args) > 2 && os.Args[len(os.Args)-2] == "-get" {
-		etcdGet(bDB, os.Args[len(os.Args)-1])
-	} else if len(os.Args) > 2 && os.Args[len(os.Args)-2] == "-del" {
-		etcdDel(bDB, os.Args[len(os.Args)-1])
-	} else if len(os.Args) > 1 {
-		switch os.Args[len(os.Args)-1] {
-		case "-ct":
-			create(db, ifName1, "192.168.1.2/24")
-		case "-mt":
-			create(db, ifName1, "192.168.1.2/24")
-		case "-dt":
-			delete(db, interfaces.InterfaceKey(ifName1))
-		case "-ce":
-			createEthernet(db, eth, "192.168.1.1", "2001:db8:0:0:0:ff00:5168:2bc8/48")
-		case "-me":
-			createEthernet(db, eth, "192.168.2.2", "2001:db8:0:0:0:ff00:48d2:c7d9/48")
-		case "-de":
-			delete(db, interfaces.InterfaceKey(eth))
-		case "-cl":
-			createLoopback(db, loopback, "8a:f1:be:90:00:dd", "192.168.15.1/24",
-				"2001:db8:0:0:0:ff00:89e3:bb42/48")
-		case "-ml":
-			createLoopback(db, loopback, "b3:65:f1:f5:dc:f6", "192.168.25.2/24",
-				"2001:db8:0:0:0:ff00:7772:1234/48")
-		case "-dl":
-			delete(db, interfaces.InterfaceKey(loopback))
-		case "-cmm":
-			createMemif(db, memif, "192.168.42.1/24", true)
-		case "-dmm":
-			delete(db, interfaces.InterfaceKey(memif))
-		case "-cms":
-			createMemif(db, memif, "192.168.42.2/24", false)
-		case "-dms":
-			delete(db, interfaces.InterfaceKey(memif))
-		case "-cvx":
-			createVxlan(db, vxlan, 13, "192.168.42.1", "192.168.42.2")
-		case "-dvx":
-			delete(db, interfaces.InterfaceKey(vxlan))
+func (ctl *VppAgentCtl) do() {
+	args := os.Args
+	argsLen := len(args)
+	if argsLen <= 1 {
+		// No commands
+		ctl.usage()
+		return
+	}
+	switch args[1] {
+	case "-list":
+		// List all keys
+		ctl.listAllAgentKeys()
+	case "-dump":
+		if argsLen > 2 {
+			// Dump specific key
+			ctl.etcdDump(args[2])
+		} else {
+			// Dump all keys
+			ctl.etcdDump("")
+		}
+	case "-get":
+		if argsLen > 2 {
+			// Get key
+			ctl.etcdGet(args[2])
+		}
+	case "-del":
+		if argsLen > 2 {
+			// Del key
+			ctl.etcdDel(args[2])
+		}
+	case "-put":
+		if argsLen > 3 {
+			ctl.etcdPut(args[2], args[3])
+		}
+	default:
+		switch args[1] {
+		// ACL
 		case "-acl":
 			createACL(db)
 		case "-dacl":
@@ -143,14 +131,6 @@ func main() {
 			addArpEntry(db, ifName1)
 		case "-dae":
 			deleteArpEntry(db, ifName1)
-		case "-aparpi":
-			addProxyArpIf(db)
-		case "-aparpr":
-			addProxyArpRng(db)
-		case "-dparpi":
-			delProxyArpIf(db)
-		case "-dparpr":
-			delProxyArpRng(db)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -164,221 +144,1262 @@ func main() {
 			createAfPacket(db, afpacket1, "lo", "41:69:e3:1d:82:81", "192.168.12.1/24",
 				"fd21:7408:186f::/48")
 		case "-bfds":
-			createBfdSession(db, ifName1)
-		case "-dbfds":
-			delete(db, bfd.SessionKey(ifName1))
+			ctl.createBfdSession()
+		case "-bfdsd":
+			ctl.deleteBfdSession()
 		case "-bfdk":
-			createBfdKey(db, uint32(1))
-		case "-dbfdk":
-			delete(db, bfd.AuthKeysKey(string(1)))
+			ctl.createBfdKey()
+		case "-bfdkd":
+			ctl.deleteBfdKey()
 		case "-bfde":
-			createBfdEcho(db, ifName1)
-		case "-dbfde":
-			delete(db, bfd.EchoFunctionKey(ifName1))
-		case "-daf":
-			delete(db, interfaces.InterfaceKey(afpacket1))
-		case "-cvth1":
-			createVeth(db, veth1, veth2, "ns1", "d2:74:8c:12:67:d2", "192.168.22.1/24",
-				"2001:db8:0:0:0:ff00:89e3:bb42/48")
-		case "-cvth2":
-			createVeth(db, veth2, veth1, "ns3", "92:c7:42:67:ab:cd", "192.168.22.5/24",
-				"2001:842:0:0:0:ff00:13c7:1245/48")
-		case "-cltap":
-			createLinuxTap(db)
-		case "-dltap":
-			deleteLinuxTap(db)
-		case "-dvth1":
-			delete(db, linuxIntf.InterfaceKey(veth1))
-		case "-dvth2":
-			delete(db, linuxIntf.InterfaceKey(veth2))
-		case "-ps":
-			printState(db)
-		case "-ierr":
-			reportIfaceErrorState(db)
-		case "-bderr":
-			reportBdErrorState(db)
-		case "-clarp":
-			createLinuxArp(db)
-		case "-dlarp":
-			delete(db, l32.StaticArpKey("arp3"))
-		case "-clrt":
-			createLinuxRoute(db)
-		case "-clrtdef":
-			createDefaultLinuxRoute(db)
-		case "-appns":
-			createAppNamespace(db)
-		case "-ef":
-			enableL4Features(db)
-		case "-df":
-			disableL4Features(db)
-		case "-dlrt":
-			delete(db, l32.StaticRouteKey("route1"))
-		case "-stna":
-			createStnRule(db, ifName1, "10.1.1.3")
+			ctl.createBfdEcho()
+		case "-bfded":
+			ctl.deleteBfdEcho()
+			// VPP interfaces
+		case "-eth":
+			ctl.createEthernet()
+		case "-ethd":
+			ctl.deleteEthernet()
+		case "-tap":
+			ctl.createTap()
+		case "-tapd":
+			ctl.deleteTap()
+		case "-loop":
+			ctl.createLoopback()
+		case "-loopd":
+			ctl.deleteLoopback()
+		case "-memif":
+			ctl.createMemif()
+		case "-memifd":
+			ctl.deleteMemif()
+		case "-vxlan":
+			ctl.createVxlan()
+		case "-vxland":
+			ctl.deleteVxlan()
+		case "-afpkt":
+			ctl.createAfPacket()
+		case "-afpktd":
+			ctl.deleteAfPacket()
+			// Linux interfaces
+		case "-veth":
+			ctl.createVethPair()
+		case "-vethd":
+			ctl.deleteVethPair()
+		case "-ltap":
+			ctl.createLinuxTap()
+		case "-ltapd":
+			ctl.deleteLinuxTap()
+			// STN
+		case "-stn":
+			ctl.createStn()
 		case "-stnd":
-			delete(db, stn.Key("rule1"))
-		case "-natg":
-			setNatGlobalConfig(db)
-		case "-natdg":
-			deleteNatGlobalConfig(db)
+			ctl.deleteStn()
+			// NAT
+		case "-gnat":
+			ctl.createGlobalNat()
+		case "-gnatd":
+			ctl.deleteGlobalNat()
 		case "-snat":
-			createSNat(db)
+			ctl.createSNat()
+		case "-snatd":
+			ctl.deleteSNat()
 		case "-dnat":
-			createDNat(db)
-		case "-ddnat":
-			deleteDNat(db)
+			ctl.createDNat()
+		case "-dnatd":
+			ctl.deleteDNat()
+			// Bridge domains
+		case "-bd":
+			ctl.createBridgeDomain()
+		case "-bdd":
+			ctl.deleteBridgeDomain()
+			// FIB
+		case "-fib":
+			ctl.createFib()
+		case "-fibd":
+			ctl.deleteFib()
+			// L2 xConnect
+		case "-xconn":
+			ctl.createXConn()
+		case "-xconnd":
+			ctl.deleteXConn()
+			// VPP routes
+		case "-route":
+			ctl.createRoute()
+		case "-routed":
+			ctl.deleteRoute()
+			// Linux routes
+		case "-lrte":
+			ctl.createLinuxRoute()
+		case "-lrted":
+			ctl.deleteLinuxRoute()
+			// VPP ARP
+		case "-arp":
+			ctl.createArp()
+		case "-arpd":
+			ctl.deleteArp()
+			// Linux ARP
+		case "-larp":
+			ctl.createLinuxArp()
+		case "-larpd":
+			ctl.deleteLinuxArp()
+			// L4 plugin
+		case "-el4":
+			ctl.enableL4Features()
+		case "-dl4":
+			ctl.disableL4Features()
+		case "-appns":
+			ctl.createAppNamespace()
+		case "-appnsd":
+			ctl.deleteAppNamespace()
+			// TXN (transaction)
+		case "-txn":
+			ctl.createTxn()
+		case "-txnd":
+			ctl.deleteTxn()
+			// Error reporting
+		case "-errIf":
+			ctl.reportIfaceErrorState()
+		case "-errBd":
+			ctl.reportBdErrorState()
 		default:
-			usage()
+			ctl.usage()
 		}
-	} else {
-		usage()
 	}
 }
 
-func usage() {
-	fmt.Println(os.Args[0], ": [etcd-config-file] <command>")
-	fmt.Println("\tcommands: -ct -mt -dt -ce -me -cl -ml -dl -cmm -dmm -cms -dms -cvx -dvx -cr -dr -stna -stnd")
-	fmt.Println(os.Args[0], ": [etcd-config-file] -put <etc_key> <json-file>")
-	fmt.Println(os.Args[0], ": [etcd-config-file] -get <etc_key>")
+// Show command info
+func (ctl *VppAgentCtl) usage() {
+	var buffer bytes.Buffer
+	// Crud operation
+	buffer.WriteString("\nCrud operations with .json\n\t-put <etc_key> <json-file>\n\t-get <etc_key>\n\t-del <etc_key>\n\t-dump\n\t-list\n\n")
+	// Prearranged flags
+	buffer.WriteString("Prearranged flags (create, delete):\n")
+	// ACL
+	buffer.WriteString("\t-acl,\t-acld\t- Access List\n")
+	// BFD
+	buffer.WriteString("\t-bfds,\t-bfdsd\t- BFD session\n\t-bfdk,\t-bfdkd\t- BFD authentication key\n\t-bfde,\t-bfded\t- BFD echo function\n")
+	// Interfaces
+	buffer.WriteString("\t-eth,\t-ethd\t- Physical interface\n\t-tap,\t-tapd\t- TAP type interface\n\t-loop,\t-loopd\t- Loop type interface\n")
+	buffer.WriteString("\t-memif,\t-memifd\t- Memif type interface\n\t-vxlan,\t-vxland\t- VxLAN type interface\n\t-afpkt,\t-afpktd\t- af_packet type interface\n")
+	// Linux interfaces
+	buffer.WriteString("\t-veth,\t-vethd\t- Linux VETH interface pair\n\t-ltap,\t-ltapd\t- Linux TAP interface\n")
+	// STN
+	buffer.WriteString("\t-stn,\t-stnd\t- STN rule\n")
+	// NAT
+	buffer.WriteString("\t-gnat,\t-gnatd\t- Global NAT configuration\n\t-snat,\t-snatd\t- SNAT configuration\n\t-dnat,\t-dnatd\t- DNAT configuration\n")
+	// L2
+	buffer.WriteString("\t-bd,\t-bdd\t- Bridge doamin\n\t-fib,\t-fibd\t- L2 FIB\n\t-xconn,\t-xconnd\t- L2 X-Connect\n")
+	// L3
+	buffer.WriteString("\t-route,\t-routed\t- L3 route\n\t-arp,\t-arpd\t- ARP entry\n")
+	// Linux L3
+	buffer.WriteString("\t-lrte,\t-lrted\t- Linux route\n\t-larp,\t-larpd\t- Linux ARP entry\n")
+	// L4
+	buffer.WriteString("\t-el4,\t-dl4\t- L4 features\n")
+	buffer.WriteString("\t-appns,\t-appnsd\t- Application namespace\n\n")
+	// Other
+	buffer.WriteString("Other:\n\t-txn,\t-txnd\t- Transaction\n\t-errIf\t\t- Interface error state report\n\t-errBd\t\t- Bridge domain error state report\n")
+	ctl.log.Print(buffer.String())
 }
 
-func createACL(db keyval.ProtoBroker) {
-	accessList := acl.AccessLists{}
-	accessList.Acl = make([]*acl.AccessLists_Acl, 1)
-	accessList.Acl[0] = new(acl.AccessLists_Acl)
-	accessList.Acl[0].AclName = "acl1"
-	accessList.Acl[0].Rules = make([]*acl.AccessLists_Acl_Rule, 1)
-	accessList.Acl[0].Rules[0] = new(acl.AccessLists_Acl_Rule)
-	accessList.Acl[0].Rules[0].Actions = new(acl.AccessLists_Acl_Rule_Actions)
-	accessList.Acl[0].Rules[0].Actions.AclAction = acl.AclAction_PERMIT
-	accessList.Acl[0].Rules[0].Matches = new(acl.AccessLists_Acl_Rule_Matches)
+// Access lists
 
-	//// Actions
-	//accessList.Acl[0].Rules[1] = new(acl.AccessLists_Acl_Rule)
-	//accessList.Acl[0].Rules[1].Actions = new(acl.AccessLists_Acl_Rule_Actions)
-	//accessList.Acl[0].Rules[1].Actions.AclAction = acl.AclAction_PERMIT
-	//accessList.Acl[0].Rules[1].Matches = new(acl.AccessLists_Acl_Rule_Matches)
-	//
-	//accessList.Acl[0].Rules[2] = new(acl.AccessLists_Acl_Rule)
-	//accessList.Acl[0].Rules[2].Actions = new(acl.AccessLists_Acl_Rule_Actions)
-	//accessList.Acl[0].Rules[2].Actions.AclAction = acl.AclAction_PERMIT
-	//accessList.Acl[0].Rules[2].Matches = new(acl.AccessLists_Acl_Rule_Matches)
+func (ctl *VppAgentCtl) createACL() {
+	accessList := acl.AccessLists{
+		Acl: []*acl.AccessLists_Acl{
+			// Single ACL entry
+			{
+				AclName: "acl1",
+				// ACL rules
+				Rules: []*acl.AccessLists_Acl_Rule{
+					// ACL IP rule
+					{
+						Actions: &acl.AccessLists_Acl_Rule_Actions{
+							AclAction: acl.AclAction_PERMIT,
+						},
+						Matches: &acl.AccessLists_Acl_Rule_Matches{
+							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+								Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+									SourceNetwork:      "192.168.1.1/32",
+									DestinationNetwork: "10.20.0.1/24",
+								},
+							},
+						},
+					},
+					// ACL ICMP rule
+					{
+						Actions: &acl.AccessLists_Acl_Rule_Actions{
+							AclAction: acl.AclAction_PERMIT,
+						},
+						Matches: &acl.AccessLists_Acl_Rule_Matches{
+							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+								Icmp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp{
+									Icmpv6: false,
+									IcmpCodeRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange{
+										First: 150,
+										Last:  250,
+									},
+									IcmpTypeRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange{
+										First: 1150,
+										Last:  1250,
+									},
+								},
+							},
+						},
+					},
+					// ACL TCP rule
+					{
+						Actions: &acl.AccessLists_Acl_Rule_Actions{
+							AclAction: acl.AclAction_PERMIT,
+						},
+						Matches: &acl.AccessLists_Acl_Rule_Matches{
+							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+								Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
+									TcpFlagsMask:  20,
+									TcpFlagsValue: 10,
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+										LowerPort: 150,
+										UpperPort: 250,
+									},
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+										LowerPort: 1150,
+										UpperPort: 1250,
+									},
+								},
+							},
+						},
+					},
+					// ACL UDP rule
+					{
+						Actions: &acl.AccessLists_Acl_Rule_Actions{
+							AclAction: acl.AclAction_PERMIT,
+						},
+						Matches: &acl.AccessLists_Acl_Rule_Matches{
+							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+								Udp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp{
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_SourcePortRange{
+										LowerPort: 150,
+										UpperPort: 250,
+									},
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_DestinationPortRange{
+										LowerPort: 1150,
+										UpperPort: 1250,
+									},
+								},
+							},
+						},
+					},
+					// ACL other rule
+					{
+						Actions: &acl.AccessLists_Acl_Rule_Actions{
+							AclAction: acl.AclAction_PERMIT,
+						},
+						Matches: &acl.AccessLists_Acl_Rule_Matches{
+							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
+								Other: &acl.AccessLists_Acl_Rule_Matches_IpRule_Other{
+									Protocol: 0,
+								},
+							},
+						},
+					},
+					// ACL MAC IP rule. Note: do not combine ACL ip and mac ip rules in single acl
+					//{
+					//	Actions: &acl.AccessLists_Acl_Rule_Actions{
+					//		AclAction: acl.AclAction_PERMIT,
+					//	},
+					//	Matches: &acl.AccessLists_Acl_Rule_Matches{
+					//		MacipRule: &acl.AccessLists_Acl_Rule_Matches_MacIpRule{
+					//			SourceAddress: "192.168.0.1",
+					//			SourceAddressPrefix: uint32(16),
+					//			SourceMacAddress: "11:44:0A:B8:4A:35",
+					//			SourceMacAddressMask: "ff:ff:ff:ff:00:00",
+					//		},
+					//	},
+					//},
+				},
+				// Interfaces
+				Interfaces: &acl.AccessLists_Acl_Interfaces{
+					Ingress: []string{"tap1", "tap2"},
+					Egress:  []string{"tap1", "tap2"},
+				},
+			},
+		},
+	}
 
-	// Ipv4Rule
-	accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.1/32"
-	accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "10.20.0.1/24"
-
-	//// Ipv6Rule
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "1201:0db8:0a0b:12f0:0000:0000:0000:0000"
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "5064:ff9b:0000:0000:0000:0000:0000:0000"
-	//
-	//// Ipv4Rule with empty destination address
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = "192.168.1.2"
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = ""
-	//
-	//// Ipv6Rule with empty source address
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = ""
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = "0064:ff9b:0000:0000:0000:0000:0000:0000"
-	//
-	//// Ip Rule with empty source and destination addresses
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Ip)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.SourceNetwork = ""
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Ip.DestinationNetwork = ""
-	//
-	//// Icmpv4 Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpTypeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpTypeRange.First = 150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpTypeRange.Last = 250
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpCodeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpCodeRange.First = 1150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Icmp.IcmpCodeRange.Last = 1250
-	//
-	//// Icmpv6 Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
-	//accessList.Acl[0].Rules[2].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp)
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpTypeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange)
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpTypeRange.First = 150
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpTypeRange.Last = 250
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange)
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange.First = 1150
-	//accessList.Acl[0].Rules[2].Matches.IpRule.Icmp.IcmpCodeRange.Last = 1250
-	//// Tcp Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.LowerPort = 150
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.SourcePortRange.UpperPort = 250
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange)
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.LowerPort = 1150
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.DestinationPortRange.UpperPort = 1250
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsValue = 10
-	accessList.Acl[0].Rules[0].Matches.IpRule.Tcp.TcpFlagsMask = 20
-	//
-	//// Udp Rule (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Udp)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.SourcePortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_SourcePortRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.SourcePortRange.LowerPort = 150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.SourcePortRange.UpperPort = 250
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.DestinationPortRange = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_DestinationPortRange)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.DestinationPortRange.LowerPort = 1150
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Udp.DestinationPortRange.UpperPort = 1250
-	//
-	//// Other (comment out "...IpRule = new(...)" to include the IP layer rule definition from above)
-	//accessList.Acl[0].Rules[0].Matches.IpRule = new(acl.AccessLists_Acl_Rule_Matches_IpRule)
-	//accessList.Acl[0].Rules[0].Matches.IpRule.Other = new(acl.AccessLists_Acl_Rule_Matches_IpRule_Other)
-	//
-	//// Macip v4
-	//accessList.Acl[0].Rules[0].Matches.MacipRule = new(acl.AccessLists_Acl_Rule_Matches_MacIpRule)
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceAddress = "192.168.0.1"
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceAddressPrefix = uint32(16)
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceMacAddress = "b2:74:8c:12:67:d2"
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceMacAddressMask = "ff:ff:ff:ff:00:00"
-	//
-	//// Macip v6
-	//accessList.Acl[0].Rules[0].Matches.MacipRule = new(acl.AccessLists_Acl_Rule_Matches_MacIpRule)
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceAddress = "12001:0db8:0a0b:12f0:0000:0000:0000:0001"
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceAddressPrefix = uint32(64)
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceMacAddress = "d2:74:8c:12:67:d2"
-	//accessList.Acl[0].Rules[0].Matches.MacipRule.SourceMacAddressMask = "ff:ff:ff:ff:00:00"
-
-	accessList.Acl[0].Interfaces = new(acl.AccessLists_Acl_Interfaces)
-	accessList.Acl[0].Interfaces.Egress = make([]string, 2)
-	accessList.Acl[0].Interfaces.Egress[0] = "tap1"
-	accessList.Acl[0].Interfaces.Egress[1] = "tap2"
-	accessList.Acl[0].Interfaces.Ingress = make([]string, 2)
-	accessList.Acl[0].Interfaces.Ingress[0] = "tap3"
-	accessList.Acl[0].Interfaces.Ingress[1] = "tap4"
-
-	log.Print(accessList.Acl[0])
-
-	db.Put(acl.Key(accessList.Acl[0].AclName), accessList.Acl[0])
-	//db.Delete(acl.Key(accessList.Acl[0].AclName))
+	ctl.log.Print(accessList.Acl[0])
+	ctl.broker.Put(acl.Key(accessList.Acl[0].AclName), accessList.Acl[0])
 }
 
-func etcdPut(bDB *etcdv3.BytesConnectionEtcd, key string, file string) {
-	input, err := readData(file)
+func (ctl *VppAgentCtl) deleteACL() {
+	aclKey := acl.Key("acl1")
 
-	log.Println("DB putting ", key, " ", string(input))
+	ctl.log.Println("Deleting", aclKey)
+	ctl.broker.Delete(aclKey)
+}
 
-	err = bDB.Put(key, input)
+// Bidirectional forwarding detection
+
+func (ctl *VppAgentCtl) createBfdSession() {
+	session := bfd.SingleHopBFD{
+		Sessions: []*bfd.SingleHopBFD_Session{
+			{
+				Interface:             "memif1",
+				Enabled:               true,
+				SourceAddress:         "192.168.1.2",
+				DestinationAddress:    "20.10.0.5",
+				RequiredMinRxInterval: 8,
+				DesiredMinTxInterval:  3,
+				DetectMultiplier:      9,
+				Authentication: &bfd.SingleHopBFD_Session_Authentication{
+					KeyId:           1,
+					AdvertisedKeyId: 1,
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(session)
+	ctl.broker.Put(bfd.SessionKey(session.Sessions[0].Interface), session.Sessions[0])
+}
+
+func (ctl *VppAgentCtl) deleteBfdSession() {
+	sessionKey := bfd.SessionKey("memif1")
+
+	ctl.log.Println("Deleting", sessionKey)
+	ctl.broker.Delete(sessionKey)
+}
+
+func (ctl *VppAgentCtl) createBfdKey() {
+	authKey := bfd.SingleHopBFD{
+		Keys: []*bfd.SingleHopBFD_Key{
+			{
+				Id:                 1,
+				AuthenticationType: bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1, // or Keyed sha1
+				Secret:             "1981491891941891",
+			},
+		},
+	}
+
+	ctl.log.Println(authKey)
+	ctl.broker.Put(bfd.AuthKeysKey(string(authKey.Keys[0].Id)), authKey.Keys[0])
+}
+
+func (ctl *VppAgentCtl) deleteBfdKey() {
+	bfdAuthKeyKey := bfd.AuthKeysKey(string(1))
+
+	ctl.log.Println("Deleting", bfdAuthKeyKey)
+	ctl.broker.Delete(bfdAuthKeyKey)
+}
+
+func (ctl *VppAgentCtl) createBfdEcho() {
+	echoFunction := bfd.SingleHopBFD{
+		EchoFunction: &bfd.SingleHopBFD_EchoFunction{
+			EchoSourceInterface: "memif1",
+		},
+	}
+
+	ctl.log.Println(echoFunction)
+	ctl.broker.Put(bfd.EchoFunctionKey("memif1"), echoFunction.EchoFunction)
+}
+
+func (ctl *VppAgentCtl) deleteBfdEcho() {
+	echoFunctionKey := bfd.EchoFunctionKey("memif1")
+
+	ctl.log.Println("Deleting", echoFunctionKey)
+	ctl.broker.Delete(echoFunctionKey)
+}
+
+// VPP interfaces
+
+func (ctl *VppAgentCtl) createEthernet() {
+	ethernet := &interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:    "GigabitEthernet0/8/0",
+				Type:    interfaces.InterfaceType_ETHERNET_CSMACD,
+				Enabled: true,
+				IpAddresses: []string{
+					"192.168.1.1",
+					"2001:db8:0:0:0:ff00:5168:2bc8/48",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+			},
+		},
+	}
+
+	ctl.log.Println(ethernet)
+	ctl.broker.Put(interfaces.InterfaceKey(ethernet.Interface[0].Name), ethernet.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteEthernet() {
+	ethernetKey := interfaces.InterfaceKey("GigabitEthernet0/8/0")
+
+	ctl.log.Println("Deleting", ethernetKey)
+	ctl.broker.Delete(ethernetKey)
+}
+
+func (ctl *VppAgentCtl) createTap() {
+	tap := &interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:        "tap1",
+				Type:        interfaces.InterfaceType_TAP_INTERFACE,
+				Enabled:     true,
+				PhysAddress: "12:E4:0E:D5:BC:DC",
+				IpAddresses: []string{
+					"192.168.20.3/24",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+				Tap: &interfaces.Interfaces_Interface_Tap{
+					HostIfName: "tap1",
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(tap)
+	ctl.broker.Put(interfaces.InterfaceKey(tap.Interface[0].Name), tap.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteTap() {
+	tapKey := interfaces.InterfaceKey("tap1")
+
+	ctl.log.Println("Deleting", tapKey)
+	ctl.broker.Delete(tapKey)
+}
+
+func (ctl *VppAgentCtl) createLoopback() {
+	loopback := &interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:        "loop1",
+				Type:        interfaces.InterfaceType_SOFTWARE_LOOPBACK,
+				Enabled:     true,
+				PhysAddress: "7C:4E:E7:8A:63:68",
+				Mtu:         1478,
+				IpAddresses: []string{
+					"192.168.20.3/24",
+					"172.125.40.1/24",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+			},
+		},
+	}
+
+	ctl.log.Println(loopback)
+	ctl.broker.Put(interfaces.InterfaceKey(loopback.Interface[0].Name), loopback.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteLoopback() {
+	loopbackKey := interfaces.InterfaceKey("loop1")
+
+	ctl.log.Println("Deleting", loopbackKey)
+	ctl.broker.Delete(loopbackKey)
+}
+
+func (ctl *VppAgentCtl) createMemif() {
+	memif := &interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:        "memif1",
+				Type:        interfaces.InterfaceType_MEMORY_INTERFACE,
+				Enabled:     true,
+				PhysAddress: "4E:93:2A:38:A7:77",
+				Mtu:         1478,
+				IpAddresses: []string{
+					"172.125.40.1/24",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+				Memif: &interfaces.Interfaces_Interface_Memif{
+					Id:             1,
+					Secret:         "secret",
+					Master:         true,
+					SocketFilename: "/tmp/memif1.sock",
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(memif)
+	ctl.broker.Put(interfaces.InterfaceKey(memif.Interface[0].Name), memif.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteMemif() {
+	memifKey := interfaces.InterfaceKey("memif1")
+
+	ctl.log.Println("Deleting", memifKey)
+	ctl.broker.Delete(memifKey)
+}
+
+func (ctl *VppAgentCtl) createVxlan() {
+	vxlan := &interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:        "vxlan1",
+				Type:        interfaces.InterfaceType_VXLAN_TUNNEL,
+				Enabled:     true,
+				PhysAddress: "09:8E:3A:47:DD:F9",
+				Mtu:         1478,
+				IpAddresses: []string{
+					"172.125.40.1/24",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+				Vxlan: &interfaces.Interfaces_Interface_Vxlan{
+					SrcAddress: "192.168.42.1",
+					DstAddress: "192.168.42.2",
+					Vni:        13,
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(vxlan)
+	ctl.broker.Put(interfaces.InterfaceKey(vxlan.Interface[0].Name), vxlan.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteVxlan() {
+	vxlanKey := interfaces.InterfaceKey("vxlan1")
+
+	ctl.log.Println("Deleting", vxlanKey)
+	ctl.broker.Delete(vxlanKey)
+}
+
+func (ctl *VppAgentCtl) createAfPacket() {
+	ifs := interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:    "afpacket1",
+				Type:    interfaces.InterfaceType_AF_PACKET_INTERFACE,
+				Enabled: true,
+				Mtu:     1500,
+				IpAddresses: []string{
+					"172.125.40.1/24",
+					"192.168.12.1/24",
+					"fd21:7408:186f::/48",
+				},
+				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+				//	IsUnnumbered: true,
+				//	InterfaceWithIP: "memif1",
+				//},
+				Afpacket: &interfaces.Interfaces_Interface_Afpacket{
+					HostIfName: "lo",
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(ifs)
+	ctl.broker.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteAfPacket() {
+	afPacketKey := interfaces.InterfaceKey("afpacket1")
+
+	ctl.log.Println("Deleting", afPacketKey)
+	ctl.broker.Delete(afPacketKey)
+}
+
+// Linux interfaces
+
+func (ctl *VppAgentCtl) createVethPair() {
+	// Note: VETH interfaces are created in pairs
+	veths := linuxIntf.LinuxInterfaces{
+		Interface: []*linuxIntf.LinuxInterfaces_Interface{
+			{
+				Name:        "veth1",
+				Type:        linuxIntf.LinuxInterfaces_VETH,
+				Enabled:     true,
+				PhysAddress: "5D:5A:15:EE:D1:9F",
+				Namespace: &linuxIntf.LinuxInterfaces_Interface_Namespace{
+					Name: "ns1",
+					Type: linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+				},
+				Mtu: 1500,
+				IpAddresses: []string{
+					"192.168.22.1/24",
+				},
+				Veth: &linuxIntf.LinuxInterfaces_Interface_Veth{
+					PeerIfName: "veth2",
+				},
+			},
+			{
+				Name:        "veth2",
+				Type:        linuxIntf.LinuxInterfaces_VETH,
+				Enabled:     true,
+				PhysAddress: "F1:E8:5F:62:B7:99",
+				Namespace: &linuxIntf.LinuxInterfaces_Interface_Namespace{
+					Name: "ns2",
+					Type: linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+				},
+				Mtu: 1500,
+				IpAddresses: []string{
+					"192.168.22.5/24",
+				},
+				Veth: &linuxIntf.LinuxInterfaces_Interface_Veth{
+					PeerIfName: "veth1",
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(veths)
+	ctl.broker.Put(linuxIntf.InterfaceKey(veths.Interface[0].Name), veths.Interface[0])
+	ctl.broker.Put(linuxIntf.InterfaceKey(veths.Interface[1].Name), veths.Interface[1])
+}
+
+func (ctl *VppAgentCtl) deleteVethPair() {
+	veth1Key := linuxIntf.InterfaceKey("veth1")
+	veth2Key := linuxIntf.InterfaceKey("veth2")
+
+	ctl.log.Println("Deleting", veth1Key)
+	ctl.broker.Delete(veth1Key)
+	ctl.log.Println("Deleting", veth2Key)
+	ctl.broker.Delete(veth2Key)
+}
+
+func (ctl *VppAgentCtl) createLinuxTap() {
+	linuxTap := linuxIntf.LinuxInterfaces{
+		Interface: []*linuxIntf.LinuxInterfaces_Interface{
+			{
+				Name:        "tap1",
+				HostIfName:  "tap-host",
+				Type:        linuxIntf.LinuxInterfaces_AUTO_TAP,
+				Enabled:     true,
+				PhysAddress: "BC:FE:E9:5E:07:04",
+				Namespace: &linuxIntf.LinuxInterfaces_Interface_Namespace{
+					Name: "ns1",
+					Type: linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+				},
+				Mtu: 1500,
+				IpAddresses: []string{
+					"172.52.45.127/24",
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(linuxTap)
+	ctl.broker.Put(linuxIntf.InterfaceKey(linuxTap.Interface[0].Name), linuxTap.Interface[0])
+}
+
+func (ctl *VppAgentCtl) deleteLinuxTap() {
+	linuxTapKey := linuxIntf.InterfaceKey("tap1")
+
+	ctl.log.Println("Deleting", linuxTapKey)
+	ctl.broker.Delete(linuxTapKey)
+}
+
+// STN
+
+func (ctl *VppAgentCtl) createStn() {
+	stnRule := stn.StnRule{
+		RuleName:  "rule1",
+		IpAddress: "192.168.50.12",
+		Interface: "memif1",
+	}
+
+	ctl.log.Println(stnRule)
+	ctl.broker.Put(stn.Key(stnRule.RuleName), &stnRule)
+}
+
+func (ctl *VppAgentCtl) deleteStn() {
+	stnRuleKey := stn.Key("rule1")
+
+	ctl.log.Println("Deleting", stnRuleKey)
+	ctl.broker.Delete(stnRuleKey)
+}
+
+// Network address translation
+
+func (ctl *VppAgentCtl) createGlobalNat() {
+	natGlobal := &nat.Nat44Global{
+		Forwarding: false,
+		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
+			{
+				Name:          "tap1",
+				IsInside:      false,
+				OutputFeature: false,
+			},
+			{
+				Name:          "tap2",
+				IsInside:      false,
+				OutputFeature: true,
+			},
+			{
+				Name:          "tap3",
+				IsInside:      true,
+				OutputFeature: false,
+			},
+		},
+		AddressPools: []*nat.Nat44Global_AddressPools{
+			{
+				VrfId:           0,
+				FirstSrcAddress: "192.168.0.1",
+				TwiceNat:        false,
+			},
+			{
+				VrfId:           0,
+				FirstSrcAddress: "175.124.0.1",
+				LastSrcAddress:  "175.124.0.3",
+				TwiceNat:        false,
+			},
+			{
+				VrfId:           0,
+				FirstSrcAddress: "10.10.0.1",
+				LastSrcAddress:  "10.10.0.2",
+				TwiceNat:        false,
+			},
+		},
+	}
+
+	ctl.log.Println(natGlobal)
+	ctl.broker.Put(nat.GlobalConfigKey(), natGlobal)
+}
+
+func (ctl *VppAgentCtl) deleteGlobalNat() {
+	globalNat := nat.GlobalConfigKey()
+
+	ctl.log.Println("Deleting", globalNat)
+	ctl.broker.Delete(globalNat)
+}
+
+func (ctl *VppAgentCtl) createSNat() {
+	// Note: SNAT not implemented
+	sNat := &nat.Nat44SNat_SNatConfig{
+		Label: "snat1",
+	}
+
+	ctl.log.Println(sNat)
+	ctl.broker.Put(nat.SNatKey(sNat.Label), sNat)
+}
+
+func (ctl *VppAgentCtl) deleteSNat() {
+	sNat := nat.SNatKey("snat1")
+
+	ctl.log.Println("Deleting", sNat)
+	ctl.broker.Delete(sNat)
+}
+
+func (ctl *VppAgentCtl) createDNat() {
+	// DNat config
+	dNat := &nat.Nat44DNat_DNatConfig{
+		Label: "dnat1",
+		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
+			{
+				VrfId:             0,
+				ExternalInterface: "tap1",
+				ExternalIP:        "192.168.0.1",
+				ExternalPort:      8989,
+				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
+					{
+						LocalIP:     "172.124.0.2",
+						LocalPort:   6500,
+						Probability: 40,
+					},
+					{
+						LocalIP:     "172.125.10.5",
+						LocalPort:   2300,
+						Probability: 40,
+					},
+				},
+				Protocol: 1,
+				TwiceNat: false,
+			},
+		},
+		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
+			{
+				VrfId:     0,
+				IpAddress: "10.10.0.1",
+				Port:      2525,
+				Protocol:  0,
+			},
+		},
+	}
+
+	ctl.log.Println(dNat)
+	ctl.broker.Put(nat.DNatKey(dNat.Label), dNat)
+}
+
+func (ctl *VppAgentCtl) deleteDNat() {
+	dNat := nat.DNatKey("dnat1")
+
+	ctl.log.Println("Deleting", dNat)
+	ctl.broker.Delete(dNat)
+}
+
+// Bridge domains
+
+func (ctl *VppAgentCtl) createBridgeDomain() {
+	bd := l2.BridgeDomains{
+		BridgeDomains: []*l2.BridgeDomains_BridgeDomain{
+			{
+				Name:                "bd1",
+				Learn:               true,
+				ArpTermination:      true,
+				Flood:               true,
+				UnknownUnicastFlood: true,
+				Forward:             true,
+				MacAge:              0,
+				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+					{
+						Name: "loop1",
+						BridgedVirtualInterface: true,
+						SplitHorizonGroup:       0,
+					},
+					{
+						Name: "tap1",
+						BridgedVirtualInterface: false,
+						SplitHorizonGroup:       0,
+					},
+					{
+						Name: "memif1",
+						BridgedVirtualInterface: false,
+						SplitHorizonGroup:       0,
+					},
+				},
+				ArpTerminationTable: []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable{
+					{
+						IpAddress:   "192.168.50.20",
+						PhysAddress: "A7:5D:44:D8:E6:51",
+					},
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(bd)
+	ctl.broker.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
+}
+
+func (ctl *VppAgentCtl) deleteBridgeDomain() {
+	bdKey := l2.BridgeDomainKey("bd1")
+
+	ctl.log.Println("Deleting", bdKey)
+	ctl.broker.Delete(bdKey)
+}
+
+// FIB
+
+func (ctl *VppAgentCtl) createFib() {
+	fib := l2.FibTableEntries{
+		FibTableEntry: []*l2.FibTableEntries_FibTableEntry{
+			{
+				PhysAddress:             "34:EA:FE:3C:64:A7",
+				BridgeDomain:            "bd1",
+				OutgoingInterface:       "loop1",
+				StaticConfig:            true,
+				BridgedVirtualInterface: true,
+				Action:                  l2.FibTableEntries_FibTableEntry_FORWARD, // or DROP
+			},
+		},
+	}
+
+	ctl.log.Println(fib)
+	ctl.broker.Put(l2.FibKey(fib.FibTableEntry[0].BridgeDomain, fib.FibTableEntry[0].PhysAddress), fib.FibTableEntry[0])
+}
+
+func (ctl *VppAgentCtl) deleteFib() {
+	fibKey := l2.FibKey("bd1", "34:EA:FE:3C:64:A7")
+
+	ctl.log.Println("Deleting", fibKey)
+	ctl.broker.Delete(fibKey)
+}
+
+// L2 xConnect
+
+func (ctl *VppAgentCtl) createXConn() {
+	xc := l2.XConnectPairs{
+		XConnectPairs: []*l2.XConnectPairs_XConnectPair{
+			{
+				ReceiveInterface:  "loop1",
+				TransmitInterface: "tap1",
+			},
+		},
+	}
+
+	ctl.log.Println(xc)
+	ctl.broker.Put(l2.XConnectKey(xc.XConnectPairs[0].ReceiveInterface), xc.XConnectPairs[0])
+}
+
+func (ctl *VppAgentCtl) deleteXConn() {
+	xcKey := l2.XConnectKey("loop1")
+
+	ctl.log.Println("Deleting", xcKey)
+	ctl.broker.Delete(xcKey)
+}
+
+// VPP routes
+
+func (ctl *VppAgentCtl) createRoute() {
+	routes := l3.StaticRoutes{
+		Route: []*l3.StaticRoutes_Route{
+			{
+				VrfId:             0,
+				DstIpAddr:         "10.1.1.3/32",
+				NextHopAddr:       "192.168.1.13",
+				Weight:            6,
+				OutgoingInterface: "tap1",
+			},
+		},
+	}
+
+	ctl.log.Print(routes.Route[0])
+	ctl.broker.Put(l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr), routes.Route[0])
+}
+
+func (ctl *VppAgentCtl) deleteRoute() {
+	routeKey := l3.RouteKey(0, "10.1.1.3/32", "192.168.1.13")
+
+	ctl.log.Println("Deleting", routeKey)
+	ctl.broker.Delete(routeKey)
+}
+
+// Linux routes
+
+func (ctl *VppAgentCtl) createLinuxRoute() {
+	linuxRoutes := linuxL3.LinuxStaticRoutes{
+		Route: []*linuxL3.LinuxStaticRoutes_Route{
+			// Static route
+			{
+				Name:      "route1",
+				DstIpAddr: "10.0.2.0/24",
+				Interface: "veth1",
+				Metric:    100,
+				Namespace: &linuxL3.LinuxStaticRoutes_Route_Namespace{
+					Name: "ns1",
+					Type: linuxL3.LinuxStaticRoutes_Route_Namespace_NAMED_NS,
+				},
+			},
+			// Default route
+			{
+				Name:      "defRoute",
+				Default:   true,
+				GwAddr:    "10.0.2.2",
+				Interface: "veth1",
+				Metric:    100,
+				Namespace: &linuxL3.LinuxStaticRoutes_Route_Namespace{
+					Name: "ns1",
+					Type: linuxL3.LinuxStaticRoutes_Route_Namespace_NAMED_NS,
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(linuxRoutes)
+	ctl.broker.Put(linuxL3.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
+	ctl.broker.Put(linuxL3.StaticRouteKey(linuxRoutes.Route[1].Name), linuxRoutes.Route[1])
+}
+
+func (ctl *VppAgentCtl) deleteLinuxRoute() {
+	linuxStaticRouteKey := linuxL3.StaticRouteKey("route1")
+	linuxDefaultRouteKey := linuxL3.StaticRouteKey("defRoute")
+
+	ctl.log.Println("Deleting", linuxStaticRouteKey)
+	ctl.broker.Delete(linuxStaticRouteKey)
+	ctl.log.Println("Deleting", linuxDefaultRouteKey)
+	ctl.broker.Delete(linuxDefaultRouteKey)
+}
+
+// VPP ARP
+
+func (ctl *VppAgentCtl) createArp() {
+	arp := l3.ArpTable{
+		ArpTableEntries: []*l3.ArpTable_ArpTableEntry{
+			{
+				Interface:   "tap1",
+				IpAddress:   "192.168.10.21",
+				PhysAddress: "59:6C:45:59:8E:BD",
+				Static:      true,
+			},
+		},
+	}
+
+	ctl.log.Println(arp)
+	ctl.broker.Put(l3.ArpEntryKey(arp.ArpTableEntries[0].Interface, arp.ArpTableEntries[0].IpAddress), arp.ArpTableEntries[0])
+}
+
+func (ctl *VppAgentCtl) deleteArp() {
+	arpKey := l3.ArpEntryKey("tap1", "192.168.10.21")
+
+	ctl.log.Println("Deleting", arpKey)
+	ctl.broker.Delete(arpKey)
+}
+
+// Linux ARP
+
+func (ctl *VppAgentCtl) createLinuxArp() {
+	linuxArp := linuxL3.LinuxStaticArpEntries{
+		ArpEntry: []*linuxL3.LinuxStaticArpEntries_ArpEntry{
+			{
+				Name:      "arp1",
+				Interface: "veth1",
+				Namespace: &linuxL3.LinuxStaticArpEntries_ArpEntry_Namespace{
+					Name: "ns1",
+					Type: linuxL3.LinuxStaticArpEntries_ArpEntry_Namespace_NAMED_NS,
+				},
+				IpAddr:    "130.0.0.1",
+				HwAddress: "46:06:18:DB:05:3A",
+				State: &linuxL3.LinuxStaticArpEntries_ArpEntry_NudState{
+					Type: linuxL3.LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT, // or NOARP, REACHABLE, STALE
+				},
+				IpFamily: &linuxL3.LinuxStaticArpEntries_ArpEntry_IpFamily{
+					Family: linuxL3.LinuxStaticArpEntries_ArpEntry_IpFamily_IPV4, // or IPv6, ALL, MPLS
+				},
+			},
+		},
+	}
+
+	ctl.log.Println(linuxArp)
+	ctl.broker.Put(linuxL3.StaticArpKey(linuxArp.ArpEntry[0].Name), linuxArp.ArpEntry[0])
+}
+
+func (ctl *VppAgentCtl) deleteLinuxArp() {
+	linuxArpKey := linuxL3.StaticArpKey("arp1")
+
+	ctl.log.Println("Deleting", linuxArpKey)
+	ctl.broker.Delete(linuxArpKey)
+}
+
+// L4 plugin
+
+func (ctl *VppAgentCtl) enableL4Features() {
+	l4Features := &l4.L4Features{
+		Enabled: true,
+	}
+
+	ctl.log.Println(l4Features)
+	ctl.broker.Put(l4.FeatureKey(), l4Features)
+}
+
+func (ctl *VppAgentCtl) disableL4Features() {
+	l4Features := &l4.L4Features{
+		Enabled: false,
+	}
+
+	ctl.log.Println(l4Features)
+	ctl.broker.Put(l4.FeatureKey(), l4Features)
+}
+
+func (ctl *VppAgentCtl) createAppNamespace() {
+	appNs := l4.AppNamespaces{
+		AppNamespaces: []*l4.AppNamespaces_AppNamespace{
+			{
+				NamespaceId: "appns1",
+				Secret:      1,
+				Interface:   "tap1",
+			},
+		},
+	}
+
+	ctl.log.Println(appNs)
+	ctl.broker.Put(l4.AppNamespacesKey(appNs.AppNamespaces[0].NamespaceId), appNs.AppNamespaces[0])
+}
+
+func (ctl *VppAgentCtl) deleteAppNamespace() {
+	// Note: application namespace cannot be removed, missing API in VPP
+	ctl.log.Println("App namespace delete not supported")
+}
+
+// TXN transactions
+
+func (ctl *VppAgentCtl) createTxn() {
+	ifs := interfaces.Interfaces{
+		Interface: []*interfaces.Interfaces_Interface{
+			{
+				Name:    "tap1",
+				Type:    interfaces.InterfaceType_TAP_INTERFACE,
+				Enabled: true,
+				Mtu:     1500,
+				IpAddresses: []string{
+					"10.4.4.1/24",
+				},
+				Tap: &interfaces.Interfaces_Interface_Tap{
+					HostIfName: "tap1",
+				},
+			},
+			{
+				Name:    "tap2",
+				Type:    interfaces.InterfaceType_TAP_INTERFACE,
+				Enabled: true,
+				Mtu:     1500,
+				IpAddresses: []string{
+					"10.4.4.2/24",
+				},
+				Tap: &interfaces.Interfaces_Interface_Tap{
+					HostIfName: "tap2",
+				},
+			},
+		},
+	}
+
+	bd := l2.BridgeDomains{
+		BridgeDomains: []*l2.BridgeDomains_BridgeDomain{
+			{
+				Name:                "bd1",
+				Flood:               false,
+				UnknownUnicastFlood: false,
+				Forward:             true,
+				Learn:               true,
+				ArpTermination:      false,
+				MacAge:              0,
+				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+					{
+						Name: "tap1",
+						BridgedVirtualInterface: true,
+						SplitHorizonGroup:       0,
+					},
+					{
+						Name: "tap2",
+						BridgedVirtualInterface: false,
+						SplitHorizonGroup:       0,
+					},
+				},
+			},
+		},
+	}
+
+	t := ctl.broker.NewTxn()
+	t.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+	t.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
+	t.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
+
+	t.Commit()
+}
+
+func (ctl *VppAgentCtl) deleteTxn() {
+	ctl.log.Println("Deleting txn items")
+	ctl.broker.Delete(interfaces.InterfaceKey("tap1"))
+	ctl.broker.Delete(interfaces.InterfaceKey("tap2"))
+	ctl.broker.Delete(l2.BridgeDomainKey("bd1"))
+}
+
+// Error reporting
+
+func (ctl *VppAgentCtl) reportIfaceErrorState() {
+	ifErr, err := ctl.broker.ListValues(interfaces.IfErrorPrefix)
 	if err != nil {
-		log.Panic("error putting the data ", key, " that to DB from ", file, ", err: ", err)
+		ctl.log.Fatal(err)
+		return
 	}
-	log.Println("DB put successful ", key, " ", file)
+	for {
+		kv, allReceived := ifErr.GetNext()
+		if allReceived {
+			break
+		}
+		entry := &interfaces.InterfaceErrors_Interface{}
+		err := kv.GetValue(entry)
+		if err != nil {
+			ctl.log.Fatal(err)
+			return
+		}
+		ctl.log.Println(entry)
+	}
 }
-func readData(file string) ([]byte, error) {
+
+func (ctl *VppAgentCtl) reportBdErrorState() {
+	bdErr, err := ctl.broker.ListValues(l2.BdErrPrefix)
+	if err != nil {
+		ctl.log.Fatal(err)
+		return
+	}
+	for {
+		kv, allReceived := bdErr.GetNext()
+		if allReceived {
+			break
+		}
+		entry := &l2.BridgeDomainErrors_BridgeDomain{}
+		err := kv.GetValue(entry)
+		if err != nil {
+			ctl.log.Fatal(err)
+			return
+		}
+
+		ctl.log.Println(entry)
+	}
+}
+
+// Auxiliary methods
+
+func (ctl *VppAgentCtl) etcdGet(key string) {
+	ctl.log.Debug("GET ", key)
+
+	data, found, _, err := ctl.bytesConnection.GetValue(key)
+	if err != nil {
+		ctl.log.Error(err)
+		return
+	}
+	if !found {
+		ctl.log.Debug("No value found for the key", key)
+	}
+	ctl.log.Println(string(data))
+}
+
+func (ctl *VppAgentCtl) etcdPut(key string, file string) {
+	input, err := ctl.readData(file)
+
+	ctl.log.Println("DB putting ", key, " ", string(input))
+
+	err = ctl.bytesConnection.Put(key, input)
+	if err != nil {
+		ctl.log.Panic("error putting the data ", key, " that to DB from ", file, ", err: ", err)
+	}
+	ctl.log.Println("DB put successful ", key, " ", file)
+}
+
+func (ctl *VppAgentCtl) etcdDel(key string) {
+	found, err := ctl.bytesConnection.Delete(key, datasync.WithPrefix())
+	if err != nil {
+		ctl.log.Error(err)
+		return
+	}
+	if found {
+		ctl.log.Debug("Data deleted:", key)
+	} else {
+		ctl.log.Debug("No value found for the key", key)
+	}
+}
+
+func (ctl *VppAgentCtl) etcdDump(key string) {
+	ctl.log.Debug("DUMP ", key)
+
+	data, err := ctl.bytesConnection.ListValues(key)
+	if err != nil {
+		ctl.log.Error(err)
+		return
+	}
+
+	var found bool
+	for {
+		found = true
+		kv, stop := data.GetNext()
+		if stop {
+			break
+		}
+		ctl.log.Println(kv.GetKey())
+		ctl.log.Println(string(kv.GetValue()))
+		ctl.log.Println()
+
+	}
+	if !found {
+		ctl.log.Debug("No value found for the key", key)
+	}
+}
+
+func (ctl *VppAgentCtl) readData(file string) ([]byte, error) {
 	var input []byte
 	var err error
 
@@ -392,369 +1413,35 @@ func readData(file string) ([]byte, error) {
 		// read JSON from file
 		input, err = ioutil.ReadFile(file)
 		if err != nil {
-			log.Panic("error reading the data that needs to be written to DB from ", file, ", err: ", err)
+			ctl.log.Panic("error reading the data that needs to be written to DB from ", file, ", err: ", err)
 		}
 	}
 
 	// validate the JSON
 	var js map[string]interface{}
 	if json.Unmarshal(input, &js) != nil {
-		log.Panic("Not a valid JSON: ", string(input))
+		ctl.log.Panic("Not a valid JSON: ", string(input))
 	}
 	return input, err
 }
 
-func etcdGet(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	log.Debug("GET ", key)
+func (ctl *VppAgentCtl) listAllAgentKeys() {
+	ctl.log.Debug("listAllAgentKeys")
 
-	data, found, _, err := bDB.GetValue(key)
+	it, err := ctl.broker.ListKeys(ctl.serviceLabel.GetAllAgentsPrefix())
 	if err != nil {
-		log.Error(err)
-		return
-	}
-	if !found {
-		log.Debug("No value found for the key", key)
-	}
-	fmt.Println(string(data))
-}
-
-func etcdDump(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	log.Debug("DUMP ", key)
-
-	data, err := bDB.ListValues(key)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	var found bool
-	for {
-		found = true
-		kv, stop := data.GetNext()
-		if stop {
-			break
-		}
-		fmt.Println(kv.GetKey())
-		fmt.Println(string(kv.GetValue()))
-		fmt.Println()
-
-	}
-
-	if !found {
-		log.Debug("No value found for the key", key)
-	}
-}
-
-func etcdDel(bDB *etcdv3.BytesConnectionEtcd, key string) {
-	found, err := bDB.Delete(key, datasync.WithPrefix())
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	if found {
-		log.Debug("Data deleted:", key)
-	} else {
-		log.Debug("No value found for the key", key)
-	}
-}
-
-func createRoute(db keyval.ProtoBroker) {
-	routes := l3.StaticRoutes{
-		Route: []*l3.StaticRoutes_Route{
-			{
-				VrfId:             0,
-				DstIpAddr:         "10.1.1.3/32",
-				NextHopAddr:       "192.168.1.13",
-				Weight:            6,
-				OutgoingInterface: "tap1",
-			},
-		},
-	}
-
-	key := l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr)
-	db.Put(key, routes.Route[0])
-	log.Printf("Adding route %v", key)
-}
-
-func deleteRoute(db keyval.ProtoBroker, routeDstIP string, routeNhIP string) {
-	path := l3.RouteKey(0, routeDstIP, "192.168.1.13")
-	db.Delete(path)
-	log.WithField("path", path).Debug("Removing route")
-}
-
-func txn(db keyval.ProtoBroker) {
-	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 2)
-
-	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
-	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "10.4.4.1/24"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
-
-	ifs.Interface[1] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[1].Name = "tap2"
-	ifs.Interface[1].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[1].Enabled = true
-	ifs.Interface[1].Mtu = 1500
-	ifs.Interface[1].IpAddresses = make([]string, 1)
-	ifs.Interface[1].IpAddresses[0] = "10.4.4.2/24"
-	ifs.Interface[1].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap2"}
-
-	bd01 := l2.BridgeDomains_BridgeDomain{
-		Name:                "aaa",
-		Flood:               false,
-		UnknownUnicastFlood: false,
-		Forward:             true,
-		Learn:               true,
-		ArpTermination:      false,
-		MacAge:              0, /*means disable aging*/
-	}
-
-	t := db.NewTxn()
-	t.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-	t.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
-	t.Put(l2.BridgeDomainKey("bd01"), &bd01)
-
-	t.Commit()
-
-}
-
-func deleteTxn(db keyval.ProtoBroker) {
-	db.Delete(interfaces.InterfaceKey("tap1"))
-	db.Delete(interfaces.InterfaceKey("tap2"))
-}
-
-func listAllAgentKeys(db *etcdv3.BytesConnectionEtcd) {
-	log.Debug("listAllAgentKeys")
-
-	it, err := db.ListKeys(serviceLabel.GetAllAgentsPrefix())
-	if err != nil {
-		log.Error(err)
+		ctl.log.Error(err)
 	}
 	for {
 		key, _, stop := it.GetNext()
 		if stop {
 			break
 		}
-		fmt.Println("key: ", key)
+		ctl.log.Println("key: ", key)
 	}
 }
 
-func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
-	// fill in data - option 1
-	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 4)
-
-	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
-	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:41"
-	ifs.Interface[0].Mtu = 555
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "192.168.20.1/24"
-	//ifs.Interface[0].IpAddresses[0] = "192.168.2.9/24"
-	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
-	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
-	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
-	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
-	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
-
-	log.Println(ifs)
-
-	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-
-}
-
-func createEthernet(db keyval.ProtoBroker, ifname string, ipv4Addr string, ipv6Addr string) {
-	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 2)
-
-	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = ifname
-	ifs.Interface[0].Type = interfaces.InterfaceType_ETHERNET_CSMACD
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = ""
-
-	// Ipv4
-	ifs.Interface[0].SetDhcpClient = false
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-
-	// Ipv6
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv6Addr
-
-	log.Println(ifs)
-
-	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-}
-
-func createLoopback(db keyval.ProtoBroker, ifname string, physAddr string, ipv4Addr string, ipv6Addr string) {
-	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
-
-	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = ifname
-	ifs.Interface[0].Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = physAddr
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1478
-	ifs.Interface[0].IpAddresses = make([]string, 2)
-	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-	ifs.Interface[0].IpAddresses[1] = ipv6Addr
-
-	log.Println(ifs)
-
-	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-}
-
-func createAfPacket(db keyval.ProtoBroker, ifname string, hostIfName string, physAddr string, ipv4Addr string, ipv6Addr string) {
-	ifs := interfaces.Interfaces{}
-	ifs.Interface = make([]*interfaces.Interfaces_Interface, 1)
-
-	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = ifname
-	ifs.Interface[0].Type = interfaces.InterfaceType_AF_PACKET_INTERFACE
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = physAddr
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv6Addr
-
-	ifs.Interface[0].Afpacket = new(interfaces.Interfaces_Interface_Afpacket)
-	ifs.Interface[0].Afpacket.HostIfName = hostIfName
-
-	log.Println(ifs)
-
-	db.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-}
-
-func createVeth(db keyval.ProtoBroker, ifname string, peerIfName string, ns string, physAddr string, ipv4Addr string, ipv6Addr string) {
-	ifs := linuxIntf.LinuxInterfaces{}
-	ifs.Interface = make([]*linuxIntf.LinuxInterfaces_Interface, 1)
-
-	ifs.Interface[0] = new(linuxIntf.LinuxInterfaces_Interface)
-	ifs.Interface[0].Name = ifname
-	ifs.Interface[0].Type = linuxIntf.LinuxInterfaces_VETH
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = physAddr
-
-	ifs.Interface[0].Namespace = new(linuxIntf.LinuxInterfaces_Interface_Namespace)
-	ifs.Interface[0].Namespace.Type = linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS
-	ifs.Interface[0].Namespace.Name = ns
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1500
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = ipv4Addr
-
-	//ifs.Interface[0].Enabled = true
-	//ifs.Interface[0].Mtu = 1500
-	//ifs.Interface[0].IpAddresses = make([]string, 1)
-	//ifs.Interface[0].IpAddresses[0] = ipv6Addr
-
-	ifs.Interface[0].Veth = &linuxIntf.LinuxInterfaces_Interface_Veth{PeerIfName: peerIfName}
-
-	log.Println(ifs)
-
-	db.Put(linuxIntf.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-}
-func createLinuxTap(db keyval.ProtoBroker) {
-	ifs := linuxIntf.LinuxInterfaces{}
-	ifs.Interface = make([]*linuxIntf.LinuxInterfaces_Interface, 1)
-
-	ifs.Interface[0] = new(linuxIntf.LinuxInterfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
-	ifs.Interface[0].HostIfName = "tap2"
-	ifs.Interface[0].Type = linuxIntf.LinuxInterfaces_AUTO_TAP
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = "92:c7:42:67:ab:cc"
-
-	ifs.Interface[0].Namespace = new(linuxIntf.LinuxInterfaces_Interface_Namespace)
-	ifs.Interface[0].Namespace.Type = linuxIntf.LinuxInterfaces_Interface_Namespace_NAMED_NS
-	ifs.Interface[0].Namespace.Name = "ns2"
-
-	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].Mtu = 1155
-	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "172.52.45.127/24"
-
-	log.Println(ifs)
-
-	db.Put(linuxIntf.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-}
-
-func deleteLinuxTap(db keyval.ProtoBroker) {
-	ifs := linuxIntf.LinuxInterfaces{}
-	ifs.Interface = make([]*linuxIntf.LinuxInterfaces_Interface, 1)
-
-	ifs.Interface[0] = new(linuxIntf.LinuxInterfaces_Interface)
-	ifs.Interface[0].Name = "tap1"
-
-	db.Delete(linuxIntf.InterfaceKey(ifs.Interface[0].Name))
-}
-
-func createMemif(db keyval.ProtoBroker, ifname string, ipAddr string, master bool) {
-	key := interfaces.InterfaceKey(ifname)
-	iface := interfaces.Interfaces_Interface{
-		Name:    ifname,
-		Type:    interfaces.InterfaceType_MEMORY_INTERFACE,
-		Enabled: true,
-		Memif: &interfaces.Interfaces_Interface_Memif{
-			Id:             1,
-			Secret:         "secret",
-			Master:         master,
-			SocketFilename: "/tmp/memif1.sock",
-		},
-		Mtu:         1478,
-		IpAddresses: []string{ipAddr},
-	}
-	log.Println(key, iface)
-	db.Put(key, &iface)
-}
-
-func createVxlan(db keyval.ProtoBroker, ifname string, vni uint32, src string, dst string) {
-
-	iface := interfaces.Interfaces_Interface{
-		Name:    ifname,
-		Type:    interfaces.InterfaceType_VXLAN_TUNNEL,
-		Enabled: true,
-		Vxlan: &interfaces.Interfaces_Interface_Vxlan{
-			SrcAddress: src,
-			DstAddress: dst,
-			Vni:        vni,
-		},
-	}
-	log.Println(iface)
-	db.Put(interfaces.InterfaceKey(iface.Name), &iface)
-}
-
-func delete(db keyval.ProtoBroker, key string) {
-	db.Delete(key)
-	log.Println("Deleting", key)
-}
-
-func createEtcdClient() (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker) {
-
+func (ctl *VppAgentCtl) createEtcdClient() (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker) {
 	var err error
 	var configFile string
 
@@ -768,12 +1455,12 @@ func createEtcdClient() (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker) {
 	if configFile != "" {
 		err := config.ParseConfigFromYamlFile(configFile, cfg)
 		if err != nil {
-			log.Fatal(err)
+			ctl.log.Fatal(err)
 		}
 	}
 	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
 	if err != nil {
-		log.Fatal(err)
+		ctl.log.Fatal(err)
 	}
 
 	etcdLogger := logrus.NewLogger("etcdLogger")
@@ -781,63 +1468,13 @@ func createEtcdClient() (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker) {
 
 	bDB, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, etcdLogger)
 	if err != nil {
-		log.Fatal(err)
+		ctl.log.Fatal(err)
 	}
 
 	return bDB, kvproto.NewProtoWrapperWithSerializer(bDB, &keyval.SerializerJSON{}).
-		NewBroker(serviceLabel.GetAgentPrefix())
+		NewBroker(ctl.serviceLabel.GetAgentPrefix())
 }
 
-func createBridgeDomain(db keyval.ProtoBroker, bdName string) {
-	bd := l2.BridgeDomains{}
-	bd.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 1)
-
-	bd.BridgeDomains[0] = new(l2.BridgeDomains_BridgeDomain)
-	bd.BridgeDomains[0].Name = "bd1"
-	bd.BridgeDomains[0].Learn = true
-	bd.BridgeDomains[0].ArpTermination = true
-	bd.BridgeDomains[0].Flood = true
-	bd.BridgeDomains[0].UnknownUnicastFlood = true
-	bd.BridgeDomains[0].Forward = true
-
-	bd.BridgeDomains[0].Interfaces = make([]*l2.BridgeDomains_BridgeDomain_Interfaces, 1)
-	bd.BridgeDomains[0].Interfaces[0] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
-	bd.BridgeDomains[0].Interfaces[0].Name = "tap1"
-	bd.BridgeDomains[0].Interfaces[0].BridgedVirtualInterface = false
-	bd.BridgeDomains[0].Interfaces[0].SplitHorizonGroup = 1
-	//bd.BridgeDomains[0].Interfaces[1] = new(l2.BridgeDomains_BridgeDomain_Interfaces)
-	//bd.BridgeDomains[0].Interfaces[1].Name = "tap2"
-	//bd.BridgeDomains[0].Interfaces[1].BridgedVirtualInterface = true
-
-	log.Println(bd)
-	db.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
-}
-
-func addArpEntry(db keyval.ProtoBroker, iface string) {
-	arpTable := l3.ArpTable{}
-	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
-	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
-	arpTable.ArpTableEntries[0].Interface = "tap1"
-	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
-	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
-	arpTable.ArpTableEntries[0].Static = true
-
-	log.Println(arpTable)
-	db.Put(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress), arpTable.ArpTableEntries[0])
-}
-
-func deleteArpEntry(db keyval.ProtoBroker, iface string) {
-	arpTable := l3.ArpTable{}
-	arpTable.ArpTableEntries = make([]*l3.ArpTable_ArpTableEntry, 1)
-	arpTable.ArpTableEntries[0] = new(l3.ArpTable_ArpTableEntry)
-	arpTable.ArpTableEntries[0].Interface = "tap1"
-	arpTable.ArpTableEntries[0].IpAddress = "192.168.10.21"
-	arpTable.ArpTableEntries[0].PhysAddress = "59:6C:45:59:8E:BD"
-	arpTable.ArpTableEntries[0].Static = true
-
-	log.Println(arpTable)
-	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
-}
 
 func addProxyArpIf(db keyval.ProtoBroker) {
 	proxyArpIf := l3.ProxyArpInterfaces{
@@ -889,429 +1526,4 @@ func addProxyArpRng(db keyval.ProtoBroker) {
 
 func delProxyArpRng(db keyval.ProtoBroker) {
 	db.Delete(l3.ProxyArpRangeKey("proxyArpRng1"))
-}
-
-func addArpTableEntry(db keyval.ProtoBroker, bdName string) {
-	bd := l2.BridgeDomains{}
-	bd.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 1)
-
-	bd.BridgeDomains[0] = new(l2.BridgeDomains_BridgeDomain)
-	bd.BridgeDomains[0].Name = bdName
-	bd.BridgeDomains[0].Learn = true
-	bd.BridgeDomains[0].ArpTermination = true
-	bd.BridgeDomains[0].Flood = true
-	bd.BridgeDomains[0].UnknownUnicastFlood = true
-	bd.BridgeDomains[0].Forward = true
-	bd.BridgeDomains[0].ArpTerminationTable = make([]*l2.BridgeDomains_BridgeDomain_ArpTerminationTable, 2)
-	bd.BridgeDomains[0].ArpTerminationTable[0] = new(l2.BridgeDomains_BridgeDomain_ArpTerminationTable)
-	bd.BridgeDomains[0].ArpTerminationTable[1] = new(l2.BridgeDomains_BridgeDomain_ArpTerminationTable)
-	bd.BridgeDomains[0].ArpTerminationTable[0].PhysAddress = "a7:65:f1:b5:dc:f6"
-	bd.BridgeDomains[0].ArpTerminationTable[0].IpAddress = "192.168.10.10"
-	bd.BridgeDomains[0].ArpTerminationTable[1].PhysAddress = "59:6C:45:59:8E:BC"
-	bd.BridgeDomains[0].ArpTerminationTable[1].IpAddress = "10.10.0.1"
-
-	log.Println(bd)
-	db.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
-}
-
-func addStaticFibTableEntry(db keyval.ProtoBroker, bdName string, iface string) {
-	fibTable := l2.FibTableEntries{}
-	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
-	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].OutgoingInterface = iface
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
-	fibTable.FibTableEntry[0].BridgedVirtualInterface = false
-
-	log.Println(fibTable)
-
-	db.Put(l2.FibKey(fibTable.FibTableEntry[0].BridgeDomain, fibTable.FibTableEntry[0].PhysAddress), fibTable.FibTableEntry[0])
-}
-
-func deleteStaticFibTableEntry(db keyval.ProtoBroker, bdName string) {
-	fibTable := l2.FibTableEntries{}
-	fibTable.FibTableEntry = make([]*l2.FibTableEntries_FibTableEntry, 1)
-	fibTable.FibTableEntry[0] = new(l2.FibTableEntries_FibTableEntry)
-	fibTable.FibTableEntry[0].PhysAddress = "aa:65:f1:59:8E:BC"
-	fibTable.FibTableEntry[0].BridgeDomain = bdName
-
-	log.Println(fibTable)
-
-	db.Delete(l2.FibKey(fibTable.FibTableEntry[0].BridgeDomain, fibTable.FibTableEntry[0].PhysAddress))
-}
-
-func createL2xConnect(db keyval.ProtoBroker, ifnameRx string, ifnameTx string) {
-	xcp := l2.XConnectPairs{}
-	xcp.XConnectPairs = make([]*l2.XConnectPairs_XConnectPair, 1)
-	xcp.XConnectPairs[0] = new(l2.XConnectPairs_XConnectPair)
-	xcp.XConnectPairs[0].ReceiveInterface = ifnameRx
-	xcp.XConnectPairs[0].TransmitInterface = ifnameTx
-
-	log.Println(xcp)
-
-	db.Put(l2.XConnectKey(xcp.XConnectPairs[0].ReceiveInterface), xcp.XConnectPairs[0])
-}
-
-func createBfdSession(db keyval.ProtoBroker, iface string) {
-	singleHopBfd := bfd.SingleHopBFD{}
-	singleHopBfd.Sessions = make([]*bfd.SingleHopBFD_Session, 1)
-	singleHopBfd.Sessions[0] = new(bfd.SingleHopBFD_Session)
-	singleHopBfd.Sessions[0].Interface = iface
-	singleHopBfd.Sessions[0].RequiredMinRxInterval = 8
-	singleHopBfd.Sessions[0].DesiredMinTxInterval = 3
-	singleHopBfd.Sessions[0].SourceAddress = "192.168.1.2"
-	singleHopBfd.Sessions[0].DestinationAddress = "20.10.0.5"
-	//singleHopBfd.Sessions[0].SourceAddress = "2001:db8:0:0:0:ff00:42:8329"
-	//singleHopBfd.Sessions[0].DestinationAddress = "2871:db18:0:0:0:ff00:42:8329"
-	singleHopBfd.Sessions[0].DetectMultiplier = 9
-	singleHopBfd.Sessions[0].Enabled = true
-	singleHopBfd.Sessions[0].Authentication = new(bfd.SingleHopBFD_Session_Authentication)
-	singleHopBfd.Sessions[0].Authentication.KeyId = 1
-	singleHopBfd.Sessions[0].Authentication.AdvertisedKeyId = 1
-
-	log.Println(singleHopBfd)
-
-	db.Put(bfd.SessionKey(singleHopBfd.Sessions[0].Interface), singleHopBfd.Sessions[0])
-}
-
-func createBfdKey(db keyval.ProtoBroker, id uint32) {
-	singleHopBfd := bfd.SingleHopBFD{}
-	singleHopBfd.Keys = make([]*bfd.SingleHopBFD_Key, 1)
-	singleHopBfd.Keys[0] = new(bfd.SingleHopBFD_Key)
-	singleHopBfd.Keys[0].Id = id
-	singleHopBfd.Keys[0].AuthenticationType = bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1
-	singleHopBfd.Keys[0].Secret = "1981491891941891"
-
-	log.Println(singleHopBfd)
-
-	db.Put(bfd.AuthKeysKey(string(singleHopBfd.Keys[0].Id)), singleHopBfd.Keys[0])
-}
-
-func createBfdEcho(db keyval.ProtoBroker, iface string) {
-	singleHopBfd := bfd.SingleHopBFD{}
-	singleHopBfd.EchoFunction = new(bfd.SingleHopBFD_EchoFunction)
-	singleHopBfd.EchoFunction.EchoSourceInterface = iface
-
-	log.Println(singleHopBfd)
-
-	db.Put(bfd.EchoFunctionKey(singleHopBfd.EchoFunction.EchoSourceInterface), singleHopBfd.EchoFunction)
-}
-
-func reportIfaceErrorState(db keyval.ProtoBroker) {
-	ifErr, err := db.ListValues(interfaces.IfErrorPrefix)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	for {
-
-		kv, allReceived := ifErr.GetNext()
-
-		if allReceived {
-			break
-		}
-		entry := &interfaces.InterfaceErrors_Interface{}
-		err := kv.GetValue(entry)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		fmt.Println(entry)
-	}
-}
-
-func reportBdErrorState(db keyval.ProtoBroker) {
-	bdErr, err := db.ListValues(l2.BdErrPrefix)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	for {
-		kv, allReceived := bdErr.GetNext()
-		if allReceived {
-			break
-		}
-		entry := &l2.BridgeDomainErrors_BridgeDomain{}
-		err := kv.GetValue(entry)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		fmt.Println(entry)
-	}
-}
-
-func printState(db keyval.ProtoBroker) {
-	respIf, errIf := db.ListValues(interfaces.InterfaceStateKeyPrefix())
-	if errIf != nil {
-		log.Fatal(errIf)
-		return
-	}
-
-	// interfaces
-	for {
-
-		kv, allReceived := respIf.GetNext()
-
-		if allReceived {
-			break
-		}
-		entry := &interfaces.InterfacesState_Interface{}
-		err := kv.GetValue(entry)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		fmt.Println(entry)
-	}
-
-	respBd, errBd := db.ListValues(l2.BridgeDomainKeyPrefix())
-	if errBd != nil {
-		log.Fatal(errBd)
-		return
-	}
-
-	// bridge domains
-	for {
-		kv, allReceived := respBd.GetNext()
-		if allReceived {
-			break
-		}
-
-		entry := &l2.BridgeDomains_BridgeDomain{}
-		err := kv.GetValue(entry)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		fmt.Println(entry)
-	}
-}
-
-func createLinuxArp(db keyval.ProtoBroker) {
-	linuxArpEntries := l32.LinuxStaticArpEntries{}
-	linuxArpEntries.ArpEntry = make([]*l32.LinuxStaticArpEntries_ArpEntry, 1)
-	linuxArpEntries.ArpEntry[0] = new(l32.LinuxStaticArpEntries_ArpEntry)
-	linuxArpEntries.ArpEntry[0].Name = "arp1"
-	linuxArpEntries.ArpEntry[0].Namespace = new(l32.LinuxStaticArpEntries_ArpEntry_Namespace)
-	linuxArpEntries.ArpEntry[0].Namespace.Type = l32.LinuxStaticArpEntries_ArpEntry_Namespace_NAMED_NS
-	linuxArpEntries.ArpEntry[0].Namespace.Name = "ns1"
-	linuxArpEntries.ArpEntry[0].Interface = "veth1"
-	linuxArpEntries.ArpEntry[0].IpAddr = "130.0.0.1"
-	linuxArpEntries.ArpEntry[0].HwAddress = "ab:cd:ef:01:02:03"
-	linuxArpEntries.ArpEntry[0].State = new(l32.LinuxStaticArpEntries_ArpEntry_NudState)
-	linuxArpEntries.ArpEntry[0].State.Type = l32.LinuxStaticArpEntries_ArpEntry_NudState_PERMANENT
-	linuxArpEntries.ArpEntry[0].IpFamily = new(l32.LinuxStaticArpEntries_ArpEntry_IpFamily)
-	linuxArpEntries.ArpEntry[0].IpFamily.Family = l32.LinuxStaticArpEntries_ArpEntry_IpFamily_IPV4
-
-	log.Println(linuxArpEntries)
-
-	db.Put(l32.StaticArpKey(linuxArpEntries.ArpEntry[0].Name), linuxArpEntries.ArpEntry[0])
-}
-
-func createLinuxRoute(db keyval.ProtoBroker) {
-	linuxRoutes := l32.LinuxStaticRoutes{}
-	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
-	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
-	linuxRoutes.Route[0].Name = "route1"
-	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
-	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
-	linuxRoutes.Route[0].Namespace.Name = "ns1"
-	linuxRoutes.Route[0].DstIpAddr = "10.0.2.0/24"
-	//linuxRoutes.Route[0].SrcIpAddr = "128.0.0.10"
-	//linuxRoutes.Route[0].GwAddr = "128.0.0.1"
-	linuxRoutes.Route[0].Interface = "veth1"
-	linuxRoutes.Route[0].Metric = 100
-
-	log.Println(linuxRoutes)
-
-	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
-}
-
-func createDefaultLinuxRoute(db keyval.ProtoBroker) {
-	linuxRoutes := l32.LinuxStaticRoutes{}
-	linuxRoutes.Route = make([]*l32.LinuxStaticRoutes_Route, 1)
-	linuxRoutes.Route[0] = new(l32.LinuxStaticRoutes_Route)
-	linuxRoutes.Route[0].Name = "defRoute"
-	linuxRoutes.Route[0].Namespace = new(l32.LinuxStaticRoutes_Route_Namespace)
-	linuxRoutes.Route[0].Namespace.Type = l32.LinuxStaticRoutes_Route_Namespace_NAMED_NS
-	linuxRoutes.Route[0].Namespace.Name = "ns1"
-	linuxRoutes.Route[0].Default = true
-	linuxRoutes.Route[0].Interface = "veth1"
-	linuxRoutes.Route[0].GwAddr = "10.0.2.2"
-	linuxRoutes.Route[0].Metric = 100
-
-	log.Println(linuxRoutes)
-
-	db.Put(l32.StaticRouteKey(linuxRoutes.Route[0].Name), linuxRoutes.Route[0])
-}
-
-func createAppNamespace(db keyval.ProtoBroker) {
-	appNamespace := l4.AppNamespaces{}
-	appNamespace.AppNamespaces = make([]*l4.AppNamespaces_AppNamespace, 1)
-	appNamespace.AppNamespaces[0] = new(l4.AppNamespaces_AppNamespace)
-	appNamespace.AppNamespaces[0].NamespaceId = "ns8"
-	appNamespace.AppNamespaces[0].Secret = 1
-	appNamespace.AppNamespaces[0].Interface = "tap1"
-
-	log.Println(appNamespace)
-
-	db.Put(l4.AppNamespacesKey(appNamespace.AppNamespaces[0].NamespaceId), appNamespace.AppNamespaces[0])
-}
-
-func enableL4Features(db keyval.ProtoBroker) {
-	l4Fatures := &l4.L4Features{}
-	l4Fatures.Enabled = true
-
-	log.Println(l4Fatures)
-
-	db.Put(l4.FeatureKey(), l4Fatures)
-}
-
-func disableL4Features(db keyval.ProtoBroker) {
-	l4Fatures := &l4.L4Features{}
-	l4Fatures.Enabled = false
-
-	log.Println(l4Fatures)
-
-	db.Put(l4.FeatureKey(), l4Fatures)
-}
-
-func createStnRule(db keyval.ProtoBroker, ifName string, ipAddress string) {
-	stnRule := stn.StnRule{
-		RuleName:  "rule1",
-		IpAddress: ipAddress,
-		Interface: ifName,
-	}
-
-	log.Println(stnRule)
-
-	db.Put(stn.Key(stnRule.RuleName), &stnRule)
-}
-
-func setNatGlobalConfig(db keyval.ProtoBroker) {
-	natGlobal := &nat.Nat44Global{}
-	natGlobal.Forwarding = false
-	natGlobal.NatInterfaces = make([]*nat.Nat44Global_NatInterfaces, 3)
-	natGlobal.NatInterfaces[0] = &nat.Nat44Global_NatInterfaces{
-		Name:          "tap1",
-		IsInside:      false,
-		OutputFeature: false,
-	}
-	natGlobal.NatInterfaces[1] = &nat.Nat44Global_NatInterfaces{
-		Name:          "tap2",
-		IsInside:      false,
-		OutputFeature: false,
-	}
-	natGlobal.NatInterfaces[2] = &nat.Nat44Global_NatInterfaces{
-		Name:          "tap3",
-		IsInside:      false,
-		OutputFeature: false,
-	}
-	natGlobal.AddressPools = make([]*nat.Nat44Global_AddressPools, 3)
-	natGlobal.AddressPools[0] = &nat.Nat44Global_AddressPools{
-		VrfId:           0,
-		FirstSrcAddress: "192.168.0.1",
-		TwiceNat:        false,
-	}
-	natGlobal.AddressPools[1] = &nat.Nat44Global_AddressPools{
-		VrfId:           0,
-		FirstSrcAddress: "175.124.0.1",
-		LastSrcAddress:  "175.124.0.3",
-		TwiceNat:        false,
-	}
-	natGlobal.AddressPools[2] = &nat.Nat44Global_AddressPools{
-		VrfId:           0,
-		FirstSrcAddress: "10.10.0.1",
-		LastSrcAddress:  "10.10.0.2",
-		TwiceNat:        false,
-	}
-
-	log.Println(natGlobal)
-
-	db.Put(nat.GlobalConfigKey(), natGlobal)
-
-	log.Println(nat.GlobalConfigKey())
-}
-
-func deleteNatGlobalConfig(db keyval.ProtoBroker) {
-	db.Delete(nat.GlobalConfigKey())
-}
-
-func createSNat(db keyval.ProtoBroker) {
-	sNat := &nat.Nat44SNat_SNatConfig{
-		Label: "pool1",
-	}
-
-	log.Println(sNat)
-
-	db.Put(nat.SNatKey(sNat.Label), sNat)
-}
-
-func createDNat(db keyval.ProtoBroker) {
-	// Local IP list
-	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
-	localIP := &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-		LocalIP:     "172.124.0.2",
-		LocalPort:   6500,
-		Probability: 40,
-	}
-	localIPs = append(localIPs, localIP)
-	localIP = &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-		LocalIP:     "172.125.10.5",
-		LocalPort:   2300,
-		Probability: 40,
-	}
-	localIPs = append(localIPs, localIP)
-
-	// Static mapping
-	var mapping []*nat.Nat44DNat_DNatConfig_StaticMappings
-	entry := &nat.Nat44DNat_DNatConfig_StaticMappings{
-		VrfId:             0,
-		ExternalInterface: "tap1",
-		ExternalIP:        "192.168.0.1",
-		ExternalPort:      8989,
-		LocalIps:          localIPs,
-		Protocol:          1,
-		TwiceNat:          false,
-	}
-	mapping = append(mapping, entry)
-
-	// Identity mapping
-	var idMapping []*nat.Nat44DNat_DNatConfig_IdentityMappings
-	idEntry := &nat.Nat44DNat_DNatConfig_IdentityMappings{
-		VrfId: 0,
-		//AddressedInterface: "tap1",
-		IpAddress: "10.10.0.1",
-		Port:      2525,
-		Protocol:  0,
-	}
-	idMapping = append(idMapping, idEntry)
-
-	// DNat config
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label:      "dnat1",
-		StMappings: mapping,
-		IdMappings: idMapping,
-	}
-
-	log.Println(dNat)
-
-	db.Put(nat.DNatKey(dNat.Label), dNat)
-}
-
-func deleteDNat(db keyval.ProtoBroker) {
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: "dnat1",
-	}
-
-	log.Println(dNat)
-
-	db.Delete(nat.DNatKey(dNat.Label))
 }
