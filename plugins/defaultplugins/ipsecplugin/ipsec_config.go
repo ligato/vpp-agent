@@ -121,6 +121,7 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 		if entry.Sa != "" {
 			var exists bool
 			if saID, _, exists = plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
+				// TODO: cache policy entry for future configuration
 				plugin.Log.Warnf("SA %q for SPD %q not found, skipping SPD policy entry configuration", entry.Sa, spd.Name)
 				continue
 			}
@@ -203,6 +204,8 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, newSa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Debugf("Modifying SA %v", oldSa.Name)
 
+	// TODO: check if only keys change and use IpsecSaSetKey vpp call
+
 	if err := plugin.DeleteSA(oldSa); err != nil {
 		plugin.Log.Error("deleting old SPD failed:", err)
 		return err
@@ -224,6 +227,7 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 		plugin.Log.Warnf("SA %q not found", oldSa.Name)
 		return nil
 	}
+	// TODO: check if SA is used by any registered SPD
 	if err := vppcalls.DelSAEntry(saID, oldSa, plugin.vppCh, plugin.Stopwatch); err != nil {
 		return err
 	}
@@ -251,7 +255,14 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 	}
 }
 
-// ResolveDeletedInterface is responsible for..
+// ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
 func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
+	// TODO: cache all used assignments related to the interface
+	/*for _, spdName := range plugin.SpdIndexes.ListNames() {
+		if spdID, _, exists := plugin.SpdIndexes.LookupIdx(spdName); exists {
+			for _, ifaceName := range {
 
+			}
+		}
+	}*/
 }
