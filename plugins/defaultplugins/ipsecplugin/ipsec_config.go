@@ -31,6 +31,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
+// SPDIfCacheEntry contains info about cached assignment of interface to SPD
+type SPDIfCacheEntry struct {
+	ifaceName string
+	spdID     uint32
+}
+
 // IPSecConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of interfaces as modelled by the proto file "../model/ipsec/ipsec.proto"
 // and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/ipsec".
@@ -49,6 +55,8 @@ type IPSecConfigurator struct {
 	SaIndexes   idxvpp.NameToIdxRW
 	SpdIndexSeq uint32
 	SpdIndexes  idxvpp.NameToIdxRW
+
+	SPDIfCache []SPDIfCacheEntry
 }
 
 // Init members (channels...) and start go routines
@@ -90,7 +98,11 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 
 		swIfIdx, _, exists := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !exists {
-			plugin.Log.Warnf("Interface %q for SPD %q not found, skipping assigning interface to SPD", iface.Name, spd.Name)
+			plugin.SPDIfCache = append(plugin.SPDIfCache, SPDIfCacheEntry{
+				ifaceName: iface.Name,
+				spdID:     spdID,
+			})
+			plugin.Log.Warnf("Interface %q for SPD %q not found, caching assignment of interface to SPD", iface.Name, spd.Name)
 			continue
 		}
 
@@ -139,6 +151,28 @@ func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases
 	plugin.Log.Infof("Deleting SPD %v", oldSpd.Name)
 
 	return nil
+}
+
+// ResolveCreatedInterface is responsible for reconfiguring cached assignments
+func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint32) {
+	for i, entry := range plugin.SPDIfCache {
+		if entry.ifaceName == ifName {
+			plugin.Log.Infof("Assigning SPD %v to interface %q", entry.spdID, ifName)
+
+			if err := vppcalls.InterfaceAddSPD(entry.spdID, swIfIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+				plugin.Log.Errorf("assigning interface to SPD failed: %v", err)
+				continue
+			}
+
+			plugin.Log.Infof("Assigned SPD %q to interface %q", entry.spdID, entry.ifaceName)
+			plugin.SPDIfCache = append(plugin.SPDIfCache[:i], plugin.SPDIfCache[i+1:]...)
+		}
+	}
+}
+
+// ResolveDeletedInterface is responsible for..
+func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
+
 }
 
 // ConfigureSA

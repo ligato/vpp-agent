@@ -129,7 +129,7 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
 		}
 	} else {
-		req.IsIPAny = 1
+		//req.IsIPAny = 1
 		req.RemoteAddressStart = net.ParseIP("0.0.0.0").To4()
 		req.RemoteAddressStop = net.ParseIP("255.255.255.255").To4()
 		req.LocalAddressStart = net.ParseIP("0.0.0.0").To4()
