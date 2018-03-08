@@ -147,7 +147,6 @@ func (m *SecurityPolicyDatabases) GetSpds() []*SecurityPolicyDatabases_SPD {
 }
 
 type SecurityPolicyDatabases_SPD struct {
-	// uint32 id = 1;  /* SPD ID */
 	Name          string                                     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Interfaces    []*SecurityPolicyDatabases_SPD_Interface   `protobuf:"bytes,2,rep,name=interfaces" json:"interfaces,omitempty"`
 	PolicyEntries []*SecurityPolicyDatabases_SPD_PolicyEntry `protobuf:"bytes,3,rep,name=policy_entries" json:"policy_entries,omitempty"`
@@ -182,11 +181,8 @@ func (*SecurityPolicyDatabases_SPD_Interface) ProtoMessage()    {}
 
 // Policy Entry
 type SecurityPolicyDatabases_SPD_PolicyEntry struct {
-	// uint32 spd_id = 1;
-	Priority   int32 `protobuf:"varint,1,opt,name=priority,proto3" json:"priority,omitempty"`
-	IsOutbound bool  `protobuf:"varint,2,opt,name=is_outbound,proto3" json:"is_outbound,omitempty"`
-	// bool is_ipv6 = 3;
-	// bool is_ip_any = 3;
+	Priority        int32                                          `protobuf:"varint,1,opt,name=priority,proto3" json:"priority,omitempty"`
+	IsOutbound      bool                                           `protobuf:"varint,2,opt,name=is_outbound,proto3" json:"is_outbound,omitempty"`
 	RemoteAddrStart string                                         `protobuf:"bytes,3,opt,name=remote_addr_start,proto3" json:"remote_addr_start,omitempty"`
 	RemoteAddrStop  string                                         `protobuf:"bytes,4,opt,name=remote_addr_stop,proto3" json:"remote_addr_stop,omitempty"`
 	LocalAddrStart  string                                         `protobuf:"bytes,5,opt,name=local_addr_start,proto3" json:"local_addr_start,omitempty"`
@@ -197,8 +193,7 @@ type SecurityPolicyDatabases_SPD_PolicyEntry struct {
 	LocalPortStart  uint32                                         `protobuf:"varint,10,opt,name=local_port_start,proto3" json:"local_port_start,omitempty"`
 	LocalPortStop   uint32                                         `protobuf:"varint,11,opt,name=local_port_stop,proto3" json:"local_port_stop,omitempty"`
 	Action          SecurityPolicyDatabases_SPD_PolicyEntry_Action `protobuf:"varint,12,opt,name=action,proto3,enum=ipsec.SecurityPolicyDatabases_SPD_PolicyEntry_Action" json:"action,omitempty"`
-	// uint32 sa_id = 14;
-	Sa string `protobuf:"bytes,13,opt,name=sa,proto3" json:"sa,omitempty"`
+	Sa              string                                         `protobuf:"bytes,13,opt,name=sa,proto3" json:"sa,omitempty"`
 }
 
 func (m *SecurityPolicyDatabases_SPD_PolicyEntry) Reset() {
@@ -224,7 +219,6 @@ func (m *SecurityAssociations) GetSas() []*SecurityAssociations_SA {
 }
 
 type SecurityAssociations_SA struct {
-	// uint32 id = 1; /* SA ID */
 	Name          string                                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Spi           uint32                                  `protobuf:"varint,2,opt,name=spi,proto3" json:"spi,omitempty"`
 	Protocol      SecurityAssociations_SA_IPSecProtocol   `protobuf:"varint,3,opt,name=protocol,proto3,enum=ipsec.SecurityAssociations_SA_IPSecProtocol" json:"protocol,omitempty"`
@@ -234,10 +228,8 @@ type SecurityAssociations_SA struct {
 	IntegKey      string                                  `protobuf:"bytes,7,opt,name=integ_key,proto3" json:"integ_key,omitempty"`
 	UseEsn        bool                                    `protobuf:"varint,8,opt,name=use_esn,proto3" json:"use_esn,omitempty"`
 	UseAntiReplay bool                                    `protobuf:"varint,9,opt,name=use_anti_replay,proto3" json:"use_anti_replay,omitempty"`
-	// bool is_tunnel = 10;
-	// bool is_tunnel_ipv6 = 11;
-	TunnelSrcAddr string `protobuf:"bytes,10,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
-	TunnelDstAddr string `protobuf:"bytes,11,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
+	TunnelSrcAddr string                                  `protobuf:"bytes,10,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
+	TunnelDstAddr string                                  `protobuf:"bytes,11,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
 }
 
 func (m *SecurityAssociations_SA) Reset()         { *m = SecurityAssociations_SA{} }
