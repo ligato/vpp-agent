@@ -23,3 +23,11 @@ const (
 	// KeyPrefixSA is the relative key prefix for IPSec's Security Associations
 	KeyPrefixSA = KeyPrefix + "sa/"
 )
+
+func SPDKey(name string) string {
+	return KeyPrefixSPD + name
+}
+
+func SAKey(name string) string {
+	return KeyPrefixSA + name
+}

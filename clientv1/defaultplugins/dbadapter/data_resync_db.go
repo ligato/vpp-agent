@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -177,6 +178,24 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.Dat
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
 	key := nat.DNatKey(nat44.Label)
 	dsl.txn.Put(key, nat44)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
+	key := nat.DNatKey(sa.Name)
+	dsl.txn.Put(key, sa)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
+	key := nat.DNatKey(spd.Name)
+	dsl.txn.Put(key, spd)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl
