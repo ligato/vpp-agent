@@ -72,7 +72,7 @@ type NsHandler struct {
 func (plugin *NsHandler) Init(msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
 	plugin.Log.Infof("Initializing namespace handler plugin")
 
-	// Init channel
+	// Init channels
 	plugin.microserviceChan = msChan
 	plugin.ifMicroserviceNotif = ifNotif
 
@@ -81,8 +81,14 @@ func (plugin *NsHandler) Init(msChan chan *MicroserviceCtx, ifNotif chan *Micros
 	plugin.microServiceByLabel = make(map[string]*Microservice)
 	plugin.microServiceByID = make(map[string]*Microservice)
 
-	// Docker client
+	// Default namespace
 	var err error
+	plugin.defaultNs, err = netns.Get()
+	if err != nil {
+		return fmt.Errorf("failed to init default namespace: %v", err)
+	}
+
+	// Docker client
 	plugin.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
 		plugin.Log.WithFields(logging.Fields{
