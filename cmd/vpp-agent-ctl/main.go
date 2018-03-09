@@ -143,6 +143,14 @@ func main() {
 			addArpEntry(db, ifName1)
 		case "-dae":
 			deleteArpEntry(db, ifName1)
+		case "-aparpi":
+			addProxyArpIf(db)
+		case "-aparpr":
+			addProxyArpRng(db)
+		case "-dparpi":
+			delProxyArpIf(db)
+		case "-dparpr":
+			delProxyArpRng(db)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -829,6 +837,35 @@ func deleteArpEntry(db keyval.ProtoBroker, iface string) {
 
 	log.Println(arpTable)
 	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
+}
+
+func addProxyArpIf(db keyval.ProtoBroker) {
+	proxyArpIf := l3.ProxyArpInterfaces{}
+	proxyArpIf.Interfaces = make([]*l3.ProxyArpInterfaces_Interface, 1)
+	proxyArpIf.Interfaces[0] = new(l3.ProxyArpInterfaces_Interface)
+	proxyArpIf.Interfaces[0].Interface = "tap1"
+
+	log.Println(proxyArpIf)
+	db.Put(l3.ProxyArpInterfaceKey(proxyArpIf.Interfaces[0].Interface), proxyArpIf.Interfaces[0])
+}
+
+func delProxyArpIf(db keyval.ProtoBroker) {
+	db.Delete(l3.ProxyArpInterfaceKey("tap1"))
+}
+
+func addProxyArpRng(db keyval.ProtoBroker) {
+	proxyArpRng := l3.ProxyArpRanges{}
+	proxyArpRng.Ranges = make([]*l3.ProxyArpRanges_Range, 1)
+	proxyArpRng.Ranges[0] = new(l3.ProxyArpRanges_Range)
+	proxyArpRng.Ranges[0].FirstIp = "192.168.10.5"
+	proxyArpRng.Ranges[0].LastIp = "192.168.10.10"
+
+	log.Println(proxyArpRng)
+	db.Put(l3.ProxyArpRangeKey(proxyArpRng.Ranges[0].FirstIp, proxyArpRng.Ranges[0].LastIp), proxyArpRng.Ranges[0])
+}
+
+func delProxyArpRng(db keyval.ProtoBroker) {
+	db.Delete(l3.ProxyArpRangeKey("192.168.10.5", "192.168.10.10"))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {

@@ -33,26 +33,34 @@ message ArpTable {
 
 /* Proxy ARP ranges */
 message ProxyArpRanges {
-    message Range {
-        string first_ip = 1;                /* first (starting) IP address of the proxy ARP range */
-        string last_ip = 2;                 /* last (ending) IP address of the proxy ARP range  */
+    message RangeList {
+        string name = 1;                                /* unique proxy ARP range config identifier */
+        message Ranges {
+            string first_ip = 1;                        /* first (starting) IP address of the proxy ARP range */
+            string last_ip = 2;                         /* last (ending) IP address of the proxy ARP range  */
+        }
+        repeated Ranges ranges = 2;
     }
-    repeated Range ranges = 100;            /* list of proxy arp ranges */
+    repeated RangeList ranges = 100;                    /* list of proxy arp ranges */
 }
 
 /* Proxy ARP interfaces */
 message ProxyArpInterfaces {
-    message Interface {
-        string interface = 1;               /* name of the interface proxy arp is enabled for */
+    message InterfaceList {
+        string name = 1;                                /* unique proxy ARP interface config conigurator identifier */
+        message Interfaces {
+            string interface = 1;                       /* name of the interface proxy arp is enabled for */
+        }
+        repeated Interfaces interfaces = 2;
     }
-    repeated Interface interfaces = 100;    /* list of proxy ARP-enabled interfaces */
+    repeated InterfaceList interfaceList = 1;           /* list of proxy ARP-enabled interfaces */
 }
 
 /* STN (Steal The NIC) feature table */
 message STNTable {
     message STNTableEntry {
-        string ip_address = 1;  /* destination IP address of a packet that will be punted to specified interface in case it hasn't bee processed by VPP */
-        string interface = 2;   /* interface where the packets will be punted */
+        string ip_address = 1;                          /* destination IP address of a packet that will be punted to specified interface in case it hasn't bee processed by VPP */
+        string interface = 2;                           /* interface where the packets will be punted */
     }
-    repeated STNTableEntry stn_table_entries = 100;  /* list of STN entries */
+    repeated STNTableEntry stn_table_entries = 100;     /* list of STN entries */
 }
