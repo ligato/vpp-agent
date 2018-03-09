@@ -27,12 +27,12 @@ vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/l4/namespaces/ns1" json/app-ns
 The vpp-agent-ctl contains a simple predefined application namespace config also. It can be used 
 for testing purposes. To enable l4 features, run:
 ```
-vpp-agent-ctl -ef
+vpp-agent-ctl -el4
 ```
 
 To disable it:
 ```
-vpp-agent-ctl -df
+vpp-agent-ctl -dl4
 ```
 
 To configure application namespace:

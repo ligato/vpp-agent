@@ -433,6 +433,6 @@ func udpACL(udpRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Udp, aclRule *acl_a
 }
 
 func otherACL(otherRule *acl.AccessLists_Acl_Rule_Matches_IpRule_Other, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	logrus.DefaultLogger().Warn("unknown protocol: %v", otherRule.Protocol)
+	logrus.DefaultLogger().Warnf("unknown protocol: %d", otherRule.Protocol)
 	return aclRule
 }

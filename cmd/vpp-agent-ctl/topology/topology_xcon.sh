@@ -15,7 +15,7 @@ VNF_NAME="vnf-vpp"
 # This works for my VirtualBox ethernet interface:
 # modprobe igb_uio
 # vpp unix { interactive } dpdk { dev 0000:00:08.0 uio-driver igb_uio }
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/GigabitEthernet0/8/0 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/GigabitEthernet0/8/0 - << EOF
 {
   "name": "GigabitEthernet0/8/0",
   "type": 1,
@@ -28,7 +28,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/GigabitEth
 EOF
 
 # VSWITCH - create a loopback interface
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop1 - << EOF
 {
   "name": "loop1",
   "enabled": true,
@@ -41,7 +41,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop1 - <<
 EOF
 
 # VSWITCH - create a vxlan interface
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/vxlan1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/vxlan1 - << EOF
 {
   "name": "vxlan1",
   "type": 5,
@@ -55,7 +55,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/vxlan1 - <
 EOF
 
 # VSWITCH - create a BVI loopback interface for B2 (extension to the cCMTS topology)
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop-bvi2 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop-bvi2 - << EOF
 {
   "name": "loop-bvi2",
   "enabled": true,
@@ -67,7 +67,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop-bvi2 
 EOF
 
 # VSWITCH - add static route to 6.0.0.0/24 via GigabitEthernet0/8/0
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0/24/8.42.0.1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0/24/8.42.0.1 - << EOF
 {
   "description": "Static route",
   "dst_ip_addr": "6.0.0.0/24",
@@ -77,7 +77,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/6.0.0.0/24
 EOF
 
 # VSWITCH - create memif master to RNG
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rng - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rng - << EOF
 {
   "name": "memif-to-rng",
   "type": 2,
@@ -91,7 +91,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-r
 EOF
 
 # RNG - create memif slave to VSWITCH
-vpp-agent-ctl -put /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
+../vpp-agent-ctl -put /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
 {
   "name": "memif-to-vswitch",
   "type": 2,
@@ -110,7 +110,7 @@ EOF
 
 
 # VSWITCH - create memif master to USSCHED
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-ussched - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-ussched - << EOF
 {
   "name": "memif-to-ussched",
   "type": 2,
@@ -124,7 +124,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-u
 EOF
 
 # USSCHED - create memif slave to VSWITCH
-vpp-agent-ctl -put /vnf-agent/${USSCHED_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
+../vpp-agent-ctl -put /vnf-agent/${USSCHED_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
 {
   "name": "memif-to-vswitch",
   "type": 2,
@@ -142,7 +142,7 @@ vpp-agent-ctl -put /vnf-agent/${USSCHED_NAME}/vpp/config/v1/interface/memif-to-v
 EOF
 
 # VSWITCH - create memif to VNF 1
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-1 - << EOF
 {
   "name": "memif-to-vnf-1",
   "type": 2,
@@ -156,7 +156,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-v
 EOF
 
 # VNF - create memif slave 1 to VSWITCH
-vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswitch-1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswitch-1 - << EOF
 {
   "name": "memif-to-vswitch-1",
   "type": 2,
@@ -174,7 +174,7 @@ vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswit
 EOF
 
 # VSWITCH - create memif to vnf 2
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-2 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-vnf-2 - << EOF
 {
   "name": "memif-to-vnf-2",
   "type": 2,
@@ -188,7 +188,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-v
 EOF
 
 # VNF - create memif slave 2 to VSWITCH
-vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswitch-2 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswitch-2 - << EOF
 {
   "name": "memif-to-vswitch-2",
   "type": 2,
@@ -206,7 +206,7 @@ vpp-agent-ctl -put /vnf-agent/${VNF_NAME}/vpp/config/v1/interface/memif-to-vswit
 EOF
 
 # VSWITCH - create cross-connection between interfaces memif-to-rng and memif-to-ussched
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-rng - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-rng - << EOF
 {
    "receive_interface": "memif-to-rng",
    "transmit_interface": "memif-to-ussched"
@@ -214,7 +214,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-rn
 EOF
 
 # VSWITCH - create cross-connection between interfaces memif-to-vnf-1 and memif-to-rng
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-1 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-1 - << EOF
 {
    "receive_interface": "memif-to-vnf-1",
    "transmit_interface": "memif-to-rng"
@@ -222,7 +222,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vn
 EOF
 
 # VSWITCH - create cross-connection between interfaces memif-to-ussched and memif-to-vnf-1
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-ussched - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-ussched - << EOF
 {
    "receive_interface": "memif-to-ussched",
    "transmit_interface": "memif-to-vnf-1"
@@ -230,7 +230,7 @@ vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-us
 EOF
 
 # VSWITCH - create cross-connection between interfaces memif-to-vnf-2 and vxlan1
-vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-2 - << EOF
+../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/xconnect/memif-to-vnf-2 - << EOF
 {
    "receive_interface": "memif-to-vnf-2",
    "transmit_interface": "vxlan1"

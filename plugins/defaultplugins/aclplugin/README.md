@@ -26,5 +26,5 @@ vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -acl
 
 To delete the acl, use:
 ```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -dacl
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -acld
 ```

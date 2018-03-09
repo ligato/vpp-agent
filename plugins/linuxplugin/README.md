@@ -105,20 +105,15 @@ vpp-agent-ctl -put "/vnf-agent/my-agent/linux/config/v1/interface/veth1" json/ve
 The `vpp-agent-ctl` binary also ships with some simple predefined VETH configurations.
 This is intended solely for testing purposes.
 
-To create the `veth1` end of the `veth1-veth2` pair in the named namespace `ns1` and with IP address `192.168.22.1`, run:
+To create the `veth1-veth2` pair where `veth1` in the named namespace `ns1` with IP address `192.168.22.1` 
+and `veth` is in the named namespace `ns2` with IP address `192.168.22.2`, run:
 ```
-vpp-agent-ctl -cvth1
-```
-
-To create the `veth2` end of the `veth1-veth2` pair in the named namespace `ns2` and with IP address `192.168.22.2`, run:
-```
-vpp-agent-ctl -cvth2
+vpp-agent-ctl -veth
 ```
 
-To remove the interfaces one-by-one, run:
+To remove the both interfaces, run:
 ```
-vpp-agent-ctl -dvth1
-vpp-agent-ctl -dvth2
+vpp-agent-ctl -vethd
 ```
 
 Run `vpp-agent-ctl` with no arguments to get the list of all available commands and options.

@@ -105,23 +105,17 @@ purposes.
 
 To create a `master` memif with IP address `192.168.42.1`, run:
 ```
-vpp-agent-ctl -cmm
+vpp-agent-ctl -memif
 ```
 
-To turn the memif from `master` to `slave` and change the IP address
-from `192.168.42.1` to `192.168.42.2`, invoke:
-```
-vpp-agent-ctl -cms
-```
-
-Note: As it is not possible to change the operating mode of memif
+It is not possible to change the operating mode of memif
 interface once it was created, the agent must first remove the
 existing interface and then create a new instance of memif in
 `slave` mode.
 
 To remove the interface, run:
 ```
-vpp-agent-ctl -dmm
+vpp-agent-ctl -memifd
 ```
 
 Similarly, `vpp-agent-ctl` offers commands to create, change and delete
@@ -235,7 +229,7 @@ purposes.
 
 To create a global NAT config, run:
 ```
-vpp-agent-ctl -natg
+vpp-agent-ctl -gnat
 ```
 
 To create a DNAT config, run:
@@ -274,7 +268,7 @@ purposes.
 
 To create a `rule1` stn rule with IP address `10.1.1.3/32`, run:
 ```
-vpp-agent-ctl -stna
+vpp-agent-ctl -stn
 ```
 
 To remove the stn rule, run:

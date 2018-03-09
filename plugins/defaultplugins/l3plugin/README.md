@@ -22,11 +22,11 @@ vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/arp/tap1/192.168.10.21" json/a
 The vpp-agent-ctl also contains a simple predefined ARP entry config. It can be used for testing purposes.
 To setup the predefined ARP config run:
 ```
-vpp-agent-ctl -aae
+vpp-agent-ctl -arp
 ```
 To remove it run:
 ```
-vpp-agent-ctl -dae
+vpp-agent-ctl -arpd
 ```
 
 ## Proxy ARP
@@ -52,13 +52,13 @@ An example configuration for IP ranges can be found [here](../../../cmd/vpp-agen
 Predefined configuration in vpp-agent-ctl for interfaces:
 
 ```
-vpp-agent-ctl -aparpi
+vpp-agent-ctl -prxi
 ```
 
 For ranges:
 
 ```
-vpp-agent-ctl -aparpr
+vpp-agent-ctl -prxd
 ```
 
 ## Routes
@@ -83,9 +83,9 @@ vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" json/routes.json
 The vpp-agent-ctl contains a simple predefined route config also. It can be used for testing purposes.
 To setup the predefined route config run:
 ```
-vpp-agent-ctl -cr
+vpp-agent-ctl -route
 ```
 To remove it run:
 ```
-vpp-agent-ctl -dr
+vpp-agent-ctl -routed
 ```
