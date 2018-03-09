@@ -920,7 +920,10 @@ func (plugin *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context
 					plugin.removeObsoleteVeth(nsMgmtCtx, iface.config.Name, iface.config.HostIfName, iface.config.Namespace)
 					if iface.peer != nil && iface.peer.config != nil {
 						plugin.removeObsoleteVeth(nsMgmtCtx, iface.peer.config.Name, iface.peer.config.HostIfName, iface.peer.config.Namespace)
+					} else {
+						plugin.Log.Warnf("Obsolete peer for %s not removed, no peer data", iface.config.Name)
 					}
+
 				}
 			} else {
 				plugin.Log.Errorf("Unknown microservice event type: %s", msEvent.EventType)
