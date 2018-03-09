@@ -175,7 +175,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
-		var value, prevValue l3.ProxyArpInterfaces_Interface
+		var value, prevValue l3.ProxyArpInterfaces_InterfaceList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -187,7 +187,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
-		var value, prevValue l3.ProxyArpRanges_Range
+		var value, prevValue l3.ProxyArpRanges_RangeList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -411,7 +411,7 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry,
 }
 
 // dataChangeProxyARPInterface propagates data change to the arpConfigurator
-func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l3.ProxyArpInterfaces_Interface,
+func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l3.ProxyArpInterfaces_InterfaceList,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
@@ -424,7 +424,7 @@ func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l
 }
 
 // dataChangeProxyARPRange propagates data change to the arpConfigurator
-func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.ProxyArpRanges_Range,
+func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.ProxyArpRanges_RangeList,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
 

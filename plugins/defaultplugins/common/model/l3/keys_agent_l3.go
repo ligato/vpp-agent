@@ -36,9 +36,9 @@ const (
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPInterfacePrefix = "vpp/config/v1/proxyarp/interface/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
-	ProxyARPRangeKey = ProxyARPRangePrefix + "{first}/{last}"
+	ProxyARPRangeKey = ProxyARPRangePrefix + "{label}"
 	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
-	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{if}"
+	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance.
@@ -114,15 +114,16 @@ func ParseArpKey(key string) (iface string, ipAddr string, err error) {
 	return "", "", fmt.Errorf("invalid ARP key")
 }
 
-func ProxyArpRangeKey(firstIP, lastIP string) string {
+// ProxyArpRangeKey returns the key to store Proxy ARP range config
+func ProxyArpRangeKey(label string) string {
 	key := ProxyARPRangeKey
-	key = strings.Replace(key, "{first}", firstIP, 1)
-	key = strings.Replace(key, "{last}", lastIP, 1)
+	key = strings.Replace(key, "{label}", label, 1)
 	return key
 }
 
-func ProxyArpInterfaceKey(ifName string) string {
+// ProxyArpInterfaceKey returns the key to store Proxy ARP interface config
+func ProxyArpInterfaceKey(label string) string {
 	key := ProxyARPInterfaceKey
-	key = strings.Replace(key, "{inf}", ifName, 1)
+	key = strings.Replace(key, "{label}", label, 1)
 	return key
 }

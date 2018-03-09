@@ -97,7 +97,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				// Keep order.
 				plugin.aclConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.arpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
-				plugin.proxyArpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
+				plugin.proxyArpConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {

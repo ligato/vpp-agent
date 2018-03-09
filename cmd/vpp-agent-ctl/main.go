@@ -840,32 +840,55 @@ func deleteArpEntry(db keyval.ProtoBroker, iface string) {
 }
 
 func addProxyArpIf(db keyval.ProtoBroker) {
-	proxyArpIf := l3.ProxyArpInterfaces{}
-	proxyArpIf.Interfaces = make([]*l3.ProxyArpInterfaces_Interface, 1)
-	proxyArpIf.Interfaces[0] = new(l3.ProxyArpInterfaces_Interface)
-	proxyArpIf.Interfaces[0].Interface = "tap1"
+	proxyArpIf := l3.ProxyArpInterfaces{
+		InterfaceList: []*l3.ProxyArpInterfaces_InterfaceList{
+			{
+				Name: "proxyArpIf1",
+				Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interfaces{
+					{
+						Interface: "tap1",
+					},
+					{
+						Interface: "tap2",
+					},
+				},
+			},
+		},
+	}
 
 	log.Println(proxyArpIf)
-	db.Put(l3.ProxyArpInterfaceKey(proxyArpIf.Interfaces[0].Interface), proxyArpIf.Interfaces[0])
+	db.Put(l3.ProxyArpInterfaceKey(proxyArpIf.InterfaceList[0].Name), proxyArpIf.InterfaceList[0])
 }
 
 func delProxyArpIf(db keyval.ProtoBroker) {
-	db.Delete(l3.ProxyArpInterfaceKey("tap1"))
+	db.Delete(l3.ProxyArpInterfaceKey("proxyArpIf1"))
 }
 
 func addProxyArpRng(db keyval.ProtoBroker) {
-	proxyArpRng := l3.ProxyArpRanges{}
-	proxyArpRng.Ranges = make([]*l3.ProxyArpRanges_Range, 1)
-	proxyArpRng.Ranges[0] = new(l3.ProxyArpRanges_Range)
-	proxyArpRng.Ranges[0].FirstIp = "192.168.10.5"
-	proxyArpRng.Ranges[0].LastIp = "192.168.10.10"
+	proxyArpRng := l3.ProxyArpRanges{
+		Ranges: []*l3.ProxyArpRanges_RangeList{
+			{
+				Name: "proxyArpRng1",
+				Ranges: []*l3.ProxyArpRanges_RangeList_Ranges{
+					{
+						FirstIp: "124.168.10.5",
+						LastIp:  "124.168.10.10",
+					},
+					{
+						FirstIp: "172.154.10.5",
+						LastIp:  "172.154.10.10",
+					},
+				},
+			},
+		},
+	}
 
 	log.Println(proxyArpRng)
-	db.Put(l3.ProxyArpRangeKey(proxyArpRng.Ranges[0].FirstIp, proxyArpRng.Ranges[0].LastIp), proxyArpRng.Ranges[0])
+	db.Put(l3.ProxyArpRangeKey(proxyArpRng.Ranges[0].Name), proxyArpRng.Ranges[0])
 }
 
 func delProxyArpRng(db keyval.ProtoBroker) {
-	db.Delete(l3.ProxyArpRangeKey("192.168.10.5", "192.168.10.10"))
+	db.Delete(l3.ProxyArpRangeKey("proxyArpRng1"))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {

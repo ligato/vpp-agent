@@ -57,9 +57,9 @@ type DataResyncReq struct {
 	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC.
 	ArpEntries []*l3.ArpTable_ArpTableEntry
 	// ProxyArpInterfaces is a list af all proxy ARP interface entries that are expected to be in VPP after RESYNC.
-	ProxyArpInterfaces []*l3.ProxyArpInterfaces_Interface
+	ProxyArpInterfaces []*l3.ProxyArpInterfaces_InterfaceList
 	// ProxyArpRanges is a list af all proxy ARP ranges that are expected to be in VPP after RESYNC.
-	ProxyArpRanges []*l3.ProxyArpRanges_Range
+	ProxyArpRanges []*l3.ProxyArpRanges_RangeList
 	// L4Features is a bool flag that is expected to be set in VPP after RESYNC.
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC.
@@ -87,8 +87,8 @@ func NewDataResyncReq() *DataResyncReq {
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
 		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
-		ProxyArpInterfaces:  []*l3.ProxyArpInterfaces_Interface{},
-		ProxyArpRanges:      []*l3.ProxyArpRanges_Range{},
+		ProxyArpInterfaces:  []*l3.ProxyArpInterfaces_InterfaceList{},
+		ProxyArpRanges:      []*l3.ProxyArpRanges_RangeList{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
 		StnRules:            []*stn.StnRule{},
@@ -298,7 +298,7 @@ func resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *Dat
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			entry := &l3.ProxyArpInterfaces_Interface{}
+			entry := &l3.ProxyArpInterfaces_InterfaceList{}
 			if err := arpData.GetValue(entry); err == nil {
 				req.ProxyArpInterfaces = append(req.ProxyArpInterfaces, entry)
 				num++
@@ -314,7 +314,7 @@ func resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataRes
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			entry := &l3.ProxyArpRanges_Range{}
+			entry := &l3.ProxyArpRanges_RangeList{}
 			if err := arpData.GetValue(entry); err == nil {
 				req.ProxyArpRanges = append(req.ProxyArpRanges, entry)
 				num++
