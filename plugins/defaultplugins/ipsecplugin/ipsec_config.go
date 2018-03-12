@@ -271,7 +271,6 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 
 // ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
 func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) {
-	// TODO: cache all used assignments related to the interface
 	for _, assign := range plugin.SpdIndexes.LookupSPDInterfaceAssignments(ifName) {
 		plugin.Log.Infof("Unassigning SPD %v from interface %q", assign.SpdID, ifName)
 
@@ -284,12 +283,4 @@ func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx 
 
 		plugin.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
 	}
-
-	/*for _, spdName := range plugin.SpdIndexes.ListNames() {
-		if spdID, _, exists := plugin.SpdIndexes.LookupIdx(spdName); exists {
-			for _, ifaceName := range {
-
-			}
-		}
-	}*/
 }
