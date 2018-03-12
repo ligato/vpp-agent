@@ -561,17 +561,18 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
 	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
 		"ipsec_spd_indexes", nil))
-	/*spdIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
-	"ipsec_spd_indexes", ifaceidx.IndexMetadata)*/
+	cachedSpdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_cached_spd_indexes", nil))
 	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
-		Log:         ipsecLogger,
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
-		Stopwatch:   stopwatch,
-		SaIndexSeq:  1,
-		SaIndexes:   saIndexes,
-		SpdIndexSeq: 1,
-		SpdIndexes:  spdIndexes,
+		Log:              ipsecLogger,
+		GoVppmux:         plugin.GoVppmux,
+		SwIfIndexes:      plugin.swIfIndexes,
+		Stopwatch:        stopwatch,
+		SaIndexSeq:       1,
+		SaIndexes:        saIndexes,
+		SpdIndexSeq:      1,
+		SpdIndexes:       spdIndexes,
+		CachedSpdIndexes: cachedSpdIndexes,
 	}
 
 	// Init IPSec plugin

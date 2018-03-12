@@ -19,9 +19,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 )
 
-// SPDIndex provides read-only access to mapping between routes data and route names
+// SPDIndex provides read-only access to mapping between SPD data and SPD names
 type SPDIndex interface {
-	// GetMapping returns internal read-only mapping with metadata of l3.StaticRoutes_Route type.
+	// GetMapping returns internal read-only mapping with metadata of ipsec.SecurityPolicyDatabases_SPD type.
 	GetMapping() idxvpp.NameToIdxRW
 
 	// LookupIdx looks up previously stored item identified by index in mapping.
@@ -30,12 +30,14 @@ type SPDIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *ipsec.SecurityPolicyDatabases_SPD, exists bool)
 
-	// LookupSPDInterfaceAssignment returns structure with route name and data which contains specified ifName
-	// in metadata as outgoing interface
-	LookupSPDInterfaceAssignments(ifName string) []SPDInterfaceAssignment
+	// LookupByInterface returns structure with SPD interface assignment data.
+	LookupByInterface(ifName string) []SPDEntry
+
+	// LookupBySA returns structure with matched SPD entries.
+	LookupBySA(saName string) []SPDEntry
 }
 
-// RouteIndexRW is mapping between routes data (metadata) and routes entry names.
+// RouteIndexRW is mapping between SPD data (metadata) and SPD entry names.
 type SPDIndexRW interface {
 	SPDIndex
 
@@ -46,7 +48,7 @@ type SPDIndexRW interface {
 	UnregisterName(name string) (idx uint32, metadata *ipsec.SecurityPolicyDatabases_SPD, exists bool)
 }
 
-// spdIndex is type-safe implementation of mapping between routeId and route data.
+// spdIndex is type-safe implementation of mapping between spdID and SPD data.
 type spdIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
@@ -79,21 +81,35 @@ func (index *spdIndex) LookupName(idx uint32) (name string, metadata *ipsec.Secu
 	return name, metadata, exists
 }
 
-// SPDInterfaceAssignment is used for associating route with route name in func return value
-// It is used as container to return more values
-type SPDInterfaceAssignment struct {
+// SPDEntry is used for matched SPD entries
+type SPDEntry struct {
 	SPD   *ipsec.SecurityPolicyDatabases_SPD
 	SpdID uint32
 }
 
-// LookupRouteAndIDByOutgoingIfc returns all names related to the provided interface
-func (index *spdIndex) LookupSPDInterfaceAssignments(ifName string) (list []SPDInterfaceAssignment) {
+// LookupSPDInterfaceAssignments returns all SPD interface assignments related to the provided interface
+func (index *spdIndex) LookupByInterface(ifName string) (list []SPDEntry) {
 	for _, spdName := range index.mapping.ListNames() {
 		spdID, spd, found := index.LookupIdx(spdName)
 		if found && spd != nil {
 			for _, iface := range spd.Interfaces {
 				if iface.Name == ifName {
-					list = append(list, SPDInterfaceAssignment{spd, spdID})
+					list = append(list, SPDEntry{spd, spdID})
+				}
+			}
+		}
+	}
+	return
+}
+
+// LookupSPDBySA returns all SPDs related to the provided SA name.
+func (index *spdIndex) LookupBySA(saName string) (list []SPDEntry) {
+	for _, spdName := range index.mapping.ListNames() {
+		spdID, spd, found := index.LookupIdx(spdName)
+		if found && spd != nil {
+			for _, entry := range spd.PolicyEntries {
+				if entry.Sa == saName {
+					list = append(list, SPDEntry{spd, spdID})
 				}
 			}
 		}

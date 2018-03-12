@@ -34,8 +34,8 @@ import (
 
 // SPDIfCacheEntry contains info about cached assignment of interface to SPD
 type SPDIfCacheEntry struct {
-	ifaceName string
 	spdID     uint32
+	ifaceName string
 }
 
 // IPSecConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -52,10 +52,11 @@ type IPSecConfigurator struct {
 
 	SwIfIndexes ifaceidx.SwIfIndexRW
 
-	SaIndexSeq  uint32
-	SaIndexes   idxvpp.NameToIdxRW
-	SpdIndexSeq uint32
-	SpdIndexes  ipsecidx.SPDIndexRW
+	SaIndexSeq       uint32
+	SaIndexes        idxvpp.NameToIdxRW
+	SpdIndexSeq      uint32
+	SpdIndexes       ipsecidx.SPDIndexRW
+	CachedSpdIndexes ipsecidx.SPDIndexRW
 
 	SPDIfCache []SPDIfCacheEntry
 }
@@ -86,6 +87,22 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 
 	spdID := plugin.SpdIndexSeq
 	plugin.SpdIndexSeq++
+
+	for _, entry := range spd.PolicyEntries {
+		if entry.Sa != "" {
+			if _, _, exists := plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
+				plugin.Log.Warnf("SA %q for SPD %q not found, caching SPD configuration", entry.Sa, spd.Name)
+				plugin.CachedSpdIndexes.RegisterName(spd.Name, spdID, spd)
+				return nil
+			}
+		}
+	}
+
+	return plugin.configureSPD(spdID, spd)
+}
+
+func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityPolicyDatabases_SPD) error {
+	plugin.Log.Debugf("configuring SPD %v (%d)", spd.Name, spdID)
 
 	if err := vppcalls.AddSPD(spdID, plugin.vppCh, plugin.Stopwatch); err != nil {
 		return err
@@ -119,7 +136,6 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 		if entry.Sa != "" {
 			var exists bool
 			if saID, _, exists = plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
-				// TODO: cache policy entry for future configuration
 				plugin.Log.Warnf("SA %q for SPD %q not found, skipping SPD policy entry configuration", entry.Sa, spd.Name)
 				continue
 			}
@@ -136,14 +152,6 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 	plugin.Log.Infof("Configured SPD %v", spd.Name)
 
 	return nil
-}
-
-func (plugin *IPSecConfigurator) cacheSPDInterfaceAssignment(spdID uint32, ifaceName string) {
-	plugin.Log.Debugf("caching SPD %v interface assignment to %v", spdID, ifaceName)
-	plugin.SPDIfCache = append(plugin.SPDIfCache, SPDIfCacheEntry{
-		ifaceName: ifaceName,
-		spdID:     spdID,
-	})
 }
 
 // ModifySPD
@@ -202,6 +210,20 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 
 	plugin.SaIndexes.RegisterName(sa.Name, saID, nil)
 	plugin.Log.Infof("Registered SA %v (%d)", sa.Name, saID)
+
+	for _, cached := range plugin.CachedSpdIndexes.LookupBySA(sa.Name) {
+		spd := cached.SPD
+		for _, entry := range spd.PolicyEntries {
+			if entry.Sa != "" {
+				if _, _, exists := plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
+					plugin.Log.Warnf("SA %q for SPD %q not found, keeping SPD in cache", entry.Sa, spd.Name)
+					return nil
+				}
+			}
+		}
+		plugin.CachedSpdIndexes.UnregisterName(spd.Name)
+		plugin.configureSPD(cached.SpdID, spd)
+	}
 
 	return nil
 }
@@ -271,7 +293,7 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 
 // ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
 func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) {
-	for _, assign := range plugin.SpdIndexes.LookupSPDInterfaceAssignments(ifName) {
+	for _, assign := range plugin.SpdIndexes.LookupByInterface(ifName) {
 		plugin.Log.Infof("Unassigning SPD %v from interface %q", assign.SpdID, ifName)
 
 		// TODO: just store this for future, because this will fail since swIfIdx no longer exists
@@ -283,4 +305,12 @@ func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx 
 
 		plugin.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
 	}
+}
+
+func (plugin *IPSecConfigurator) cacheSPDInterfaceAssignment(spdID uint32, ifaceName string) {
+	plugin.Log.Debugf("caching SPD %v interface assignment to %v", spdID, ifaceName)
+	plugin.SPDIfCache = append(plugin.SPDIfCache, SPDIfCacheEntry{
+		ifaceName: ifaceName,
+		spdID:     spdID,
+	})
 }
