@@ -36,6 +36,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
@@ -279,7 +280,7 @@ func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
 
 // GetIPSecSPDIndexes
 func (plugin *Plugin) GetIPSecSPDIndexes() idxvpp.NameToIdx {
-	return plugin.ipsecConfigurator.SpdIndexes
+	return plugin.ipsecConfigurator.SpdIndexes.GetMapping()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
@@ -558,8 +559,10 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	}
 	saIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
 		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
-	spdIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
-		"ipsec_spd_indexes", ifaceidx.IndexMetadata)
+	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_spd_indexes", nil))
+	/*spdIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+	"ipsec_spd_indexes", ifaceidx.IndexMetadata)*/
 	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
 		Log:         ipsecLogger,
 		GoVppmux:    plugin.GoVppmux,

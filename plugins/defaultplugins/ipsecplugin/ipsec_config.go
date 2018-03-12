@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -54,7 +55,7 @@ type IPSecConfigurator struct {
 	SaIndexSeq  uint32
 	SaIndexes   idxvpp.NameToIdxRW
 	SpdIndexSeq uint32
-	SpdIndexes  idxvpp.NameToIdxRW
+	SpdIndexes  ipsecidx.SPDIndexRW
 
 	SPDIfCache []SPDIfCacheEntry
 }
@@ -90,7 +91,7 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 		return err
 	}
 
-	plugin.SpdIndexes.RegisterName(spd.Name, spdID, nil)
+	plugin.SpdIndexes.RegisterName(spd.Name, spdID, spd)
 	plugin.Log.Infof("Registered SPD %v (%d)", spd.Name, spdID)
 
 	for _, iface := range spd.Interfaces {
@@ -98,11 +99,8 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 
 		swIfIdx, _, exists := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !exists {
-			plugin.SPDIfCache = append(plugin.SPDIfCache, SPDIfCacheEntry{
-				ifaceName: iface.Name,
-				spdID:     spdID,
-			})
 			plugin.Log.Warnf("Interface %q for SPD %q not found, caching assignment of interface to SPD", iface.Name, spd.Name)
+			plugin.cacheSPDInterfaceAssignment(spdID, iface.Name)
 			continue
 		}
 
@@ -138,6 +136,14 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 	plugin.Log.Infof("Configured SPD %v", spd.Name)
 
 	return nil
+}
+
+func (plugin *IPSecConfigurator) cacheSPDInterfaceAssignment(spdID uint32, ifaceName string) {
+	plugin.Log.Debugf("caching SPD %v interface assignment to %v", spdID, ifaceName)
+	plugin.SPDIfCache = append(plugin.SPDIfCache, SPDIfCacheEntry{
+		ifaceName: ifaceName,
+		spdID:     spdID,
+	})
 }
 
 // ModifySPD
@@ -244,20 +250,41 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 		if entry.ifaceName == ifName {
 			plugin.Log.Infof("Assigning SPD %v to interface %q", entry.spdID, ifName)
 
+			// TODO: loop through stored deletes, this is now needed because old assignment might still exist
+			if err := vppcalls.InterfaceDelSPD(entry.spdID, swIfIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+				plugin.Log.Errorf("unassigning interface from SPD failed: %v", err)
+			} else {
+				plugin.Log.Infof("Unassigned SPD %v from interface %q", entry.spdID, ifName)
+			}
+
 			if err := vppcalls.InterfaceAddSPD(entry.spdID, swIfIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
 				plugin.Log.Errorf("assigning interface to SPD failed: %v", err)
 				continue
+			} else {
+				plugin.Log.Infof("Assigned SPD %v to interface %q", entry.spdID, entry.ifaceName)
 			}
 
-			plugin.Log.Infof("Assigned SPD %q to interface %q", entry.spdID, entry.ifaceName)
 			plugin.SPDIfCache = append(plugin.SPDIfCache[:i], plugin.SPDIfCache[i+1:]...)
 		}
 	}
 }
 
 // ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
-func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
+func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) {
 	// TODO: cache all used assignments related to the interface
+	for _, assign := range plugin.SpdIndexes.LookupSPDInterfaceAssignments(ifName) {
+		plugin.Log.Infof("Unassigning SPD %v from interface %q", assign.SpdID, ifName)
+
+		// TODO: just store this for future, because this will fail since swIfIdx no longer exists
+		if err := vppcalls.InterfaceDelSPD(assign.SpdID, swIfIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("unassigning interface from SPD failed: %v", err)
+		} else {
+			plugin.Log.Infof("Unassigned SPD %v from interface %q", assign.SpdID, ifName)
+		}
+
+		plugin.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
+	}
+
 	/*for _, spdName := range plugin.SpdIndexes.ListNames() {
 		if spdID, _, exists := plugin.SpdIndexes.LookupIdx(spdName); exists {
 			for _, ifaceName := range {
