@@ -173,7 +173,7 @@ func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.Put
 
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.PutDSL {
-	dsl.parent.txn.Put(ipsec.SAKey(spd.Name), spd)
+	dsl.parent.txn.Put(ipsec.SPDKey(spd.Name), spd)
 	return dsl
 }
 
