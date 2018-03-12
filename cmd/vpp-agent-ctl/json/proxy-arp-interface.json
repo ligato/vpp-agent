@@ -1,3 +1,14 @@
 {
-  "interface": "tap1"
+  "name": "if1",
+  "interfaces": [
+    {
+      "interface": "tap1"
+    },
+    {
+      "interface": "tap2"
+    },
+    {
+      "interface": "tap3"
+    }
+  ]
 }

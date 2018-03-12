@@ -29,6 +29,38 @@ To remove it run:
 vpp-agent-ctl -dae
 ```
 
+## Proxy ARP
+
+Proxy ARP configuration is composed from two parts; interfaces that are enabled and IP address ranges.
+Both of these configuration types are stored under separate keys.
+
+For proxy arp interface array, use key:
+
+```
+/vnf-agent/<agent-label>/vpp/config/v1/proxyarp/interface/<if-cfg-label>
+```
+
+For proxy arp ranges:
+
+```
+/vnf-agent/<agent-label>/vpp/config/v1/proxyarp/range/<rng-cfg-label>
+```
+
+An example configuration for interfaces can be found [here](../../../cmd/vpp-agent-ctl/json/proxy-arp-interface.json).
+An example configuration for IP ranges can be found [here](../../../cmd/vpp-agent-ctl/json/proxy-arp-ranges.json).
+
+Predefined configuration in vpp-agent-ctl for interfaces:
+
+```
+vpp-agent-ctl -aparpi
+```
+
+For ranges:
+
+```
+vpp-agent-ctl -aparpr
+```
+
 ## Routes
 
 The configuration must be stored in etcd using the following key:
