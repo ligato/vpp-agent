@@ -91,4 +91,10 @@ type API interface {
 
 	// DumpNat44DNat returns the current NAT44 DNAT config
 	DumpNat44DNat() (*nat.Nat44DNat, error)
+
+	// GetIPSecSAIndexes
+	GetIPSecSAIndexes() idxvpp.NameToIdx
+
+	// GetIPSecSPDIndexes
+	GetIPSecSPDIndexes() idxvpp.NameToIdx
 }

@@ -272,6 +272,16 @@ func (plugin *Plugin) DumpNat44DNat() (*nat.Nat44DNat, error) {
 	return plugin.natConfigurator.DumpNatDNat()
 }
 
+// GetIPSecSAIndexes
+func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
+	return plugin.ipsecConfigurator.SaIndexes
+}
+
+// GetIPSecSPDIndexes
+func (plugin *Plugin) GetIPSecSPDIndexes() idxvpp.NameToIdx {
+	return plugin.ipsecConfigurator.SpdIndexes
+}
+
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
