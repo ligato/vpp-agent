@@ -185,7 +185,7 @@ func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplug
 
 // IPSecSA adds request to create a new Security Association
 func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
-	key := nat.DNatKey(sa.Name)
+	key := ipsec.SAKey(sa.Name)
 	dsl.txn.Put(key, sa)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -194,7 +194,7 @@ func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplug
 
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
-	key := nat.DNatKey(spd.Name)
+	key := ipsec.SPDKey(spd.Name)
 	dsl.txn.Put(key, spd)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
