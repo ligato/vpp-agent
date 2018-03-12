@@ -59,7 +59,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			dataChng.Done(err)
 
 		case microserviceChng := <-plugin.msChan:
-			plugin.ifConfigurator.HandleMicroservices(microserviceChng)
+			plugin.nsHandler.HandleMicroservices(microserviceChng)
 
 		case linuxIdxEv := <-plugin.ifIndexesWatchChan:
 			if linuxIdxEv.IsDelete() {

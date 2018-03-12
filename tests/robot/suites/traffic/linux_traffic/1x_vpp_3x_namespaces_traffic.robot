@@ -109,7 +109,7 @@ Check Linux Routes2
 Remove VPP Nodes
     Remove All Nodes
     Sleep   ${RESYNC_SLEEP}
-     
+
 Start VPP1 Again
     Add Agent VPP Node    agent_vpp_1
     Sleep    ${RESYNC_WAIT}
