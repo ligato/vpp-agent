@@ -159,8 +159,13 @@ func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, 
 	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
 		// remove the interface and re-add as pending
-		plugin.DeleteAfPacketInterface(afpacket.config, ifIdx)
-		plugin.ConfigureAfPacketInterface(afpacket.config)
+		if err := plugin.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
+			plugin.Logger.Error("Failed to remove af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+		} else {
+			if _, _, err := plugin.ConfigureAfPacketInterface(afpacket.config); err != nil {
+				plugin.Logger.Error("Failed to configure af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+			}
+		}
 	}
 }
 

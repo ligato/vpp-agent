@@ -114,13 +114,14 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 
 	containers, err = plugin.dockerClient.ListContainers(listOpts)
 	if err != nil {
-		plugin.Log.Errorf("Error listing docker containers: %v", err)
 		if err, ok := err.(*docker.Error); ok &&
 			(err.Status == 500 || err.Status == 404) { // 404 is required to support older docker version
 			plugin.Log.Debugf("clearing since: %v", ctx.since)
 			ctx.since = ""
+		} else {
+			plugin.Log.Errorf("Error listing docker containers: %v", err)
+			return
 		}
-		return
 	}
 
 	for _, container := range containers {

@@ -201,12 +201,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		var pending bool
 		if ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface); err != nil {
 			return err
-		} else if pending {
+		}
+		if pending {
 			plugin.Log.Debugf("interface %+v cannot be created yet and will be configured later", iface)
 			return nil
 		}
 	}
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
@@ -832,7 +834,9 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName,
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
-		plugin.ConfigureVPPInterface(pendingAfpacket)
+		if err := plugin.ConfigureVPPInterface(pendingAfpacket); err != nil {
+			plugin.Log.Error(err)
+		}
 	}
 }
 

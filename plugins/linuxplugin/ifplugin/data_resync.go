@@ -111,8 +111,10 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 			if found {
 				plugin.Log.Debugf("RESYNC Linux interface %v: found peer %v", linkName, linuxIf.Veth.PeerIfName)
 			} else {
-				err := fmt.Errorf("RESYNC Linux interface %v: failed to obtain peer for veth", linkName)
-				errs = append(errs, err)
+				// No info about the peer, use the same as in the NB config
+				linuxIf.Veth = &interfaces.LinuxInterfaces_Interface_Veth{
+					PeerIfName: linkDataPair.nbIfData.Veth.PeerIfName,
+				}
 			}
 		}
 		// Check if interface needs to be modified
