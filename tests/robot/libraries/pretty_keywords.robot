@@ -116,9 +116,27 @@ IP Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     log many    ${out}
     Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
+IP6 Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP6 Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+
+IP6 Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP6 Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+
+
 Show IP Fib On ${node}
     Log Many    ${node}
     ${out}=     vpp_term: Show IP Fib    ${node}
+    Log Many    ${out}
+
+Show IP6 Fib On ${node}
+    Log Many    ${node}
+    ${out}=     vpp_term: Show IP6 Fib    ${node}
     Log Many    ${out}
 
 Show Interfaces On ${node}
