@@ -44,6 +44,14 @@ func (when *WhenIface) StoreIf(data *intf.Interfaces_Interface, opts ...interfac
 	when.Log.Debug("When_StoreIf end")
 }
 
+// StoreIf stores configuration of a given interface in ETCD.
+func (when *WhenIface) Put(fn func(dsl vppclient.PutDSL) vppclient.PutDSL) {
+	err := fn(when.NewChange(pluginName).Put()).Send().ReceiveReply()
+	if err != nil {
+		when.Log.Panic(err)
+	}
+}
+
 // DelIf removes configuration of a given interface from ETCD.
 func (when *WhenIface) DelIf(data *intf.Interfaces_Interface) {
 	when.Log.Debug("When_StoreIf begin")
