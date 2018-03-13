@@ -230,10 +230,10 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, cal
 	}, plugin.Log)
 }
 
-// ResolveCreatedInterface uses FIB cache to additionally configure any FIB entries for this interface. Bridge domain
+// ResolveRegisteredInterface uses FIB cache to additionally configure any FIB entries for this interface. Bridge domain
 // is checked for existence. If resolution is successful, new FIB entry is configured, registered and removed from cache.
-func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32, callback func(error)) error {
-	plugin.Log.Infof("Resolve new interface %v from FIB perspective", interfaceName)
+func (plugin *FIBConfigurator) ResolveRegisteredInterface(interfaceName string, interfaceIndex uint32, callback func(error)) error {
+	plugin.Log.Infof("FIB configurator: resolving registered interface %s", interfaceName)
 
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
@@ -284,14 +284,14 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 			}
 		}
 	}
-	plugin.Log.Infof("FIB: resolution of created interface %v is done", interfaceName)
+	plugin.Log.Debugf("FIB: resolution of registered interface %s is done", interfaceName)
 	return wasError
 }
 
-// ResolveDeletedInterface if interface was deleted. All FIB entries belonging to this interface are removed from
+// ResolveUnregisteredInterface if interface was deleted. All FIB entries belonging to this interface are removed from
 // configuration and added to FIB cache (from Agent perspective, FIB entry is not removed when interface is removed).
-func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, interfaceIndex uint32, callback func(error)) error {
-	plugin.Log.Infof("Resolve removed interface %v from FIB perspective ", interfaceName)
+func (plugin *FIBConfigurator) ResolveUnregisteredInterface(interfaceName string, interfaceIndex uint32, callback func(error)) error {
+	plugin.Log.Infof("FIB configurator: resolving unregistered interface %s", interfaceName)
 
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
@@ -328,15 +328,15 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 		}
 	}
 
-	plugin.Log.Infof("FIB: resolution of removed interface %v is done", interfaceName)
+	plugin.Log.Debugf("FIB: resolution of unregistered interface %s is done", interfaceName)
 	return wasError
 }
 
-// ResolveCreatedBridgeDomain uses FIB cache to additionally configure any FIB entries
+// RegisteredBridgeDomain uses FIB cache to additionally configure any FIB entries
 // for this bridge domain. Required interface is checked for existence. If resolution
 // is successful, new FIB entry is configured, registered and removed from cache.
-func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
-	plugin.Log.Infof("Resolve created bridge domain %v from FIB perspective ", domainID)
+func (plugin *FIBConfigurator) RegisteredBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
+	plugin.Log.Infof("FIB configurator: resolve registered bridge domain %d", domainID)
 
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
@@ -379,14 +379,14 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 			}
 		}
 	}
-	plugin.Log.Debugf("FIB: resolution of created bridge domain %v is done", domainName)
+	plugin.Log.Debugf("FIB configurator: resolution of registered bridge domain %d is done", domainName)
 	return wasError
 }
 
-// ResolveDeletedBridgeDomain if BD was deleted. All FIB entries belonging to this bridge domain are removed from
+// UnregisteredBridgeDomain if BD was deleted. All FIB entries belonging to this bridge domain are removed from
 // configuration and added to FIB cache (from Agent perspective, FIB entry is not removed when bridge domain vanishes).
-func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
-	plugin.Log.Infof("Resolve removed bridge domain %v from FIB perspective ", domainID)
+func (plugin *FIBConfigurator) UnregisteredBridgeDomain(domainName string, domainID uint32, callback func(error)) error {
+	plugin.Log.Infof("FIB configurator: resolving unregistered bridge domain %d", domainID)
 
 	firstIndex := 1
 	lastIndex := plugin.FibIndexSeq - 1 // Number of all registered FIB Indexes
@@ -423,7 +423,7 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 		}
 	}
 
-	plugin.Log.Infof("FIB: resolution of removed bridge domain %v is done", domainName)
+	plugin.Log.Infof("FIB configurator: resolution of unregistered bridge domain %d done", domainName)
 	return wasError
 }
 

@@ -148,20 +148,26 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName, 
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) {
+func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) error {
 	if plugin.Linux == nil {
 		plugin.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).
 			Warn("Unexpectedly learned about removed Linux interface")
-		return
+		return nil
 	}
 	delete(plugin.hostInterfaces, hostIfName)
 
 	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
 		// remove the interface and re-add as pending
-		plugin.DeleteAfPacketInterface(afpacket.config, ifIdx)
-		plugin.ConfigureAfPacketInterface(afpacket.config)
+		if err := plugin.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
+			plugin.Logger.Error(err)
+		}
+		_, _, err := plugin.ConfigureAfPacketInterface(afpacket.config)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // IsPendingAfPacket returns true if the given config belongs to pending Afpacket interface.

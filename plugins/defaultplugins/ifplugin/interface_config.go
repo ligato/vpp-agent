@@ -824,22 +824,23 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	return wasError
 }
 
-// ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
-func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) {
-	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName, "ifIdx": interfaceIndex}).Info("New Linux interface was created")
+// RegisteredLinuxInterface reacts to a newly created Linux interface.
+func (plugin *InterfaceConfigurator) RegisteredLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) error {
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName, "ifIdx": interfaceIndex}).Info("New Linux interface was registered")
 
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
-		plugin.ConfigureVPPInterface(pendingAfpacket)
+		return plugin.ConfigureVPPInterface(pendingAfpacket)
 	}
+	return nil
 }
 
-// ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) {
-	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
+// UnregisteredLinuxInterface reacts to a removed Linux interface.
+func (plugin *InterfaceConfigurator) UnregisteredLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) error {
+	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was unregistered")
 
-	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)
+	return plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)
 }
 
 // returns memif socket filename ID. Registers it if does not exists yet

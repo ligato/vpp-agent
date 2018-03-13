@@ -72,22 +72,24 @@ func (plugin *StnConfigurator) Init() (err error) {
 	return nil
 }
 
-// ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface
+// UnregisteredInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
-func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: resolving deleted interface: %v", interfaceName)
+func (plugin *StnConfigurator) UnregisteredInterface(interfaceName string, ifIdx uint32) error {
+	plugin.Log.Debugf("STN plugin: resolving unregistered interface %s", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, true); rule != nil {
-		plugin.Delete(rule)
+		return plugin.Delete(rule)
 	}
+	return nil
 }
 
-// ResolveCreatedInterface will check rules and if there is one waiting for interfaces it will be written
+// RegisteredInterface will check rules and if there is one waiting for interfaces it will be written
 // into VPP.
-func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
+func (plugin *StnConfigurator) RegisteredInterface(interfaceName string, ifIdx uint32) error {
+	plugin.Log.Debugf("STN plugin: resolving registered interface %s", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
-		plugin.Add(rule)
+		return plugin.Add(rule)
 	}
+	return nil
 }
 
 // Add create a new STN rule.
@@ -272,13 +274,13 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	} else {
 		_, ruleIface, exists = plugin.StnAllIndexes.LookupIdx(idx)
 	}
-	plugin.Log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
+
 	if exists {
 		stnRule, ok := ruleIface.(*modelStn.StnRule)
 		if ok {
 			rule = stnRule
 		}
-		plugin.Log.Debugf("Getting rule: %+v", stnRule)
+		plugin.Log.Debugf("Cached rule %s found for interface %s", stnRule.RuleName, iface)
 	}
 
 	return

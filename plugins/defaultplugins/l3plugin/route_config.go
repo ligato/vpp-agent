@@ -280,13 +280,13 @@ func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Rout
 	return nil
 }
 
-// ResolveCreatedInterface is responsible for reconfiguring cached routes and then from removing them from route cache
-func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
+// RegisteredInterface is responsible for reconfiguring cached routes and then from removing them from route cache
+func (plugin *RouteConfigurator) RegisteredInterface(ifName string, swIdx uint32) error {
 	routesWithIndex := plugin.RouteCachedIndex.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
-		return
+		return nil
 	}
-	plugin.Log.Infof("Route configurator: resolving new interface %v for %d routes", ifName, len(routesWithIndex))
+	plugin.Log.Infof("Route configurator: resolving registered interface %s for %d routes", ifName, len(routesWithIndex))
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
 		plugin.Log.WithFields(logging.Fields{
@@ -299,6 +299,8 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 		plugin.recreateRoute(route, vrf)
 		plugin.RouteCachedIndex.UnregisterName(routeWithIndex.RouteID)
 	}
+
+	return nil
 }
 
 /**
@@ -317,13 +319,13 @@ func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf
 	plugin.ConfigureRoute(route, vrf)
 }
 
-// ResolveDeletedInterface is responsible for moving routes of deleted interface to cache
-func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
+// UnregisteredInterface is responsible for moving routes of deleted interface to cache
+func (plugin *RouteConfigurator) UnregisteredInterface(ifName string, swIdx uint32) error {
 	routesWithIndex := plugin.RouteIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
-		return
+		return nil
 	}
-	plugin.Log.Debugf("Route configurator: resolving deleted interface %v for %d routes", ifName, len(routesWithIndex))
+	plugin.Log.Debugf("Route configurator: resolving unregistered interface %s for %d routes", ifName, len(routesWithIndex))
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
 		plugin.Log.WithFields(logging.Fields{
@@ -334,6 +336,7 @@ func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx ui
 		}).Debug("Add routes to route cache - outgoing interface was deleted.")
 		plugin.moveRouteToCache(route)
 	}
+	return nil
 }
 
 func (plugin *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {

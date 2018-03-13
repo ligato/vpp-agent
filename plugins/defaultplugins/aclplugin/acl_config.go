@@ -329,9 +329,9 @@ func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableI
 	return configurableIfs
 }
 
-// ResolveCreatedInterface configures new interface for every ACL found in cache
-func (plugin *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
-	plugin.Log.Debugf("ACL configurator: resolving new interface %v", ifName)
+// RegisteredInterface configures registered (new) interface for every ACL found in cache
+func (plugin *ACLConfigurator) RegisteredInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("ACL configurator: resolving registered interface %s", ifName)
 
 	// Iterate over cache in order to find out where the interface is used
 	var wasErr error
@@ -358,22 +358,22 @@ func (plugin *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 				plugin.Log.Warnf("ACL interface is not defined as L2, ingress or egress")
 			}
 			// Remove from cache
-			plugin.Log.Debugf("New interface %s (%s) configured for ACL %d, removed from cache",
+			plugin.Log.Debugf("Registered interface %s (%s) configured for ACL %d, removed from cache",
 				ifName, aclCacheEntry.ifAttr, aclCacheEntry.aclID)
 			plugin.ACLIfCache = append(plugin.ACLIfCache[:entryIdx], plugin.ACLIfCache[entryIdx+1:]...)
 		}
 	}
 
-	plugin.Log.Debugf("ACL configurator: new interface %v resolution done", ifName)
+	plugin.Log.Debugf("ACL configurator: resolution of registered interface %v done", ifName)
 
 	return wasErr
 }
 
-// ResolveDeletedInterface puts removed interface to cache, including acl index. Note: it's not needed to remove ACL
-// from interface manually, VPP handles it itself and such an behavior would cause errors (ACLs cannot be dumped
+// UnregisteredInterface puts unregistered interface to cache, including acl index. Note: it's not needed to
+// remove ACL from interface manually, VPP handles it itself and such an behavior would cause errors (ACLs cannot be dumped
 // from non-existing interface)
-func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
-	plugin.Log.Debugf("ACL configurator: resolving deleted interface %v", ifName)
+func (plugin *ACLConfigurator) UnregisteredInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("ACL configurator: resolving unregistered interface %s", ifName)
 
 	var wasErr error
 
@@ -430,7 +430,7 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 		}
 	}
 
-	plugin.Log.Debugf("ACL configurator: resolution done for removed interface %v", ifName)
+	plugin.Log.Debugf("ACL configurator: resolution done for unregistered interface %v", ifName)
 
 	return wasErr
 }
