@@ -148,7 +148,7 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 
 // ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.DataResyncDSL {
-	key := l3.ProxyArpInterfaceKey(val.Name)
+	key := l3.ProxyArpInterfaceKey(val.Label)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -157,7 +157,7 @@ func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_Interfac
 
 // ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
-	key := l3.ProxyArpRangeKey(val.Name)
+	key := l3.ProxyArpRangeKey(val.Lable)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

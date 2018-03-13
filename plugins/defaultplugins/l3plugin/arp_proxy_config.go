@@ -87,12 +87,12 @@ func (plugin *ProxyArpConfigurator) Close() error {
 }
 
 func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.Log.Infof("Enabling interfaces from proxy ARP config %s", pArpIf.Name)
+	plugin.Log.Infof("Enabling interfaces from proxy ARP config %s", pArpIf.Label)
 
 	var wasErr error
 	for _, proxyArpIf := range pArpIf.Interfaces {
-		ifName := proxyArpIf.Interface
-		if proxyArpIf.Interface == "" {
+		ifName := proxyArpIf.Name
+		if ifName == "" {
 			err := fmt.Errorf("proxy ARP interface not set")
 			plugin.Log.Error(err)
 			wasErr = err
@@ -117,16 +117,16 @@ func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_I
 		}
 	}
 	// Register
-	plugin.ProxyArpIfIndices.RegisterName(pArpIf.Name, plugin.ProxyARPIndexSeq, nil)
+	plugin.ProxyArpIfIndices.RegisterName(pArpIf.Label, plugin.ProxyARPIndexSeq, nil)
 	plugin.ProxyARPIndexSeq++
-	plugin.Log.Debugf("Proxy ARP interface configuration %s registered", pArpIf.Name)
+	plugin.Log.Debugf("Proxy ARP interface configuration %s registered", pArpIf.Label)
 
 	return wasErr
 }
 
 // ModifyInterface does nothing
 func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.Log.Infof("Modifying proxy ARP interface configuration %s", newPArpIf.Name)
+	plugin.Log.Infof("Modifying proxy ARP interface configuration %s", newPArpIf.Label)
 
 	toEnable, toDisable := plugin.calculateIfDiff(newPArpIf.Interfaces, oldPArpIf.Interfaces)
 	var wasErr error
@@ -172,19 +172,19 @@ func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.Pro
 		}
 	}
 
-	plugin.Log.Debugf("Proxy ARP interface config %s modification done", newPArpIf.Name)
+	plugin.Log.Debugf("Proxy ARP interface config %s modification done", newPArpIf.Label)
 
 	return wasErr
 }
 
 // DeleteInterface disables proxy ARP interface or removes it from cache
 func (plugin *ProxyArpConfigurator) DeleteInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.Log.Infof("Disabling interfaces from proxy ARP config %s", pArpIf.Name)
+	plugin.Log.Infof("Disabling interfaces from proxy ARP config %s", pArpIf.Label)
 
 	var wasErr error
 ProxyArpIfLoop:
 	for _, proxyArpIf := range pArpIf.Interfaces {
-		ifName := proxyArpIf.Interface
+		ifName := proxyArpIf.Name
 		// Check if interface is cached
 		for idx, cachedIf := range plugin.ProxyARPIfCache {
 			if cachedIf == ifName {
@@ -211,15 +211,15 @@ ProxyArpIfLoop:
 	}
 
 	// Un-register
-	plugin.ProxyArpIfIndices.UnregisterName(pArpIf.Name)
-	plugin.Log.Debugf("Proxy ARP interface config %s un-registered", pArpIf.Name)
+	plugin.ProxyArpIfIndices.UnregisterName(pArpIf.Label)
+	plugin.Log.Debugf("Proxy ARP interface config %s un-registered", pArpIf.Label)
 
 	return wasErr
 }
 
 // AddRange configures new IP range for proxy ARP
 func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Setting up proxy ARP IP range config %s", pArpRng.Name)
+	plugin.Log.Infof("Setting up proxy ARP IP range config %s", pArpRng.Lable)
 
 	var wasErr error
 	for _, proxyArpRange := range pArpRng.Ranges {
@@ -251,16 +251,16 @@ func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeLis
 	}
 
 	// Register
-	plugin.ProxyArpRngIndices.RegisterName(pArpRng.Name, plugin.ProxyARPIndexSeq, nil)
+	plugin.ProxyArpRngIndices.RegisterName(pArpRng.Lable, plugin.ProxyARPIndexSeq, nil)
 	plugin.ProxyARPIndexSeq++
-	plugin.Log.Debugf("Proxy ARP range config %s registered", pArpRng.Name)
+	plugin.Log.Debugf("Proxy ARP range config %s registered", pArpRng.Lable)
 
 	return wasErr
 }
 
 // ModifyRange does nothing
 func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Modifying proxy ARP range config %s", oldPArpRng.Name)
+	plugin.Log.Infof("Modifying proxy ARP range config %s", oldPArpRng.Lable)
 
 	toAdd, toDelete := plugin.calculateRngDiff(newPArpRng.Ranges, oldPArpRng.Ranges)
 	var wasErr error
@@ -321,13 +321,13 @@ func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.Proxy
 		}
 	}
 
-	plugin.Log.Debugf("Proxy ARP range config %s modification done", newPArpRng.Name)
+	plugin.Log.Debugf("Proxy ARP range config %s modification done", newPArpRng.Lable)
 
 	return wasErr
 }
 
 func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Removing proxy ARP IP range config %s", pArpRng.Name)
+	plugin.Log.Infof("Removing proxy ARP IP range config %s", pArpRng.Lable)
 
 	var wasErr error
 	for _, proxyArpRange := range pArpRng.Ranges {
@@ -359,8 +359,8 @@ func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_Range
 	}
 
 	// Un-register
-	plugin.ProxyArpIfIndices.UnregisterName(pArpRng.Name)
-	plugin.Log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Name)
+	plugin.ProxyArpIfIndices.UnregisterName(pArpRng.Lable)
+	plugin.Log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Lable)
 
 	return wasErr
 }
@@ -417,36 +417,36 @@ func (plugin *ProxyArpConfigurator) pruneIP(ip string) (string, error) {
 }
 
 // Calculate difference between old and new interfaces
-func (plugin *ProxyArpConfigurator) calculateIfDiff(newIfs, oldIfs []*l3.ProxyArpInterfaces_InterfaceList_Interfaces) (toEnable, toDisable []string) {
+func (plugin *ProxyArpConfigurator) calculateIfDiff(newIfs, oldIfs []*l3.ProxyArpInterfaces_InterfaceList_Interface) (toEnable, toDisable []string) {
 	// Find missing new interfaces
 	for _, newIf := range newIfs {
 		var found bool
 		for _, oldIf := range oldIfs {
-			if newIf.Interface == oldIf.Interface {
+			if newIf.Name == oldIf.Name {
 				found = true
 			}
 		}
 		if !found {
-			toEnable = append(toEnable, newIf.Interface)
+			toEnable = append(toEnable, newIf.Name)
 		}
 	}
 	// Find obsolete interfaces
 	for _, oldIf := range oldIfs {
 		var found bool
 		for _, newIf := range newIfs {
-			if oldIf.Interface == newIf.Interface {
+			if oldIf.Name == newIf.Name {
 				found = true
 			}
 		}
 		if !found {
-			toDisable = append(toDisable, oldIf.Interface)
+			toDisable = append(toDisable, oldIf.Name)
 		}
 	}
 	return
 }
 
 // Calculate difference between old and new ranges
-func (plugin *ProxyArpConfigurator) calculateRngDiff(newRngs, oldRngs []*l3.ProxyArpRanges_RangeList_Ranges) (toAdd, toDelete []*l3.ProxyArpRanges_RangeList_Ranges) {
+func (plugin *ProxyArpConfigurator) calculateRngDiff(newRngs, oldRngs []*l3.ProxyArpRanges_RangeList_Range) (toAdd, toDelete []*l3.ProxyArpRanges_RangeList_Range) {
 	// Find missing ranges
 	for _, newRng := range newRngs {
 		var found bool

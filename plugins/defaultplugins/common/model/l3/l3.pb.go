@@ -81,48 +81,48 @@ func (*ArpTable_ArpTableEntry) ProtoMessage()    {}
 
 // Proxy ARP ranges
 type ProxyArpRanges struct {
-	Ranges []*ProxyArpRanges_RangeList `protobuf:"bytes,100,rep,name=ranges" json:"ranges,omitempty"`
+	RangeList []*ProxyArpRanges_RangeList `protobuf:"bytes,100,rep,name=range_list" json:"range_list,omitempty"`
 }
 
 func (m *ProxyArpRanges) Reset()         { *m = ProxyArpRanges{} }
 func (m *ProxyArpRanges) String() string { return proto.CompactTextString(m) }
 func (*ProxyArpRanges) ProtoMessage()    {}
 
-func (m *ProxyArpRanges) GetRanges() []*ProxyArpRanges_RangeList {
+func (m *ProxyArpRanges) GetRangeList() []*ProxyArpRanges_RangeList {
 	if m != nil {
-		return m.Ranges
+		return m.RangeList
 	}
 	return nil
 }
 
 type ProxyArpRanges_RangeList struct {
-	Name   string                             `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Ranges []*ProxyArpRanges_RangeList_Ranges `protobuf:"bytes,2,rep,name=ranges" json:"ranges,omitempty"`
+	Lable  string                            `protobuf:"bytes,1,opt,name=lable,proto3" json:"lable,omitempty"`
+	Ranges []*ProxyArpRanges_RangeList_Range `protobuf:"bytes,2,rep,name=ranges" json:"ranges,omitempty"`
 }
 
 func (m *ProxyArpRanges_RangeList) Reset()         { *m = ProxyArpRanges_RangeList{} }
 func (m *ProxyArpRanges_RangeList) String() string { return proto.CompactTextString(m) }
 func (*ProxyArpRanges_RangeList) ProtoMessage()    {}
 
-func (m *ProxyArpRanges_RangeList) GetRanges() []*ProxyArpRanges_RangeList_Ranges {
+func (m *ProxyArpRanges_RangeList) GetRanges() []*ProxyArpRanges_RangeList_Range {
 	if m != nil {
 		return m.Ranges
 	}
 	return nil
 }
 
-type ProxyArpRanges_RangeList_Ranges struct {
+type ProxyArpRanges_RangeList_Range struct {
 	FirstIp string `protobuf:"bytes,1,opt,name=first_ip,proto3" json:"first_ip,omitempty"`
 	LastIp  string `protobuf:"bytes,2,opt,name=last_ip,proto3" json:"last_ip,omitempty"`
 }
 
-func (m *ProxyArpRanges_RangeList_Ranges) Reset()         { *m = ProxyArpRanges_RangeList_Ranges{} }
-func (m *ProxyArpRanges_RangeList_Ranges) String() string { return proto.CompactTextString(m) }
-func (*ProxyArpRanges_RangeList_Ranges) ProtoMessage()    {}
+func (m *ProxyArpRanges_RangeList_Range) Reset()         { *m = ProxyArpRanges_RangeList_Range{} }
+func (m *ProxyArpRanges_RangeList_Range) String() string { return proto.CompactTextString(m) }
+func (*ProxyArpRanges_RangeList_Range) ProtoMessage()    {}
 
 // Proxy ARP interfaces
 type ProxyArpInterfaces struct {
-	InterfaceList []*ProxyArpInterfaces_InterfaceList `protobuf:"bytes,1,rep,name=interfaceList" json:"interfaceList,omitempty"`
+	InterfaceList []*ProxyArpInterfaces_InterfaceList `protobuf:"bytes,1,rep,name=interface_list" json:"interface_list,omitempty"`
 }
 
 func (m *ProxyArpInterfaces) Reset()         { *m = ProxyArpInterfaces{} }
@@ -137,32 +137,32 @@ func (m *ProxyArpInterfaces) GetInterfaceList() []*ProxyArpInterfaces_InterfaceL
 }
 
 type ProxyArpInterfaces_InterfaceList struct {
-	Name       string                                         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Interfaces []*ProxyArpInterfaces_InterfaceList_Interfaces `protobuf:"bytes,2,rep,name=interfaces" json:"interfaces,omitempty"`
+	Label      string                                        `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Interfaces []*ProxyArpInterfaces_InterfaceList_Interface `protobuf:"bytes,2,rep,name=interfaces" json:"interfaces,omitempty"`
 }
 
 func (m *ProxyArpInterfaces_InterfaceList) Reset()         { *m = ProxyArpInterfaces_InterfaceList{} }
 func (m *ProxyArpInterfaces_InterfaceList) String() string { return proto.CompactTextString(m) }
 func (*ProxyArpInterfaces_InterfaceList) ProtoMessage()    {}
 
-func (m *ProxyArpInterfaces_InterfaceList) GetInterfaces() []*ProxyArpInterfaces_InterfaceList_Interfaces {
+func (m *ProxyArpInterfaces_InterfaceList) GetInterfaces() []*ProxyArpInterfaces_InterfaceList_Interface {
 	if m != nil {
 		return m.Interfaces
 	}
 	return nil
 }
 
-type ProxyArpInterfaces_InterfaceList_Interfaces struct {
-	Interface string `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+type ProxyArpInterfaces_InterfaceList_Interface struct {
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
-func (m *ProxyArpInterfaces_InterfaceList_Interfaces) Reset() {
-	*m = ProxyArpInterfaces_InterfaceList_Interfaces{}
+func (m *ProxyArpInterfaces_InterfaceList_Interface) Reset() {
+	*m = ProxyArpInterfaces_InterfaceList_Interface{}
 }
-func (m *ProxyArpInterfaces_InterfaceList_Interfaces) String() string {
+func (m *ProxyArpInterfaces_InterfaceList_Interface) String() string {
 	return proto.CompactTextString(m)
 }
-func (*ProxyArpInterfaces_InterfaceList_Interfaces) ProtoMessage() {}
+func (*ProxyArpInterfaces_InterfaceList_Interface) ProtoMessage() {}
 
 // STN (Steal The NIC) feature table
 type STNTable struct {

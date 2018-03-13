@@ -34,26 +34,26 @@ message ArpTable {
 /* Proxy ARP ranges */
 message ProxyArpRanges {
     message RangeList {
-        string name = 1;                                /* unique proxy ARP range config identifier */
-        message Ranges {
+        string lable = 1;                                /* unique proxy ARP range config identifier */
+        message Range {
             string first_ip = 1;                        /* first (starting) IP address of the proxy ARP range */
             string last_ip = 2;                         /* last (ending) IP address of the proxy ARP range  */
         }
-        repeated Ranges ranges = 2;
+        repeated Range ranges = 2;
     }
-    repeated RangeList ranges = 100;                    /* list of proxy arp ranges */
+    repeated RangeList range_list = 100;                    /* list of proxy arp ranges */
 }
 
 /* Proxy ARP interfaces */
 message ProxyArpInterfaces {
     message InterfaceList {
-        string name = 1;                                /* unique proxy ARP interface config conigurator identifier */
-        message Interfaces {
-            string interface = 1;                       /* name of the interface proxy arp is enabled for */
+        string label = 1;                                /* unique proxy ARP interface config conigurator identifier */
+        message Interface {
+            string name = 1;                       /* name of the interface proxy arp is enabled for */
         }
-        repeated Interfaces interfaces = 2;
+        repeated Interface interfaces = 2;
     }
-    repeated InterfaceList interfaceList = 1;           /* list of proxy ARP-enabled interfaces */
+    repeated InterfaceList interface_list = 1;           /* list of proxy ARP-enabled interfaces */
 }
 
 /* STN (Steal The NIC) feature table */

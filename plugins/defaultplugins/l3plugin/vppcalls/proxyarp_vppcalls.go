@@ -67,7 +67,7 @@ func vppAddDelProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, enabl
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.Debugf("interface %v enabled: %v", req.SwIfIndex, enable)
+	log.Debugf("interface %v enabled for proxy arp: %v", req.SwIfIndex, enable)
 
 	return nil
 }
@@ -96,7 +96,7 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, i
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.Debugf("range: %v - %v added: %v", req.LowAddress, req.HiAddress, isAdd)
+	log.Debugf("proxy arp range: %v - %v added: %v", req.LowAddress, req.HiAddress, isAdd)
 
 	return nil
 }
