@@ -46,6 +46,8 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
 		map[string] /*name*/ *stn.StnRule{},
 		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
@@ -68,6 +70,8 @@ type DataResyncDSL struct {
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnPutProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
 	txnPutStn         map[string] /*value*/ *stn.StnRule
 	txnPutNatGlobal   map[string] /*label*/ *nat.Nat44Global
 	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
@@ -124,7 +128,7 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultpl
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfID, val.DstIPAddr, val.NextHopAddr)] = val
+	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
 
 	return dsl
 }
@@ -153,6 +157,18 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 // Arp adds VPP L3 ARP to the RESYNC request.
 func (dsl *DataResyncDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
 	dsl.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.DataResyncDSL {
+	dsl.txnPutProxyArpIfs[val.Name] = val
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
+	dsl.txnPutProxyArpRng[val.Name] = val
 	return dsl
 }
 

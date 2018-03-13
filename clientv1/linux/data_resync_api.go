@@ -66,6 +66,10 @@ type DataResyncDSL interface {
 	ACL(acl *vpp_acl.AccessLists_Acl) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) DataResyncDSL
+	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) DataResyncDSL
+	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *vpp_l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request
