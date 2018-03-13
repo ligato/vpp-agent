@@ -118,12 +118,11 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 		if dockerErr, ok := err.(*docker.Error); ok && (dockerErr.Status == 500 || dockerErr.Status == 404) {
 			// Reset filter and list containers again
 			plugin.Log.Debug("clearing 'since' %s", ctx.since)
-			listOpts.Filters = map[string][]string{}
-			if containers, err = plugin.dockerClient.ListContainers(listOpts); err != nil {
-				plugin.Log.Errorf("Error listing docker containers: %v", err)
-				return
-			}
-		} else {
+			ctx.since = ""
+			delete(listOpts.Filters, "since")
+			containers, err = plugin.dockerClient.ListContainers(listOpts)
+		}
+		if err != nil {
 			// If there is other error, return it
 			plugin.Log.Errorf("Error listing docker containers: %v", err)
 			return
