@@ -306,7 +306,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "a205b3b93a30c4527c828338c1e01bac2ce12b13"
+  revision = "32683576d10608200eab3b52fa74f449bc0b29c9"
 
 [[projects]]
   branch = "master"
