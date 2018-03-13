@@ -383,8 +383,7 @@ func (plugin *BDConfigurator) calculateBdParamsDiff(newBdConfig, oldBdConfig *l2
 //  * interface which will be the new BVI
 func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces) (toSet, toUnset []*l2.BridgeDomains_BridgeDomain_Interfaces) {
 	// Find BVI interfaces (it may not be configured)
-	var oldBVI *l2.BridgeDomains_BridgeDomain_Interfaces
-	var newBVI *l2.BridgeDomains_BridgeDomain_Interfaces
+	var oldBVI, newBVI *l2.BridgeDomains_BridgeDomain_Interfaces
 	for _, newIface := range newIfaces {
 		if newIface.BridgedVirtualInterface {
 			newBVI = newIface
@@ -401,9 +400,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	// If BVI was set/unset in general or the BVI interface was changed, pass the knowledge to the diff
 	// resolution
 	var bviChanged bool
-	if oldBVI == nil && newBVI == nil {
-		bviChanged = false
-	} else if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI.Name != newBVI.Name) {
+	if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI.Name != newBVI.Name) {
 		bviChanged = true
 	}
 
@@ -411,7 +408,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	for _, oldIface := range oldIfaces {
 		var exists bool
 		for _, newIface := range newIfaces {
-			if oldIface.Name == newIface.Name {
+			if oldIface.Name == newIface.Name && oldIface.SplitHorizonGroup == newIface.SplitHorizonGroup {
 				exists = true
 			}
 		}
@@ -437,7 +434,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	for _, newIface := range newIfaces {
 		var exists bool
 		for _, oldIface := range oldIfaces {
-			if newIface.Name == oldIface.Name {
+			if newIface.Name == oldIface.Name && newIface.SplitHorizonGroup == oldIface.SplitHorizonGroup {
 				exists = true
 			}
 		}
