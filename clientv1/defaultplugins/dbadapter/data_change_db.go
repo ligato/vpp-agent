@@ -146,6 +146,18 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
+// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
+func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.ProxyArpInterfaceKey(arp.Label), arp)
+	return dsl
+}
+
+// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.ProxyArpRangeKey(arp.Lable), arp)
+	return dsl
+}
+
 // StnRule adds a request to create or update STN rule.
 func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
@@ -241,6 +253,18 @@ func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
 // Arp adds a request to delete an existing VPP L3 ARP entry.
 func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr))
+	return dsl
+}
+
+// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+func (dsl *DeleteDSL) ProxyArpInterfaces(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.ProxyArpInterfaceKey(label))
+	return dsl
+}
+
+// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+func (dsl *DeleteDSL) ProxyArpRanges(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.ProxyArpRangeKey(label))
 	return dsl
 }
 

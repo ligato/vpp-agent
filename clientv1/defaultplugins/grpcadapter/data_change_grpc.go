@@ -45,6 +45,8 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*value*/ *l4.L4Features{},
 		map[string] /*id*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
 		map[string] /*name*/ *stn.StnRule{},
 		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
@@ -61,6 +63,8 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
 		map[string] /*key*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
 		map[string] /*name*/ *stn.StnRule{},
 		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
@@ -83,6 +87,8 @@ type DataChangeDSL struct {
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnPutProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
 	txnPutStn         map[string] /*value*/ *stn.StnRule
 	txnPutNatGlobal   map[string] /*id*/ *nat.Nat44Global
 	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
@@ -99,6 +105,8 @@ type DataChangeDSL struct {
 	txnDelL4Features  map[string] /*value*/ *l4.L4Features
 	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
 	txnDelArp         map[string] /*value*/ *l3.ArpTable_ArpTableEntry
+	txnDelProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnDelProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
 	txnDelStn         map[string] /*value*/ *stn.StnRule
 	txnDelNatGlobal   map[string] /*id*/ *nat.Nat44Global
 	txnDelDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
@@ -161,7 +169,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.P
 
 // StaticRoute creates or updates the L3 Static Route.
 func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.PutDSL {
-	dsl.parent.txnPutStaticRoute[l3.RouteKey(val.VrfID, val.DstIPAddr, val.NextHopAddr)] = val
+	dsl.parent.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
 
 	return dsl
 }
@@ -190,6 +198,18 @@ func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugi
 // Arp adds a request to create or update VPP L3 ARP entry.
 func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	dsl.parent.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
+func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.PutDSL {
+	dsl.parent.txnPutProxyArpIfs[arp.Label] = arp
+	return dsl
+}
+
+// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugins.PutDSL {
+	dsl.parent.txnPutProxyArpRng[arp.Lable] = arp
 	return dsl
 }
 
@@ -312,6 +332,18 @@ func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 // Arp adds a request to delete an existing VPP L3 ARP entry.
 func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelArp[l3.ArpEntryKey(ifaceName, ipAddr)] = nil
+	return dsl
+}
+
+// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+func (dsl *DeleteDSL) ProxyArpInterfaces(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelProxyArpIfs[label] = nil
+	return dsl
+}
+
+// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+func (dsl *DeleteDSL) ProxyArpRanges(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelProxyArpRng[label] = nil
 	return dsl
 }
 

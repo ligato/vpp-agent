@@ -143,6 +143,18 @@ func (dsl *DataResyncDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.DataResy
 	return dsl
 }
 
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *vpp_l3.ProxyArpInterfaces_InterfaceList) linux.DataResyncDSL {
+	dsl.vppDataResync.ProxyArpInterfaces(val)
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *vpp_l3.ProxyArpRanges_RangeList) linux.DataResyncDSL {
+	dsl.vppDataResync.ProxyArpRanges(val)
+	return dsl
+}
+
 // L4Features adds L4 features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *vpp_l4.L4Features) linux.DataResyncDSL {
 	dsl.vppDataResync.L4Features(val)

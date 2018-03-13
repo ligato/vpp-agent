@@ -174,6 +174,30 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+		var value, prevValue l3.ProxyArpInterfaces_InterfaceList
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeProxyARPInterface(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+		var value, prevValue l3.ProxyArpRanges_RangeList
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeProxyARPRange(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
@@ -384,6 +408,32 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry,
 		return plugin.arpConfigurator.ChangeArp(value, prevValue)
 	}
 	return plugin.arpConfigurator.AddArp(value)
+}
+
+// dataChangeProxyARPInterface propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l3.ProxyArpInterfaces_InterfaceList,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.proxyArpConfigurator.DeleteInterface(prevValue)
+	} else if diff {
+		return plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+	}
+	return plugin.proxyArpConfigurator.AddInterface(value)
+}
+
+// dataChangeProxyARPRange propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.ProxyArpRanges_RangeList,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.proxyArpConfigurator.DeleteRange(prevValue)
+	} else if diff {
+		return plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+	}
+	return plugin.proxyArpConfigurator.AddRange(value)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator

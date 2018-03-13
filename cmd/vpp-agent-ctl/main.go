@@ -143,6 +143,14 @@ func main() {
 			addArpEntry(db, ifName1)
 		case "-dae":
 			deleteArpEntry(db, ifName1)
+		case "-aparpi":
+			addProxyArpIf(db)
+		case "-aparpr":
+			addProxyArpRng(db)
+		case "-dparpi":
+			delProxyArpIf(db)
+		case "-dparpr":
+			delProxyArpRng(db)
 		case "-aat":
 			addArpTableEntry(db, bridgeDomain1)
 		case "-cxc":
@@ -542,20 +550,20 @@ func create(db keyval.ProtoBroker, ifname string, ipAddr string) {
 	ifs.Interface = make([]*interfaces.Interfaces_Interface, 4)
 
 	ifs.Interface[0] = new(interfaces.Interfaces_Interface)
-	ifs.Interface[0].Name = "tap2"
+	ifs.Interface[0].Name = "tap1"
 	ifs.Interface[0].Type = interfaces.InterfaceType_TAP_INTERFACE
 	ifs.Interface[0].Enabled = true
-	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:42"
+	ifs.Interface[0].PhysAddress = "09:9e:df:66:54:41"
 	ifs.Interface[0].Mtu = 555
 	ifs.Interface[0].IpAddresses = make([]string, 1)
-	ifs.Interface[0].IpAddresses[0] = "192.168.20.3/24"
+	ifs.Interface[0].IpAddresses[0] = "192.168.20.1/24"
 	//ifs.Interface[0].IpAddresses[0] = "192.168.2.9/24"
 	//ifs.Interface[0].IpAddresses[2] = "10.10.1.7/24"
 	//ifs.Interface[0].Unnumbered = &interfaces.Interfaces_Interface_Unnumbered{}
 	//ifs.Interface[0].Unnumbered.IsUnnumbered = true
 	//ifs.Interface[0].Unnumbered.InterfaceWithIP = "memif"
 	//ifs.Interface[0].IpAddresses[0] = "2002:db8:0:0:0:ff00:42:8329"
-	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap2"}
+	ifs.Interface[0].Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: "tap1"}
 
 	log.Println(ifs)
 
@@ -829,6 +837,58 @@ func deleteArpEntry(db keyval.ProtoBroker, iface string) {
 
 	log.Println(arpTable)
 	db.Delete(l3.ArpEntryKey(arpTable.ArpTableEntries[0].Interface, arpTable.ArpTableEntries[0].IpAddress))
+}
+
+func addProxyArpIf(db keyval.ProtoBroker) {
+	proxyArpIf := l3.ProxyArpInterfaces{
+		InterfaceList: []*l3.ProxyArpInterfaces_InterfaceList{
+			{
+				Label: "proxyArpIf1",
+				Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{
+					{
+						Name: "tap1",
+					},
+					{
+						Name: "tap2",
+					},
+				},
+			},
+		},
+	}
+
+	log.Println(proxyArpIf)
+	db.Put(l3.ProxyArpInterfaceKey(proxyArpIf.InterfaceList[0].Label), proxyArpIf.InterfaceList[0])
+}
+
+func delProxyArpIf(db keyval.ProtoBroker) {
+	db.Delete(l3.ProxyArpInterfaceKey("proxyArpIf1"))
+}
+
+func addProxyArpRng(db keyval.ProtoBroker) {
+	proxyArpRng := l3.ProxyArpRanges{
+		RangeList: []*l3.ProxyArpRanges_RangeList{
+			{
+				Lable: "proxyArpRng1",
+				Ranges: []*l3.ProxyArpRanges_RangeList_Range{
+					{
+						FirstIp: "124.168.10.5",
+						LastIp:  "124.168.10.10",
+					},
+					{
+						FirstIp: "172.154.10.5",
+						LastIp:  "172.154.10.10",
+					},
+				},
+			},
+		},
+	}
+
+	log.Println(proxyArpRng)
+	db.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Lable), proxyArpRng.RangeList[0])
+}
+
+func delProxyArpRng(db keyval.ProtoBroker) {
+	db.Delete(l3.ProxyArpRangeKey("proxyArpRng1"))
 }
 
 func addArpTableEntry(db keyval.ProtoBroker, bdName string) {

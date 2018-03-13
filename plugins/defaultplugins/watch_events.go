@@ -97,6 +97,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				// Keep order.
 				plugin.aclConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.arpConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
+				plugin.proxyArpConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.bdConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.fibConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {
@@ -111,6 +112,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 			} else {
 				plugin.aclConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.arpConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.proxyArpConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				plugin.bdConfigurator.ResolveDeletedInterface(ifIdxEv.Name) //TODO ifIdxEv.Idx to not process data events
 				plugin.fibConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx, func(err error) {
 					if err != nil {

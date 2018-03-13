@@ -139,6 +139,11 @@ type Plugin struct {
 	arpConfigurator *l3plugin.ArpConfigurator
 	arpIndexes      l3idx.ARPIndexRW
 
+	// L3 proxy arp fields
+	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
+	proxyArpIfIndices    idxvpp.NameToIdxRW
+	proxyArpRngIndices   idxvpp.NameToIdxRW
+
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
 	namespaceIndexes    nsidx.AppNsIndexRW
@@ -707,6 +712,25 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		Stopwatch:   stopwatch,
 	}
 
+	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
+	// Proxy ARP interface configuration indices
+	plugin.proxyArpIfIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_if_indices", nil)
+	// Proxy ARP range configuration indices
+	plugin.proxyArpRngIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_rng_indices", nil)
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
+	}
+	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{
+		Log:                proxyArpLogger,
+		GoVppmux:           plugin.GoVppmux,
+		ProxyArpIfIndices:  plugin.proxyArpIfIndices,
+		ProxyArpRngIndices: plugin.proxyArpRngIndices,
+		ProxyARPIndexSeq:   1,
+		SwIfIndexes:        plugin.swIfIndexes,
+		Stopwatch:          stopwatch,
+	}
+
 	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
@@ -717,6 +741,11 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
+
+	if err := plugin.proxyArpConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("proxyArpConfigurator Initialized")
 
 	return nil
 }
@@ -813,7 +842,8 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.natConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.proxyArpConfigurator,
+		plugin.natConfigurator)
 
 	return err
 }
