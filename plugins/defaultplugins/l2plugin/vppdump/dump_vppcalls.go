@@ -103,10 +103,6 @@ func DumpBridgeDomains(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog 
 			return nil, err
 		}
 
-		log.Warnf("tag %v, learn %v, forward %v, flood %v, arpT %v, uuflood %v, macage %v,",
-			bdDetails.BdTag, bdDetails.Learn, bdDetails.Forward, bdDetails.Flood, bdDetails.ArpTerm, bdDetails.UuFlood, bdDetails.MacAge)
-		log.Warnf("id %v, ifcount %v, if %v, bvi %v", bdDetails.BdID, bdDetails.NSwIfs, bdDetails.SwIfDetails, bdDetails.BviSwIfIndex)
-
 		// bridge domain details
 		bds[bdDetails.BdID] = &BridgeDomain{
 			Interfaces: []*BridgeDomainInterface{},

@@ -103,24 +103,30 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 	}
 	ctx.created = nextCreated
 
-	// Finally inspect newly created containers.
+	// Inspect newly created containers
 	listOpts := docker.ListContainersOptions{
 		All:     true,
 		Filters: map[string][]string{},
 	}
+	// List containers and filter all older than 'since' ID
 	if ctx.since != "" {
 		listOpts.Filters["since"] = []string{ctx.since}
 	}
-
 	containers, err = plugin.dockerClient.ListContainers(listOpts)
 	if err != nil {
-		plugin.Log.Errorf("Error listing docker containers: %v", err)
-		if err, ok := err.(*docker.Error); ok &&
-			(err.Status == 500 || err.Status == 404) { // 404 is required to support older docker version
-			plugin.Log.Debugf("clearing since: %v", ctx.since)
+		// If 'since' container was not found, list all containers (404 is required to support older docker version)
+		if dockerErr, ok := err.(*docker.Error); ok && (dockerErr.Status == 500 || dockerErr.Status == 404) {
+			// Reset filter and list containers again
+			plugin.Log.Debug("clearing 'since' %s", ctx.since)
 			ctx.since = ""
+			delete(listOpts.Filters, "since")
+			containers, err = plugin.dockerClient.ListContainers(listOpts)
 		}
-		return
+		if err != nil {
+			// If there is other error, return it
+			plugin.Log.Errorf("Error listing docker containers: %v", err)
+			return
+		}
 	}
 
 	for _, container := range containers {
