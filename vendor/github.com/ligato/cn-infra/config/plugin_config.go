@@ -1,13 +1,10 @@
 package config
 
 import (
-	"sync"
-
 	"os"
-
 	"path"
-
 	"strings"
+	"sync"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
