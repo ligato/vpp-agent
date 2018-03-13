@@ -748,7 +748,7 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools, log loggin
 	for _, oldAp := range oldAPs {
 		// If new address pool is a range, remove it
 		if oldAp.LastSrcAddress != "" {
-			toRemove = append(toAdd, oldAp)
+			toRemove = append(toRemove, oldAp)
 			continue
 		}
 		// Otherwise try to find the same address pool

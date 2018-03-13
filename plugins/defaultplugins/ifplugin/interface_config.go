@@ -17,14 +17,15 @@
 
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/dhcp.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tapv2.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=../common/bin_api
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=../common/bin_api
 
 // Package ifplugin implements the Interface plugin that handles management
 // of VPP interfaces.
@@ -200,12 +201,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		var pending bool
 		if ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface); err != nil {
 			return err
-		} else if pending {
+		}
+		if pending {
 			plugin.Log.Debugf("interface %+v cannot be created yet and will be configured later", iface)
 			return nil
 		}
 	}
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
@@ -831,7 +834,9 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName,
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
-		plugin.ConfigureVPPInterface(pendingAfpacket)
+		if err := plugin.ConfigureVPPInterface(pendingAfpacket); err != nil {
+			plugin.Log.Error(err)
+		}
 	}
 }
 

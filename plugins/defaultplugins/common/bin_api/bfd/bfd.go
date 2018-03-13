@@ -6,28 +6,6 @@ package bfd
 import "git.fd.io/govpp.git/api"
 
 // BfdUDPSetEchoSource represents the VPP binary API message 'bfd_udp_set_echo_source'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 49:
-//
-//            "bfd_udp_set_echo_source",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x529cb13f"
-//            }
 //
 type BfdUDPSetEchoSource struct {
 	SwIfIndex uint32
@@ -40,31 +18,13 @@ func (*BfdUDPSetEchoSource) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPSetEchoSource) GetCrcString() string {
-	return "529cb13f"
+	return "928d862a"
 }
 func NewBfdUDPSetEchoSource() api.Message {
 	return &BfdUDPSetEchoSource{}
 }
 
 // BfdUDPSetEchoSourceReply represents the VPP binary API message 'bfd_udp_set_echo_source_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 71:
-//
-//            "bfd_udp_set_echo_source_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPSetEchoSourceReply struct {
 	Retval int32
@@ -77,31 +37,13 @@ func (*BfdUDPSetEchoSourceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPSetEchoSourceReply) GetCrcString() string {
-	return "e8d4e804"
+	return "c7700775"
 }
 func NewBfdUDPSetEchoSourceReply() api.Message {
 	return &BfdUDPSetEchoSourceReply{}
 }
 
 // BfdUDPDelEchoSource represents the VPP binary API message 'bfd_udp_del_echo_source'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 89:
-//
-//            "bfd_udp_del_echo_source",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type BfdUDPDelEchoSource struct {
 }
@@ -113,31 +55,13 @@ func (*BfdUDPDelEchoSource) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPDelEchoSource) GetCrcString() string {
-	return "51077d14"
+	return "2757531c"
 }
 func NewBfdUDPDelEchoSource() api.Message {
 	return &BfdUDPDelEchoSource{}
 }
 
 // BfdUDPDelEchoSourceReply represents the VPP binary API message 'bfd_udp_del_echo_source_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 107:
-//
-//            "bfd_udp_del_echo_source_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPDelEchoSourceReply struct {
 	Retval int32
@@ -150,73 +74,13 @@ func (*BfdUDPDelEchoSourceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPDelEchoSourceReply) GetCrcString() string {
-	return "e8d4e804"
+	return "63ae82c7"
 }
 func NewBfdUDPDelEchoSourceReply() api.Message {
 	return &BfdUDPDelEchoSourceReply{}
 }
 
 // BfdUDPAdd represents the VPP binary API message 'bfd_udp_add'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 125:
-//
-//            "bfd_udp_add",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "desired_min_tx"
-//            ],
-//            [
-//                "u32",
-//                "required_min_rx"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "detect_mult"
-//            ],
-//            [
-//                "u8",
-//                "is_authenticated"
-//            ],
-//            [
-//                "u8",
-//                "bfd_key_id"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            {
-//                "crc": "0x61cf1850"
-//            }
 //
 type BfdUDPAdd struct {
 	SwIfIndex       uint32
@@ -238,31 +102,13 @@ func (*BfdUDPAdd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPAdd) GetCrcString() string {
-	return "61cf1850"
+	return "5fe67640"
 }
 func NewBfdUDPAdd() api.Message {
 	return &BfdUDPAdd{}
 }
 
 // BfdUDPAddReply represents the VPP binary API message 'bfd_udp_add_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 185:
-//
-//            "bfd_udp_add_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPAddReply struct {
 	Retval int32
@@ -275,61 +121,13 @@ func (*BfdUDPAddReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPAddReply) GetCrcString() string {
-	return "e8d4e804"
+	return "95013fb7"
 }
 func NewBfdUDPAddReply() api.Message {
 	return &BfdUDPAddReply{}
 }
 
 // BfdUDPMod represents the VPP binary API message 'bfd_udp_mod'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 203:
-//
-//            "bfd_udp_mod",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "desired_min_tx"
-//            ],
-//            [
-//                "u32",
-//                "required_min_rx"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "detect_mult"
-//            ],
-//            {
-//                "crc": "0x6049bf47"
-//            }
 //
 type BfdUDPMod struct {
 	SwIfIndex     uint32
@@ -348,31 +146,13 @@ func (*BfdUDPMod) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPMod) GetCrcString() string {
-	return "6049bf47"
+	return "cee1341e"
 }
 func NewBfdUDPMod() api.Message {
 	return &BfdUDPMod{}
 }
 
 // BfdUDPModReply represents the VPP binary API message 'bfd_udp_mod_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 251:
-//
-//            "bfd_udp_mod_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPModReply struct {
 	Retval int32
@@ -385,49 +165,13 @@ func (*BfdUDPModReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPModReply) GetCrcString() string {
-	return "e8d4e804"
+	return "6f9b0cf4"
 }
 func NewBfdUDPModReply() api.Message {
 	return &BfdUDPModReply{}
 }
 
 // BfdUDPDel represents the VPP binary API message 'bfd_udp_del'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 269:
-//
-//            "bfd_udp_del",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            {
-//                "crc": "0xc9e9cc5a"
-//            }
 //
 type BfdUDPDel struct {
 	SwIfIndex uint32
@@ -443,31 +187,13 @@ func (*BfdUDPDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPDel) GetCrcString() string {
-	return "c9e9cc5a"
+	return "e95cc3ee"
 }
 func NewBfdUDPDel() api.Message {
 	return &BfdUDPDel{}
 }
 
 // BfdUDPDelReply represents the VPP binary API message 'bfd_udp_del_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 305:
-//
-//            "bfd_udp_del_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPDelReply struct {
 	Retval int32
@@ -480,31 +206,13 @@ func (*BfdUDPDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPDelReply) GetCrcString() string {
-	return "e8d4e804"
+	return "b9b0b355"
 }
 func NewBfdUDPDelReply() api.Message {
 	return &BfdUDPDelReply{}
 }
 
 // BfdUDPSessionDump represents the VPP binary API message 'bfd_udp_session_dump'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 323:
-//
-//            "bfd_udp_session_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type BfdUDPSessionDump struct {
 }
@@ -516,73 +224,13 @@ func (*BfdUDPSessionDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPSessionDump) GetCrcString() string {
-	return "51077d14"
+	return "b5bd25a6"
 }
 func NewBfdUDPSessionDump() api.Message {
 	return &BfdUDPSessionDump{}
 }
 
 // BfdUDPSessionDetails represents the VPP binary API message 'bfd_udp_session_details'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 341:
-//
-//            "bfd_udp_session_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "state"
-//            ],
-//            [
-//                "u8",
-//                "is_authenticated"
-//            ],
-//            [
-//                "u8",
-//                "bfd_key_id"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            [
-//                "u32",
-//                "required_min_rx"
-//            ],
-//            [
-//                "u32",
-//                "desired_min_tx"
-//            ],
-//            [
-//                "u8",
-//                "detect_mult"
-//            ],
-//            {
-//                "crc": "0x837bb0ed"
-//            }
 //
 type BfdUDPSessionDetails struct {
 	SwIfIndex       uint32
@@ -605,53 +253,13 @@ func (*BfdUDPSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPSessionDetails) GetCrcString() string {
-	return "837bb0ed"
+	return "1a431796"
 }
 func NewBfdUDPSessionDetails() api.Message {
 	return &BfdUDPSessionDetails{}
 }
 
 // BfdUDPSessionSetFlags represents the VPP binary API message 'bfd_udp_session_set_flags'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 401:
-//
-//            "bfd_udp_session_set_flags",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "admin_up_down"
-//            ],
-//            {
-//                "crc": "0x667d6e7c"
-//            }
 //
 type BfdUDPSessionSetFlags struct {
 	SwIfIndex   uint32
@@ -668,31 +276,13 @@ func (*BfdUDPSessionSetFlags) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPSessionSetFlags) GetCrcString() string {
-	return "667d6e7c"
+	return "7b8518ba"
 }
 func NewBfdUDPSessionSetFlags() api.Message {
 	return &BfdUDPSessionSetFlags{}
 }
 
 // BfdUDPSessionSetFlagsReply represents the VPP binary API message 'bfd_udp_session_set_flags_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 441:
-//
-//            "bfd_udp_session_set_flags_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPSessionSetFlagsReply struct {
 	Retval int32
@@ -705,39 +295,13 @@ func (*BfdUDPSessionSetFlagsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPSessionSetFlagsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "1a8335c3"
 }
 func NewBfdUDPSessionSetFlagsReply() api.Message {
 	return &BfdUDPSessionSetFlagsReply{}
 }
 
 // WantBfdEvents represents the VPP binary API message 'want_bfd_events'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 459:
-//
-//            "want_bfd_events",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantBfdEvents struct {
 	EnableDisable uint32
@@ -751,31 +315,13 @@ func (*WantBfdEvents) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantBfdEvents) GetCrcString() string {
-	return "476f5a08"
+	return "bc6547f0"
 }
 func NewWantBfdEvents() api.Message {
 	return &WantBfdEvents{}
 }
 
 // WantBfdEventsReply represents the VPP binary API message 'want_bfd_events_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 485:
-//
-//            "want_bfd_events_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantBfdEventsReply struct {
 	Retval int32
@@ -788,48 +334,13 @@ func (*WantBfdEventsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantBfdEventsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "be8b3ff3"
 }
 func NewWantBfdEventsReply() api.Message {
 	return &WantBfdEventsReply{}
 }
 
 // BfdAuthSetKey represents the VPP binary API message 'bfd_auth_set_key'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 503:
-//
-//            "bfd_auth_set_key",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            [
-//                "u8",
-//                "key_len"
-//            ],
-//            [
-//                "u8",
-//                "auth_type"
-//            ],
-//            [
-//                "u8",
-//                "key",
-//                20
-//            ],
-//            {
-//                "crc": "0x690b8877"
-//            }
 //
 type BfdAuthSetKey struct {
 	ConfKeyID uint32
@@ -845,31 +356,13 @@ func (*BfdAuthSetKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdAuthSetKey) GetCrcString() string {
-	return "690b8877"
+	return "abbe70cc"
 }
 func NewBfdAuthSetKey() api.Message {
 	return &BfdAuthSetKey{}
 }
 
 // BfdAuthSetKeyReply represents the VPP binary API message 'bfd_auth_set_key_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 538:
-//
-//            "bfd_auth_set_key_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdAuthSetKeyReply struct {
 	Retval int32
@@ -882,35 +375,13 @@ func (*BfdAuthSetKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdAuthSetKeyReply) GetCrcString() string {
-	return "e8d4e804"
+	return "68ed0d61"
 }
 func NewBfdAuthSetKeyReply() api.Message {
 	return &BfdAuthSetKeyReply{}
 }
 
 // BfdAuthDelKey represents the VPP binary API message 'bfd_auth_del_key'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 556:
-//
-//            "bfd_auth_del_key",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            {
-//                "crc": "0x65310b22"
-//            }
 //
 type BfdAuthDelKey struct {
 	ConfKeyID uint32
@@ -923,31 +394,13 @@ func (*BfdAuthDelKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdAuthDelKey) GetCrcString() string {
-	return "65310b22"
+	return "4e4d7318"
 }
 func NewBfdAuthDelKey() api.Message {
 	return &BfdAuthDelKey{}
 }
 
 // BfdAuthDelKeyReply represents the VPP binary API message 'bfd_auth_del_key_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 578:
-//
-//            "bfd_auth_del_key_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdAuthDelKeyReply struct {
 	Retval int32
@@ -960,31 +413,13 @@ func (*BfdAuthDelKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdAuthDelKeyReply) GetCrcString() string {
-	return "e8d4e804"
+	return "a0db385f"
 }
 func NewBfdAuthDelKeyReply() api.Message {
 	return &BfdAuthDelKeyReply{}
 }
 
 // BfdAuthKeysDump represents the VPP binary API message 'bfd_auth_keys_dump'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 596:
-//
-//            "bfd_auth_keys_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type BfdAuthKeysDump struct {
 }
@@ -996,39 +431,13 @@ func (*BfdAuthKeysDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdAuthKeysDump) GetCrcString() string {
-	return "51077d14"
+	return "336fa6ba"
 }
 func NewBfdAuthKeysDump() api.Message {
 	return &BfdAuthKeysDump{}
 }
 
 // BfdAuthKeysDetails represents the VPP binary API message 'bfd_auth_keys_details'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 614:
-//
-//            "bfd_auth_keys_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            [
-//                "u32",
-//                "use_count"
-//            ],
-//            [
-//                "u8",
-//                "auth_type"
-//            ],
-//            {
-//                "crc": "0x84130e9f"
-//            }
 //
 type BfdAuthKeysDetails struct {
 	ConfKeyID uint32
@@ -1043,61 +452,13 @@ func (*BfdAuthKeysDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdAuthKeysDetails) GetCrcString() string {
-	return "84130e9f"
+	return "377927eb"
 }
 func NewBfdAuthKeysDetails() api.Message {
 	return &BfdAuthKeysDetails{}
 }
 
 // BfdUDPAuthActivate represents the VPP binary API message 'bfd_udp_auth_activate'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 640:
-//
-//            "bfd_udp_auth_activate",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "is_delayed"
-//            ],
-//            [
-//                "u8",
-//                "bfd_key_id"
-//            ],
-//            [
-//                "u32",
-//                "conf_key_id"
-//            ],
-//            {
-//                "crc": "0x1bae0947"
-//            }
 //
 type BfdUDPAuthActivate struct {
 	SwIfIndex uint32
@@ -1116,31 +477,13 @@ func (*BfdUDPAuthActivate) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPAuthActivate) GetCrcString() string {
-	return "1bae0947"
+	return "87ac919e"
 }
 func NewBfdUDPAuthActivate() api.Message {
 	return &BfdUDPAuthActivate{}
 }
 
 // BfdUDPAuthActivateReply represents the VPP binary API message 'bfd_udp_auth_activate_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 688:
-//
-//            "bfd_udp_auth_activate_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPAuthActivateReply struct {
 	Retval int32
@@ -1153,53 +496,13 @@ func (*BfdUDPAuthActivateReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPAuthActivateReply) GetCrcString() string {
-	return "e8d4e804"
+	return "ba8f2610"
 }
 func NewBfdUDPAuthActivateReply() api.Message {
 	return &BfdUDPAuthActivateReply{}
 }
 
 // BfdUDPAuthDeactivate represents the VPP binary API message 'bfd_udp_auth_deactivate'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 706:
-//
-//            "bfd_udp_auth_deactivate",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "local_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "peer_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "is_delayed"
-//            ],
-//            {
-//                "crc": "0x10661991"
-//            }
 //
 type BfdUDPAuthDeactivate struct {
 	SwIfIndex uint32
@@ -1216,31 +519,13 @@ func (*BfdUDPAuthDeactivate) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BfdUDPAuthDeactivate) GetCrcString() string {
-	return "10661991"
+	return "75f4d9e3"
 }
 func NewBfdUDPAuthDeactivate() api.Message {
 	return &BfdUDPAuthDeactivate{}
 }
 
 // BfdUDPAuthDeactivateReply represents the VPP binary API message 'bfd_udp_auth_deactivate_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 746:
-//
-//            "bfd_udp_auth_deactivate_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type BfdUDPAuthDeactivateReply struct {
 	Retval int32
@@ -1253,7 +538,7 @@ func (*BfdUDPAuthDeactivateReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BfdUDPAuthDeactivateReply) GetCrcString() string {
-	return "e8d4e804"
+	return "1885e013"
 }
 func NewBfdUDPAuthDeactivateReply() api.Message {
 	return &BfdUDPAuthDeactivateReply{}

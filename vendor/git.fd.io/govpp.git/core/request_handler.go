@@ -22,7 +22,6 @@ import (
 	logger "github.com/sirupsen/logrus"
 
 	"git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
 )
 
 // watchRequests watches for requests on the request API channel and forwards them as messages to VPP.
@@ -62,7 +61,7 @@ func (c *Connection) processRequest(ch *api.Channel, chMeta *channelMetadata, re
 		log.WithFields(logger.Fields{
 			"msg_name": req.Message.GetMessageName(),
 			"msg_crc":  req.Message.GetCrcString(),
-		}).Error(err)
+		}).Error(error)
 		sendReply(ch, &api.VppReply{Error: error})
 		return error
 	}
@@ -98,8 +97,7 @@ func (c *Connection) processRequest(ch *api.Channel, chMeta *channelMetadata, re
 
 	if req.Multipart {
 		// send a control ping to determine end of the multipart response
-		ping := &vpe.ControlPing{}
-		pingData, _ := c.codec.EncodeMsg(ping, c.pingReqID)
+		pingData, _ := c.codec.EncodeMsg(msgControlPing, c.pingReqID)
 
 		log.WithFields(logger.Fields{
 			"context":  chMeta.id,
@@ -205,7 +203,7 @@ func (c *Connection) messageNameToID(msgName string, msgCrc string) (uint16, err
 		log.WithFields(logger.Fields{
 			"msg_name": msgName,
 			"msg_crc":  msgCrc,
-		}).Errorf("unable to retrieve message ID: %v", err)
+		}).Error(error)
 		return id, error
 	}
 

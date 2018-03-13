@@ -183,6 +183,7 @@ func handleNat44StaticMapping(ctx *StaticMappingContext, isAdd, addrOnly bool, v
 		ExternalSwIfIndex: ctx.ExternalIfIdx,
 		VrfID:             ctx.Vrf,
 		TwiceNat:          boolToUint(ctx.TwiceNat),
+		Out2inOnly:        1,
 		IsAdd:             boolToUint(isAdd),
 	}
 	if addrOnly {
@@ -229,6 +230,7 @@ func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, isAdd bool, vppChan
 		Protocol:     ctx.Protocol,
 		VrfID:        ctx.Vrf,
 		TwiceNat:     boolToUint(ctx.TwiceNat),
+		Out2inOnly:   1,
 		IsAdd:        boolToUint(isAdd),
 	}
 

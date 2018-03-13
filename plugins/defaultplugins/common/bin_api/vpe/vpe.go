@@ -6,24 +6,6 @@ package vpe
 import "git.fd.io/govpp.git/api"
 
 // ControlPing represents the VPP binary API message 'control_ping'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 32:
-//
-//            "control_ping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type ControlPing struct {
 }
@@ -35,39 +17,13 @@ func (*ControlPing) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ControlPing) GetCrcString() string {
-	return "51077d14"
+	return "ea1bf4f7"
 }
 func NewControlPing() api.Message {
 	return &ControlPing{}
 }
 
 // ControlPingReply represents the VPP binary API message 'control_ping_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 50:
-//
-//            "control_ping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "vpe_pid"
-//            ],
-//            {
-//                "crc": "0xf6b0b8ca"
-//            }
 //
 type ControlPingReply struct {
 	Retval      int32
@@ -82,35 +38,13 @@ func (*ControlPingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ControlPingReply) GetCrcString() string {
-	return "f6b0b8ca"
+	return "aa016e7b"
 }
 func NewControlPingReply() api.Message {
 	return &ControlPingReply{}
 }
 
 // Cli represents the VPP binary API message 'cli'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 76:
-//
-//            "cli",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u64",
-//                "cmd_in_shmem"
-//            ],
-//            {
-//                "crc": "0x23bfbfff"
-//            }
 //
 type Cli struct {
 	CmdInShmem uint64
@@ -123,41 +57,13 @@ func (*Cli) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Cli) GetCrcString() string {
-	return "23bfbfff"
+	return "543d8e2e"
 }
 func NewCli() api.Message {
 	return &Cli{}
 }
 
 // CliInband represents the VPP binary API message 'cli_inband'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 98:
-//
-//            "cli_inband",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "length"
-//            ],
-//            [
-//                "u8",
-//                "cmd",
-//                0,
-//                "length"
-//            ],
-//            {
-//                "crc": "0x74e00a49"
-//            }
 //
 type CliInband struct {
 	Length uint32 `struc:"sizeof=Cmd"`
@@ -171,35 +77,13 @@ func (*CliInband) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*CliInband) GetCrcString() string {
-	return "74e00a49"
+	return "22345937"
 }
 func NewCliInband() api.Message {
 	return &CliInband{}
 }
 
 // CliReply represents the VPP binary API message 'cli_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 126:
-//
-//            "cli_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u64",
-//                "reply_in_shmem"
-//            ],
-//            {
-//                "crc": "0x06d68297"
-//            }
 //
 type CliReply struct {
 	Retval       int32
@@ -213,41 +97,13 @@ func (*CliReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*CliReply) GetCrcString() string {
-	return "06d68297"
+	return "594a0b2e"
 }
 func NewCliReply() api.Message {
 	return &CliReply{}
 }
 
 // CliInbandReply represents the VPP binary API message 'cli_inband_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 148:
-//
-//            "cli_inband_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "length"
-//            ],
-//            [
-//                "u8",
-//                "reply",
-//                0,
-//                "length"
-//            ],
-//            {
-//                "crc": "0x1f22bbb8"
-//            }
 //
 type CliInbandReply struct {
 	Retval int32
@@ -262,36 +118,13 @@ func (*CliInbandReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*CliInbandReply) GetCrcString() string {
-	return "1f22bbb8"
+	return "c1835761"
 }
 func NewCliInbandReply() api.Message {
 	return &CliInbandReply{}
 }
 
 // GetNodeIndex represents the VPP binary API message 'get_node_index'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 176:
-//
-//            "get_node_index",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "node_name",
-//                64
-//            ],
-//            {
-//                "crc": "0x6c9a495d"
-//            }
 //
 type GetNodeIndex struct {
 	NodeName []byte `struc:"[64]byte"`
@@ -304,35 +137,13 @@ func (*GetNodeIndex) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*GetNodeIndex) GetCrcString() string {
-	return "6c9a495d"
+	return "226d3f8c"
 }
 func NewGetNodeIndex() api.Message {
 	return &GetNodeIndex{}
 }
 
 // GetNodeIndexReply represents the VPP binary API message 'get_node_index_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 199:
-//
-//            "get_node_index_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "node_index"
-//            ],
-//            {
-//                "crc": "0xa8600b89"
-//            }
 //
 type GetNodeIndexReply struct {
 	Retval    int32
@@ -346,41 +157,13 @@ func (*GetNodeIndexReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*GetNodeIndexReply) GetCrcString() string {
-	return "a8600b89"
+	return "29116865"
 }
 func NewGetNodeIndexReply() api.Message {
 	return &GetNodeIndexReply{}
 }
 
 // AddNodeNext represents the VPP binary API message 'add_node_next'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 221:
-//
-//            "add_node_next",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "node_name",
-//                64
-//            ],
-//            [
-//                "u8",
-//                "next_name",
-//                64
-//            ],
-//            {
-//                "crc": "0x9ab92f7a"
-//            }
 //
 type AddNodeNext struct {
 	NodeName []byte `struc:"[64]byte"`
@@ -394,35 +177,13 @@ func (*AddNodeNext) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AddNodeNext) GetCrcString() string {
-	return "9ab92f7a"
+	return "e4202993"
 }
 func NewAddNodeNext() api.Message {
 	return &AddNodeNext{}
 }
 
 // AddNodeNextReply represents the VPP binary API message 'add_node_next_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 249:
-//
-//            "add_node_next_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "next_index"
-//            ],
-//            {
-//                "crc": "0x2ed75f32"
-//            }
 //
 type AddNodeNextReply struct {
 	Retval    int32
@@ -436,31 +197,13 @@ func (*AddNodeNextReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AddNodeNextReply) GetCrcString() string {
-	return "2ed75f32"
+	return "e89d6eed"
 }
 func NewAddNodeNextReply() api.Message {
 	return &AddNodeNextReply{}
 }
 
 // ShowVersion represents the VPP binary API message 'show_version'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 271:
-//
-//            "show_version",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type ShowVersion struct {
 }
@@ -472,51 +215,13 @@ func (*ShowVersion) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ShowVersion) GetCrcString() string {
-	return "51077d14"
+	return "f18f9480"
 }
 func NewShowVersion() api.Message {
 	return &ShowVersion{}
 }
 
 // ShowVersionReply represents the VPP binary API message 'show_version_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 289:
-//
-//            "show_version_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "program",
-//                32
-//            ],
-//            [
-//                "u8",
-//                "version",
-//                32
-//            ],
-//            [
-//                "u8",
-//                "build_date",
-//                32
-//            ],
-//            [
-//                "u8",
-//                "build_directory",
-//                256
-//            ],
-//            {
-//                "crc": "0x8b5a13b4"
-//            }
 //
 type ShowVersionReply struct {
 	Retval         int32
@@ -533,31 +238,13 @@ func (*ShowVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ShowVersionReply) GetCrcString() string {
-	return "8b5a13b4"
+	return "83186d9e"
 }
 func NewShowVersionReply() api.Message {
 	return &ShowVersionReply{}
 }
 
 // GetNodeGraph represents the VPP binary API message 'get_node_graph'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 327:
-//
-//            "get_node_graph",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type GetNodeGraph struct {
 }
@@ -569,35 +256,13 @@ func (*GetNodeGraph) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*GetNodeGraph) GetCrcString() string {
-	return "51077d14"
+	return "f8636a76"
 }
 func NewGetNodeGraph() api.Message {
 	return &GetNodeGraph{}
 }
 
 // GetNodeGraphReply represents the VPP binary API message 'get_node_graph_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 345:
-//
-//            "get_node_graph_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u64",
-//                "reply_in_shmem"
-//            ],
-//            {
-//                "crc": "0x06d68297"
-//            }
 //
 type GetNodeGraphReply struct {
 	Retval       int32
@@ -611,41 +276,13 @@ func (*GetNodeGraphReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*GetNodeGraphReply) GetCrcString() string {
-	return "06d68297"
+	return "816d91b6"
 }
 func NewGetNodeGraphReply() api.Message {
 	return &GetNodeGraphReply{}
 }
 
 // GetNextIndex represents the VPP binary API message 'get_next_index'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 367:
-//
-//            "get_next_index",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "node_name",
-//                64
-//            ],
-//            [
-//                "u8",
-//                "next_name",
-//                64
-//            ],
-//            {
-//                "crc": "0x9ab92f7a"
-//            }
 //
 type GetNextIndex struct {
 	NodeName []byte `struc:"[64]byte"`
@@ -659,35 +296,13 @@ func (*GetNextIndex) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*GetNextIndex) GetCrcString() string {
-	return "9ab92f7a"
+	return "52f0e416"
 }
 func NewGetNextIndex() api.Message {
 	return &GetNextIndex{}
 }
 
 // GetNextIndexReply represents the VPP binary API message 'get_next_index_reply'.
-// Generated from '/usr/share/vpp/api/vpe.api.json', line 395:
-//
-//            "get_next_index_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "next_index"
-//            ],
-//            {
-//                "crc": "0x2ed75f32"
-//            }
 //
 type GetNextIndexReply struct {
 	Retval    int32
@@ -701,7 +316,7 @@ func (*GetNextIndexReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*GetNextIndexReply) GetCrcString() string {
-	return "2ed75f32"
+	return "671fbdb1"
 }
 func NewGetNextIndexReply() api.Message {
 	return &GetNextIndexReply{}

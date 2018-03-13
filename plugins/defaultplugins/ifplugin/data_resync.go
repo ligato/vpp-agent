@@ -763,9 +763,10 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		return true
 	}
 	// MAC address (compare only if it is set in the NB configuration)
-	if nbIf.PhysAddress != "" && nbIf.PhysAddress != vppIf.PhysAddress {
-		plugin.Log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)",
-			nbIf.PhysAddress, vppIf.PhysAddress)
+	nbMac := strings.ToUpper(nbIf.PhysAddress)
+	vppMac := strings.ToUpper(vppIf.PhysAddress)
+	if nbMac != "" && nbMac != vppMac {
+		plugin.Log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
