@@ -2,6 +2,10 @@
 Ping From ${node} To ${ip}
     vpp_term: Check Ping    ${node}    ${ip}
 
+Ping6 From ${node} To ${ip}
+    vpp_term: Check Ping6    ${node}    ${ip}
+
+
 Ping On ${node} With IP ${ip}, Source ${source}
     vpp_term: Check Ping Within Interface    ${node}    ${ip}    ${source}
 
