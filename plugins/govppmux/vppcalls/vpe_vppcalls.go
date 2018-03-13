@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+
 	"github.com/ligato/cn-infra/logging"
 )
 

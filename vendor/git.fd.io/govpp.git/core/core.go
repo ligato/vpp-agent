@@ -30,6 +30,11 @@ import (
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 )
 
+var (
+	msgControlPing      api.Message = &vpe.ControlPing{}
+	msgControlPingReply api.Message = &vpe.ControlPingReply{}
+)
+
 const (
 	requestChannelBufSize      = 100 // default size of the request channel buffers
 	replyChannelBufSize        = 100 // default size of the reply channel buffers
@@ -128,6 +133,12 @@ func SetHealthCheckThreshold(threshold int) {
 	healthCheckThreshold = threshold
 }
 
+// SetControlPingMessages sets the messages for ControlPing and ControlPingReply
+func SetControlPingMessages(controPing, controlPingReply api.Message) {
+	msgControlPing = controPing
+	msgControlPingReply = controlPingReply
+}
+
 // Connect connects to VPP using specified VPP adapter and returns the connection handle.
 // This call blocks until VPP is connected, or an error occurs. Only one connection attempt will be performed.
 func Connect(vppAdapter adapter.VppAdapter) (*Connection, error) {
@@ -210,12 +221,18 @@ func (c *Connection) connectVPP() error {
 		return err
 	}
 
+	// store control ping IDs
+	if c.pingReqID, err = c.GetMessageID(msgControlPing); err != nil {
+		c.vpp.Disconnect()
+		return err
+	}
+	if c.pingReplyID, err = c.GetMessageID(msgControlPingReply); err != nil {
+		c.vpp.Disconnect()
+		return err
+	}
+
 	// store connected state
 	atomic.StoreUint32(&c.connected, 1)
-
-	// store control ping IDs
-	c.pingReqID, _ = c.GetMessageID(&vpe.ControlPing{})
-	c.pingReplyID, _ = c.GetMessageID(&vpe.ControlPingReply{})
 
 	log.Info("Connected to VPP.")
 	return nil
@@ -233,11 +250,16 @@ func (c *Connection) disconnectVPP() {
 func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
-		c.vpp.WaitReady()
+		if err := c.vpp.WaitReady(); err != nil {
+			log.Warnf("wait ready failed: %v", err)
+		}
 		if err := c.connectVPP(); err == nil {
 			// signal connected event
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Connected}
 			break
+		} else {
+			log.Errorf("connecting to VPP failed: %v", err)
+			time.Sleep(time.Second)
 		}
 	}
 
@@ -268,7 +290,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 		}
 
 		// send the control ping
-		ch.ReqChan <- &api.VppRequest{Message: &vpe.ControlPing{}}
+		ch.ReqChan <- &api.VppRequest{Message: msgControlPing}
 
 		// expect response within timeout period
 		select {
