@@ -18,8 +18,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "tcp": {
                         "destination_port_range": {
@@ -59,8 +59,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "tcp": {
                         "destination_port_range": {
@@ -102,8 +102,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "udp": {
                         "destination_port_range": {
@@ -148,8 +148,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "udp": {
                         "destination_port_range": {
@@ -194,8 +194,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "udp": {
                         "destination_port_range": {
@@ -240,8 +240,8 @@
             "matches": {
                 "ip_rule": {
                     "ip": {
-                        "destination_network": "10.0.0.0/32",
-                        "source_network": "10.0.0.0/32"
+                        "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",
+                        "source_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64"
                     },
                     "udp": {
                         "destination_port_range": {

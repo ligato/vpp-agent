@@ -590,11 +590,11 @@ func (plugin *LinuxInterfaceConfigurator) deleteVethInterface(ifConfig, peerConf
 // Un-configure TAP interface, set original name and return it to the default namespace (do not delete,
 // the interface will be removed together with the peer (VPP TAP))
 func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInterfaceConfig) error {
-	plugin.Log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
 	if ifConfig == nil || ifConfig.config == nil {
 		plugin.Log.Warn("Unable to remove linux TAP configuration: no data available")
 		return nil
 	}
+	plugin.Log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
 	if !plugin.NsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
 		plugin.Log.Warnf("Unable to remove linux TAP configuration: cannot access namespace %v", ifConfig.config.Namespace.Name)
 		return nil

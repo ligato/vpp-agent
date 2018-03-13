@@ -84,6 +84,13 @@ linux: Check Ping
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
+linux: Check Ping6
+    [Arguments]        ${node}    ${ip}
+    Log Many           ${node}    ${ip}
+    ${out}=            Execute In Container    ${node}    ping6 -c 5 ${ip}
+    Should Contain     ${out}    from ${ip}
+    Should Not Contain    ${out}    100% packet loss
+
 linux: Run TCP Ping Server On Node
     [Arguments]    ${node}   ${port}
     [Documentation]    Run TCP PingServer as listener on node ${node}

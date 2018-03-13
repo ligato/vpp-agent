@@ -69,12 +69,27 @@ vpp_term: Show IP Fib
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib ${ip}
     [Return]           ${out}
 
+vpp_term: Show IP6 Fib
+    [Arguments]        ${node}    ${ip}=${EMPTY}
+    [Documentation]    Show IP fib output
+    Log Many           ${node}    ${ip}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib ${ip}
+    [Return]           ${out}
+
 vpp_term: Show IP Fib Table
     [Arguments]        ${node}    ${id}
     [Documentation]    Show IP fib output for VRF table defined in input
     Log Many           ${node}    ${id}
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib table ${id}
     [Return]           ${out}
+
+vpp_term: Show IP6 Fib Table
+    [Arguments]        ${node}    ${id}
+    [Documentation]    Show IP fib output for VRF table defined in input
+    Log Many           ${node}    ${id}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib table ${id}
+    [Return]           ${out}
+
 
 vpp_term: Show L2fib
     [Arguments]        ${node}
@@ -94,6 +109,13 @@ vpp_term: Check Ping
     [Arguments]        ${node}    ${ip}     ${count}=5
     Log Many           ${node}    ${ip}     ${count}
     ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} repeat ${count}   delay=10s
+    Should Contain     ${out}    from ${ip}
+    Should Not Contain    ${out}    100% packet loss
+
+vpp_term: Check Ping6
+    [Arguments]        ${node}    ${ip}     ${count}=5
+    Log Many           ${node}    ${ip}     ${count}
+    ${out}=            vpp_term: Issue Command    ${node}    ping6 ${ip} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
