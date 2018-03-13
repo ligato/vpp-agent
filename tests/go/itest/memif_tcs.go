@@ -124,6 +124,11 @@ func (s *suiteMemif) TC04() {
 	s.Then.ContainsIPSecSA(IPsecSA10.Name)
 	s.Then.ContainsIPSecSA(IPsecSA20.Name)
 	s.Then.ContainsIPSecSPD(IPsecSPD1.Name)
+
+	s.When.StoreIf(&iftst.Memif100011Master)
+	s.Then.SwIfIndexes().ContainsName(iftst.Memif100011Master.Name)
+	s.When.DelIf(&iftst.Memif100011Master)
+	s.When.StoreIf(&iftst.Memif100011Master)
 }
 
 var IPsecSA10 = ipsec.SecurityAssociations_SA{
@@ -149,7 +154,7 @@ var IPsecSA20 = ipsec.SecurityAssociations_SA{
 var IPsecSPD1 = ipsec.SecurityPolicyDatabases_SPD{
 	Name: "spd1",
 	Interfaces: []*ipsec.SecurityPolicyDatabases_SPD_Interface{
-		{Name: "afp1"},
+		{Name: "memif1"},
 	},
 	PolicyEntries: []*ipsec.SecurityPolicyDatabases_SPD_PolicyEntry{
 		{
