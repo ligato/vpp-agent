@@ -26,7 +26,7 @@ WORKDIR /opt/vpp-agent/dev
 ARG VPP_COMMIT
 
 RUN /bin/bash -c "\
-    git clone https://gerrit.fd.io/r/vpp \
+    git clone https://github.com/vpp-dev/vpp.git \
     && cd vpp \
     && git checkout ${VPP_COMMIT} \
     && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"

@@ -31,7 +31,7 @@ required = [
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
-  revision = "2406041faa197799c7715f815cbd391a5c0e9ad3"
+  revision = "4df448ad6cdfa2e60fa0167e5f70cc1127fbd3bf"
 
 [[constraint]]
   branch = "master"

@@ -23,12 +23,18 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
+
+func init() {
+	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
+}
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {

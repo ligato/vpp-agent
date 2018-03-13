@@ -6,28 +6,6 @@ package stats
 import "git.fd.io/govpp.git/api"
 
 // IP4FibCounter represents the VPP binary API data type 'ip4_fib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 752:
-//
-//            "ip4_fib_counter",
-//            [
-//                "u32",
-//                "address"
-//            ],
-//            [
-//                "u8",
-//                "address_length"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0xa6ceb0c9"
-//            }
 //
 type IP4FibCounter struct {
 	Address       uint32
@@ -40,38 +18,10 @@ func (*IP4FibCounter) GetTypeName() string {
 	return "ip4_fib_counter"
 }
 func (*IP4FibCounter) GetCrcString() string {
-	return "a6ceb0c9"
+	return "b2739495"
 }
 
 // IP4MfibCounter represents the VPP binary API data type 'ip4_mfib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 774:
-//
-//            "ip4_mfib_counter",
-//            [
-//                "u8",
-//                "source",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "group",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "group_length"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0x2cee4721"
-//            }
 //
 type IP4MfibCounter struct {
 	Source      []byte `struc:"[4]byte"`
@@ -85,32 +35,10 @@ func (*IP4MfibCounter) GetTypeName() string {
 	return "ip4_mfib_counter"
 }
 func (*IP4MfibCounter) GetCrcString() string {
-	return "2cee4721"
+	return "1044fa4b"
 }
 
 // IP4NbrCounter represents the VPP binary API data type 'ip4_nbr_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 802:
-//
-//            "ip4_nbr_counter",
-//            [
-//                "u32",
-//                "address"
-//            ],
-//            [
-//                "u8",
-//                "link_type"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0xb9f974d6"
-//            }
 //
 type IP4NbrCounter struct {
 	Address  uint32
@@ -123,33 +51,10 @@ func (*IP4NbrCounter) GetTypeName() string {
 	return "ip4_nbr_counter"
 }
 func (*IP4NbrCounter) GetCrcString() string {
-	return "b9f974d6"
+	return "487e2e85"
 }
 
 // IP6FibCounter represents the VPP binary API data type 'ip6_fib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 824:
-//
-//            "ip6_fib_counter",
-//            [
-//                "u64",
-//                "address",
-//                2
-//            ],
-//            [
-//                "u8",
-//                "address_length"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0xf1197efb"
-//            }
 //
 type IP6FibCounter struct {
 	Address       []uint64 `struc:"[2]uint64"`
@@ -162,38 +67,10 @@ func (*IP6FibCounter) GetTypeName() string {
 	return "ip6_fib_counter"
 }
 func (*IP6FibCounter) GetCrcString() string {
-	return "f1197efb"
+	return "cf35769b"
 }
 
 // IP6MfibCounter represents the VPP binary API data type 'ip6_mfib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 847:
-//
-//            "ip6_mfib_counter",
-//            [
-//                "u8",
-//                "source",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "group",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "group_length"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0x90a9590e"
-//            }
 //
 type IP6MfibCounter struct {
 	Source      []byte `struc:"[16]byte"`
@@ -207,33 +84,10 @@ func (*IP6MfibCounter) GetTypeName() string {
 	return "ip6_mfib_counter"
 }
 func (*IP6MfibCounter) GetCrcString() string {
-	return "90a9590e"
+	return "ba5ab587"
 }
 
 // IP6NbrCounter represents the VPP binary API data type 'ip6_nbr_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 875:
-//
-//            "ip6_nbr_counter",
-//            [
-//                "u64",
-//                "address",
-//                2
-//            ],
-//            [
-//                "u8",
-//                "link_type"
-//            ],
-//            [
-//                "u64",
-//                "packets"
-//            ],
-//            [
-//                "u64",
-//                "bytes"
-//            ],
-//            {
-//                "crc": "0x2d755474"
-//            }
 //
 type IP6NbrCounter struct {
 	Address  []uint64 `struc:"[2]uint64"`
@@ -246,36 +100,10 @@ func (*IP6NbrCounter) GetTypeName() string {
 	return "ip6_nbr_counter"
 }
 func (*IP6NbrCounter) GetCrcString() string {
-	return "2d755474"
+	return "efca741e"
 }
 
 // WantStats represents the VPP binary API message 'want_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 44:
-//
-//            "want_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantStats struct {
 	EnableDisable uint32
@@ -289,31 +117,13 @@ func (*WantStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantStats) GetCrcString() string {
-	return "476f5a08"
+	return "4f2effb4"
 }
 func NewWantStats() api.Message {
 	return &WantStats{}
 }
 
 // WantStatsReply represents the VPP binary API message 'want_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 70:
-//
-//            "want_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantStatsReply struct {
 	Retval int32
@@ -326,39 +136,13 @@ func (*WantStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "b36abf5f"
 }
 func NewWantStatsReply() api.Message {
 	return &WantStatsReply{}
 }
 
 // WantInterfaceSimpleStats represents the VPP binary API message 'want_interface_simple_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 88:
-//
-//            "want_interface_simple_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantInterfaceSimpleStats struct {
 	EnableDisable uint32
@@ -372,31 +156,13 @@ func (*WantInterfaceSimpleStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantInterfaceSimpleStats) GetCrcString() string {
-	return "476f5a08"
+	return "bb4739ed"
 }
 func NewWantInterfaceSimpleStats() api.Message {
 	return &WantInterfaceSimpleStats{}
 }
 
 // WantInterfaceSimpleStatsReply represents the VPP binary API message 'want_interface_simple_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 114:
-//
-//            "want_interface_simple_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantInterfaceSimpleStatsReply struct {
 	Retval int32
@@ -409,49 +175,13 @@ func (*WantInterfaceSimpleStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantInterfaceSimpleStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "5163615b"
 }
 func NewWantInterfaceSimpleStatsReply() api.Message {
 	return &WantInterfaceSimpleStatsReply{}
 }
 
 // WantPerInterfaceSimpleStats represents the VPP binary API message 'want_per_interface_simple_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 132:
-//
-//            "want_per_interface_simple_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            [
-//                "u32",
-//                "num"
-//            ],
-//            [
-//                "u32",
-//                "sw_ifs",
-//                0,
-//                "num"
-//            ],
-//            {
-//                "crc": "0x729d04f1"
-//            }
 //
 type WantPerInterfaceSimpleStats struct {
 	EnableDisable uint32
@@ -467,31 +197,13 @@ func (*WantPerInterfaceSimpleStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantPerInterfaceSimpleStats) GetCrcString() string {
-	return "729d04f1"
+	return "0165e6f2"
 }
 func NewWantPerInterfaceSimpleStats() api.Message {
 	return &WantPerInterfaceSimpleStats{}
 }
 
 // WantPerInterfaceSimpleStatsReply represents the VPP binary API message 'want_per_interface_simple_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 168:
-//
-//            "want_per_interface_simple_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantPerInterfaceSimpleStatsReply struct {
 	Retval int32
@@ -504,39 +216,13 @@ func (*WantPerInterfaceSimpleStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantPerInterfaceSimpleStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "720ee096"
 }
 func NewWantPerInterfaceSimpleStatsReply() api.Message {
 	return &WantPerInterfaceSimpleStatsReply{}
 }
 
 // WantInterfaceCombinedStats represents the VPP binary API message 'want_interface_combined_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 186:
-//
-//            "want_interface_combined_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantInterfaceCombinedStats struct {
 	EnableDisable uint32
@@ -550,31 +236,13 @@ func (*WantInterfaceCombinedStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantInterfaceCombinedStats) GetCrcString() string {
-	return "476f5a08"
+	return "a98830b6"
 }
 func NewWantInterfaceCombinedStats() api.Message {
 	return &WantInterfaceCombinedStats{}
 }
 
 // WantInterfaceCombinedStatsReply represents the VPP binary API message 'want_interface_combined_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 212:
-//
-//            "want_interface_combined_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantInterfaceCombinedStatsReply struct {
 	Retval int32
@@ -587,49 +255,13 @@ func (*WantInterfaceCombinedStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantInterfaceCombinedStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "b260196d"
 }
 func NewWantInterfaceCombinedStatsReply() api.Message {
 	return &WantInterfaceCombinedStatsReply{}
 }
 
 // WantPerInterfaceCombinedStats represents the VPP binary API message 'want_per_interface_combined_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 230:
-//
-//            "want_per_interface_combined_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            [
-//                "u32",
-//                "num"
-//            ],
-//            [
-//                "u32",
-//                "sw_ifs",
-//                0,
-//                "num"
-//            ],
-//            {
-//                "crc": "0x729d04f1"
-//            }
 //
 type WantPerInterfaceCombinedStats struct {
 	EnableDisable uint32
@@ -645,31 +277,13 @@ func (*WantPerInterfaceCombinedStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantPerInterfaceCombinedStats) GetCrcString() string {
-	return "729d04f1"
+	return "d914890f"
 }
 func NewWantPerInterfaceCombinedStats() api.Message {
 	return &WantPerInterfaceCombinedStats{}
 }
 
 // WantPerInterfaceCombinedStatsReply represents the VPP binary API message 'want_per_interface_combined_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 266:
-//
-//            "want_per_interface_combined_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantPerInterfaceCombinedStatsReply struct {
 	Retval int32
@@ -682,39 +296,13 @@ func (*WantPerInterfaceCombinedStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantPerInterfaceCombinedStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "06158495"
 }
 func NewWantPerInterfaceCombinedStatsReply() api.Message {
 	return &WantPerInterfaceCombinedStatsReply{}
 }
 
 // WantIP4FibStats represents the VPP binary API message 'want_ip4_fib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 284:
-//
-//            "want_ip4_fib_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP4FibStats struct {
 	EnableDisable uint32
@@ -728,31 +316,13 @@ func (*WantIP4FibStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP4FibStats) GetCrcString() string {
-	return "476f5a08"
+	return "6ce4937d"
 }
 func NewWantIP4FibStats() api.Message {
 	return &WantIP4FibStats{}
 }
 
 // WantIP4FibStatsReply represents the VPP binary API message 'want_ip4_fib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 310:
-//
-//            "want_ip4_fib_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP4FibStatsReply struct {
 	Retval int32
@@ -765,39 +335,13 @@ func (*WantIP4FibStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP4FibStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "d337cb77"
 }
 func NewWantIP4FibStatsReply() api.Message {
 	return &WantIP4FibStatsReply{}
 }
 
 // WantIP6FibStats represents the VPP binary API message 'want_ip6_fib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 328:
-//
-//            "want_ip6_fib_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP6FibStats struct {
 	EnableDisable uint32
@@ -811,31 +355,13 @@ func (*WantIP6FibStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP6FibStats) GetCrcString() string {
-	return "476f5a08"
+	return "01697516"
 }
 func NewWantIP6FibStats() api.Message {
 	return &WantIP6FibStats{}
 }
 
 // WantIP6FibStatsReply represents the VPP binary API message 'want_ip6_fib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 354:
-//
-//            "want_ip6_fib_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP6FibStatsReply struct {
 	Retval int32
@@ -848,39 +374,13 @@ func (*WantIP6FibStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP6FibStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "531708ab"
 }
 func NewWantIP6FibStatsReply() api.Message {
 	return &WantIP6FibStatsReply{}
 }
 
 // WantIP4MfibStats represents the VPP binary API message 'want_ip4_mfib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 372:
-//
-//            "want_ip4_mfib_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP4MfibStats struct {
 	EnableDisable uint32
@@ -894,31 +394,13 @@ func (*WantIP4MfibStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP4MfibStats) GetCrcString() string {
-	return "476f5a08"
+	return "7212b461"
 }
 func NewWantIP4MfibStats() api.Message {
 	return &WantIP4MfibStats{}
 }
 
 // WantIP4MfibStatsReply represents the VPP binary API message 'want_ip4_mfib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 398:
-//
-//            "want_ip4_mfib_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP4MfibStatsReply struct {
 	Retval int32
@@ -931,39 +413,13 @@ func (*WantIP4MfibStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP4MfibStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "3e6c7fc9"
 }
 func NewWantIP4MfibStatsReply() api.Message {
 	return &WantIP4MfibStatsReply{}
 }
 
 // WantIP6MfibStats represents the VPP binary API message 'want_ip6_mfib_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 416:
-//
-//            "want_ip6_mfib_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP6MfibStats struct {
 	EnableDisable uint32
@@ -977,31 +433,13 @@ func (*WantIP6MfibStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP6MfibStats) GetCrcString() string {
-	return "476f5a08"
+	return "8a3001de"
 }
 func NewWantIP6MfibStats() api.Message {
 	return &WantIP6MfibStats{}
 }
 
 // WantIP6MfibStatsReply represents the VPP binary API message 'want_ip6_mfib_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 442:
-//
-//            "want_ip6_mfib_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP6MfibStatsReply struct {
 	Retval int32
@@ -1014,39 +452,13 @@ func (*WantIP6MfibStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP6MfibStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "a07c7171"
 }
 func NewWantIP6MfibStatsReply() api.Message {
 	return &WantIP6MfibStatsReply{}
 }
 
 // WantIP4NbrStats represents the VPP binary API message 'want_ip4_nbr_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 460:
-//
-//            "want_ip4_nbr_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP4NbrStats struct {
 	EnableDisable uint32
@@ -1060,31 +472,13 @@ func (*WantIP4NbrStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP4NbrStats) GetCrcString() string {
-	return "476f5a08"
+	return "6bea26e1"
 }
 func NewWantIP4NbrStats() api.Message {
 	return &WantIP4NbrStats{}
 }
 
 // WantIP4NbrStatsReply represents the VPP binary API message 'want_ip4_nbr_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 486:
-//
-//            "want_ip4_nbr_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP4NbrStatsReply struct {
 	Retval int32
@@ -1097,39 +491,13 @@ func (*WantIP4NbrStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP4NbrStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "e27d62cd"
 }
 func NewWantIP4NbrStatsReply() api.Message {
 	return &WantIP4NbrStatsReply{}
 }
 
 // WantIP6NbrStats represents the VPP binary API message 'want_ip6_nbr_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 504:
-//
-//            "want_ip6_nbr_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "enable_disable"
-//            ],
-//            [
-//                "u32",
-//                "pid"
-//            ],
-//            {
-//                "crc": "0x476f5a08"
-//            }
 //
 type WantIP6NbrStats struct {
 	EnableDisable uint32
@@ -1143,31 +511,13 @@ func (*WantIP6NbrStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*WantIP6NbrStats) GetCrcString() string {
-	return "476f5a08"
+	return "0667c08a"
 }
 func NewWantIP6NbrStats() api.Message {
 	return &WantIP6NbrStats{}
 }
 
 // WantIP6NbrStatsReply represents the VPP binary API message 'want_ip6_nbr_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 530:
-//
-//            "want_ip6_nbr_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type WantIP6NbrStatsReply struct {
 	Retval int32
@@ -1180,37 +530,13 @@ func (*WantIP6NbrStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*WantIP6NbrStatsReply) GetCrcString() string {
-	return "e8d4e804"
+	return "625da111"
 }
 func NewWantIP6NbrStatsReply() api.Message {
 	return &WantIP6NbrStatsReply{}
 }
 
 // VnetIP4FibCounters represents the VPP binary API message 'vnet_ip4_fib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 548:
-//
-//            "vnet_ip4_fib_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "vl_api_ip4_fib_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x57e3feec"
-//            }
 //
 type VnetIP4FibCounters struct {
 	VrfID uint32
@@ -1225,37 +551,13 @@ func (*VnetIP4FibCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP4FibCounters) GetCrcString() string {
-	return "57e3feec"
+	return "1ab9d6c5"
 }
 func NewVnetIP4FibCounters() api.Message {
 	return &VnetIP4FibCounters{}
 }
 
 // VnetIP4MfibCounters represents the VPP binary API message 'vnet_ip4_mfib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 572:
-//
-//            "vnet_ip4_mfib_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "vl_api_ip4_mfib_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x946eb588"
-//            }
 //
 type VnetIP4MfibCounters struct {
 	VrfID uint32
@@ -1270,41 +572,13 @@ func (*VnetIP4MfibCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP4MfibCounters) GetCrcString() string {
-	return "946eb588"
+	return "f1a05536"
 }
 func NewVnetIP4MfibCounters() api.Message {
 	return &VnetIP4MfibCounters{}
 }
 
 // VnetIP4NbrCounters represents the VPP binary API message 'vnet_ip4_nbr_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 596:
-//
-//            "vnet_ip4_nbr_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "begin"
-//            ],
-//            [
-//                "vl_api_ip4_nbr_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x214c4811"
-//            }
 //
 type VnetIP4NbrCounters struct {
 	Count     uint32 `struc:"sizeof=C"`
@@ -1320,37 +594,13 @@ func (*VnetIP4NbrCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP4NbrCounters) GetCrcString() string {
-	return "214c4811"
+	return "fc2b5092"
 }
 func NewVnetIP4NbrCounters() api.Message {
 	return &VnetIP4NbrCounters{}
 }
 
 // VnetIP6FibCounters represents the VPP binary API message 'vnet_ip6_fib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 624:
-//
-//            "vnet_ip6_fib_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "vl_api_ip6_fib_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x13aed73d"
-//            }
 //
 type VnetIP6FibCounters struct {
 	VrfID uint32
@@ -1365,37 +615,13 @@ func (*VnetIP6FibCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP6FibCounters) GetCrcString() string {
-	return "13aed73d"
+	return "9ab453ae"
 }
 func NewVnetIP6FibCounters() api.Message {
 	return &VnetIP6FibCounters{}
 }
 
 // VnetIP6MfibCounters represents the VPP binary API message 'vnet_ip6_mfib_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 648:
-//
-//            "vnet_ip6_mfib_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "vl_api_ip6_mfib_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x65fe1ae3"
-//            }
 //
 type VnetIP6MfibCounters struct {
 	VrfID uint32
@@ -1410,41 +636,13 @@ func (*VnetIP6MfibCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP6MfibCounters) GetCrcString() string {
-	return "65fe1ae3"
+	return "a0f743b0"
 }
 func NewVnetIP6MfibCounters() api.Message {
 	return &VnetIP6MfibCounters{}
 }
 
 // VnetIP6NbrCounters represents the VPP binary API message 'vnet_ip6_nbr_counters'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 672:
-//
-//            "vnet_ip6_nbr_counters",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "count"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "begin"
-//            ],
-//            [
-//                "vl_api_ip6_nbr_counter_t",
-//                "c",
-//                0,
-//                "count"
-//            ],
-//            {
-//                "crc": "0x650161c0"
-//            }
 //
 type VnetIP6NbrCounters struct {
 	Count     uint32 `struc:"sizeof=C"`
@@ -1460,31 +658,13 @@ func (*VnetIP6NbrCounters) GetMessageType() api.MessageType {
 	return api.OtherMessage
 }
 func (*VnetIP6NbrCounters) GetCrcString() string {
-	return "650161c0"
+	return "181b673f"
 }
 func NewVnetIP6NbrCounters() api.Message {
 	return &VnetIP6NbrCounters{}
 }
 
 // VnetGetSummaryStats represents the VPP binary API message 'vnet_get_summary_stats'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 700:
-//
-//            "vnet_get_summary_stats",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
 //
 type VnetGetSummaryStats struct {
 }
@@ -1496,45 +676,13 @@ func (*VnetGetSummaryStats) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*VnetGetSummaryStats) GetCrcString() string {
-	return "51077d14"
+	return "16435c20"
 }
 func NewVnetGetSummaryStats() api.Message {
 	return &VnetGetSummaryStats{}
 }
 
 // VnetGetSummaryStatsReply represents the VPP binary API message 'vnet_get_summary_stats_reply'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 718:
-//
-//            "vnet_get_summary_stats_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u64",
-//                "total_pkts",
-//                2
-//            ],
-//            [
-//                "u64",
-//                "total_bytes",
-//                2
-//            ],
-//            [
-//                "f64",
-//                "vector_rate"
-//            ],
-//            {
-//                "crc": "0x32b87c56"
-//            }
 //
 type VnetGetSummaryStatsReply struct {
 	Retval     int32
@@ -1550,7 +698,7 @@ func (*VnetGetSummaryStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*VnetGetSummaryStatsReply) GetCrcString() string {
-	return "32b87c56"
+	return "675ce280"
 }
 func NewVnetGetSummaryStatsReply() api.Message {
 	return &VnetGetSummaryStatsReply{}

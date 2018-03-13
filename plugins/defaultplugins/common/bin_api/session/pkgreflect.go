@@ -39,8 +39,6 @@ var Types = map[string]reflect.Type{
 	"UnbindSockReply":           reflect.TypeOf((*UnbindSockReply)(nil)).Elem(),
 	"UnbindURI":                 reflect.TypeOf((*UnbindURI)(nil)).Elem(),
 	"UnbindURIReply":            reflect.TypeOf((*UnbindURIReply)(nil)).Elem(),
-	"UnmapSegment":              reflect.TypeOf((*UnmapSegment)(nil)).Elem(),
-	"UnmapSegmentReply":         reflect.TypeOf((*UnmapSegmentReply)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
@@ -78,8 +76,6 @@ var Functions = map[string]reflect.Value{
 	"NewUnbindSockReply":           reflect.ValueOf(NewUnbindSockReply),
 	"NewUnbindURI":                 reflect.ValueOf(NewUnbindURI),
 	"NewUnbindURIReply":            reflect.ValueOf(NewUnbindURIReply),
-	"NewUnmapSegment":              reflect.ValueOf(NewUnmapSegment),
-	"NewUnmapSegmentReply":         reflect.ValueOf(NewUnmapSegmentReply),
 }
 
 var Variables = map[string]reflect.Value{}
