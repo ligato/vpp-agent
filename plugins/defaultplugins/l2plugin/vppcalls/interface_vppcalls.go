@@ -48,6 +48,7 @@ func SetInterfacesToBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx uint32
 			Enable:      1,
 			BdID:        bdIdx,
 			RxSwIfIndex: ifIdx,
+			Shg:         uint8(bdIface.SplitHorizonGroup),
 		}
 		// Set as BVI.
 		if bdIface.BridgedVirtualInterface {
@@ -92,6 +93,7 @@ func UnsetInterfacesFromBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx ui
 			Enable:      0,
 			BdID:        bdIdx,
 			RxSwIfIndex: ifIdx,
+			Shg:         uint8(bdIface.SplitHorizonGroup),
 		}
 		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
