@@ -39,8 +39,8 @@ const (
 	swIndexC uint32 = 3
 	swIndexD uint32 = 4
 
-	splitHorizonGroupA = 2104
-	splitHorizonGroupB = 1903
+	splitHorizonGroupA = 10
+	splitHorizonGroupB = 100
 
 	dummyPluginName = "dummy plugin name"
 	dummyRetVal     = 4
@@ -67,22 +67,26 @@ var testDataOutBDIfaces = []*l2ba.SwInterfaceSetL2Bridge{
 	{
 		BdID:        dummyBridgeDomain,
 		RxSwIfIndex: swIndexA,
+		Shg:         splitHorizonGroupA,
 		Enable:      1,
 		Bvi:         1,
 	},
 	{
 		BdID:        dummyBridgeDomain,
 		RxSwIfIndex: swIndexB,
+		Shg:         splitHorizonGroupA,
 		Enable:      1,
 	},
 	{
 		BdID:        dummyBridgeDomain,
 		RxSwIfIndex: swIndexA,
+		Shg:         splitHorizonGroupA,
 		Enable:      0,
 	},
 	{
 		BdID:        dummyBridgeDomain,
 		RxSwIfIndex: swIndexB,
+		Shg:         splitHorizonGroupA,
 		Enable:      0,
 	},
 }
