@@ -212,17 +212,19 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 	plugin.Log.Infof("Registered SA %v (%d)", sa.Name, saID)
 
 	for _, cached := range plugin.CachedSpdIndexes.LookupBySA(sa.Name) {
-		spd := cached.SPD
-		for _, entry := range spd.PolicyEntries {
+		for _, entry := range cached.SPD.PolicyEntries {
 			if entry.Sa != "" {
 				if _, _, exists := plugin.SaIndexes.LookupIdx(entry.Sa); !exists {
-					plugin.Log.Warnf("SA %q for SPD %q not found, keeping SPD in cache", entry.Sa, spd.Name)
+					plugin.Log.Warnf("SA %q for SPD %q not found, keeping SPD in cache", entry.Sa, cached.SPD.Name)
 					return nil
 				}
 			}
 		}
-		plugin.CachedSpdIndexes.UnregisterName(spd.Name)
-		plugin.configureSPD(cached.SpdID, spd)
+		if err := plugin.configureSPD(cached.SpdID, cached.SPD); err != nil {
+			plugin.Log.Errorf("configuring cached SPD failed: %v", err)
+		} else {
+			plugin.CachedSpdIndexes.UnregisterName(cached.SPD.Name)
+		}
 	}
 
 	return nil
@@ -255,7 +257,16 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 		plugin.Log.Warnf("SA %q not found", oldSa.Name)
 		return nil
 	}
-	// TODO: check if SA is used by any registered SPD
+
+	for _, entry := range plugin.SpdIndexes.LookupBySA(oldSa.Name) {
+		if err := plugin.DeleteSPD(entry.SPD); err != nil {
+			plugin.Log.Errorf("deleting SPD to be cached failed: %v", err)
+			continue
+		}
+		plugin.CachedSpdIndexes.RegisterName(entry.SPD.Name, entry.SpdID, entry.SPD)
+		plugin.Log.Warnf("caching SPD %v due removed SA %v", entry.SPD.Name, oldSa.Name)
+	}
+
 	if err := vppcalls.DelSAEntry(saID, oldSa, plugin.vppCh, plugin.Stopwatch); err != nil {
 		return err
 	}
