@@ -188,7 +188,6 @@ func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *
 	} else if ev.IsCreate() || ev.IsModify() {
 		if ev.Kv.Value != nil {
 			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, prevKvValue, ev.Kv.ModRevision))
-			log.Debug("NewBytesWatchPutResp")
 		}
 	}
 }
