@@ -23,7 +23,7 @@ message LinuxStaticRoutes {
         }
         Namespace namespace = 3;
 
-        string interface = 5;               /* interface name */
+        string interface = 5;               /* interface host name */
         string description = 6;             /* optional description */
 
         message Scope {                     /* the scope of the area where the link is valid */

@@ -37,10 +37,15 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		return err
 	}
 
-	// Correlate VPP and NB configuration
-	for _, vppRoute := range vppRoutes {
+	// Correlate NB and VPP configuration
+	for _, nbRoute := range nbRoutes {
+		// Default VPP value for weight in case it is not set
+		if nbRoute.Weight == 0 {
+			nbRoute.Weight = 1
+		}
 		// Look for the same route in the configuration
-		for _, nbRoute := range nbRoutes {
+	VppRouteIteration:
+		for _, vppRoute := range vppRoutes {
 			ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbRoute.OutgoingInterface)
 			if !found {
 				continue
@@ -67,8 +72,9 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
 			plugin.RouteIndexes.RegisterName(routeID, plugin.RouteIndexSeq, nbRoute)
 			plugin.RouteIndexSeq++
+			plugin.Log.Debugf("RESYNC routes: route %s registered without additional changes", routeID)
+			break VppRouteIteration
 		}
-
 	}
 
 	// Add missing route configuration
@@ -79,6 +85,7 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 			_, _, found := plugin.RouteIndexes.LookupIdx(routeID)
 			if !found {
 				// create new route if does not exist yet. VRF ID is already validated at this point.
+				plugin.Log.Debugf("RESYNC routes: route %s not found and will be configured", routeID)
 				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
 					plugin.Log.Error(err)
 					wasError = err
