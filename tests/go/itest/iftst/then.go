@@ -40,6 +40,18 @@ func (step *ThenIface) BfdIndexes() *BfdIndexesAssertions {
 	return &BfdIndexesAssertions{}
 }
 
+// ContainsName checks several times if sw_if_index - ifName mapping exists.
+func (step *ThenIface) ContainsIPSecSA(name string) bool {
+	idx := idxtst.ContainsName(step.VPP.GetIPSecSAIndexes(), name)
+	return idx != 0
+}
+
+// ContainsName checks several times if sw_if_index - ifName mapping exists.
+func (step *ThenIface) ContainsIPSecSPD(name string) bool {
+	idx := idxtst.ContainsName(step.VPP.GetIPSecSPDIndexes(), name)
+	return idx != 0
+}
+
 // SwIfIndexesAssertions is a helper struct for fluent DSL in tests for interfaces.
 type SwIfIndexesAssertions struct {
 	VPP defaultplugins.API

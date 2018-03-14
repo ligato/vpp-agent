@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -89,6 +90,10 @@ type PutDSL interface {
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration
 	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	// IPSecSA adds request to create a new Security Association
+	IPSecSA(sa *ipsec.SecurityAssociations_SA) PutDSL
+	// IPSecSPD adds request to create a new Security Policy Database
+	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -140,6 +145,10 @@ type DeleteDSL interface {
 	NAT44Global() DeleteDSL
 	// NAT44DNat adds a request to delete a new DNAT configuration
 	NAT44DNat(label string) DeleteDSL
+	// IPSecSA adds request to delete a Security Association
+	IPSecSA(saName string) DeleteDSL
+	// IPSecSPD adds request to delete a Security Policy Database
+	IPSecSPD(spdName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

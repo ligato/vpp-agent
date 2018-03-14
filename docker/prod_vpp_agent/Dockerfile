@@ -8,7 +8,7 @@ RUN apt-get update \
      iproute2 iputils-ping inetutils-traceroute \
      # vpp requirements
      openssl python libapr1 libnuma1 \
-     supervisor \
+     supervisor ipsec-tools \
  && rm -rf /var/lib/apt/lists/*
 
 # install vpp

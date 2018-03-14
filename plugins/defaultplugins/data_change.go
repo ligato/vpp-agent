@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 
@@ -273,6 +274,32 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
+		if strings.HasPrefix(key, ipsec.KeyPrefixSPD) {
+			var value, prevValue ipsec.SecurityPolicyDatabases_SPD
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecSPD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		} else if strings.HasPrefix(key, ipsec.KeyPrefixSA) {
+			var value, prevValue ipsec.SecurityAssociations_SA
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecSA(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
 	}
@@ -508,4 +535,28 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 		return plugin.natConfigurator.ModifyDNat(prevValue, value)
 	}
 	return plugin.natConfigurator.ConfigureDNat(value)
+}
+
+// dataChangeIPSecSPD propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteSPD(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifySPD(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureSPD(value)
+}
+
+// dataChangeIPSecSA propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteSA(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureSA(value)
 }

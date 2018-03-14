@@ -108,6 +108,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.l4Configurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.stnConfigurator.ResolveCreatedInterface(ifIdxEv.Name)
 				plugin.routeConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.ipsecConfigurator.ResolveCreatedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			} else {
 				plugin.aclConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
@@ -123,6 +124,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.l4Configurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				plugin.stnConfigurator.ResolveDeletedInterface(ifIdxEv.Name)
 				plugin.routeConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
+				plugin.ipsecConfigurator.ResolveDeletedInterface(ifIdxEv.Name, ifIdxEv.Idx)
 				// TODO propagate error
 			}
 			ifIdxEv.Done()

@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -72,6 +73,10 @@ type DataResyncReq struct {
 	Nat44SNat []*nat.Nat44SNat_SNatConfig
 	// Nat44DNat is a list of all DNAT configurations expected to be in VPP after RESYNC
 	Nat44DNat []*nat.Nat44DNat_DNatConfig
+	// IPSecSPDs is a list of all IPSec Security Policy Databases expected to be in VPP after RESYNC
+	IPSecSPDs []*ipsec.SecurityPolicyDatabases_SPD
+	// IPSecSAs is a list of all IPSec Security Associations expected to be in VPP after RESYNC
+	IPSecSAs []*ipsec.SecurityAssociations_SA
 }
 
 // NewDataResyncReq is a constructor.
@@ -95,6 +100,8 @@ func NewDataResyncReq() *DataResyncReq {
 		Nat44Global:         &nat.Nat44Global{},
 		Nat44SNat:           []*nat.Nat44SNat_SNatConfig{},
 		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
+		IPSecSPDs:           []*ipsec.SecurityPolicyDatabases_SPD{},
+		IPSecSAs:            []*ipsec.SecurityAssociations_SA{},
 	}
 }
 
@@ -189,6 +196,9 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
 		resyncErrs = append(resyncErrs, err)
 	}
+	if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs); err != nil {
+		resyncErrs = append(resyncErrs, err)
+	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
@@ -261,6 +271,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, nat.DNatPrefix()) {
 			numDNats := appendResyncDNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
+		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
+			numIPSecs := appendResyncIPSec(resyncData, req)
+			plugin.Log.Debug("Received RESYNC IPSec configs ", numIPSecs)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -597,6 +610,30 @@ func appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) in
 	return num
 }
 
+func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
+	for {
+		if data, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSPD) {
+				value := &ipsec.SecurityPolicyDatabases_SPD{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecSPDs = append(req.IPSecSPDs, value)
+					num++
+				}
+			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSA) {
+				value := &ipsec.SecurityAssociations_SA{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecSAs = append(req.IPSecSAs, value)
+					num++
+				}
+			}
+
+		}
+	}
+	return
+}
+
 // All registration for above channel select (it ensures proper order during initialization) are put here.
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
@@ -628,6 +665,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			nat.GlobalConfigPrefix(),
 			nat.SNatPrefix(),
 			nat.DNatPrefix(),
+			ipsec.KeyPrefix,
 		)
 	if err != nil {
 		return err

@@ -10,6 +10,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stats"
@@ -23,16 +24,17 @@ var swIfIndexSeq uint32
 
 // RepliesSuccess replies with success binary API message.
 func RepliesSuccess(vppMock *govppmock.VppAdapter) {
-	vppMock.RegisterBinAPITypes(interfaces.Types)
-	vppMock.RegisterBinAPITypes(memif.Types)
-	vppMock.RegisterBinAPITypes(tap.Types)
-	vppMock.RegisterBinAPITypes(tapv2.Types)
 	vppMock.RegisterBinAPITypes(af_packet.Types)
-	vppMock.RegisterBinAPITypes(vpe.Types)
-	vppMock.RegisterBinAPITypes(vxlan.Types)
 	vppMock.RegisterBinAPITypes(bfd.Types)
+	vppMock.RegisterBinAPITypes(interfaces.Types)
+	vppMock.RegisterBinAPITypes(ipsec.Types)
+	vppMock.RegisterBinAPITypes(memif.Types)
 	vppMock.RegisterBinAPITypes(session.Types)
 	vppMock.RegisterBinAPITypes(stats.Types)
+	vppMock.RegisterBinAPITypes(tap.Types)
+	vppMock.RegisterBinAPITypes(tapv2.Types)
+	vppMock.RegisterBinAPITypes(vpe.Types)
+	vppMock.RegisterBinAPITypes(vxlan.Types)
 
 	vppMock.MockReplyHandler(VppMockHandler(vppMock))
 }
