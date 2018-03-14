@@ -1,10 +1,7 @@
 #!/bin/bash
 
-set +e
-sudo docker rmi -f prod_vpp_agent 2>/dev/null
 set -e
 
-./extract_agent_files.sh
-./extract_vpp_files.sh
+IMAGE_TAG=${IMAGE_TAG:-prod_vpp_agent}
 
-sudo docker build -t prod_vpp_agent --no-cache .
+sudo docker build --tag ${IMAGE_TAG} .
