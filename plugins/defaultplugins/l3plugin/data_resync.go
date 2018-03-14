@@ -36,44 +36,61 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	if err != nil {
 		return err
 	}
+	plugin.Log.Debugf("Found %d routes configured on the VPP", len(vppRoutes))
 
 	// Correlate NB and VPP configuration
 	for _, nbRoute := range nbRoutes {
+		nbRouteID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+		nbIfIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbRoute.OutgoingInterface)
+		if !found {
+			plugin.Log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
+			plugin.RouteCachedIndex.RegisterName(nbRouteID, plugin.RouteIndexSeq, nbRoute)
+			plugin.RouteIndexSeq++
+			continue
+		}
 		// Default VPP value for weight in case it is not set
 		if nbRoute.Weight == 0 {
 			nbRoute.Weight = 1
 		}
 		// Look for the same route in the configuration
-	VppRouteIteration:
 		for _, vppRoute := range vppRoutes {
-			ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbRoute.OutgoingInterface)
-			if !found {
-				continue
-			}
-			if vppRoute.OutIface != ifIdx {
+			vppRouteID := routeIdentifier(vppRoute.VrfID, vppRoute.DstAddr.String(), vppRoute.NextHopAddr.String())
+			plugin.Log.Debugf("RESYNC routes: comparing %s and %s", nbRouteID, vppRouteID)
+			if vppRoute.OutIface != nbIfIdx {
+				plugin.Log.Debugf("RESYNC routes: interface index is different (NB: %d, VPP %d)",
+					nbIfIdx, vppRoute.OutIface)
 				continue
 			}
 			if vppRoute.DstAddr.String() != nbRoute.DstIpAddr {
+				plugin.Log.Debugf("RESYNC routes: dst address is different (NB: %s, VPP %s)",
+					nbRoute.DstIpAddr, vppRoute.DstAddr.String())
 				continue
 			}
 			if vppRoute.VrfID != nbRoute.VrfId {
+				plugin.Log.Debugf("RESYNC routes: VRF ID is different (NB: %d, VPP %d)",
+					nbRoute.VrfId, vppRoute.VrfID)
 				continue
 			}
 			if vppRoute.Weight != nbRoute.Weight {
+				plugin.Log.Debugf("RESYNC routes: weight is different (NB: %d, VPP %d)",
+					nbRoute.Weight, vppRoute.Weight)
 				continue
 			}
 			if vppRoute.Preference != nbRoute.Preference {
+				plugin.Log.Debugf("RESYNC routes: preference is different (NB: %d, VPP %d)",
+					nbRoute.Preference, vppRoute.Preference)
 				continue
 			}
 			if vppRoute.NextHopAddr.String() != nbRoute.NextHopAddr {
+				plugin.Log.Debugf("RESYNC routes: next hop address is different (NB: %d, VPP %d)",
+					nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
 				continue
 			}
 			// Register existing routes
-			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
-			plugin.RouteIndexes.RegisterName(routeID, plugin.RouteIndexSeq, nbRoute)
+			plugin.RouteIndexes.RegisterName(nbRouteID, plugin.RouteIndexSeq, nbRoute)
 			plugin.RouteIndexSeq++
-			plugin.Log.Debugf("RESYNC routes: route %s registered without additional changes", routeID)
-			break VppRouteIteration
+			plugin.Log.Debugf("RESYNC routes: route %s registered without additional changes", nbRouteID)
+			break
 		}
 	}
 
