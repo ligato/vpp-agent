@@ -307,27 +307,30 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	// Destination IP address
 	if route.DstIpAddr != "" {
 		addressWithPrefix := strings.Split(route.DstIpAddr, "/")
-		dstIPAddr := &net.IPNet{}
 		if len(addressWithPrefix) > 1 {
+			dstIPAddr := &net.IPNet{}
 			_, dstIPAddr, err = net.ParseCIDR(route.DstIpAddr)
 			if err != nil {
 				plugin.Log.Error(err)
 				return err
 			}
+			netLinkRoute.Dst = dstIPAddr
 		} else {
-			return fmt.Errorf("cannot remove static route %v, dst address net mask not set", route.Name)
+			plugin.Log.Error("static route's dst address mask not set, route %s may not be removed", route.Name)
 		}
-		netLinkRoute.Dst = dstIPAddr
 	}
+	// Gateway IP address
 	if route.GwAddr != "" {
 		gateway := net.ParseIP(route.GwAddr)
-		if gateway == nil {
-			return fmt.Errorf("cannot remove static route %v, gateway address has incorrect format: %v",
-				route.Name, route.GwAddr)
+		if gateway != nil {
+			netLinkRoute.Gw = gateway
+		} else {
+			plugin.Log.Error("static route's gateway address %s has incorrect format, route %s may not be removed",
+				route.GwAddr, route.Name)
 		}
-		netLinkRoute.Gw = gateway
-	} else {
-		return fmt.Errorf("cannot remove static route %v, destination/gateway address not available", route.Name)
+	}
+	if netLinkRoute.Dst == nil && netLinkRoute.Gw == nil {
+		return fmt.Errorf("cannot delete static route %v, requred at least destination or gateway address", route.Name)
 	}
 
 	// Scope

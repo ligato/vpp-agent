@@ -70,9 +70,10 @@ RUN ./build-agent.sh ${AGENT_COMMIT}
 # copy configs
 COPY etcd.conf kafka.conf govpp.conf defaultplugins.conf linuxplugin.conf logs.conf ./
 COPY vpp.conf /etc/vpp/vpp.conf
-
-COPY runvpp.sh /usr/bin/runvpp
 COPY supervisord.conf /etc/supervisord/supervisord.conf
+
+# copy scripts
+COPY runvpp.sh /usr/bin/runvpp
 COPY agent_start.py /usr/bin/agent_start.py
 COPY supervisord_kill.py /usr/bin/supervisord_kill.py
 

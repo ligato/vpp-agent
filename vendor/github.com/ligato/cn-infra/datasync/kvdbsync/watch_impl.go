@@ -80,10 +80,6 @@ func (keys *watchBrokerKeys) watchChanges(x keyval.ProtoWatchResp) {
 	}
 
 	ch := NewChangeWatchResp(x, prev)
-
-	logrus.DefaultLogger().Debug("dbAdapter x:", x)
-	logrus.DefaultLogger().Debug("dbAdapter ch:", *ch)
-
 	keys.changeChan <- ch
 	// TODO NICE-to-HAVE publish the err using the transport asynchronously
 }
