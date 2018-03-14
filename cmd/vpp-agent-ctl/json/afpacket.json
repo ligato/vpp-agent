@@ -3,7 +3,7 @@
         "host_if_name": "lo"
     },
     "enabled": true,
-    "mtu": 1500
+    "mtu": 1500,
     "ip_addresses": [
         "fdcd:f7fb:995c::/48"
     ],
