@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -51,6 +52,8 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*name*/ *stn.StnRule{},
 		map[string] /*label*/ *nat.Nat44Global{},
 		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
+		map[string] /*name*/ *ipsec.SecurityAssociations_SA{},
+		map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD{},
 	}
 }
 
@@ -75,6 +78,8 @@ type DataResyncDSL struct {
 	txnPutStn         map[string] /*value*/ *stn.StnRule
 	txnPutNatGlobal   map[string] /*label*/ *nat.Nat44Global
 	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
+	txnPutIPSecSA     map[string] /*name*/ *ipsec.SecurityAssociations_SA
+	txnPutIPSecSPD    map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
@@ -190,6 +195,18 @@ func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplug
 	return dsl
 }
 
+// IPSecSA adds request to create a new Security Association
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
+	dsl.txnPutIPSecSA[ipsec.SAKey(sa.Name)] = sa
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
+	dsl.txnPutIPSecSPD[ipsec.SPDKey(spd.Name)] = spd
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet with iterator values.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	for {
@@ -208,23 +225,23 @@ type keySet map[string] /*key*/ interface{} /*nil*/
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
 func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
-	putIntfs := []*interfaces.Interfaces_Interface{}
+	var putIntfs []*interfaces.Interfaces_Interface
 	for _, intf := range dsl.txnPutIntf {
 		putIntfs = append(putIntfs, intf)
 	}
-	putBDs := []*l2.BridgeDomains_BridgeDomain{}
+	var putBDs []*l2.BridgeDomains_BridgeDomain
 	for _, bd := range dsl.txnPutBD {
 		putBDs = append(putBDs, bd)
 	}
-	putXCons := []*l2.XConnectPairs_XConnectPair{}
+	var putXCons []*l2.XConnectPairs_XConnectPair
 	for _, xcon := range dsl.txnPutXCon {
 		putXCons = append(putXCons, xcon)
 	}
-	putRoutes := []*l3.StaticRoutes_Route{}
+	var putRoutes []*l3.StaticRoutes_Route
 	for _, route := range dsl.txnPutStaticRoute {
 		putRoutes = append(putRoutes, route)
 	}
-	putACLs := []*acl.AccessLists_Acl{}
+	var putACLs []*acl.AccessLists_Acl
 	for _, acl := range dsl.txnPutACL {
 		putACLs = append(putACLs, acl)
 	}

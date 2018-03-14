@@ -24,10 +24,12 @@ const (
 	KeyPrefixSA = KeyPrefix + "sa/"
 )
 
+// SPDKey returns key for Security Policy Database
 func SPDKey(name string) string {
 	return KeyPrefixSPD + name
 }
 
+// SAKey returns key for Security Association
 func SAKey(name string) string {
 	return KeyPrefixSA + name
 }

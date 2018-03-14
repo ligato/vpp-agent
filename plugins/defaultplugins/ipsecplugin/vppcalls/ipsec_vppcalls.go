@@ -48,10 +48,12 @@ func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *m
 	return nil
 }
 
+// AddSPD adds SPD to VPP via binary API
 func AddSPD(spdID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDel(spdID, true, vppChan, stopwatch)
 }
 
+// DelSPD deletes SPD from VPP via binary API
 func DelSPD(spdID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDel(spdID, false, vppChan, stopwatch)
 }
@@ -78,10 +80,12 @@ func interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool, vppChan *govppapi.Cha
 	return nil
 }
 
+// InterfaceAddSPD adds SPD interface assignment to VPP via binary API
 func InterfaceAddSPD(spdID, swIfIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceAddDelSpd(spdID, swIfIdx, true, vppChan, stopwatch)
 }
 
+// InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
 func InterfaceDelSPD(spdID, swIfIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceAddDelSpd(spdID, swIfIdx, false, vppChan, stopwatch)
 }
@@ -129,7 +133,6 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To4()
 		}
 	} else {
-		//req.IsIPAny = 1
 		req.RemoteAddressStart = net.ParseIP("0.0.0.0").To4()
 		req.RemoteAddressStop = net.ParseIP("255.255.255.255").To4()
 		req.LocalAddressStart = net.ParseIP("0.0.0.0").To4()
@@ -147,10 +150,12 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 	return nil
 }
 
+// AddSPDEntry adds SPD policy entry to VPP via binary API
 func AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDelEntry(spdID, saID, spd, true, vppChan, stopwatch)
 }
 
+// DelSPDEntry deletes SPD policy entry from VPP via binary API
 func DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDelEntry(spdID, saID, spd, false, vppChan, stopwatch)
 }
@@ -211,10 +216,12 @@ func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, 
 	return nil
 }
 
+// AddSAEntry adds SA to VPP via binary API
 func AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return sadAddDelEntry(saID, sa, true, vppChan, stopwatch)
 }
 
+// DelSAEntry deletes SA from VPP via binary API
 func DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return sadAddDelEntry(saID, sa, false, vppChan, stopwatch)
 }

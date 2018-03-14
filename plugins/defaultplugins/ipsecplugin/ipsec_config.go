@@ -81,7 +81,7 @@ func (plugin *IPSecConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
-// ConfigureSPD configures SPD
+// ConfigureSPD configures Security Policy Database in VPP
 func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
 	plugin.Log.Debugf("Configuring SPD %v", spd.Name)
 
@@ -116,7 +116,7 @@ func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityP
 
 		swIfIdx, _, exists := plugin.SwIfIndexes.LookupIdx(iface.Name)
 		if !exists {
-			plugin.Log.Warnf("Interface %q for SPD %q not found, caching assignment of interface to SPD", iface.Name, spd.Name)
+			plugin.Log.Infof("Interface %q for SPD %q not found, caching assignment of interface to SPD", iface.Name, spd.Name)
 			plugin.cacheSPDInterfaceAssignment(spdID, iface.Name)
 			continue
 		}
@@ -154,7 +154,7 @@ func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityP
 	return nil
 }
 
-// ModifySPD
+// ModifySPD modifies Security Policy Database in VPP
 func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, newSpd *ipsec.SecurityPolicyDatabases_SPD) error {
 	plugin.Log.Debugf("Modifying SPD %v", oldSpd.Name)
 
@@ -170,9 +170,15 @@ func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases
 	return nil
 }
 
-// DeleteSPD
+// DeleteSPD deletes Security Policy Database in VPP
 func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD) error {
 	plugin.Log.Debugf("Deleting SPD %v", oldSpd.Name)
+
+	if spdID, _, found := plugin.CachedSpdIndexes.LookupIdx(oldSpd.Name); found {
+		plugin.Log.Debugf("removing cached SPD %v", spdID)
+		plugin.CachedSpdIndexes.UnregisterName(oldSpd.Name)
+		return nil
+	}
 
 	spdID, _, exists := plugin.SpdIndexes.LookupIdx(oldSpd.Name)
 	if !exists {
@@ -197,7 +203,7 @@ func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases
 	return nil
 }
 
-// ConfigureSA
+// ConfigureSA configures Security Association in VPP
 func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Debugf("Configuring SA %v", sa.Name)
 
@@ -230,7 +236,7 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 	return nil
 }
 
-// ModifySA
+// ModifySA modifies Security Association in VPP
 func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, newSa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Debugf("Modifying SA %v", oldSa.Name)
 
@@ -248,7 +254,7 @@ func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, 
 	return nil
 }
 
-// DeleteSA
+// DeleteSA deletes Security Association in VPP
 func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
 	plugin.Log.Debugf("Deleting SA %v", oldSa.Name)
 

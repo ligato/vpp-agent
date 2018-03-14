@@ -35,8 +35,8 @@ message SecurityPolicyDatabases {
                 RESOLVE = 2;
                 PROTECT = 3;
             }
-            Action action = 12;
-            string sa = 13;
+            Action action = 12; /* policy action */
+            string sa = 13;     /* security association name */
         }
         repeated PolicyEntry policy_entries = 3;   /* list of policy entries belonging to this SPD */
     }
@@ -46,8 +46,8 @@ message SecurityPolicyDatabases {
 /* Security Association (SA) */
 message SecurityAssociations {
     message SA {
-        string name = 1;
-        uint32 spi = 2;
+        string name = 1;    /* security association name */
+        uint32 spi = 2;     /* security parameter index */
 
         /* IPSec protocol */
         enum IPSecProtocol {
