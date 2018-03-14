@@ -6,7 +6,7 @@ RUN apt-get update \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
     default-jre default-jdk telnet netcat software-properties-common \
     make autoconf automake libtool curl unzip \
-    golang-gogoprotobuf-dev \
+    golang-gogoprotobuf-dev ipsec-tools \
  && apt-get remove -y --purge gcc \
  && rm -rf /var/lib/apt/lists/*
 
