@@ -37,7 +37,7 @@ def main():
                 write_stderr(msg)
                 write_stdout('RESULT 2\nOK')
                 continue
-            with open('/root/supervisord.pid', 'r') as pidfile:
+            with open('/opt/vpp-agent/dev/vpp/build-root/supervisord.pid', 'r') as pidfile:
                 pid = int(pidfile.readline())
             write_stderr('Killing supervisors with pid: ' + str(pid))
             os.kill(pid, signal.SIGQUIT)
