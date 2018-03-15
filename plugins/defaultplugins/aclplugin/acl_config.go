@@ -96,8 +96,9 @@ func (plugin *ACLConfigurator) Init() (err error) {
 }
 
 // Close GOVPP channel.
-func (plugin *ACLConfigurator) Close() {
-	safeclose.CloseAll(plugin.vppChannel, plugin.vppDumpChannel)
+func (plugin *ACLConfigurator) Close() error {
+	_, err := safeclose.CloseAll(plugin.vppChannel, plugin.vppDumpChannel)
+	return err
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.

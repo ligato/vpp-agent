@@ -32,6 +32,8 @@ import (
 
 // Nat44GlobalConfigDump returns global config in NB format
 func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (*nat.Nat44Global, error) {
+	log.Debug("dumping Nat44Global")
+
 	// Dump all necessary data to reconstruct global NAT configuration
 	isEnabled, err := nat44IsForwardingEnabled(log, vppChan, stopwatch)
 	if err != nil {
@@ -67,6 +69,8 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 		})
 	}
 
+	log.Debug("dumped Nat44Global")
+
 	// Set fields
 	return &nat.Nat44Global{
 		Forwarding:    isEnabled,
@@ -80,6 +84,8 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 	var wasErr error
+
+	log.Debug("dumping DNat")
 
 	// Static mappings
 	natStMappings, err := nat44StaticMappingDump(swIfIndices, log, vppChan, stopwatch)
@@ -108,6 +114,8 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *
 	for tag, data := range natIdMappings {
 		processDNatData(tag, data, &dNatCfgs, log)
 	}
+
+	log.Debugf("dumped %d NAT44DNat configs", len(dNatCfgs))
 
 	return &nat.Nat44DNat{
 		DnatConfig: dNatCfgs,
