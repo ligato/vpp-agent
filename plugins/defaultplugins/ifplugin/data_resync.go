@@ -980,6 +980,13 @@ func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint
 	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
 		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
 	}
+	// Add AF-packet type interface to local cache
+	if ifData.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
+		if plugin.Linux != nil && plugin.afPacketConfigurator != nil && ifData.Afpacket != nil {
+			// Interface is already present on the VPP so it cannot be marked as pending.
+			plugin.afPacketConfigurator.addToCache(ifData, false)
+		}
+	}
 	plugin.Log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
 	return nil
 }
