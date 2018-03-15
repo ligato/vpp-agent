@@ -14,6 +14,8 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
+${SYNC_SLEEP}=         20s
+${RESYNC_SLEEP}=       45s
 ${VARIABLES}=        common
 ${ENV}=              common
 ${NAME_TAP1}=        vpp1_tap1
@@ -34,7 +36,7 @@ Configure Environment
     Configure Environment 1
 
 Show Interfaces Before Setup
-    ${interfaces}=    vpp_term: Show Interfaces    agent_vpp_1
+    Show Interfaces And Other Objects
 
 Add TAP1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1}
@@ -72,9 +74,32 @@ Check STN Rule Is Updated
 Delete STN Rule
     vpp_ctl: Delete STN Rule    node=agent_vpp_1    rule_name=${RULE_NAME}
 
-#TODO: Check Deleted STN Rule
+Check Deleted STN Rule
+    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ipv4=${IP_STN_RULE}
 
-Show Interfaces And Other Objects After Setup
+
+
+Add STN Rule Again
+    vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
+
+Check STN Rule Is Created Again
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ipv4=${IP_STN_RULE}
+
+Remove VPP And Two Nodes
+    Remove Node     agent_vpp_1
+    Sleep    ${SYNC_SLEEP}
+
+Start VPP And Two Nodes
+    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    Sleep    ${RESYNC_SLEEP}
+    Show Interfaces And Other Objects
+
+Check STN Rule Is Created After Resync
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ipv4=${IP_STN_RULE}
+
+
+*** Keywords ***
+Show Interfaces And Other Objects
     vpp_term: Show Interfaces    agent_vpp_1
     Write To Machine    agent_vpp_1_term    show int
     Write To Machine    agent_vpp_1_term    show stn rules
@@ -88,7 +113,6 @@ Show Interfaces And Other Objects After Setup
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
 
-*** Keywords ***
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup
 
