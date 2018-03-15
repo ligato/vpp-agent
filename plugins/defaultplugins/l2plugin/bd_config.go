@@ -154,6 +154,11 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_BridgeDomain, oldBdConfig *l2.BridgeDomains_BridgeDomain) error {
 	plugin.Log.Infof("Modifying VPP bridge domain %v", newBdConfig.Name)
 
+	// Update bridge domain's registered metadata
+	if success := plugin.BdIndices.UpdateMetadata(newBdConfig.Name, newBdConfig); !success {
+		plugin.Log.Errorf("Failed to update metadata for bridge domain %s", newBdConfig.Name)
+	}
+
 	// Validate updated config.
 	isValid, recreate := plugin.vppValidateBridgeDomainBVI(newBdConfig, oldBdConfig)
 	if !isValid {
