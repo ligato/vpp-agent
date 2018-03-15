@@ -681,7 +681,9 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin
 	defer revertNs()
 	if err != nil {
 		// Already removed as namespace no longer exists.
-		plugin.IfIndexes.UnregisterName(vethName)
+		if _, _, found := plugin.IfIndexes.LookupIdx(vethName); found {
+			plugin.IfIndexes.UnregisterName(vethName)
+		}
 		return nil
 	}
 	exists, err := linuxcalls.InterfaceExists(hostIfName, measure.GetTimeLog("iface_exists", plugin.Stopwatch))
@@ -690,8 +692,10 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin
 		return err
 	}
 	if !exists {
-		// already removed
-		plugin.IfIndexes.UnregisterName(vethName)
+		// Already removed
+		if _, _, found := plugin.IfIndexes.LookupIdx(vethName); found {
+			plugin.IfIndexes.UnregisterName(vethName)
+		}
 		return nil
 	}
 	ifType, err := linuxcalls.GetInterfaceType(hostIfName, measure.GetTimeLog("get_iface_type", plugin.Stopwatch))
@@ -714,7 +718,9 @@ func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin
 		plugin.Log.Error(err)
 		return err
 	}
-	plugin.IfIndexes.UnregisterName(vethName)
+	if _, _, found := plugin.IfIndexes.LookupIdx(vethName); found {
+		plugin.IfIndexes.UnregisterName(vethName)
+	}
 	return nil
 }
 
