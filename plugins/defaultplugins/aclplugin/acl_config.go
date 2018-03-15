@@ -65,8 +65,9 @@ type ACLConfigurator struct {
 
 	ACLIfCache []*ACLIfCacheEntry // cache for ACL un-configured interfaces
 
-	vppcalls   *vppcalls.ACLInterfacesVppCalls
-	vppChannel *api.Channel
+	vppcalls       *vppcalls.ACLInterfacesVppCalls
+	vppChannel     *api.Channel
+	vppDumpChannel *api.Channel
 }
 
 // Init goroutines, channels and mappings.
@@ -75,6 +76,10 @@ func (plugin *ACLConfigurator) Init() (err error) {
 
 	// Init VPP API channel.
 	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	if err != nil {
+		return err
+	}
+	plugin.vppDumpChannel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
@@ -91,8 +96,9 @@ func (plugin *ACLConfigurator) Init() (err error) {
 }
 
 // Close GOVPP channel.
-func (plugin *ACLConfigurator) Close() {
-	safeclose.Close(plugin.vppChannel)
+func (plugin *ACLConfigurator) Close() error {
+	_, err := safeclose.CloseAll(plugin.vppChannel, plugin.vppDumpChannel)
+	return err
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
@@ -306,7 +312,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 
 // DumpACL returns all configured ACLs in proto format
 func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppDumpChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
 	if err != nil {
 		plugin.Log.Error(err)
 		return nil, err

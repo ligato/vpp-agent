@@ -72,6 +72,7 @@ type NatConfigurator struct {
 
 	NatIndexSeq uint32
 	vppChan     *govppapi.Channel
+	vppDumpChan *govppapi.Channel
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/isInside)
 	notEnabledIfs []*nat.Nat44Global_NatInterfaces
@@ -89,6 +90,9 @@ func (plugin *NatConfigurator) Init() (err error) {
 	if plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
 		return err
 	}
+	if plugin.vppDumpChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
+		return err
+	}
 
 	// Check VPP message compatibility
 	if err := vppcalls.CheckMsgCompatibilityForNat(plugin.vppChan); err != nil {
@@ -100,7 +104,8 @@ func (plugin *NatConfigurator) Init() (err error) {
 
 // Close used resources
 func (plugin *NatConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
+	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
+	return err
 }
 
 // SetNatGlobalConfig configures common setup for all NAT use cases
@@ -391,12 +396,12 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 
 // DumpNatGlobal returns the current NAT44 global config
 func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
-	return vppdump.Nat44GlobalConfigDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
+	return vppdump.Nat44GlobalConfigDump(plugin.SwIfIndexes, plugin.Log, plugin.vppDumpChan, plugin.Stopwatch)
 }
 
 // DumpNatDNat returns the current NAT44 DNAT config
 func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return vppdump.NAT44DNatDump(plugin.SwIfIndexes, plugin.Log, plugin.vppChan, plugin.Stopwatch)
+	return vppdump.NAT44DNatDump(plugin.SwIfIndexes, plugin.Log, plugin.vppDumpChan, plugin.Stopwatch)
 }
 
 // enables set of interfaces as inside/outside in NAT

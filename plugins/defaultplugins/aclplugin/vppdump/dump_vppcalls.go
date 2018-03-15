@@ -53,6 +53,7 @@ type ACLToInterface struct {
 // DumpACLs return a list of all configured ACLs including ruleData and interfaces
 func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *govppapi.Channel,
 	timeLog measure.StopWatchEntry) ([]*ACLEntry, error) {
+	log.Debugf("dumping ACLs")
 
 	var ACLs []*ACLEntry
 
@@ -83,6 +84,8 @@ func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *go
 			},
 		})
 	}
+
+	log.Debugf("dumped %d ACLs", len(ACLs))
 
 	return ACLs, nil
 }
