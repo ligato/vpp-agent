@@ -173,7 +173,7 @@ func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_Interfac
 
 // ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
-	dsl.txnPutProxyArpRng[val.Lable] = val
+	dsl.txnPutProxyArpRng[val.Label] = val
 	return dsl
 }
 

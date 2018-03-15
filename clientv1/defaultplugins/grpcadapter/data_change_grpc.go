@@ -218,7 +218,7 @@ func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) 
 
 // ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
 func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugins.PutDSL {
-	dsl.parent.txnPutProxyArpRng[arp.Lable] = arp
+	dsl.parent.txnPutProxyArpRng[arp.Label] = arp
 	return dsl
 }
 

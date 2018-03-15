@@ -219,7 +219,7 @@ ProxyArpIfLoop:
 
 // AddRange configures new IP range for proxy ARP
 func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Setting up proxy ARP IP range config %s", pArpRng.Lable)
+	plugin.Log.Infof("Setting up proxy ARP IP range config %s", pArpRng.Label)
 
 	var wasErr error
 	for _, proxyArpRange := range pArpRng.Ranges {
@@ -251,16 +251,16 @@ func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeLis
 	}
 
 	// Register
-	plugin.ProxyArpRngIndices.RegisterName(pArpRng.Lable, plugin.ProxyARPIndexSeq, nil)
+	plugin.ProxyArpRngIndices.RegisterName(pArpRng.Label, plugin.ProxyARPIndexSeq, nil)
 	plugin.ProxyARPIndexSeq++
-	plugin.Log.Debugf("Proxy ARP range config %s registered", pArpRng.Lable)
+	plugin.Log.Debugf("Proxy ARP range config %s registered", pArpRng.Label)
 
 	return wasErr
 }
 
 // ModifyRange does nothing
 func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Modifying proxy ARP range config %s", oldPArpRng.Lable)
+	plugin.Log.Infof("Modifying proxy ARP range config %s", oldPArpRng.Label)
 
 	toAdd, toDelete := plugin.calculateRngDiff(newPArpRng.Ranges, oldPArpRng.Ranges)
 	var wasErr error
@@ -321,13 +321,13 @@ func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.Proxy
 		}
 	}
 
-	plugin.Log.Debugf("Proxy ARP range config %s modification done", newPArpRng.Lable)
+	plugin.Log.Debugf("Proxy ARP range config %s modification done", newPArpRng.Label)
 
 	return wasErr
 }
 
 func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Infof("Removing proxy ARP IP range config %s", pArpRng.Lable)
+	plugin.Log.Infof("Removing proxy ARP IP range config %s", pArpRng.Label)
 
 	var wasErr error
 	for _, proxyArpRange := range pArpRng.Ranges {
@@ -359,8 +359,8 @@ func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_Range
 	}
 
 	// Un-register
-	plugin.ProxyArpIfIndices.UnregisterName(pArpRng.Lable)
-	plugin.Log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Lable)
+	plugin.ProxyArpIfIndices.UnregisterName(pArpRng.Label)
+	plugin.Log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Label)
 
 	return wasErr
 }

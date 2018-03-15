@@ -34,7 +34,7 @@ message ArpTable {
 /* Proxy ARP ranges */
 message ProxyArpRanges {
     message RangeList {
-        string lable = 1;                                /* unique proxy ARP range config identifier */
+        string label = 1;                                /* unique proxy ARP range config identifier */
         message Range {
             string first_ip = 1;                        /* first (starting) IP address of the proxy ARP range */
             string last_ip = 2;                         /* last (ending) IP address of the proxy ARP range  */
