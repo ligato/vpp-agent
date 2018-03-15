@@ -96,7 +96,7 @@ func (m *ProxyArpRanges) GetRangeList() []*ProxyArpRanges_RangeList {
 }
 
 type ProxyArpRanges_RangeList struct {
-	Lable  string                            `protobuf:"bytes,1,opt,name=lable,proto3" json:"lable,omitempty"`
+	Label  string                            `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
 	Ranges []*ProxyArpRanges_RangeList_Range `protobuf:"bytes,2,rep,name=ranges" json:"ranges,omitempty"`
 }
 

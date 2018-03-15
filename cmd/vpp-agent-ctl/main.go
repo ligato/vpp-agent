@@ -868,7 +868,7 @@ func addProxyArpRng(db keyval.ProtoBroker) {
 	proxyArpRng := l3.ProxyArpRanges{
 		RangeList: []*l3.ProxyArpRanges_RangeList{
 			{
-				Lable: "proxyArpRng1",
+				Label: "proxyArpRng1",
 				Ranges: []*l3.ProxyArpRanges_RangeList_Range{
 					{
 						FirstIp: "124.168.10.5",
@@ -884,7 +884,7 @@ func addProxyArpRng(db keyval.ProtoBroker) {
 	}
 
 	log.Println(proxyArpRng)
-	db.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Lable), proxyArpRng.RangeList[0])
+	db.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Label), proxyArpRng.RangeList[0])
 }
 
 func delProxyArpRng(db keyval.ProtoBroker) {
