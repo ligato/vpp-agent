@@ -370,7 +370,19 @@ vpp_term: Check STN Rule State
     Log                ${iface}
     Should Be Equal As Strings   ${internal_name}  ${iface}
     Log                ${next_node}
-    
+
+vpp_term: Check STN Rule Deleted
+    [Arguments]        ${node}  ${interface}  ${ipv4}
+    Log Many    ${node}    ${ipv4}
+    [Documentation]    Check STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Show STN Rules    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    Log                ${internal_name}
+    Should Not Contain     ${out}    ${ipv4}
+    Should Not Contain     ${out}    ${internal_name}
+
 vpp_term: Add Trace Afpacket
     [Arguments]        ${node}
     [Documentation]    vpp_term: Add Trace for afpacket interfaces
