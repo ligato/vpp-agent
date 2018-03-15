@@ -400,7 +400,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	// If BVI was set/unset in general or the BVI interface was changed, pass the knowledge to the diff
 	// resolution
 	var bviChanged bool
-	if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI.Name != newBVI.Name) {
+	if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI != nil && newBVI != nil && oldBVI.Name != newBVI.Name) {
 		bviChanged = true
 	}
 
