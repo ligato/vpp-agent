@@ -93,8 +93,6 @@ func (mem *nameToIdxMem) UpdateMetadata(name string, metadata interface{}) (succ
 		}
 	}
 	return false
-
-	return mem.internal.Update(name, meta)
 }
 
 // GetRegistryTitle returns a name assigned to mapping.
