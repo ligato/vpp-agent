@@ -75,7 +75,6 @@ func (mem *nameToIdxMem) RegisterName(name string, idx uint32, metadata interfac
 
 // UnregisterName removes data associated with the given name.
 func (mem *nameToIdxMem) UnregisterName(name string) (idx uint32, metadata interface{}, found bool) {
-
 	meta, found := mem.internal.Delete(name)
 	if found {
 		if internalMeta, ok := meta.(*nameToIdxMeta); ok {
@@ -85,6 +84,17 @@ func (mem *nameToIdxMem) UnregisterName(name string) (idx uint32, metadata inter
 	return
 }
 
+// Update metadata in mapping entry associated with the provided name.
+func (mem *nameToIdxMem) UpdateMetadata(name string, metadata interface{}) (success bool) {
+	meta, found := mem.internal.GetValue(name)
+	if found {
+		if internalMeta, ok := meta.(*nameToIdxMeta); ok {
+			return mem.internal.Update(name, &nameToIdxMeta{internalMeta.idx, metadata})
+		}
+	}
+	return false
+}
+
 // GetRegistryTitle returns a name assigned to mapping.
 func (mem *nameToIdxMem) GetRegistryTitle() string {
 	return mem.internal.GetRegistryTitle()
@@ -92,7 +102,6 @@ func (mem *nameToIdxMem) GetRegistryTitle() string {
 
 // LookupIdx allows to retrieve previously stored index for particular name.
 func (mem *nameToIdxMem) LookupIdx(name string) (uint32, interface{}, bool) {
-
 	meta, found := mem.internal.GetValue(name)
 	if found {
 		if internalMeta, ok := meta.(*nameToIdxMeta); ok {

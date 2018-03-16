@@ -46,8 +46,11 @@ type BDIndexRW interface {
 	// RegisterName adds new item into name-to-index mapping.
 	RegisterName(name string, idx uint32, metadata *l2.BridgeDomains_BridgeDomain)
 
-	// UnregisterName removes an item identified by name from mapping
+	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool)
+
+	// UpdateMetadata updates metadata in existing bridge domain entry.
+	UpdateMetadata(name string, metadata *l2.BridgeDomains_BridgeDomain) (success bool)
 }
 
 // bdIndex is type-safe implementation of mapping between Software interface index
@@ -105,6 +108,11 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 func (bdi *bdIndex) UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
 	idx, meta, exists := bdi.mapping.UnregisterName(name)
 	return idx, bdi.castMetadata(meta), exists
+}
+
+// UpdateMetadata updates metadata in existing bridge domain entry.
+func (bdi *bdIndex) UpdateMetadata(name string, metadata *l2.BridgeDomains_BridgeDomain) (success bool) {
+	return bdi.mapping.UpdateMetadata(name, metadata)
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

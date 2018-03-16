@@ -106,6 +106,95 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 }
 
 /**
+TestUpdateMetadata tests methods:
+* UpdateMetadata()
+*/
+func TestUpdateMetadata(t *testing.T) {
+	RegisterTestingT(t)
+	nameToIdx, bdIndex, _ := testInitialization(t, nil)
+	bd := prepareBridgeDomainData(bdName0, []string{ifaceAName, ifaceBName})
+	bdUpdt1 := prepareBridgeDomainData(bdName0, []string{ifaceCName})
+	bdUpdt2 := prepareBridgeDomainData(bdName0, []string{ifaceDName})
+
+	// Update before registration (no entry created)
+	success := bdIndex.UpdateMetadata(bd.Name, bd)
+	Expect(success).To(BeFalse())
+	_, metadata, found := nameToIdx.LookupIdx(bd.Name)
+	Expect(found).To(BeFalse())
+	Expect(metadata).To(BeNil())
+
+	// Register bridge domain
+	bdIndex.RegisterName(bd.Name, idx0, bd)
+
+	// Evaluate result
+	var names []string
+	names = nameToIdx.ListNames()
+	Expect(names).To(HaveLen(1))
+	Expect(names).To(ContainElement(bd.Name))
+
+	// Evaluate entry metadata
+	_, metadata, found = nameToIdx.LookupIdx(bd.Name)
+	Expect(found).To(BeTrue())
+	Expect(metadata).ToNot(BeNil())
+
+	bdData, ok := metadata.(*l2.BridgeDomains_BridgeDomain)
+	Expect(ok).To(BeTrue())
+	Expect(bdData.Interfaces).To(HaveLen(2))
+
+	var ifNames []string
+	for _, ifData := range bdData.Interfaces {
+		ifNames = append(ifNames, ifData.Name)
+	}
+	Expect(ifNames).To(ContainElement(ifaceAName))
+	Expect(ifNames).To(ContainElement(ifaceBName))
+
+	// Update metadata (same name, different data)
+	success = bdIndex.UpdateMetadata(bdUpdt1.Name, bdUpdt1)
+	Expect(success).To(BeTrue())
+
+	// Evaluate updated metadata
+	_, metadata, found = nameToIdx.LookupIdx(bd.Name)
+	Expect(found).To(BeTrue())
+	Expect(metadata).ToNot(BeNil())
+
+	bdData, ok = metadata.(*l2.BridgeDomains_BridgeDomain)
+	Expect(ok).To(BeTrue())
+	Expect(bdData.Interfaces).To(HaveLen(1))
+
+	ifNames = []string{}
+	for _, ifData := range bdData.Interfaces {
+		ifNames = append(ifNames, ifData.Name)
+	}
+	Expect(ifNames).To(ContainElement(ifaceCName))
+
+	// Update metadata again
+	success = bdIndex.UpdateMetadata(bdUpdt2.Name, bdUpdt2)
+	Expect(success).To(BeTrue())
+
+	// Evaluate updated metadata
+	_, metadata, found = nameToIdx.LookupIdx(bd.Name)
+	Expect(found).To(BeTrue())
+	Expect(metadata).ToNot(BeNil())
+
+	bdData, ok = metadata.(*l2.BridgeDomains_BridgeDomain)
+	Expect(ok).To(BeTrue())
+	Expect(bdData.Interfaces).To(HaveLen(1))
+
+	ifNames = []string{}
+	for _, ifData := range bdData.Interfaces {
+		ifNames = append(ifNames, ifData.Name)
+	}
+	Expect(ifNames).To(ContainElement(ifaceDName))
+
+	// Unregister
+	bdIndex.UnregisterName(bd.Name)
+
+	// Evaluate unregistration
+	names = nameToIdx.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
+/**
 TestLookupIndex tests method:
 * LookupIndex
 */
