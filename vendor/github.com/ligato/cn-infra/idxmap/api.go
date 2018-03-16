@@ -58,6 +58,11 @@ type NamedMappingRW interface {
 	// it is overwritten.
 	Put(name string, value interface{})
 
+	// Update replaces a metadata value in an existing mapping under
+	// provided <name>. If item is missing, it is NOT created
+	// and false value is returned in such a case.
+	Update(name string, value interface{}) (success bool)
+
 	// Delete removes an item associated with the <name> from the mapping.
 	Delete(name string) (value interface{}, exists bool)
 }

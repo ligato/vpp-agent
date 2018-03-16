@@ -69,9 +69,18 @@ func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 // If there is an already stored item with that name, it gets overwritten.
 func (mem *memNamedMapping) Put(name string, value interface{}) {
 	mem.putNameToIdxSync(name, value)
-
 	mem.publishToChannel(name, value)
+}
 
+// Update replaces metadata in existing item with <name>. If item is missing,
+// false value is returned.
+func (mem *memNamedMapping) Update(name string, value interface{}) (success bool) {
+	_, found := mem.nameToIdx[name]
+	if found {
+		mem.putNameToIdxSync(name, value)
+		return true
+	}
+	return false
 }
 
 // Delete removes an item associated with the given <name> from the mapping.
