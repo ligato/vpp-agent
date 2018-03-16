@@ -16,7 +16,7 @@ RPD_NAME="rpd"
 #
 
 # VSWITCH - add static route to 112.1.1.3/32 via 8.42.0.1
-../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/112.1.1.3/32/8.42.0.1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/112.1.1.3/32/8.42.0.1 - << EOF
 {
   "description": "Static route",
   "dst_ip_addr": "112.1.1.3/32",
@@ -25,7 +25,7 @@ RPD_NAME="rpd"
 EOF
 
 # VSWITCH - create memif master to RPD
-../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rpd - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rpd - << EOF
 {
   "name": "memif-to-rpd",
   "type": 2,
@@ -43,7 +43,7 @@ EOF
 EOF
 
 # RPD - create memif slave to VSWITCH
-../vpp-agent-ctl -put /vnf-agent/${RPD_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
+vpp-agent-ctl -put /vnf-agent/${RPD_NAME}/vpp/config/v1/interface/memif-to-vswitch - << EOF
 {
   "name": "memif-to-vswitch",
   "type": 2,
@@ -61,7 +61,7 @@ EOF
 EOF
 
 # RPD - create a loopback interface
-../vpp-agent-ctl -put /vnf-agent/${RPD_NAME}/vpp/config/v1/interface/loop1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${RPD_NAME}/vpp/config/v1/interface/loop1 - << EOF
 {
   "name": "loop1",
   "enabled": true,

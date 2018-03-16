@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	ctlImpl "github.com/ligato/vpp-agent/cmd/vpp-agent-ctl/impl"
 )
 
 func main() {
@@ -47,7 +46,7 @@ func main() {
 		// Remove first argument
 		cmdSet = args[1:]
 	}
-	ctl, err := ctlImpl.Init(etcdCfg, cmdSet)
+	ctl, err := initCtl(etcdCfg, cmdSet)
 	if err != nil {
 		// Error is already printed in 'bytes_broker_impl.go'
 		usage()
@@ -57,167 +56,167 @@ func main() {
 	do(ctl)
 }
 
-func do(ctl *ctlImpl.VppAgentCtl) {
+func do(ctl *VppAgentCtl) {
 	switch ctl.Commands[0] {
 	case "-list":
 		// List all keys
-		ctl.ListAllAgentKeys()
+		ctl.listAllAgentKeys()
 	case "-dump":
 		if len(ctl.Commands) > 2 {
 			// Dump specific key
-			ctl.EtcdDump(ctl.Commands[1])
+			ctl.etcdDump(ctl.Commands[1])
 		} else {
 			// Dump all keys
-			ctl.EtcdDump("")
+			ctl.etcdDump("")
 		}
 	case "-get":
 		if len(ctl.Commands) > 2 {
 			// Get key
-			ctl.EtcdGet(ctl.Commands[1])
+			ctl.etcdGet(ctl.Commands[1])
 		}
 	case "-del":
 		if len(ctl.Commands) > 2 {
 			// Del key
-			ctl.EtcdDel(ctl.Commands[1])
+			ctl.etcdDel(ctl.Commands[1])
 		}
 	case "-put":
 		if len(ctl.Commands) > 3 {
-			ctl.EtcdPut(ctl.Commands[1], ctl.Commands[2])
+			ctl.etcdPut(ctl.Commands[1], ctl.Commands[2])
 		}
 	default:
 		switch ctl.Commands[0] {
 		// ACL
 		case "-acl":
-			ctl.CreateACL()
+			ctl.createACL()
 		case "-acld":
-			ctl.DeleteACL()
+			ctl.deleteACL()
 			// BFD
 		case "-bfds":
-			ctl.CreateBfdSession()
+			ctl.createBfdSession()
 		case "-bfdsd":
-			ctl.DeleteBfdSession()
+			ctl.deleteBfdSession()
 		case "-bfdk":
-			ctl.CreateBfdKey()
+			ctl.createBfdKey()
 		case "-bfdkd":
-			ctl.DeleteBfdKey()
+			ctl.deleteBfdKey()
 		case "-bfde":
-			ctl.CreateBfdEcho()
+			ctl.createBfdEcho()
 		case "-bfded":
-			ctl.DeleteBfdEcho()
+			ctl.deleteBfdEcho()
 			// VPP interfaces
 		case "-eth":
-			ctl.CreateEthernet()
+			ctl.createEthernet()
 		case "-ethd":
-			ctl.DeleteEthernet()
+			ctl.deleteEthernet()
 		case "-tap":
-			ctl.CreateTap()
+			ctl.createTap()
 		case "-tapd":
-			ctl.DeleteTap()
+			ctl.deleteTap()
 		case "-loop":
-			ctl.CreateLoopback()
+			ctl.createLoopback()
 		case "-loopd":
-			ctl.DeleteLoopback()
+			ctl.deleteLoopback()
 		case "-memif":
-			ctl.CreateMemif()
+			ctl.createMemif()
 		case "-memifd":
-			ctl.DeleteMemif()
+			ctl.deleteMemif()
 		case "-vxlan":
-			ctl.CreateVxlan()
+			ctl.createVxlan()
 		case "-vxland":
-			ctl.DeleteVxlan()
+			ctl.deleteVxlan()
 		case "-afpkt":
-			ctl.CreateAfPacket()
+			ctl.createAfPacket()
 		case "-afpktd":
-			ctl.DeleteAfPacket()
+			ctl.deleteAfPacket()
 			// Linux interfaces
 		case "-veth":
-			ctl.CreateVethPair()
+			ctl.createVethPair()
 		case "-vethd":
-			ctl.DeleteVethPair()
+			ctl.deleteVethPair()
 		case "-ltap":
-			ctl.CreateLinuxTap()
+			ctl.createLinuxTap()
 		case "-ltapd":
-			ctl.DeleteLinuxTap()
+			ctl.deleteLinuxTap()
 			// STN
 		case "-stn":
-			ctl.CreateStn()
+			ctl.createStn()
 		case "-stnd":
-			ctl.DeleteStn()
+			ctl.deleteStn()
 			// NAT
 		case "-gnat":
-			ctl.CreateGlobalNat()
+			ctl.createGlobalNat()
 		case "-gnatd":
-			ctl.DeleteGlobalNat()
+			ctl.deleteGlobalNat()
 		case "-snat":
-			ctl.CreateSNat()
+			ctl.createSNat()
 		case "-snatd":
-			ctl.DeleteSNat()
+			ctl.deleteSNat()
 		case "-dnat":
-			ctl.CreateDNat()
+			ctl.createDNat()
 		case "-dnatd":
-			ctl.DeleteDNat()
+			ctl.deleteDNat()
 			// Bridge domains
 		case "-bd":
-			ctl.CreateBridgeDomain()
+			ctl.createBridgeDomain()
 		case "-bdd":
-			ctl.DeleteBridgeDomain()
+			ctl.deleteBridgeDomain()
 			// FIB
 		case "-fib":
-			ctl.CreateFib()
+			ctl.createFib()
 		case "-fibd":
-			ctl.DeleteFib()
+			ctl.deleteFib()
 			// L2 xConnect
 		case "-xconn":
-			ctl.CreateXConn()
+			ctl.createXConn()
 		case "-xconnd":
-			ctl.DeleteXConn()
+			ctl.deleteXConn()
 			// VPP routes
 		case "-route":
-			ctl.CreateRoute()
+			ctl.createRoute()
 		case "-routed":
-			ctl.DeleteRoute()
+			ctl.deleteRoute()
 			// Linux routes
 		case "-lrte":
-			ctl.CreateLinuxRoute()
+			ctl.createLinuxRoute()
 		case "-lrted":
-			ctl.DeleteLinuxRoute()
+			ctl.deleteLinuxRoute()
 			// VPP ARP
 		case "-arp":
-			ctl.CreateArp()
+			ctl.createArp()
 		case "-arpd":
-			ctl.DeleteArp()
+			ctl.deleteArp()
 		case "-prxi":
-			ctl.AddProxyArpInterfaces()
+			ctl.addProxyArpInterfaces()
 		case "-prxid":
-			ctl.DeleteProxyArpInterfaces()
+			ctl.deleteProxyArpInterfaces()
 		case "-prxr":
-			ctl.AddProxyArpRanges()
+			ctl.addProxyArpRanges()
 		case "-prxrd":
-			ctl.DeleteProxyArpRanges()
+			ctl.deleteProxyArpRanges()
 			// Linux ARP
 		case "-larp":
-			ctl.CreateLinuxArp()
+			ctl.createLinuxArp()
 		case "-larpd":
-			ctl.DeleteLinuxArp()
+			ctl.deleteLinuxArp()
 			// L4 plugin
 		case "-el4":
-			ctl.EnableL4Features()
+			ctl.enableL4Features()
 		case "-dl4":
-			ctl.DisableL4Features()
+			ctl.disableL4Features()
 		case "-appns":
-			ctl.CreateAppNamespace()
+			ctl.createAppNamespace()
 		case "-appnsd":
-			ctl.DeleteAppNamespace()
+			ctl.deleteAppNamespace()
 			// TXN (transaction)
 		case "-txn":
-			ctl.CreateTxn()
+			ctl.createTxn()
 		case "-txnd":
-			ctl.DeleteTxn()
+			ctl.deleteTxn()
 			// Error reporting
 		case "-errIf":
-			ctl.ReportIfaceErrorState()
+			ctl.reportIfaceErrorState()
 		case "-errBd":
-			ctl.ReportBdErrorState()
+			ctl.reportBdErrorState()
 		default:
 			usage()
 		}
@@ -228,32 +227,49 @@ func do(ctl *ctlImpl.VppAgentCtl) {
 func usage() {
 	var buffer bytes.Buffer
 	// Crud operation
-	buffer.WriteString("\nCrud operations with .json\n\t-put <etc_key> <json-file>\n\t-get <etc_key>\n\t-del <etc_key>\n\t-dump\n\t-list\n\n")
-	// Prearranged flags
-	buffer.WriteString("Prearranged flags (create, delete):\n")
-	// ACL
-	buffer.WriteString("\t-acl,\t-acld\t- Access List\n")
-	// BFD
-	buffer.WriteString("\t-bfds,\t-bfdsd\t- BFD session\n\t-bfdk,\t-bfdkd\t- BFD authentication key\n\t-bfde,\t-bfded\t- BFD echo function\n")
-	// Interfaces
-	buffer.WriteString("\t-eth,\t-ethd\t- Physical interface\n\t-tap,\t-tapd\t- TAP type interface\n\t-loop,\t-loopd\t- Loop type interface\n")
-	buffer.WriteString("\t-memif,\t-memifd\t- Memif type interface\n\t-vxlan,\t-vxland\t- VxLAN type interface\n\t-afpkt,\t-afpktd\t- af_packet type interface\n")
-	// Linux interfaces
-	buffer.WriteString("\t-veth,\t-vethd\t- Linux VETH interface pair\n\t-ltap,\t-ltapd\t- Linux TAP interface\n")
-	// STN
-	buffer.WriteString("\t-stn,\t-stnd\t- STN rule\n")
-	// NAT
-	buffer.WriteString("\t-gnat,\t-gnatd\t- Global NAT configuration\n\t-snat,\t-snatd\t- SNAT configuration\n\t-dnat,\t-dnatd\t- DNAT configuration\n")
-	// L2
-	buffer.WriteString("\t-bd,\t-bdd\t- Bridge doamin\n\t-fib,\t-fibd\t- L2 FIB\n\t-xconn,\t-xconnd\t- L2 X-Connect\n")
-	// L3
-	buffer.WriteString("\t-route,\t-routed\t- L3 route\n\t-arp,\t-arpd\t- ARP entry\n\t-prxi,\t-prxid\t- Proxy ARP interfaces\n\t-prxr,\t-prxrd\t- Proxy ARP ranges\n")
-	// Linux L3
-	buffer.WriteString("\t-lrte,\t-lrted\t- Linux route\n\t-larp,\t-larpd\t- Linux ARP entry\n")
-	// L4
-	buffer.WriteString("\t-el4,\t-dl4\t- L4 features\n")
-	buffer.WriteString("\t-appns,\t-appnsd\t- Application namespace\n\n")
-	// Other
-	buffer.WriteString("Other:\n\t-txn,\t-txnd\t- Transaction\n\t-errIf\t\t- Interface error state report\n\t-errBd\t\t- Bridge domain error state report\n")
+	buffer.WriteString(` 
+
+	Crud operations with .json:
+		-put	<etc_key>    <json-file>
+		-get	<etc_key>
+		-del	<etc_key>
+		-dump
+		-list
+
+	Prearranged flags (create, delete):
+		-acl,	-acld	- Access List
+		-bfds,	-bfdsd	- BFD session
+		-bfdk,	-bfdkd	- BFD authentication key
+		-bfde,	-bfded	- BFD echo function
+		-eth,	-ethd	- Physical interface
+		-tap,	-tapd	- TAP type interface
+		-loop,	-loopd	- Loop type interface
+		-memif,	-memifd	- Memif type interface
+		-vxlan,	-vxland	- VxLAN type interface
+		-afpkt,	-afpktd	- af_packet type interface
+		-veth,	-vethd	- Linux VETH interface pair
+		-ltap,	-ltapd	- Linux TAP interface
+		-stn,	-stnd	- STN rule
+		-gnat,	-gnatd	- Global NAT configuration
+		-snat,	-snatd	- SNAT configuration
+		-dnat,	-dnatd	- DNAT configuration
+		-bd,	-bdd	- Bridge doamin
+		-fib,	-fibd	- L2 FIB
+		-xconn,	-xconnd	- L2 X-Connect
+		-route,	-routed	- L3 route
+		-arp,	-arpd	- ARP entry
+		-prxi,	-prxid	- Proxy ARP interfaces
+		-prxr,	-prxrd	- Proxy ARP ranges
+		-lrte,	-lrted	- Linux route
+		-larp,	-larpd	- Linux ARP entry
+		-el4,	-dl4	- L4 features
+		-appns,	-appnsd	- Application namespace
+
+	Other:
+		-txn,	-txnd	- Transaction
+		-errIf		- Interface error state report
+		-errBd		- Bridge domain error state report
+	`)
+
 	logrus.DefaultLogger().Print(buffer.String())
 }

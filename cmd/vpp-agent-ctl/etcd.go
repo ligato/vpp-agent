@@ -16,7 +16,7 @@
 // VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
 // be used to demonstrate the usage of VPP Agent plugins and their APIs.
 
-package impl
+package main
 
 import (
 	"bufio"
@@ -33,7 +33,7 @@ import (
 )
 
 // CreateEtcdClient uses environment variable or ETCD config file to establish connection
-func (ctl *VppAgentCtl) CreateEtcdClient(configFile string) (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker, error) {
+func (ctl *VppAgentCtl) createEtcdClient(configFile string) (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker, error) {
 	var err error
 
 	if configFile == "" {
@@ -62,7 +62,7 @@ func (ctl *VppAgentCtl) CreateEtcdClient(configFile string) (*etcdv3.BytesConnec
 }
 
 // ListAllAgentKeys prints all keys stored in the broker
-func (ctl *VppAgentCtl) ListAllAgentKeys() {
+func (ctl *VppAgentCtl) listAllAgentKeys() {
 	ctl.Log.Debug("listAllAgentKeys")
 
 	it, err := ctl.broker.ListKeys(ctl.serviceLabel.GetAllAgentsPrefix())
@@ -79,7 +79,7 @@ func (ctl *VppAgentCtl) ListAllAgentKeys() {
 }
 
 // EtcdGet uses ETCD connection to get value for specific key
-func (ctl *VppAgentCtl) EtcdGet(key string) {
+func (ctl *VppAgentCtl) etcdGet(key string) {
 	ctl.Log.Debug("GET ", key)
 
 	data, found, _, err := ctl.bytesConnection.GetValue(key)
@@ -94,7 +94,7 @@ func (ctl *VppAgentCtl) EtcdGet(key string) {
 }
 
 // EtcdPut stores key/data value
-func (ctl *VppAgentCtl) EtcdPut(key string, file string) {
+func (ctl *VppAgentCtl) etcdPut(key string, file string) {
 	input, err := ctl.readData(file)
 
 	ctl.Log.Println("DB putting ", key, " ", string(input))
@@ -107,7 +107,7 @@ func (ctl *VppAgentCtl) EtcdPut(key string, file string) {
 }
 
 // EtcdDel removes data under provided key
-func (ctl *VppAgentCtl) EtcdDel(key string) {
+func (ctl *VppAgentCtl) etcdDel(key string) {
 	found, err := ctl.bytesConnection.Delete(key, datasync.WithPrefix())
 	if err != nil {
 		ctl.Log.Error(err)
@@ -121,7 +121,7 @@ func (ctl *VppAgentCtl) EtcdDel(key string) {
 }
 
 // EtcdDump lists values under key. If no key is provided, all data is read.
-func (ctl *VppAgentCtl) EtcdDump(key string) {
+func (ctl *VppAgentCtl) etcdDump(key string) {
 	ctl.Log.Debug("DUMP ", key)
 
 	data, err := ctl.bytesConnection.ListValues(key)
@@ -132,7 +132,6 @@ func (ctl *VppAgentCtl) EtcdDump(key string) {
 
 	var found bool
 	for {
-		found = true
 		kv, stop := data.GetNext()
 		if stop {
 			break
@@ -140,7 +139,7 @@ func (ctl *VppAgentCtl) EtcdDump(key string) {
 		ctl.Log.Println(kv.GetKey())
 		ctl.Log.Println(string(kv.GetValue()))
 		ctl.Log.Println()
-
+		found = true
 	}
 	if !found {
 		ctl.Log.Debug("No value found for the key", key)

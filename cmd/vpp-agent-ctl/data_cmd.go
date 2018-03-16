@@ -16,7 +16,7 @@
 // VPP Agent plugins. In addition to testing, the vpp-agent-ctl tool can
 // be used to demonstrate the usage of VPP Agent plugins and their APIs.
 
-package impl
+package main
 
 import (
 	"log"
@@ -50,7 +50,7 @@ type VppAgentCtl struct {
 }
 
 // Init creates new VppAgentCtl object with initialized fields
-func Init(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
+func initCtl(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
 	var err error
 	ctl := &VppAgentCtl{
 		Log:      logrus.DefaultLogger(),
@@ -62,7 +62,7 @@ func Init(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
 	flag.CommandLine.ParseEnv(os.Environ())
 	ctl.serviceLabel.Init()
 	// Establish ETCD connection
-	ctl.bytesConnection, ctl.broker, err = ctl.CreateEtcdClient(etcdCfg)
+	ctl.bytesConnection, ctl.broker, err = ctl.createEtcdClient(etcdCfg)
 
 	return ctl, err
 }
@@ -70,7 +70,7 @@ func Init(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
 // Access lists
 
 // CreateACL puts access list config to the ETCD
-func (ctl *VppAgentCtl) CreateACL() {
+func (ctl *VppAgentCtl) createACL() {
 	accessList := acl.AccessLists{
 		Acl: []*acl.AccessLists_Acl{
 			// Single ACL entry
@@ -197,7 +197,7 @@ func (ctl *VppAgentCtl) CreateACL() {
 }
 
 // DeleteACL removes access list config from the ETCD
-func (ctl *VppAgentCtl) DeleteACL() {
+func (ctl *VppAgentCtl) deleteACL() {
 	aclKey := acl.Key("acl1")
 
 	ctl.Log.Println("Deleting", aclKey)
@@ -207,7 +207,7 @@ func (ctl *VppAgentCtl) DeleteACL() {
 // Bidirectional forwarding detection
 
 // CreateBfdSession puts bidirectional forwarding detection session config to the ETCD
-func (ctl *VppAgentCtl) CreateBfdSession() {
+func (ctl *VppAgentCtl) createBfdSession() {
 	session := bfd.SingleHopBFD{
 		Sessions: []*bfd.SingleHopBFD_Session{
 			{
@@ -231,7 +231,7 @@ func (ctl *VppAgentCtl) CreateBfdSession() {
 }
 
 // DeleteBfdSession removes bidirectional forwarding detection session config from the ETCD
-func (ctl *VppAgentCtl) DeleteBfdSession() {
+func (ctl *VppAgentCtl) deleteBfdSession() {
 	sessionKey := bfd.SessionKey("memif1")
 
 	ctl.Log.Println("Deleting", sessionKey)
@@ -239,7 +239,7 @@ func (ctl *VppAgentCtl) DeleteBfdSession() {
 }
 
 // CreateBfdKey puts bidirectional forwarding detection authentication key config to the ETCD
-func (ctl *VppAgentCtl) CreateBfdKey() {
+func (ctl *VppAgentCtl) createBfdKey() {
 	authKey := bfd.SingleHopBFD{
 		Keys: []*bfd.SingleHopBFD_Key{
 			{
@@ -255,7 +255,7 @@ func (ctl *VppAgentCtl) CreateBfdKey() {
 }
 
 // DeleteBfdKey removes bidirectional forwarding detection authentication key config from the ETCD
-func (ctl *VppAgentCtl) DeleteBfdKey() {
+func (ctl *VppAgentCtl) deleteBfdKey() {
 	bfdAuthKeyKey := bfd.AuthKeysKey(string(1))
 
 	ctl.Log.Println("Deleting", bfdAuthKeyKey)
@@ -263,7 +263,7 @@ func (ctl *VppAgentCtl) DeleteBfdKey() {
 }
 
 // CreateBfdEcho puts bidirectional forwarding detection echo detection config to the ETCD
-func (ctl *VppAgentCtl) CreateBfdEcho() {
+func (ctl *VppAgentCtl) createBfdEcho() {
 	echoFunction := bfd.SingleHopBFD{
 		EchoFunction: &bfd.SingleHopBFD_EchoFunction{
 			EchoSourceInterface: "memif1",
@@ -275,7 +275,7 @@ func (ctl *VppAgentCtl) CreateBfdEcho() {
 }
 
 // DeleteBfdEcho removes bidirectional forwarding detection echo detection config from the ETCD
-func (ctl *VppAgentCtl) DeleteBfdEcho() {
+func (ctl *VppAgentCtl) deleteBfdEcho() {
 	echoFunctionKey := bfd.EchoFunctionKey("memif1")
 
 	ctl.Log.Println("Deleting", echoFunctionKey)
@@ -285,7 +285,7 @@ func (ctl *VppAgentCtl) DeleteBfdEcho() {
 // VPP interfaces
 
 // CreateEthernet puts ethernet type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateEthernet() {
+func (ctl *VppAgentCtl) createEthernet() {
 	ethernet := &interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -309,7 +309,7 @@ func (ctl *VppAgentCtl) CreateEthernet() {
 }
 
 // DeleteEthernet removes ethernet type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteEthernet() {
+func (ctl *VppAgentCtl) deleteEthernet() {
 	ethernetKey := interfaces.InterfaceKey("GigabitEthernet0/8/0")
 
 	ctl.Log.Println("Deleting", ethernetKey)
@@ -317,7 +317,7 @@ func (ctl *VppAgentCtl) DeleteEthernet() {
 }
 
 // CreateTap puts TAP type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateTap() {
+func (ctl *VppAgentCtl) createTap() {
 	tap := &interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -344,7 +344,7 @@ func (ctl *VppAgentCtl) CreateTap() {
 }
 
 // DeleteTap removes TAP type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteTap() {
+func (ctl *VppAgentCtl) deleteTap() {
 	tapKey := interfaces.InterfaceKey("tap1")
 
 	ctl.Log.Println("Deleting", tapKey)
@@ -352,7 +352,7 @@ func (ctl *VppAgentCtl) DeleteTap() {
 }
 
 // CreateLoopback puts loopback type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateLoopback() {
+func (ctl *VppAgentCtl) createLoopback() {
 	loopback := &interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -378,7 +378,7 @@ func (ctl *VppAgentCtl) CreateLoopback() {
 }
 
 // DeleteLoopback removes loopback type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteLoopback() {
+func (ctl *VppAgentCtl) deleteLoopback() {
 	loopbackKey := interfaces.InterfaceKey("loop1")
 
 	ctl.Log.Println("Deleting", loopbackKey)
@@ -386,7 +386,7 @@ func (ctl *VppAgentCtl) DeleteLoopback() {
 }
 
 // CreateMemif puts memif type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateMemif() {
+func (ctl *VppAgentCtl) createMemif() {
 	memif := &interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -417,7 +417,7 @@ func (ctl *VppAgentCtl) CreateMemif() {
 }
 
 // DeleteMemif removes memif type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteMemif() {
+func (ctl *VppAgentCtl) deleteMemif() {
 	memifKey := interfaces.InterfaceKey("memif1")
 
 	ctl.Log.Println("Deleting", memifKey)
@@ -425,7 +425,7 @@ func (ctl *VppAgentCtl) DeleteMemif() {
 }
 
 // CreateVxLan puts VxLAN type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateVxlan() {
+func (ctl *VppAgentCtl) createVxlan() {
 	vxlan := &interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -454,7 +454,7 @@ func (ctl *VppAgentCtl) CreateVxlan() {
 }
 
 // DeleteVxlan removes VxLAN type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteVxlan() {
+func (ctl *VppAgentCtl) deleteVxlan() {
 	vxlanKey := interfaces.InterfaceKey("vxlan1")
 
 	ctl.Log.Println("Deleting", vxlanKey)
@@ -462,7 +462,7 @@ func (ctl *VppAgentCtl) DeleteVxlan() {
 }
 
 // CreateAfPacket puts Af-packet type interface config to the ETCD
-func (ctl *VppAgentCtl) CreateAfPacket() {
+func (ctl *VppAgentCtl) createAfPacket() {
 	ifs := interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -491,7 +491,7 @@ func (ctl *VppAgentCtl) CreateAfPacket() {
 }
 
 // DeleteAfPacket removes AF-Packet type interface config from the ETCD
-func (ctl *VppAgentCtl) DeleteAfPacket() {
+func (ctl *VppAgentCtl) deleteAfPacket() {
 	afPacketKey := interfaces.InterfaceKey("afpacket1")
 
 	ctl.Log.Println("Deleting", afPacketKey)
@@ -501,7 +501,7 @@ func (ctl *VppAgentCtl) DeleteAfPacket() {
 // Linux interfaces
 
 // CreateVethPair puts two VETH type interfaces to the ETCD
-func (ctl *VppAgentCtl) CreateVethPair() {
+func (ctl *VppAgentCtl) createVethPair() {
 	// Note: VETH interfaces are created in pairs
 	veths := linuxIf.LinuxInterfaces{
 		Interface: []*linuxIf.LinuxInterfaces_Interface{
@@ -548,7 +548,7 @@ func (ctl *VppAgentCtl) CreateVethPair() {
 }
 
 // DeleteVethPair removes VETH pair interfaces from the ETCD
-func (ctl *VppAgentCtl) DeleteVethPair() {
+func (ctl *VppAgentCtl) deleteVethPair() {
 	veth1Key := linuxIf.InterfaceKey("veth1")
 	veth2Key := linuxIf.InterfaceKey("veth2")
 
@@ -559,7 +559,7 @@ func (ctl *VppAgentCtl) DeleteVethPair() {
 }
 
 // CreateLinuxTap puts linux TAP type interface configuration to the ETCD
-func (ctl *VppAgentCtl) CreateLinuxTap() {
+func (ctl *VppAgentCtl) createLinuxTap() {
 	linuxTap := linuxIf.LinuxInterfaces{
 		Interface: []*linuxIf.LinuxInterfaces_Interface{
 			{
@@ -585,7 +585,7 @@ func (ctl *VppAgentCtl) CreateLinuxTap() {
 }
 
 // DeleteLinuxTap removes linux TAP type interface configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteLinuxTap() {
+func (ctl *VppAgentCtl) deleteLinuxTap() {
 	linuxTapKey := linuxIf.InterfaceKey("tap1")
 
 	ctl.Log.Println("Deleting", linuxTapKey)
@@ -595,7 +595,7 @@ func (ctl *VppAgentCtl) DeleteLinuxTap() {
 // STN
 
 // CreateStn puts STN configuration to the ETCD
-func (ctl *VppAgentCtl) CreateStn() {
+func (ctl *VppAgentCtl) createStn() {
 	stnRule := stn.StnRule{
 		RuleName:  "rule1",
 		IpAddress: "192.168.50.12",
@@ -607,7 +607,7 @@ func (ctl *VppAgentCtl) CreateStn() {
 }
 
 // DeleteStn removes STN configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteStn() {
+func (ctl *VppAgentCtl) deleteStn() {
 	stnRuleKey := stn.Key("rule1")
 
 	ctl.Log.Println("Deleting", stnRuleKey)
@@ -617,7 +617,7 @@ func (ctl *VppAgentCtl) DeleteStn() {
 // Network address translation
 
 // CreateGlobalNat puts global NAT44 configuration to the ETCD
-func (ctl *VppAgentCtl) CreateGlobalNat() {
+func (ctl *VppAgentCtl) createGlobalNat() {
 	natGlobal := &nat.Nat44Global{
 		Forwarding: false,
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
@@ -663,7 +663,7 @@ func (ctl *VppAgentCtl) CreateGlobalNat() {
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteGlobalNat() {
+func (ctl *VppAgentCtl) deleteGlobalNat() {
 	globalNat := nat.GlobalConfigKey()
 
 	ctl.Log.Println("Deleting", globalNat)
@@ -671,7 +671,7 @@ func (ctl *VppAgentCtl) DeleteGlobalNat() {
 }
 
 // CreateSNat puts SNAT configuration to the ETCD
-func (ctl *VppAgentCtl) CreateSNat() {
+func (ctl *VppAgentCtl) createSNat() {
 	// Note: SNAT not implemented
 	sNat := &nat.Nat44SNat_SNatConfig{
 		Label: "snat1",
@@ -682,7 +682,7 @@ func (ctl *VppAgentCtl) CreateSNat() {
 }
 
 // DeleteSNat removes SNAT configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteSNat() {
+func (ctl *VppAgentCtl) deleteSNat() {
 	sNat := nat.SNatKey("snat1")
 
 	ctl.Log.Println("Deleting", sNat)
@@ -690,7 +690,7 @@ func (ctl *VppAgentCtl) DeleteSNat() {
 }
 
 // CreateDNat puts DNAT configuration to the ETCD
-func (ctl *VppAgentCtl) CreateDNat() {
+func (ctl *VppAgentCtl) createDNat() {
 	// DNat config
 	dNat := &nat.Nat44DNat_DNatConfig{
 		Label: "dnat1",
@@ -731,7 +731,7 @@ func (ctl *VppAgentCtl) CreateDNat() {
 }
 
 // DeleteDNat removes DNAT configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteDNat() {
+func (ctl *VppAgentCtl) deleteDNat() {
 	dNat := nat.DNatKey("dnat1")
 
 	ctl.Log.Println("Deleting", dNat)
@@ -741,7 +741,7 @@ func (ctl *VppAgentCtl) DeleteDNat() {
 // Bridge domains
 
 // CreateBridgeDomain puts L2 bridge domain configuration to the ETCD
-func (ctl *VppAgentCtl) CreateBridgeDomain() {
+func (ctl *VppAgentCtl) createBridgeDomain() {
 	bd := l2.BridgeDomains{
 		BridgeDomains: []*l2.BridgeDomains_BridgeDomain{
 			{
@@ -784,7 +784,7 @@ func (ctl *VppAgentCtl) CreateBridgeDomain() {
 }
 
 // DeleteBridgeDomain removes bridge domain configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteBridgeDomain() {
+func (ctl *VppAgentCtl) deleteBridgeDomain() {
 	bdKey := l2.BridgeDomainKey("bd1")
 
 	ctl.Log.Println("Deleting", bdKey)
@@ -794,7 +794,7 @@ func (ctl *VppAgentCtl) DeleteBridgeDomain() {
 // FIB
 
 // CreateFib puts L2 FIB entry configuration to the ETCD
-func (ctl *VppAgentCtl) CreateFib() {
+func (ctl *VppAgentCtl) createFib() {
 	fib := l2.FibTableEntries{
 		FibTableEntry: []*l2.FibTableEntries_FibTableEntry{
 			{
@@ -813,7 +813,7 @@ func (ctl *VppAgentCtl) CreateFib() {
 }
 
 // DeleteFib removes FIB entry configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteFib() {
+func (ctl *VppAgentCtl) deleteFib() {
 	fibKey := l2.FibKey("bd1", "34:EA:FE:3C:64:A7")
 
 	ctl.Log.Println("Deleting", fibKey)
@@ -823,7 +823,7 @@ func (ctl *VppAgentCtl) DeleteFib() {
 // L2 xConnect
 
 // CreateXConn puts L2 cross connect configuration to the ETCD
-func (ctl *VppAgentCtl) CreateXConn() {
+func (ctl *VppAgentCtl) createXConn() {
 	xc := l2.XConnectPairs{
 		XConnectPairs: []*l2.XConnectPairs_XConnectPair{
 			{
@@ -838,7 +838,7 @@ func (ctl *VppAgentCtl) CreateXConn() {
 }
 
 // DeleteXConn removes cross connect configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteXConn() {
+func (ctl *VppAgentCtl) deleteXConn() {
 	xcKey := l2.XConnectKey("loop1")
 
 	ctl.Log.Println("Deleting", xcKey)
@@ -848,7 +848,7 @@ func (ctl *VppAgentCtl) DeleteXConn() {
 // VPP routes
 
 // CreateRoute puts VPP route configuration to the ETCD
-func (ctl *VppAgentCtl) CreateRoute() {
+func (ctl *VppAgentCtl) createRoute() {
 	routes := l3.StaticRoutes{
 		Route: []*l3.StaticRoutes_Route{
 			{
@@ -866,7 +866,7 @@ func (ctl *VppAgentCtl) CreateRoute() {
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteRoute() {
+func (ctl *VppAgentCtl) deleteRoute() {
 	routeKey := l3.RouteKey(0, "10.1.1.3/32", "192.168.1.13")
 
 	ctl.Log.Println("Deleting", routeKey)
@@ -876,7 +876,7 @@ func (ctl *VppAgentCtl) DeleteRoute() {
 // Linux routes
 
 // CreateLinuxRoute puts linux route configuration to the ETCD
-func (ctl *VppAgentCtl) CreateLinuxRoute() {
+func (ctl *VppAgentCtl) createLinuxRoute() {
 	linuxRoutes := linuxL3.LinuxStaticRoutes{
 		Route: []*linuxL3.LinuxStaticRoutes_Route{
 			// Static route
@@ -911,7 +911,7 @@ func (ctl *VppAgentCtl) CreateLinuxRoute() {
 }
 
 // DeleteLinuxRoute removes linux route configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteLinuxRoute() {
+func (ctl *VppAgentCtl) deleteLinuxRoute() {
 	linuxStaticRouteKey := linuxL3.StaticRouteKey("route1")
 	linuxDefaultRouteKey := linuxL3.StaticRouteKey("defRoute")
 
@@ -924,7 +924,7 @@ func (ctl *VppAgentCtl) DeleteLinuxRoute() {
 // VPP ARP
 
 // CreateArp puts VPP ARP entry configuration to the ETCD
-func (ctl *VppAgentCtl) CreateArp() {
+func (ctl *VppAgentCtl) createArp() {
 	arp := l3.ArpTable{
 		ArpTableEntries: []*l3.ArpTable_ArpTableEntry{
 			{
@@ -941,7 +941,7 @@ func (ctl *VppAgentCtl) CreateArp() {
 }
 
 // DeleteArp removes VPP ARP entry configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteArp() {
+func (ctl *VppAgentCtl) deleteArp() {
 	arpKey := l3.ArpEntryKey("tap1", "192.168.10.21")
 
 	ctl.Log.Println("Deleting", arpKey)
@@ -949,7 +949,7 @@ func (ctl *VppAgentCtl) DeleteArp() {
 }
 
 // AddProxyArpInterfaces puts VPP proxy ARP interface configuration to the ETCD
-func (ctl *VppAgentCtl) AddProxyArpInterfaces() {
+func (ctl *VppAgentCtl) addProxyArpInterfaces() {
 	proxyArpIf := l3.ProxyArpInterfaces{
 		InterfaceList: []*l3.ProxyArpInterfaces_InterfaceList{
 			{
@@ -971,7 +971,7 @@ func (ctl *VppAgentCtl) AddProxyArpInterfaces() {
 }
 
 // DeleteProxyArpInterfaces removes VPP proxy ARP interface configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteProxyArpInterfaces() {
+func (ctl *VppAgentCtl) deleteProxyArpInterfaces() {
 	arpKey := l3.ProxyArpInterfaceKey("proxyArpIf1")
 
 	ctl.Log.Println("Deleting", arpKey)
@@ -979,11 +979,11 @@ func (ctl *VppAgentCtl) DeleteProxyArpInterfaces() {
 }
 
 // AddProxyArpRanges puts VPP proxy ARP range configuration to the ETCD
-func (ctl *VppAgentCtl) AddProxyArpRanges() {
+func (ctl *VppAgentCtl) addProxyArpRanges() {
 	proxyArpRng := l3.ProxyArpRanges{
 		RangeList: []*l3.ProxyArpRanges_RangeList{
 			{
-				Lable: "proxyArpRng1",
+				Label: "proxyArpRng1",
 				Ranges: []*l3.ProxyArpRanges_RangeList_Range{
 					{
 						FirstIp: "124.168.10.5",
@@ -999,11 +999,11 @@ func (ctl *VppAgentCtl) AddProxyArpRanges() {
 	}
 
 	log.Println(proxyArpRng)
-	ctl.broker.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Lable), proxyArpRng.RangeList[0])
+	ctl.broker.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Label), proxyArpRng.RangeList[0])
 }
 
 // DeleteProxyArpranges removes VPP proxy ARP range configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteProxyArpRanges() {
+func (ctl *VppAgentCtl) deleteProxyArpRanges() {
 	arpKey := l3.ProxyArpRangeKey("proxyArpRng1")
 
 	ctl.Log.Println("Deleting", arpKey)
@@ -1013,7 +1013,7 @@ func (ctl *VppAgentCtl) DeleteProxyArpRanges() {
 // Linux ARP
 
 // CreateLinuxArp puts linux ARP entry configuration to the ETCD
-func (ctl *VppAgentCtl) CreateLinuxArp() {
+func (ctl *VppAgentCtl) createLinuxArp() {
 	linuxArp := linuxL3.LinuxStaticArpEntries{
 		ArpEntry: []*linuxL3.LinuxStaticArpEntries_ArpEntry{
 			{
@@ -1040,7 +1040,7 @@ func (ctl *VppAgentCtl) CreateLinuxArp() {
 }
 
 // DeleteLinuxArp removes Linux ARP entry configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteLinuxArp() {
+func (ctl *VppAgentCtl) deleteLinuxArp() {
 	linuxArpKey := linuxL3.StaticArpKey("arp1")
 
 	ctl.Log.Println("Deleting", linuxArpKey)
@@ -1050,7 +1050,7 @@ func (ctl *VppAgentCtl) DeleteLinuxArp() {
 // L4 plugin
 
 // EnableL4Features enables L4 configuration on the VPP
-func (ctl *VppAgentCtl) EnableL4Features() {
+func (ctl *VppAgentCtl) enableL4Features() {
 	l4Features := &l4.L4Features{
 		Enabled: true,
 	}
@@ -1060,7 +1060,7 @@ func (ctl *VppAgentCtl) EnableL4Features() {
 }
 
 // DisableL4Features disables L4 configuration on the VPP
-func (ctl *VppAgentCtl) DisableL4Features() {
+func (ctl *VppAgentCtl) disableL4Features() {
 	l4Features := &l4.L4Features{
 		Enabled: false,
 	}
@@ -1070,7 +1070,7 @@ func (ctl *VppAgentCtl) DisableL4Features() {
 }
 
 // CreateAppNamespace puts application namespace configuration to the ETCD
-func (ctl *VppAgentCtl) CreateAppNamespace() {
+func (ctl *VppAgentCtl) createAppNamespace() {
 	appNs := l4.AppNamespaces{
 		AppNamespaces: []*l4.AppNamespaces_AppNamespace{
 			{
@@ -1086,7 +1086,7 @@ func (ctl *VppAgentCtl) CreateAppNamespace() {
 }
 
 // DeleteAppNamespace removes application namespace configuration from the ETCD
-func (ctl *VppAgentCtl) DeleteAppNamespace() {
+func (ctl *VppAgentCtl) deleteAppNamespace() {
 	// Note: application namespace cannot be removed, missing API in VPP
 	ctl.Log.Println("App namespace delete not supported")
 }
@@ -1094,7 +1094,7 @@ func (ctl *VppAgentCtl) DeleteAppNamespace() {
 // TXN transactions
 
 // CreateTxn demonstrates transaction - two interfaces and bridge domain put to the ETCD using txn
-func (ctl *VppAgentCtl) CreateTxn() {
+func (ctl *VppAgentCtl) createTxn() {
 	ifs := interfaces.Interfaces{
 		Interface: []*interfaces.Interfaces_Interface{
 			{
@@ -1159,7 +1159,7 @@ func (ctl *VppAgentCtl) CreateTxn() {
 }
 
 // DeleteTxn demonstrates transaction - two interfaces and bridge domain removed from the ETCD using txn
-func (ctl *VppAgentCtl) DeleteTxn() {
+func (ctl *VppAgentCtl) deleteTxn() {
 	ctl.Log.Println("Deleting txn items")
 	t := ctl.broker.NewTxn()
 	t.Delete(interfaces.InterfaceKey("tap1"))
@@ -1172,7 +1172,7 @@ func (ctl *VppAgentCtl) DeleteTxn() {
 // Error reporting
 
 // ReportIfaceErrorState reports interface status data to the ETCD
-func (ctl *VppAgentCtl) ReportIfaceErrorState() {
+func (ctl *VppAgentCtl) reportIfaceErrorState() {
 	ifErr, err := ctl.broker.ListValues(interfaces.IfErrorPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)
@@ -1194,7 +1194,7 @@ func (ctl *VppAgentCtl) ReportIfaceErrorState() {
 }
 
 // ReportBdErrorState reports bridge domain status data to the ETCD
-func (ctl *VppAgentCtl) ReportBdErrorState() {
+func (ctl *VppAgentCtl) reportBdErrorState() {
 	bdErr, err := ctl.broker.ListValues(l2.BdErrPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)

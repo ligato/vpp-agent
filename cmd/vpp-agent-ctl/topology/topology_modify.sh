@@ -6,7 +6,7 @@ USSCHED_NAME="ussched-vpp"
 VNF_NAME="vnf-vpp"
 
 # VSWITCH - change IP & MAC of the loopback interface
-../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/loop1 - << EOF
 {
   "name": "loop1",
   "enabled": true,
@@ -19,13 +19,13 @@ VNF_NAME="vnf-vpp"
 EOF
 
 # VSWITCH - delete memif master to RNG (bridge domain B2)
-../vpp-agent-ctl -del /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rng
+vpp-agent-ctl -del /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/interface/memif-to-rng
 
 # RNG - delete memif slave to VSWITCH
-../vpp-agent-ctl -del /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswitch
+vpp-agent-ctl -del /vnf-agent/${RNG_NAME}/vpp/config/v1/interface/memif-to-vswitch
 
 # VSWITCH - add one more static route
-../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/20.5.0.0/24/8.42.0.1 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/vrf/0/fib/20.5.0.0/24/8.42.0.1 - << EOF
 {
   "description": "Static route 2",
   "dst_ip_addr": "20.5.0.0/24",
@@ -35,7 +35,7 @@ EOF
 EOF
 
 # VSWITCH - remove deleted interface + BVI interface from bridge domain
-../vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/bd/B2 - << EOF
+vpp-agent-ctl -put /vnf-agent/${VSWITCH_NAME}/vpp/config/v1/bd/B2 - << EOF
 {
   "name": "B2",
   "flood": true,
