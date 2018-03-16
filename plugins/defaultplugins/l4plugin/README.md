@@ -16,9 +16,9 @@ An example of configuration in json format can be found [here](../../../cmd/vpp-
 Note: the l4 features need to be enabled on the VPP. To do so, use second json configuration file
 which can be found here [here](../../../cmd/vpp-agent-ctl/json/enable-l4.json) 
 
-To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
-We assume that we want to configure vpp with label `vpp1` and config is stored in the `app-ns.json` file.
-At first, enable L4 features, then configure the application namespace.
+To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/vpp-agent-ctl.go) 
+can be used. We assume that we want to configure vpp with label `vpp1` and config is stored 
+in the `app-ns.json` file. At first, enable L4 features, then configure the application namespace.
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/l4/features/feature" json/enable-l4.json
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/l4/namespaces/ns1" json/app-ns.json
