@@ -18,8 +18,8 @@ An example of configuration in json format can be found here:
 [SPD](../../../cmd/vpp-agent-ctl/json/ipsec-spd.json) and
 [SA](../../../cmd/vpp-agent-ctl/json/ipsec-sa10.json).
 
-To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
-We assume that we want to configure vpp with label `vpp1`,
+To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) 
+can be used. We assume that we want to configure vpp with label `vpp1`,
 config for SPD is stored in the `ipsec-spd.json` file and
 config for SAs is stored in the `ipsec-sa10.json` and `ipsec-sa20.json` file.
 

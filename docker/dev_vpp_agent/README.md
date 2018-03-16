@@ -211,10 +211,8 @@ The ETCD server will be available on your host OS IP (most likely
 
 Call the agent via ETCD using the testing client:
 ```
-cd $GOPATH/src/github.com/ligato/vpp-agent/cmd/vpp-agent-ctl
-go run main.go /opt/vpp-agent/dev/etcd.conf -ct
-go run main.go /opt/vpp-agent/dev/etcd.conf -mt
-go run main.go /opt/vpp-agent/dev/etcd.conf -dt
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
 
 ### Running Kafka on Local Host

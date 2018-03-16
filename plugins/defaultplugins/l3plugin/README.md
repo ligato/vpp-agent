@@ -13,8 +13,9 @@ The configuration must be stored in etcd using the following key:
 
 An example of configuration in json format can be found [here](../../../cmd/vpp-agent-ctl/json/arp.json).
 
-To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
-We assume that we want to configure vpp with label `vpp1` and config is stored in the `arp.json` file
+To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) 
+can be used. We assume that we want to configure vpp with label `vpp1` and config is stored in
+the `arp.json` file
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/arp/tap1/192.168.10.21" json/arp.json
 ```
@@ -22,11 +23,11 @@ vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/arp/tap1/192.168.10.21" json/a
 The vpp-agent-ctl also contains a simple predefined ARP entry config. It can be used for testing purposes.
 To setup the predefined ARP config run:
 ```
-vpp-agent-ctl -aae
+vpp-agent-ctl -arp
 ```
 To remove it run:
 ```
-vpp-agent-ctl -dae
+vpp-agent-ctl -arpd
 ```
 
 ## Proxy ARP
@@ -52,13 +53,13 @@ An example configuration for IP ranges can be found [here](../../../cmd/vpp-agen
 Predefined configuration in vpp-agent-ctl for interfaces:
 
 ```
-vpp-agent-ctl -aparpi
+vpp-agent-ctl -prxi
 ```
 
 For ranges:
 
 ```
-vpp-agent-ctl -aparpr
+vpp-agent-ctl -prxd
 ```
 
 ## Routes
@@ -74,7 +75,7 @@ An example of configuration in json format can be found [here](../../../cmd/vpp-
 Note: Value `0` in vrfID field denotes default VRF in vpp. Since it is default value it is omitted in the config above.
  If you want to configure a route for a VRF other than default, make sure that the VRF has already been created.
 
-To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
+To insert config into etcd in json format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) can be used.
 We assume that we want to configure vpp with label `vpp1` and config is stored in the `routes.json` file
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" json/routes.json
@@ -83,9 +84,9 @@ vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/vrf/0/fib" json/routes.json
 The vpp-agent-ctl contains a simple predefined route config also. It can be used for testing purposes.
 To setup the predefined route config run:
 ```
-vpp-agent-ctl -cr
+vpp-agent-ctl -route
 ```
 To remove it run:
 ```
-vpp-agent-ctl -dr
+vpp-agent-ctl -routed
 ```
