@@ -24,7 +24,7 @@ A bit more advanced example which includes ARP termination entries can be found
 [here](../../../cmd/vpp-agent-ctl/json/bridge-domain-arp.json). Example of FIB tables 
 is available [here](../../../cmd/vpp-agent-ctl/json/l2_fib.json)
 
-To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/vpp-agent-ctl.go) can be used.
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) can be used.
 Let's assume that we want to configure vpp with the label `vpp1` and config for bridge domain `bd1` is stored
 in the `bridge-domain.json` file. Furthermore, we assume that the bridge domain `bd1` contains tap interface `tap1`
 with configuration stored in `tap.json`. To convey this configuration to the agent through northbound API,

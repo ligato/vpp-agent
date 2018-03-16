@@ -9,6 +9,6 @@ Agent repository:
   such as a vswitch.
 - [agentctl](agentctl/agentctl.go) - CLI tool that allows to show
   the state and to configure VPP Agents connected to etcd
-- [vpp-agent-ctl](vpp-agent-ctl/vpp-agent-ctl.go) - a utility for testing VPP
+- [vpp-agent-ctl](vpp-agent-ctl/vpp-agent-ctl.g) - a utility for testing VPP
   Agent configuration. It contains a set of hard-wired configurations
   that can be invoked using command line flags and sent to the VPP Agent.
