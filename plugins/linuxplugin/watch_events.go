@@ -25,27 +25,35 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
+	runWithMutex := func(fn func()) {
+		if plugin.WatchEventsMutex != nil {
+			plugin.WatchEventsMutex.Lock()
+			defer plugin.WatchEventsMutex.Unlock()
+		}
+		fn()
+	}
+
 	for {
 		select {
 		case e := <-plugin.resyncChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onResyncEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onResyncEvent(e)
+			})
 
 		case e := <-plugin.changeChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onChangeEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onChangeEvent(e)
+			})
 
 		case ms := <-plugin.msChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.nsHandler.HandleMicroservices(ms)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.nsHandler.HandleMicroservices(ms)
+			})
 
 		case e := <-plugin.ifIndexesWatchChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onLinuxIfaceEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onLinuxIfaceEvent(e)
+			})
 
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")

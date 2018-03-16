@@ -31,37 +31,45 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
+	runWithMutex := func(fn func()) {
+		if plugin.WatchEventsMutex != nil {
+			plugin.WatchEventsMutex.Lock()
+			defer plugin.WatchEventsMutex.Unlock()
+		}
+		fn()
+	}
+
 	for {
 		select {
 		case e := <-plugin.resyncConfigChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onResyncEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onResyncEvent(e)
+			})
 
 		case e := <-plugin.resyncStatusChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onStatusResyncEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onStatusResyncEvent(e)
+			})
 
 		case e := <-plugin.changeChan:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onChangeEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onChangeEvent(e)
+			})
 
 		case e := <-plugin.ifIdxWatchCh:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onVppIfaceEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onVppIfaceEvent(e)
+			})
 
 		case e := <-plugin.linuxIfIdxWatchCh:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onLinuxIfaceEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onLinuxIfaceEvent(e)
+			})
 
 		case e := <-plugin.bdIdxWatchCh:
-			plugin.WatchEventsMutex.Lock()
-			plugin.onVppBdEvent(e)
-			plugin.WatchEventsMutex.Unlock()
+			runWithMutex(func() {
+				plugin.onVppBdEvent(e)
+			})
 
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
