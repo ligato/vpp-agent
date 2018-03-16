@@ -15,23 +15,10 @@
 package linuxplugin
 
 import (
-	"os"
-	"strconv"
-	"time"
-
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"golang.org/x/net/context"
 )
-
-var (
-	sleepAfterLinuxResync = time.Duration(0)
-)
-
-func init() {
-	sec, err := strconv.Atoi(os.Getenv("SLEEP_AFTER_LINUX_RESYNC"))
-	if err == nil && sec > 0 {
-		sleepAfterLinuxResync = time.Second * time.Duration(sec)
-	}
-}
 
 // WatchEvents goroutine is used to watch for changes in the northbound configuration.
 func (plugin *Plugin) watchEvents(ctx context.Context) {
@@ -40,40 +27,51 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 
 	for {
 		select {
-		case resyncEv := <-plugin.resyncChan:
-			req := resyncParseEvent(resyncEv, plugin.Log)
-			err := plugin.resyncPropageRequest(req)
+		case e := <-plugin.resyncChan:
+			plugin.WatchEventsMutex.Lock()
+			plugin.onResyncEvent(e)
+			plugin.WatchEventsMutex.Unlock()
 
-			// optional hard sleep after linux resync
-			if sleepAfterLinuxResync > 0 {
-				plugin.Log.Warnf("starting sleep after linux resync for %v", sleepAfterLinuxResync)
-				time.Sleep(sleepAfterLinuxResync)
-				plugin.Log.Warnf("finished sleep after linux resync")
-			}
+		case e := <-plugin.changeChan:
+			plugin.WatchEventsMutex.Lock()
+			plugin.onChangeEvent(e)
+			plugin.WatchEventsMutex.Unlock()
 
-			resyncEv.Done(err)
+		case ms := <-plugin.msChan:
+			plugin.WatchEventsMutex.Lock()
+			plugin.nsHandler.HandleMicroservices(ms)
+			plugin.WatchEventsMutex.Unlock()
 
-		case dataChng := <-plugin.changeChan:
-			err := plugin.changePropagateRequest(dataChng)
-
-			dataChng.Done(err)
-
-		case microserviceChng := <-plugin.msChan:
-			plugin.nsHandler.HandleMicroservices(microserviceChng)
-
-		case linuxIdxEv := <-plugin.ifIndexesWatchChan:
-			if linuxIdxEv.IsDelete() {
-				plugin.arpConfigurator.ResolveDeletedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
-				plugin.routeConfigurator.ResolveDeletedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
-			} else {
-				plugin.arpConfigurator.ResolveCreatedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
-				plugin.routeConfigurator.ResolveCreatedInterface(linuxIdxEv.Name, linuxIdxEv.Idx)
-			}
-			linuxIdxEv.Done()
+		case e := <-plugin.ifIndexesWatchChan:
+			plugin.WatchEventsMutex.Lock()
+			plugin.onLinuxIfaceEvent(e)
+			plugin.WatchEventsMutex.Unlock()
 
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
 			return
 		}
 	}
+}
+
+func (plugin *Plugin) onResyncEvent(e datasync.ResyncEvent) {
+	req := resyncParseEvent(e, plugin.Log)
+	err := plugin.resyncPropageRequest(req)
+	e.Done(err)
+}
+
+func (plugin *Plugin) onChangeEvent(e datasync.ChangeEvent) {
+	err := plugin.changePropagateRequest(e)
+	e.Done(err)
+}
+
+func (plugin *Plugin) onLinuxIfaceEvent(e ifaceidx.LinuxIfIndexDto) {
+	if e.IsDelete() {
+		plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+	} else {
+		plugin.arpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+	}
+	e.Done()
 }

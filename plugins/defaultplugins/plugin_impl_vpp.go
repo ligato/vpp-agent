@@ -17,7 +17,6 @@ package defaultplugins
 import (
 	"context"
 	"os"
-
 	"sync"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -191,7 +190,8 @@ type Deps struct {
 	GoVppmux          govppmux.API
 	Linux             linuxpluginAPI
 
-	DataSyncs map[string]datasync.KeyProtoValWriter
+	DataSyncs        map[string]datasync.KeyProtoValWriter
+	WatchEventsMutex *sync.Mutex
 }
 
 type linuxpluginAPI interface {
