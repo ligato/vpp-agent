@@ -1,4 +1,4 @@
-# Release v1.3 (2018-XX-XX)
+# Release v1.3-rc1 (2018-XX-XX)
 
 ## Compatibility
 VPP v18.01-rc0~605-g954d437
