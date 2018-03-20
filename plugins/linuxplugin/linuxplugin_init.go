@@ -84,6 +84,7 @@ type Plugin struct {
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
+	WatchEventsMutex      *sync.Mutex
 }
 
 // LinuxConfig holds the linuxplugin configuration.

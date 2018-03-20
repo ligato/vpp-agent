@@ -62,7 +62,7 @@ func do(ctl *VppAgentCtl) {
 		// List all keys
 		ctl.listAllAgentKeys()
 	case "-dump":
-		if len(ctl.Commands) > 2 {
+		if len(ctl.Commands) >= 2 {
 			// Dump specific key
 			ctl.etcdDump(ctl.Commands[1])
 		} else {
@@ -70,17 +70,17 @@ func do(ctl *VppAgentCtl) {
 			ctl.etcdDump("")
 		}
 	case "-get":
-		if len(ctl.Commands) > 2 {
+		if len(ctl.Commands) >= 2 {
 			// Get key
 			ctl.etcdGet(ctl.Commands[1])
 		}
 	case "-del":
-		if len(ctl.Commands) > 2 {
+		if len(ctl.Commands) >= 2 {
 			// Del key
 			ctl.etcdDel(ctl.Commands[1])
 		}
 	case "-put":
-		if len(ctl.Commands) > 3 {
+		if len(ctl.Commands) >= 3 {
 			ctl.etcdPut(ctl.Commands[1], ctl.Commands[2])
 		}
 	default:
