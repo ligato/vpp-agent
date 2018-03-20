@@ -96,6 +96,9 @@ func (ctl *VppAgentCtl) etcdGet(key string) {
 // EtcdPut stores key/data value
 func (ctl *VppAgentCtl) etcdPut(key string, file string) {
 	input, err := ctl.readData(file)
+	if err != nil {
+		ctl.Log.Fatal(err)
+	}
 
 	ctl.Log.Println("DB putting ", key, " ", string(input))
 
@@ -108,6 +111,8 @@ func (ctl *VppAgentCtl) etcdPut(key string, file string) {
 
 // EtcdDel removes data under provided key
 func (ctl *VppAgentCtl) etcdDel(key string) {
+	ctl.Log.Debug("DEL ", key)
+
 	found, err := ctl.bytesConnection.Delete(key, datasync.WithPrefix())
 	if err != nil {
 		ctl.Log.Error(err)

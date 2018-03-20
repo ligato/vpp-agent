@@ -56,8 +56,6 @@ func initCtl(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
 		Log:      logrus.DefaultLogger(),
 		Commands: cmdSet,
 	}
-	// Setup logger
-	ctl.Log.SetLevel(logging.InfoLevel)
 	// Parse service label
 	flag.CommandLine.ParseEnv(os.Environ())
 	ctl.serviceLabel.Init()
