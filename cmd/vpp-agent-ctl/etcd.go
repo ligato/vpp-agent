@@ -22,6 +22,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -74,7 +75,8 @@ func (ctl *VppAgentCtl) listAllAgentKeys() {
 		if stop {
 			break
 		}
-		ctl.Log.Println("key: ", key)
+		//ctl.Log.Println("key: ", key)
+		fmt.Println("key: ", key)
 	}
 }
 
@@ -90,7 +92,8 @@ func (ctl *VppAgentCtl) etcdGet(key string) {
 	if !found {
 		ctl.Log.Debug("No value found for the key", key)
 	}
-	ctl.Log.Println(string(data))
+	//ctl.Log.Println(string(data))
+	fmt.Println(string(data))
 }
 
 // EtcdPut stores key/data value
@@ -141,9 +144,12 @@ func (ctl *VppAgentCtl) etcdDump(key string) {
 		if stop {
 			break
 		}
-		ctl.Log.Println(kv.GetKey())
-		ctl.Log.Println(string(kv.GetValue()))
-		ctl.Log.Println()
+		//ctl.Log.Println(kv.GetKey())
+		//ctl.Log.Println(string(kv.GetValue()))
+		//ctl.Log.Println()
+		fmt.Println(kv.GetKey())
+		fmt.Println(string(kv.GetValue()))
+		fmt.Println()
 		found = true
 	}
 	if !found {
