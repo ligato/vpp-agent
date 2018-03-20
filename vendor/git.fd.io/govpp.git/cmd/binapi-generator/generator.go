@@ -32,6 +32,13 @@ import (
 	"github.com/bennyscetbun/jsongo"
 )
 
+var (
+	inputFile     = flag.String("input-file", "", "Input JSON file.")
+	inputDir      = flag.String("input-dir", ".", "Input directory with JSON files.")
+	outputDir     = flag.String("output-dir", ".", "Output directory where package folders will be generated.")
+	includeAPIVer = flag.Bool("include-apiver", false, "Wether to include VlAPIVersion in generated file.")
+)
+
 // MessageType represents the type of a VPP message.
 type messageType int
 
@@ -60,9 +67,6 @@ type context struct {
 }
 
 func main() {
-	inputFile := flag.String("input-file", "", "Input JSON file.")
-	inputDir := flag.String("input-dir", ".", "Input directory with JSON files.")
-	outputDir := flag.String("output-dir", ".", "Output directory where package folders will be generated.")
 	flag.Parse()
 
 	if *inputFile == "" && *inputDir == "" {
@@ -405,14 +409,14 @@ func generatePackageHeader(ctx *context, w io.Writer, rootNode *jsongo.JSONNode)
 	fmt.Fprintln(w, "package "+ctx.packageName)
 
 	fmt.Fprintln(w, "import \""+apiImportPath+"\"")
+	fmt.Fprintln(w)
 
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "// VlApiVersion contains version of the API.")
-	vlAPIVersion := rootNode.Map("vl_api_version")
-	if vlAPIVersion != nil {
-		fmt.Fprintln(w, "const VlAPIVersion = ", vlAPIVersion.Get())
+	vlAPIVersion := rootNode.Map("vl_api_version").Get()
+	if *includeAPIVer {
+		fmt.Fprintln(w, "// VlApiVersion contains version of the API.")
+		fmt.Fprintln(w, "const VlAPIVersion = ", vlAPIVersion)
+		fmt.Fprintln(w)
 	}
-	fmt.Fprintln(w)
 }
 
 // generateMessageComment generates comment for a message into provider writer

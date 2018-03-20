@@ -15,17 +15,17 @@
 package dbadapter
 
 import (
-	"strconv"
-
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -147,9 +147,45 @@ func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
 	return dsl
 }
 
+// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
+func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.ProxyArpInterfaceKey(arp.Label), arp)
+	return dsl
+}
+
+// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(l3.ProxyArpRangeKey(arp.Label), arp)
+	return dsl
+}
+
 // StnRule adds a request to create or update STN rule.
 func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
+	return dsl
+}
+
+// NAT44Global adds a request to set global configuration for NAT44
+func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(nat.GlobalConfigKey(), nat44)
+	return dsl
+}
+
+// NAT44DNat adds a request to create a new DNAT configuration
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(nat.DNatKey(nat44.Label), nat44)
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(ipsec.SAKey(sa.Name), sa)
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.PutDSL {
+	dsl.parent.txn.Put(ipsec.SPDKey(spd.Name), spd)
 	return dsl
 }
 
@@ -178,8 +214,8 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.Dele
 
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKey uint32) defaultplugins.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.AuthKeysKey(strconv.Itoa(int(bfdKey))))
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKey string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(bfd.AuthKeysKey(bfdKey))
 	return dsl
 }
 
@@ -233,6 +269,18 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.Delete
 	return dsl
 }
 
+// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+func (dsl *DeleteDSL) ProxyArpInterfaces(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.ProxyArpInterfaceKey(label))
+	return dsl
+}
+
+// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+func (dsl *DeleteDSL) ProxyArpRanges(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(l3.ProxyArpRangeKey(label))
+	return dsl
+}
+
 // AppNamespace adds a request to delete an existing VPP Application Namespace.
 func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(l4.AppNamespacesKey(id))
@@ -242,6 +290,30 @@ func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 // StnRule adds request to delete Stn rule.
 func (dsl *DeleteDSL) StnRule(ruleName string) defaultplugins.DeleteDSL {
 	dsl.parent.txn.Delete(stn.Key(ruleName))
+	return dsl
+}
+
+// NAT44Global adds a request to remove global configuration for NAT44
+func (dsl *DeleteDSL) NAT44Global() defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.GlobalConfigKey())
+	return dsl
+}
+
+// NAT44DNat adds a request to delete a new DNAT configuration
+func (dsl *DeleteDSL) NAT44DNat(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(nat.DNatKey(label))
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *DeleteDSL) IPSecSA(saName string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(ipsec.SAKey(saName))
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *DeleteDSL) IPSecSPD(spdName string) defaultplugins.DeleteDSL {
+	dsl.parent.txn.Delete(ipsec.SPDKey(spdName))
 	return dsl
 }
 

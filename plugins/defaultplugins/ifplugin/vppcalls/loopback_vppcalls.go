@@ -24,53 +24,42 @@ import (
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API.
-func AddLoopbackInterface(vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (swIndex uint32, err error) {
-	// CreateLoopback time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func AddLoopbackInterface(ifName string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &interfaces.CreateLoopback{}
-	reply := &interfaces.CreateLoopbackReply{}
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
 
-	if err != nil {
+	reply := &interfaces.CreateLoopbackReply{}
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
-
-	if 0 != reply.Retval {
-		return 0, fmt.Errorf("add loopback interface returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, nil
+	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, stopwatch)
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API.
-func DeleteLoopbackInterface(idx uint32, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) error {
-	// DeleteLoopback time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DeleteLoopbackInterface(ifName string, idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Prepare the message.
-	req := &interfaces.DeleteLoopback{}
-	req.SwIfIndex = idx
+	req := &interfaces.DeleteLoopback{
+		SwIfIndex: idx,
+	}
 
 	reply := &interfaces.DeleteLoopbackReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-
-	if 0 != reply.Retval {
-		return fmt.Errorf("deleting of loopback interface returned %d", reply.Retval)
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return nil
+	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
 }

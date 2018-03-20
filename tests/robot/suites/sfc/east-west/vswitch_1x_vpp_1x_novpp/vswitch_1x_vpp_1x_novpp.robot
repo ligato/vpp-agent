@@ -38,12 +38,18 @@ Check Ping Agent1 -> VPP2
     linux: Check Ping    agent_1    10.0.0.1
 
 Remove Agent Nodes
-    Remove All Nodes
+    #Remove All Nodes
+    Remove Node    agent_vpp_1
+    #Remove Node    agent_vpp_2
+    Remove Node    agent_1
+    Sleep     ${SYNC_SLEEP}
 
 Start Agent Nodes Again
-    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
-    Add Agent VPP Node    agent_vpp_2
+    #Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    #Add Agent VPP Node    agent_vpp_2
     Add Agent Node    agent_1
+    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    #Sleep    ${SYNC_SLEEP}
     Sleep    ${SYNC_SLEEP}
 
 Check Interfaces After Resync
@@ -55,13 +61,46 @@ Check Ping VPP2 -> Agent1 After Resync
 Check Ping Agent1 -> VPP2 After Resync
     linux: Check Ping    agent_1    10.0.0.1
 
-Done
-    [Tags]    debug
-    No Operation
+Remove Agent Nodes Again
+    #Remove All Nodes
+    Remove Node    agent_vpp_1
+    #Remove Node    agent_vpp_2
+    Remove Node    agent_1
+    Sleep     ${SYNC_SLEEP}
 
-Final Sleep For Manual Checking
-    [Tags]    debug
-    Sleep   ${FINAL_SLEEP}
+Start Agent Nodes Again2
+    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    Add Agent Node    agent_1
+    Sleep    ${SYNC_SLEEP}
+
+Check Interfaces After Resync2
+    Check Stuff
+
+Check Ping VPP2 -> Agent1 After Resync2
+    vpp_term: Check Ping    agent_vpp_2    10.0.0.10
+
+Check Ping Agent1 -> VPP2 After Resync2
+    linux: Check Ping    agent_1    10.0.0.1
+
+Remove All Agent Nodes
+    Remove All Nodes
+    Sleep     ${SYNC_SLEEP}
+
+Start All Agent Nodes
+    Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
+    Add Agent VPP Node    agent_vpp_2
+    Add Agent Node    agent_1
+    Sleep    ${SYNC_SLEEP}
+
+Check Interfaces After Resync3
+    Check Stuff
+
+Check Ping VPP2 -> Agent1 After Resync3
+    vpp_term: Check Ping    agent_vpp_2    10.0.0.10
+
+Check Ping Agent1 -> VPP2 After Resync3
+    linux: Check Ping    agent_1    10.0.0.1
+
 
 *** Keywords ***
 

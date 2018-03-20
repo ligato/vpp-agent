@@ -26,14 +26,11 @@ import (
 
 // SetInterfacesToBridgeDomain sets all provided interfaces to bridge domain.
 func SetInterfacesToBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx uint32, bdIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) {
-	// SwInterfaceSetL2Bridge time measurement.
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) {
+
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	if len(bdIfaces) == 0 {
 		log.Debugf("Bridge domain %v has no new interface to set", bd.Name)
@@ -48,39 +45,38 @@ func SetInterfacesToBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx uint32
 			continue
 		}
 		req := &l2ba.SwInterfaceSetL2Bridge{
+			Enable:      1,
 			BdID:        bdIdx,
 			RxSwIfIndex: ifIdx,
-			Enable:      1,
+			Shg:         uint8(bdIface.SplitHorizonGroup),
 		}
 		// Set as BVI.
 		if bdIface.BridgedVirtualInterface {
 			req.Bvi = 1
 			log.Debugf("Interface %v set as BVI", bdIface.Name)
 		}
+
 		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-		err := vppChan.SendRequest(req).ReceiveReply(reply)
-		if err != nil {
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 			log.Errorf("Error while assigning interface %v to bd %v: %v", bdIface.Name, bd.Name, err)
 			continue
 		}
-		if 0 != reply.Retval {
-			log.Errorf("Unexpected return value %v while assigning interface %v (idx %v) to bd %v", reply.Retval, bdIface.Name, ifIdx, bd.Name)
+		if reply.Retval != 0 {
+			log.Errorf("%s returned %d while assigning interface %v (idx %v) to bd %v", reply.GetMessageName(), reply.Retval, bdIface.Name, ifIdx, bd.Name)
 			continue
 		}
-		log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bd.Name}).Debug("Interface set to bridge domain.")
+
+		log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bd.Name}).Debug("Interface set to bridge domain")
 	}
 }
 
 // UnsetInterfacesFromBridgeDomain removes all interfaces from bridge domain.
 func UnsetInterfacesFromBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx uint32, bdIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, timeLog measure.StopWatchEntry) {
-	// SwInterfaceSetL2Bridge time measurement.
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) {
+
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	if len(bdIfaces) == 0 {
 		log.Debugf("Bridge domain %v has no obsolete interface to unset", bd.Name)
@@ -94,39 +90,38 @@ func UnsetInterfacesFromBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx ui
 			continue
 		}
 		req := &l2ba.SwInterfaceSetL2Bridge{
+			Enable:      0,
 			BdID:        bdIdx,
 			RxSwIfIndex: ifIdx,
-			Enable:      0,
+			Shg:         uint8(bdIface.SplitHorizonGroup),
 		}
 		reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-		err := vppChan.SendRequest(req).ReceiveReply(reply)
-		if err != nil {
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 			log.Errorf("Error while removing interface %v from bd %v: %v", bdIface.Name, bd.Name, err)
 			continue
 		}
-		if 0 != reply.Retval {
-			log.Errorf("Unexpected return value %v while removing interface %v from bd %v", reply.Retval, bdIface.Name, bd.Name)
+		if reply.Retval != 0 {
+			log.Errorf("%s returned %d while removing interface %v from bd %v", reply.GetMessageName(), reply.Retval, bdIface.Name, bd.Name)
 			continue
 		}
-		log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bd.Name}).Debug("Interface unset from bridge domain.")
+
+		log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bd.Name}).Debug("Interface unset from bridge domain")
 	}
 }
 
 // SetInterfaceToBridgeDomain sets single interface to bridge domain.
 func SetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger,
-	vppChan VPPChannel, timeLog measure.StopWatchEntry) {
-	// SwInterfaceSetL2Bridge time measurement.
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	vppChan VPPChannel, stopwatch *measure.Stopwatch) {
 
-	req := &l2ba.SwInterfaceSetL2Bridge{}
-	req.BdID = bridgeDomainIndex
-	req.RxSwIfIndex = interfaceIndex
-	req.Enable = 1
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &l2ba.SwInterfaceSetL2Bridge{
+		Enable:      1,
+		BdID:        bridgeDomainIndex,
+		RxSwIfIndex: interfaceIndex,
+	}
 	if bvi {
 		req.Bvi = 1
 	} else {
@@ -134,12 +129,12 @@ func SetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32,
 	}
 
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
-	err := vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
 	}
-	if 0 != reply.Retval {
-		log.WithFields(logging.Fields{"Return value": reply.Retval}).Error("Unexpected return value")
+	if reply.Retval != 0 {
+		log.Error("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain.")
+
+	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain")
 }

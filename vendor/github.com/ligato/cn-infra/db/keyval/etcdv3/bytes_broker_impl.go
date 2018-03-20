@@ -83,8 +83,10 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 	}
 	etcdConnectTime := time.Since(start)
 	log.WithField("durationInNs", etcdConnectTime.Nanoseconds()).Info("Connecting to etcd took ", etcdConnectTime)
+
 	conn, err := NewEtcdConnectionUsingClient(etcdClient, log)
 	conn.opTimeout = config.OpTimeout
+
 	return conn, err
 }
 
@@ -93,12 +95,12 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 // This constructor is used primarily for testing.
 func NewEtcdConnectionUsingClient(etcdClient *clientv3.Client, log logging.Logger) (*BytesConnectionEtcd, error) {
 	log.Debug("NewEtcdConnectionWithBytes", etcdClient)
-
-	conn := BytesConnectionEtcd{}
-	conn.Logger = log
-	conn.etcdClient = etcdClient
-	conn.lessor = clientv3.NewLease(etcdClient)
-	conn.opTimeout = defaultOpTimeout
+	conn := BytesConnectionEtcd{
+		Logger:     log,
+		etcdClient: etcdClient,
+		lessor:     clientv3.NewLease(etcdClient),
+		opTimeout:  defaultOpTimeout,
+	}
 	return &conn, nil
 }
 
@@ -176,16 +178,16 @@ func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...datasync.DelOption
 }
 
 func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *clientv3.Event) {
+	var prevKvValue []byte
+	if ev.PrevKv != nil {
+		prevKvValue = ev.PrevKv.Value
+	}
+
 	if ev.Type == mvccpb.DELETE {
-		resp(NewBytesWatchDelResp(string(ev.Kv.Key), ev.Kv.ModRevision))
+		resp(NewBytesWatchDelResp(string(ev.Kv.Key), prevKvValue, ev.Kv.ModRevision))
 	} else if ev.IsCreate() || ev.IsModify() {
 		if ev.Kv.Value != nil {
-			var prevKvValue []byte
-			if ev.PrevKv != nil {
-				prevKvValue = ev.PrevKv.Value
-			}
 			resp(NewBytesWatchPutResp(string(ev.Kv.Key), ev.Kv.Value, prevKvValue, ev.Kv.ModRevision))
-			log.Debug("NewBytesWatchPutResp")
 		}
 	}
 }
@@ -263,15 +265,16 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 			if err != nil {
 				return err
 			}
+
 			etcdOpts = append(etcdOpts, clientv3.WithLease(lease.ID))
 		}
 	}
 
-	_, err := kv.Put(ctx, key, string(binData), etcdOpts...)
-	if err != nil {
+	if _, err := kv.Put(ctx, key, string(binData), etcdOpts...); err != nil {
 		log.Error("etcdv3 put error: ", err)
 		return err
 	}
+
 	return nil
 }
 
@@ -334,7 +337,33 @@ func getValueInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	// get data from etcdv3
 	resp, err := kv.Get(ctx, key)
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcdv3 get error: ", err)
+		return nil, false, 0, err
+	}
+
+	for _, ev := range resp.Kvs {
+		return ev.Value, true, ev.ModRevision, nil
+	}
+	return nil, false, 0, nil
+}
+
+// GetValueRev retrieves one key-value item from the data store. The item
+// is identified by the provided <key>.
+func (db *BytesConnectionEtcd) GetValueRev(key string, rev int64) (data []byte, found bool, revision int64, err error) {
+	return getValueRevInternal(db.Logger, db.etcdClient, db.opTimeout, key, rev)
+}
+
+func getValueRevInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration,
+	key string, rev int64) (data []byte, found bool, revision int64, err error) {
+
+	deadline := time.Now().Add(opTimeout)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
+	// get data from etcdv3
+	resp, err := kv.Get(ctx, key, clientv3.WithRev(rev))
+	if err != nil {
+		log.Error("etcdv3 get error: ", err)
 		return nil, false, 0, err
 	}
 
@@ -407,14 +436,66 @@ func listValuesRangeInternal(log logging.Logger, kv clientv3.KV, opTimeout time.
 	return &bytesKeyValIterator{len: len(resp.Kvs), resp: resp}, nil
 }
 
+// Compact compacts the ETCD database to specific revision
+func (db *BytesConnectionEtcd) Compact(rev ...int64) (int64, error) {
+	return compactInternal(db.Logger, db.etcdClient, db.opTimeout, rev...)
+}
+
+func compactInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration, rev ...int64) (int64, error) {
+	deadline := time.Now().Add(opTimeout)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
+	var toRev int64
+	if len(rev) == 0 {
+		resp, err := kv.Get(ctx, "\x00")
+		if err != nil {
+			log.Error("etcdv3 error: ", err)
+			return 0, err
+		}
+		toRev = resp.Header.Revision
+	} else {
+		toRev = rev[0]
+	}
+
+	log.Debugf("compacting ETCD to revision %v", toRev)
+	t := time.Now()
+	if _, err := kv.Compact(ctx, toRev, clientv3.WithCompactPhysical()); err != nil {
+		log.Error("etcdv3 compact error: ", err)
+		return 0, err
+	}
+	log.Debugf("compacting ETCD took %v", time.Since(t))
+
+	return toRev, nil
+}
+
+// GetRevision returns current revision of ETCD database
+func (db *BytesConnectionEtcd) GetRevision() (revision int64, err error) {
+	return getRevisionInternal(db.Logger, db.etcdClient, db.opTimeout)
+}
+
+func getRevisionInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration) (revision int64, err error) {
+	deadline := time.Now().Add(opTimeout)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
+	resp, err := kv.Get(ctx, "\x00")
+	if err != nil {
+		log.Error("etcdv3 error: ", err)
+		return 0, err
+	}
+
+	return resp.Header.Revision, nil
+}
+
 // GetNext returns the following item from the result set.
 // When there are no more items to get, <stop> is returned as *true* and <val>
 // is simply *nil*.
 func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
-
 	if ctx.index >= ctx.len {
 		return nil, true
 	}
+
 	key := string(ctx.resp.Kvs[ctx.index].Key)
 	data := ctx.resp.Kvs[ctx.index].Value
 	rev := ctx.resp.Kvs[ctx.index].ModRevision
@@ -433,7 +514,6 @@ func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
 // When there are no more keys to get, <stop> is returned as *true*
 // and <key> and <rev> are default values.
 func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
-
 	if ctx.index >= ctx.len {
 		return "", 0, true
 	}
@@ -441,6 +521,7 @@ func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 	key = string(ctx.resp.Kvs[ctx.index].Key)
 	rev = ctx.resp.Kvs[ctx.index].ModRevision
 	ctx.index++
+
 	return key, rev, false
 }
 

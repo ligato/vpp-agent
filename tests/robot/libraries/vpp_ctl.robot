@@ -241,6 +241,17 @@ vpp_ctl: Put TAP Interface With IP
     vpp_ctl: Put Json     ${uri}    ${data}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
+vpp_ctl: Put TAP Unnumbered Interface
+    [Arguments]    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tap_interface_unnumbered.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+
 vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
     Log Many    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}
@@ -514,7 +525,7 @@ vpp_ctl: Check ACL Reply
     List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 
- vpp_ctl: Put ARP
+vpp_ctl: Put ARP
     [Arguments]    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
     Log Many    ${node}    ${interface}    ${ipv4}    ${MAC}    ${static}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/arp.json
@@ -524,7 +535,7 @@ vpp_ctl: Check ACL Reply
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
- vpp_ctl: Get ARP As Json
+vpp_ctl: Get ARP As Json
     [Arguments]           ${node}  ${interface}
     Log Many              ${node}     ${interface}
     ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/arp/${interface}
@@ -625,3 +636,21 @@ vpp_ctl: Put TAPv2 Interface With IP
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+
+vpp_ctl: Put STN Rule
+    [Arguments]    ${node}    ${interface}    ${ip}    ${rule_name}
+    Log Many    ${node}    ${interface}    ${ip}    ${rule_name}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/stn_rule.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/stn/rules/${rule_name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete STN Rule
+    [Arguments]    ${node}    ${rule_name}
+    Log Many     ${node}    ${rule_name}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/stn/rules/${rule_name}
+    ${out}=      vpp_ctl: Delete key    ${uri}
+    Log Many     ${out}
+    [Return]    ${out}

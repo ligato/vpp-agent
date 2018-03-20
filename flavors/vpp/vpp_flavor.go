@@ -2,6 +2,8 @@
 package vpp
 
 import (
+	"sync"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/msgsync"
@@ -93,6 +95,11 @@ func (f *Flavor) Inject() bool {
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
 	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
+
+	// Mutex for synchronizing watching events
+	var watchEventsMutex sync.Mutex
+	f.VPP.Deps.WatchEventsMutex = &watchEventsMutex
+	f.Linux.Deps.WatchEventsMutex = &watchEventsMutex
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP

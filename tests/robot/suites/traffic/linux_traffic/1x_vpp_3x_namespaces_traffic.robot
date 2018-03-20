@@ -38,16 +38,16 @@ Setup Interfaces
 
     Sleep    ${CONFIG_SLEEP}
 
+Chcek Linux Interfaces
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
-
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
 
+Ping In Namespaces
     # This should work by default after veth interface setup
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.2
     Ping in namespace    node=agent_vpp_1    namespace=ns2    ip=192.168.22.1
-
     Ping in namespace    node=agent_vpp_1    namespace=ns2    ip=192.168.22.6
     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.5
 
@@ -58,7 +58,7 @@ Setup Interfaces
 #     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1
 #     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.2
 
-Create Linux Routes
+Create Linux Defalut Routes
     # this did not work
     #vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=innercross1    ip=192.168.22.5    prefix=32    next_hop=192.168.22.1
     #vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=innercross2    ip=192.168.22.2    prefix=32    next_hop=192.168.22.6
@@ -66,9 +66,11 @@ Create Linux Routes
     vpp_ctl: Put Default Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=innercross2    next_hop=192.168.22.6
     Sleep    ${CONFIG_SLEEP}
 
+Check Linux Default Routes
     Check Linux Default Routes    node=agent_vpp_1    namespace=ns1    next_hop=192.168.22.1
     Check Linux Default Routes    node=agent_vpp_1    namespace=ns3    next_hop=192.168.22.6
 
+Ping In Namespaces Again
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.5
     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.2
 
@@ -96,20 +98,17 @@ Create Linux Routes2
     #ip netns exec $NS_MID sysctl -w net.ipv4.ip_forward=1
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns2 sysctl -w net.ipv4.ip_forward=1
 
+Check Linux Routes2
     Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=192.168.22.6    next_hop=192.168.22.2
     Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1    next_hop=192.168.22.5
 
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.6
     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1
 
-Config Done
-    No Operation
-
-Final Sleep After Config For Manual Checking
-    Sleep   ${CONFIG_SLEEP}
 
 Remove VPP Nodes
     Remove All Nodes
+    Sleep   ${RESYNC_SLEEP}
 
 Start VPP1 Again
     Add Agent VPP Node    agent_vpp_1

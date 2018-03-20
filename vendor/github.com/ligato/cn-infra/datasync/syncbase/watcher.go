@@ -120,6 +120,8 @@ func (adapter *Registry) PropagateChanges(txData map[string] /*key*/ datasync.Ch
 					if val.GetChangeType() == datasync.Delete {
 						if _, prev = adapter.lastRev.Del(key); prev != nil {
 							curRev = prev.GetRevision() + 1
+						} else {
+							continue
 						}
 					} else {
 						_, prev, curRev = adapter.lastRev.Put(key, val)

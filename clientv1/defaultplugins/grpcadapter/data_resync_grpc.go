@@ -23,9 +23,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -34,7 +37,7 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 	return &DataResyncDSL{client,
 		map[string] /*name*/ *interfaces.Interfaces_Interface{},
 		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
-		map[uint32] /*id*/ *bfd.SingleHopBFD_Key{},
+		map[string] /*id*/ *bfd.SingleHopBFD_Key{},
 		map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction{},
 		map[string] /*name*/ *l2.BridgeDomains_BridgeDomain{},
 		map[string] /*key*/ *l2.FibTableEntries_FibTableEntry{},
@@ -43,6 +46,14 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 		map[string] /*name*/ *acl.AccessLists_Acl{},
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*label*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
+		map[string] /*name*/ *ipsec.SecurityAssociations_SA{},
+		map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD{},
 	}
 }
 
@@ -52,7 +63,7 @@ type DataResyncDSL struct {
 	client            vppsvc.ResyncConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
 	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
-	txnPutBfdAuthKey  map[uint32] /*id*/ *bfd.SingleHopBFD_Key
+	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
 	txnPutBfdEcho     map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction
 	txnPutBD          map[string] /*name*/ *l2.BridgeDomains_BridgeDomain
 	txnPutBDFIB       map[string] /*key*/ *l2.FibTableEntries_FibTableEntry
@@ -61,6 +72,14 @@ type DataResyncDSL struct {
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnPutProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
+	txnPutStn         map[string] /*value*/ *stn.StnRule
+	txnPutNatGlobal   map[string] /*label*/ *nat.Nat44Global
+	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
+	txnPutIPSecSA     map[string] /*name*/ *ipsec.SecurityAssociations_SA
+	txnPutIPSecSPD    map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
@@ -79,7 +98,7 @@ func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugi
 
 // BfdAuthKeys adds BFD key to the RESYNC request.
 func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
-	dsl.txnPutBfdAuthKey[val.Id] = val
+	dsl.txnPutBfdAuthKey[strconv.Itoa(int(val.Id))] = val
 
 	return dsl
 }
@@ -140,6 +159,54 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 	return dsl
 }
 
+// Arp adds VPP L3 ARP to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+	dsl.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.DataResyncDSL {
+	dsl.txnPutProxyArpIfs[val.Label] = val
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
+	dsl.txnPutProxyArpRng[val.Label] = val
+	return dsl
+}
+
+// StnRule adds Stn rule to the RESYNC request.
+func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+	dsl.txnPutStn[val.RuleName] = val
+	return dsl
+}
+
+// NAT44Global adds a request to RESYNC global configuration for NAT44
+func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
+	dsl.txnPutNatGlobal["global"] = nat44
+	return dsl
+}
+
+// NAT44DNat adds a request to RESYNC a new DNAT configuration
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
+	dsl.txnPutDNat[nat.DNatKey(nat44.Label)] = nat44
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
+	dsl.txnPutIPSecSA[ipsec.SAKey(sa.Name)] = sa
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
+	dsl.txnPutIPSecSPD[ipsec.SPDKey(spd.Name)] = spd
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet with iterator values.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
 	for {
@@ -158,23 +225,23 @@ type keySet map[string] /*key*/ interface{} /*nil*/
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
 func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
-	putIntfs := []*interfaces.Interfaces_Interface{}
+	var putIntfs []*interfaces.Interfaces_Interface
 	for _, intf := range dsl.txnPutIntf {
 		putIntfs = append(putIntfs, intf)
 	}
-	putBDs := []*l2.BridgeDomains_BridgeDomain{}
+	var putBDs []*l2.BridgeDomains_BridgeDomain
 	for _, bd := range dsl.txnPutBD {
 		putBDs = append(putBDs, bd)
 	}
-	putXCons := []*l2.XConnectPairs_XConnectPair{}
+	var putXCons []*l2.XConnectPairs_XConnectPair
 	for _, xcon := range dsl.txnPutXCon {
 		putXCons = append(putXCons, xcon)
 	}
-	putRoutes := []*l3.StaticRoutes_Route{}
+	var putRoutes []*l3.StaticRoutes_Route
 	for _, route := range dsl.txnPutStaticRoute {
 		putRoutes = append(putRoutes, route)
 	}
-	putACLs := []*acl.AccessLists_Acl{}
+	var putACLs []*acl.AccessLists_Acl
 	for _, acl := range dsl.txnPutACL {
 		putACLs = append(putACLs, acl)
 	}

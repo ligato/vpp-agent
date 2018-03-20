@@ -70,6 +70,12 @@ type NameToIdxRW interface {
 	// VPP configurations and use the VPP binary API to clean it up from
 	// VPP.
 	UnregisterName(name string) (idx uint32, metadata interface{}, exists bool)
+
+	// UpdateMetadata replaces metadata value in existing name-to-index
+	// mapping entry. Unlike registration, this function does not create
+	// any notification. If mapping associated with the name does not
+	// exist, it is not created.
+	UpdateMetadata(name string, metadata interface{}) (success bool)
 }
 
 // NameToIdx is the "user API" to the NameToIdx registry. It provides

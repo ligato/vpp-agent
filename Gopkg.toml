@@ -31,7 +31,7 @@ required = [
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
-  revision = "8ca20507d15703412c18b07d4f4ce6b4de989de6"
+  revision = "4df448ad6cdfa2e60fa0167e5f70cc1127fbd3bf"
 
 [[constraint]]
   branch = "master"
@@ -59,7 +59,7 @@ required = [
 
 [[constraint]]
   name = "github.com/ligato/cn-infra"
-  version = "1.1"
+  revision = "b1d7b65181d158935badfb66898f06160c4b1c26"
 
 [[constraint]]
   branch = "master"

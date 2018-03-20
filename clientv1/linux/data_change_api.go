@@ -22,9 +22,10 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -84,12 +85,20 @@ type PutDSL interface {
 	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) PutDSL
+	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) PutDSL
+	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *vpp_l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update VPP Stn rule.
 	StnRule(stn *vpp_stn.StnRule) PutDSL
+	// NAT44Global adds a request to set global configuration for NAT44
+	NAT44Global(nat *nat.Nat44Global) PutDSL
+	// NAT44DNat adds a request to create a new DNAT configuration
+	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -117,7 +126,7 @@ type DeleteDSL interface {
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
 	// BfdAuthKeys adds a request to delete an existing VPP bidirectional
 	// forwarding detection key.
-	BfdAuthKeys(bfdKey uint32) DeleteDSL
+	BfdAuthKeys(bfdKey string) DeleteDSL
 	// BfdEchoFunction adds a request to delete an existing VPP bidirectional
 	// forwarding detection echo function.
 	BfdEchoFunction(bfdEchoName string) DeleteDSL
@@ -139,8 +148,16 @@ type DeleteDSL interface {
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
+	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(label string) DeleteDSL
+	// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+	ProxyArpRanges(label string) DeleteDSL
 	// StnRule adds a request to delete an existing VPP Stn rule.
 	StnRule(ruleName string) DeleteDSL
+	// NAT44Global adds a request to remove global configuration for NAT44
+	NAT44Global() DeleteDSL
+	// NAT44DNat adds a request to delete a new DNAT configuration
+	NAT44DNat(label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

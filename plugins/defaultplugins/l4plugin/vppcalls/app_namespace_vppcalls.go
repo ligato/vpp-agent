@@ -15,14 +15,19 @@
 package vppcalls
 
 import (
+	"fmt"
+	"time"
+
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/session"
 )
 
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace
-func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, log logging.Logger, vppChan *govppapi.Channel) (appnsIndex uint32, err error) {
-	log.Debugf("Adding App Namespace %v to interface %v", string(id), swIfIdx)
+func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (appNsIdx uint32, err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(session.AppNamespaceAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &session.AppNamespaceAddDel{
 		SwIfIndex:      swIfIdx,
@@ -34,22 +39,12 @@ func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byt
 	}
 
 	reply := &session.AppNamespaceAddDelReply{}
-
-	err = vppChan.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
-		log.WithFields(logging.Fields{"Error": err, "AppNamespace": string(id)}).Error("Error while configuring AppNamespace")
+	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
-		log.WithField("Return value", reply.Retval).Error("Unexpected return value")
-		return 0, err
+		return 0, fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)
 	}
 
-	appnsIndex = reply.AppnsIndex
-	log.WithFields(logging.Fields{
-		"AppNamespaceID":    string(id),
-		"AppNamespaceIndex": appnsIndex,
-	}).Debug("AppNamespace added.")
-
-	return appnsIndex, nil
+	return reply.AppnsIndex, nil
 }

@@ -18,13 +18,12 @@ import (
 	"container/list"
 	"fmt"
 	"net"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
-
-	"time"
 )
 
 // FibLogicalReq groups multiple fields so that all of them do not enumerate in one function call (request, reply/callback).
@@ -40,26 +39,23 @@ type FibLogicalReq struct {
 
 // NewL2FibVppCalls is a constructor.
 func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
-	return &L2FibVppCalls{vppChan, measure.GetTimeLog(l2ba.L2fibAddDel{}, stopwatch), list.New()}
+	return &L2FibVppCalls{vppChan, stopwatch, list.New()}
 }
 
 // L2FibVppCalls aggregates vpp calls related to l2 fib.
 type L2FibVppCalls struct {
 	vppChan         *govppapi.Channel
-	timeLog         measure.StopWatchEntry
+	stopwatch       *measure.Stopwatch
 	waitingForReply *list.List
 }
 
 // Add creates L2 FIB table entry.
 func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error), log logging.Logger) error {
 	log.Debug("Adding L2 FIB table entry, mac: ", mac)
-	// L2fibAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if fib.timeLog != nil {
-			fib.timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+
+	defer func(t time.Time) {
+		fib.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	return fib.request(&FibLogicalReq{
 		MAC:      mac,
@@ -75,13 +71,10 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 // Delete removes existing L2 FIB table entry.
 func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error), log logging.Logger) error {
 	log.Debug("Removing L2 fib table entry, mac: ", mac)
-	// L2fibAddDel time measurement
-	start := time.Now()
-	defer func() {
-		if fib.timeLog != nil {
-			fib.timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+
+	defer func(t time.Time) {
+		fib.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	return fib.request(&FibLogicalReq{
 		MAC:      mac,
@@ -92,10 +85,9 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 	}, log)
 }
 
-func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger) error {
+func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger) (err error) {
 	// Convert MAC address.
 	var mac []byte
-	var err error
 	if logicalReq.MAC != "" {
 		mac, err = net.ParseMAC(logicalReq.MAC)
 	}
@@ -107,8 +99,8 @@ func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger)
 	req.Mac = mac
 	req.BdID = logicalReq.BDIdx
 	req.SwIfIndex = logicalReq.SwIfIdx
-	req.BviMac = parseBoolToUint8(logicalReq.BVI)
-	req.StaticMac = parseBoolToUint8(logicalReq.Static)
+	req.BviMac = boolToUint(logicalReq.BVI)
+	req.StaticMac = boolToUint(logicalReq.Static)
 	if logicalReq.Delete {
 		req.IsAdd = 0
 	} else {
@@ -160,12 +152,4 @@ func (fib *L2FibVppCalls) WatchFIBReplies(log logging.Logger) {
 			}
 		}
 	}
-}
-
-// Parse true=1 false=0
-func parseBoolToUint8(input bool) uint8 {
-	if input == true {
-		return 1
-	}
-	return 0
 }

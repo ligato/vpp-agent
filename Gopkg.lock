@@ -13,7 +13,7 @@
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "8ca20507d15703412c18b07d4f4ce6b4de989de6"
+  revision = "4df448ad6cdfa2e60fa0167e5f70cc1127fbd3bf"
 
 [[projects]]
   branch = "master"
@@ -306,8 +306,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "39925ecc46ce2ed75c36869d584925963a3314d4"
-  version = "v1.1"
+  revision = "b1d7b65181d158935badfb66898f06160c4b1c26"
 
 [[projects]]
   branch = "master"
@@ -599,6 +598,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5a40c098955a862ef114cf87d1263f4965f74666d5571e35cc1c3ea9217357ce"
+  inputs-digest = "3c5d7fb379ea29a3fbcd2d52b9ff2959a2c2603331eebda510b99e0bc47b2d79"
   solver-name = "gps-cdcl"
   solver-version = 1

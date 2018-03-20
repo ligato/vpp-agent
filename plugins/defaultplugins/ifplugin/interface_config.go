@@ -17,14 +17,15 @@
 
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/af_packet.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/bfd.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/dhcp.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/interface.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=../common/bin_api
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tapv2.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=../common/bin_api
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=../common/bin_api
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/stats.api.json --output-dir=../common/bin_api
 
 // Package ifplugin implements the Interface plugin that handles management
 // of VPP interfaces.
@@ -33,12 +34,10 @@ package ifplugin
 import (
 	"bytes"
 	"errors"
-	"strings"
-
-	"time"
-
 	"fmt"
 	"net"
+	"strings"
+	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
@@ -46,14 +45,13 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/dhcp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -67,13 +65,15 @@ type InterfaceConfigurator struct {
 
 	GoVppmux     govppmux.API
 	ServiceLabel servicelabel.ReaderAPI
-	Linux        interface{} //just flag if nil
+	Linux        interface{} // just flag if nil
 
 	Stopwatch *measure.Stopwatch // timer used to measure and store time
 
 	swIfIndexes ifaceidx.SwIfIndexRW
+	dhcpIndices ifaceidx.DhcpIndexRW
 
-	uIfaceCache map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+	uIfaceCache  map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+	memifScCache map[string]uint32 // memif socket filename/ID cache (all known sockets). Note: do not remove items from the map
 
 	mtu uint32 // default MTU value can be read from config
 
@@ -81,13 +81,18 @@ type InterfaceConfigurator struct {
 
 	vppCh *govppapi.Channel
 
+	// Notification channels
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
+	dhcpChan  chan govppapi.Message // channel to receive DHCP notifications
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu uint32, notifChan chan govppapi.Message) (err error) {
+func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, dhcpIndices ifaceidx.DhcpIndexRW,
+	mtu uint32, notifChan chan govppapi.Message) (err error) {
 	plugin.Log.Debug("Initializing Interface configurator")
+
 	plugin.swIfIndexes = swIfIndexes
+	plugin.dhcpIndices = dhcpIndices
 	plugin.notifChan = notifChan
 	plugin.mtu = mtu
 
@@ -95,22 +100,35 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, mtu 
 	if err != nil {
 		return err
 	}
-	err = vppcalls.CheckMsgCompatibilityForInterface(plugin.Log, plugin.vppCh)
-	if err != nil {
+	if err := vppcalls.CheckMsgCompatibilityForInterface(plugin.Log, plugin.vppCh); err != nil {
 		return err
 	}
 
+	// Init AF-packet configurator
 	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, SwIfIndexes: plugin.swIfIndexes, Stopwatch: plugin.Stopwatch}
 	plugin.afPacketConfigurator.Init(plugin.vppCh)
 
 	plugin.uIfaceCache = make(map[string]string)
+	// Obtain registered socket filenames
+	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.Log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.Stopwatch))
+	if err != nil {
+		return err
+	}
+
+	plugin.dhcpChan = make(chan govppapi.Message, 1)
+	if _, err := plugin.vppCh.SubscribeNotification(plugin.dhcpChan, dhcp.NewDhcpComplEvent); err != nil {
+		return err
+	}
+	go plugin.watchDHCPNotifications()
 
 	return nil
 }
 
 // Close GOVPP channel
 func (plugin *InterfaceConfigurator) Close() error {
-	return safeclose.Close(plugin.vppCh)
+	_, err := safeclose.CloseAll(plugin.vppCh, plugin.dhcpChan)
+	return err
 }
 
 // PropagateIfDetailsToStatus looks up all VPP interfaces
@@ -161,28 +179,36 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	switch iface.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		ifIdx, err = vppcalls.AddTapInterface(iface.Tap, plugin.vppCh, measure.GetTimeLog(tap.TapConnect{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddTapInterface(iface.Name, iface.Tap, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		ifIdx, err = vppcalls.AddMemifInterface(iface.Memif, plugin.vppCh, measure.GetTimeLog(memif.MemifCreate{}, plugin.Stopwatch))
+		var id uint32 // Memif socket id
+		id, err = plugin.resolveMemifSocketFilename(iface.Memif)
+		if err != nil {
+			return err
+		}
+		ifIdx, err = vppcalls.AddMemifInterface(iface.Name, iface.Memif, id, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Vxlan, iface.Vrf, plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnelReply{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		ifIdx, err = vppcalls.AddLoopbackInterface(plugin.vppCh, measure.GetTimeLog(interfaces.CreateLoopback{}, plugin.Stopwatch))
+		ifIdx, err = vppcalls.AddLoopbackInterface(iface.Name, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
 		var exists bool
 		if ifIdx, _, exists = plugin.swIfIndexes.LookupIdx(iface.Name); !exists {
-			return errors.New("it is not yet supported to add (whitelist) a new physical interface")
+			plugin.Log.Warnf("It is not yet supported to add (whitelist) a new physical interface")
+			return nil
 		}
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		var pending bool
 		if ifIdx, pending, err = plugin.afPacketConfigurator.ConfigureAfPacketInterface(iface); err != nil {
 			return err
-		} else if pending {
+		}
+		if pending {
 			plugin.Log.Debugf("interface %+v cannot be created yet and will be configured later", iface)
 			return nil
 		}
 	}
 	if err != nil {
+		plugin.Log.Error(err)
 		return err
 	}
 
@@ -195,9 +221,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional mac address
 	if iface.PhysAddress != "" {
-		err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceSetMacAddress{}, plugin.Stopwatch))
-		if err != nil {
+		if err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -206,6 +230,15 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.Log, plugin.vppCh); err != nil {
 			errs = append(errs, err)
+		}
+	}
+
+	// configure DHCP client
+	if iface.SetDhcpClient {
+		if err := vppcalls.SetInterfaceAsDHCPClient(ifIdx, iface.Name, plugin.vppCh, plugin.Stopwatch); err != nil {
+			errs = append(errs, err)
+		} else {
+			plugin.Log.Debugf("Interface %v set as DHCP client", iface.Name)
 		}
 	}
 
@@ -220,23 +253,22 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure container IP address
 	if iface.ContainerIpAddress != "" {
-		if err := plugin.addContainerIPAddress(iface, ifIdx); err != nil {
+		if err := vppcalls.AddContainerIP(ifIdx, iface.ContainerIpAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
 			errs = append(errs, err)
+		} else {
+			plugin.Log.WithFields(logging.Fields{"IPaddr": iface.ContainerIpAddress, "ifIdx": ifIdx}).
+				Debug("Container IP address added")
 		}
 	}
 
 	// configure mtu. Prefer value in interface config, otherwise set default value if defined
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		if iface.Mtu != 0 {
-			err = vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.Log, plugin.vppCh,
-				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
-			if err != nil {
+			if err := vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
 				errs = append(errs, err)
 			}
 		} else if plugin.mtu != 0 {
-			err = vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh,
-				measure.GetTimeLog(interfaces.SwInterfaceSetMtu{}, plugin.Stopwatch))
-			if err != nil {
+			if err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -253,9 +285,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// set interface up if enabled
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
 	if iface.Enabled {
-		err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceSetFlags{}, plugin.Stopwatch))
-		if nil != err {
+		if err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
 			l.Debugf("setting interface up failed: %v", err)
 			return err
 		}
@@ -308,8 +338,7 @@ func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interf
 Call specific vpp API method for setting rx-mode
 */
 func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings) error {
-	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.Log, plugin.vppCh,
-		measure.GetTimeLog(interfaces.SwInterfaceSetRxMode{}, plugin.Stopwatch))
+	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.vppCh, plugin.Stopwatch)
 	plugin.Log.WithFields(logging.Fields{"ifName": iface.Name, "rxMode": rxModeSettings.RxMode}).
 		Debug("RX-mode configuration for ", iface.Type, ".")
 	return err
@@ -329,9 +358,10 @@ func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx u
 			return nil
 		}
 		// Set interface as un-numbered
-		err := vppcalls.SetUnnumberedIP(ifIdx, ifIdxIP, plugin.Log, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetUnnumbered{}, plugin.Stopwatch))
-		if err != nil {
+		if err := vppcalls.SetUnnumberedIP(ifIdx, ifIdxIP, plugin.vppCh, plugin.Stopwatch); err != nil {
 			return err
+		} else {
+			plugin.Log.WithFields(logging.Fields{"un-numberedIface": ifIdx, "ifIdxIP": ifIdxIP}).Debug("Interface set as un-numbered")
 		}
 		// just log
 		if len(addresses) != 0 {
@@ -342,9 +372,8 @@ func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx u
 	// configure optional ip address
 	var wasErr error
 	for _, address := range addresses {
-		err := vppcalls.AddInterfaceIP(ifIdx, address, plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddress{}, plugin.Stopwatch))
-		if nil != err {
+		if err := vppcalls.AddInterfaceIP(ifIdx, address, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("adding interface IP address failed: %v", err)
 			wasErr = err
 		}
 	}
@@ -359,8 +388,7 @@ func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx u
 func (plugin *InterfaceConfigurator) removeIPAddresses(ifIdx uint32, addresses []*net.IPNet, unnumbered *intf.Interfaces_Interface_Unnumbered) error {
 	if unnumbered != nil && unnumbered.IsUnnumbered {
 		// Set interface as un-numbered
-		err := vppcalls.UnsetUnnumberedIP(ifIdx, plugin.Log, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetUnnumbered{}, plugin.Stopwatch))
-		if err != nil {
+		if err := vppcalls.UnsetUnnumberedIP(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
 			return err
 		}
 	}
@@ -368,11 +396,12 @@ func (plugin *InterfaceConfigurator) removeIPAddresses(ifIdx uint32, addresses [
 	// delete IP Addresses
 	var wasErr error
 	for _, addr := range addresses {
-		err := vppcalls.DelInterfaceIP(ifIdx, addr, plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddress{}, plugin.Stopwatch))
-		plugin.Log.Debug("del ip addr ", ifIdx, " ", addr, " ", err)
-		if nil != err {
+		err := vppcalls.DelInterfaceIP(ifIdx, addr, plugin.vppCh, plugin.Stopwatch)
+		if err != nil {
+			plugin.Log.Errorf("deleting IP address failed: %v", err)
 			wasErr = err
+		} else {
+			plugin.Log.Debug("deleted IP addr %v", addr)
 		}
 	}
 
@@ -393,14 +422,15 @@ func (plugin *InterfaceConfigurator) resolveDependentUnnumberedInterfaces(ifName
 				delete(plugin.uIfaceCache, uIface)
 				continue
 			}
-			err := vppcalls.SetUnnumberedIP(uIdx, ifIdxIP, plugin.Log, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetUnnumbered{}, plugin.Stopwatch))
-			delete(plugin.uIfaceCache, uIface)
-			if err != nil {
+			if err := vppcalls.SetUnnumberedIP(uIdx, ifIdxIP, plugin.vppCh, plugin.Stopwatch); err != nil {
+				plugin.Log.Errorf("setting unnumbered IP failed: %v", err)
 				wasErr = err
+			} else {
+				plugin.Log.WithFields(logging.Fields{"un-numberedIface": uIdx, "ifIdxIP": ifIdxIP}).Debug("Interface set as un-numbered")
 			}
+			delete(plugin.uIfaceCache, uIface)
 		}
 	}
-
 	return wasErr
 }
 
@@ -484,7 +514,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	var wasError error
-	//rx mode
+	// rx mode
 	wasError = plugin.modifyRxModeForInterfaces(oldConfig, newConfig, ifIdx)
 
 	// admin status
@@ -501,9 +531,30 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	// configure new mac address if set (and only if it was changed)
 	if newConfig.PhysAddress != "" && newConfig.PhysAddress != oldConfig.PhysAddress {
-		err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.Log, plugin.vppCh, nil)
-		if err != nil {
+		if err := vppcalls.SetInterfaceMac(ifIdx, newConfig.PhysAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("setting interface MAC address failed: %v", err)
 			wasError = err
+		}
+	}
+
+	// reconfigure DHCP
+	if oldConfig.SetDhcpClient != newConfig.SetDhcpClient {
+		if newConfig.SetDhcpClient {
+			if err := vppcalls.SetInterfaceAsDHCPClient(ifIdx, newConfig.Name, plugin.vppCh, plugin.Stopwatch); err != nil {
+				plugin.Log.Error(err)
+				wasError = err
+			} else {
+				plugin.Log.Debugf("Interface %v set as DHCP client", newConfig.Name)
+			}
+		} else {
+			if err := vppcalls.UnsetInterfaceAsDHCPClient(ifIdx, newConfig.Name, plugin.vppCh, plugin.Stopwatch); err != nil {
+				plugin.Log.Error(err)
+				wasError = err
+			} else {
+				// Remove from dhcp mapping
+				plugin.dhcpIndices.UnregisterName(newConfig.Name)
+				plugin.Log.Debugf("Interface %v unset as DHCP client", oldConfig.Name)
+			}
 		}
 	}
 
@@ -524,18 +575,18 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		plugin.Log.Debugf("VRF changed: %v -> %v", oldConfig.Vrf, newConfig.Vrf)
 
 		// interface must not have IP when setting VRF
-		err = plugin.removeIPAddresses(ifIdx, oldAddrs, newConfig.Unnumbered)
-		if err != nil {
+		if err := plugin.removeIPAddresses(ifIdx, oldAddrs, newConfig.Unnumbered); err != nil {
+			plugin.Log.Error(err)
 			wasError = err
 		}
 
-		err := vppcalls.SetInterfaceVRF(ifIdx, newConfig.Vrf, plugin.Log, plugin.vppCh)
-		if err != nil {
+		if err := vppcalls.SetInterfaceVRF(ifIdx, newConfig.Vrf, plugin.Log, plugin.vppCh); err != nil {
+			plugin.Log.Error(err)
 			wasError = err
 		}
 
-		err = plugin.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered)
-		if err != nil {
+		if err = plugin.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
+			plugin.Log.Error(err)
 			wasError = err
 		}
 
@@ -546,33 +597,35 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		plugin.Log.Debug("del ip addrs: ", del)
 		plugin.Log.Debug("add ip addrs: ", add)
 
-		err = plugin.removeIPAddresses(ifIdx, del, oldConfig.Unnumbered)
-		if err != nil {
+		if err := plugin.removeIPAddresses(ifIdx, del, oldConfig.Unnumbered); err != nil {
+			plugin.Log.Error(err)
 			wasError = err
 		}
 
-		err = plugin.configureIPAddresses(newConfig.Name, ifIdx, add, newConfig.Unnumbered)
-		if err != nil {
+		if err := plugin.configureIPAddresses(newConfig.Name, ifIdx, add, newConfig.Unnumbered); err != nil {
+			plugin.Log.Error(err)
 			wasError = err
 		}
 	}
 
-	//container ip address
-	err = plugin.modifyContainerIPAddress(newConfig, oldConfig, ifIdx)
-	if err != nil {
-		plugin.Log.WithFields(logging.Fields{"new ip": newConfig.ContainerIpAddress, "old ip": oldConfig.ContainerIpAddress,
-			"ifIdx": ifIdx}).Debug("Container IP modification problem ", err)
+	// container ip address
+	if newConfig.ContainerIpAddress != oldConfig.ContainerIpAddress {
+		plugin.Log.WithFields(logging.Fields{"ifIdx": ifIdx, "ip_new": newConfig.ContainerIpAddress, "ip_old": oldConfig.ContainerIpAddress}).
+			Debug("Container IP address modification.")
+		if err := vppcalls.AddContainerIP(ifIdx, newConfig.ContainerIpAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.WithFields(logging.Fields{"newIP": newConfig.ContainerIpAddress, "oldIP": oldConfig.ContainerIpAddress, "ifIdx": ifIdx}).
+				Errorf("adding container IP failed: %v", err)
+			wasError = err
+		}
 	}
 
 	// Set MTU if changed in interface config
 	if newConfig.Mtu != 0 && newConfig.Mtu != oldConfig.Mtu {
-		err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.Log, plugin.vppCh, nil)
-		if err != nil {
+		if err := vppcalls.SetInterfaceMtu(ifIdx, newConfig.Mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
 			wasError = err
 		}
 	} else if newConfig.Mtu == 0 && plugin.mtu != 0 {
-		err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.Log, plugin.vppCh, nil)
-		if err != nil {
+		if err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
 			wasError = err
 		}
 	}
@@ -606,7 +659,7 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 				return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
 			}
 		} else {
-			//reset rx-mode to default value
+			// reset rx-mode to default value
 			newRxSettings = &intf.Interfaces_Interface_RxModeSettings{}
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:
@@ -628,23 +681,11 @@ Direct call of vpp api to change rx-mode of specified interface
 */
 func (plugin *InterfaceConfigurator) modifyRxMode(ifIdx uint32, newIntf *intf.Interfaces_Interface,
 	oldRxMode intf.RxModeType, newRxMode intf.Interfaces_Interface_RxModeSettings) error {
-	err := vppcalls.SetRxMode(ifIdx, *newIntf.RxModeSettings, plugin.Log, plugin.vppCh,
-		measure.GetTimeLog(interfaces.SwInterfaceSetRxMode{}, plugin.Stopwatch))
+	err := vppcalls.SetRxMode(ifIdx, *newIntf.RxModeSettings, plugin.vppCh, plugin.Stopwatch)
 	plugin.Log.WithFields(
 		logging.Fields{"ifName": newIntf.Name, "rxMode old": oldRxMode, "rxMode new": newRxMode.RxMode}).
 		Debug("RX-mode modification for ", newIntf.Type, ".")
 	return err
-}
-
-func (plugin *InterfaceConfigurator) modifyContainerIPAddress(newConfig *intf.Interfaces_Interface,
-	oldConfig *intf.Interfaces_Interface, ifIdx uint32) error {
-	if newConfig.ContainerIpAddress != oldConfig.ContainerIpAddress {
-		plugin.Log.WithFields(logging.Fields{"ifIdx": ifIdx, "ip_new": newConfig.ContainerIpAddress,
-			"ip_old": oldConfig.ContainerIpAddress}).
-			Debug("Container IP address modification.")
-		return plugin.addContainerIPAddress(newConfig, ifIdx)
-	}
-	return nil
 }
 
 // recreateVPPInterface removes and creates an interface from scratch.
@@ -653,14 +694,14 @@ func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interf
 	var err error
 
 	if oldConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
 	} else {
 		err = plugin.deleteVPPInterface(oldConfig, ifIdx)
 	}
-	if err == nil {
-		err = plugin.ConfigureVPPInterface(newConfig)
+	if err != nil {
+		return err
 	}
-	return err
+	return plugin.ConfigureVPPInterface(newConfig)
 }
 
 // DeleteVPPInterface reacts to a removed NB configuration of a VPP interface.
@@ -669,21 +710,37 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	plugin.Log.Infof("Removing interface %v", iface.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
-		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface)
+		ifIdx, _, found := plugin.afPacketConfigurator.SwIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			return fmt.Errorf("cannot remove af packet interface %v, index not available from mapping", iface.Name)
+		}
+		return plugin.afPacketConfigurator.DeleteAfPacketInterface(iface, ifIdx)
 	}
 
-	// unregister name to init mapping (following triggers notifications for all subscribers)
-	ifIdx, prev, found := plugin.swIfIndexes.UnregisterName(iface.Name)
-	if !found {
-		plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
-		return nil
-	}
+	// unregister name to init mapping (following triggers notifications for all subscribers, skip physical interfaces)
+	if iface.Type != intf.InterfaceType_ETHERNET_CSMACD {
+		ifIdx, prev, found := plugin.swIfIndexes.UnregisterName(iface.Name)
+		if !found {
+			plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
+			return nil
+		}
 
-	// delete from unnumbered map (if the interface is present)
-	delete(plugin.uIfaceCache, iface.Name)
+		// delete from unnumbered map (if the interface is present)
+		delete(plugin.uIfaceCache, iface.Name)
 
-	if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
-		return err
+		if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
+			return err
+		}
+	} else {
+		// Find index of the Physical interface and un-configure it
+		ifIdx, prev, found := plugin.swIfIndexes.LookupIdx(iface.Name)
+		if !found {
+			plugin.Log.WithField("ifname", iface.Name).Debug("Unable to find index for interface to be deleted.")
+			return nil
+		}
+		if err := plugin.deleteVPPInterface(prev, ifIdx); err != nil {
+			return err
+		}
 	}
 
 	plugin.Log.Infof("Interface %v removed", iface.Name)
@@ -691,23 +748,41 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	return wasError
 }
 
-func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_Interface, ifIdx uint32) (
-	wasError error) {
+func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_Interface, ifIdx uint32) (wasError error) {
 	plugin.Log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface begin")
 
 	// let's try to do following even if previously error occurred
-	err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.SwInterfaceSetFlags{}, plugin.Stopwatch))
-	if nil != err {
+	if err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+		plugin.Log.Error(err)
 		wasError = err
 	}
 
+	// Remove DHCP if it was set
+	if oldConfig.SetDhcpClient {
+		if err := vppcalls.UnsetInterfaceAsDHCPClient(ifIdx, oldConfig.Name, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Error(err)
+			wasError = err
+		}
+		// Remove from dhcp mapping
+		plugin.dhcpIndices.UnregisterName(oldConfig.Name)
+		plugin.Log.Debugf("Interface %v unset as DHCP client", oldConfig.Name)
+	}
+
 	// let's try to do following even if previously error occurred
-	plugin.deleteContainerIPAddress(oldConfig, ifIdx)
+	if oldConfig.ContainerIpAddress != "" {
+		if err := vppcalls.DelContainerIP(ifIdx, oldConfig.ContainerIpAddress, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Error(err)
+			wasError = err
+		} else {
+			plugin.Log.WithFields(logging.Fields{"IPaddr": oldConfig.ContainerIpAddress, "ifIdx": ifIdx}).
+				Debug("Container IP address deleted")
+		}
+	}
 
 	for i, oldIP := range oldConfig.IpAddresses {
 		if strings.HasPrefix(oldIP, "fe80") {
-			// todo skip link local addresses (possible workaround for af_packet)
+			// TODO: skip link local addresses (possible workaround for af_packet)
 			oldConfig.IpAddresses = append(oldConfig.IpAddresses[:i], oldConfig.IpAddresses[i+1:]...)
 		}
 	}
@@ -718,32 +793,31 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 		return err
 	}
 	for _, oldAddr := range oldAddrs {
-		err := vppcalls.DelInterfaceIP(ifIdx, oldAddr, plugin.Log, plugin.vppCh,
-			measure.GetTimeLog(interfaces.SwInterfaceAddDelAddressReply{}, plugin.Stopwatch))
-		if nil != err {
-			plugin.Log.Error(err)
+		if err := vppcalls.DelInterfaceIP(ifIdx, oldAddr, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("deleting interface IP address failed: %v", err)
 			wasError = err
 		}
 	}
 
-	plugin.Log.Info("Ip addrs removed")
+	plugin.Log.Info("IP addrs removed")
 
 	// let's try to do following even if previously error occurred
 	switch oldConfig.Type {
 	case intf.InterfaceType_TAP_INTERFACE:
-		err = vppcalls.DeleteTapInterface(ifIdx, oldConfig.Tap.Version, plugin.vppCh, measure.GetTimeLog(tap.TapDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteTapInterface(oldConfig.Name, ifIdx, oldConfig.Tap.Version, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		err = vppcalls.DeleteMemifInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(memif.MemifDelete{}, plugin.Stopwatch))
+		err = vppcalls.DeleteMemifInterface(oldConfig.Name, ifIdx, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = vppcalls.DeleteVxlanTunnel(oldConfig.GetVxlan(), plugin.vppCh, measure.GetTimeLog(vxlan.VxlanAddDelTunnel{}, plugin.Stopwatch))
+		err = vppcalls.DeleteVxlanTunnel(oldConfig.Name, ifIdx, oldConfig.GetVxlan(), plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-		err = vppcalls.DeleteLoopbackInterface(ifIdx, plugin.vppCh, measure.GetTimeLog(interfaces.DeleteLoopback{}, plugin.Stopwatch))
+		err = vppcalls.DeleteLoopbackInterface(oldConfig.Name, ifIdx, plugin.vppCh, plugin.Stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
-		return errors.New("it is not yet supported to remove (blacklist) physical interface")
+		plugin.Log.Debugf("Interface removal skipped: cannot remove (blacklist) physical interface") // Not an error
+		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
-		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig)
+		err = plugin.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
 	}
-	if nil != err {
+	if err != nil {
 		wasError = err
 	}
 
@@ -760,15 +834,36 @@ func (plugin *InterfaceConfigurator) ResolveCreatedLinuxInterface(interfaceName,
 	pendingAfpacket := plugin.afPacketConfigurator.ResolveCreatedLinuxInterface(interfaceName, hostIfName, interfaceIndex)
 	if pendingAfpacket != nil {
 		// there is a pending afpacket that can be now configured
-		plugin.ConfigureVPPInterface(pendingAfpacket)
+		if err := plugin.ConfigureVPPInterface(pendingAfpacket); err != nil {
+			plugin.Log.Error(err)
+		}
 	}
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string) {
+func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) {
 	plugin.Log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
 
-	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName)
+	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)
+}
+
+// returns memif socket filename ID. Registers it if does not exists yet
+func (plugin *InterfaceConfigurator) resolveMemifSocketFilename(memifIf *intf.Interfaces_Interface_Memif) (uint32, error) {
+	if memifIf.SocketFilename == "" {
+		return 0, fmt.Errorf("memif configuration does not contain socket file name")
+	}
+	registeredID, ok := plugin.memifScCache[memifIf.SocketFilename]
+	if !ok {
+		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
+		registeredID = uint32(len(plugin.memifScCache))
+		err := vppcalls.RegisterMemifSocketFilename([]byte(memifIf.SocketFilename), registeredID, plugin.vppCh, plugin.Stopwatch)
+		if err != nil {
+			return 0, fmt.Errorf("error registering socket file name %s (ID %d): %v", memifIf.SocketFilename, registeredID, err)
+		}
+		plugin.memifScCache[memifIf.SocketFilename] = registeredID
+		plugin.Log.Debugf("Memif socket filename %s registered under ID %d", memifIf.SocketFilename, registeredID)
+	}
+	return registeredID, nil
 }
 
 func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {
@@ -806,20 +901,54 @@ func (plugin *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.
 	return true
 }
 
-func (plugin *InterfaceConfigurator) addContainerIPAddress(iface *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIPv6, err := addrs.ParseIPWithPrefix(iface.ContainerIpAddress)
-	if err != nil {
-		return err
-	}
-	return vppcalls.AddContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
-		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
-}
+// watch and process DHCP notifications. DHCP configuration is registered to dhcp mapping for every interface
+func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
+	plugin.Log.Debug("Started watcher on DHCP notifications")
 
-func (plugin *InterfaceConfigurator) deleteContainerIPAddress(oldConfig *intf.Interfaces_Interface, ifIdx uint32) error {
-	addr, isIPv6, err := addrs.ParseIPWithPrefix(oldConfig.ContainerIpAddress)
-	if err != nil {
-		return nil
+	for {
+		select {
+		case notification := <-plugin.dhcpChan:
+			switch dhcpNotif := notification.(type) {
+			case *dhcp.DhcpComplEvent:
+				var ipAddr, rIPAddr net.IP = dhcpNotif.HostAddress, dhcpNotif.RouterAddress
+				var hwAddr net.HardwareAddr = dhcpNotif.HostMac
+				var ipStr, rIPStr string
+
+				name := string(bytes.Trim(dhcpNotif.Hostname, "\x00"))
+
+				if dhcpNotif.IsIpv6 == 1 {
+					ipStr = ipAddr.To16().String()
+					rIPStr = rIPAddr.To16().String()
+				} else {
+					ipStr = ipAddr[:4].To4().String()
+					rIPStr = rIPAddr[:4].To4().String()
+				}
+
+				plugin.Log.Debugf("DHCP assigned %v to interface %q (router address %v)", ipStr, name, rIPStr)
+
+				ifIdx, _, found := plugin.swIfIndexes.LookupIdx(name)
+				if !found {
+					plugin.Log.Warnf("Expected interface %v not found in the mapping", name)
+					continue
+				}
+
+				// Register DHCP config
+				plugin.dhcpIndices.RegisterName(name, ifIdx, &ifaceidx.DHCPSettings{
+					IfName: name,
+					IsIPv6: func(isIPv6 uint8) bool {
+						if isIPv6 == 1 {
+							return true
+						}
+						return false
+					}(dhcpNotif.IsIpv6),
+					IPAddress:     ipStr,
+					Mask:          uint32(dhcpNotif.MaskWidth),
+					PhysAddress:   hwAddr.String(),
+					RouterAddress: rIPStr,
+				})
+
+				plugin.Log.Debugf("Registered dhcp metadata for interface %v", name)
+			}
+		}
 	}
-	return vppcalls.DelContainerIP(ifIdx, addr, isIPv6, plugin.Log, plugin.vppCh,
-		measure.GetTimeLog(ip.IPContainerProxyAddDel{}, plugin.Stopwatch))
 }

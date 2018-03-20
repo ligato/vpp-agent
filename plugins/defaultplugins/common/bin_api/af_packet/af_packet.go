@@ -5,42 +5,7 @@ package af_packet
 
 import "git.fd.io/govpp.git/api"
 
-// VlApiVersion contains version of the API.
-const VlAPIVersion = 0x8957ca8b
-
 // AfPacketCreate represents the VPP binary API message 'af_packet_create'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 23:
-//
-//            "af_packet_create",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "host_if_name",
-//                64
-//            ],
-//            [
-//                "u8",
-//                "hw_addr",
-//                6
-//            ],
-//            [
-//                "u8",
-//                "use_random_hw_addr"
-//            ],
-//            {
-//                "crc": "0x6d5d30d6"
-//            }
 //
 type AfPacketCreate struct {
 	HostIfName      []byte `struc:"[64]byte"`
@@ -55,35 +20,13 @@ func (*AfPacketCreate) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AfPacketCreate) GetCrcString() string {
-	return "6d5d30d6"
+	return "92768640"
 }
 func NewAfPacketCreate() api.Message {
 	return &AfPacketCreate{}
 }
 
 // AfPacketCreateReply represents the VPP binary API message 'af_packet_create_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 55:
-//
-//            "af_packet_create_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0xfda5941f"
-//            }
 //
 type AfPacketCreateReply struct {
 	Retval    int32
@@ -97,36 +40,13 @@ func (*AfPacketCreateReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AfPacketCreateReply) GetCrcString() string {
-	return "fda5941f"
+	return "718bac92"
 }
 func NewAfPacketCreateReply() api.Message {
 	return &AfPacketCreateReply{}
 }
 
 // AfPacketDelete represents the VPP binary API message 'af_packet_delete'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 77:
-//
-//            "af_packet_delete",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "host_if_name",
-//                64
-//            ],
-//            {
-//                "crc": "0x3efceda3"
-//            }
 //
 type AfPacketDelete struct {
 	HostIfName []byte `struc:"[64]byte"`
@@ -139,31 +59,13 @@ func (*AfPacketDelete) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AfPacketDelete) GetCrcString() string {
-	return "3efceda3"
+	return "c063ce85"
 }
 func NewAfPacketDelete() api.Message {
 	return &AfPacketDelete{}
 }
 
 // AfPacketDeleteReply represents the VPP binary API message 'af_packet_delete_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 100:
-//
-//            "af_packet_delete_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type AfPacketDeleteReply struct {
 	Retval int32
@@ -176,39 +78,13 @@ func (*AfPacketDeleteReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AfPacketDeleteReply) GetCrcString() string {
-	return "e8d4e804"
+	return "1a80431a"
 }
 func NewAfPacketDeleteReply() api.Message {
 	return &AfPacketDeleteReply{}
 }
 
 // AfPacketSetL4CksumOffload represents the VPP binary API message 'af_packet_set_l4_cksum_offload'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 118:
-//
-//            "af_packet_set_l4_cksum_offload",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "set"
-//            ],
-//            {
-//                "crc": "0x86538585"
-//            }
 //
 type AfPacketSetL4CksumOffload struct {
 	SwIfIndex uint8
@@ -222,31 +98,13 @@ func (*AfPacketSetL4CksumOffload) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AfPacketSetL4CksumOffload) GetCrcString() string {
-	return "86538585"
+	return "e371db06"
 }
 func NewAfPacketSetL4CksumOffload() api.Message {
 	return &AfPacketSetL4CksumOffload{}
 }
 
 // AfPacketSetL4CksumOffloadReply represents the VPP binary API message 'af_packet_set_l4_cksum_offload_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 144:
-//
-//            "af_packet_set_l4_cksum_offload_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
 //
 type AfPacketSetL4CksumOffloadReply struct {
 	Retval int32
@@ -259,7 +117,7 @@ func (*AfPacketSetL4CksumOffloadReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AfPacketSetL4CksumOffloadReply) GetCrcString() string {
-	return "e8d4e804"
+	return "3cd60131"
 }
 func NewAfPacketSetL4CksumOffloadReply() api.Message {
 	return &AfPacketSetL4CksumOffloadReply{}

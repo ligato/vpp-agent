@@ -17,7 +17,6 @@ package defaultplugins
 import (
 	"context"
 	"os"
-
 	"sync"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -29,10 +28,14 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
@@ -78,12 +81,13 @@ type Plugin struct {
 
 	// ACL plugin fields
 	aclConfigurator *aclplugin.ACLConfigurator
-	aclL3L4Indexes  idxvpp.NameToIdxRW
-	aclL2Indexes    idxvpp.NameToIdxRW
+	aclL3L4Indexes  aclidx.AclIndexRW
+	aclL2Indexes    aclidx.AclIndexRW
 
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	swIfIndexes          ifaceidx.SwIfIndexRW
+	dhcpIndices          ifaceidx.DhcpIndexRW
 	linuxIfIndexes       ifaceLinux.LinuxIfIndex
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -94,6 +98,9 @@ type Plugin struct {
 	stnConfigurator      *ifplugin.StnConfigurator
 	stnAllIndexes        idxvpp.NameToIdxRW
 	stnUnstoredIndexes   idxvpp.NameToIdxRW
+
+	// IPSec plugin fields
+	ipsecConfigurator *ipsecplugin.IPSecConfigurator
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
@@ -120,6 +127,14 @@ type Plugin struct {
 	xcConfigurator *l2plugin.XConnectConfigurator
 	xcIndexes      idxvpp.NameToIdxRW
 
+	// NAT fields
+	natConfigurator      *ifplugin.NatConfigurator
+	sNatIndices          idxvpp.NameToIdxRW
+	sNatMappingIndices   idxvpp.NameToIdxRW
+	dNatIndices          idxvpp.NameToIdxRW
+	dNatStMappingIndices idxvpp.NameToIdxRW
+	dNatIdMappingIndices idxvpp.NameToIdxRW
+
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
 	routeIndexes      l3idx.RouteIndexRW
@@ -127,6 +142,11 @@ type Plugin struct {
 	// L3 arp fields
 	arpConfigurator *l3plugin.ArpConfigurator
 	arpIndexes      l3idx.ARPIndexRW
+
+	// L3 proxy arp fields
+	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
+	proxyArpIfIndices    idxvpp.NameToIdxRW
+	proxyArpRngIndices   idxvpp.NameToIdxRW
 
 	// L4 fields
 	l4Configurator      *l4plugin.L4Configurator
@@ -170,7 +190,8 @@ type Deps struct {
 	GoVppmux          govppmux.API
 	Linux             linuxpluginAPI
 
-	DataSyncs map[string]datasync.KeyProtoValWriter
+	DataSyncs        map[string]datasync.KeyProtoValWriter
+	WatchEventsMutex *sync.Mutex
 }
 
 type linuxpluginAPI interface {
@@ -198,6 +219,12 @@ func (plugin *Plugin) DisableResync(keyPrefix ...string) {
 // This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
 func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
 	return plugin.swIfIndexes
+}
+
+// GetDHCPIndices gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
+// This mapping is helpful if other plugins need to know about the DHCP configuration set by VPP.
+func (plugin *Plugin) GetDHCPIndices() ifaceidx.DhcpIndex {
+	return plugin.dhcpIndices
 }
 
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
@@ -239,6 +266,26 @@ func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
 // DumpACL returns a list of all configured ACL entires
 func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
 	return plugin.aclConfigurator.DumpACL()
+}
+
+// DumpNat44Global returns the current NAT44 global config
+func (plugin *Plugin) DumpNat44Global() (*nat.Nat44Global, error) {
+	return plugin.natConfigurator.DumpNatGlobal()
+}
+
+// DumpNat44DNat returns the current NAT44 DNAT config
+func (plugin *Plugin) DumpNat44DNat() (*nat.Nat44DNat, error) {
+	return plugin.natConfigurator.DumpNatDNat()
+}
+
+// GetIPSecSAIndexes
+func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
+	return plugin.ipsecConfigurator.SaIndexes
+}
+
+// GetIPSecSPDIndexes
+func (plugin *Plugin) GetIPSecSPDIndexes() idxvpp.NameToIdx {
+	return plugin.ipsecConfigurator.SpdIndexes.GetMapping()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
@@ -303,7 +350,7 @@ func (plugin *Plugin) Init() error {
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 
-	//FIXME Run the following go routines later than following init*() calls - just before Watch().
+	// FIXME: Run the following go routines later than following init*() calls - just before Watch().
 
 	// Run event handler go routines.
 	go plugin.publishIfStateEvents(ctx)
@@ -313,34 +360,30 @@ func (plugin *Plugin) Init() error {
 	// Run error handler.
 	go plugin.changePropagateError()
 
-	err = plugin.initIF(ctx)
-	if err != nil {
+	if err = plugin.initIF(ctx); err != nil {
 		return err
 	}
-	err = plugin.initACL(ctx)
-	if err != nil {
+	if err = plugin.initIPSec(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL2(ctx)
-	if err != nil {
+	if err = plugin.initACL(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL3(ctx)
-	if err != nil {
+	if err = plugin.initL2(ctx); err != nil {
 		return err
 	}
-	err = plugin.initL4(ctx)
-	if err != nil {
+	if err = plugin.initL3(ctx); err != nil {
 		return err
 	}
-
-	err = plugin.initErrorHandler()
-	if err != nil {
+	if err = plugin.initL4(ctx); err != nil {
 		return err
 	}
 
-	err = plugin.subscribeWatcher()
-	if err != nil {
+	if err = plugin.initErrorHandler(); err != nil {
+		return err
+	}
+
+	if err = plugin.subscribeWatcher(); err != nil {
 		return err
 	}
 
@@ -388,9 +431,13 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	stnLogger := plugin.Log.NewLogger("-stn-conf")
+	natLogger := plugin.Log.NewLogger("-nat-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
+	// DHCP indices
+	plugin.dhcpIndices = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
+		"dhcp_indices", ifaceidx.IndexDHCPMetadata))
 
 	// Get pointer to the map with Linux interface indices.
 	if plugin.Linux != nil {
@@ -435,7 +482,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		Linux:        plugin.Linux,
 		Stopwatch:    stopwatch,
 	}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.ifMtu, plugin.ifVppNotifChan)
+	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.dhcpIndices, plugin.ifMtu, plugin.ifVppNotifChan)
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -471,10 +518,74 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		StnAllIndexSeq:      1,
 		Stopwatch:           stopwatch,
 	}
-	plugin.stnConfigurator.Init()
+	if err := plugin.stnConfigurator.Init(); err != nil {
+		return err
+	}
 
 	plugin.Log.Debug("stnConfigurator Initialized")
 
+	// NAT indices
+	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
+	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
+	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
+	plugin.dNatStMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-st-mapping-indices", nil)
+	plugin.dNatIdMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-id-mapping-indices", nil)
+
+	plugin.natConfigurator = &ifplugin.NatConfigurator{
+		Log:                  natLogger,
+		GoVppmux:             plugin.GoVppmux,
+		SwIfIndexes:          plugin.swIfIndexes,
+		SNatIndices:          plugin.sNatIndices,
+		SNatMappingIndices:   plugin.sNatMappingIndices,
+		DNatIndices:          plugin.dNatIndices,
+		DNatStMappingIndices: plugin.dNatStMappingIndices,
+		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
+		NatIndexSeq:          1,
+		Stopwatch:            stopwatch,
+	}
+	if err := plugin.natConfigurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("Configurator Initialized")
+
+	return nil
+}
+
+func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
+	plugin.Log.Infof("Init IPSec plugin")
+
+	// logger
+	ipsecLogger := plugin.Log.NewLogger("-ipsec-plugin")
+
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("IPSecConfigurator", ipsecLogger)
+	}
+	saIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
+	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_spd_indexes", nil))
+	cachedSpdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+		"ipsec_cached_spd_indexes", nil))
+	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
+		Log:              ipsecLogger,
+		GoVppmux:         plugin.GoVppmux,
+		SwIfIndexes:      plugin.swIfIndexes,
+		Stopwatch:        stopwatch,
+		SaIndexSeq:       1,
+		SaIndexes:        saIndexes,
+		SpdIndexSeq:      1,
+		SpdIndexes:       spdIndexes,
+		CachedSpdIndexes: cachedSpdIndexes,
+	}
+
+	// Init IPSec plugin
+	if err = plugin.ipsecConfigurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("ipsecConfigurator Initialized")
 	return nil
 }
 
@@ -483,9 +594,8 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	// logger
 	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
-	plugin.aclL3L4Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil)
-
-	plugin.aclL2Indexes = nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil)
+	plugin.aclL3L4Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil))
+	plugin.aclL2Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
@@ -650,6 +760,25 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		Stopwatch:   stopwatch,
 	}
 
+	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
+	// Proxy ARP interface configuration indices
+	plugin.proxyArpIfIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_if_indices", nil)
+	// Proxy ARP range configuration indices
+	plugin.proxyArpRngIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_rng_indices", nil)
+
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
+	}
+	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{
+		Log:                proxyArpLogger,
+		GoVppmux:           plugin.GoVppmux,
+		ProxyArpIfIndices:  plugin.proxyArpIfIndices,
+		ProxyArpRngIndices: plugin.proxyArpRngIndices,
+		ProxyARPIndexSeq:   1,
+		SwIfIndexes:        plugin.swIfIndexes,
+		Stopwatch:          stopwatch,
+	}
+
 	if err := plugin.routeConfigurator.Init(); err != nil {
 		return err
 	}
@@ -660,6 +789,11 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
+
+	if err := plugin.proxyArpConfigurator.Init(); err != nil {
+		return err
+	}
+	plugin.Log.Debug("proxyArpConfigurator Initialized")
 
 	return nil
 }
@@ -677,13 +811,13 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
 	}
 	plugin.l4Configurator = &l4plugin.L4Configurator{
-		Log:                l4Logger,
-		GoVppmux:           plugin.GoVppmux,
-		AppNsIndexes:       plugin.namespaceIndexes,
-		NotConfiguredAppNs: plugin.notConfAppNsIndexes,
-		AppNsIdxSeq:        1,
-		SwIfIndexes:        plugin.swIfIndexes,
-		Stopwatch:          stopwatch,
+		Log:          l4Logger,
+		GoVppmux:     plugin.GoVppmux,
+		AppNsIndexes: plugin.namespaceIndexes,
+		AppNsCached:  plugin.notConfAppNsIndexes,
+		AppNsIdxSeq:  1,
+		SwIfIndexes:  plugin.swIfIndexes,
+		Stopwatch:    stopwatch,
 	}
 	err := plugin.l4Configurator.Init()
 	if err != nil {
@@ -702,7 +836,7 @@ func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	if err != nil {
 		return nil, err
 	} else if !found {
-		plugin.Log.Warn("defaultplugins config not found")
+		plugin.Log.Debug("defaultplugins config not found")
 		return nil, nil
 	}
 	plugin.Log.Debugf("defaultplugins config found: %+v", config)
@@ -756,7 +890,8 @@ func (plugin *Plugin) Close() error {
 		plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator)
+		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.proxyArpConfigurator,
+		plugin.natConfigurator, plugin.ipsecConfigurator)
 
 	return err
 }

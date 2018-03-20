@@ -109,17 +109,14 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 	plugin.BridgeDomainIDSeq++
 
 	// Create bridge domain with respective index.
-	err := vppcalls.VppAddBridgeDomain(bdIdx, bdConfig, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, plugin.Stopwatch))
-
-	if err != nil {
-		plugin.Log.WithField("Bridge domain name", bdConfig.Name).Error(err)
+	if err := vppcalls.VppAddBridgeDomain(bdIdx, bdConfig, plugin.vppChan, plugin.Stopwatch); err != nil {
+		plugin.Log.Errorf("adding bridge domain %v failed: %v", bdConfig.Name, err)
 		return err
 	}
 
 	// Find all interfaces belonging to this bridge domain and set them up.
 	vppcalls.SetInterfacesToBridgeDomain(bdConfig, bdIdx, bdConfig.Interfaces, plugin.SwIfIndices, plugin.Log,
-		plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
+		plugin.vppChan, plugin.Stopwatch)
 
 	// Resolve ARP termination table entries.
 	arpTerminationTable := bdConfig.GetArpTerminationTable()
@@ -127,7 +124,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 		arpTable := bdConfig.ArpTerminationTable
 		for _, arpEntry := range arpTable {
 			err := vppcalls.VppAddArpTerminationTableEntry(bdIdx, arpEntry.PhysAddress, arpEntry.IpAddress,
-				plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.BdIPMacAddDel{}, plugin.Stopwatch))
+				plugin.Log, plugin.vppChan, plugin.Stopwatch)
 			if err != nil {
 				plugin.Log.Error(err)
 			}
@@ -138,7 +135,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 
 	// Register created bridge domain.
 	plugin.BdIndices.RegisterName(bdConfig.Name, bdIdx, bdConfig)
-	plugin.Log.WithFields(logging.Fields{"Name": bdConfig.Name, "Index": bdIdx}).Debug("Bridge domain registered.")
+	plugin.Log.WithFields(logging.Fields{"Name": bdConfig.Name, "Index": bdIdx}).Debug("Bridge domain registered")
 
 	// Push to bridge domain state.
 	errLookup := plugin.PropagateBdDetailsToStatus(bdIdx, bdConfig.Name)
@@ -147,12 +144,20 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 		return errLookup
 	}
 
+	plugin.Log.WithFields(logging.Fields{"bdIdx": bdIdx}).
+		Infof("Bridge domain %v configured", bdConfig.Name)
+
 	return nil
 }
 
 // ModifyBridgeDomain processes the NB config and propagates it to bin api calls.
 func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_BridgeDomain, oldBdConfig *l2.BridgeDomains_BridgeDomain) error {
 	plugin.Log.Infof("Modifying VPP bridge domain %v", newBdConfig.Name)
+
+	// Update bridge domain's registered metadata
+	if success := plugin.BdIndices.UpdateMetadata(newBdConfig.Name, newBdConfig); !success {
+		plugin.Log.Errorf("Failed to update metadata for bridge domain %s", newBdConfig.Name)
+	}
 
 	// Validate updated config.
 	isValid, recreate := plugin.vppValidateBridgeDomainBVI(newBdConfig, oldBdConfig)
@@ -182,21 +187,18 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 
 		// Update interfaces.
 		toSet, toUnset := plugin.calculateIfaceDiff(newBdConfig.Interfaces, oldBdConfig.Interfaces)
-		vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig, bdIdx, toUnset, plugin.SwIfIndices, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
-		vppcalls.SetInterfacesToBridgeDomain(newBdConfig, bdIdx, toSet, plugin.SwIfIndices, plugin.Log,
-			plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
+		vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig, bdIdx, toUnset, plugin.SwIfIndices, plugin.Log, plugin.vppChan, plugin.Stopwatch)
+		vppcalls.SetInterfacesToBridgeDomain(newBdConfig, bdIdx, toSet, plugin.SwIfIndices, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 
 		// Update ARP termination table.
 		toAdd, toRemove := plugin.calculateARPDiff(newBdConfig.ArpTerminationTable, oldBdConfig.ArpTerminationTable)
-		ipMacAddDelTimeLog := measure.GetTimeLog(l2ba.BdIPMacAddDel{}, plugin.Stopwatch)
 		for _, entry := range toAdd {
-			vppcalls.VppAddArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress, plugin.Log,
-				plugin.vppChan, ipMacAddDelTimeLog)
+			vppcalls.VppAddArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress,
+				plugin.Log, plugin.vppChan, plugin.Stopwatch)
 		}
 		for _, entry := range toRemove {
-			vppcalls.VppRemoveArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress, plugin.Log,
-				plugin.vppChan, ipMacAddDelTimeLog)
+			vppcalls.VppRemoveArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress,
+				plugin.Log, plugin.vppChan, plugin.Stopwatch)
 		}
 
 		// Push change to bridge domain state.
@@ -225,20 +227,19 @@ func (plugin *BDConfigurator) DeleteBridgeDomain(bdConfig *l2.BridgeDomains_Brid
 
 func (plugin *BDConfigurator) deleteBridgeDomain(bdConfig *l2.BridgeDomains_BridgeDomain, bdIdx uint32) error {
 	// Unmap all interfaces from removed bridge domain.
-	vppcalls.UnsetInterfacesFromBridgeDomain(bdConfig, bdIdx, bdConfig.Interfaces,
-		plugin.SwIfIndices, plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
+	vppcalls.UnsetInterfacesFromBridgeDomain(bdConfig, bdIdx, bdConfig.Interfaces, plugin.SwIfIndices,
+		plugin.Log, plugin.vppChan, plugin.Stopwatch)
 
-	err := vppcalls.VppDeleteBridgeDomain(bdIdx, plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.BridgeDomainAddDel{}, plugin.Stopwatch))
-	if err != nil {
+	if err := vppcalls.VppDeleteBridgeDomain(bdIdx, plugin.vppChan, plugin.Stopwatch); err != nil {
 		return err
 	}
 
 	plugin.BdIndices.UnregisterName(bdConfig.Name)
-	plugin.Log.WithFields(logging.Fields{"Name": bdConfig.Name, "bdIdx": bdIdx}).Debug("Bridge domain removed.")
+	plugin.Log.WithFields(logging.Fields{"bdIdx": bdIdx}).
+		Debugf("Bridge domain %v removed", bdConfig.Name)
 
 	// Update bridge domain state.
-	err = plugin.PropagateBdDetailsToStatus(bdIdx, bdConfig.Name)
-	if err != nil {
+	if err := plugin.PropagateBdDetailsToStatus(bdIdx, bdConfig.Name); err != nil {
 		return err
 	}
 
@@ -290,8 +291,7 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint3
 		return nil
 	}
 
-	vppcalls.SetInterfaceToBridgeDomain(bdIdx, ifIdx, bvi, plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.SwInterfaceSetL2Bridge{}, plugin.Stopwatch))
+	vppcalls.SetInterfaceToBridgeDomain(bdIdx, ifIdx, bvi, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 
 	// Push to bridge domain state.
 	err := plugin.PropagateBdDetailsToStatus(bdIdx, bd.Name)
@@ -388,8 +388,7 @@ func (plugin *BDConfigurator) calculateBdParamsDiff(newBdConfig, oldBdConfig *l2
 //  * interface which will be the new BVI
 func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces) (toSet, toUnset []*l2.BridgeDomains_BridgeDomain_Interfaces) {
 	// Find BVI interfaces (it may not be configured)
-	var oldBVI *l2.BridgeDomains_BridgeDomain_Interfaces
-	var newBVI *l2.BridgeDomains_BridgeDomain_Interfaces
+	var oldBVI, newBVI *l2.BridgeDomains_BridgeDomain_Interfaces
 	for _, newIface := range newIfaces {
 		if newIface.BridgedVirtualInterface {
 			newBVI = newIface
@@ -406,9 +405,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	// If BVI was set/unset in general or the BVI interface was changed, pass the knowledge to the diff
 	// resolution
 	var bviChanged bool
-	if oldBVI == nil && newBVI == nil {
-		bviChanged = false
-	} else if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI.Name != newBVI.Name) {
+	if (oldBVI == nil && newBVI != nil) || (oldBVI != nil && newBVI == nil) || (oldBVI != nil && newBVI != nil && oldBVI.Name != newBVI.Name) {
 		bviChanged = true
 	}
 
@@ -416,7 +413,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	for _, oldIface := range oldIfaces {
 		var exists bool
 		for _, newIface := range newIfaces {
-			if oldIface.Name == newIface.Name {
+			if oldIface.Name == newIface.Name && oldIface.SplitHorizonGroup == newIface.SplitHorizonGroup {
 				exists = true
 			}
 		}
@@ -442,7 +439,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 	for _, newIface := range newIfaces {
 		var exists bool
 		for _, oldIface := range oldIfaces {
-			if newIface.Name == oldIface.Name {
+			if newIface.Name == oldIface.Name && newIface.SplitHorizonGroup == oldIface.SplitHorizonGroup {
 				exists = true
 			}
 		}

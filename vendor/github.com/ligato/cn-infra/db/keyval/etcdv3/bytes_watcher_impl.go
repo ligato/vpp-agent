@@ -76,12 +76,13 @@ func (resp *BytesWatchPutResp) GetRevision() int64 {
 // BytesWatchDelResp is sent when a key-value pair has been removed.
 type BytesWatchDelResp struct {
 	key string
+	prevValue []byte
 	rev int64
 }
 
 // NewBytesWatchDelResp creates an instance of BytesWatchDelResp.
-func NewBytesWatchDelResp(key string, revision int64) *BytesWatchDelResp {
-	return &BytesWatchDelResp{key: key, rev: revision}
+func NewBytesWatchDelResp(key string, prevValue []byte, revision int64) *BytesWatchDelResp {
+	return &BytesWatchDelResp{key: key, prevValue: prevValue, rev: revision}
 }
 
 // GetChangeType returns "Delete" for BytesWatchPutResp.
@@ -99,9 +100,9 @@ func (resp *BytesWatchDelResp) GetValue() []byte {
 	return nil
 }
 
-// GetPrevValue returns nil for BytesWatchDelResp.
+// GetPrevValue returns previous value for BytesWatchDelResp.
 func (resp *BytesWatchDelResp) GetPrevValue() []byte {
-	return nil
+	return resp.prevValue
 }
 
 // GetRevision returns the revision associated with the 'delete' operation.

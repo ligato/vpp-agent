@@ -33,7 +33,7 @@ cmd:
 clean-cmd:
 	@echo "# cleaning binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
-	rm -f ./cmd/vpp-agent-ctl/vpp-agent-grpc
+	rm -f ./cmd/vpp-agent-grpc/vpp-agent-grpc
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
@@ -45,7 +45,6 @@ examples:
 	cd examples/idx_iface_cache 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/idx_mapping_lookup 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_veth_cache		&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 
@@ -57,7 +56,6 @@ clean-examples:
 	rm -f examples/idx_iface_cache/idx_iface_cache
 	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
 	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/idx_veth_cache/idx_veth_cache
 	rm -f examples/localclient_linux/localclient_linux
 	rm -r examples/localclient_vpp/localclient_vpp
 
@@ -118,6 +116,7 @@ generate: get-generators
 	cd plugins/linuxplugin && go generate
 	cd plugins/defaultplugins/aclplugin && go generate
 	cd plugins/defaultplugins/ifplugin && go generate
+	cd plugins/defaultplugins/ipsecplugin && go generate
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
@@ -126,12 +125,16 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/stn && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect

@@ -28,3 +28,21 @@ def Parse_ARP(info, intf, ip, mac):
             return True
     print "ARP Found"
     return False
+
+
+# input - output from sh ip arp command
+# output - state info list
+def parse_stn_rule(info):
+    state = {}
+    for line in info.splitlines():
+        try:
+            if "address" in line.strip().split()[0]:
+                state['ip_address'] = line.strip().split()[1]
+            elif "iface" in line.strip().split()[0]:
+                state['iface'] = line.strip().split()[1]
+            elif "next_node" in line.strip().split()[0]:
+                state['next_node'] = line.strip().split()[1]
+        except IndexError:
+            pass
+
+    return state['ip_address'], state['iface'], state['next_node']

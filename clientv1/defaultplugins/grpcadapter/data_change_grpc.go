@@ -22,9 +22,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -33,7 +36,7 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 	return &DataChangeDSL{client,
 		map[string] /*name*/ *interfaces.Interfaces_Interface{},
 		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
-		map[uint32] /*id*/ *bfd.SingleHopBFD_Key{},
+		map[string] /*id*/ *bfd.SingleHopBFD_Key{},
 		map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction{},
 		map[string] /*name*/ *l2.BridgeDomains_BridgeDomain{},
 		map[string] /*key*/ *l2.FibTableEntries_FibTableEntry{},
@@ -42,10 +45,18 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *acl.AccessLists_Acl{},
 		map[string] /*value*/ *l4.L4Features{},
 		map[string] /*id*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*label*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
+		map[string] /*name*/ *ipsec.SecurityAssociations_SA{},
+		map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD{},
 
 		map[string] /*name*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
-		map[uint32] /*id*/ *struct{}{},
+		map[string] /*id*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
 		map[string] /*name*/ *struct{}{},
 		map[string] /*key*/ *struct{}{},
@@ -54,6 +65,14 @@ func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
 		map[string] /*name*/ *struct{}{},
 		map[string] /*id*/ *l4.L4Features{},
 		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
+		map[string] /*key*/ *l3.ArpTable_ArpTableEntry{},
+		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
+		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
+		map[string] /*name*/ *stn.StnRule{},
+		map[string] /*label*/ *nat.Nat44Global{},
+		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
+		map[string] /*name*/ *ipsec.SecurityAssociations_SA{},
+		map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD{},
 	}
 }
 
@@ -63,7 +82,7 @@ type DataChangeDSL struct {
 	client            vppsvc.ChangeConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
 	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
-	txnPutBfdAuthKey  map[uint32] /*id*/ *bfd.SingleHopBFD_Key
+	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
 	txnPutBfdEcho     map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction
 	txnPutBD          map[string] /*name*/ *l2.BridgeDomains_BridgeDomain
 	txnPutBDFIB       map[string] /*key*/ *l2.FibTableEntries_FibTableEntry
@@ -72,10 +91,18 @@ type DataChangeDSL struct {
 	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
 	txnPutL4Features  map[string] /*value*/ *l4.L4Features
 	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
+	txnPutProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnPutProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
+	txnPutStn         map[string] /*value*/ *stn.StnRule
+	txnPutNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
+	txnPutIPSecSA     map[string] /*name*/ *ipsec.SecurityAssociations_SA
+	txnPutIPSecSPD    map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD
 
 	txnDelIntf        map[string] /*name*/ *struct{}
 	txnDelBfdSession  map[string] /*name*/ *struct{}
-	txnDelBfdAuthKey  map[uint32] /*id*/ *struct{}
+	txnDelBfdAuthKey  map[string] /*id*/ *struct{}
 	txnDelBfdEcho     map[string] /*name*/ *struct{}
 	txnDelBD          map[string] /*name*/ *struct{}
 	txnDelBDFIB       map[string] /*key*/ *struct{}
@@ -84,6 +111,14 @@ type DataChangeDSL struct {
 	txnDelACL         map[string] /*name*/ *struct{}
 	txnDelL4Features  map[string] /*value*/ *l4.L4Features
 	txnDelAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
+	txnDelArp         map[string] /*value*/ *l3.ArpTable_ArpTableEntry
+	txnDelProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
+	txnDelProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
+	txnDelStn         map[string] /*value*/ *stn.StnRule
+	txnDelNatGlobal   map[string] /*id*/ *nat.Nat44Global
+	txnDelDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
+	txnDelIPSecSA     map[string] /*name*/ *ipsec.SecurityAssociations_SA
+	txnDelIPSecSPD    map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD
 }
 
 // PutDSL allows to add or edit the configuration of delault plugins based on grpc requests.
@@ -110,7 +145,7 @@ func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugins.PutD
 
 // BfdAuthKeys creates or updates the bidirectional forwarding detection key.
 func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.PutDSL {
-	dsl.parent.txnPutBfdAuthKey[val.Id] = val
+	dsl.parent.txnPutBfdAuthKey[strconv.Itoa(int(val.Id))] = val
 	return dsl
 }
 
@@ -169,6 +204,54 @@ func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugi
 	return dsl
 }
 
+// Arp adds a request to create or update VPP L3 ARP entry.
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+	dsl.parent.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	return dsl
+}
+
+// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
+func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.PutDSL {
+	dsl.parent.txnPutProxyArpIfs[arp.Label] = arp
+	return dsl
+}
+
+// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugins.PutDSL {
+	dsl.parent.txnPutProxyArpRng[arp.Label] = arp
+	return dsl
+}
+
+// StnRule adds a request to create or update STN rule.
+func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
+	dsl.parent.txnPutStn[val.RuleName] = val
+	return dsl
+}
+
+// NAT44Global adds a request to set global configuration for NAT44
+func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.PutDSL {
+	dsl.parent.txnPutNatGlobal["global"] = nat44
+	return dsl
+}
+
+// NAT44DNat adds a request to create a new DNAT configuration
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.PutDSL {
+	dsl.parent.txnPutDNat[nat.DNatKey(nat44.Label)] = nat44
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.PutDSL {
+	dsl.parent.txnPutIPSecSA[ipsec.SAKey(sa.Name)] = sa
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.PutDSL {
+	dsl.parent.txnPutIPSecSPD[ipsec.SPDKey(spd.Name)] = spd
+	return dsl
+}
+
 // Put enables creating Interface/BD...
 func (dsl *DataChangeDSL) Put() defaultplugins.PutDSL {
 	return &PutDSL{dsl}
@@ -206,7 +289,7 @@ func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) defaultplugins.Dele
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
 func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) defaultplugins.DeleteDSL {
-	dsl.parent.txnDelBfdAuthKey[AtoibfdKeyID] = nil
+	dsl.parent.txnDelBfdAuthKey[bfdKeyID] = nil
 	return dsl
 }
 
@@ -241,7 +324,8 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 // StaticRoute deletes the L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) defaultplugins.DeleteDSL {
 	dsl.parent.txnDelStaticRoute[l3.RouteKey(vrf, dstAddr, nextHopAddr)] =
-		&vppsvc.DelStaticRoutesRequest_DelStaticRoute{vrf, dstAddr, nextHopAddr}
+		&vppsvc.DelStaticRoutesRequest_DelStaticRoute{
+			VRF: vrf, DstAddr: dstAddr, NextHopAddr: nextHopAddr}
 
 	return dsl
 }
@@ -255,15 +339,63 @@ func (dsl *DeleteDSL) ACL(aclName string) defaultplugins.DeleteDSL {
 
 // L4Features deletes request for the L4Features.
 func (dsl *DeleteDSL) L4Features() defaultplugins.DeleteDSL {
-	dsl.parent.txnPutL4Features["l4"] = nil
+	dsl.parent.txnDelL4Features["l4"] = nil
 
 	return dsl
 }
 
 // AppNamespace delets request for the Application Namespaces List.
 func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
-	dsl.parent.txnPutAppNs[id] = nil
+	dsl.parent.txnDelAppNs[id] = nil
 
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP entry.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelArp[l3.ArpEntryKey(ifaceName, ipAddr)] = nil
+	return dsl
+}
+
+// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+func (dsl *DeleteDSL) ProxyArpInterfaces(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelProxyArpIfs[label] = nil
+	return dsl
+}
+
+// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+func (dsl *DeleteDSL) ProxyArpRanges(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelProxyArpRng[label] = nil
+	return dsl
+}
+
+// StnRule adds request to delete Stn rule.
+func (dsl *DeleteDSL) StnRule(name string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelStn[name] = nil
+	return dsl
+}
+
+// NAT44Global adds a request to remove global configuration for NAT44
+func (dsl *DeleteDSL) NAT44Global() defaultplugins.DeleteDSL {
+	dsl.parent.txnPutNatGlobal["global"] = nil
+	return dsl
+}
+
+// NAT44DNat adds a request to delete a DNAT configuration
+func (dsl *DeleteDSL) NAT44DNat(label string) defaultplugins.DeleteDSL {
+	dsl.parent.txnPutDNat[nat.DNatKey(label)] = nil
+	return dsl
+}
+
+// IPSecSA adds request to delete a Security Association
+func (dsl *DeleteDSL) IPSecSA(name string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelIPSecSA[ipsec.SAKey(name)] = nil
+	return dsl
+}
+
+// IPSecSPD adds request to delete a Security Policy Database
+func (dsl *DeleteDSL) IPSecSPD(name string) defaultplugins.DeleteDSL {
+	dsl.parent.txnDelIPSecSPD[ipsec.SPDKey(name)] = nil
 	return dsl
 }
 
@@ -282,7 +414,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	var wasErr error
 
 	if len(dsl.txnPutIntf) > 0 {
-		putIntfs := []*interfaces.Interfaces_Interface{}
+		var putIntfs []*interfaces.Interfaces_Interface
 		for _, intf := range dsl.txnPutIntf {
 			putIntfs = append(putIntfs, intf)
 		}
@@ -292,7 +424,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		}
 	}
 	if len(dsl.txnPutBD) > 0 {
-		putBDs := []*l2.BridgeDomains_BridgeDomain{}
+		var putBDs []*l2.BridgeDomains_BridgeDomain
 		for _, bd := range dsl.txnPutBD {
 			putBDs = append(putBDs, bd)
 		}
@@ -302,7 +434,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		}
 	}
 	if len(dsl.txnPutXCon) > 0 {
-		putXCons := []*l2.XConnectPairs_XConnectPair{}
+		var putXCons []*l2.XConnectPairs_XConnectPair
 		for _, xcon := range dsl.txnPutXCon {
 			putXCons = append(putXCons, xcon)
 		}
@@ -312,7 +444,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		}
 	}
 	if len(dsl.txnPutStaticRoute) > 0 {
-		putRoutes := []*l3.StaticRoutes_Route{}
+		var putRoutes []*l3.StaticRoutes_Route
 		for _, route := range dsl.txnPutStaticRoute {
 			putRoutes = append(putRoutes, route)
 		}
@@ -322,7 +454,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 		}
 	}
 	if len(dsl.txnPutACL) > 0 {
-		putACLs := []*acl.AccessLists_Acl{}
+		var putACLs []*acl.AccessLists_Acl
 		for _, acl := range dsl.txnPutACL {
 			putACLs = append(putACLs, acl)
 		}
@@ -333,51 +465,51 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	}
 
 	if len(dsl.txnDelIntf) > 0 {
-		delIntfs := []string{}
+		var delIntfs []string
 		for intfName := range dsl.txnDelIntf {
 			delIntfs = append(delIntfs, intfName)
 		}
-		_, err := dsl.client.DelInterfaces(context.Background(), &vppsvc.DelNamesRequest{delIntfs})
+		_, err := dsl.client.DelInterfaces(context.Background(), &vppsvc.DelNamesRequest{Name: delIntfs})
 		if err != nil {
 			wasErr = err
 		}
 	}
 	if len(dsl.txnDelBD) > 0 {
-		bdNames := []string{}
+		var bdNames []string
 		for intfName := range dsl.txnDelBD {
 			bdNames = append(bdNames, intfName)
 		}
-		_, err := dsl.client.DelBDs(context.Background(), &vppsvc.DelNamesRequest{bdNames})
+		_, err := dsl.client.DelBDs(context.Background(), &vppsvc.DelNamesRequest{Name: bdNames})
 		if err != nil {
 			wasErr = err
 		}
 	}
 	if len(dsl.txnDelXCon) > 0 {
-		delXCons := []string{}
+		var delXCons []string
 		for intfName := range dsl.txnDelXCon {
 			delXCons = append(delXCons, intfName)
 		}
-		_, err := dsl.client.DelXCons(context.Background(), &vppsvc.DelNamesRequest{delXCons})
+		_, err := dsl.client.DelXCons(context.Background(), &vppsvc.DelNamesRequest{Name: delXCons})
 		if err != nil {
 			wasErr = err
 		}
 	}
 	if len(dsl.txnDelStaticRoute) > 0 {
-		delRoutes := []*vppsvc.DelStaticRoutesRequest_DelStaticRoute{}
+		var delRoutes []*vppsvc.DelStaticRoutesRequest_DelStaticRoute
 		for _, route := range dsl.txnDelStaticRoute {
 			delRoutes = append(delRoutes, route)
 		}
-		_, err := dsl.client.DelStaticRoutes(context.Background(), &vppsvc.DelStaticRoutesRequest{delRoutes})
+		_, err := dsl.client.DelStaticRoutes(context.Background(), &vppsvc.DelStaticRoutesRequest{Route: delRoutes})
 		if err != nil {
 			wasErr = err
 		}
 	}
 	if len(dsl.txnDelACL) > 0 {
-		delACLs := []string{}
+		var delACLs []string
 		for intfName := range dsl.txnDelACL {
 			delACLs = append(delACLs, intfName)
 		}
-		_, err := dsl.client.DelACLs(context.Background(), &vppsvc.DelNamesRequest{delACLs})
+		_, err := dsl.client.DelACLs(context.Background(), &vppsvc.DelNamesRequest{Name: delACLs})
 		if err != nil {
 			wasErr = err
 		}

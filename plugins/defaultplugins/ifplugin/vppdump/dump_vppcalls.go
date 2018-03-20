@@ -34,6 +34,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 )
 
+// Default VPP MTU value
+const defaultVPPMtu = 9216
+
 // Interface is the wrapper structure for the interface northbound API structure.
 type Interface struct {
 	VPPInternalName string `json:"vpp_internal_name"`
@@ -69,10 +72,22 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 		iface := &Interface{
 			VPPInternalName: string(bytes.Trim(ifDetails.InterfaceName, "\x00")),
 			Interfaces_Interface: ifnb.Interfaces_Interface{
+				Name:        string(bytes.Trim(ifDetails.Tag, "\x00")),
 				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
+				Mtu: func(vppMtu uint16) uint32 {
+					// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
+					if vppMtu == defaultVPPMtu {
+						return 0
+					}
+					return uint32(vppMtu)
+				}(ifDetails.LinkMtu),
 			},
+		}
+		// Fill name for physical interfaces (they are mostly without tag)
+		if iface.Type == ifnb.InterfaceType_ETHERNET_CSMACD {
+			iface.Name = iface.VPPInternalName
 		}
 		ifs[ifDetails.SwIfIndex] = iface
 
@@ -124,6 +139,39 @@ func DumpInterfaces(log logging.Logger, vppChan *govppapi.Channel, stopwatch *me
 	}
 
 	return ifs, nil
+}
+
+// DumpMemifSocketDetails dumps memif socket details from the VPP
+func DumpMemifSocketDetails(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]uint32, error) {
+	// MemifSocketFilenameDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	memifSocketMap := make(map[string]uint32)
+
+	reqCtx := vppChan.SendMultiRequest(&memif.MemifSocketFilenameDump{})
+	for {
+		socketDetails := &memif.MemifSocketFilenameDetails{}
+		stop, err := reqCtx.ReceiveReply(socketDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			log.Error(err)
+			return memifSocketMap, err
+		}
+
+		filename := string(bytes.Trim(socketDetails.SocketFilename, "\x00"))
+		memifSocketMap[filename] = socketDetails.SocketID
+	}
+
+	log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
+
+	return memifSocketMap, nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
@@ -206,6 +254,12 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 		}
 	}()
 
+	// Dump all memif sockets
+	memifSocketMap, err := DumpMemifSocketDetails(log, vppChan, timeLog)
+	if err != nil {
+		return err
+	}
+
 	reqCtx := vppChan.SendMultiRequest(&memif.MemifDump{})
 	for {
 		memifDetails := &memif.MemifDetails{}
@@ -225,10 +279,19 @@ func dumpMemifDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uin
 			Master: memifDetails.Role == 0,
 			Mode:   memifModetoNB(memifDetails.Mode),
 			Id:     memifDetails.ID,
-			//TODO Secret - not available in the binary API
-			SocketFilename: string(bytes.Trim(memifDetails.SocketFilename, "\x00")),
-			RingSize:       memifDetails.RingSize,
-			BufferSize:     uint32(memifDetails.BufferSize),
+			// TODO: Secret - not available in the binary API
+			SocketFilename: func(socketMap map[string]uint32) (filename string) {
+				for filename, id := range socketMap {
+					if memifDetails.SocketID == id {
+						return filename
+					}
+				}
+				// Socket for configured memif should exist
+				log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
+				return
+			}(memifSocketMap),
+			RingSize:   memifDetails.RingSize,
+			BufferSize: uint32(memifDetails.BufferSize),
 			// TODO: RxQueues, TxQueues - not available in the binary API
 		}
 		ifs[memifDetails.SwIfIndex].Type = ifnb.InterfaceType_MEMORY_INTERFACE
@@ -288,7 +351,7 @@ func dumpTapDetails(log logging.Logger, vppChan *govppapi.Channel, ifs map[uint3
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    2,
-			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
+			HostIfName: string(bytes.Trim(tapDetails.HostIfName, "\x00")),
 			// Other parameters are not not yet part of the dump.
 
 		}

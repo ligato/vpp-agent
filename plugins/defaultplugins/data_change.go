@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -173,6 +175,30 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+		var value, prevValue l3.ProxyArpInterfaces_InterfaceList
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeProxyARPInterface(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+		var value, prevValue l3.ProxyArpRanges_RangeList
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeProxyARPRange(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
 	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
@@ -208,6 +234,71 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			}
 		} else {
 			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+		// Global NAT config
+		var value, prevValue nat.Nat44Global
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeNatGlobal(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+		// SNAT config
+		var value, prevValue nat.Nat44SNat_SNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeSNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+		// DNAT config
+		var value, prevValue nat.Nat44DNat_DNatConfig
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangeDNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
+		if strings.HasPrefix(key, ipsec.KeyPrefixSPD) {
+			var value, prevValue ipsec.SecurityPolicyDatabases_SPD
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecSPD(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		} else if strings.HasPrefix(key, ipsec.KeyPrefixSA) {
+			var value, prevValue ipsec.SecurityAssociations_SA
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecSA(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
 		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
@@ -346,6 +437,32 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry,
 	return plugin.arpConfigurator.AddArp(value)
 }
 
+// dataChangeProxyARPInterface propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l3.ProxyArpInterfaces_InterfaceList,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.proxyArpConfigurator.DeleteInterface(prevValue)
+	} else if diff {
+		return plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+	}
+	return plugin.proxyArpConfigurator.AddInterface(value)
+}
+
+// dataChangeProxyARPRange propagates data change to the arpConfigurator
+func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.ProxyArpRanges_RangeList,
+	changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.proxyArpConfigurator.DeleteRange(prevValue)
+	} else if diff {
+		return plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+	}
+	return plugin.proxyArpConfigurator.AddRange(value)
+}
+
 // DataChangeStaticRoute propagates data change to the l4Configurator
 func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_AppNamespace, prevValue *l4.AppNamespaces_AppNamespace,
 	changeType datasync.PutDel) error {
@@ -372,6 +489,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
 }
 
+// DataChangeStnRule propagates data change to the stn configurator
 func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
@@ -381,4 +499,64 @@ func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue
 		return plugin.stnConfigurator.Modify(prevValue, value)
 	}
 	return plugin.stnConfigurator.Add(value)
+}
+
+// dataChangeNatGlobal propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.PutDel) error {
+	plugin.Log.Debug("natGlobalChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+	}
+	return plugin.natConfigurator.SetNatGlobalConfig(value)
+}
+
+// dataChangeSNat propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.PutDel) error {
+	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteSNat(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifySNat(prevValue, value)
+	}
+	return plugin.natConfigurator.ConfigureSNat(value)
+}
+
+// dataChangeDNat propagates data change to the nat configurator
+func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.natConfigurator.DeleteDNat(prevValue)
+	} else if diff {
+		return plugin.natConfigurator.ModifyDNat(prevValue, value)
+	}
+	return plugin.natConfigurator.ConfigureDNat(value)
+}
+
+// dataChangeIPSecSPD propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteSPD(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifySPD(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureSPD(value)
+}
+
+// dataChangeIPSecSA propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteSA(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureSA(value)
 }

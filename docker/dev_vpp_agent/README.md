@@ -43,6 +43,20 @@ explicitly specify the agent and vpp commit numbers:
 ```
 sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg VPP_COMMIT=f3bcdbf071c98ed676591bd22c3d3f8601009fa8 --no-cache .
 ```
+In addition, these environment variables can be set in Dockerfile:
+- `START_AGENT` - whether the vpp-agent should be started after start of the container (default is true, agent will be started)
+- `RETAIN_SUPERVISOR` - whether the supervisor should be killed (default is false, supervisor will be stopped)
+
+Their values can be also changed before image start with `docker -e` to have desired behavior
+
+### Building VPP .deb Packages in Debug or Release Mode
+You can build VPP .deb packages with debug or release mode. By default the image is built for release mode.
+The environmental variable `VPP_DEBUG_DEB=y` can be used to build VPP .deb packages with debug mode.
+
+To build the image with VPP .deb packages with debug mode:
+```
+VPP_DEBUG_DEB=y ./build.sh
+```
 
 #### Verifying a Created or Downloaded Image
 You can verify the newly built or downloaded image as follows:
@@ -87,7 +101,7 @@ dev_vpp_agent_shrink                                  latest              bd2e76
 ```
 ---
 
-### Starting the Image
+## Starting the Image
 By default, the VPP & the Agent processes will be started automatically 
 in the container. This is useful e.g. for deployments with Kubernetes, 
 as described in [this README](../../k8s/dev-setup/README.md). However, this option is
@@ -101,6 +115,23 @@ sudo docker run -it --name vpp_agent --privileged --rm dev_vpp_agent bash
 To open another terminal into the image:
 ```
 sudo docker exec -it vpp_agent bash
+```
+
+### Running VPP in Debug or Release Mode
+You can run VPP in debug or release mode. By default the image runs in release mode.
+The environmental variable `RUN_VPP_DEBUG=y` can be used to run VPP in debug mode.
+
+To start the image with VPP in debug mode:
+```
+sudo docker run -it --env RUN_VPP_DEBUG=y --rm --privileged dev_vpp_agent bash
+```
+
+### Mounting VPP Build Using Volume
+You can run custom build of VPP by using volume mount. The VPP build in the image is located at `/opt/vpp-agent/dev/vpp`.
+
+To start the image with custom VPP build mounted from host:
+```
+sudo docker run -it --volume $HOME/myvpp:/opt/vpp-agent/dev/vpp --rm --privileged dev_vpp_agent bash
 ```
 
 ### Running VPP and the Agent
@@ -180,10 +211,8 @@ The ETCD server will be available on your host OS IP (most likely
 
 Call the agent via ETCD using the testing client:
 ```
-cd $GOPATH/src/github.com/ligato/vpp-agent/cmd/vpp-agent-ctl
-go run main.go /opt/vpp-agent/dev/etcd.conf -ct
-go run main.go /opt/vpp-agent/dev/etcd.conf -mt
-go run main.go /opt/vpp-agent/dev/etcd.conf -dt
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
 
 ### Running Kafka on Local Host

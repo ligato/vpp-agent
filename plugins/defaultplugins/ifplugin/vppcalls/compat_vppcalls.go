@@ -22,6 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tapv2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
@@ -101,6 +103,32 @@ func CheckMsgCompatibilityForBfd(vppChan *govppapi.Channel) error {
 		&bfd.BfdAuthSetKeyReply{},
 		&bfd.BfdAuthDelKey{},
 		&bfd.BfdAuthDelKeyReply{},
+	}
+	return vppChan.CheckMessageCompatibility(msgs...)
+}
+
+// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
+func CheckMsgCompatibilityForNat(vppChan *govppapi.Channel) error {
+	msgs := []govppapi.Message{
+		&nat.Nat44AddDelAddressRange{},
+		&nat.Nat44AddDelAddressRangeReply{},
+		&nat.Nat44ForwardingEnableDisable{},
+		&nat.Nat44ForwardingEnableDisableReply{},
+		&nat.Nat44InterfaceAddDelFeature{},
+		&nat.Nat44InterfaceAddDelFeatureReply{},
+		&nat.Nat44AddDelStaticMapping{},
+		&nat.Nat44AddDelStaticMappingReply{},
+		&nat.Nat44AddDelLbStaticMapping{},
+		&nat.Nat44AddDelLbStaticMappingReply{},
+	}
+	return vppChan.CheckMessageCompatibility(msgs...)
+}
+
+// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
+func CheckMsgCompatibilityForStn(vppChan *govppapi.Channel) error {
+	msgs := []govppapi.Message{
+		&stn.StnAddDelRule{},
+		&stn.StnAddDelRuleReply{},
 	}
 	return vppChan.CheckMessageCompatibility(msgs...)
 }

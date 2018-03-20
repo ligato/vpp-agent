@@ -50,15 +50,13 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 		ipRulesExist := checkIPRules(vppACL.ACLDetails.Rules)
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(&acl_api.ACLDel{}, plugin.Stopwatch)); err != nil {
+			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
 			continue
 		} else {
-			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel,
-				measure.GetTimeLog(&acl_api.MacipACLAdd{}, plugin.Stopwatch)); err != nil {
+			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}

@@ -1,3 +1,54 @@
+# Release v1.3-rc1 (2018-XX-XX)
+
+## Compatibility
+VPP v18.01-rc0~605-g954d437
+cn-infra v1.1
+
+The vpp-agent is now using custom VPP branch stable-1801-contiv.
+Link to [github].(https://github.com/vpp-dev/vpp/tree/stable-1801-contiv)
+
+## New Features
+- [ipsecplugin](plugins/defaultplugins/ifplugin)
+  * New plugin for IPSec added. *add more info about IPSec (what is possible to do,
+    what is not, link to readme...)*
+- [nsplugin](plugins/linuxplugin/nsplugin)
+  * New namespace plugin added. The configurator handles common namespace and microservice
+    processing and communication with other Linux plugins.      
+- [ifplugin](plugins/defaultplugins/ifplugin)
+  * Added support for Network address translation. NAT plugin supports
+    configuration of NAT44 interfaces, address pools and DNAT. Look for
+    more information in the [readme](plugins/defaultplugins/ifplugin/README.md).
+  * DHCP can now be configured for the interface  
+- [l2plugin](plugins/defaultplugins/l2plugin)
+  * Split-horizon group can be configured for bridge domain interface.
+- [l3plugin](plugins/defaultplugins/l3plugin)
+  * Added support for proxy ARP. For more information and configuration 
+    example, please see [readme](plugins/defaultplugins/l3plugin/README.md).   
+- [linux ifplugin](plugins/linuxplugin/ifplugin)
+  * Support for automatic interface configuration (currently only TAP). 
+        
+## Improvements
+- [aclplugin](plugins/defaultplugins/aclplugin)
+  * Removed configuration order of interfaces. Access list can be now 
+    configured even if interfaces do not exist yet, and add them later.
+- [vpp-agent-ctl](cmd/vpp-agent-ctl) 
+  * The vpp-agent-ctl was refactored and command info was updated.            
+
+## Image
+  * VPP can be build in release and debug mode
+
+## Bugfix
+  * Resync of ifplugin in both, VPP and Linux, was improved. Interfaces
+    with the same configuration data are not recreated during resync.
+  * STN do not fail if IP address with mask is provided.
+  * Fixed ingress/egress interface resolution in ACL.  
+  * Linux routes now check network reachability for gateway address b
+    before configuration. It should prevent "network unreachable" errors 
+    during config.
+  * Corrected bridge domain crash in case non-bvi interface was added to
+    another non-bvi interface.  
+  * Fixed several bugs related to VETH and AF-PACKET configuration and resync.  
+
 # Release v1.2 (2018-02-07)
 
 ## Compatibility

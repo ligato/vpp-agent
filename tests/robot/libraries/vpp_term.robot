@@ -69,12 +69,27 @@ vpp_term: Show IP Fib
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib ${ip}
     [Return]           ${out}
 
+vpp_term: Show IP6 Fib
+    [Arguments]        ${node}    ${ip}=${EMPTY}
+    [Documentation]    Show IP fib output
+    Log Many           ${node}    ${ip}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib ${ip}
+    [Return]           ${out}
+
 vpp_term: Show IP Fib Table
     [Arguments]        ${node}    ${id}
     [Documentation]    Show IP fib output for VRF table defined in input
     Log Many           ${node}    ${id}
     ${out}=            vpp_term: Issue Command  ${node}    show ip fib table ${id}
     [Return]           ${out}
+
+vpp_term: Show IP6 Fib Table
+    [Arguments]        ${node}    ${id}
+    [Documentation]    Show IP fib output for VRF table defined in input
+    Log Many           ${node}    ${id}
+    ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib table ${id}
+    [Return]           ${out}
+
 
 vpp_term: Show L2fib
     [Arguments]        ${node}
@@ -94,6 +109,13 @@ vpp_term: Check Ping
     [Arguments]        ${node}    ${ip}     ${count}=5
     Log Many           ${node}    ${ip}     ${count}
     ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} repeat ${count}   delay=10s
+    Should Contain     ${out}    from ${ip}
+    Should Not Contain    ${out}    100% packet loss
+
+vpp_term: Check Ping6
+    [Arguments]        ${node}    ${ip}     ${count}=5
+    Log Many           ${node}    ${ip}     ${count}
+    ${out}=            vpp_term: Issue Command    ${node}    ping6 ${ip} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
@@ -320,7 +342,75 @@ vpp_term: Show Trace
 
 vpp_term: Add Trace Memif
     [Arguments]        ${node}
-    [Documentation]    vpp_term: Show Trace
+    [Documentation]    vpp_term: Add Trace for memif interfaces
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}    trace add memif-input 10
+    [Return]           ${out}
+
+
+vpp_term: Show STN Rules
+    [Arguments]        ${node}
+    [Documentation]    Show STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   show stn rules
+    [Return]           ${out}
+
+vpp_term: Check STN Rule State
+    [Arguments]        ${node}  ${interface}  ${ipv4}
+    Log Many    ${node}    ${ipv4}
+    [Documentation]    Check STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Show STN Rules    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    Log                ${internal_name}
+    ${ip_address}  ${iface}  ${next_node}  Parse STN Rule    ${out}
+    Log                ${ip_address}
+    Should Be Equal As Strings   ${ipv4}  ${ip_address}
+    Log                ${iface}
+    Should Be Equal As Strings   ${internal_name}  ${iface}
+    Log                ${next_node}
+
+vpp_term: Check STN Rule Deleted
+    [Arguments]        ${node}  ${interface}  ${ipv4}
+    Log Many    ${node}    ${ipv4}
+    [Documentation]    Check STN Rules
+    Log Many           ${node}
+    ${out}=            vpp_term: Show STN Rules    ${node}
+    Log                ${out}
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    Log                ${internal_name}
+    Should Not Contain     ${out}    ${ipv4}
+    Should Not Contain     ${out}    ${internal_name}
+
+vpp_term: Add Trace Afpacket
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Add Trace for afpacket interfaces
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    trace add af-packet-input 10
+    [Return]           ${out}
+
+vpp_term: Set VPP Tracing And Debugging
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Add More Tracing and debugging
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    clear hardware
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear interface
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear error
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    clear run
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace on
+    Log                ${out}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace post-mortem-on
+    Log                ${out}
+    [Return]           ${out}
+
+vpp_term: Dump Trace
+    [Arguments]        ${node}
+    [Documentation]    vpp_term: Dump VPP Trace
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    api trace save apitrace.trc
     [Return]           ${out}

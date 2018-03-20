@@ -10,7 +10,8 @@ Resource     ../../../libraries/all_libs.robot
 
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
-
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
@@ -18,7 +19,7 @@ ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
 ${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
-${RESYNC_WAIT}=        50s
+${RESYNC_WAIT}=        20s
 
 *** Test Cases ***
 Configure Environment
@@ -64,14 +65,19 @@ Check Interfaces On VPP1
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
     Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_memif1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_afpacket1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_vxlan1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_loop1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_tap1
+    Log    ${int}
     Should Contain    ${out}    ${int}
 
 Check Linux Interfaces On VPP2
@@ -85,14 +91,19 @@ Check Interfaces On VPP2
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
     Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_memif1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_afpacket1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_vxlan1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_loop1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_tap1
+    Log    ${int}
     Should Contain    ${out}    ${int}
 
 Check Bridge Domain On VPP1 Is Created
@@ -152,14 +163,19 @@ Check Interfaces On VPP1 After Resync
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
     Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_memif1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_afpacket1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_vxlan1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_loop1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_tap1
+    Log    ${int}
     Should Contain    ${out}    ${int}
 
 Check Linux Interfaces On VPP2 After Resync
@@ -173,14 +189,18 @@ Check Interfaces On VPP2 After Resync
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
     Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_memif1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_afpacket1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_vxlan1
+    Log    ${int}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_loop1
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_tap1
+    Log    ${int}
     Should Contain    ${out}    ${int}
 
 Check Bridge Domain On VPP1 Is Created After Resync
@@ -255,3 +275,9 @@ Final Sleep After Resync For Manual Checking
 
 
 *** Keywords ***
+*** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

@@ -16,7 +16,8 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
@@ -29,7 +30,7 @@ import (
 	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -142,6 +143,18 @@ func (dsl *DataResyncDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.DataResy
 	return dsl
 }
 
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *vpp_l3.ProxyArpInterfaces_InterfaceList) linux.DataResyncDSL {
+	dsl.vppDataResync.ProxyArpInterfaces(val)
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *vpp_l3.ProxyArpRanges_RangeList) linux.DataResyncDSL {
+	dsl.vppDataResync.ProxyArpRanges(val)
+	return dsl
+}
+
 // L4Features adds L4 features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *vpp_l4.L4Features) linux.DataResyncDSL {
 	dsl.vppDataResync.L4Features(val)
@@ -157,6 +170,20 @@ func (dsl *DataResyncDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace)
 // StnRule adds Stn rule to the RESYNC request.
 func (dsl *DataResyncDSL) StnRule(stn *vpp_stn.StnRule) linux.DataResyncDSL {
 	dsl.vppDataResync.StnRule(stn)
+	return dsl
+}
+
+// NAT44Global adds a request to RESYNC global configuration for NAT44
+func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linux.DataResyncDSL {
+	dsl.vppDataResync.NAT44Global(nat44)
+
+	return dsl
+}
+
+// NAT44DNat adds a request to RESYNC a new DNAT configuration
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linux.DataResyncDSL {
+	dsl.vppDataResync.NAT44DNat(nat44)
+
 	return dsl
 }
 

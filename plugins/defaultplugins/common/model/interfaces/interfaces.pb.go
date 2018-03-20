@@ -178,6 +178,7 @@ type Interfaces_Interface struct {
 	Mtu                uint32        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	Vrf                uint32        `protobuf:"varint,7,opt,name=vrf,proto3" json:"vrf,omitempty"`
 	ContainerIpAddress string        `protobuf:"bytes,8,opt,name=container_ip_address,proto3" json:"container_ip_address,omitempty"`
+	SetDhcpClient      bool          `protobuf:"varint,9,opt,name=set_dhcp_client,proto3" json:"set_dhcp_client,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
 	IpAddresses    []string                             `protobuf:"bytes,10,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
 	Unnumbered     *Interfaces_Interface_Unnumbered     `protobuf:"bytes,11,opt,name=unnumbered" json:"unnumbered,omitempty"`

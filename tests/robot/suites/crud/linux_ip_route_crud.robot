@@ -137,14 +137,19 @@ At first create route and after that create inteface in namespace 3
     # routy sa zalozia po uspesnom pingu zo ns3 ?! or ping fails
     # Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.169.22.3
 
-Config Done
-    No Operation
-
-Final Sleep After Config For Manual Checking
-    Sleep   ${CONFIG_SLEEP}
+Check linux Routes On VPP1
+    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=192.168.22.2
+    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=192.168.22.1
+    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=8.8.8.8    next_hop=192.168.22.1
+    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=9.9.9.9    next_hop=192.168.22.1
+    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1
+    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=192.168.22.2
+    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=192.169.22.22
+    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=192.169.22.3
 
 Remove VPP Nodes
     Remove All Nodes
+    Sleep    ${RESYNC_SLEEP}
 
 Start VPP1 Again
     Add Agent VPP Node    agent_vpp_1

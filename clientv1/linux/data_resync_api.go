@@ -15,7 +15,8 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
@@ -25,7 +26,7 @@ import (
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -65,12 +66,20 @@ type DataResyncDSL interface {
 	ACL(acl *vpp_acl.AccessLists_Acl) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) DataResyncDSL
+	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) DataResyncDSL
+	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *vpp_l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) DataResyncDSL
 	// StnRule adds Stn rule to the RESYNC request.
 	StnRule(stn *vpp_stn.StnRule) DataResyncDSL
+	// NAT44Global adds a request to RESYNC global configuration for NAT44
+	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
+	// NAT44DNat adds a request to RESYNC a new DNAT configuration
+	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv1.Reply

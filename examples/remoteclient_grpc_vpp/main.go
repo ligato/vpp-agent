@@ -362,8 +362,8 @@ var (
 	// routeThroughMemif1 is an example route configuration, with memif1 being the next hop.
 	routeThroughMemif1 = l3.StaticRoutes_Route{
 		Description: "Description",
-		VrfId:       0,
-		DstIpAddr:   "192.168.2.1/32",
+		VrfID:       0,
+		DstIPAddr:   "192.168.2.1/32",
 		NextHopAddr: "192.168.1.1", // Memif1AsMaster
 		Weight:      5,
 	}

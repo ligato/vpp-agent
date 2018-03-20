@@ -18,15 +18,19 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-const dummyHostIFName = "TestIFName"
+const (
+	dummyIfName     = "TestIfName"
+	dummyHostIFName = "TestHostIfName"
+)
 
-var dummyAfPacket = &interfaces.Interfaces_Interface_Afpacket{
+var dummyAfPacket = &intf.Interfaces_Interface_Afpacket{
 	HostIfName: dummyHostIFName,
 }
 
@@ -45,16 +49,20 @@ func TestAddAfPacketInterface(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := vppcalls.AddAfPacketInterface(dummyAfPacket, ctx.MockChannel, nil)
+	ifIndex, err := vppcalls.AddAfPacketInterface(dummyIfName, dummyAfPacket, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ifIndex).ShouldNot(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*af_packet.AfPacketCreate)
-	Expect(ok).To(BeTrue())
-
-	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(testAfPacketAddData))
+	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
+	for i, msg := range ctx.MockChannel.Msgs {
+		if i == 0 {
+			vppMsg, ok := msg.(*af_packet.AfPacketCreate)
+			Expect(ok).To(BeTrue())
+			Expect(vppMsg).To(Equal(testAfPacketAddData))
+		}
+	}
 }
 
 func TestDeleteAfPacketInterface(t *testing.T) {
@@ -62,13 +70,17 @@ func TestDeleteAfPacketInterface(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteAfPacketInterface(dummyAfPacket, ctx.MockChannel, nil)
+	err := vppcalls.DeleteAfPacketInterface(dummyIfName, 0, dummyAfPacket, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := ctx.MockChannel.Msg.(*af_packet.AfPacketDelete)
-	Expect(ok).To(BeTrue())
-
-	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(testAfPacketDelData))
+	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
+	for i, msg := range ctx.MockChannel.Msgs {
+		if i == 0 {
+			vppMsg, ok := msg.(*af_packet.AfPacketDelete)
+			Expect(ok).To(BeTrue())
+			Expect(vppMsg).To(Equal(testAfPacketDelData))
+		}
+	}
 }

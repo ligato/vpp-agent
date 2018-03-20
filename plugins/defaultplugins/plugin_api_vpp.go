@@ -19,6 +19,7 @@ package defaultplugins
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
@@ -40,6 +41,10 @@ type API interface {
 	//      swIfIndexes.LookupByName("vswitch_ingres")
 	//
 	GetSwIfIndexes() ifaceidx.SwIfIndex
+
+	// GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
+	// This mapping is helpful if other plugins need to know about the DHCP configuration given to interface.
+	GetDHCPIndices() ifaceidx.DhcpIndex
 
 	// GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
 	// The mapping consists of the interface (its name), generated index and the BFDSessionMeta with an authentication key
@@ -80,4 +85,16 @@ type API interface {
 
 	// DumpACL returns a list of all configured ACLs.
 	DumpACL() (acls []*acl.AccessLists_Acl, err error)
+
+	// DumpNat44Global returns the current NAT44 global config
+	DumpNat44Global() (*nat.Nat44Global, error)
+
+	// DumpNat44DNat returns the current NAT44 DNAT config
+	DumpNat44DNat() (*nat.Nat44DNat, error)
+
+	// GetIPSecSAIndexes
+	GetIPSecSAIndexes() idxvpp.NameToIdx
+
+	// GetIPSecSPDIndexes
+	GetIPSecSPDIndexes() idxvpp.NameToIdx
 }
