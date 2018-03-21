@@ -1,7 +1,8 @@
 FROM dev_vpp_agent as devimg
 
-RUN cd /root/go/src/github.com/ligato/vpp-agent \
- && make STRIP=y install
+RUN /bin/bash -c "\
+    cd /root/go/src/github.com/ligato/vpp-agent \
+    && make STRIP=y install"
 
 FROM ubuntu:16.04
 
