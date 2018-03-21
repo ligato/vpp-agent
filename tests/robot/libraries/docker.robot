@@ -164,9 +164,10 @@ Execute In Container
     Log Many                 ${container}       ${command}
     Switch Connection        docker
     ${currdate}=             Get Current Date
-    ${out}   ${stderr}=      Execute Command    ${DOCKER_COMMAND} exec ${container} ${command}    return_stderr=True
+    ${out}  ${stderr}  ${rc}=      Execute Command    ${DOCKER_COMMAND} exec ${container} ${command}    return_stderr=True    return_rc=True
     Log                      ${out}
     Log                      ${stderr}
+    Log                      ${rc}
     ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
     Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
     Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}***
