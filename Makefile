@@ -3,7 +3,11 @@ COMMIT	:= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
-LDFLAGS	= -ldflags '-X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)'
+LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
+
+ifeq ($(STRIP), y)
+LDFLAGS += -w -s
+endif
 
 COVER_DIR ?= /tmp/
 
@@ -16,18 +20,18 @@ clean: clean-cmd clean-examples
 # Install commands
 install:
 	@echo "# installing commands"
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-grpc
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-grpc
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
 # Build commands
 cmd:
 	@echo "# building commands"
-	cd cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
-	cd cmd/vpp-agent-grpc	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	cd cmd/vpp-agent-ctl	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent-grpc	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 
 # Clean commands
 clean-cmd:
