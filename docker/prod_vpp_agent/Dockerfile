@@ -1,5 +1,8 @@
 FROM dev_vpp_agent as devimg
 
+RUN cd $GOPATH/src/github.com/ligato/vpp-agent
+ && make STRIP=y install
+
 FROM ubuntu:16.04
 
 RUN apt-get update \
