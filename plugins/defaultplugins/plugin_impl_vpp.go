@@ -541,6 +541,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		DNatStMappingIndices: plugin.dNatStMappingIndices,
 		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
 		NatIndexSeq:          1,
+		NatMappingTagSeq:     1,
 		Stopwatch:            stopwatch,
 	}
 	if err := plugin.natConfigurator.Init(); err != nil {
