@@ -10,6 +10,8 @@ Resource     ../../../libraries/all_libs.robot
 
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=          common
@@ -63,3 +65,11 @@ Final Sleep For Manual Checking
 Suite Cleanup
     Stop SFC Controller Container
     Testsuite Teardown
+
+*** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown
+
