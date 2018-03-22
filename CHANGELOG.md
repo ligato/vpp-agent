@@ -2,7 +2,7 @@
 
 ## Compatibility
 VPP v18.01-rc0~605-g954d437
-cn-infra v1.1
+cn-infra v1.2
 
 The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github.com/vpp-dev/vpp/tree/stable-1801-contiv).
 
