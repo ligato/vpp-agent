@@ -810,8 +810,7 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 		ifIdx, _, found = plugin.SwIfIndexes.LookupIdx(idMapping.AddressedInterface)
 		if !found {
 			// TODO: use cache to configure later
-			plugin.Log.Warnf("Identity mapping config: provided interface %v does not exist", idMapping.AddressedInterface)
-			return
+			return fmt.Errorf("identity mapping config: provided interface %v does not exist", idMapping.AddressedInterface)
 		}
 	}
 

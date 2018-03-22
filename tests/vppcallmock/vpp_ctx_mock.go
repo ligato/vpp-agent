@@ -85,6 +85,5 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRe
 // CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
 // which the library is connected to
 func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
-	m.Msgs = msgs
 	return m.channel.CheckMessageCompatibility(msgs...)
 }
