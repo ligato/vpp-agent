@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -76,8 +75,8 @@ type NatConfigurator struct {
 	NatIndexSeq uint32
 	// Static/identity mapping tag sequence
 	NatMappingTagSeq uint32
-	vppChan          *govppapi.Channel
-	vppDumpChan      *govppapi.Channel
+	vppChan          vppcalls.VPPChannel
+	vppDumpChan      vppcalls.VPPChannel
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/data)
 	notEnabledIfs map[string]*nat.Nat44Global_NatInterfaces

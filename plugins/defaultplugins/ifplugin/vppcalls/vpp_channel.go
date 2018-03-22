@@ -21,6 +21,10 @@ import (
 // VPPChannel is interface for send request to VPP channel
 type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
+
+	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
+
+	CheckMessageCompatibility(messages ...govppapi.Message) error
 }
 
 func boolToUint(value bool) uint8 {

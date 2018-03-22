@@ -23,7 +23,6 @@ import (
 	nat_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -36,16 +35,14 @@ func TestNatConfiguratorEnableForwarding(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 	Expect(plugin).ToNot(BeNil())
 
 	// Prepare replies
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		Forwarding: true,
 	})
 	Expect(err).To(BeNil())
@@ -60,16 +57,14 @@ func TestNatConfiguratorDisableForwarding(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 	Expect(plugin).ToNot(BeNil())
 
 	// Prepare replies
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		Forwarding: false,
 	})
 	Expect(err).To(BeNil())
@@ -84,7 +79,7 @@ func TestNatConfiguratorModifyForwarding(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 	Expect(plugin).ToNot(BeNil())
 
 	// Prepare replies
@@ -94,9 +89,6 @@ func TestNatConfiguratorModifyForwarding(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-
 	oldCfg := &nat.Nat44Global{
 		Forwarding: true,
 	}
@@ -105,7 +97,7 @@ func TestNatConfiguratorModifyForwarding(t *testing.T) {
 	}
 
 	// Set config
-	err = plugin.SetNatGlobalConfig(oldCfg)
+	err := plugin.SetNatGlobalConfig(oldCfg)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.Forwarding).To(BeTrue())
 
@@ -131,16 +123,14 @@ func TestNatConfiguratorEnableDisableInterfaces(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 
 	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx.Connection)
+	plugin, swIfIndices := getNatConfigurator(ctx)
 
 	// Prepare interface indices
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 
 	// Enable two interfaces
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
 			{
 				Name:          ifNames[0],
@@ -193,16 +183,14 @@ func TestNatConfiguratorEnableDisableOutputInterfaces(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
 
 	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx.Connection)
+	plugin, swIfIndices := getNatConfigurator(ctx)
 
 	// Prepare interface indices
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 
 	// Enable two output feature interfaces
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
 			{
 				Name:          ifNames[0],
@@ -260,15 +248,12 @@ func TestNatConfiguratorModifyInterfaces(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // if2 configured
 
 	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx.Connection)
+	plugin, swIfIndices := getNatConfigurator(ctx)
 
 	// Prepare interface indices
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 	swIfIndices.RegisterName(ifNames[2], 3, nil)
-
-	err := plugin.Init()
-	Expect(err).To(BeNil())
 
 	oldCfg := &nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
@@ -311,7 +296,7 @@ func TestNatConfiguratorModifyInterfaces(t *testing.T) {
 	}
 
 	// Put old config
-	err = plugin.SetNatGlobalConfig(oldCfg)
+	err := plugin.SetNatGlobalConfig(oldCfg)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(3))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
@@ -338,12 +323,10 @@ func TestNatConfiguratorInterfaceCache(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
 
 	// Configurator (do not register indices)
-	plugin, swIfIndices := getNatConfigurator(ctx.Connection)
+	plugin, swIfIndices := getNatConfigurator(ctx)
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
 			{
 				Name:          ifNames[0],
@@ -410,12 +393,10 @@ func TestNatConfiguratorAddressPool(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		AddressPools: []*nat.Nat44Global_AddressPools{
 			{
 				FirstSrcAddress: ipAddresses[0],
@@ -458,12 +439,9 @@ func TestNatConfiguratorModifyAddressPool(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 
 	// Start
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-
 	oldCfg := &nat.Nat44Global{
 		AddressPools: []*nat.Nat44Global_AddressPools{
 			{
@@ -494,7 +472,7 @@ func TestNatConfiguratorModifyAddressPool(t *testing.T) {
 		},
 	}
 
-	err = plugin.SetNatGlobalConfig(oldCfg)
+	err := plugin.SetNatGlobalConfig(oldCfg)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.AddressPools).To(HaveLen(2))
 
@@ -517,12 +495,10 @@ func TestNatConfiguratorAddressPoolErrors(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 
 	// No IP address provided
-	err := plugin.Init()
-	Expect(err).To(BeNil())
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
+	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
 		AddressPools: []*nat.Nat44Global_AddressPools{
 			{
 				VrfId:    0,
@@ -579,15 +555,13 @@ func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 
 	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx.Connection)
+	plugin, swIfIndices := getNatConfigurator(ctx)
 
 	// Register required interfaces
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 
 	// Config to remove
-	err := plugin.Init()
-	Expect(err).To(BeNil())
 	natGlobalCfg := &nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
 			{
@@ -619,7 +593,7 @@ func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 			},
 		},
 	}
-	err = plugin.SetNatGlobalConfig(natGlobalCfg)
+	err := plugin.SetNatGlobalConfig(natGlobalCfg)
 	Expect(err).To(BeNil())
 	Expect(plugin.notEnabledIfs).To(HaveLen(1))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
@@ -661,18 +635,16 @@ func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// Configurator
-	plugin, _ := getNatConfigurator(ctx.Connection)
+	plugin, _ := getNatConfigurator(ctx)
 
 	// Config to remove
-	err := plugin.Init()
-	Expect(err).To(BeNil())
 	natGlobalCfg := &nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterfaces{},
 		AddressPools:  []*nat.Nat44Global_AddressPools{},
 	}
 
 	// Delete empty global config
-	err = plugin.DeleteNatGlobalConfig(natGlobalCfg)
+	err := plugin.DeleteNatGlobalConfig(natGlobalCfg)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT).To(BeNil())
 
@@ -681,7 +653,7 @@ func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-func getNatConfigurator(connection govppmux.API) (*NatConfigurator, ifaceidx.SwIfIndexRW) {
+func getNatConfigurator(ctx *vppcallmock.TestCtx) (*NatConfigurator, ifaceidx.SwIfIndexRW) {
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
@@ -690,8 +662,10 @@ func getNatConfigurator(connection govppmux.API) (*NatConfigurator, ifaceidx.SwI
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat-configurator-test", "nat", nil))
 
 	return &NatConfigurator{
-		Log:         log,
-		GoVppmux:    connection,
-		SwIfIndexes: swIfIndices,
+		Log:            log,
+		SwIfIndexes:    swIfIndices,
+		vppChan:        ctx.MockChannel,
+		notEnabledIfs:  make(map[string]*nat.Nat44Global_NatInterfaces),
+		notDisabledIfs: make(map[string]*nat.Nat44Global_NatInterfaces),
 	}, swIfIndices
 }
