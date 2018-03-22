@@ -50,6 +50,8 @@ RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
+ENV PATH /usr/local/go/bin:$PATH
+
 # build & install Protobuf & gogo protobuf compiler
 RUN git clone https://github.com/google/protobuf.git \
  && cd protobuf \
