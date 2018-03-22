@@ -60,6 +60,8 @@ type NatConfigurator struct {
 
 	GoVppmux    govppmux.API
 	SwIfIndexes ifaceidx.SwIfIndex
+	// Global config
+	globalNAT *nat.Nat44Global
 	// SNAT config indices
 	SNatIndices idxvpp.NameToIdxRW
 	// SNAT indices for static mapping
@@ -77,10 +79,10 @@ type NatConfigurator struct {
 	vppChan          *govppapi.Channel
 	vppDumpChan      *govppapi.Channel
 
-	// a map of missing interfaces which should be enabled for NAT (format ifName/isInside)
-	notEnabledIfs []*nat.Nat44Global_NatInterfaces
-	// a map of NAT-enabled interfaces which should be disabled (format ifName/isInside)
-	notDisabledIfs []*nat.Nat44Global_NatInterfaces
+	// a map of missing interfaces which should be enabled for NAT (format ifName/data)
+	notEnabledIfs map[string]*nat.Nat44Global_NatInterfaces
+	// a map of NAT-enabled interfaces which should be disabled (format ifName/data)
+	notDisabledIfs map[string]*nat.Nat44Global_NatInterfaces
 
 	Stopwatch *measure.Stopwatch
 }
@@ -88,6 +90,9 @@ type NatConfigurator struct {
 // Init NAT configurator
 func (plugin *NatConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing NAT configurator")
+
+	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterfaces)
+	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterfaces)
 
 	// Init VPP API channel
 	if plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
@@ -115,6 +120,9 @@ func (plugin *NatConfigurator) Close() error {
 func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error {
 	plugin.Log.Info("Setting up NAT global config")
 
+	// Store global NAT configuration (serves as cache)
+	plugin.globalNAT = config
+
 	// Forwarding
 	if err := vppcalls.SetNat44Forwarding(config.Forwarding, plugin.vppChan, plugin.Stopwatch); err != nil {
 		return err
@@ -135,9 +143,11 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 	}
 
 	// Address pool
+	var wasErr error
 	for _, pool := range config.AddressPools {
 		if pool.FirstSrcAddress == "" && pool.LastSrcAddress == "" {
-			plugin.Log.Warn("Invalid address pool config, no IP address provided")
+			wasErr = fmt.Errorf("invalid address pool config, no IP address provided")
+			plugin.Log.Error(wasErr)
 			continue
 		}
 		var firstIP []byte
@@ -145,14 +155,16 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 		if pool.FirstSrcAddress != "" {
 			firstIP = net.ParseIP(pool.FirstSrcAddress).To4()
 			if firstIP == nil {
-				plugin.Log.Errorf("unable to parse IP address %v", pool.FirstSrcAddress)
+				wasErr = fmt.Errorf("unable to parse IP address %v", pool.FirstSrcAddress)
+				plugin.Log.Error(wasErr)
 				continue
 			}
 		}
 		if pool.LastSrcAddress != "" {
 			lastIP = net.ParseIP(pool.LastSrcAddress).To4()
 			if lastIP == nil {
-				plugin.Log.Errorf("unable to parse IP address %v", pool.LastSrcAddress)
+				wasErr = fmt.Errorf("unable to parse IP address %v", pool.LastSrcAddress)
+				plugin.Log.Error(wasErr)
 				continue
 			}
 		}
@@ -165,18 +177,23 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 
 		// Configure address pool
 		if err := vppcalls.AddNat44AddressPool(firstIP, lastIP, pool.VrfId, pool.TwiceNat, plugin.vppChan, plugin.Stopwatch); err != nil {
-			return err
+			wasErr = err
+			plugin.Log.Error(wasErr)
+			continue
 		}
 	}
 
 	plugin.Log.Debug("Setting up NAT global config done")
 
-	return nil
+	return wasErr
 }
 
 // ModifyNatGlobalConfig modifies common setup for all NAT use cases
 func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.Nat44Global) (err error) {
 	plugin.Log.Info("Modifying NAT global config")
+
+	// Replace global NAT config
+	plugin.globalNAT = newConfig
 
 	// Forwarding
 	if oldConfig.Forwarding != newConfig.Forwarding {
@@ -217,6 +234,9 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 // DeleteNatGlobalConfig removes common setup for all NAT use cases
 func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (err error) {
 	plugin.Log.Info("Deleting NAT global config")
+
+	// Remove global NAT config
+	plugin.globalNAT = nil
 
 	// Inside/outside interfaces
 	if len(config.NatInterfaces) > 0 {
@@ -347,6 +367,58 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 	return wasErr
 }
 
+// ResolveCreatedInterface looks for cache of interfaces which should be enabled or disabled
+// for NAT
+func (plugin *NatConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("NAT configurator: resolving registered interface %s", ifName)
+
+	var wasErr error
+
+	// Check for interfaces which should be enabled
+	var enabledIf []*nat.Nat44Global_NatInterfaces
+	for cachedName, data := range plugin.notEnabledIfs {
+		if cachedName == ifName {
+			delete(plugin.notEnabledIfs, cachedName)
+			if err := plugin.enableNatInterfaces(append(enabledIf, data)); err != nil {
+				plugin.Log.Error(err)
+				wasErr = err
+			}
+		}
+	}
+	// Check for interfaces which could be disabled
+	var disabledIf []*nat.Nat44Global_NatInterfaces
+	for cachedName, data := range plugin.notDisabledIfs {
+		if cachedName == ifName {
+			delete(plugin.notDisabledIfs, cachedName)
+			if err := plugin.disableNatInterfaces(append(disabledIf, data)); err != nil {
+				plugin.Log.Error(err)
+				wasErr = err
+			}
+		}
+	}
+
+	return wasErr
+}
+
+// ResolveDeletedInterface handles removed interface from NAT perspective
+func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
+	plugin.Log.Debugf("NAT configurator: resolving deleted interface %s", ifName)
+
+	// Check global NAT for interfaces
+	if plugin.globalNAT != nil {
+		for _, natIf := range plugin.globalNAT.NatInterfaces {
+			if natIf.Name == ifName {
+				// This interface was removed and it is not possible to determine its state, so agent handles it as
+				// not enabled
+				plugin.notEnabledIfs[natIf.Name] = natIf
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
 // DumpNatGlobal returns the current NAT44 global config
 func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
 	return vppdump.Nat44GlobalConfigDump(plugin.SwIfIndexes, plugin.Log, plugin.vppDumpChan, plugin.Stopwatch)
@@ -363,7 +435,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(natInterface.Name)
 		if !found {
 			plugin.Log.Debugf("Interface %v missing, cannot enable NAT", natInterface.Name)
-			plugin.notEnabledIfs = append(plugin.notEnabledIfs, natInterface) // cache interface
+			plugin.notEnabledIfs[natInterface.Name] = natInterface // cache interface
 		} else {
 			if natInterface.OutputFeature {
 				// enable nat interface and output feature
@@ -395,10 +467,17 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 // disables set of interfaces in NAT
 func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterfaces) (err error) {
 	for _, natInterface := range natInterfaces {
+		// Check if interface is not in the cache
+		for ifName := range plugin.notEnabledIfs {
+			if ifName == natInterface.Name {
+				delete(plugin.notEnabledIfs, ifName)
+			}
+		}
+		// Check if interface exists
 		ifIdx, _, found := plugin.SwIfIndexes.LookupIdx(natInterface.Name)
 		if !found {
 			plugin.Log.Debugf("Interface %v missing, cannot disable NAT", natInterface)
-			plugin.notDisabledIfs = append(plugin.notDisabledIfs, natInterface) // cache interface
+			plugin.notDisabledIfs[natInterface.Name] = natInterface // cache interface
 		} else {
 			if natInterface.OutputFeature {
 				// disable nat interface and output feature

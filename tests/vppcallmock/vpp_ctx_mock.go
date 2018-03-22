@@ -26,7 +26,7 @@ import (
 //TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
-	conn        *core.Connection
+	Connection  *core.Connection
 	channel     *govppapi.Channel
 	MockChannel *mockedChannel
 }
@@ -40,10 +40,10 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	}
 
 	var err error
-	ctx.conn, err = core.Connect(ctx.MockVpp)
+	ctx.Connection, err = core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	ctx.channel, err = ctx.conn.NewAPIChannel()
+	ctx.channel, err = ctx.Connection.NewAPIChannel()
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.MockChannel = &mockedChannel{channel: ctx.channel}
@@ -54,7 +54,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 //TeardownTestCtx politely close all used resources
 func (ctx *TestCtx) TeardownTestCtx() {
 	ctx.channel.Close()
-	ctx.conn.Disconnect()
+	ctx.Connection.Disconnect()
 }
 
 //MockedChannel implements ChannelIntf for testing purposes
