@@ -70,9 +70,12 @@ type NatConfigurator struct {
 	DNatStMappingIndices idxvpp.NameToIdxRW
 	DNatIdMappingIndices idxvpp.NameToIdxRW
 
+	// Nat name-to-idx mapping sequence
 	NatIndexSeq uint32
-	vppChan     *govppapi.Channel
-	vppDumpChan *govppapi.Channel
+	// Static/identity mapping tag sequence
+	NatMappingTagSeq uint32
+	vppChan          *govppapi.Channel
+	vppDumpChan      *govppapi.Channel
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/isInside)
 	notEnabledIfs []*nat.Nat44Global_NatInterfaces
@@ -198,7 +201,7 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 	}
 
 	// Address pool
-	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools, plugin.Log)
+	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools)
 	if err := plugin.deleteAddressPool(toRemove); err != nil {
 		return err
 	}
@@ -256,56 +259,18 @@ func (plugin *NatConfigurator) DeleteSNat(sNat *nat.Nat44SNat_SNatConfig) error 
 func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.Infof("Configuring DNAT with label %v", dNat.Label)
 
-	// Resolve static mapping
-	for mappingIdx, mappingEntry := range dNat.StMappings {
-		var tag string
-		localIPList := mappingEntry.LocalIps
-		if len(localIPList) == 0 {
-			plugin.Log.Errorf("cannot configure DNAT %v static mapping: no local address provided", mappingIdx)
-			continue
-		} else if len(localIPList) == 1 {
-			// Case without load balance (one local address)
-			tag = getMappingTag(dNat.Label, static, mappingIdx)
-			if err := plugin.handleStaticMapping(mappingEntry, tag, true); err != nil {
-				plugin.Log.Errorf("DNAT static mapping configuration failed: %v", err)
-				continue
-			}
-		} else {
-			// Case with load balance (more local addresses)
-			// Case without load balance (one local address)
-			tag = getMappingTag(dNat.Label, staticLb, mappingIdx)
-			if err := plugin.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
-				plugin.Log.Errorf("DNAT static lb-mapping configuration failed: %v", err)
-				continue
-			}
-		}
-		// Register DNAT static mapping
-		mappingIdentifier := getStMappingIdentifier(mappingEntry)
-		plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
-		plugin.NatIndexSeq++
+	var wasErr error
 
-		plugin.Log.Debugf("DNAT static (lb)mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+	// Resolve static mapping
+	if err := plugin.configureStaticMappings(dNat.Label, dNat.StMappings); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to configure static mapping for DNAT %s: %v", dNat.Label, err)
 	}
 
 	// Resolve identity mapping
-	for mappingIdx, idMapping := range dNat.IdMappings {
-		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
-			plugin.Log.Errorf("cannot configure DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
-			continue
-		}
-		// Case without load balance (one local address)
-		tag := getMappingTag(dNat.Label, identity, mappingIdx)
-		if err := plugin.handleIdentityMapping(idMapping, tag, true); err != nil {
-			plugin.Log.Error(err)
-			continue
-		}
-
-		// Register DNAT identity mapping
-		mappingIdentifier := getIdMappingIdentifier(idMapping)
-		plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
-		plugin.NatIndexSeq++
-
-		plugin.Log.Debugf("DNAT identity mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+	if err := plugin.configureIdentityMappings(dNat.Label, dNat.IdMappings); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to configure identity mapping for DNAT %s: %v", dNat.Label, err)
 	}
 
 	// Register DNAT configuration
@@ -315,74 +280,62 @@ func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) err
 
 	plugin.Log.Infof("DNAT %v configuration done", dNat.Label)
 
-	return nil
+	return wasErr
 }
 
 // ModifyDNat modifies existing DNAT setup
 func (plugin *NatConfigurator) ModifyDNat(oldDNat, newDNat *nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.Infof("Modifying DNAT with label %v", newDNat.Label)
 
-	// todo keep is simple for now, but it would be better to find different mappings and add/remove just them
-	if err := plugin.DeleteDNat(oldDNat); err != nil {
-		return err
+	var wasErr error
+
+	// Static mappings
+	stmToAdd, stmToRemove := plugin.diffStatic(oldDNat.StMappings, newDNat.StMappings)
+
+	if err := plugin.unconfigureStaticMappings(stmToRemove); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to remove static mapping from DNAT %s: %v", newDNat.Label, err)
 	}
-	if err := plugin.ConfigureDNat(newDNat); err != nil {
-		return err
+
+	if err := plugin.configureStaticMappings(newDNat.Label, stmToAdd); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to configure static mapping for DNAT %s: %v", newDNat.Label, err)
+	}
+
+	// Identity mappings
+	idToAdd, idToRemove := plugin.diffIdentity(oldDNat.IdMappings, newDNat.IdMappings)
+
+	if err := plugin.unconfigureIdentityMappings(idToRemove); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to remove identity mapping from DNAT %s: %v", newDNat.Label, err)
+	}
+
+	if err := plugin.configureIdentityMappings(newDNat.Label, idToAdd); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to configure identity mapping for DNAT %s: %v", newDNat.Label, err)
 	}
 
 	plugin.Log.Infof("DNAT %v modification done", newDNat.Label)
 
-	return nil
+	return wasErr
 }
 
 // DeleteDNat removes existing DNAT setup
 func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	plugin.Log.Infof("Deleting DNAT with label %v", dNat.Label)
 
-	// In delete case, vpp-agent attempts to reconstruct every static mapping entry and remove it from the VPP
-	mapping := dNat.StMappings
-	for mappingIdx, mappingEntry := range mapping {
-		localIPList := mappingEntry.LocalIps
-		if len(localIPList) == 0 {
-			plugin.Log.Warnf("DNAT mapping %v has not local IPs, cannot remove it", mappingIdx)
-			continue
-		} else if len(localIPList) == 1 {
-			// Case without load balance (one local address)
-			if err := plugin.handleStaticMapping(mappingEntry, dummyTag, false); err != nil {
-				plugin.Log.Errorf("DNAT mapping removal failed: %v", err)
-				continue
-			}
-		} else {
-			// Case with load balance (more local addresses)
-			if err := plugin.handleStaticMappingLb(mappingEntry, dummyTag, false); err != nil {
-				plugin.Log.Errorf("DNAT lb-mapping removal failed: %v", err)
-				continue
-			}
-		}
-		// Unregister DNAT mapping
-		mappingIdentifier := getStMappingIdentifier(mappingEntry)
-		plugin.DNatStMappingIndices.UnregisterName(mappingIdentifier)
+	var wasErr error
 
-		plugin.Log.Debugf("DNAT lb-mapping un-configured (ID %v)", mappingIdentifier)
+	// In delete case, vpp-agent attempts to reconstruct every static mapping entry and remove it from the VPP
+	if err := plugin.unconfigureStaticMappings(dNat.StMappings); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to remove static mapping from DNAT %s: %v", dNat.Label, err)
 	}
 
 	// Do the same also for identity apping
-	for mappingIdx, idMapping := range dNat.IdMappings {
-		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
-			plugin.Log.Errorf("cannot remove DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
-			continue
-		}
-		if err := plugin.handleIdentityMapping(idMapping, dummyTag, false); err != nil {
-			plugin.Log.Error(err)
-			continue
-		}
-
-		// Register DNAT identity mapping
-		mappingIdentifier := getIdMappingIdentifier(idMapping)
-		plugin.DNatIdMappingIndices.UnregisterName(mappingIdentifier)
-		plugin.NatIndexSeq++
-
-		plugin.Log.Debugf("DNAT identity (lb)mapping un-configured (ID: %v)", mappingIdentifier)
+	if err := plugin.unconfigureIdentityMappings(dNat.IdMappings); err != nil {
+		wasErr = err
+		plugin.Log.Errorf("Failed to remove identity mapping from DNAT %s: %v", dNat.Label, err)
 	}
 
 	// Unregister DNAT configuration
@@ -391,7 +344,7 @@ func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error 
 
 	plugin.Log.Infof("DNAT %v removal done", dNat.Label)
 
-	return nil
+	return wasErr
 }
 
 // DumpNatGlobal returns the current NAT44 global config
@@ -548,6 +501,77 @@ func (plugin *NatConfigurator) deleteAddressPool(addressPools []*nat.Nat44Global
 	return
 }
 
+// configures a list of static mappings for provided label
+func (plugin *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMappings) error {
+	var wasErr error
+	for _, mappingEntry := range mappings {
+		var tag string
+		localIPList := mappingEntry.LocalIps
+		if len(localIPList) == 0 {
+			wasErr = fmt.Errorf("cannot configure DNAT static mapping: no local address provided")
+			plugin.Log.Error(wasErr)
+			continue
+		} else if len(localIPList) == 1 {
+			// Case without load balance (one local address)
+			tag = plugin.getMappingTag(label, static)
+			if err := plugin.handleStaticMapping(mappingEntry, tag, true); err != nil {
+				wasErr = fmt.Errorf("DNAT static mapping configuration failed: %v", err)
+				plugin.Log.Error(wasErr)
+				continue
+			}
+		} else {
+			// Case with load balance (more local addresses)
+			tag = plugin.getMappingTag(label, staticLb)
+			if err := plugin.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
+				wasErr = fmt.Errorf("DNAT static lb-mapping configuration failed: %v", err)
+				plugin.Log.Error(wasErr)
+				continue
+			}
+		}
+		// Register DNAT static mapping
+		mappingIdentifier := getStMappingIdentifier(mappingEntry)
+		plugin.DNatStMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
+		plugin.NatIndexSeq++
+
+		plugin.Log.Debugf("DNAT static (lb)mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+	}
+
+	return wasErr
+}
+
+// removes static mappings from configuration with provided label
+func (plugin *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DNatConfig_StaticMappings) error {
+	var wasErr error
+	for mappingIdx, mappingEntry := range mappings {
+		localIPList := mappingEntry.LocalIps
+		if len(localIPList) == 0 {
+			plugin.Log.Warnf("DNAT mapping %v has not local IPs, cannot remove it", mappingIdx)
+			continue
+		} else if len(localIPList) == 1 {
+			// Case without load balance (one local address)
+			if err := plugin.handleStaticMapping(mappingEntry, dummyTag, false); err != nil {
+				wasErr = fmt.Errorf("DNAT mapping removal failed: %v", err)
+				plugin.Log.Error(wasErr)
+				continue
+			}
+		} else {
+			// Case with load balance (more local addresses)
+			if err := plugin.handleStaticMappingLb(mappingEntry, dummyTag, false); err != nil {
+				wasErr = fmt.Errorf("DNAT lb-mapping removal failed: %v", err)
+				plugin.Log.Error(wasErr)
+				continue
+			}
+		}
+		// Unregister DNAT mapping
+		mappingIdentifier := getStMappingIdentifier(mappingEntry)
+		plugin.DNatStMappingIndices.UnregisterName(mappingIdentifier)
+
+		plugin.Log.Debugf("DNAT lb-mapping un-configured (ID %v)", mappingIdentifier)
+	}
+
+	return wasErr
+}
+
 // configures single static mapping entry with load balancer
 func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMappings, tag string, add bool) (err error) {
 	// Validate tag
@@ -645,6 +669,60 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	return vppcalls.DelNat44StaticMapping(ctx, plugin.vppChan, plugin.Stopwatch)
 }
 
+// configures a list of identity mappings with label
+func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) error {
+	var wasErr error
+	for _, idMapping := range mappings {
+		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
+			wasErr = fmt.Errorf("cannot configure DNAT identity mapping: no IP address or interface provided")
+			plugin.Log.Error(wasErr)
+			continue
+		}
+		// Case without load balance (one local address)
+		tag := plugin.getMappingTag(label, identity)
+		if err := plugin.handleIdentityMapping(idMapping, tag, true); err != nil {
+			wasErr = err
+			plugin.Log.Error(err)
+			continue
+		}
+
+		// Register DNAT identity mapping
+		mappingIdentifier := getIdMappingIdentifier(idMapping)
+		plugin.DNatIdMappingIndices.RegisterName(mappingIdentifier, plugin.NatIndexSeq, nil)
+		plugin.NatIndexSeq++
+
+		plugin.Log.Debugf("DNAT identity mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+	}
+
+	return wasErr
+}
+
+// removes identity mappings from configuration with provided label
+func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) error {
+	var wasErr error
+	for mappingIdx, idMapping := range mappings {
+		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
+			wasErr = fmt.Errorf("cannot remove DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
+			plugin.Log.Error(wasErr)
+			continue
+		}
+		if err := plugin.handleIdentityMapping(idMapping, dummyTag, false); err != nil {
+			wasErr = err
+			plugin.Log.Error(err)
+			continue
+		}
+
+		// Unregister DNAT identity mapping
+		mappingIdentifier := getIdMappingIdentifier(idMapping)
+		plugin.DNatIdMappingIndices.UnregisterName(mappingIdentifier)
+		plugin.NatIndexSeq++
+
+		plugin.Log.Debugf("DNAT identity (lb)mapping un-configured (ID: %v)", mappingIdentifier)
+	}
+
+	return wasErr
+}
+
 // handler for single identity mapping entry
 func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMappings, tag string, isAdd bool) (err error) {
 	// Verify interface if exists
@@ -726,7 +804,7 @@ func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterfaces) (toSetIn, t
 }
 
 // looks for new and obsolete address pools
-func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools, log logging.Logger) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
+func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
 	// Find new address pools
 	for _, newAp := range newAPs {
 		// If new address pool is a range, add it
@@ -775,6 +853,122 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools, log loggin
 	return
 }
 
+// returns a list of static mappings to add/remove
+func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_StaticMappings) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_StaticMappings) {
+	// Find missing mappings
+	for _, newMap := range newMappings {
+		var found bool
+		for _, oldMap := range oldMappings {
+			// VRF, protocol and twice map
+			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
+				continue
+			}
+			// External interface, IP and port
+			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIP != oldMap.ExternalIP ||
+				newMap.ExternalPort != oldMap.ExternalPort {
+				continue
+			}
+			// Local IPs
+			if !plugin.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
+				continue
+			}
+			found = true
+		}
+		if !found {
+			toAdd = append(toAdd, newMap)
+		}
+	}
+	// Find obsolete mappings
+	for _, oldMap := range oldMappings {
+		var found bool
+		for _, newMap := range newMappings {
+			// VRF, protocol and twice map
+			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
+				continue
+			}
+			// External interface, IP and port
+			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIP != oldMap.ExternalIP ||
+				newMap.ExternalPort != oldMap.ExternalPort {
+				continue
+			}
+			// Local IPs
+			if !plugin.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
+				continue
+			}
+			found = true
+		}
+		if !found {
+			toRemove = append(toRemove, oldMap)
+		}
+	}
+
+	return
+}
+
+// returns a list of identity mappings to add/remove
+func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_IdentityMappings) {
+	// Find missing mappings
+	for _, newMap := range newMappings {
+		var found bool
+		for _, oldMap := range oldMappings {
+			// VRF and protocol
+			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol {
+				continue
+			}
+			// Addressed interface, IP address and port
+			if newMap.AddressedInterface != oldMap.AddressedInterface || newMap.IpAddress != oldMap.IpAddress ||
+				newMap.Port != oldMap.Port {
+				continue
+			}
+			found = true
+		}
+		if !found {
+			toAdd = append(toAdd, newMap)
+		}
+	}
+	// Find obsolete mappings
+	for _, oldMap := range oldMappings {
+		var found bool
+		for _, newMap := range newMappings {
+			// VRF and protocol
+			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol {
+				continue
+			}
+			// Addressed interface, IP address and port
+			if newMap.AddressedInterface != oldMap.AddressedInterface || newMap.IpAddress != oldMap.IpAddress ||
+				newMap.Port != oldMap.Port {
+				continue
+			}
+			found = true
+		}
+		if !found {
+			toRemove = append(toRemove, oldMap)
+		}
+	}
+
+	return
+}
+
+// comapares two lists of Local IP addresses, returns true if lists are equal, false otherwise
+func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs) bool {
+	if len(oldIPs) != len(newIPs) {
+		return false
+	}
+	for _, newIP := range newIPs {
+		var found bool
+		for _, oldIP := range oldIPs {
+			if newIP.LocalIP == oldIP.LocalIP && newIP.LocalPort == oldIP.LocalPort && newIP.Probability == oldIP.Probability {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	// Do not need to compare old vs. new if length is the same
+	return true
+}
+
 // returns a list of validated local IP addresses with port and probability value
 func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
 	for _, ipPort := range ipPorts {
@@ -785,7 +979,7 @@ func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs, lo
 
 		localIP := net.ParseIP(ipPort.LocalIP).To4()
 		if localIP == nil {
-			log.Error("cannot set local IP/Port to mapping: unable to parse local IP %v", ipPort.LocalIP)
+			log.Errorf("cannot set local IP/Port to mapping: unable to parse local IP %v", ipPort.LocalIP)
 			continue
 		}
 
@@ -834,10 +1028,12 @@ func getIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMappings) 
 }
 
 // returns unique mapping tag
-func getMappingTag(label, mType string, index int) string {
+func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
 	var buffer bytes.Buffer
 	buffer.WriteString(label)
 	buffer.WriteString(mType)
-	buffer.WriteString(strconv.Itoa(index))
+	buffer.WriteString(strconv.Itoa(int(plugin.NatMappingTagSeq)))
+	plugin.NatMappingTagSeq++
+
 	return buffer.String()
 }
