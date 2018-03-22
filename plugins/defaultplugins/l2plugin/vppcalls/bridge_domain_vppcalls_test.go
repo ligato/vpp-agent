@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	dummyBridgeDomain     = 4
 	dummyBridgeDomainName = "bridge_domain"
 )
 
