@@ -37,7 +37,7 @@ type AFPacketConfigurator struct {
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	hostInterfaces   map[string]struct{}        // a set of available host interfaces
 
-	vppCh *govppapi.Channel // govpp channel used by InterfaceConfigurator
+	vppCh vppcalls.VPPChannel // govpp channel used by InterfaceConfigurator
 }
 
 // AfPacketConfig wraps the proto formatted configuration of an Afpacket interface together with a flag
@@ -160,10 +160,10 @@ func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, 
 	if found {
 		// remove the interface and re-add as pending
 		if err := plugin.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
-			plugin.Logger.Error("Failed to remove af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+			plugin.Logger.Errorf("Failed to remove af_packet interface %s (host name: %s)", interfaceName, hostIfName)
 		} else {
 			if _, _, err := plugin.ConfigureAfPacketInterface(afpacket.config); err != nil {
-				plugin.Logger.Error("Failed to configure af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+				plugin.Logger.Errorf("Failed to configure af_packet interface %s (host name: %s)", interfaceName, hostIfName)
 			}
 		}
 	}
