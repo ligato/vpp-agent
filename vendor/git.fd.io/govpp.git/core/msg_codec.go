@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
-	logger "github.com/sirupsen/logrus"
 	"github.com/lunixbochs/struc"
+	logger "github.com/sirupsen/logrus"
 
 	"git.fd.io/govpp.git/api"
 )

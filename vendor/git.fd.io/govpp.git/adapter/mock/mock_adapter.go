@@ -30,10 +30,10 @@ import (
 	"github.com/lunixbochs/struc"
 )
 
-type ReplyMode int
+type replyMode int
 
 const (
-	_                ReplyMode = 0
+	_                replyMode = 0
 	useRepliesQueue            = 1 // use replies in the queue
 	useReplyHandlers           = 2 // use reply handler
 )
@@ -51,7 +51,7 @@ type VppAdapter struct {
 	replies       []api.Message  // FIFO queue of messages
 	replyHandlers []ReplyHandler // callbacks that are able to calculate mock responses
 	repliesLock   sync.Mutex     // mutex for the queue
-	mode          ReplyMode      // mode in which the mock operates
+	mode          replyMode      // mode in which the mock operates
 }
 
 // defaultReply is a default reply message that mock adapter returns for a request.
@@ -250,8 +250,7 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		for i, reply := range a.replies {
 			if i > 0 && reply.GetMessageName() == "control_ping_reply" {
 				// hack - do not send control_ping_reply immediately, leave it for the the next callback
-				a.replies = []api.Message{}
-				a.replies = append(a.replies, reply)
+				a.replies = a.replies[i:]
 				return nil
 			}
 			msgID, _ := a.GetMsgID(reply.GetMessageName(), reply.GetCrcString())

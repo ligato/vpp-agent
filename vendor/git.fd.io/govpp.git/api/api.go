@@ -233,15 +233,15 @@ func (ch *Channel) receiveReplyInternal(msg Message) (LastReplyReceived bool, er
 			return false, err
 		}
 		if vppReply.MessageID != expMsgID {
-			err = fmt.Errorf("invalid message ID %d, expected %d "+
-				"(also check if multiple goroutines are not sharing one GoVPP channel)", vppReply.MessageID, expMsgID)
+			err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (check if multiple goroutines are not sharing single GoVPP channel)",
+				expMsgID, msg.GetMessageName(), vppReply.MessageID)
 			return false, err
 		}
 		// decode the message
 		err = ch.MsgDecoder.DecodeMsg(vppReply.Data, msg)
 
 	case <-time.After(ch.replyTimeout):
-		err = fmt.Errorf("no reply received within the timeout period %ds", ch.replyTimeout/time.Second)
+		err = fmt.Errorf("no reply received within the timeout period %s", ch.replyTimeout)
 	}
 	return
 }
