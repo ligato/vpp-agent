@@ -90,7 +90,7 @@ func TestVppAddArpTerminationTableEntryMacError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	//ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
 	err := vppcalls.VppAddArpTerminationTableEntry(
 		4, "in:va:li:d:ma:c", "192.168.4.4",
@@ -103,7 +103,7 @@ func TestVppAddArpTerminationTableEntryIpError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	//ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
 	err := vppcalls.VppAddArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "",
