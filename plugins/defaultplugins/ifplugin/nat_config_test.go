@@ -35,331 +35,212 @@ var ipAddresses = []string{"10.0.0.1", "10.0.0.2", "125.0.0.1", "172.125.0.1", "
 var invalidIP = "invalid-ip"
 var ports = []uint32{8000, 8500, 8989, 9000}
 
-// NAT Global test cases
+/* Global NAT Test Cases */
 
+// Enable NAT forwarding
 func TestNatConfiguratorEnableForwarding(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	// Prepare replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
-
-	// Start
-	err := plugin.SetNatGlobalConfig(getForwardingConfig(true))
-	Expect(err).To(BeNil())
-
-	// Close
-	err = plugin.Close()
+	// Data
+	data := getTestNatForwardingConfig(true)
+	// Test
+	err = plugin.SetNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 }
 
+// Disable NAT forwarding
 func TestNatConfiguratorDisableForwarding(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	// Prepare replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
-
-	// Start
-	err := plugin.SetNatGlobalConfig(getForwardingConfig(false))
-	Expect(err).To(BeNil())
-
-	// Close
-	err = plugin.Close()
+	// Data
+	data := getTestNatForwardingConfig(false)
+	// Test
+	err = plugin.SetNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 }
 
+// Modify NAT forwarding
 func TestNatConfiguratorModifyForwarding(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	// Prepare replies
-	// Create
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
-	// Modify
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
-
-	// Start
-	oldCfg := getForwardingConfig(true)
-	newCfg := getForwardingConfig(false)
-
-	// Set config
-	err := plugin.SetNatGlobalConfig(oldCfg)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Create
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Modify
+	// Data
+	oldData := getTestNatForwardingConfig(true)
+	newData := getTestNatForwardingConfig(false)
+	// Test create
+	err = plugin.SetNatGlobalConfig(oldData)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.Forwarding).To(BeTrue())
-
-	// Modify config
-	err = plugin.ModifyNatGlobalConfig(oldCfg, newCfg)
+	// Test modify
+	err = plugin.ModifyNatGlobalConfig(oldData, newData)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.Forwarding).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Enable two interfaces for NAT, then remove one
 func TestNatConfiguratorEnableDisableInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // First case
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Second case
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-
-	// Prepare interface indices
+	// Registration
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
-
-	// Enable two interfaces
-	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				Name:          ifNames[1],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-		},
-	})
+	// Data
+	var ifs1, ifs2 []*nat.Nat44Global_NatInterfaces
+	firstData := &nat.Nat44Global{NatInterfaces: append(ifs1,
+		getTestNatInterfaceConfig(ifNames[0], true, false),
+		getTestNatInterfaceConfig(ifNames[1], true, false))}
+	secondData := &nat.Nat44Global{NatInterfaces: append(ifs2,
+		getTestNatInterfaceConfig(ifNames[0], true, false))}
+	// Test set interfaces
+	err = plugin.SetNatGlobalConfig(firstData)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
 	Expect(plugin.globalNAT.NatInterfaces).To(HaveLen(2))
-
-	// Disable one interface
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-		},
-	})
+	// Test disable one interface
+	err = plugin.SetNatGlobalConfig(secondData)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
 	Expect(plugin.globalNAT.NatInterfaces).To(HaveLen(1))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Enable two output interfaces for NAT, then remove one
 func TestNatConfiguratorEnableDisableOutputInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // First case
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Second case
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-
-	// Prepare interface indices
+	// Registration
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
-
-	// Enable two output feature interfaces
-	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-			{
-				Name:          ifNames[1],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-		},
-	})
+	// Data
+	var ifs1, ifs2 []*nat.Nat44Global_NatInterfaces
+	firstData := &nat.Nat44Global{NatInterfaces: append(ifs1,
+		getTestNatInterfaceConfig(ifNames[0], true, true),
+		getTestNatInterfaceConfig(ifNames[1], true, true))}
+	secondData := &nat.Nat44Global{NatInterfaces: append(ifs2,
+		getTestNatInterfaceConfig(ifNames[0], true, true))}
+	// Test set output interfaces
+	err = plugin.SetNatGlobalConfig(firstData)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
 	Expect(plugin.globalNAT.NatInterfaces).To(HaveLen(2))
-
-	// Disable one output feature interface
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-		},
-	})
+	// Test disable one output interface
+	err = plugin.SetNatGlobalConfig(secondData)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
 	Expect(plugin.globalNAT.NatInterfaces).To(HaveLen(1))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Create and modify NAT interfaces and output interfaces
 func TestNatConfiguratorModifyInterfaces(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies
-	// Config
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})      // Called always during config
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})       // if1 configured
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // if2 configured
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // if3 configured
-	// Modify (if3 was not changed)
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})       // if1 removed
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // if2 removed
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})       // if1 configured
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // if2 configured
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-
-	// Prepare interface indices
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Create
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{}) // Modify
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
+	// Registration
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 	swIfIndices.RegisterName(ifNames[2], 3, nil)
-
-	oldCfg := &nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				Name:          ifNames[1],
-				IsInside:      false,
-				OutputFeature: true,
-			},
-			{
-				Name:          ifNames[2],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-		},
-	}
-
-	newCfg := &nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      false,
-				OutputFeature: true,
-			},
-			{
-				Name:          ifNames[1],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				Name:          ifNames[2],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-		},
-	}
-
-	// Put old config
-	err := plugin.SetNatGlobalConfig(oldCfg)
+	// Data
+	var ifs1, ifs2 []*nat.Nat44Global_NatInterfaces
+	oldData := &nat.Nat44Global{NatInterfaces: append(ifs1,
+		getTestNatInterfaceConfig(ifNames[0], true, false),
+		getTestNatInterfaceConfig(ifNames[1], false, true),
+		getTestNatInterfaceConfig(ifNames[2], true, true))}
+	newData := &nat.Nat44Global{NatInterfaces: append(ifs2,
+		getTestNatInterfaceConfig(ifNames[0], false, true),
+		getTestNatInterfaceConfig(ifNames[1], true, false),
+		getTestNatInterfaceConfig(ifNames[2], true, true))}
+	// Test create
+	err = plugin.SetNatGlobalConfig(oldData)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(3))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
 	Expect(plugin.globalNAT.NatInterfaces).To(HaveLen(3))
-
-	// Modify it
-	err = plugin.ModifyNatGlobalConfig(oldCfg, newCfg)
-	Expect(err).To(BeNil())
-
-	// Close
-	err = plugin.Close()
+	// Test modify
+	err = plugin.ModifyNatGlobalConfig(oldData, newData)
 	Expect(err).To(BeNil())
 }
 
+// Test interface cache registering and un-registering interfaces after configuration
 func TestNatConfiguratorInterfaceCache(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies (one nat interface and one with output feature)
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
-
-	// Configurator (do not register indices)
-	plugin, swIfIndices := getNatConfigurator(ctx)
-
-	// Start
-	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				Name:          ifNames[1],
-				IsInside:      true,
-				OutputFeature: true,
-			},
-		},
-	})
+	// Data
+	var ifs []*nat.Nat44Global_NatInterfaces
+	data := &nat.Nat44Global{NatInterfaces: append(ifs,
+		getTestNatInterfaceConfig(ifNames[0], true, false),
+		getTestNatInterfaceConfig(ifNames[1], true, true))}
+	// Test create
+	err = plugin.SetNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(0))
-	// Both of them should be in cache for not enabled interfaces
 	Expect(plugin.notEnabledIfs).To(HaveLen(2))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Register first interface
+	// Test register first interface
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	err = plugin.ResolveCreatedInterface(ifNames[0], 1)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(1))
 	Expect(plugin.notEnabledIfs).To(HaveLen(1))
-
-	// Register second interface
+	// Test register second interface
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 	err = plugin.ResolveCreatedInterface(ifNames[1], 2)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
-
-	// Unregister second interface
+	// Test un-register second interface
 	_, _, found := swIfIndices.UnregisterName(ifNames[1])
 	Expect(found).To(BeTrue())
 	err = plugin.ResolveDeletedInterface(ifNames[1], 1)
@@ -367,253 +248,140 @@ func TestNatConfiguratorInterfaceCache(t *testing.T) {
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(1))
 	Expect(plugin.notEnabledIfs).To(HaveLen(1))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Re-enable second interface
+	// Test re-enable second interface
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 	err = plugin.ResolveCreatedInterface(ifNames[1], 2)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(2))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorAddressPool(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies (one nat interface and one with output feature)
+// Set NAT address pools
+func TestNatConfiguratorCreateAddressPool(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-
-	// Start
-	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				FirstSrcAddress: ipAddresses[0],
-				LastSrcAddress:  ipAddresses[1],
-				VrfId:           0,
-				TwiceNat:        true,
-			},
-			{
-				// First IP only
-				FirstSrcAddress: ipAddresses[2],
-				VrfId:           1,
-				TwiceNat:        false,
-			},
-			{
-				// Last IP only
-				LastSrcAddress: ipAddresses[3],
-				VrfId:          1,
-				TwiceNat:       false,
-			},
-		},
-	})
+	// Data
+	var aps []*nat.Nat44Global_AddressPools
+	data := &nat.Nat44Global{AddressPools: append(aps,
+		getTestNatAddressPoolConfig(ipAddresses[0], ipAddresses[1], 0, true),
+		getTestNatAddressPoolConfig(ipAddresses[2], "", 1, false),
+		getTestNatAddressPoolConfig("", ipAddresses[3], 1, false))}
+	// Test set address pool
+	err = plugin.SetNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.AddressPools).To(HaveLen(3))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Set and modify NAT address pools
 func TestNatConfiguratorModifyAddressPool(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configure
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Configure
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-	// Modify
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{}) // Modify
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-
-	// Start
-	oldCfg := &nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				FirstSrcAddress: ipAddresses[0],
-				VrfId:           0,
-				TwiceNat:        true,
-			},
-			{
-				LastSrcAddress: ipAddresses[3],
-				VrfId:          1,
-				TwiceNat:       false,
-			},
-		},
-	}
-
-	newCfg := &nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				FirstSrcAddress: ipAddresses[0],
-				VrfId:           0,
-				TwiceNat:        true,
-			},
-			{
-				FirstSrcAddress: ipAddresses[2],
-				VrfId:           1,
-				TwiceNat:        false,
-			},
-		},
-	}
-
-	err := plugin.SetNatGlobalConfig(oldCfg)
+	// Data
+	var aps1, aps2 []*nat.Nat44Global_AddressPools
+	oldData := &nat.Nat44Global{AddressPools: append(aps1,
+		getTestNatAddressPoolConfig(ipAddresses[0], "", 0, true),
+		getTestNatAddressPoolConfig("", ipAddresses[3], 1, false))}
+	newData := &nat.Nat44Global{AddressPools: append(aps2,
+		getTestNatAddressPoolConfig(ipAddresses[0], "", 0, true),
+		getTestNatAddressPoolConfig("", ipAddresses[2], 1, false))}
+	// Test set address pool
+	err = plugin.SetNatGlobalConfig(oldData)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.AddressPools).To(HaveLen(2))
-
-	err = plugin.ModifyNatGlobalConfig(oldCfg, newCfg)
+	// Test modify address pool
+	err = plugin.ModifyNatGlobalConfig(oldData, newData)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT.AddressPools).To(HaveLen(2))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Test various errors which may occur during address pool configuration
 func TestNatConfiguratorAddressPoolErrors(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies (one nat interface and one with output feature)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-
-	// No IP address provided
-	err := plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				VrfId:    0,
-				TwiceNat: true,
-			},
-		},
-	})
+	// Data
+	var aps1, aps2, aps3 []*nat.Nat44Global_AddressPools
+	data1 := &nat.Nat44Global{AddressPools: append(aps1, getTestNatAddressPoolConfig("", "", 0, true))}
+	data2 := &nat.Nat44Global{AddressPools: append(aps2, getTestNatAddressPoolConfig(invalidIP, "", 0, true))}
+	data3 := &nat.Nat44Global{AddressPools: append(aps3, getTestNatAddressPoolConfig("", invalidIP, 0, true))}
+	// Test no IP address provided
+	err = plugin.SetNatGlobalConfig(data1)
 	Expect(err).ToNot(BeNil())
-
-	// Invalid first IP
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				FirstSrcAddress: "not-an-ip",
-				VrfId:           0,
-				TwiceNat:        true,
-			},
-		},
-	})
+	// Test invalid first IP
+	err = plugin.SetNatGlobalConfig(data2)
 	Expect(err).ToNot(BeNil())
-
-	// Invalid last IP
-	err = plugin.SetNatGlobalConfig(&nat.Nat44Global{
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				LastSrcAddress: "not-an-ip",
-				VrfId:          0,
-				TwiceNat:       true,
-			},
-		},
-	})
+	// Test invalid last IP
+	err = plugin.SetNatGlobalConfig(data3)
 	Expect(err).ToNot(BeNil())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Remove global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Prepare replies (one nat interface and one with output feature)
-	// Configure Global NAT
-	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Configure
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-	// Delete Global NAT
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{}) // Delete
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
-	// Re-register interfaces
-	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // Re-register
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-
-	// Register required interfaces
+	// Registration
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
-
-	// Config to remove
-	natGlobalCfg := &nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
-			{
-				// NAT interface
-				Name:          ifNames[0],
-				IsInside:      true,
-				OutputFeature: false,
-			},
-			{
-				// NAT output feature interface
-				Name:          ifNames[1],
-				IsInside:      false,
-				OutputFeature: true,
-			},
-			{
-				// NAT interface which is not registered yet
-				Name:          ifNames[2],
-				IsInside:      false,
-				OutputFeature: false,
-			},
-		},
-		AddressPools: []*nat.Nat44Global_AddressPools{
-			{
-				// Single address pool
-				FirstSrcAddress: ipAddresses[0],
-				LastSrcAddress:  ipAddresses[1],
-				VrfId:           0,
-				TwiceNat:        true,
-			},
-		},
-	}
-	err := plugin.SetNatGlobalConfig(natGlobalCfg)
+	// Data
+	var ifs []*nat.Nat44Global_NatInterfaces
+	var aps []*nat.Nat44Global_AddressPools
+	data := &nat.Nat44Global{NatInterfaces: append(ifs,
+		getTestNatInterfaceConfig(ifNames[0], true, false),
+		getTestNatInterfaceConfig(ifNames[1], false, true),
+		getTestNatInterfaceConfig(ifNames[2], false, false)),
+		AddressPools: append(aps, getTestNatAddressPoolConfig(ipAddresses[0], ipAddresses[1], 0, true))}
+	// Test set config
+	err = plugin.SetNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.notEnabledIfs).To(HaveLen(1))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Now un-register another interface
+	// Test un-register interface
 	_, _, found := swIfIndices.UnregisterName(ifNames[1])
 	Expect(found).To(BeTrue())
 	err = plugin.ResolveDeletedInterface(ifNames[1], 1)
 	Expect(err).To(BeNil())
 	Expect(plugin.notEnabledIfs).To(HaveLen(2))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Delete global config
-	err = plugin.DeleteNatGlobalConfig(natGlobalCfg)
+	// Test delete config
+	err = plugin.DeleteNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(1))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(2))
 	Expect(plugin.globalNAT).To(BeNil())
-
-	// Re-create missing interfaces
+	// Test re-create interfaces
 	swIfIndices.RegisterName(ifNames[1], 2, nil)
 	err = plugin.ResolveCreatedInterface(ifNames[1], 2)
 	Expect(err).To(BeNil())
@@ -623,111 +391,64 @@ func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 	Expect(plugin.SwIfIndexes.GetMapping().ListNames()).To(HaveLen(3))
 	Expect(plugin.notEnabledIfs).To(HaveLen(0))
 	Expect(plugin.notDisabledIfs).To(HaveLen(0))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Remove empty global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-
-	// Config to remove
-	natGlobalCfg := &nat.Nat44Global{
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{},
-		AddressPools:  []*nat.Nat44Global_AddressPools{},
-	}
-
-	// Delete empty global config
-	err := plugin.DeleteNatGlobalConfig(natGlobalCfg)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	data := &nat.Nat44Global{}
+	// Test delete empty config
+	err = plugin.DeleteNatGlobalConfig(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.globalNAT).To(BeNil())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-// DNAT test cases
+/* DNAT test cases */
 
-func TestNatConfiguratorDNatStaticMappingEmptyLocal(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+// Configure DNAT static mapping without local IP
+func TestNatConfiguratorDNatStaticMappingNoLocalIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: 8989,
-				LocalIps:     []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP))}
+	// Test configure DNAT without local IPs
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure DNAT static mapping using external IP
 func TestNatConfiguratorDNatStaticMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 32)))}
+	// Test configure DNAT
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
@@ -740,336 +461,180 @@ func TestNatConfiguratorDNatStaticMapping(t *testing.T) {
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(net.ParseIP(ipAddresses[0]).To4()))
 	Expect(msg.ExternalSwIfIndex).To(BeEquivalentTo(vppcalls.NoInterface))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure DNAT static mapping using external interface
 func TestNatConfiguratorDNatStaticMappingExternalInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	// Register interface
+	// Registrations
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:             0,
-				ExternalInterface: ifNames[0],
-				ExternalIP:        ipAddresses[0],
-				ExternalPort:      ports[0],
-				Protocol:          nat.Protocol_UDP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, ifNames[0], ipAddresses[0], ports[0], nat.Protocol_UDP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 32)))}
+	// Configure DNAT with external interface
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.ExternalSwIfIndex).To(BeEquivalentTo(1))
 	Expect(msg.Protocol).To(BeEquivalentTo(17))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure DNAT static mapping as address-only
 func TestNatConfiguratorDNatStaticMappingAddressOnly(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				Protocol:   nat.Protocol_ICMP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, nat.Protocol_ICMP,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 32)))}
+	// Test configure DNAT address only
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.Protocol).To(BeEquivalentTo(1))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingInvalidLocalAddress(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     invalidIP,
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT with invalid local IP
+func TestNatConfiguratorDNatStaticMappingInvalidLocalAddressError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, 0,
+			getTestNatStaticLocalIP(invalidIP, 0, 32)))}
+	// Test configure DNAT with invalid local IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// DNAT is registered
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	// Mapping is not
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingInvalidExternalAddress(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: invalidIP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT with invalid external IP
+func TestNatConfiguratorDNatStaticMappingInvalidExternalAddressError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", invalidIP, 0, 0,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 32)))}
+	// Test configure DNAT with invalid external IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// DNAT is registered
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	// Mapping is not
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingMissingInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:             0,
-				ExternalInterface: ifNames[0],
-				ExternalIP:        ipAddresses[0],
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT with non-existing external interface
+func TestNatConfiguratorDNatStaticMappingMissingInterfaceError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, ifNames[0], ipAddresses[0], 0, 0,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 32)))}
+	// Test configure DNAT with missing external interface
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// DNAT is registered
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	// Mapping is not
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure DNAT with unknown protocol and check whether it will be set to default
 func TestNatConfiguratorDNatStaticMappingUnknownProtocol(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				Protocol:   10,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, 10,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 32)))}
+	// Test configure DNAT with unnown protocol
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	// DNAT is registered
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	// Mapping is not
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
-	// Expected protocol is TCP
-	Expect(msg.Protocol).To(BeEquivalentTo(6))
-
-	// Close
+	Expect(msg.Protocol).To(BeEquivalentTo(6)) // Expected protocol is TCP
 	err = plugin.Close()
 	Expect(err).To(BeNil())
 }
 
+// Configure DNAT static mapping with load balancer
 func TestNatConfiguratorDNatStaticMappingLb(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[2],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35),
+			getTestNatStaticLocalIP(ipAddresses[2], ports[2], 65)))}
+	// Test configure DNAT static mapping with load balancer
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
@@ -1078,186 +643,93 @@ func TestNatConfiguratorDNatStaticMappingLb(t *testing.T) {
 	Expect(msg.TwiceNat).To(BeEquivalentTo(0))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
 	Expect(msg.LocalNum).To(BeEquivalentTo(2))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingLbInvalidLocals(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						// Missing port
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-					{
-						// Invalid IP address
-						LocalIP:     invalidIP,
-						LocalPort:   ports[1],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT static mapping with load balancer with invalid local IP
+func TestNatConfiguratorDNatStaticMappingLbInvalidLocalError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 35),
+			getTestNatStaticLocalIP(invalidIP, ports[1], 65)))}
+	// Test configure DNAT static mapping with load balancer with invalid local IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingLbMissingExternalPort(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				Protocol:   nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[0],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[1],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT static mapping with load balancer with missing external port
+func TestNatConfiguratorDNatStaticMappingLbMissingExternalPortError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[0], 35),
+			getTestNatStaticLocalIP(ipAddresses[2], ports[1], 65)))}
+	// Test configure static mapping with load balancer with missing external port
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   invalidIP,
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[2],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure DNAT static mapping with load balancer with invalid external IP
+func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", invalidIP, ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35),
+			getTestNatStaticLocalIP(ipAddresses[2], ports[2], 65)))}
+	// Test DNAT static mapping invalid external IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure NAT identity mapping
 func TestNatConfiguratorDNatIdentityMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:     0,
-				IpAddress: ipAddresses[0],
-				Port:      ports[0],
-				Protocol:  nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP))}
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
@@ -1265,558 +737,304 @@ func TestNatConfiguratorDNatIdentityMapping(t *testing.T) {
 	Expect(msg.IPAddress).To(BeEquivalentTo(net.ParseIP(ipAddresses[0]).To4()))
 	Expect(msg.Port).To(BeEquivalentTo(ports[0]))
 	Expect(msg.Protocol).To(BeEquivalentTo(6))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure NAT identity mapping with address interface
 func TestNatConfiguratorDNatIdentityMappingInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
+	var err error
+	// Setup
+	ctx, plugin, swIfIndices := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-
-	// Configurator
-	plugin, swIfIndices := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	// Register interface
+	// Register
 	swIfIndices.RegisterName(ifNames[0], 1, nil)
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:              0,
-				AddressedInterface: ifNames[0],
-				Protocol:           nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, ifNames[0], "", 0, nat.Protocol_TCP))}
+	// Test identity mapping with address interface
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
 	msg, ok := ctx.MockChannel.Msg.(*nat_api.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg).ToNot(BeNil())
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatIdentityMappingMissingInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:              0,
-				AddressedInterface: ifNames[0],
-				Protocol:           nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Configure NAT identity mapping with address interface while interface is not registered
+func TestNatConfiguratorDNatIdentityMappingMissingInterfaceError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, ifNames[0], "", 0, nat.Protocol_TCP))}
+	// Test identity mapping with address interface	while interface is not registered
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatIdentityMappingInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:     0,
-				IpAddress: invalidIP,
-				Port:      ports[0],
-				Protocol:  nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Create NAT identity mapping with invalid IP address
+func TestNatConfiguratorDNatIdentityMappingInvalidIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, "", invalidIP, ports[0], nat.Protocol_TCP))}
+	// Test identity mapping with invalid IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:    0,
-				Port:     1000,
-				Protocol: nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Create identity mapping without IP address and interface set
+func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, "", "", ports[0], nat.Protocol_TCP))}
+	// Test identity mapping without interface and IP
+	err = plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure and modify static and identity mappings
 func TestNatConfiguratorDNatModify(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT configure
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Configure
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-	// DNAT modify
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{}) // Modify
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	oldDNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[1],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[3],
-						LocalPort:   ports[2],
-						Probability: 65,
-					},
-				},
-			},
-		},
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:     0,
-				IpAddress: ipAddresses[4],
-				Port:      ports[3],
-				Protocol:  nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(oldDNat)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	oldData := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, 0,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 35)),
+		getTestNatStaticMappingConfig(0, "", ipAddresses[1], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[2], ports[1], 35),
+			getTestNatStaticLocalIP(ipAddresses[3], ports[2], 65))),
+		IdMappings: append(idMaps,
+			getTestNatIdentityMappingConfig(0, "", ipAddresses[4], ports[3], nat.Protocol_TCP))}
+	newData := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], 0, 0,
+			getTestNatStaticLocalIP(ipAddresses[1], 0, 35)),
+		getTestNatStaticMappingConfig(0, "", ipAddresses[4], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[3], ports[1], 0))),
+		IdMappings: append(idMaps,
+			getTestNatIdentityMappingConfig(0, "", ipAddresses[2], ports[1], 0))}
+	// Test configure static and identity mappings
+	err = plugin.ConfigureDNat(oldData)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(oldDNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(oldData.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(oldDNat.StMappings[0])
+	id := getStMappingIdentifier(oldData.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-	id = getStMappingIdentifier(oldDNat.StMappings[1])
+	id = getStMappingIdentifier(oldData.StMappings[1])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	id = getIdMappingIdentifier(oldDNat.IdMappings[0])
+	id = getIdMappingIdentifier(oldData.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	newDnat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:      0,
-				ExternalIP: ipAddresses[0],
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						Probability: 35,
-					},
-				},
-			},
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[4],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:   ipAddresses[3],
-						LocalPort: ports[1],
-					},
-				},
-			},
-		},
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:     0,
-				IpAddress: ipAddresses[2],
-				Port:      900,
-			},
-		},
-	}
-
-	err = plugin.ModifyDNat(oldDNat, newDnat)
+	// Test modify static and identity mapping
+	err = plugin.ModifyDNat(oldData, newData)
 	Expect(err).To(BeNil())
-
-	id = getStMappingIdentifier(newDnat.StMappings[0])
+	id = getStMappingIdentifier(newData.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-	id = getStMappingIdentifier(newDnat.StMappings[1])
+	id = getStMappingIdentifier(newData.StMappings[1])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	id = getIdMappingIdentifier(newDnat.IdMappings[0])
+	id = getIdMappingIdentifier(newData.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
 }
 
+//  Configure and delete static mapping
 func TestNatConfiguratorDeleteDNatStaticMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Configure
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Delete
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35)))}
+	// Test configure DNAT static mapping
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	err = plugin.DeleteDNat(dNat)
+	// Test delete static mapping
+	err = plugin.DeleteDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found = plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found = plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeFalse())
-
-	id = getStMappingIdentifier(dNat.StMappings[0])
+	id = getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDeleteDNatStaticMappingInvalidInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   invalidIP,
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.DeleteDNat(dNat)
+// Delete static mapping with invalid IP
+func TestNatConfiguratorDeleteDNatStaticMappingInvalidIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", invalidIP, ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35)))}
+	// Test delete static mapping with invalid interface
+	err = plugin.DeleteDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure and delete static mapping with load balancer
 func TestNatConfiguratorDeleteDNatStaticMappingLb(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// DNAT replies
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   ipAddresses[0],
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[2],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{}) // Configure
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{}) // Delete
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35),
+			getTestNatStaticLocalIP(ipAddresses[2], ports[2], 65)))}
+	// Test configure static mapping with load balancer
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getStMappingIdentifier(dNat.StMappings[0])
+	id := getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	err = plugin.DeleteDNat(dNat)
+	// Test delete static mapping with load balancer
+	err = plugin.DeleteDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found = plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found = plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeFalse())
-
-	id = getStMappingIdentifier(dNat.StMappings[0])
+	id = getStMappingIdentifier(data.StMappings[0])
 	_, _, found = plugin.DNatStMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-func TestNatConfiguratorDeleteDNatStaticMappingLbInvalidInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
-			{
-				VrfId:        0,
-				ExternalIP:   invalidIP,
-				ExternalPort: ports[0],
-				Protocol:     nat.Protocol_TCP,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-					{
-						LocalIP:     ipAddresses[1],
-						LocalPort:   ports[1],
-						Probability: 35,
-					},
-					{
-						LocalIP:     ipAddresses[2],
-						LocalPort:   ports[2],
-						Probability: 65,
-					},
-				},
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+// Delete static mapping with load ballancer with invalid IP address
+func TestNatConfiguratorDeleteDNatStaticMappingLbInvalidIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, StMappings: append(stMaps,
+		getTestNatStaticMappingConfig(0, "", invalidIP, ports[0], nat.Protocol_TCP,
+			getTestNatStaticLocalIP(ipAddresses[1], ports[1], 35),
+			getTestNatStaticLocalIP(ipAddresses[2], ports[2], 65)))}
+	// Test delete static mapping with load balancer with invalid IP
+	err = plugin.DeleteDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Configure and delete NAT identity mapping
 func TestNatConfiguratorDNatDeleteIdentityMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Replies
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:     0,
-				IpAddress: ipAddresses[0],
-				Port:      ports[0],
-				Protocol:  nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.ConfigureDNat(dNat)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{}) // Configure
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{}) // Delete
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, "", ipAddresses[0], ports[0], nat.Protocol_TCP))}
+	// Test configure identity mapping
+	err = plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found := plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found := plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeTrue())
-
-	id := getIdMappingIdentifier(dNat.IdMappings[0])
+	id := getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeTrue())
-
-	err = plugin.DeleteDNat(dNat)
+	// Test delete identity mapping
+	err = plugin.DeleteDNat(data)
 	Expect(err).To(BeNil())
-
-	_, _, found = plugin.DNatIndices.LookupIdx(dNat.Label)
+	_, _, found = plugin.DNatIndices.LookupIdx(data.Label)
 	Expect(found).To(BeFalse())
-
-	id = getIdMappingIdentifier(dNat.IdMappings[0])
+	id = getIdMappingIdentifier(data.IdMappings[0])
 	_, _, found = plugin.DNatIdMappingIndices.LookupIdx(id)
 	Expect(found).To(BeFalse())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
+// Delete NAT identity mapping without ip address set
 func TestNatConfiguratorDNatDeleteIdentityMappingNoInterfaceAndIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
-
-	// Configurator
-	plugin, _ := getNatConfigurator(ctx)
-	Expect(plugin).ToNot(BeNil())
-
-	dNat := &nat.Nat44DNat_DNatConfig{
-		Label: label,
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
-			{
-				VrfId:    0,
-				Port:     ports[0],
-				Protocol: nat.Protocol_TCP,
-			},
-		},
-	}
-
-	err := plugin.DeleteDNat(dNat)
+	var err error
+	// Setup
+	ctx, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(ctx, plugin)
+	// Data
+	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMappings
+	data := &nat.Nat44DNat_DNatConfig{Label: label, IdMappings: append(idMaps,
+		getTestNatIdentityMappingConfig(0, "", "", ports[0], nat.Protocol_TCP))}
+	// Test delete identity mapping without interface IP
+	err = plugin.DeleteDNat(data)
 	Expect(err).ToNot(BeNil())
-
-	// Close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
 }
 
-// Auxiliary
+/* NAT Test Setup */
 
-func getNatConfigurator(ctx *vppcallmock.TestCtx) (*NatConfigurator, ifaceidx.SwIfIndexRW) {
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *NatConfigurator, ifaceidx.SwIfIndexRW) {
+	ctx := vppcallmock.SetupTestCtx(t)
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
@@ -1824,7 +1042,7 @@ func getNatConfigurator(ctx *vppcallmock.TestCtx) (*NatConfigurator, ifaceidx.Sw
 	// Interface indices
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat-configurator-test", "nat", nil))
 
-	return &NatConfigurator{
+	return ctx, &NatConfigurator{
 		Log:                  log,
 		SwIfIndexes:          swIfIndices,
 		DNatIndices:          nametoidx.NewNameToIdx(log, "dnat-test", "dnat", nil),
@@ -1836,6 +1054,60 @@ func getNatConfigurator(ctx *vppcallmock.TestCtx) (*NatConfigurator, ifaceidx.Sw
 	}, swIfIndices
 }
 
-func getForwardingConfig(fwd bool) *nat.Nat44Global {
+func natTestTeardown(ctx *vppcallmock.TestCtx, plugin *NatConfigurator) {
+	ctx.TeardownTestCtx()
+	err := plugin.Close()
+	Expect(err).To(BeNil())
+}
+
+/* NAT Test Data */
+
+func getTestNatForwardingConfig(fwd bool) *nat.Nat44Global {
 	return &nat.Nat44Global{Forwarding: fwd}
+}
+
+func getTestNatInterfaceConfig(name string, inside, output bool) *nat.Nat44Global_NatInterfaces {
+	return &nat.Nat44Global_NatInterfaces{
+		Name:          name,
+		IsInside:      inside,
+		OutputFeature: output,
+	}
+}
+
+func getTestNatAddressPoolConfig(first, last string, vrf uint32, twn bool) *nat.Nat44Global_AddressPools {
+	return &nat.Nat44Global_AddressPools{
+		FirstSrcAddress: first,
+		LastSrcAddress:  last,
+		VrfId:           vrf,
+		TwiceNat:        twn,
+	}
+}
+
+func getTestNatStaticMappingConfig(vrf uint32, ifName, externalIP string, externalPort uint32, proto nat.Protocol, locals ...*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs) *nat.Nat44DNat_DNatConfig_StaticMappings {
+	return &nat.Nat44DNat_DNatConfig_StaticMappings{
+		VrfId:             vrf,
+		ExternalInterface: ifName,
+		ExternalIP:        externalIP,
+		ExternalPort:      externalPort,
+		LocalIps:          locals,
+		Protocol:          proto,
+	}
+}
+
+func getTestNatIdentityMappingConfig(vrf uint32, ifName, ip string, port uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_IdentityMappings {
+	return &nat.Nat44DNat_DNatConfig_IdentityMappings{
+		VrfId:              vrf,
+		AddressedInterface: ifName,
+		IpAddress:          ip,
+		Port:               port,
+		Protocol:           proto,
+	}
+}
+
+func getTestNatStaticLocalIP(ip string, port, probability uint32) *nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs {
+	return &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
+		LocalIP:     ip,
+		LocalPort:   port,
+		Probability: probability,
+	}
 }

@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -54,7 +53,7 @@ type BFDConfigurator struct {
 	// Auxiliary mappings
 	bfdRemovedAuthIndex idxvpp.NameToIdxRW
 
-	vppChan *govppapi.Channel
+	vppChan vppcalls.VPPChannel
 }
 
 // Init members and channels
@@ -173,6 +172,8 @@ func (plugin *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Se
 		if err != nil {
 			return err
 		}
+		plugin.bfdSessionsIndexes.RegisterName(newBfdInput.Interface, plugin.BfdIDSeq, nil)
+		plugin.BfdIDSeq++
 	} else {
 		// Compare source and destination addresses which cannot change if BFD session is modified
 		// todo new BFD input should be compared to BFD data on the vpp, not the last change (old BFD data)
@@ -197,7 +198,7 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 
 	ifIndex, _, found := plugin.SwIfIndexes.LookupIdx(bfdInput.Interface)
 	if !found {
-		return nil
+		return fmt.Errorf("cannot remove BFD session, interface %s not found", bfdInput.Interface)
 	}
 
 	err := vppcalls.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress, plugin.vppChan, plugin.Stopwatch)
