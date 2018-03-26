@@ -124,7 +124,7 @@ Take ETCD Snapshots
     Run Keyword If      ${status}==False         Log     Errors detected in keys: ${errors}    level=WARN
     
 Create Next Snapshot Prefix
-    ${prefix}=          Evaluate    str(${snapshot_num}).zfill(2)
+    ${prefix}=          Evaluate    str(${snapshot_num}).zfill(3)
     ${snapshot_num}=    Evaluate    ${snapshot_num}+1
     Set Global Variable  ${snapshot_num}
     [Return]            ${prefix}
