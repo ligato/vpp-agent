@@ -109,12 +109,13 @@ func NewDhcpProxySetVssReply() api.Message {
 // DhcpClientConfig represents the VPP binary API message 'dhcp_client_config'.
 //
 type DhcpClientConfig struct {
-	SwIfIndex     uint32
-	Hostname      []byte `struc:"[64]byte"`
-	ClientID      []byte `struc:"[64]byte"`
-	IsAdd         uint8
-	WantDhcpEvent uint8
-	Pid           uint32
+	SwIfIndex        uint32
+	Hostname         []byte `struc:"[64]byte"`
+	ClientID         []byte `struc:"[64]byte"`
+	IsAdd            uint8
+	WantDhcpEvent    uint8
+	SetBroadcastFlag uint8
+	Pid              uint32
 }
 
 func (*DhcpClientConfig) GetMessageName() string {
@@ -124,7 +125,7 @@ func (*DhcpClientConfig) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*DhcpClientConfig) GetCrcString() string {
-	return "41c8a9f2"
+	return "2fa5fdcf"
 }
 func NewDhcpClientConfig() api.Message {
 	return &DhcpClientConfig{}
