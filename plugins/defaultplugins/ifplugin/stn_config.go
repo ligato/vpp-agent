@@ -19,12 +19,10 @@
 package ifplugin
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -48,9 +46,8 @@ type StnConfigurator struct {
 	StnAllIndexSeq      uint32
 	StnUnstoredIndexes  idxvpp.NameToIdxRW
 	StnUnstoredIndexSeq uint32
-	vppChan             *govppapi.Channel
+	vppChan             vppcalls.VPPChannel
 
-	cancel    context.CancelFunc
 	Stopwatch *measure.Stopwatch
 }
 
@@ -86,7 +83,9 @@ func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
 func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
 	plugin.Log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
-		plugin.Add(rule)
+		if err := plugin.Add(rule); err == nil {
+			plugin.StnUnstoredIndexes.UnregisterName(StnIdentifier(interfaceName))
+		}
 	}
 }
 
