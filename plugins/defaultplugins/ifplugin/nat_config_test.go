@@ -18,6 +18,8 @@ import (
 	"net"
 	"testing"
 
+	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -34,6 +36,28 @@ var ifNames = []string{"if1", "if2", "if3"}
 var ipAddresses = []string{"10.0.0.1", "10.0.0.2", "125.0.0.1", "172.125.0.1", "124.10.0.1"}
 var invalidIP = "invalid-ip"
 var ports = []uint32{8000, 8500, 8989, 9000}
+
+/* NAT configurator init and close */
+
+// Test init function
+func TestNatConfiguratorInit(t *testing.T) {
+	RegisterTestingT(t)
+	connection, err := core.Connect(&mock.VppAdapter{})
+	Expect(err).To(BeNil())
+	plugin := &NatConfigurator{
+		Log:      logrus.DefaultLogger(),
+		GoVppmux: connection,
+	}
+	err = plugin.Init()
+	Expect(err).To(BeNil())
+	Expect(plugin.vppChan).ToNot(BeNil())
+	Expect(plugin.vppDumpChan).ToNot(BeNil())
+	Expect(plugin.notEnabledIfs).ToNot(BeNil())
+	Expect(plugin.notDisabledIfs).ToNot(BeNil())
+	err = plugin.Close()
+	Expect(err).To(BeNil())
+	connection.Disconnect()
+}
 
 /* Global NAT Test Cases */
 

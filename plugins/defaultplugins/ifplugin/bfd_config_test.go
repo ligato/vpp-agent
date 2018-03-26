@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -34,6 +35,33 @@ import (
 
 var bfdKeyNames = []string{"key1", "key2"}
 var secret = "bfd-key-secret"
+
+/* BFD configurator init and close */
+
+// Test init function
+func TestBfdConfiguratorInit(t *testing.T) {
+	RegisterTestingT(t)
+	connection, err := core.Connect(&mock.VppAdapter{})
+	Expect(err).To(BeNil())
+	plugin := &BFDConfigurator{
+		Log:      logrus.DefaultLogger(),
+		GoVppmux: connection,
+	}
+	bfdSessionsIndexes := nametoidx.NewNameToIdx(plugin.Log, "bfds-test", "bfds", nil)
+	bfdKeysIndexes := nametoidx.NewNameToIdx(plugin.Log, "bfdk-test", "bfdk", nil)
+	bfdEchoFunctionIndex := nametoidx.NewNameToIdx(plugin.Log, "echo-test", "echo", nil)
+	bfdRemovedAuthIndex := nametoidx.NewNameToIdx(plugin.Log, "bfdr-test", "bfdr", nil)
+	err = plugin.Init(bfdSessionsIndexes, bfdKeysIndexes, bfdEchoFunctionIndex, bfdRemovedAuthIndex)
+	Expect(err).To(BeNil())
+	Expect(plugin.vppChan).ToNot(BeNil())
+	Expect(plugin.bfdSessionsIndexes).ToNot(BeNil())
+	Expect(plugin.bfdKeysIndexes).ToNot(BeNil())
+	Expect(plugin.bfdEchoFunctionIndex).ToNot(BeNil())
+	Expect(plugin.bfdRemovedAuthIndex).ToNot(BeNil())
+	err = plugin.Close()
+	Expect(err).To(BeNil())
+	connection.Disconnect()
+}
 
 /* BFD Sessions */
 

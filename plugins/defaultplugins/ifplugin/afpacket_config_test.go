@@ -17,6 +17,8 @@ package ifplugin
 import (
 	"testing"
 
+	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -32,6 +34,26 @@ import (
 var afPacketNames = []string{"af-packet", "af-packet-2"}
 var afPacketHosts = []string{"af-packet-host1", "af-packet-host2"}
 var netAddresses = []string{"10.0.0.1/24", "10.0.0.2/24", "192.168.50.1/24"}
+
+/* AF_PACKET configurator init */
+
+// Test init function
+func TestAfPacketConfiguratorInit(t *testing.T) {
+	RegisterTestingT(t)
+	connection, err := core.Connect(&mock.VppAdapter{})
+	Expect(err).To(BeNil())
+	plugin := &AFPacketConfigurator{
+		Logger: logrus.DefaultLogger(),
+	}
+	vppCh, err := connection.NewAPIChannel()
+	Expect(err).To(BeNil())
+	err = plugin.Init(vppCh)
+	Expect(err).To(BeNil())
+	Expect(plugin.vppCh).ToNot(BeNil())
+	Expect(plugin.afPacketByHostIf).ToNot(BeNil())
+	Expect(plugin.afPacketByName).ToNot(BeNil())
+	connection.Disconnect()
+}
 
 /* AF_PACKET test cases */
 
