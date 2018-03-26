@@ -293,7 +293,7 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 	// Check that this auth key is not used in any session
 	sessionList, err := vppcalls.DumpBfdUDPSessionsWithID(newInput.Id, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
-		return fmt.Errorf("error while verifying authentication key usage. Id: %v", oldInput.Id)
+		return fmt.Errorf("error while verifying authentication key usage. Id: %d: %v", oldInput.Id, err)
 	}
 	if len(sessionList) != 0 {
 		// Authentication Key is used and cannot be removed directly
@@ -310,11 +310,11 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 
 	err = vppcalls.DeleteBfdUDPAuthenticationKey(oldInput, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
-		return fmt.Errorf("error while removing BFD auth key with ID %v", oldInput.Id)
+		return fmt.Errorf("error while removing BFD auth key with ID %d: %v", oldInput.Id, err)
 	}
 	err = vppcalls.SetBfdUDPAuthenticationKey(newInput, plugin.Log, plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
-		return fmt.Errorf("error while setting up BFD auth key with ID %v", oldInput.Id)
+		return fmt.Errorf("error while setting up BFD auth key with ID %d: %v", oldInput.Id, err)
 	}
 
 	// Recreate BFD sessions if necessary
