@@ -27,7 +27,6 @@ import (
 	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -105,7 +104,7 @@ func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 	data := getTestBfdSession(ifNames[0], ipAddresses[1])
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[0])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
@@ -125,7 +124,7 @@ func TestBfdConfiguratorConfigureSession(t *testing.T) {
 	data := getTestBfdSession(ifNames[0], ipAddresses[1])
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[1])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[1])))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).To(BeNil())
@@ -145,7 +144,7 @@ func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 	newData := getTestBfdSession(ifNames[1], ipAddresses[1])
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[0])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -179,7 +178,7 @@ func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 	// Register
 	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[2])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[2])))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -198,7 +197,7 @@ func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 	newData := getTestBfdSession(ifNames[1], ipAddresses[1])
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[1], 1, getTestInterface(append(addresses, netAddresses[1])))
+	swIfIndices.RegisterName(ifNames[1], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[1])))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
@@ -221,7 +220,7 @@ func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 	// Register
 	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[0], netAddresses[1])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0], netAddresses[1])))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -241,7 +240,7 @@ func TestBfdConfiguratorModifySession(t *testing.T) {
 	// Register
 	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[0])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
@@ -280,7 +279,7 @@ func TestBfdConfiguratorDeleteSession(t *testing.T) {
 	// Register
 	plugin.bfdSessionsIndexes.RegisterName(data.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getTestInterface(append(addresses, netAddresses[0])))
+	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
 	// Modify BFD session
 	err = plugin.DeleteBfdSession(data)
 	Expect(err).To(BeNil())
@@ -585,12 +584,5 @@ func getTestBfdEchoFunction(ifName string) *bfd.SingleHopBFD_EchoFunction {
 	return &bfd.SingleHopBFD_EchoFunction{
 		Name:                "echo",
 		EchoSourceInterface: ifName,
-	}
-}
-
-func getTestInterface(ip []string) *interfaces.Interfaces_Interface {
-	return &interfaces.Interfaces_Interface{
-		Name:        ifNames[0],
-		IpAddresses: ip,
 	}
 }

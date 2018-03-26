@@ -32,7 +32,6 @@ import (
 )
 
 var label = "test-dnat"
-var ifNames = []string{"if1", "if2", "if3"}
 var ipAddresses = []string{"10.0.0.1", "10.0.0.2", "125.0.0.1", "172.125.0.1", "124.10.0.1"}
 var invalidIP = "invalid-ip"
 var ports = []uint32{8000, 8500, 8989, 9000}

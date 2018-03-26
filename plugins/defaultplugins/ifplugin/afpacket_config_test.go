@@ -33,7 +33,6 @@ import (
 
 var afPacketNames = []string{"af-packet", "af-packet-2"}
 var afPacketHosts = []string{"af-packet-host1", "af-packet-host2"}
-var netAddresses = []string{"10.0.0.1/24", "10.0.0.2/24", "192.168.50.1/24"}
 
 /* AF_PACKET configurator init */
 

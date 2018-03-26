@@ -18,14 +18,13 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // SetRxMode calls SwInterfaceSetRxMode bin
-func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

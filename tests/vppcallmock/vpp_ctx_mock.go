@@ -87,3 +87,13 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRe
 func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
 	return m.channel.CheckMessageCompatibility(msgs...)
 }
+
+// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel
+func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, msgFactory func() govppapi.Message) (*govppapi.NotifSubscription, error) {
+	return m.channel.SubscribeNotification(notifChan, msgFactory)
+}
+
+// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription
+func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubscription) error {
+	return m.channel.UnsubscribeNotification(subscription)
+}

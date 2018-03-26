@@ -25,6 +25,10 @@ type VPPChannel interface {
 	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
 
 	CheckMessageCompatibility(messages ...govppapi.Message) error
+
+	SubscribeNotification(notifChan chan govppapi.Message, msgFactory func() govppapi.Message) (*govppapi.NotifSubscription, error)
+
+	UnsubscribeNotification(subscription *govppapi.NotifSubscription) error
 }
 
 func boolToUint(value bool) uint8 {

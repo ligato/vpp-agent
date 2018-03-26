@@ -79,7 +79,7 @@ type InterfaceConfigurator struct {
 
 	afPacketConfigurator *AFPacketConfigurator
 
-	vppCh *govppapi.Channel
+	vppCh vppcalls.VPPChannel
 
 	// Notification channels
 	notifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
@@ -268,7 +268,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 				errs = append(errs, err)
 			}
 		} else if plugin.mtu != 0 {
-			if err := vppcalls.SetInterfaceMtu(ifIdx, plugin.mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
+			iface.Mtu = plugin.mtu
+			if err := vppcalls.SetInterfaceMtu(ifIdx, iface.Mtu, plugin.vppCh, plugin.Stopwatch); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -298,7 +299,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// TODO: use some error aggregator
 	if errs != nil {
-		return fmt.Errorf("%v", errs)
+		return fmt.Errorf("found %d errors: %v", len(errs), errs)
 	}
 	return nil
 }
@@ -447,7 +448,7 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 		return errors.New("oldConfig is null")
 	}
 
-	if plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
+	if newConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE && plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
 		return plugin.recreateVPPInterface(newConfig, oldConfig, 0)
 	}
 
@@ -630,6 +631,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		}
 	}
 
+	plugin.swIfIndexes.UpdateMetadata(newConfig.Name, newConfig)
 	plugin.Log.WithFields(logging.Fields{"ifName": newConfig.Name, "ifIdx": ifIdx}).Info("Modified interface")
 
 	return wasError
@@ -948,6 +950,13 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 				})
 
 				plugin.Log.Debugf("Registered dhcp metadata for interface %v", name)
+
+				_, _, found = plugin.dhcpIndices.LookupIdx(name)
+				if found {
+					plugin.Log.Debugf("Name %q is registered", name)
+				} else {
+					plugin.Log.Debugf("Name %q is NOT registered", name)
+				}
 			}
 		}
 	}

@@ -17,7 +17,6 @@ package ifplugin
 import (
 	"errors"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -48,7 +47,7 @@ type AfPacketConfig struct {
 }
 
 // Init members of AFPacketConfigurator.
-func (plugin *AFPacketConfigurator) Init(vppCh *govppapi.Channel) (err error) {
+func (plugin *AFPacketConfigurator) Init(vppCh vppcalls.VPPChannel) (err error) {
 	plugin.Infof("Initializing AF-Packet configurator")
 
 	plugin.vppCh = vppCh
