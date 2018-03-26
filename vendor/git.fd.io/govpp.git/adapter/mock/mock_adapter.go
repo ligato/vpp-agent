@@ -22,12 +22,20 @@ import (
 	"reflect"
 	"sync"
 
-	"git.fd.io/govpp.git/core"
-	"github.com/lunixbochs/struc"
-
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/mock/binapi"
 	"git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
+
+	"github.com/lunixbochs/struc"
+)
+
+type replyMode int
+
+const (
+	_                replyMode = 0
+	useRepliesQueue            = 1 // use replies in the queue
+	useReplyHandlers           = 2 // use reply handler
 )
 
 // VppAdapter represents a mock VPP adapter that can be used for unit/integration testing instead of the vppapiclient adapter.
@@ -39,6 +47,11 @@ type VppAdapter struct {
 	msgIDSeq     uint16
 	binAPITypes  map[string]reflect.Type
 	access       sync.RWMutex
+
+	replies       []api.Message  // FIFO queue of messages
+	replyHandlers []ReplyHandler // callbacks that are able to calculate mock responses
+	repliesLock   sync.Mutex     // mutex for the queue
+	mode          replyMode      // mode in which the mock operates
 }
 
 // defaultReply is a default reply message that mock adapter returns for a request.
@@ -61,14 +74,6 @@ type ReplyHandler func(request MessageDTO) (reply []byte, msgID uint16, ok bool)
 const (
 	defaultReplyMsgID = 1 // default message ID for the reply to be sent back via callback
 )
-
-var replies []api.Message        // FIFO queue of messages
-var replyHandlers []ReplyHandler // callbacks that are able to calculate mock responses
-var repliesLock sync.Mutex       // mutex for the queue
-var mode = 0                     // mode in which the mock operates
-
-const useRepliesQueue = 1  // use replies in the queue instead of the default one
-const useReplyHandlers = 2 //use ReplyHandler
 
 // NewVppAdapter returns a new mock adapter.
 func NewVppAdapter() adapter.VppAdapter {
@@ -211,22 +216,26 @@ func (a *VppAdapter) initMaps() {
 
 // SendMsg emulates sending a binary-encoded message to VPP.
 func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
-	switch mode {
+	switch a.mode {
 	case useReplyHandlers:
 		a.initMaps()
-		for i := len(replyHandlers) - 1; i >= 0; i-- {
-			replyHandler := replyHandlers[i]
+		for i := len(a.replyHandlers) - 1; i >= 0; i-- {
+			replyHandler := a.replyHandlers[i]
 
 			buf := bytes.NewReader(data)
 			reqHeader := core.VppRequestHeader{}
 			struc.Unpack(buf, &reqHeader)
 
 			a.access.Lock()
-			reqMsgName, _ := a.msgIDsToName[reqHeader.VlMsgID]
+			reqMsgName := a.msgIDsToName[reqHeader.VlMsgID]
 			a.access.Unlock()
 
-			reply, msgID, finished := replyHandler(MessageDTO{reqHeader.VlMsgID, reqMsgName,
-				clientID, data})
+			reply, msgID, finished := replyHandler(MessageDTO{
+				MsgID:    reqHeader.VlMsgID,
+				MsgName:  reqMsgName,
+				ClientID: clientID,
+				Data:     data,
+			})
 			if finished {
 				a.callback(clientID, msgID, reply)
 				return nil
@@ -234,15 +243,14 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		}
 		fallthrough
 	case useRepliesQueue:
-		repliesLock.Lock()
-		defer repliesLock.Unlock()
+		a.repliesLock.Lock()
+		defer a.repliesLock.Unlock()
 
 		// pop all replies from queue
-		for i, reply := range replies {
+		for i, reply := range a.replies {
 			if i > 0 && reply.GetMessageName() == "control_ping_reply" {
 				// hack - do not send control_ping_reply immediately, leave it for the the next callback
-				replies = []api.Message{}
-				replies = append(replies, reply)
+				a.replies = a.replies[i:]
 				return nil
 			}
 			msgID, _ := a.GetMsgID(reply.GetMessageName(), reply.GetCrcString())
@@ -259,12 +267,12 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 			struc.Pack(buf, reply)
 			a.callback(clientID, msgID, buf.Bytes())
 		}
-		if len(replies) > 0 {
-			replies = []api.Message{}
-			if len(replyHandlers) > 0 {
+		if len(a.replies) > 0 {
+			a.replies = []api.Message{}
+			if len(a.replyHandlers) > 0 {
 				// Switch back to handlers once the queue is empty to revert back
 				// the fallthrough effect.
-				mode = useReplyHandlers
+				a.mode = useReplyHandlers
 			}
 			return nil
 		}
@@ -295,19 +303,19 @@ func (a *VppAdapter) WaitReady() error {
 // can be pushed into it, the first one will be popped when some request comes.
 // Using of this method automatically switches the mock into th useRepliesQueue mode.
 func (a *VppAdapter) MockReply(msg api.Message) {
-	repliesLock.Lock()
-	defer repliesLock.Unlock()
+	a.repliesLock.Lock()
+	defer a.repliesLock.Unlock()
 
-	replies = append(replies, msg)
-	mode = useRepliesQueue
+	a.replies = append(a.replies, msg)
+	a.mode = useRepliesQueue
 }
 
 // MockReplyHandler registers a handler function that is supposed to generate mock responses to incoming requests.
 // Using of this method automatically switches the mock into th useReplyHandlers mode.
 func (a *VppAdapter) MockReplyHandler(replyHandler ReplyHandler) {
-	repliesLock.Lock()
-	defer repliesLock.Unlock()
+	a.repliesLock.Lock()
+	defer a.repliesLock.Unlock()
 
-	replyHandlers = append(replyHandlers, replyHandler)
-	mode = useReplyHandlers
+	a.replyHandlers = append(a.replyHandlers, replyHandler)
+	a.mode = useReplyHandlers
 }
