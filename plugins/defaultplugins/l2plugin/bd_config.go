@@ -291,11 +291,15 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint3
 		return nil
 	}
 
-	vppcalls.SetInterfaceToBridgeDomain(bdIdx, ifIdx, bvi, plugin.Log, plugin.vppChan, plugin.Stopwatch)
+	err := vppcalls.SetInterfaceToBridgeDomain(bdIdx, ifIdx, bvi, plugin.Log, plugin.vppChan, plugin.Stopwatch)
+	if err != nil {
+		plugin.Log.WithFields(logging.Fields{"bdIdx": bdIdx}).
+			Errorf("Error while assigning interface to bridge domain:", err)
+		return err
+	}
 
 	// Push to bridge domain state.
-	err := plugin.PropagateBdDetailsToStatus(bdIdx, bd.Name)
-	if err != nil {
+	if err := plugin.PropagateBdDetailsToStatus(bdIdx, bd.Name); err != nil {
 		return err
 	}
 

@@ -15,6 +15,7 @@
 package vppcalls
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
@@ -111,7 +112,7 @@ func UnsetInterfacesFromBridgeDomain(bd *l2.BridgeDomains_BridgeDomain, bdIdx ui
 
 // SetInterfaceToBridgeDomain sets single interface to bridge domain.
 func SetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32, bvi bool, log logging.Logger,
-	vppChan VPPChannel, stopwatch *measure.Stopwatch) {
+	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
@@ -130,11 +131,14 @@ func SetInterfaceToBridgeDomain(bridgeDomainIndex uint32, interfaceIndex uint32,
 
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		log.WithFields(logging.Fields{"Error": err, "Bridge Domain": bridgeDomainIndex}).Error("Error while assigning interface to bridge domain")
+		return err
 	}
 	if reply.Retval != 0 {
-		log.Error("%s returned %d", reply.GetMessageName(), reply.Retval)
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).Debug("Interface set to bridge domain")
+	log.WithFields(logging.Fields{"Interface": interfaceIndex, "BD": bridgeDomainIndex}).
+		Debug("Interface set to bridge domain")
+
+	return nil
 }
