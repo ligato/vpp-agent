@@ -50,7 +50,7 @@ scenarios:
 	- retvalue != 0
 	- returned VPP message != what is expected
 */
-//TestVppSetL2XConnect tests VppSetL2XConnect method
+// TestVppSetL2XConnect tests VppSetL2XConnect method
 func TestVppSetL2XConnect(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -95,7 +95,7 @@ scenarios:
 	- retvalue != 0
 	- returned VPP message != what is expected
 */
-//TestVppUnsetL2XConnect tests VppUnsetL2XConnect method
+// TestVppUnsetL2XConnect tests VppUnsetL2XConnect method
 func TestVppUnsetL2XConnect(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
