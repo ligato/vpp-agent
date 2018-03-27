@@ -73,37 +73,3 @@ func VppDeleteBridgeDomain(bdIdx uint32, vppChan VPPChannel, stopwatch *measure.
 
 	return nil
 }
-
-/*
-// VppUpdateBridgeDomain updates bridge domain parameters.
-// TODO: removed, unused
-func VppUpdateBridgeDomain(oldBdIdx uint32, newBdIdx uint32, newBridgeDomain *l2.BridgeDomains_BridgeDomain, log logging.Logger,
-	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
-	log.Debug("Updating VPP bridge domain parameters ", newBridgeDomain.Name)
-
-	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &l2ba.BridgeDomainAddDel{
-		IsAdd:   1,
-		BdID:    newBdIdx,
-		Learn:   boolToUint(newBridgeDomain.Learn),
-		ArpTerm: boolToUint(newBridgeDomain.ArpTermination),
-		Flood:   boolToUint(newBridgeDomain.Flood),
-		UuFlood: boolToUint(newBridgeDomain.UnknownUnicastFlood),
-		Forward: boolToUint(newBridgeDomain.Forward),
-		MacAge:  uint8(newBridgeDomain.MacAge),
-	}
-
-	reply := &l2ba.BridgeDomainAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return fmt.Errorf("updating bridge domain failed with error %v", err)
-	}
-	if 0 != reply.Retval {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-
-	log.WithFields(logging.Fields{"Name": newBridgeDomain.Name, "Index": newBdIdx}).Debug("Bridge domain Updated.")
-	return nil
-}*/

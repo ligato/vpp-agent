@@ -86,7 +86,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	}))
 }
 
-func TestVppAddArpTerminationTableEntryMacError(t *testing.T) {
+func TestVppArpTerminationTableEntryMacError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
@@ -95,11 +95,15 @@ func TestVppAddArpTerminationTableEntryMacError(t *testing.T) {
 	err := vppcalls.VppAddArpTerminationTableEntry(
 		4, "in:va:li:d:ma:c", "192.168.4.4",
 		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "in:va:li:d:ma:c", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
 	Expect(err).Should(HaveOccurred())
 }
 
-func TestVppAddArpTerminationTableEntryIpError(t *testing.T) {
+func TestVppArpTerminationTableEntryIpError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
@@ -108,11 +112,15 @@ func TestVppAddArpTerminationTableEntryIpError(t *testing.T) {
 	err := vppcalls.VppAddArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "",
 		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "",
+		dummyLogger, ctx.MockChannel, nil)
 	Expect(err).Should(HaveOccurred())
 }
 
-func TestVppAddArpTerminationTableEntryError(t *testing.T) {
+func TestVppArpTerminationTableEntryError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
@@ -123,6 +131,10 @@ func TestVppAddArpTerminationTableEntryError(t *testing.T) {
 	err := vppcalls.VppAddArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
 		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
 	Expect(err).Should(HaveOccurred())
 }
