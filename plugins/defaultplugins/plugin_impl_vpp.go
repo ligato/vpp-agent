@@ -96,8 +96,6 @@ type Plugin struct {
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
 	stnConfigurator      *ifplugin.StnConfigurator
-	stnAllIndexes        idxvpp.NameToIdxRW
-	stnUnstoredIndexes   idxvpp.NameToIdxRW
 
 	// IPSec plugin fields
 	ipsecConfigurator *ipsecplugin.IPSecConfigurator
@@ -430,7 +428,6 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
 	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
-	stnLogger := plugin.Log.NewLogger("-stn-conf")
 	natLogger := plugin.Log.NewLogger("-nat-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
@@ -501,24 +498,10 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("stnConfigurator", stnLogger)
-	}
-
-	plugin.stnAllIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-all-indexes", nil)
-	plugin.stnUnstoredIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-unstored-indexes", nil)
-
-	plugin.stnConfigurator = &ifplugin.StnConfigurator{
-		Log:                 bfdLogger,
-		GoVppmux:            plugin.GoVppmux,
-		SwIfIndexes:         plugin.swIfIndexes,
-		StnUnstoredIndexes:  plugin.stnUnstoredIndexes,
-		StnAllIndexes:       plugin.stnAllIndexes,
-		StnUnstoredIndexSeq: 1,
-		StnAllIndexSeq:      1,
-		Stopwatch:           stopwatch,
-	}
-	if err := plugin.stnConfigurator.Init(); err != nil {
+	// STN configurator
+	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
+	stnLogger := plugin.Log.NewLogger("-stn-conf")
+	if err := plugin.stnConfigurator.Init(plugin.PluginName, stnLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 

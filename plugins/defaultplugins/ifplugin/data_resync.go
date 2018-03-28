@@ -352,11 +352,11 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHop
 
 // Resync writes stn rule to the the empty VPP
 func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
@@ -380,15 +380,15 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 		}
 		vppStnIPStr = vppStnIP.String()
 
-		vppStnIfName, _, found := plugin.SwIfIndexes.LookupName(vppStnRule.SwIfIndex)
+		vppStnIfName, _, found := plugin.ifIndices.LookupName(vppStnRule.SwIfIndex)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
 			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 			}
-			plugin.Log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
+			plugin.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
 				vppStnIPStr, vppStnRule.SwIfIndex)
 			continue
 		}
@@ -401,29 +401,29 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 				plugin.indexSTNRule(nbStnRule, false)
 				match = true
 			}
-			plugin.Log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
+			plugin.log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
 		}
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
 			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 			}
-			plugin.Log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnIfName)
+			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnIfName)
 		}
 	}
 
 	// Configure missing rules
 	for _, nbStnRule := range nbStnRules {
 		identifier := StnIdentifier(nbStnRule.Interface)
-		_, _, found := plugin.StnAllIndexes.LookupIdx(identifier)
+		_, _, found := plugin.allIndices.LookupIdx(identifier)
 		if !found {
 			if err := plugin.Add(nbStnRule); err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 			}
-			plugin.Log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
+			plugin.log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
 		}
 	}
 

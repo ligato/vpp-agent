@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ifplugin
+package ifplugin_test
 
 import (
 	"net"
@@ -26,30 +26,26 @@ import (
 	stn_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
-
-var ruleNames = []string{"rule1", "rule2"}
 
 /* STN configurator init and close */
 
 // Test init function
 func TestStnConfiguratorInit(t *testing.T) {
 	RegisterTestingT(t)
-	connection, err := core.Connect(&mock.VppAdapter{})
+	connection, _ := core.Connect(&mock.VppAdapter{})
+	defer connection.Disconnect()
+
+	plugin := &ifplugin.StnConfigurator{}
+	err := plugin.Init("test-plugin-name", logrus.DefaultLogger(), connection, nil, true)
 	Expect(err).To(BeNil())
-	plugin := &StnConfigurator{
-		Log:      logrus.DefaultLogger(),
-		GoVppmux: connection,
-	}
-	err = plugin.Init()
-	Expect(err).To(BeNil())
-	Expect(plugin.vppChan).ToNot(BeNil())
+
 	err = plugin.Close()
 	Expect(err).To(BeNil())
-	connection.Disconnect()
 }
 
 /* STN Test Cases */
@@ -58,92 +54,84 @@ func TestStnConfiguratorInit(t *testing.T) {
 func TestStnConfiguratorAddRule(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add stn rule
 	err = plugin.Add(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Add STN rule with full IP (address/mask)
 func TestStnConfiguratorAddRuleFullIP(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], netAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1/24")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add stn rule with full IP
 	err = plugin.Add(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Add STN rule while interface is missing
 func TestStnConfiguratorAddRuleMissingInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Test add rule while interface is not registered
 	err = plugin.Add(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
 }
 
 // Add STN rule while non-zero return value is get
 func TestStnConfiguratorAddRuleRetvalError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{
 		Retval: 1,
 	})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add rule returns -1
 	err = plugin.Add(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Add nil STN rule
 func TestStnConfiguratorAddRuleNoInput(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	_, conn, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Test add empty rule
 	err = plugin.Add(nil)
 	Expect(err).ToNot(BeNil())
@@ -153,186 +141,186 @@ func TestStnConfiguratorAddRuleNoInput(t *testing.T) {
 func TestStnConfiguratorAddRuleNoInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], "", ipAddresses[0])
+	data := getTestStnRule("rule1", "", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add rule with invalid interface data
 	err = plugin.Add(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Add STN rule without IP
 func TestStnConfiguratorAddRuleNoIP(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], "")
+	data := getTestStnRule("rule1", "if1", "")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add rule with missing IP data
 	err = plugin.Add(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Add STN rule with invalid IP
 func TestStnConfiguratorAddRuleInvalidIP(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], invalidIP)
+	data := getTestStnRule("rule1", "if1", "no-ip")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test add rule with invalid IP data
 	err = plugin.Add(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Delete STN rule
 func TestStnConfiguratorDeleteRule(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test delete stn rule
+	plugin.Add(data)
 	err = plugin.Delete(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Delete STN rule with missing interface
 func TestStnConfiguratorDeleteRuleMissingInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	_, conn, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
-	// Register
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
-	plugin.StnUnstoredIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Test delete rule while interface is not registered
+	plugin.Add(data)
 	err = plugin.Delete(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Delete STN rule non-zero return value
 func TestStnConfiguratorDeleteRuleRetvalError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{
 		Retval: 1,
 	})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test delete rule with return value -1
+	plugin.Add(data)
 	err = plugin.Delete(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Delete STN rule failed check
 func TestStnConfiguratorDeleteRuleCheckError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], invalidIP)
+	data := getTestStnRule("rule1", "if1", "no-ip")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
-	plugin.StnUnstoredIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
+	plugin.Add(data)
 	// Test delete rule with error check
 	err = plugin.Delete(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+}
+
+// Delete STN rule without interface
+func TestStnConfiguratorDeleteRuleNoInterface(t *testing.T) {
+	var err error
+	// Setup
+	_, conn, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
+	// Data
+	data := getTestStnRule("rule1", "", "10.0.0.1")
+	// Test delete rule
+	err = plugin.Delete(data)
+	Expect(err).ToNot(BeNil())
 }
 
 // Modify STN rule
 func TestStnConfiguratorModifyRule(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	oldData := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
-	newData := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[1])
+	oldData := getTestStnRule("rule1", "if1", "10.0.0.1")
+	newData := getTestStnRule("rule1", "if1", "10.0.0.2")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test modify rule
+	plugin.Add(oldData)
 	err = plugin.Modify(oldData, newData)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
 }
 
 // Modify STN rule nil check
 func TestStnConfiguratorModifyRuleNilCheck(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	_, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Data
-	oldData := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
-	newData := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[1])
+	oldData := getTestStnRule("rule1", "if1", "10.0.0.1")
+	newData := getTestStnRule("rule1", "if1", "10.0.0.2")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test nil old rule
 	err = plugin.Modify(nil, newData)
 	Expect(err).ToNot(BeNil())
@@ -345,24 +333,24 @@ func TestStnConfiguratorModifyRuleNilCheck(t *testing.T) {
 func TestStnConfiguratorDumpRule(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnRuleDetails{
 		IsIP4:     1,
-		IPAddress: net.ParseIP(ipAddresses[0]),
+		IPAddress: net.ParseIP("10.0.0.1"),
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test rule dump
 	data, err := plugin.Dump()
 	Expect(err).To(BeNil())
 	Expect(data).ToNot(BeNil())
 	Expect(data).To(HaveLen(1))
 	Expect(data[0].SwIfIndex).To(BeEquivalentTo(1))
-	Expect(data[0].IPAddress).To(BeEquivalentTo(net.ParseIP(ipAddresses[0])))
+	Expect(data[0].IPAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1")))
 	Expect(data[0].IsIP4).To(BeEquivalentTo(1))
 }
 
@@ -370,72 +358,70 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 func TestStnConfiguratorResolveCreatedInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Test add rule while interface is not registered
 	err = plugin.Add(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	swIfIndices.RegisterName("if1", 1, nil)
 	// Test resolving of new interface
-	plugin.ResolveCreatedInterface(ifNames[0])
-	_, _, found = plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	plugin.ResolveCreatedInterface("if1")
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Resolve removed interface for STN
 func TestStnConfiguratorResolveDeletedInterface(t *testing.T) {
+	var err error
 	// Setup
-	ctx, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(ctx, plugin)
+	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(conn, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
+	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
 	// Data
-	data := getTestStnRule(ruleNames[0], ifNames[0], ipAddresses[0])
+	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
-	plugin.StnAllIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, data)
-	plugin.StnUnstoredIndexes.RegisterName(StnIdentifier(ifNames[0]), 1, data)
+	swIfIndices.RegisterName("if1", 1, nil)
+	err = plugin.Add(data)
+	Expect(err).To(BeNil())
 	// Test resolving of deleted interface
-	plugin.ResolveDeletedInterface(ifNames[0])
-	_, _, found := plugin.StnAllIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.StnUnstoredIndexes.LookupIdx(StnIdentifier(ifNames[0]))
-	Expect(found).To(BeFalse())
+	swIfIndices.UnregisterName("if1")
+	plugin.ResolveDeletedInterface("if1")
+	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
+	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 /* STN Test Setup */
 
-func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *StnConfigurator, ifaceidx.SwIfIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.StnConfigurator, ifaceidx.SwIfIndexRW) {
+	RegisterTestingT(t)
+	ctx := &vppcallmock.TestCtx{
+		MockVpp: &mock.VppAdapter{},
+	}
+	connection, err := core.Connect(ctx.MockVpp)
+	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
-
 	// Interface indices
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn-configurator-test", "stn", nil))
+	// Configurator
+	plugin := &ifplugin.StnConfigurator{}
+	plugin.Init("test-stn", log, connection, swIfIndices, false)
 
-	return ctx, &StnConfigurator{
-		Log:                log,
-		SwIfIndexes:        swIfIndices,
-		StnAllIndexes:      nametoidx.NewNameToIdx(log, "stn-all-test", "stn-all", nil),
-		StnUnstoredIndexes: nametoidx.NewNameToIdx(log, "stn-unstored-test", "stn-unstored", nil),
-		vppChan:            ctx.MockChannel,
-	}, swIfIndices
+	return ctx, connection, plugin, swIfIndices
 }
 
-func stnTestTeardown(ctx *vppcallmock.TestCtx, plugin *StnConfigurator) {
-	ctx.TeardownTestCtx()
+func stnTestTeardown(connection *core.Connection, plugin *ifplugin.StnConfigurator) {
+	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 }
