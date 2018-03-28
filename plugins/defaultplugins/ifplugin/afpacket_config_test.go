@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ifplugin
+package ifplugin_test
 
 import (
 	"testing"
@@ -26,12 +26,12 @@ import (
 	ap_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/af_packet"
 	if_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-var afPacketNames = []string{"af-packet", "af-packet-2"}
 var afPacketHosts = []string{"af-packet-host1", "af-packet-host2"}
 
 /* AF_PACKET configurator init */
@@ -41,16 +41,11 @@ func TestAfPacketConfiguratorInit(t *testing.T) {
 	RegisterTestingT(t)
 	connection, err := core.Connect(&mock.VppAdapter{})
 	Expect(err).To(BeNil())
-	plugin := &AFPacketConfigurator{
-		Logger: logrus.DefaultLogger(),
-	}
+	plugin := &ifplugin.AFPacketConfigurator{}
 	vppCh, err := connection.NewAPIChannel()
 	Expect(err).To(BeNil())
-	err = plugin.Init(vppCh)
+	err = plugin.Init(logrus.DefaultLogger(), vppCh, struct{}{}, nil, nil)
 	Expect(err).To(BeNil())
-	Expect(plugin.vppCh).ToNot(BeNil())
-	Expect(plugin.afPacketByHostIf).ToNot(BeNil())
-	Expect(plugin.afPacketByName).ToNot(BeNil())
 	connection.Disconnect()
 }
 
@@ -64,21 +59,20 @@ func TestAfPacketConfigureHostNotAvail(t *testing.T) {
 	defer afPacketTestTeardown(ctx)
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("if1", append(addresses, "10.0.0.1/24"), "host1")
 	// Test configure af packet with host unavailable
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeZero())
 	Expect(pending).To(BeTrue())
-	cached, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
-	Expect(cached.pending).To(BeTrue())
-	cached, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
+	exists, pending, cachedData := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeTrue())
+	Expect(cachedData).ToNot(BeNil())
+	exists, pending, cachedData = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeTrue())
+	Expect(cachedData).ToNot(BeNil())
 }
 
 // Configure af packet interface
@@ -92,25 +86,23 @@ func TestAfPacketConfigureHostAvail(t *testing.T) {
 		SwIfIndex: 2,
 	})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("if1", append(addresses, "10.0.0.1/24"), "host1")
 	// Test af packet
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(2))
 	Expect(pending).To(BeFalse())
-	cached, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
-	Expect(cached.pending).To(BeFalse())
-	cached, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
+	exists, pending, cachedData := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
+	exists, pending, cachedData = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
 }
 
 // Configure af packet with error reply from VPP API
@@ -124,22 +116,21 @@ func TestAfPacketConfigureHostAvailError(t *testing.T) {
 		Retval:    1,
 		SwIfIndex: 2,
 	})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("if1", append(addresses, "10.0.0.1/24"), "host1")
 	// Test configure af packet with return value != 0
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).ToNot(BeNil())
 	Expect(swIfIdx).To(BeZero())
 	Expect(pending).To(BeTrue())
-	cached, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	cached, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
+	exists, pending, cachedData := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeTrue())
+	Expect(cachedData).ToNot(BeNil())
+	exists, pending, cachedData = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	Expect(cachedData).ToNot(BeNil())
 }
 
 // Configure af packet as incorrect interface type
@@ -150,17 +141,17 @@ func TestAfPacketConfigureIncorrectTypeError(t *testing.T) {
 	defer afPacketTestTeardown(ctx)
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("host1", append(addresses, "10.0.0.1/24"), "host1")
 	data.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
 	// Test configure af packet with incorrect type
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).ToNot(BeNil())
 	Expect(swIfIdx).To(BeZero())
 	Expect(pending).To(BeFalse())
-	_, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeFalse())
-	_, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeFalse())
+	exists, _, _ := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeFalse())
+	exists, _, _ = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeFalse())
 }
 
 // Call af packet modification which causes recreation of the interface
@@ -174,13 +165,12 @@ func TestAfPacketModifyRecreateChangedHost(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses, newAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	newData := getTestAfPacketData(afPacketNames[0], append(newAddresses, netAddresses[1]), afPacketHosts[1])
+	oldData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	newData := getTestAfPacketData("if1", append(newAddresses, "10.0.0.2/24"), "host2")
 	// Test configure initial af packet data
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -204,8 +194,8 @@ func TestAfPacketModifyRecreatePending(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	var oldAddresses, newAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	newData := getTestAfPacketData(afPacketNames[0], append(newAddresses, netAddresses[0]), afPacketHosts[0])
+	oldData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	newData := getTestAfPacketData("if1", append(newAddresses, "10.0.0.1/24"), "host1")
 	// Test configure initial af packet data
 	_, pending, err := plugin.ConfigureAfPacketInterface(oldData)
 	Expect(err).To(BeNil())
@@ -224,8 +214,8 @@ func TestAfPacketModifyRecreateNotFound(t *testing.T) {
 	defer afPacketTestTeardown(ctx)
 	// Data
 	var oldAddresses, newAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	newData := getTestAfPacketData(afPacketNames[0], append(newAddresses, netAddresses[1]), afPacketHosts[1])
+	oldData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	newData := getTestAfPacketData("if1", append(newAddresses, "10.0.0.1/24"), "host2")
 	// Test af packet modify
 	recreate, err := plugin.ModifyAfPacketInterface(newData, oldData)
 	Expect(err).To(BeNil())
@@ -243,13 +233,12 @@ func TestAfPacketModifyNoRecreate(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses, newAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	newData := getTestAfPacketData(afPacketNames[0], append(newAddresses, netAddresses[1]), afPacketHosts[0])
+	oldData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	newData := getTestAfPacketData("if1", append(newAddresses, "10.0.0.1/24"), "host1")
 	// Test configure initial data
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -258,14 +247,14 @@ func TestAfPacketModifyNoRecreate(t *testing.T) {
 	recreate, err := plugin.ModifyAfPacketInterface(newData, oldData)
 	Expect(err).To(BeNil())
 	Expect(recreate).To(BeFalse())
-	cached, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.IpAddresses[0]).To(BeEquivalentTo(netAddresses[1]))
-	cached, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.IpAddresses[0]).To(BeEquivalentTo(netAddresses[1]))
+	exists, pending, cachedData := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
+	exists, pending, cachedData = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
 }
 
 // Modify af packet with incorrect interface type
@@ -279,14 +268,13 @@ func TestAfPacketModifyIncorrectType(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses, newAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	newData := getTestAfPacketData(afPacketNames[0], append(newAddresses, netAddresses[1]), afPacketHosts[0])
+	oldData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	newData := getTestAfPacketData("if1", append(newAddresses, "10.0.0.1/24"), "host2")
 	newData.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
 	// Test configure initial data
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -309,32 +297,30 @@ func TestAfPacketDelete(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ap_api.AfPacketDeleteReply{}) // Delete
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses []string
-	oldData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
 	// Test configure initial af packet data
-	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	Expect(pending).To(BeFalse())
-	cached, ok := plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
-	Expect(cached.pending).To(BeFalse())
-	cached, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
-	Expect(cached).ToNot(BeNil())
-	Expect(cached.config.Name).To(BeEquivalentTo(afPacketNames[0]))
+	exists, pending, cachedData := plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
+	exists, pending, cachedData = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	Expect(pending).To(BeFalse())
+	Expect(cachedData).ToNot(BeNil())
 	// Test af packet delete
-	err = plugin.DeleteAfPacketInterface(oldData, 1)
+	err = plugin.DeleteAfPacketInterface(data, 1)
 	Expect(err).To(BeNil())
-	_, ok = plugin.afPacketByName[afPacketNames[0]]
-	Expect(ok).To(BeFalse())
-	_, ok = plugin.afPacketByHostIf[afPacketHosts[0]]
-	Expect(ok).To(BeFalse())
+	exists, _, _ = plugin.GetAfPacketStatusByName("if1")
+	Expect(exists).To(BeFalse())
+	exists, _, _ = plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeFalse())
 }
 
 // Delete af packet with incorrect interface type data
@@ -348,14 +334,13 @@ func TestAfPacketDeleteIncorrectType(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	modifiedData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	modifiedData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
 	modifiedData.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
 	// Test configure initial af packet
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -377,46 +362,41 @@ func TestAfPacketNewLinuxInterfaceHostFound(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	var oldAddresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	// Fill af packet cache
-	plugin.afPacketByHostIf[data.Afpacket.HostIfName] = &AfPacketConfig{
-		config:  data,
-		pending: true,
-	}
-	_, ok := plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeFalse())
+	data := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
+	_, pending, err := plugin.ConfigureAfPacketInterface(data)
+	Expect(err).To(BeNil())
+	Expect(pending).To(BeTrue())
+	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	Expect(config).ToNot(BeNil())
-	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo(afPacketHosts[0]))
-	_, ok = plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeTrue())
+	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo("host1"))
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
 }
 
-// Register new linux interface while af packet is pending. Note: this is a case which should NOT happen
-func TestAfPacketNewLinuxInterfaceHostFoundPending(t *testing.T) {
+// Register new linux interface while af packet is not pending. Note: this is a case which should NOT happen
+func TestAfPacketNewLinuxInterfaceHostNotPending(t *testing.T) {
 	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
 	// Reply set
+	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ap_api.AfPacketDeleteReply{})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	var oldAddresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	// Fill af packet cache
-	plugin.afPacketByHostIf[data.Afpacket.HostIfName] = &AfPacketConfig{
-		config:  data,
-		pending: false,
-	}
-	_, ok := plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeFalse())
+	data := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	_, pending, err := plugin.ConfigureAfPacketInterface(data)
+	Expect(err).To(BeNil())
+	Expect(pending).To(BeFalse())
+	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	Expect(config).ToNot(BeNil())
-	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo(afPacketHosts[0]))
-	_, ok = plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeTrue())
+	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo("host1"))
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
 }
 
 // Test new linux interface which is not a host
@@ -424,24 +404,26 @@ func TestAfPacketNewLinuxInterfaceHostNotFound(t *testing.T) {
 	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
-	// Data
-	var oldAddresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	_, ok := plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeFalse())
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
+	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	Expect(config).To(BeNil())
-	_, ok = plugin.hostInterfaces[data.Afpacket.HostIfName]
-	Expect(ok).To(BeTrue())
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
 }
 
 // Test new linux interface while linux plugin is not available
 func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
-	// Setup
-	ctx, plugin, _ := afPacketTestSetup(t)
-	plugin.Linux = nil
-	defer afPacketTestTeardown(ctx)
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+	// Logger
+	log := logrus.DefaultLogger()
+	log.SetLevel(logging.DebugLevel)
+	// Interface indices
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	// Configurator
+	plugin := &ifplugin.AFPacketConfigurator{}
+	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
+	Expect(err).To(BeNil())
 	// Test registered linux interface
 	config := plugin.ResolveCreatedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
 	Expect(config).To(BeNil())
@@ -453,31 +435,24 @@ func TestAfPacketDeletedLinuxInterface(t *testing.T) {
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
 	// Reply set
+	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ap_api.AfPacketDeleteReply{})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
 	// Data
 	var oldAddresses []string
-	data := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	// Fill af packet cache
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
-	plugin.afPacketByName[afPacketNames[0]] = &AfPacketConfig{
-		config:  data,
-		pending: false,
-	}
-	plugin.afPacketByHostIf[data.Afpacket.HostIfName] = &AfPacketConfig{
-		config:  data,
-		pending: true,
-	}
+	data := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	// Prepare
+	_, pending, err := plugin.ConfigureAfPacketInterface(data)
+	Expect(err).To(BeNil())
+	Expect(pending).To(BeTrue())
 	// Test un-registered linux interface
-	plugin.ResolveDeletedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
-	_, ok := plugin.hostInterfaces[afPacketHosts[0]]
-	Expect(ok).To(BeFalse())
-	_, ok = plugin.afPacketByName[data.Name]
-	Expect(ok).To(BeTrue())
-	_, ok = plugin.afPacketByHostIf[data.Afpacket.HostIfName]
-	Expect(ok).To(BeTrue())
+	plugin.ResolveDeletedLinuxInterface("host1", "host1", 1)
+	exists, _, _ := plugin.GetAfPacketStatusByHost("host1")
+	Expect(exists).To(BeTrue())
+	exists, _, _ = plugin.GetAfPacketStatusByName("host1")
+	Expect(exists).To(BeFalse())
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
 }
 
 // Un-register linux interface while host is not found
@@ -485,26 +460,33 @@ func TestAfPacketDeletedLinuxInterfaceHostNotFound(t *testing.T) {
 	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
+	// Prepare
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	// Test un-registered linux interface
-	plugin.ResolveDeletedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
-	_, ok := plugin.hostInterfaces[afPacketHosts[0]]
-	Expect(ok).To(BeFalse())
+	plugin.ResolveDeletedLinuxInterface("host1", "host1", 1)
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
 }
 
 // Un-register linux interface with linux plugin not initialized
 func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
-	// Setup
-	ctx, plugin, _ := afPacketTestSetup(t)
-	plugin.Linux = nil
-	defer afPacketTestTeardown(ctx)
-	// Register
-	plugin.hostInterfaces[afPacketHosts[0]] = struct{}{}
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+	// Logger
+	log := logrus.DefaultLogger()
+	log.SetLevel(logging.DebugLevel)
+	// Interface indices
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	// Configurator
+	plugin := &ifplugin.AFPacketConfigurator{}
+	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
+	Expect(err).To(BeNil())
+	// Prepare
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	// Test un-registered linux interface
-	plugin.ResolveDeletedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
-	_, ok := plugin.hostInterfaces[afPacketHosts[0]]
-	Expect(ok).To(BeTrue())
+	plugin.ResolveDeletedLinuxInterface("host1", "host1", 1)
+	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
+	err = safeclose.Close(ctx)
+	Expect(err).To(BeNil())
 }
 
 // Check if 'IsPending' returns correct output
@@ -512,19 +494,23 @@ func TestAfPacketIsPending(t *testing.T) {
 	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+	// Reply set
+	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	var oldAddresses []string
-	firstData := getTestAfPacketData(afPacketNames[0], append(oldAddresses, netAddresses[0]), afPacketHosts[0])
-	secondData := getTestAfPacketData(afPacketNames[1], append(oldAddresses, netAddresses[1]), afPacketHosts[1])
-	// Fill af packet cache
-	plugin.afPacketByName[firstData.Name] = &AfPacketConfig{
-		config:  firstData,
-		pending: true,
-	}
-	plugin.afPacketByName[secondData.Name] = &AfPacketConfig{
-		config:  secondData,
-		pending: false,
-	}
+	firstData := getTestAfPacketData("if1", append(oldAddresses, "10.0.0.1/24"), "host1")
+	secondData := getTestAfPacketData("if2", append(oldAddresses, "10.0.0.2/24"), "host2")
+	// Prepare
+	plugin.ResolveCreatedLinuxInterface("host2", "host2", 3)
+	_, pending, err := plugin.ConfigureAfPacketInterface(firstData)
+	Expect(err).To(BeNil())
+	Expect(pending).To(BeTrue())
+	_, pending, err = plugin.ConfigureAfPacketInterface(secondData)
+	Expect(err).To(BeNil())
+	Expect(pending).To(BeFalse())
 	// Test 'IsPending'
 	isPending := plugin.IsPendingAfPacket(firstData)
 	Expect(isPending).To(BeTrue())
@@ -534,7 +520,7 @@ func TestAfPacketIsPending(t *testing.T) {
 
 /* AF_PACKET Test Setup */
 
-func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *AFPacketConfigurator, ifaceidx.SwIfIndexRW) {
+func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketConfigurator, ifaceidx.SwIfIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	// Logger
 	log := logrus.DefaultLogger()
@@ -542,16 +528,12 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *AFPacketConfigurato
 
 	// Interface indices
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	// Configurator
+	plugin := &ifplugin.AFPacketConfigurator{}
+	err := plugin.Init(log, ctx.MockChannel, struct{}{}, swIfIndices, nil)
+	Expect(err).To(BeNil())
 
-	return ctx, &AFPacketConfigurator{
-		Logger:           log,
-		SwIfIndexes:      swIfIndices,
-		Linux:            1, // Just a flag, cannot be nil
-		vppCh:            ctx.MockChannel,
-		afPacketByHostIf: make(map[string]*AfPacketConfig),
-		afPacketByName:   make(map[string]*AfPacketConfig),
-		hostInterfaces:   make(map[string]struct{}),
-	}, swIfIndices
+	return ctx, plugin, swIfIndices
 }
 
 func afPacketTestTeardown(ctx *vppcallmock.TestCtx) {
@@ -572,5 +554,4 @@ func getTestAfPacketData(ifName string, addresses []string, host string) *interf
 			HostIfName: host,
 		},
 	}
-
 }

@@ -105,8 +105,8 @@ func (plugin *InterfaceConfigurator) Init(swIfIndexes ifaceidx.SwIfIndexRW, dhcp
 	}
 
 	// Init AF-packet configurator
-	plugin.afPacketConfigurator = &AFPacketConfigurator{Logger: plugin.Log, Linux: plugin.Linux, SwIfIndexes: plugin.swIfIndexes, Stopwatch: plugin.Stopwatch}
-	plugin.afPacketConfigurator.Init(plugin.vppCh)
+	plugin.afPacketConfigurator = &AFPacketConfigurator{}
+	plugin.afPacketConfigurator.Init(plugin.Log, plugin.vppCh, plugin.Linux, plugin.swIfIndexes, plugin.Stopwatch)
 
 	plugin.uIfaceCache = make(map[string]string)
 	// Obtain registered socket filenames
@@ -712,7 +712,7 @@ func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_I
 	plugin.Log.Infof("Removing interface %v", iface.Name)
 
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
-		ifIdx, _, found := plugin.afPacketConfigurator.SwIfIndexes.LookupIdx(iface.Name)
+		ifIdx, _, found := plugin.afPacketConfigurator.ifIndexes.LookupIdx(iface.Name)
 		if !found {
 			return fmt.Errorf("cannot remove af packet interface %v, index not available from mapping", iface.Name)
 		}

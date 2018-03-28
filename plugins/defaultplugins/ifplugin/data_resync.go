@@ -380,7 +380,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 		}
 		vppStnIPStr = vppStnIP.String()
 
-		vppStnIfName, _, found := plugin.ifIndices.LookupName(vppStnRule.SwIfIndex)
+		vppStnIfName, _, found := plugin.ifIndexes.LookupName(vppStnRule.SwIfIndex)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
@@ -417,7 +417,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
 	// Configure missing rules
 	for _, nbStnRule := range nbStnRules {
 		identifier := StnIdentifier(nbStnRule.Interface)
-		_, _, found := plugin.allIndices.LookupIdx(identifier)
+		_, _, found := plugin.allIndexes.LookupIdx(identifier)
 		if !found {
 			if err := plugin.Add(nbStnRule); err != nil {
 				plugin.log.Error(err)

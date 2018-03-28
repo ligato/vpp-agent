@@ -465,9 +465,9 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 	// Setup
 	ctx, plugin := ifTestSetup(t)
 	plugin.afPacketConfigurator = &AFPacketConfigurator{
-		Logger:           plugin.Log,
-		SwIfIndexes:      plugin.swIfIndexes,
-		Linux:            1, // Flag
+		log:              plugin.Log,
+		ifIndexes:        plugin.swIfIndexes,
+		linux:            1, // Flag
 		vppCh:            ctx.MockChannel,
 		afPacketByHostIf: make(map[string]*AfPacketConfig),
 		afPacketByName:   make(map[string]*AfPacketConfig),
@@ -485,9 +485,9 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(ifNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacket(ifNames[0], append(addresses, netAddresses[0]), "host1")
 	// Register host
-	plugin.afPacketConfigurator.hostInterfaces[afPacketHosts[0]] = struct{}{}
+	plugin.afPacketConfigurator.hostInterfaces["host1"] = struct{}{}
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -506,9 +506,9 @@ func TestInterfacesConfigureAfPacketPending(t *testing.T) {
 	// Setup
 	ctx, plugin := ifTestSetup(t)
 	plugin.afPacketConfigurator = &AFPacketConfigurator{
-		Logger:           plugin.Log,
-		SwIfIndexes:      plugin.swIfIndexes,
-		Linux:            1, // Flag
+		log:              plugin.Log,
+		ifIndexes:        plugin.swIfIndexes,
+		linux:            1, // Flag
 		vppCh:            ctx.MockChannel,
 		afPacketByHostIf: make(map[string]*AfPacketConfig),
 		afPacketByName:   make(map[string]*AfPacketConfig),
@@ -517,7 +517,7 @@ func TestInterfacesConfigureAfPacketPending(t *testing.T) {
 	defer ifTestTeardown(ctx, plugin)
 	// Data
 	var addresses []string
-	data := getTestAfPacketData(ifNames[0], append(addresses, netAddresses[0]), afPacketHosts[0])
+	data := getTestAfPacket(ifNames[0], append(addresses, netAddresses[0]), "host1")
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -806,6 +806,18 @@ func getTestInterface(name string, ifType if_api.InterfaceType, ip []string, dhc
 		PhysAddress:        mac,
 		Mtu:                mtu,
 		ContainerIpAddress: ipAddresses[4],
+	}
+}
+
+func getTestAfPacket(ifName string, addresses []string, host string) *if_api.Interfaces_Interface {
+	return &if_api.Interfaces_Interface{
+		Name:        ifName,
+		Type:        if_api.InterfaceType_AF_PACKET_INTERFACE,
+		Enabled:     true,
+		IpAddresses: addresses,
+		Afpacket: &if_api.Interfaces_Interface_Afpacket{
+			HostIfName: host,
+		},
 	}
 }
 

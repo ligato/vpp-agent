@@ -41,11 +41,11 @@ import (
 // and stored in ETCD under the key "vpp/config/v1/stn/rules/".
 type StnConfigurator struct {
 	log logging.Logger
-	// Indices
-	ifIndices        ifaceidx.SwIfIndex
-	allIndices       idxvpp.NameToIdxRW
-	allIndicesSeq    uint32
-	unstoredIndices  idxvpp.NameToIdxRW
+	// Indexes
+	ifIndexes        ifaceidx.SwIfIndex
+	allIndexes       idxvpp.NameToIdxRW
+	allIndexesSeq    uint32
+	unstoredIndexes  idxvpp.NameToIdxRW
 	unstoredIndexSeq uint32
 	// VPP
 	vppChan vppcalls.VPPChannel
@@ -55,18 +55,18 @@ type StnConfigurator struct {
 
 // IndexExistsFor returns true if there is and mapping entry for provided name
 func (plugin *StnConfigurator) IndexExistsFor(name string) bool {
-	_, _, found := plugin.allIndices.LookupIdx(name)
+	_, _, found := plugin.allIndexes.LookupIdx(name)
 	return found
 }
 
 // UnstoredIndexExistsFor returns true if there is and mapping entry for provided name
 func (plugin *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
-	_, _, found := plugin.unstoredIndices.LookupIdx(name)
+	_, _, found := plugin.unstoredIndexes.LookupIdx(name)
 	return found
 }
 
 // Init initializes STN configurator
-func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.Logger, goVppMux govppmux.API, ifIndices ifaceidx.SwIfIndex,
+func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.Logger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Init logger
 	plugin.log = logger
@@ -78,11 +78,11 @@ func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.L
 		return err
 	}
 
-	// Init indices
-	plugin.ifIndices = ifIndices
-	plugin.allIndices = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-all-indexes", nil)
-	plugin.unstoredIndices = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-unstored-indexes", nil)
-	plugin.allIndicesSeq, plugin.unstoredIndexSeq = 1, 1
+	// Init indexes
+	plugin.ifIndexes = ifIndexes
+	plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-all-indexes", nil)
+	plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-unstored-indexes", nil)
+	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
 
 	// Stopwatch
 	if enableStopwatch {
@@ -112,7 +112,7 @@ func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
 	plugin.log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
 		if err := plugin.Add(rule); err == nil {
-			plugin.unstoredIndices.UnregisterName(StnIdentifier(interfaceName))
+			plugin.unstoredIndexes.UnregisterName(StnIdentifier(interfaceName))
 		}
 	}
 }
@@ -122,7 +122,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 	plugin.log.Infof("Configuring new STN rule %v", rule)
 
 	// Check stn data
-	stnRule, doVPPCall, err := plugin.checkStn(rule, plugin.ifIndices)
+	stnRule, doVPPCall, err := plugin.checkStn(rule, plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 	plugin.log.Infof("Removing STN rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
-	stnRule, _, err := plugin.checkStn(rule, plugin.ifIndices)
+	stnRule, _, err := plugin.checkStn(rule, plugin.ifIndexes)
 
 	if err != nil {
 		return err
@@ -255,20 +255,20 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface bool) {
 	idx := StnIdentifier(rule.Interface)
 	if withoutIface {
-		plugin.unstoredIndices.RegisterName(idx, plugin.unstoredIndexSeq, rule)
+		plugin.unstoredIndexes.RegisterName(idx, plugin.unstoredIndexSeq, rule)
 		plugin.unstoredIndexSeq++
 	}
-	plugin.allIndices.RegisterName(idx, plugin.allIndicesSeq, rule)
-	plugin.allIndicesSeq++
+	plugin.allIndexes.RegisterName(idx, plugin.allIndexesSeq, rule)
+	plugin.allIndexesSeq++
 }
 
 func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.StnRule) {
 	idx := StnIdentifier(iface)
 
 	// Removing rule from main index
-	_, ruleIface, exists := plugin.allIndices.LookupIdx(idx)
+	_, ruleIface, exists := plugin.allIndexes.LookupIdx(idx)
 	if exists {
-		plugin.allIndices.UnregisterName(idx)
+		plugin.allIndexes.UnregisterName(idx)
 		stnRule, ok := ruleIface.(*modelStn.StnRule)
 		if ok {
 			rule = stnRule
@@ -276,10 +276,10 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 	}
 
 	// Removing rule from not stored rules index
-	_, _, existsWithout := plugin.unstoredIndices.LookupIdx(idx)
+	_, _, existsWithout := plugin.unstoredIndexes.LookupIdx(idx)
 	if existsWithout {
 		withoutIface = true
-		plugin.unstoredIndices.UnregisterName(idx)
+		plugin.unstoredIndexes.UnregisterName(idx)
 	}
 
 	return
@@ -292,9 +292,9 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	var exists bool
 
 	if !fromAllRules {
-		_, ruleIface, exists = plugin.unstoredIndices.LookupIdx(idx)
+		_, ruleIface, exists = plugin.unstoredIndexes.LookupIdx(idx)
 	} else {
-		_, ruleIface, exists = plugin.allIndices.LookupIdx(idx)
+		_, ruleIface, exists = plugin.allIndexes.LookupIdx(idx)
 	}
 	plugin.log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
 	if exists {

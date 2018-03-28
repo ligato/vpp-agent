@@ -209,7 +209,8 @@ func TestStnConfiguratorDeleteRule(t *testing.T) {
 	// Register
 	swIfIndices.RegisterName("if1", 1, nil)
 	// Test delete stn rule
-	plugin.Add(data)
+	err = plugin.Add(data)
+	Expect(err).To(BeNil())
 	err = plugin.Delete(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
@@ -225,7 +226,8 @@ func TestStnConfiguratorDeleteRuleMissingInterface(t *testing.T) {
 	// Data
 	data := getTestStnRule("rule1", "if1", "10.0.0.1")
 	// Test delete rule while interface is not registered
-	plugin.Add(data)
+	err = plugin.Add(data)
+	Expect(err).To(BeNil())
 	err = plugin.Delete(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
@@ -248,7 +250,8 @@ func TestStnConfiguratorDeleteRuleRetvalError(t *testing.T) {
 	// Register
 	swIfIndices.RegisterName("if1", 1, nil)
 	// Test delete rule with return value -1
-	plugin.Add(data)
+	err = plugin.Add(data)
+	Expect(err).To(BeNil())
 	err = plugin.Delete(data)
 	Expect(err).ToNot(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
@@ -267,7 +270,8 @@ func TestStnConfiguratorDeleteRuleCheckError(t *testing.T) {
 	data := getTestStnRule("rule1", "if1", "no-ip")
 	// Register
 	swIfIndices.RegisterName("if1", 1, nil)
-	plugin.Add(data)
+	err = plugin.Add(data)
+	Expect(err).ToNot(BeNil())
 	// Test delete rule with error check
 	err = plugin.Delete(data)
 	Expect(err).ToNot(BeNil())
@@ -304,7 +308,8 @@ func TestStnConfiguratorModifyRule(t *testing.T) {
 	// Register
 	swIfIndices.RegisterName("if1", 1, nil)
 	// Test modify rule
-	plugin.Add(oldData)
+	err = plugin.Add(oldData)
+	Expect(err).To(BeNil())
 	err = plugin.Modify(oldData, newData)
 	Expect(err).To(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
@@ -415,7 +420,8 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn-configurator-test", "stn", nil))
 	// Configurator
 	plugin := &ifplugin.StnConfigurator{}
-	plugin.Init("test-stn", log, connection, swIfIndices, false)
+	err = plugin.Init("test-stn", log, connection, swIfIndices, false)
+	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices
 }
