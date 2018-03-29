@@ -17,6 +17,7 @@ package bdidx_test
 import (
 	"testing"
 
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
@@ -45,7 +46,7 @@ func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.Na
 	RegisterTestingT(t)
 
 	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(nil, "testName", "bd_indexes_test", bdidx.IndexMetadata)
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "bd_indexes_test", bdidx.IndexMetadata)
 	bdIndex := bdidx.NewBDIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 	Expect(names).To(BeEmpty())
@@ -95,7 +96,9 @@ TestRegisterAndUnregisterName tests methods:
 func TestRegisterAndUnregisterName(t *testing.T) {
 	RegisterTestingT(t)
 
-	nameToIdx, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
+	nameToIdx, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+	})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 	names := nameToIdx.ListNames()
@@ -202,7 +205,9 @@ TestLookupIndex tests method:
 func TestLookupIndex(t *testing.T) {
 	RegisterTestingT(t)
 
-	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+	})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
@@ -219,7 +224,9 @@ TestLookupIndex tests method:
 func TestLookupName(t *testing.T) {
 	RegisterTestingT(t)
 
-	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+	})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
@@ -237,11 +244,11 @@ func TestLookupByIfaceName(t *testing.T) {
 	RegisterTestingT(t)
 
 	// defines 3 bridge domains
-	_, bdIndex, bridgeDomains := testInitialization(t,
-		map[string][]string{
-			bdName0: {ifaceAName, ifaceBName},
-			bdName1: {ifaceCName},
-			bdName2: {ifaceDName}})
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+		bdName1: {ifaceCName},
+		bdName2: {ifaceDName},
+	})
 
 	// Assign correct index to every bridge domain
 	for _, bridgeDomain := range bridgeDomains {
@@ -273,4 +280,23 @@ func TestLookupByIfaceName(t *testing.T) {
 
 	_, _, _, exists = bdIndex.LookupBdForInterface("")
 	Expect(exists).To(BeFalse())
+}
+
+func TestWatchNameToIdx(t *testing.T) {
+	RegisterTestingT(t)
+
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+	})
+
+	c := make(chan bdidx.ChangeDto)
+	bdIndex.WatchNameToIdx("testName", c)
+
+	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
+
+	var dto bdidx.ChangeDto
+	Eventually(c).Should(Receive(&dto))
+
+	Expect(dto.Name).To(Equal(bridgeDomains[0].Name))
+	Expect(dto.Metadata).To(Equal(bridgeDomains[0]))
 }
