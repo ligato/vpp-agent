@@ -36,7 +36,7 @@ var (
 
 /* Confgiuration */
 
-// Initial Data configure single veth pair where both linux interfaces veth11 and veth12 are configured in
+// Initial Data configures single veth pair where both linux interfaces veth11 and veth12 are configured in
 // default namespace. Af packet interface is attached to veth11 and put to the bridge domain. The bridge domain
 // will contain a second af packet which will be created in the second iteration (modify).
 /**********************************************

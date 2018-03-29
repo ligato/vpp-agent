@@ -10,7 +10,8 @@ examples/idx_iface_cache/idx_iface_cache
 examples/idx_mapping_lookup/idx_mapping_lookup
 examples/idx_mapping_watcher/idx_mapping_watcher
 examples/idx_veth_cache/idx_veth_cache
-examples/localclient_linux/localclient_linux
+examples/localclient_linux/veth/veth
+examples/localclient_linux/tap/tap
 examples/localclient_vpp/localclient_vpp
 tests/perf/log
 tests/perf/logresult.zip
