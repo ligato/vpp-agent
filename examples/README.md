@@ -20,11 +20,17 @@ Current examples:
   the localclient package to push example configuration into VPP plugins 
   that run in the same agent instance (i.e. in the same OS process). 
   Behind the scenes, configuration data is transported via go channels.
-* **[localclient_linux](localclient_linux/main.go)** demonstrates how to
-  use the localclient package to push example configuration into linux and
-  VPP plugins running within the same agent instance (i.e. within the same 
-  OS process). Behind the scenes the configuration data is transported via
-  go channels.
+* **[localclient_linux_tap](localclient_linux/tap/main.go)** configures 
+  simple topology consisting of VPP Tap interfaces with linux host 
+  counterparts. Example demonstrates how to use the localclient package 
+  to push example configuration for those interface types into linux 
+  and VPP plugins running within the same agent instance (i.e. within 
+  the same OS process). Behind the scenes the configuration data 
+  is transported via go channels. 
+* **[localclient_linux_veth](localclient_linux/veth/main.go)** configures 
+  simple topology consisting of VPP af-packet interfaces attached to 
+  linux Veth pairs. As before, this example also uses localclient to push 
+  the configuration to vpp-agent plugins.  
 * **[remoteclient_grpc_vpp](remoteclient_grpc_vpp/main.go)** demonstrates how to
   use the remoteclient package to push example configuration into
   VPP default plugins running within different vpp-agent OS process.
