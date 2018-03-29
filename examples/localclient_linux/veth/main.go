@@ -16,32 +16,82 @@ package main
 
 import (
 	"context"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/namsral/flag"
 )
 
-// init sets the default logging level.
-func init() {
-	log.DefaultLogger().SetOutput(os.Stdout)
-	log.DefaultLogger().SetLevel(logging.DebugLevel)
-}
+var (
+	timeout = flag.Int("timeout", 20, "Timeout between applying of initial and modified configuration in seconds")
+)
 
-/********
- * Main *
- ********/
+/* Confgiuration */
+
+// Initial Data configure single veth pair where both linux interfaces veth11 and veth12 are configured in
+// default namespace. Af packet interface is attached to veth11 and put to the bridge domain. The bridge domain
+// will contain a second af packet which will be created in the second iteration (modify).
+/**********************************************
+ * Initial Data                               *
+ *                                            *
+ *  +--------------------------------------+  *
+ *  |       +-- Bridge Domain --+          |  *
+ *  |       |                   |          |  *
+ *  | +------------+            |          |  *
+ *  | | afpacket1  |        (afpacket2)    |  *
+ *  | +-----+------+                       |  *
+ *  |       |                              |  *
+ *  +-------+------------------------------+  *
+ *          |                                 *
+ *  +-------+--------+                        *
+ *  | veth11         |                        *
+ *  | DEFAULT CONFIG |                        *
+ *  +-------+--------+                        *
+ *          |                                 *
+ *  +-------+---------+                       *
+ *  | veth12          |                       *
+ *  | IP: 10.0.0.1/24 |                       *
+ *  | DEFAULT NS      |                       *
+ *  +-----------------+                       *
+ *                                            *
+ **********************************************/
+
+// Modify changes MTU of the veth11, moves veth12 to the namespace ns1 and configures IP address to it. Also second
+// branch veth21 - veth22 is configured including afpacket2. The new af packet is in the same bridge domain. This
+// configuration allows to ping between veth12 and veth22 interfaces
+/***********************************************
+ * Modified Data                               *
+ *                                             *
+ *  +---------------------------------------+  *
+ *  |       +-- Bridge domain --+           |  *
+ *  |       |                   |           |  *
+ *  | +-----+------+      +-----+------+    |  *
+ *  | | afpacket1  |      | afpacket2  |    |  *
+ *  | +-----+------+      +-----+------+    |  *
+ *  |       |                   |           |  *
+ *  +-------+-------------------+-----------+  *
+ *          |                   |              *
+ *  +-------+--------+  +-------+--------+     *
+ *  | veth11         |  | veth21         |     *
+ *  | MTU: 1000      |  | DEFAULT CONFIG |     *
+ *  +-------+--------+  +-------+--------+     *
+ *          |                   |              *
+ *  +-------+---------+ +-------+---------+    *
+ *  | veth12          | | veth22          |    *
+ *  | IP: 10.0.0.1/24 | | IP: 10.0.0.2/24 |    *
+ *  | NAMESPACE: ns1  | | NAMESPACE: ns2  |    *
+ *  +-----------------+ +-----------------+    *
+ ***********************************************/
+
+/* Vpp-agent Init and Close*/
 
 // Start Agent plugins selected for this example.
 func main() {
@@ -49,7 +99,7 @@ func main() {
 	closeChannel := make(chan struct{}, 1)
 
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &VethExamplePlugin{}}
 
 		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
 	}))
@@ -62,257 +112,204 @@ func main() {
 
 // Stop the agent with desired info message.
 func closeExample(message string, closeChannel chan struct{}) {
-	time.Sleep(40 * time.Second)
+	time.Sleep(time.Duration(*timeout+5) * time.Second)
 	log.DefaultLogger().Info(message)
 	closeChannel <- struct{}{}
 }
 
-/******************
- * Example plugin *
- ******************/
+/* VETH Example */
 
 // PluginID of an example plugin.
-const PluginID core.PluginName = "example-plugin"
+const PluginID core.PluginName = "veth-example-plugin"
 
-// ExamplePlugin demonstrates the use of the localclient to locally transport
-// example configuration into linuxplugin and default VPP plugins.
-type ExamplePlugin struct {
+// VethExamplePlugin uses localclient to transport example veth and af-packet
+// configuration to linuxplugin, eventually VPP plugins
+type VethExamplePlugin struct {
+	log    logging.Logger
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
 // Init initializes example plugin.
-func (plugin *ExamplePlugin) Init() error {
-	// Apply initial VPP configuration.
-	plugin.resyncLinuxAndVpp()
+func (plugin *VethExamplePlugin) Init() error {
+	// Logger
+	plugin.log = log.DefaultLogger()
+	plugin.log.SetLevel(logging.DebugLevel)
+	plugin.log.Info("Initializing Veth example")
+
+	// Flags
+	flag.Parse()
+	plugin.log.Infof("Timeout between create and modify set to %d", *timeout)
+
+	// Apply initial Linux/VPP configuration.
+	plugin.putInitialData()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	plugin.wg.Add(1)
-	go plugin.reconfigureLinuxAndVPP(ctx)
+	go plugin.putModifiedData(ctx, *timeout)
 
-	log.DefaultLogger().Info("Initialization of the example plugin has completed")
+	plugin.log.Info("Veth example initialization done")
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
+func (plugin *VethExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.DefaultLogger().Info("Closed example plugin")
+	log.DefaultLogger().Info("Closed Veth plugin")
 	return nil
 }
 
-// resyncLinuxAndVPP propagates snapshot of the whole initial configuration to linuxplugin and VPP plugins.
-func (plugin *ExamplePlugin) resyncLinuxAndVpp() {
+// Configure initial data
+func (plugin *VethExamplePlugin) putInitialData() {
+	plugin.log.Infof("Applying initial configuration")
 	err := localclient.DataResyncRequest(PluginID).
-		LinuxInterface(&veth11DefaultNs).
-		LinuxInterface(&veth12).
-		VppInterface(&afpacket1).
-		VppInterface(&tap1).
+		LinuxInterface(initialVeth11()).
+		LinuxInterface(initialVeth12()).
+		VppInterface(afPacket1()).
+		BD(bridgeDomain()).
 		Send().ReceiveReply()
 	if err != nil {
-		log.DefaultLogger().Errorf("Failed to apply initial Linux&VPP configuration: %v", err)
+		plugin.log.Errorf("Initial configuration failed: %v", err)
 	} else {
-		log.DefaultLogger().Info("Successfully applied initial Linux&VPP configuration")
+		plugin.log.Info("Initial configuration successful")
 	}
 }
 
-// reconfigureLinuxAndVPP simulates a set of changes in the configuration related to linuxplugin and VPP plugins.
-func (plugin *ExamplePlugin) reconfigureLinuxAndVPP(ctx context.Context) {
+// Configure modified data
+func (plugin *VethExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
 	select {
-	case <-time.After(20 * time.Second):
-		// Simulate configuration change exactly 20seconds after resync.
+	case <-time.After(time.Duration(timeout) * time.Second):
+		plugin.log.Infof("Applying modified configuration")
+		// Simulate configuration change after timeout
 		err := localclient.DataChangeRequest(PluginID).
 			Put().
-			LinuxInterface(&veth11Ns1).     /* move veth11 into the namespace "ns1" */
-			LinuxInterface(&veth12WithMtu). /* reconfigure veth12 -- explicitly set Mtu to 1000 */
-			LinuxInterface(&veth21Ns2).     /* create veth21-veth22 pair, put veth21 into the namespace "ns2" */
-			LinuxInterface(&veth22).        /* enable veth22, keep default configuration */
-			VppInterface(&afpacket2).       /* create afpacket2 interface and attach it to veth2 */
-			BD(&BDAfpackets).               /* put afpacket1 and afpacket2 into the same bridge domain */
-			Delete().
-			VppInterface(tap1.Name). /* remove the tap interface */
+			LinuxInterface(modifiedVeth11()).
+			LinuxInterface(modifiedVeth12()).
+			LinuxInterface(veth21()).
+			LinuxInterface(veth22()).
+			VppInterface(afPacket2()).
 			Send().ReceiveReply()
 		if err != nil {
-			log.DefaultLogger().Errorf("Failed to reconfigure Linux&VPP: %v", err)
+			plugin.log.Errorf("Modified configuration failed: %v", err)
 		} else {
-			log.DefaultLogger().Info("Successfully reconfigured Linux&VPP")
+			plugin.log.Info("Modified configuration successful")
 		}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
-		log.DefaultLogger().Info("Planned Linux&VPP re-configuration was canceled")
+		plugin.log.Info("Modification of configuration canceled")
 	}
 	plugin.wg.Done()
 }
 
-/*************************
- * Example plugin config *
- *************************/
+/* Example Data */
 
-/**********************************************
- * After Resync                               *
- *                                            *
- *  +--------------------------------------+  *
- *  |                                      |  *
- *  |                                      |  *
- *  | +------------+          +-------+    |  *
- *  | | afpacket1  |          | tap1  |    |  *
- *  | +-----+------+          +---+---+    |  *
- *  |       |                     |        |  *
- *  +-------+---------------------+--------+  *
- *          |                     |           *
- *  +-------+--------+      +-----+------+    *
- *  | veth12         |      | linux-tap1 |    *
- *  | DEFAULT CONFIG |      +------------+    *
- *  +-------+--------+                        *
- *          |                                 *
- *  +-------+---------+                       *
- *  | veth11          |                       *
- *  | IP: 10.0.0.1/24 |                       *
- *  | DEFAULT NS      |                       *
- *  +-----------------+                       *
- *                                            *
- **********************************************/
-
-/***********************************************
- * After Data Change Request                   *
- *                                             *
- *  +---------------------------------------+  *
- *  |       +-- Bridge domain --+           |  *
- *  |       |                   |           |  *
- *  | +-----+------+      +-----+------+    |  *
- *  | | afpacket1  |      | afpacket2  |    |  *
- *  | +-----+------+      +-----+------+    |  *
- *  |       |                   |           |  *
- *  +-------+-------------------+-----------+  *
- *          |                   |              *
- *  +-------+--------+  +-------+--------+     *
- *  | veth12         |  | veth22         |     *
- *  | MTU: 1000      |  | DEFAULT CONFIG |     *
- *  +-------+--------+  +-------+--------+     *
- *          |                   |              *
- *  +-------+---------+ +-------+---------+    *
- *  | veth11          | | veth21          |    *
- *  | IP: 10.0.0.1/24 | | IP: 10.0.0.2/24 |    *
- *  | NAMESPACE: ns1  | | NAMESPACE: ns2  |    *
- *  +-----------------+ +-----------------+    *
- ***********************************************/
-
-var (
-	// tap1 is an example tap interface configuration.
-	tap1 = vpp_intf.Interfaces_Interface{
-		Name:    "tap1",
-		Type:    vpp_intf.InterfaceType_TAP_INTERFACE,
-		Enabled: false,
-		Tap: &vpp_intf.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap1",
-		},
-		Mtu: 1500,
-	}
-
-	// veth11DefaultNs is one member of the veth11-veth12 VETH pair, put into the default namespace and NOT attached to VPP.
-	veth11DefaultNs = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth11",
-		HostIfName: "veth11",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
+func initialVeth11() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth11",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
-		IpAddresses: []string{"10.0.0.1/24"},
 	}
+}
 
-	// veth11Ns1 is veth11DefaultNs moved to the namespace "ns1".
-	veth11Ns1 = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth11",
-		HostIfName: "veth11",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
+func modifiedVeth11() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth11",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth12",
 		},
+		Mtu: 1000,
+	}
+}
+
+func initialVeth12() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth12",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth11",
+		},
+	}
+}
+
+func modifiedVeth12() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth12",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth11",
+		},
 		IpAddresses: []string{"10.0.0.1/24"},
+		PhysAddress: "D2:74:8C:12:67:D2",
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
 			Name: "ns1",
 		},
 	}
+}
 
-	// veth12 is one memeber of the veth11-veth12 VETH pair, put into the default namespace and attached to VPP.
-	veth12 = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth12",
-		HostIfName: "veth12",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth11",
-		},
-	}
-
-	// veth12WithMtu is like veth12, but MTU is reconfigured.
-	veth12WithMtu = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth12",
-		HostIfName: "veth12",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth11",
-		},
-		Mtu: 1000,
-	}
-
-	// veth21Ns2 is one member of the veth21-veth22 VETH pair, put into the namespace "ns2" and NOT attached to VPP.
-	veth21Ns2 = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth21",
-		HostIfName: "veth21",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
+func veth21() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth21",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
 		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
 			PeerIfName: "veth22",
 		},
+	}
+}
+
+func veth22() *linux_intf.LinuxInterfaces_Interface {
+	return &linux_intf.LinuxInterfaces_Interface{
+		Name:    "veth22",
+		Type:    linux_intf.LinuxInterfaces_VETH,
+		Enabled: true,
+		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
+			PeerIfName: "veth21",
+		},
 		IpAddresses: []string{"10.0.0.2/24"},
+		PhysAddress: "92:C7:42:67:AB:CD",
 		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
 			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
 			Name: "ns2",
 		},
 	}
+}
 
-	// veth22 is one member of the veth21-veth22 VETH pair, put into the default namespace and attached to VPP.
-	veth22 = linux_intf.LinuxInterfaces_Interface{
-		Name:       "veth22",
-		HostIfName: "veth22",
-		Type:       linux_intf.LinuxInterfaces_VETH,
-		Enabled:    true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth21",
-		},
-	}
-
-	// afpacket1 is attached to veth12 interface through the AF_PACKET socket.
-	afpacket1 = vpp_intf.Interfaces_Interface{
+func afPacket1() *vpp_intf.Interfaces_Interface {
+	return &vpp_intf.Interfaces_Interface{
 		Name:    "afpacket1",
 		Type:    vpp_intf.InterfaceType_AF_PACKET_INTERFACE,
 		Enabled: true,
 		Afpacket: &vpp_intf.Interfaces_Interface_Afpacket{
-			HostIfName: "veth12",
+			HostIfName: "veth11",
 		},
 	}
+}
 
-	// afpacket2 is attached to veth22 interface through the AF_PACKET socket.
-	afpacket2 = vpp_intf.Interfaces_Interface{
+func afPacket2() *vpp_intf.Interfaces_Interface {
+	return &vpp_intf.Interfaces_Interface{
 		Name:    "afpacket2",
 		Type:    vpp_intf.InterfaceType_AF_PACKET_INTERFACE,
 		Enabled: true,
 		Afpacket: &vpp_intf.Interfaces_Interface_Afpacket{
-			HostIfName: "veth22",
+			HostIfName: "veth21",
 		},
 	}
+}
 
-	// BDAfpackets is a bridge domain with both afpacket interfaces in it.
-	BDAfpackets = vpp_l2.BridgeDomains_BridgeDomain{
+func bridgeDomain() *vpp_l2.BridgeDomains_BridgeDomain {
+	return &vpp_l2.BridgeDomains_BridgeDomain{
 		Name:                "br1",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -330,4 +327,4 @@ var (
 			},
 		},
 	}
-)
+}
