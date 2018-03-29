@@ -18,10 +18,21 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 )
+
+// BridgeDomainMessages is list of used VPP messages for compatibility check
+var BridgeDomainMessages = []govppapi.Message{
+	&l2ba.BridgeDomainAddDel{},
+	&l2ba.BridgeDomainAddDelReply{},
+	&l2ba.BdIPMacAddDel{},
+	&l2ba.BdIPMacAddDelReply{},
+	&l2ba.SwInterfaceSetL2Bridge{},
+	&l2ba.SwInterfaceSetL2BridgeReply{},
+}
 
 // VppAddBridgeDomain adds new bridge domain.
 func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {

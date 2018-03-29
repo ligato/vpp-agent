@@ -63,7 +63,7 @@ func (plugin *XConnectConfigurator) Init() (err error) {
 	}
 
 	// Check bin api message compatibility
-	if err = vppcalls.CheckMsgCompatibilityForL2XConnect(plugin.Log, plugin.vppChan); err != nil {
+	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.XconnectMessages...); err != nil {
 		return err
 	}
 

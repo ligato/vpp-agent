@@ -133,6 +133,8 @@ func TestVppArpTerminationTableEntryError(t *testing.T) {
 		dummyLogger, ctx.MockChannel, nil)
 	Expect(err).Should(HaveOccurred())
 
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+
 	err = vppcalls.VppRemoveArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
 		dummyLogger, ctx.MockChannel, nil)

@@ -19,10 +19,21 @@ import (
 	"net"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
+
+// L2FibMessages is list of used VPP messages for compatibility check
+var L2FibMessages = []govppapi.Message{
+	&l2ba.BridgeDomainDump{},
+	&l2ba.BridgeDomainDetails{},
+	&l2ba.L2FibTableDump{},
+	&l2ba.L2FibTableDetails{},
+	&l2ba.L2fibAddDel{},
+	&l2ba.L2fibAddDelReply{},
+}
 
 // FibLogicalReq groups multiple fields so that all of them do
 // not enumerate in one function call (request, reply/callback).

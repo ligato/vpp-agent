@@ -80,7 +80,7 @@ func (plugin *BDConfigurator) Init(notificationChannel chan BridgeDomainStateMes
 	// Init notification channel.
 	plugin.notificationChan = notificationChannel
 
-	err = vppcalls.CheckMsgCompatibilityForBridgeDomains(plugin.Log, plugin.vppChan)
+	err = plugin.vppChan.CheckMessageCompatibility(vppcalls.BridgeDomainMessages...)
 	if err != nil {
 		return err
 	}

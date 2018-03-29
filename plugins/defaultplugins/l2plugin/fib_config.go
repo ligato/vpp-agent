@@ -76,7 +76,7 @@ func (plugin *FIBConfigurator) Init() (err error) {
 		return err
 	}
 
-	if err := vppcalls.CheckMsgCompatibilityForL2FIB(plugin.Log, plugin.syncVppChannel); err != nil {
+	if err := plugin.syncVppChannel.CheckMessageCompatibility(vppcalls.L2FibMessages...); err != nil {
 		return err
 	}
 
