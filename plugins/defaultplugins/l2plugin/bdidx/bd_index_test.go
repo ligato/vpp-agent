@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	//bridge domain name
+	// bridge domain name
 	bdName0    = "bd0"
 	bdName1    = "bd1"
 	bdName2    = "bd2"
@@ -42,20 +42,29 @@ const (
 )
 
 func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.NameToIdxRW, bdidx.BDIndexRW, []*l2.BridgeDomains_BridgeDomain) {
-	//initialize index
 	RegisterTestingT(t)
+
+	// initialize index
 	nameToIdx := nametoidx.NewNameToIdx(nil, "testName", "bd_indexes_test", bdidx.IndexMetadata)
 	bdIndex := bdidx.NewBDIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 	Expect(names).To(BeEmpty())
 
-	//data preparation
+	// data preparation
 	var bridgeDomains []*l2.BridgeDomains_BridgeDomain
 	for bdName, ifaces := range bdToIfaces {
 		bridgeDomains = append(bridgeDomains, prepareBridgeDomainData(bdName, ifaces))
 	}
 
-	return nameToIdx, bdIndex, bridgeDomains
+	return bdIndex.GetMapping(), bdIndex, bridgeDomains
+}
+
+func prepareBridgeDomainData(bdName string, ifaces []string) *l2.BridgeDomains_BridgeDomain {
+	var interfaces []*l2.BridgeDomains_BridgeDomain_Interfaces
+	for _, iface := range ifaces {
+		interfaces = append(interfaces, &l2.BridgeDomains_BridgeDomain_Interfaces{Name: iface})
+	}
+	return &l2.BridgeDomains_BridgeDomain{Interfaces: interfaces, Name: bdName}
 }
 
 /**
@@ -63,18 +72,17 @@ TestIndexMetadatat tests whether func IndexMetadata return map filled with corre
 */
 func TestIndexMetadatat(t *testing.T) {
 	RegisterTestingT(t)
-	//data preparation
+
 	bridgeDomain := prepareBridgeDomainData(bdName0, []string{ifaceAName, ifaceBName})
 
-	//call tested func
-	result := bdidx.IndexMetadata(bridgeDomain)
+	result := bdidx.IndexMetadata(nil)
+	Expect(result).To(HaveLen(0))
 
-	//evaluate result
+	result = bdidx.IndexMetadata(bridgeDomain)
 	Expect(result).To(HaveLen(1))
 
 	ifaceNames := result[ifaceNameIndexKey]
 	Expect(ifaceNames).To(HaveLen(2))
-
 	Expect(ifaceNames).To(ContainElement(ifaceAName))
 	Expect(ifaceNames).To(ContainElement(ifaceBName))
 }
@@ -86,21 +94,15 @@ TestRegisterAndUnregisterName tests methods:
 */
 func TestRegisterAndUnregisterName(t *testing.T) {
 	RegisterTestingT(t)
+
 	nameToIdx, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
-	//call tested func
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
-
-	var names []string
-	//evaluate result
-	names = nameToIdx.ListNames()
+	names := nameToIdx.ListNames()
 	Expect(names).To(HaveLen(1))
 	Expect(names).To(ContainElement(bridgeDomains[0].Name))
 
-	//call tested func
 	bdIndex.UnregisterName(bridgeDomains[0].Name)
-
-	//evaluate result
 	names = nameToIdx.ListNames()
 	Expect(names).To(BeEmpty())
 }
@@ -111,6 +113,7 @@ TestUpdateMetadata tests methods:
 */
 func TestUpdateMetadata(t *testing.T) {
 	RegisterTestingT(t)
+
 	nameToIdx, bdIndex, _ := testInitialization(t, nil)
 	bd := prepareBridgeDomainData(bdName0, []string{ifaceAName, ifaceBName})
 	bdUpdt1 := prepareBridgeDomainData(bdName0, []string{ifaceCName})
@@ -125,8 +128,6 @@ func TestUpdateMetadata(t *testing.T) {
 
 	// Register bridge domain
 	bdIndex.RegisterName(bd.Name, idx0, bd)
-
-	// Evaluate result
 	var names []string
 	names = nameToIdx.ListNames()
 	Expect(names).To(HaveLen(1))
@@ -200,6 +201,7 @@ TestLookupIndex tests method:
 */
 func TestLookupIndex(t *testing.T) {
 	RegisterTestingT(t)
+
 	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
@@ -216,6 +218,7 @@ TestLookupIndex tests method:
 */
 func TestLookupName(t *testing.T) {
 	RegisterTestingT(t)
+
 	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{bdName0: {ifaceAName, ifaceBName}})
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
@@ -232,7 +235,8 @@ TestLookupNameByIfaceName tests method:
 */
 func TestLookupByIfaceName(t *testing.T) {
 	RegisterTestingT(t)
-	//defines 3 bridge domains
+
+	// defines 3 bridge domains
 	_, bdIndex, bridgeDomains := testInitialization(t,
 		map[string][]string{
 			bdName0: {ifaceAName, ifaceBName},
@@ -250,7 +254,7 @@ func TestLookupByIfaceName(t *testing.T) {
 		}
 	}
 
-	//return all bridge domains to which ifaceAName belongs
+	// return all bridge domains to which ifaceAName belongs
 	bdIdx, _, _, exists := bdIndex.LookupBdForInterface(ifaceAName)
 	Expect(exists).To(BeTrue())
 	Expect(bdIdx).To(BeEquivalentTo(0))
@@ -266,12 +270,7 @@ func TestLookupByIfaceName(t *testing.T) {
 	bdIdx, _, _, exists = bdIndex.LookupBdForInterface(ifaceDName)
 	Expect(exists).To(BeTrue())
 	Expect(bdIdx).To(BeEquivalentTo(2))
-}
 
-func prepareBridgeDomainData(bdName string, ifaces []string) *l2.BridgeDomains_BridgeDomain {
-	interfaces := []*l2.BridgeDomains_BridgeDomain_Interfaces{}
-	for _, iface := range ifaces {
-		interfaces = append(interfaces, &l2.BridgeDomains_BridgeDomain_Interfaces{Name: iface})
-	}
-	return &l2.BridgeDomains_BridgeDomain{Interfaces: interfaces, Name: bdName}
+	_, _, _, exists = bdIndex.LookupBdForInterface("")
+	Expect(exists).To(BeFalse())
 }

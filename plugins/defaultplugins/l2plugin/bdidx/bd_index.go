@@ -67,7 +67,7 @@ type ChangeDto struct {
 }
 
 const (
-	ifaceNameIndexKey = "ipAddrKey" //TODO interfaces in the bridge domain
+	ifaceNameIndexKey = "ipAddrKey" // TODO: interfaces in the bridge domain
 )
 
 // NewBDIndex creates new instance of bdIndex.
@@ -88,12 +88,13 @@ func (bdi *bdIndex) RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomai
 // IndexMetadata creates indices for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
 	indexes := map[string][]string{}
+
 	ifMeta, ok := metaData.(*l2.BridgeDomains_BridgeDomain)
 	if !ok || ifMeta == nil {
 		return indexes
 	}
 
-	ifacenNames := []string{}
+	var ifacenNames []string
 	for _, bdIface := range ifMeta.Interfaces {
 		if bdIface != nil {
 			ifacenNames = append(ifacenNames, bdIface.Name)
