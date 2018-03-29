@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ifplugin
+package ifplugin_test
 
 import (
 	"net"
@@ -27,39 +27,27 @@ import (
 	bfd_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
+	if_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
-
-var bfdKeyNames = []string{"key1", "key2"}
-var secret = "bfd-key-secret"
 
 /* BFD configurator init and close */
 
 // Test init function
 func TestBfdConfiguratorInit(t *testing.T) {
 	RegisterTestingT(t)
-	connection, err := core.Connect(&mock.VppAdapter{})
+	connection, _ := core.Connect(&mock.VppAdapter{})
+	defer connection.Disconnect()
+
+	plugin := &ifplugin.BFDConfigurator{}
+	err := plugin.Init("test-plugin-name", logrus.DefaultLogger(), connection, nil, true)
 	Expect(err).To(BeNil())
-	plugin := &BFDConfigurator{
-		Log:      logrus.DefaultLogger(),
-		GoVppmux: connection,
-	}
-	bfdSessionsIndexes := nametoidx.NewNameToIdx(plugin.Log, "bfds-test", "bfds", nil)
-	bfdKeysIndexes := nametoidx.NewNameToIdx(plugin.Log, "bfdk-test", "bfdk", nil)
-	bfdEchoFunctionIndex := nametoidx.NewNameToIdx(plugin.Log, "echo-test", "echo", nil)
-	bfdRemovedAuthIndex := nametoidx.NewNameToIdx(plugin.Log, "bfdr-test", "bfdr", nil)
-	err = plugin.Init(bfdSessionsIndexes, bfdKeysIndexes, bfdEchoFunctionIndex, bfdRemovedAuthIndex)
-	Expect(err).To(BeNil())
-	Expect(plugin.vppChan).ToNot(BeNil())
-	Expect(plugin.bfdSessionsIndexes).ToNot(BeNil())
-	Expect(plugin.bfdKeysIndexes).ToNot(BeNil())
-	Expect(plugin.bfdEchoFunctionIndex).ToNot(BeNil())
-	Expect(plugin.bfdRemovedAuthIndex).ToNot(BeNil())
+
 	err = plugin.Close()
 	Expect(err).To(BeNil())
-	connection.Disconnect()
 }
 
 /* BFD Sessions */
@@ -68,10 +56,10 @@ func TestBfdConfiguratorInit(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[0])
+	data := getTestBfdSession("if1", "10.0.0.1")
 	// Test configure BFD session without interface
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
@@ -81,16 +69,16 @@ func TestBfdConfiguratorConfigureSessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionNoInterfaceMetaError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[0])
+	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	ifIndexes.RegisterName("if1", 1, nil)
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.bfdSessionsIndexes.LookupIdx(data.Interface)
+	_, _, found := plugin.GetBfdSessionIndexes().LookupIdx(data.Interface)
 	Expect(found).To(BeFalse())
 }
 
@@ -98,17 +86,17 @@ func TestBfdConfiguratorConfigureSessionNoInterfaceMetaError(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[1])
+	data := getTestBfdSession("if1", "10.0.0.2")
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.bfdSessionsIndexes.LookupIdx(data.Interface)
+	_, _, found := plugin.GetBfdSessionIndexes().LookupIdx(data.Interface)
 	Expect(found).To(BeFalse())
 }
 
@@ -116,35 +104,57 @@ func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 func TestBfdConfiguratorConfigureSession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[1])
+	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[1])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).To(BeNil())
-	_, meta, found := plugin.bfdSessionsIndexes.LookupIdx(data.Interface)
+	_, meta, found := plugin.GetBfdSessionIndexes().LookupIdx(data.Interface)
 	Expect(found).To(BeTrue())
 	Expect(meta).To(BeNil())
+}
+
+// Configure BFD session with non-zero reply
+func TestBfdConfiguratorConfigureSessionError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{
+		Retval: 1,
+	})
+	// Data
+	data := getTestBfdSession("if1", "10.0.0.1")
+	// Register
+	var addresses []string
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	// Test configure BFD session
+	err = plugin.ConfigureBfdSession(data)
+	Expect(err).ToNot(BeNil())
+	_, _, found := plugin.GetBfdSessionIndexes().LookupIdx(data.Interface)
+	Expect(found).To(BeFalse())
 }
 
 // Modify BFD session without interface
 func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[1], ipAddresses[1])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if2", "10.0.0.2")
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -154,13 +164,13 @@ func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorModifySessionNoInterfaceMeta(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[1], ipAddresses[1])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if1", "10.0.0.2")
 	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	ifIndexes.RegisterName("if1", 1, nil)
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -170,15 +180,15 @@ func TestBfdConfiguratorModifySessionNoInterfaceMeta(t *testing.T) {
 func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[0], ipAddresses[1])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if1", "10.0.0.2")
 	// Register
-	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
+	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[2])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.3/24")))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -188,20 +198,20 @@ func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[1], ipAddresses[1])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if2", "10.0.0.2")
 	// Register
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[1], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[1])))
+	ifIndexes.RegisterName("if2", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.2/24")))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
-	_, meta, found := plugin.bfdSessionsIndexes.LookupIdx(newData.Interface)
+	_, meta, found := plugin.GetBfdSessionIndexes().LookupIdx(newData.Interface)
 	Expect(found).To(BeTrue())
 	Expect(meta).To(BeNil())
 }
@@ -210,17 +220,17 @@ func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[0], ipAddresses[1])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if1", "10.0.0.2")
 	// Register
-	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
+	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0], netAddresses[1])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24", "10.0.0.2/24")))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -230,21 +240,21 @@ func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 func TestBfdConfiguratorModifySession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
 	// Data
-	oldData := getTestBfdSession(ifNames[0], ipAddresses[0])
-	newData := getTestBfdSession(ifNames[0], ipAddresses[0])
+	oldData := getTestBfdSession("if1", "10.0.0.1")
+	newData := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	plugin.bfdSessionsIndexes.RegisterName(oldData.Interface, 1, nil)
+	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
-	_, meta, found := plugin.bfdSessionsIndexes.LookupIdx(newData.Interface)
+	_, meta, found := plugin.GetBfdSessionIndexes().LookupIdx(newData.Interface)
 	Expect(found).To(BeTrue())
 	Expect(meta).To(BeNil())
 	err = plugin.Close()
@@ -255,12 +265,12 @@ func TestBfdConfiguratorModifySession(t *testing.T) {
 func TestBfdConfiguratorDeleteSessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[0])
+	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	plugin.bfdSessionsIndexes.RegisterName(data.Interface, 1, nil)
+	plugin.GetBfdSessionIndexes().RegisterName(data.Interface, 1, nil)
 	// Modify BFD session
 	err = plugin.DeleteBfdSession(data)
 	Expect(err).ToNot(BeNil())
@@ -270,62 +280,84 @@ func TestBfdConfiguratorDeleteSessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorDeleteSession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{})
 	// Data
-	data := getTestBfdSession(ifNames[0], ipAddresses[0])
+	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	plugin.bfdSessionsIndexes.RegisterName(data.Interface, 1, nil)
+	plugin.GetBfdSessionIndexes().RegisterName(data.Interface, 1, nil)
 	var addresses []string
-	swIfIndices.RegisterName(ifNames[0], 1, getSimpleTestInterface(ifNames[0], append(addresses, netAddresses[0])))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
 	// Modify BFD session
 	err = plugin.DeleteBfdSession(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.bfdSessionsIndexes.LookupIdx(data.Interface)
+	_, _, found := plugin.GetBfdSessionIndexes().LookupIdx(data.Interface)
 	Expect(found).To(BeFalse())
+}
+
+// Test delete BFD session with retval error
+func TestBfdConfiguratorDeleteSessionError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{
+		Retval: 1,
+	})
+	// Data
+	data := getTestBfdSession("if1", "10.0.0.1")
+	// Register
+	plugin.GetBfdSessionIndexes().RegisterName(data.Interface, 1, nil)
+	var addresses []string
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	// Modify BFD session
+	err = plugin.DeleteBfdSession(data)
+	Expect(err).ToNot(BeNil())
 }
 
 // BFD session dump
 func TestBfdConfiguratorDumpBfdSessions(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
 		SwIfIndex: 1,
-		LocalAddr: net.ParseIP(ipAddresses[0]).To4(),
-		PeerAddr:  net.ParseIP(ipAddresses[1]).To4(),
+		LocalAddr: net.ParseIP("10.0.0.1").To4(),
+		PeerAddr:  net.ParseIP("10.0.0.2").To4(),
+	})
+	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
+		SwIfIndex: 2,
+		LocalAddr: net.ParseIP("10.0.0.3").To4(),
+		PeerAddr:  net.ParseIP("10.0.0.4").To4(),
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Register
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	// Register (only first interface)
+	ifIndexes.RegisterName("if1", 1, nil)
 	// Test bfd session dump
 	sessions, err := plugin.DumpBfdSessions()
 	Expect(err).To(BeNil())
-	Expect(sessions).To(HaveLen(1))
-	Expect(sessions[0].Interface).To(BeEquivalentTo(ifNames[0]))
-	Expect(sessions[0].SourceAddress).To(BeEquivalentTo(ipAddresses[0]))
-	Expect(sessions[0].DestinationAddress).To(BeEquivalentTo(ipAddresses[1]))
-
+	Expect(sessions).To(HaveLen(2))
 }
 
 // Configure BFD authentication key
 func TestBfdConfiguratorSetAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
 	// Data
-	data := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	// Test key configuration
 	err = plugin.ConfigureBfdAuthKey(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.bfdKeysIndexes.LookupIdx(authKeyIdentifier(data.Id))
+	_, _, found := plugin.GetBfdKeyIndexes().LookupIdx(ifplugin.AuthKeyIdentifier(data.Id))
 	Expect(found).To(BeTrue())
 }
 
@@ -333,18 +365,18 @@ func TestBfdConfiguratorSetAuthKey(t *testing.T) {
 func TestBfdConfiguratorSetAuthKeyError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{
 		Retval: 1,
 	})
 	// Data
-	data := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	// Test key configuration
 	err = plugin.ConfigureBfdAuthKey(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.bfdKeysIndexes.LookupIdx(authKeyIdentifier(data.Id))
+	_, _, found := plugin.GetBfdKeyIndexes().LookupIdx(ifplugin.AuthKeyIdentifier(data.Id))
 	Expect(found).To(BeFalse())
 }
 
@@ -352,37 +384,37 @@ func TestBfdConfiguratorSetAuthKeyError(t *testing.T) {
 func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Session dump
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{}) // Authentication key delete/create
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
 	// Data
-	oldData := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
-	newData := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
+	oldData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	newData := getTestBfdAuthKey("key2", "secret", 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
 	// Register
-	plugin.bfdKeysIndexes.RegisterName(authKeyIdentifier(oldData.Id), 1, nil)
+	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(oldData.Id), 1, nil)
 	// Test key modification
 	err = plugin.ModifyBfdAuthKey(oldData, newData)
 	Expect(err).To(BeNil())
 }
 
-// Modify BFD authentication key which is used in session todo control ping reply terminates mockvpp replies
+// Modify BFD authentication key which is used in session
 func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply handler
 	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
 	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
 	ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
 	// Data
-	oldData := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
-	newData := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
+	oldData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	newData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
 	// Register
-	plugin.bfdKeysIndexes.RegisterName(authKeyIdentifier(oldData.Id), 1, nil)
+	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(oldData.Id), 1, nil)
 	// Test key modification
 	err = plugin.ModifyBfdAuthKey(oldData, newData)
 	Expect(err).To(BeNil())
@@ -392,34 +424,34 @@ func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Session dump
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{}) // Authentication key delete
 	// Data
-	data := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	// Register
-	plugin.bfdKeysIndexes.RegisterName(authKeyIdentifier(data.Id), 1, nil)
+	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(data.Id), 1, nil)
 	// Test key modification
 	err = plugin.DeleteBfdAuthKey(data)
 	Expect(err).To(BeNil())
 }
 
-// Delete BFD authentication key which is used in session todo control ping reply terminates mockvpp replies
+// Delete BFD authentication key which is used in session
 func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply handler
 	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
 	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
 	ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
 	// Data
-	data := getTestBfdAuthKey(bfdKeyNames[0], secret, 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	// Register
-	plugin.bfdKeysIndexes.RegisterName(authKeyIdentifier(data.Id), 1, nil)
+	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(data.Id), 1, nil)
 	// Test key modification
 	err = plugin.DeleteBfdAuthKey(data)
 	Expect(err).To(BeNil())
@@ -429,8 +461,8 @@ func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 func TestBfdConfiguratorDumpAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthKeysDetails{
 		ConfKeyID: 1,
@@ -453,19 +485,19 @@ func TestBfdConfiguratorDumpAuthKey(t *testing.T) {
 func TestBfdConfiguratorEchoFunction(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, swIfIndices := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{})
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelEchoSourceReply{})
 	// Data
-	data := getTestBfdEchoFunction(ifNames[0])
+	data := getTestBfdEchoFunction("if1")
 	//Registration
-	swIfIndices.RegisterName(ifNames[0], 1, nil)
+	ifIndexes.RegisterName("if1", 1, nil)
 	// Test Echo function create
 	err = plugin.ConfigureBfdEchoFunction(data)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.bfdEchoFunctionIndex.LookupIdx(data.EchoSourceInterface)
+	_, _, found := plugin.GetBfdEchoFunctionIndexes().LookupIdx(data.EchoSourceInterface)
 	Expect(found).To(BeTrue())
 	// Test Echo function modify
 	err = plugin.ModifyBfdEchoFunction(data, data)
@@ -473,7 +505,28 @@ func TestBfdConfiguratorEchoFunction(t *testing.T) {
 	// Test echo function delete
 	err = plugin.DeleteBfdEchoFunction(data)
 	Expect(err).To(BeNil())
-	_, _, found = plugin.bfdEchoFunctionIndex.LookupIdx(data.EchoSourceInterface)
+	_, _, found = plugin.GetBfdEchoFunctionIndexes().LookupIdx(data.EchoSourceInterface)
+	Expect(found).To(BeFalse())
+}
+
+// Configure BFD echo function with return value error
+func TestBfdConfiguratorEchoFunctionConfigError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{
+		Retval: 1,
+	})
+	// Data
+	data := getTestBfdEchoFunction("if1")
+	// Register
+	ifIndexes.RegisterName("if1", 1, nil)
+	// Test Echo function create
+	err = plugin.ConfigureBfdEchoFunction(data)
+	Expect(err).ToNot(BeNil())
+	_, _, found := plugin.GetBfdEchoFunctionIndexes().LookupIdx(data.EchoSourceInterface)
 	Expect(found).To(BeFalse())
 }
 
@@ -481,41 +534,60 @@ func TestBfdConfiguratorEchoFunction(t *testing.T) {
 func TestBfdConfiguratorEchoFunctionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(ctx, plugin)
+	_, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
 	// Data
-	data := getTestBfdEchoFunction(ifNames[0])
+	data := getTestBfdEchoFunction("if1")
 	// Test Echo function create
 	err = plugin.ConfigureBfdEchoFunction(data)
 	Expect(err).ToNot(BeNil())
-	_, _, found := plugin.bfdEchoFunctionIndex.LookupIdx(data.EchoSourceInterface)
+	_, _, found := plugin.GetBfdEchoFunctionIndexes().LookupIdx(data.EchoSourceInterface)
+	Expect(found).To(BeFalse())
+}
+
+// Delete BFD echo function with return value error
+func TestBfdConfiguratorEchoFunctionDeleteError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{
+		Retval: 1,
+	})
+	// Data
+	data := getTestBfdEchoFunction("if1")
+	// Test Echo function create
+	err = plugin.DeleteBfdEchoFunction(data)
+	Expect(err).ToNot(BeNil())
+	_, _, found := plugin.GetBfdEchoFunctionIndexes().LookupIdx(data.EchoSourceInterface)
 	Expect(found).To(BeFalse())
 }
 
 /* BFD Test Setup */
 
-func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *BFDConfigurator, ifaceidx.SwIfIndexRW) {
-	ctx := vppcallmock.SetupTestCtx(t)
+func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
+	RegisterTestingT(t)
+	ctx := &vppcallmock.TestCtx{
+		MockVpp: &mock.VppAdapter{},
+	}
+	connection, err := core.Connect(ctx.MockVpp)
+	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
-
 	// Interface indices
-	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bfd-configurator-test", "bfd", nil))
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn-configurator-test", "stn", nil))
+	// Configurator
+	plugin := &ifplugin.BFDConfigurator{}
+	err = plugin.Init("test-stn", log, connection, swIfIndices, false)
+	Expect(err).To(BeNil())
 
-	return ctx, &BFDConfigurator{
-		Log:                  log,
-		SwIfIndexes:          swIfIndices,
-		bfdSessionsIndexes:   nametoidx.NewNameToIdx(log, "bfds-test", "bfds", nil),
-		bfdKeysIndexes:       nametoidx.NewNameToIdx(log, "bfdk-test", "bfdk", nil),
-		bfdEchoFunctionIndex: nametoidx.NewNameToIdx(log, "echo-test", "echo", nil),
-		bfdRemovedAuthIndex:  nametoidx.NewNameToIdx(log, "bfdr-test", "bfdr", nil),
-		vppChan:              ctx.MockChannel,
-	}, swIfIndices
+	return ctx, connection, plugin, swIfIndices
 }
 
-func bfdTestTeardown(ctx *vppcallmock.TestCtx, plugin *BFDConfigurator) {
-	ctx.TeardownTestCtx()
+func bfdTestTeardown(connection *core.Connection, plugin *ifplugin.BFDConfigurator) {
+	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 }
@@ -538,8 +610,8 @@ func bfdVppMockHandler(vppMock *mock.VppAdapter) mock.ReplyHandler {
 			sendControlPing = true
 			data := &bfd_api.BfdUDPSessionDetails{
 				SwIfIndex:       1,
-				LocalAddr:       net.ParseIP(ipAddresses[0]).To4(),
-				PeerAddr:        net.ParseIP(ipAddresses[1]).To4(),
+				LocalAddr:       net.ParseIP("10.0.0.1").To4(),
+				PeerAddr:        net.ParseIP("10.0.0.2").To4(),
 				IsAuthenticated: 1,
 				BfdKeyID:        1,
 			}
@@ -566,7 +638,7 @@ func getTestBfdSession(ifName, srcAddr string) *bfd.SingleHopBFD_Session {
 	return &bfd.SingleHopBFD_Session{
 		Interface:          ifName,
 		SourceAddress:      srcAddr,
-		DestinationAddress: ipAddresses[4],
+		DestinationAddress: "10.0.0.5",
 	}
 }
 
@@ -584,5 +656,12 @@ func getTestBfdEchoFunction(ifName string) *bfd.SingleHopBFD_EchoFunction {
 	return &bfd.SingleHopBFD_EchoFunction{
 		Name:                "echo",
 		EchoSourceInterface: ifName,
+	}
+}
+
+func getSimpleTestInterface(name string, ip []string) *if_api.Interfaces_Interface {
+	return &if_api.Interfaces_Interface{
+		Name:        name,
+		IpAddresses: ip,
 	}
 }

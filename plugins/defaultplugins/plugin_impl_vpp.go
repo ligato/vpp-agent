@@ -111,10 +111,7 @@ type Plugin struct {
 	bdIdxWatchCh      chan bdidx.ChangeDto
 
 	// Bidirectional forwarding detection fields
-	bfdSessionIndexes    idxvpp.NameToIdxRW
-	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
-	bfdEchoFunctionIndex idxvpp.NameToIdxRW
-	bfdConfigurator      *ifplugin.BFDConfigurator
+	bfdConfigurator *ifplugin.BFDConfigurator
 
 	// Forwarding information base fields
 	fibConfigurator *l2plugin.FIBConfigurator
@@ -227,17 +224,17 @@ func (plugin *Plugin) GetDHCPIndices() ifaceidx.DhcpIndex {
 
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
 func (plugin *Plugin) GetBfdSessionIndexes() idxvpp.NameToIdx {
-	return plugin.bfdSessionIndexes
+	return plugin.bfdConfigurator.GetBfdSessionIndexes()
 }
 
 // GetBfdAuthKeyIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_auth_keys.
 func (plugin *Plugin) GetBfdAuthKeyIndexes() idxvpp.NameToIdx {
-	return plugin.bfdAuthKeysIndexes
+	return plugin.bfdConfigurator.GetBfdKeyIndexes()
 }
 
 // GetBfdEchoFunctionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_echo_function
 func (plugin *Plugin) GetBfdEchoFunctionIndexes() idxvpp.NameToIdx {
-	return plugin.bfdEchoFunctionIndex
+	return plugin.bfdConfigurator.GetBfdEchoFunctionIndexes()
 }
 
 // GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes.
@@ -427,7 +424,6 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// configurator loggers
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
-	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
 	natLogger := plugin.Log.NewLogger("-nat-conf")
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
@@ -442,18 +438,6 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	} else {
 		plugin.linuxIfIndexes = nil
 	}
-
-	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_session_indexes", nil)
-
-	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_auth_keys_indexes", nil)
-
-	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_echo_function_index", nil)
-
-	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
 
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Log: ifStateLogger, GoVppmux: plugin.GoVppmux}
@@ -483,19 +467,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifConfigurator Initialized")
 
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("BFDConfigurator", bfdLogger)
+	// BFD configurator
+	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
+	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
+	if err := plugin.bfdConfigurator.Init(plugin.PluginName, bfdLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+		return err
 	}
-	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
-		Log:          bfdLogger,
-		GoVppmux:     plugin.GoVppmux,
-		ServiceLabel: plugin.ServiceLabel,
-		SwIfIndexes:  plugin.swIfIndexes,
-		BfdIDSeq:     1,
-		Stopwatch:    stopwatch,
-	}
-	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
-
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
@@ -504,7 +481,6 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	if err := plugin.stnConfigurator.Init(plugin.PluginName, stnLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices

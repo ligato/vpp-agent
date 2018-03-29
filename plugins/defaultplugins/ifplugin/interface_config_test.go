@@ -789,13 +789,6 @@ func ifTestTeardown(ctx *vppcallmock.TestCtx, plugin *InterfaceConfigurator) {
 
 /* Interface Test Data */
 
-func getSimpleTestInterface(name string, ip []string) *if_api.Interfaces_Interface {
-	return &if_api.Interfaces_Interface{
-		Name:        name,
-		IpAddresses: ip,
-	}
-}
-
 func getTestInterface(name string, ifType if_api.InterfaceType, ip []string, dhcp bool, mac string, mtu uint32) *if_api.Interfaces_Interface {
 	return &if_api.Interfaces_Interface{
 		Name:               name,

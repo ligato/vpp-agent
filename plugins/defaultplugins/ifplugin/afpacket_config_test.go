@@ -32,8 +32,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var afPacketHosts = []string{"af-packet-host1", "af-packet-host2"}
-
 /* AF_PACKET configurator init */
 
 // Test init function
@@ -425,7 +423,7 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
 	Expect(err).To(BeNil())
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface(afPacketHosts[0], afPacketHosts[0], 1)
+	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	Expect(config).To(BeNil())
 }
 
