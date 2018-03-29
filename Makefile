@@ -44,13 +44,14 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "# building examples"
-	cd examples/govpp_call 			&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_bd_cache 		&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_iface_cache 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_lookup 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/govpp_call 		    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_bd_cache 	    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_iface_cache     	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_lookup  	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_watcher     && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux/veth 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp 	    && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:
@@ -60,7 +61,8 @@ clean-examples:
 	rm -f examples/idx_iface_cache/idx_iface_cache
 	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
 	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/localclient_linux/localclient_linux
+	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/localclient_linux/tap/tap
 	rm -r examples/localclient_vpp/localclient_vpp
 
 # Run tests
