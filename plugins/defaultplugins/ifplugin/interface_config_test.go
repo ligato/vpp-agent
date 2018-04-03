@@ -85,8 +85,8 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	Expect(plugin.memifScCache["test-socket-filename"]).To(BeEquivalentTo(1))
 	// Test DHCP notifications
 	dhcpIpv4 := &dhcp_api.DhcpComplEvent{
-		HostAddress:   net.ParseIP(ipAddresses[0]),
-		RouterAddress: net.ParseIP(ipAddresses[1]),
+		HostAddress:   net.ParseIP("10.0.0.1"),
+		RouterAddress: net.ParseIP("10.0.0.2"),
 		HostMac: func(mac string) []byte {
 			parsed, _ := net.ParseMAC(mac)
 			return parsed
@@ -357,7 +357,7 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 	// Data
 	var addresses []string
 	data := getTestInterface(ifNames[0], if_api.InterfaceType_VXLAN_TUNNEL, append(addresses, netAddresses[0]), false, "", 0)
-	data.Vxlan = getTestVxLanInterface(ipAddresses[1], ipAddresses[2], 1)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -369,8 +369,8 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 	Expect(meta.IpAddresses).To(HaveLen(1))
 	Expect(meta.IpAddresses[0]).To(BeEquivalentTo(netAddresses[0]))
 	Expect(meta.Vxlan).ToNot(BeNil())
-	Expect(meta.Vxlan.SrcAddress).To(BeEquivalentTo(ipAddresses[1]))
-	Expect(meta.Vxlan.DstAddress).To(BeEquivalentTo(ipAddresses[2]))
+	Expect(meta.Vxlan.SrcAddress).To(BeEquivalentTo("10.0.0.2"))
+	Expect(meta.Vxlan.DstAddress).To(BeEquivalentTo("10.0.0.3"))
 	Expect(meta.Vxlan.Vni).To(BeEquivalentTo(1))
 }
 
@@ -706,7 +706,7 @@ func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 	newData := getTestInterface(ifNames[0], if_api.InterfaceType_MEMORY_INTERFACE, newAddresses, true, macs[0], 1500)
 	newData.Memif = memifData
 	newData.Enabled = false
-	newData.ContainerIpAddress = ipAddresses[3]
+	newData.ContainerIpAddress = "10.0.0.4"
 	// Register old config
 	plugin.swIfIndexes.RegisterName(ifNames[0], 1, oldData)
 	// Test configure TAP
@@ -798,7 +798,7 @@ func getTestInterface(name string, ifType if_api.InterfaceType, ip []string, dhc
 		SetDhcpClient:      dhcp,
 		PhysAddress:        mac,
 		Mtu:                mtu,
-		ContainerIpAddress: ipAddresses[4],
+		ContainerIpAddress: "10.0.0.5",
 	}
 }
 

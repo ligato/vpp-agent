@@ -123,12 +123,7 @@ type Plugin struct {
 	xcIndexes      idxvpp.NameToIdxRW
 
 	// NAT fields
-	natConfigurator      *ifplugin.NatConfigurator
-	sNatIndices          idxvpp.NameToIdxRW
-	sNatMappingIndices   idxvpp.NameToIdxRW
-	dNatIndices          idxvpp.NameToIdxRW
-	dNatStMappingIndices idxvpp.NameToIdxRW
-	dNatIdMappingIndices idxvpp.NameToIdxRW
+	natConfigurator *ifplugin.NatConfigurator
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
@@ -424,7 +419,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// configurator loggers
 	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
-	natLogger := plugin.Log.NewLogger("-nat-conf")
+
 	// Interface indexes
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
 		"sw_if_indexes", ifaceidx.IndexMetadata))
@@ -484,29 +479,11 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices
-	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
-	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
-	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
-	plugin.dNatStMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-id-mapping-indices", nil)
-
-	plugin.natConfigurator = &ifplugin.NatConfigurator{
-		Log:                  natLogger,
-		GoVppmux:             plugin.GoVppmux,
-		SwIfIndexes:          plugin.swIfIndexes,
-		SNatIndices:          plugin.sNatIndices,
-		SNatMappingIndices:   plugin.sNatMappingIndices,
-		DNatIndices:          plugin.dNatIndices,
-		DNatStMappingIndices: plugin.dNatStMappingIndices,
-		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
-		NatIndexSeq:          1,
-		NatMappingTagSeq:     1,
-		Stopwatch:            stopwatch,
-	}
-	if err := plugin.natConfigurator.Init(); err != nil {
+	plugin.natConfigurator = &ifplugin.NatConfigurator{}
+	natLogger := plugin.Log.NewLogger("-nat-conf")
+	if err := plugin.natConfigurator.Init(plugin.PluginName, natLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("Configurator Initialized")
 
 	return nil
