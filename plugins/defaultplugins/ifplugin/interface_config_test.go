@@ -60,9 +60,33 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Test init
-	err = plugin.Init("test-plugin", logrus.DefaultLogger(), connection, nil, ifVppNotifChan, 0, false)
+	err = plugin.Init("test-plugin", logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
+		nil, ifVppNotifChan, 0, false)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("test-socket-filename")).To(BeTrue())
+	// Test close
+	err = plugin.Close()
+	Expect(err).To(BeNil())
+}
+
+// Test init function
+func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
+	var err error
+	// Setup
+	RegisterTestingT(t)
+	ctx := &vppcallmock.TestCtx{
+		MockVpp: &mock.VppAdapter{},
+	}
+	connection, _ := core.Connect(ctx.MockVpp)
+	defer connection.Disconnect()
+	plugin := &ifplugin.InterfaceConfigurator{}
+	ifVppNotifChan := make(chan govppapi.Message, 100)
+	// Reply set
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	// Test init
+	err = plugin.Init("test-plugin", logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
+		nil, ifVppNotifChan, 0, false)
+	Expect(err).To(BeNil())
 	// Register
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
@@ -892,7 +916,7 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugi
 	Expect(err).ShouldNot(HaveOccurred())
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Logger
-	log := logrus.DefaultLogger()
+	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
 	log.SetLevel(logging.DebugLevel)
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}

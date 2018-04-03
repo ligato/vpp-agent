@@ -86,10 +86,10 @@ type InterfaceConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(pluginName core.PluginName, logger logging.Logger, goVppMux govppmux.API, linux interface{},
+func (plugin *InterfaceConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
 	notifChan chan govppapi.Message, defaultMtu uint32, enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger
+	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
 
 	// Mappings

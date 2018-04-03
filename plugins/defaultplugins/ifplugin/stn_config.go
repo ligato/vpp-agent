@@ -66,10 +66,10 @@ func (plugin *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
 }
 
 // Init initializes STN configurator
-func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.Logger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
+func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Init logger
-	plugin.log = logger
+	plugin.log = logger.NewLogger("-stn-conf")
 	plugin.log.Debug("Initializing STN configurator")
 
 	// Init VPP API channel

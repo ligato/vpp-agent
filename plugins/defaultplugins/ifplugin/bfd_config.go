@@ -55,10 +55,10 @@ type BFDConfigurator struct {
 }
 
 // Init members and channels
-func (plugin *BFDConfigurator) Init(pluginName core.PluginName, logger logging.Logger, goVppMux govppmux.API,
+func (plugin *BFDConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger
+	plugin.log = logger.NewLogger("-bfd-conf")
 	plugin.log.Infof("Initializing BFD configurator")
 
 	// Mappings

@@ -41,7 +41,8 @@ func TestStnConfiguratorInit(t *testing.T) {
 	defer connection.Disconnect()
 
 	plugin := &ifplugin.StnConfigurator{}
-	err := plugin.Init("test-plugin-name", logrus.DefaultLogger(), connection, nil, true)
+	err := plugin.Init("test-plugin-name", logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
+		nil, true)
 	Expect(err).To(BeNil())
 
 	err = plugin.Close()
@@ -414,7 +415,7 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
-	log := logrus.DefaultLogger()
+	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn-configurator-test", "stn", nil))

@@ -428,8 +428,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
-	ifLogger := plugin.Log.NewLogger("-if-conf")
-	if err := plugin.ifConfigurator.Init(plugin.PluginName, ifLogger, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
@@ -452,24 +451,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
-	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
-	if err := plugin.bfdConfigurator.Init(plugin.PluginName, bfdLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.bfdConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
-	stnLogger := plugin.Log.NewLogger("-stn-conf")
-	if err := plugin.stnConfigurator.Init(plugin.PluginName, stnLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.stnConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
-	natLogger := plugin.Log.NewLogger("-nat-conf")
-	if err := plugin.natConfigurator.Init(plugin.PluginName, natLogger, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.natConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("Configurator Initialized")
