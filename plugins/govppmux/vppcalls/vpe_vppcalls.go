@@ -6,8 +6,6 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
-
-	"github.com/ligato/cn-infra/logging"
 )
 
 // VersionInfo contains values returned from ShowVersion
@@ -19,16 +17,15 @@ type VersionInfo struct {
 }
 
 // GetVersionInfo retrieves version information
-func GetVersionInfo(log logging.Logger, vppChan *govppapi.Channel) (*VersionInfo, error) {
-	req := new(vpe.ShowVersion)
-	reply := new(vpe.ShowVersionReply)
+func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
+	req := &vpe.ShowVersion{}
+	reply := &vpe.ShowVersionReply{}
 
-	// Send message
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 	if reply.Retval != 0 {
-		return nil, fmt.Errorf("ShowVersionReply returned %d", reply.Retval)
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	info := &VersionInfo{

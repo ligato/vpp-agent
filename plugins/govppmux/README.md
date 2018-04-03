@@ -72,6 +72,8 @@ The items that can be configured are:
 elapses probe is considered failed
 - *health check threshold* - number of consequent failed health checks
 until an error is reported
+- *reply timeout* - if the reply from channel doesn't arrive until timeout
+elapses, the request fails
 
 Example govpp.conf:
 
@@ -79,4 +81,5 @@ Example govpp.conf:
 health-check-probe-interval: 1000000000
 health-check-reply-timeout: 100000000
 health-check-threshold: 1
+reply-timeout: 1000000000
 ```

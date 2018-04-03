@@ -44,6 +44,8 @@ type GOVPPPlugin struct {
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
 
+	replyTimeout time.Duration
+
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
@@ -59,6 +61,16 @@ type Config struct {
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
+	ReplyTimeout             time.Duration `json:"reply-timeout"`
+}
+
+func defaultConfig() Config {
+	return Config{
+		HealthCheckProbeInterval: time.Second,
+		HealthCheckReplyTimeout:  100 * time.Millisecond,
+		HealthCheckThreshold:     1,
+		ReplyTimeout:             time.Second,
+	}
 }
 
 // FromExistingAdapter is used mainly for testing purposes.
@@ -90,6 +102,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		govpp.SetHealthCheckProbeInterval(cfg.HealthCheckProbeInterval)
 		govpp.SetHealthCheckReplyTimeout(cfg.HealthCheckReplyTimeout)
 		govpp.SetHealthCheckThreshold(cfg.HealthCheckThreshold)
+		plugin.replyTimeout = cfg.ReplyTimeout
 		plugin.Log.Debug("Setting govpp parameters", cfg)
 	}
 
@@ -148,7 +161,14 @@ func (plugin *GOVPPPlugin) Close() error {
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
-	return plugin.vppConn.NewAPIChannel()
+	ch, err := plugin.vppConn.NewAPIChannel()
+	if err != nil {
+		return nil, err
+	}
+	if plugin.replyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.replyTimeout)
+	}
+	return ch, nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -158,7 +178,14 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error) {
-	return plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
+	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
+	if err != nil {
+		return nil, err
+	}
+	if plugin.replyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.replyTimeout)
+	}
+	return ch, nil
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
@@ -192,7 +219,7 @@ func (plugin *GOVPPPlugin) retrieveVersion() {
 	}
 	defer vppAPIChan.Close()
 
-	info, err := vppcalls.GetVersionInfo(plugin.Log, vppAPIChan)
+	info, err := vppcalls.GetVersionInfo(vppAPIChan)
 	if err != nil {
 		plugin.Log.Warn("getting version info failed:", err)
 		return
@@ -200,13 +227,4 @@ func (plugin *GOVPPPlugin) retrieveVersion() {
 
 	plugin.Log.Debugf("version info: %+v", info)
 	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
-}
-
-func defaultConfig() Config {
-	c := Config{
-		HealthCheckProbeInterval: time.Second,
-		HealthCheckReplyTimeout:  100 * time.Millisecond,
-		HealthCheckThreshold:     1,
-	}
-	return c
 }
