@@ -165,7 +165,9 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
-	ch.SetReplyTimeout(plugin.replyTimeout)
+	if plugin.replyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.replyTimeout)
+	}
 	return ch, nil
 }
 
@@ -180,7 +182,9 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 	if err != nil {
 		return nil, err
 	}
-	ch.SetReplyTimeout(plugin.replyTimeout)
+	if plugin.replyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.replyTimeout)
+	}
 	return ch, nil
 }
 
