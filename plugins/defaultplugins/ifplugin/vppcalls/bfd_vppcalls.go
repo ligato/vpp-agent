@@ -188,15 +188,15 @@ func ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 }
 
 // DeleteBfdUDPSession removes an existing BFD session.
-func DeleteBfdUDPSession(ifIndex uint32, sourceAddres string, destAddres string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bfd_api.BfdUDPDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bfd_api.BfdUDPDel{
 		SwIfIndex: ifIndex,
-		LocalAddr: net.ParseIP(sourceAddres).To4(),
-		PeerAddr:  net.ParseIP(destAddres).To4(),
+		LocalAddr: net.ParseIP(sourceAddress).To4(),
+		PeerAddr:  net.ParseIP(destAddress).To4(),
 		IsIpv6:    0,
 	}
 

@@ -23,34 +23,41 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	dummyInterfaceIndex uint32 = 42
-)
-
-var testDataInterfaceAdminDown = &interfaces.SwInterfaceSetFlags{
-	SwIfIndex:   dummyInterfaceIndex,
-	AdminUpDown: 0,
-}
-
-var testDataInterfaceAdminUp = &interfaces.SwInterfaceSetFlags{
-	SwIfIndex:   dummyInterfaceIndex,
-	AdminUpDown: 1,
-}
-
 func TestInterfaceAdminDown(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
 
-	err := vppcalls.InterfaceAdminDown(dummyInterfaceIndex, ctx.MockChannel, nil)
-
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
-
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(testDataInterfaceAdminDown))
+	Expect(vppMsg.SwIfIndex).To(Equal(uint32(1)))
+	Expect(vppMsg.AdminUpDown).To(Equal(uint8(0)))
+}
+
+func TestInterfaceAdminDownError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceAdminDownRetval(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{
+		Retval: 1,
+	})
+	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
 }
 
 func TestInterfaceAdminUp(t *testing.T) {
@@ -58,14 +65,108 @@ func TestInterfaceAdminUp(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
-
-	err := vppcalls.InterfaceAdminUp(dummyInterfaceIndex, ctx.MockChannel, nil)
+	err := vppcalls.InterfaceAdminUp(1, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetFlags)
 	Expect(ok).To(BeTrue())
-
 	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(testDataInterfaceAdminUp))
+	Expect(vppMsg.SwIfIndex).To(Equal(uint32(1)))
+	Expect(vppMsg.AdminUpDown).To(Equal(uint8(1)))
+}
 
+func TestInterfaceAdminUpError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceAdminUpRetval(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{
+		Retval: 1,
+	})
+	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceSetTag(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	err := vppcalls.SetInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).To(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceTagAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg).NotTo(BeNil())
+	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
+	Expect(vppMsg.SwIfIndex).To(Equal(uint32(1)))
+}
+
+func TestInterfaceSetTagError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	err := vppcalls.SetInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceSetTagRetval(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{
+		Retval: 1,
+	})
+	err := vppcalls.SetInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceRemoveTag(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	err := vppcalls.RemoveInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).To(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceTagAddDel)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg).NotTo(BeNil())
+	Expect(vppMsg.Tag).To(BeEquivalentTo("tag"))
+	Expect(vppMsg.IsAdd).To(Equal(uint8(0)))
+}
+
+func TestInterfaceRemoveTagError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	err := vppcalls.RemoveInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
+}
+
+func TestInterfaceRemoveTagRetval(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{
+		Retval: 1,
+	})
+	err := vppcalls.RemoveInterfaceTag("tag", 1, ctx.MockChannel, nil)
+
+	Expect(err).ToNot(BeNil())
 }
