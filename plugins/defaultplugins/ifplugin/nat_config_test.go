@@ -1196,10 +1196,10 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
-	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn-configurator-test", "stn", nil))
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat-configurator-test", "nat", nil))
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init("test-stn", log, connection, swIfIndices, false)
+	err = plugin.Init("test-nat", log, connection, swIfIndices, false)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

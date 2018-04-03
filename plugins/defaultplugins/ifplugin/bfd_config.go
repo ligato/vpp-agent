@@ -43,7 +43,6 @@ import (
 type BFDConfigurator struct {
 	log logging.Logger
 
-	goVppmux  govppmux.API
 	ifIndexes ifaceidx.SwIfIndex
 	bfdIDSeq  uint32
 	stopwatch *measure.Stopwatch // timer used to measure and store time
@@ -70,8 +69,7 @@ func (plugin *BFDConfigurator) Init(pluginName core.PluginName, logger logging.L
 	plugin.bfdIDSeq = 1
 
 	// VPP channel
-	plugin.goVppmux = goVppMux
-	plugin.vppChan, err = plugin.goVppmux.NewAPIChannel()
+	plugin.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
