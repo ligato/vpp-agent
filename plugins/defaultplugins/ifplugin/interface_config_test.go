@@ -73,20 +73,8 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	var err error
 	// Setup
-	RegisterTestingT(t)
-	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
-	}
-	connection, _ := core.Connect(ctx.MockVpp)
-	defer connection.Disconnect()
-	plugin := &ifplugin.InterfaceConfigurator{}
-	ifVppNotifChan := make(chan govppapi.Message, 100)
-	// Reply set
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Test init
-	err = plugin.Init("test-plugin", logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, ifVppNotifChan, 0, false)
-	Expect(err).To(BeNil())
+	_, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
 	// Register
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
