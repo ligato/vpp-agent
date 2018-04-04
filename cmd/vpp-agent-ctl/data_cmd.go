@@ -812,7 +812,7 @@ func (ctl *VppAgentCtl) createFib() {
 
 // DeleteFib removes FIB entry configuration from the ETCD
 func (ctl *VppAgentCtl) deleteFib() {
-	fibKey := l2.FibKey("bd1", "34:EA:FE:3C:64:A7")
+	fibKey := l2.FibKey("bd1", "EA:FE:3C:64:A7:44")
 
 	ctl.Log.Println("Deleting", fibKey)
 	ctl.broker.Delete(fibKey)

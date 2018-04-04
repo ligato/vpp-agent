@@ -120,8 +120,7 @@ type Plugin struct {
 
 	// Forwarding information base fields
 	fibConfigurator *l2plugin.FIBConfigurator
-	fibIndexes      idxvpp.NameToIdxRW
-	fibDesIndexes   idxvpp.NameToIdxRW
+	fibIndexes      bdidx.FIBIndexRW
 
 	// xConnect fields
 	xcConfigurator *l2plugin.XConnectConfigurator
@@ -248,7 +247,7 @@ func (plugin *Plugin) GetBDIndexes() bdidx.BDIndex {
 }
 
 // GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
-func (plugin *Plugin) GetFIBIndexes() idxvpp.NameToIdx {
+func (plugin *Plugin) GetFIBIndexes() bdidx.FIBIndexRW {
 	return plugin.fibIndexes
 }
 
@@ -659,7 +658,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil)
+	plugin.fibIndexes = bdidx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
@@ -671,8 +670,6 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		BdIndexes:     plugin.bdIndexes,
 		IfToBdIndexes: plugin.ifToBdDesIndexes,
 		FibIndexes:    plugin.fibIndexes,
-		FibIndexSeq:   1,
-		FibDesIndexes: plugin.fibDesIndexes,
 		Stopwatch:     stopwatch,
 	}
 

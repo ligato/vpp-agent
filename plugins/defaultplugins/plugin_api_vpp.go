@@ -72,7 +72,7 @@ type API interface {
 	// - Bridge domain name
 	// - BVI (bool flag for interface)
 	// - Static config
-	GetFIBIndexes() idxvpp.NameToIdx
+	GetFIBIndexes() bdidx.FIBIndexRW
 
 	// GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes. The mapping
 	// uses the name and the index of receive interface (the one all packets are received on). XConnectMeta is a container
