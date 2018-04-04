@@ -87,7 +87,6 @@ type Plugin struct {
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
 	swIfIndexes          ifaceidx.SwIfIndexRW
-	dhcpIndices          ifaceidx.DhcpIndexRW
 	linuxIfIndexes       ifaceLinux.LinuxIfIndex
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
@@ -96,8 +95,6 @@ type Plugin struct {
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
 	stnConfigurator      *ifplugin.StnConfigurator
-	stnAllIndexes        idxvpp.NameToIdxRW
-	stnUnstoredIndexes   idxvpp.NameToIdxRW
 
 	// IPSec plugin fields
 	ipsecConfigurator *ipsecplugin.IPSecConfigurator
@@ -113,10 +110,7 @@ type Plugin struct {
 	bdIdxWatchCh      chan bdidx.ChangeDto
 
 	// Bidirectional forwarding detection fields
-	bfdSessionIndexes    idxvpp.NameToIdxRW
-	bfdAuthKeysIndexes   idxvpp.NameToIdxRW
-	bfdEchoFunctionIndex idxvpp.NameToIdxRW
-	bfdConfigurator      *ifplugin.BFDConfigurator
+	bfdConfigurator *ifplugin.BFDConfigurator
 
 	// Forwarding information base fields
 	fibConfigurator *l2plugin.FIBConfigurator
@@ -128,12 +122,7 @@ type Plugin struct {
 	xcIndexes      idxvpp.NameToIdxRW
 
 	// NAT fields
-	natConfigurator      *ifplugin.NatConfigurator
-	sNatIndices          idxvpp.NameToIdxRW
-	sNatMappingIndices   idxvpp.NameToIdxRW
-	dNatIndices          idxvpp.NameToIdxRW
-	dNatStMappingIndices idxvpp.NameToIdxRW
-	dNatIdMappingIndices idxvpp.NameToIdxRW
+	natConfigurator *ifplugin.NatConfigurator
 
 	// L3 route fields
 	routeConfigurator *l3plugin.RouteConfigurator
@@ -218,28 +207,28 @@ func (plugin *Plugin) DisableResync(keyPrefix ...string) {
 // GetSwIfIndexes gives access to mapping of logical names (used in ETCD configuration) to sw_if_index.
 // This mapping is helpful if other plugins need to configure VPP by the Binary API that uses sw_if_index input.
 func (plugin *Plugin) GetSwIfIndexes() ifaceidx.SwIfIndex {
-	return plugin.swIfIndexes
+	return plugin.ifConfigurator.GetSwIfIndexes()
 }
 
 // GetDHCPIndices gives access to mapping of logical names (used in ETCD configuration) to dhcp_index.
 // This mapping is helpful if other plugins need to know about the DHCP configuration set by VPP.
 func (plugin *Plugin) GetDHCPIndices() ifaceidx.DhcpIndex {
-	return plugin.dhcpIndices
+	return plugin.ifConfigurator.GetDHCPIndexes()
 }
 
 // GetBfdSessionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_session_indexes.
 func (plugin *Plugin) GetBfdSessionIndexes() idxvpp.NameToIdx {
-	return plugin.bfdSessionIndexes
+	return plugin.bfdConfigurator.GetBfdSessionIndexes()
 }
 
 // GetBfdAuthKeyIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_auth_keys.
 func (plugin *Plugin) GetBfdAuthKeyIndexes() idxvpp.NameToIdx {
-	return plugin.bfdAuthKeysIndexes
+	return plugin.bfdConfigurator.GetBfdKeyIndexes()
 }
 
 // GetBfdEchoFunctionIndexes gives access to mapping of logical names (used in ETCD configuration) to bfd_echo_function
 func (plugin *Plugin) GetBfdEchoFunctionIndexes() idxvpp.NameToIdx {
-	return plugin.bfdEchoFunctionIndex
+	return plugin.bfdConfigurator.GetBfdEchoFunctionIndexes()
 }
 
 // GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes.
@@ -427,17 +416,7 @@ func (plugin *Plugin) fixNilPointers() {
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init interface plugin")
 	// configurator loggers
-	ifLogger := plugin.Log.NewLogger("-if-conf")
 	ifStateLogger := plugin.Log.NewLogger("-if-state")
-	bfdLogger := plugin.Log.NewLogger("-bfd-conf")
-	stnLogger := plugin.Log.NewLogger("-stn-conf")
-	natLogger := plugin.Log.NewLogger("-nat-conf")
-	// Interface indexes
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
-		"sw_if_indexes", ifaceidx.IndexMetadata))
-	// DHCP indices
-	plugin.dhcpIndices = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(ifLogger, plugin.PluginName,
-		"dhcp_indices", ifaceidx.IndexDHCPMetadata))
 
 	// Get pointer to the map with Linux interface indices.
 	if plugin.Linux != nil {
@@ -446,19 +425,18 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 		plugin.linuxIfIndexes = nil
 	}
 
-	// BFD session
-	plugin.bfdSessionIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_session_indexes", nil)
-
-	// BFD key
-	plugin.bfdAuthKeysIndexes = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_auth_keys_indexes", nil)
-
-	// BFD echo function
-	plugin.bfdEchoFunctionIndex = nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_echo_function_index", nil)
-
-	// BFD echo function
-	BfdRemovedAuthKeys := nametoidx.NewNameToIdx(bfdLogger, plugin.PluginName, "bfd_removed_auth_keys", nil)
-
+	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
+	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
+	if err := plugin.ifConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
+		return err
+	}
+	plugin.Log.Debug("ifConfigurator Initialized")
+
+	// Get interface indexes
+	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
+
+	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Log: ifStateLogger, GoVppmux: plugin.GoVppmux}
 	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
 		select {
@@ -471,83 +449,25 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("InterfaceConfigurator", ifLogger)
-	}
-	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{
-		Log:          ifLogger,
-		GoVppmux:     plugin.GoVppmux,
-		ServiceLabel: plugin.ServiceLabel,
-		Linux:        plugin.Linux,
-		Stopwatch:    stopwatch,
-	}
-	plugin.ifConfigurator.Init(plugin.swIfIndexes, plugin.dhcpIndices, plugin.ifMtu, plugin.ifVppNotifChan)
-
-	plugin.Log.Debug("ifConfigurator Initialized")
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("BFDConfigurator", bfdLogger)
-	}
-	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{
-		Log:          bfdLogger,
-		GoVppmux:     plugin.GoVppmux,
-		ServiceLabel: plugin.ServiceLabel,
-		SwIfIndexes:  plugin.swIfIndexes,
-		BfdIDSeq:     1,
-		Stopwatch:    stopwatch,
-	}
-	plugin.bfdConfigurator.Init(plugin.bfdSessionIndexes, plugin.bfdAuthKeysIndexes, plugin.bfdEchoFunctionIndex, BfdRemovedAuthKeys)
-
-	plugin.Log.Debug("bfdConfigurator Initialized")
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("stnConfigurator", stnLogger)
-	}
-
-	plugin.stnAllIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-all-indexes", nil)
-	plugin.stnUnstoredIndexes = nametoidx.NewNameToIdx(stnLogger, plugin.PluginName, "stn-unstored-indexes", nil)
-
-	plugin.stnConfigurator = &ifplugin.StnConfigurator{
-		Log:                 bfdLogger,
-		GoVppmux:            plugin.GoVppmux,
-		SwIfIndexes:         plugin.swIfIndexes,
-		StnUnstoredIndexes:  plugin.stnUnstoredIndexes,
-		StnAllIndexes:       plugin.stnAllIndexes,
-		StnUnstoredIndexSeq: 1,
-		StnAllIndexSeq:      1,
-		Stopwatch:           stopwatch,
-	}
-	if err := plugin.stnConfigurator.Init(); err != nil {
+	// BFD configurator
+	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
+	if err := plugin.bfdConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
+	plugin.Log.Debug("bfdConfigurator Initialized")
 
+	// STN configurator
+	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
+	if err := plugin.stnConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+		return err
+	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices
-	plugin.sNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-indices", nil)
-	plugin.sNatMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "snat-mapping-indices", nil)
-	plugin.dNatIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-indices", nil)
-	plugin.dNatStMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndices = nametoidx.NewNameToIdx(natLogger, plugin.PluginName, "dnat-id-mapping-indices", nil)
-
-	plugin.natConfigurator = &ifplugin.NatConfigurator{
-		Log:                  natLogger,
-		GoVppmux:             plugin.GoVppmux,
-		SwIfIndexes:          plugin.swIfIndexes,
-		SNatIndices:          plugin.sNatIndices,
-		SNatMappingIndices:   plugin.sNatMappingIndices,
-		DNatIndices:          plugin.dNatIndices,
-		DNatStMappingIndices: plugin.dNatStMappingIndices,
-		DNatIdMappingIndices: plugin.dNatIdMappingIndices,
-		NatIndexSeq:          1,
-		NatMappingTagSeq:     1,
-		Stopwatch:            stopwatch,
-	}
-	if err := plugin.natConfigurator.Init(); err != nil {
+	plugin.natConfigurator = &ifplugin.NatConfigurator{}
+	if err := plugin.natConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("Configurator Initialized")
 
 	return nil

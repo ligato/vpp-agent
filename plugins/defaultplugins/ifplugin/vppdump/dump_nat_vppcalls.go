@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/nat"
@@ -31,7 +30,7 @@ import (
 )
 
 // Nat44GlobalConfigDump returns global config in NB format
-func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (*nat.Nat44Global, error) {
+func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (*nat.Nat44Global, error) {
 	log.Debug("dumping Nat44Global")
 
 	// Dump all necessary data to reconstruct global NAT configuration
@@ -80,7 +79,7 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 }
 
 // NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
-func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (*nat.Nat44DNat, error) {
+func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (*nat.Nat44DNat, error) {
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 	var wasErr error
@@ -123,7 +122,7 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *
 }
 
 // nat44AddressDump returns a list of NAT44 address pools configured in the VPP
-func nat44AddressDump(log logging.Logger, vppChan *govppapi.Channel,
+func nat44AddressDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 	stopwatch *measure.Stopwatch) (addresses []*nat.Nat44Global_AddressPools, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44AddressDump{}).LogTimeEntry(time.Since(t))
@@ -157,7 +156,7 @@ func nat44AddressDump(log logging.Logger, vppChan *govppapi.Channel,
 }
 
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
-func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel,
+func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
 	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
@@ -210,7 +209,7 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 }
 
 // nat44StaticMappingLbDump returns a map of static mapping tag/data pairs with load balancer
-func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
+func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
@@ -266,7 +265,7 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan *govppapi.Channel,
 }
 
 // nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
-func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel,
+func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
 	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMappings, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
@@ -313,7 +312,7 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 }
 
 // nat44InterfaceDump returns a list of interfaces enabled for NAT44
-func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan *govppapi.Channel,
+func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
 	stopwatch *measure.Stopwatch) (interfaces []*nat.Nat44Global_NatInterfaces, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
@@ -352,7 +351,7 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 
 // nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
 func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (ifaces []*nat.Nat44Global_NatInterfaces, err error) {
+	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (ifaces []*nat.Nat44Global_NatInterfaces, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -390,7 +389,7 @@ func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging
 }
 
 // Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
-func nat44IsForwardingEnabled(log logging.Logger, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (isEnabled bool, err error) {
+func nat44IsForwardingEnabled(log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (isEnabled bool, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44ForwardingIsEnabled{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

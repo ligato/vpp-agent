@@ -19,7 +19,6 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -27,7 +26,7 @@ import (
 
 //const vxlanInstanceUnset = ^uint32(0)
 
-func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
+func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -80,7 +79,7 @@ func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, is
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
-func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	swIfIdx, err := addDelVxlanTunnel(vxlanIntf, encapVrf, true, vppChan, stopwatch)
 	if err != nil {
 		return 0, err
@@ -89,7 +88,7 @@ func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, e
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
-func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	if _, err := addDelVxlanTunnel(vxlanIntf, 0, false, vppChan, stopwatch); err != nil {
 		return err
 	}

@@ -19,16 +19,16 @@
 package ifplugin
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/stn"
 	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -40,28 +40,53 @@ import (
 // in the configuration of interfaces as modelled by the proto file "../model/stn/stn.proto"
 // and stored in ETCD under the key "vpp/config/v1/stn/rules/".
 type StnConfigurator struct {
-	Log logging.Logger
-
-	GoVppmux            govppmux.API
-	SwIfIndexes         ifaceidx.SwIfIndex
-	StnAllIndexes       idxvpp.NameToIdxRW
-	StnAllIndexSeq      uint32
-	StnUnstoredIndexes  idxvpp.NameToIdxRW
-	StnUnstoredIndexSeq uint32
-	vppChan             *govppapi.Channel
-
-	cancel    context.CancelFunc
-	Stopwatch *measure.Stopwatch
+	log logging.Logger
+	// Indexes
+	ifIndexes        ifaceidx.SwIfIndex
+	allIndexes       idxvpp.NameToIdxRW
+	allIndexesSeq    uint32
+	unstoredIndexes  idxvpp.NameToIdxRW
+	unstoredIndexSeq uint32
+	// VPP
+	vppChan vppcalls.VPPChannel
+	// Stopwatch
+	stopwatch *measure.Stopwatch
 }
 
-// Init initializes ARP configurator
-func (plugin *StnConfigurator) Init() (err error) {
-	plugin.Log.Debug("Initializing STN configurator")
+// IndexExistsFor returns true if there is and mapping entry for provided name
+func (plugin *StnConfigurator) IndexExistsFor(name string) bool {
+	_, _, found := plugin.allIndexes.LookupIdx(name)
+	return found
+}
+
+// UnstoredIndexExistsFor returns true if there is and mapping entry for provided name
+func (plugin *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
+	_, _, found := plugin.unstoredIndexes.LookupIdx(name)
+	return found
+}
+
+// Init initializes STN configurator
+func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
+	enableStopwatch bool) (err error) {
+	// Init logger
+	plugin.log = logger.NewLogger("-stn-conf")
+	plugin.log.Debug("Initializing STN configurator")
 
 	// Init VPP API channel
-	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
+	plugin.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return err
+	}
+
+	// Init indexes
+	plugin.ifIndexes = ifIndexes
+	plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-all-indexes", nil)
+	plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-unstored-indexes", nil)
+	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
+
+	// Stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("stnConfigurator", plugin.log)
 	}
 
 	// Check VPP message compatibility
@@ -75,7 +100,7 @@ func (plugin *StnConfigurator) Init() (err error) {
 // ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
 func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: resolving deleted interface: %v", interfaceName)
+	plugin.log.Debugf("STN plugin: resolving deleted interface: %v", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, true); rule != nil {
 		plugin.Delete(rule)
 	}
@@ -84,33 +109,35 @@ func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {
 // ResolveCreatedInterface will check rules and if there is one waiting for interfaces it will be written
 // into VPP.
 func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
-	plugin.Log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
+	plugin.log.Debugf("STN plugin: resolving created interface: %v", interfaceName)
 	if rule := plugin.ruleFromIndex(interfaceName, false); rule != nil {
-		plugin.Add(rule)
+		if err := plugin.Add(rule); err == nil {
+			plugin.unstoredIndexes.UnregisterName(StnIdentifier(interfaceName))
+		}
 	}
 }
 
 // Add create a new STN rule.
 func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
-	plugin.Log.Infof("Configuring new STN rule %v", rule)
+	plugin.log.Infof("Configuring new STN rule %v", rule)
 
 	// Check stn data
-	stnRule, doVPPCall, err := plugin.checkStn(rule, plugin.SwIfIndexes)
+	stnRule, doVPPCall, err := plugin.checkStn(rule, plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
 	if !doVPPCall {
-		plugin.Log.Debugf("There is no interface for rule: %+v. Waiting for interface.", rule.Interface)
+		plugin.log.Debugf("There is no interface for rule: %+v. Waiting for interface.", rule.Interface)
 		plugin.indexSTNRule(rule, true)
 	} else {
-		plugin.Log.Debugf("adding STN rule: %+v", rule)
+		plugin.log.Debugf("adding STN rule: %+v", rule)
 		// Create and register new stn
-		if err := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.Stopwatch); err != nil {
+		if err := vppcalls.AddStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.stopwatch); err != nil {
 			return err
 		}
 		plugin.indexSTNRule(rule, false)
 
-		plugin.Log.Infof("STN rule %v configured", rule)
+		plugin.log.Infof("STN rule %v configured", rule)
 	}
 
 	return nil
@@ -118,36 +145,33 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 
 // Delete removes STN rule.
 func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
-	plugin.Log.Infof("Removing STN rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
+	plugin.log.Infof("Removing STN rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
-	stnRule, _, err := plugin.checkStn(rule, plugin.SwIfIndexes)
+	stnRule, _, err := plugin.checkStn(rule, plugin.ifIndexes)
 
 	if err != nil {
 		return err
 	}
-	if stnRule == nil {
-		return nil
-	}
 
 	if withoutIf, _ := plugin.removeRuleFromIndex(rule.Interface); withoutIf {
-		plugin.Log.Debug("STN rule was not stored into VPP, removed only from indexes.")
+		plugin.log.Debug("STN rule was not stored into VPP, removed only from indexes.")
 		return nil
 	}
-	plugin.Log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
+	plugin.log.Debugf("STN rule: %+v was stored in VPP, trying to delete it. %+v", stnRule)
 
 	// Remove rule
-	if err := vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.Stopwatch); err != nil {
+	if err := vppcalls.DelStnRule(stnRule.IfaceIdx, &stnRule.IPAddress, plugin.vppChan, plugin.stopwatch); err != nil {
 		return err
 	}
 
-	plugin.Log.Infof("STN rule %v removed", rule)
+	plugin.log.Infof("STN rule %v removed", rule)
 
 	return nil
 }
 
 // Modify configured rule.
 func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelStn.StnRule) error {
-	plugin.Log.Infof("Modifying STN %v", ruleNew)
+	plugin.log.Infof("Modifying STN %v", ruleNew)
 
 	if ruleOld == nil {
 		return fmt.Errorf("old stn rule is null")
@@ -165,18 +189,18 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelS
 		return err
 	}
 
-	plugin.Log.Infof("STN rule %v modified", ruleNew)
+	plugin.log.Infof("STN rule %v modified", ruleNew)
 
 	return nil
 }
 
 // Dump STN rules configured on the VPP
 func (plugin *StnConfigurator) Dump() ([]*stn.StnRuleDetails, error) {
-	rules, err := vppcalls.DumpStnRules(plugin.vppChan, plugin.Stopwatch)
+	rules, err := vppcalls.DumpStnRules(plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debugf("found %d configured STN rules", len(rules))
+	plugin.log.Debugf("found %d configured STN rules", len(rules))
 	return rules, nil
 }
 
@@ -188,7 +212,7 @@ func (plugin *StnConfigurator) Close() error {
 // checkStn will check the rule raw data and change it to internal data structure.
 // In case the rule contains a interface that doesn't exist yet, rule is stored into index map.
 func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifaceidx.SwIfIndex) (stnRule *vppcalls.StnRule, doVPPCall bool, err error) {
-	plugin.Log.Debugf("Checking stn rule: %+v", stnInput)
+	plugin.log.Debugf("Checking stn rule: %+v", stnInput)
 
 	if stnInput == nil {
 		err = fmt.Errorf("STN input is empty")
@@ -205,7 +229,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 
 	ipWithMask := strings.Split(stnInput.IpAddress, "/")
 	if len(ipWithMask) > 1 {
-		plugin.Log.Debugf("STN rule %v IP address mask is ignored", stnInput.RuleName)
+		plugin.log.Debugf("STN rule %v IP address mask is ignored", stnInput.RuleName)
 		stnInput.IpAddress = ipWithMask[0]
 	}
 	parsedIP := net.ParseIP(stnInput.IpAddress)
@@ -231,20 +255,20 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface bool) {
 	idx := StnIdentifier(rule.Interface)
 	if withoutIface {
-		plugin.StnUnstoredIndexes.RegisterName(idx, plugin.StnUnstoredIndexSeq, rule)
-		plugin.StnUnstoredIndexSeq++
+		plugin.unstoredIndexes.RegisterName(idx, plugin.unstoredIndexSeq, rule)
+		plugin.unstoredIndexSeq++
 	}
-	plugin.StnAllIndexes.RegisterName(idx, plugin.StnAllIndexSeq, rule)
-	plugin.StnAllIndexSeq++
+	plugin.allIndexes.RegisterName(idx, plugin.allIndexesSeq, rule)
+	plugin.allIndexesSeq++
 }
 
 func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.StnRule) {
 	idx := StnIdentifier(iface)
 
 	// Removing rule from main index
-	_, ruleIface, exists := plugin.StnAllIndexes.LookupIdx(idx)
+	_, ruleIface, exists := plugin.allIndexes.LookupIdx(idx)
 	if exists {
-		plugin.StnAllIndexes.UnregisterName(idx)
+		plugin.allIndexes.UnregisterName(idx)
 		stnRule, ok := ruleIface.(*modelStn.StnRule)
 		if ok {
 			rule = stnRule
@@ -252,10 +276,10 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 	}
 
 	// Removing rule from not stored rules index
-	_, _, existsWithout := plugin.StnUnstoredIndexes.LookupIdx(idx)
+	_, _, existsWithout := plugin.unstoredIndexes.LookupIdx(idx)
 	if existsWithout {
 		withoutIface = true
-		plugin.StnUnstoredIndexes.UnregisterName(idx)
+		plugin.unstoredIndexes.UnregisterName(idx)
 	}
 
 	return
@@ -268,17 +292,17 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	var exists bool
 
 	if !fromAllRules {
-		_, ruleIface, exists = plugin.StnUnstoredIndexes.LookupIdx(idx)
+		_, ruleIface, exists = plugin.unstoredIndexes.LookupIdx(idx)
 	} else {
-		_, ruleIface, exists = plugin.StnAllIndexes.LookupIdx(idx)
+		_, ruleIface, exists = plugin.allIndexes.LookupIdx(idx)
 	}
-	plugin.Log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
+	plugin.log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
 	if exists {
 		stnRule, ok := ruleIface.(*modelStn.StnRule)
 		if ok {
 			rule = stnRule
 		}
-		plugin.Log.Debugf("Getting rule: %+v", stnRule)
+		plugin.log.Debugf("Getting rule: %+v", stnRule)
 	}
 
 	return

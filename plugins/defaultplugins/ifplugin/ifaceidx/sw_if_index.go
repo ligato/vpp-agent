@@ -51,6 +51,9 @@ type SwIfIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *intf.Interfaces_Interface, exists bool)
+
+	// UpdateMetadata updates metadata in existing interface entry.
+	UpdateMetadata(name string, metadata *intf.Interfaces_Interface) (success bool)
 }
 
 // swIfIndex is type-safe implementation of mapping between Software interface index
@@ -106,6 +109,11 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 func (swi *swIfIndex) UnregisterName(name string) (idx uint32, metadata *intf.Interfaces_Interface, exists bool) {
 	idx, meta, exists := swi.mapping.UnregisterName(name)
 	return idx, swi.castMetadata(meta), exists
+}
+
+// UpdateMetadata updates metadata in existing interface entry.
+func (swi *swIfIndex) UpdateMetadata(name string, metadata *intf.Interfaces_Interface) (success bool) {
+	return swi.mapping.UpdateMetadata(name, metadata)
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

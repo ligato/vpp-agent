@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
@@ -29,7 +28,7 @@ const (
 	removeContainerIP uint8 = 0
 )
 
-func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ip.IPContainerProxyAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -66,11 +65,11 @@ func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan *go
 }
 
 // AddContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=1
-func AddContainerIP(ifIdx uint32, addr string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func AddContainerIP(ifIdx uint32, addr string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return sendAndLogMessageForVpp(ifIdx, addr, addContainerIP, vppChan, stopwatch)
 }
 
 // DelContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=0
-func DelContainerIP(ifIdx uint32, addr string, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelContainerIP(ifIdx uint32, addr string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP, vppChan, stopwatch)
 }

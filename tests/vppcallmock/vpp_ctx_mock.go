@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-//TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
+// TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
 	conn        *core.Connection
@@ -31,7 +31,7 @@ type TestCtx struct {
 	MockChannel *mockedChannel
 }
 
-//SetupTestCtx sets up all fields of TestCtx structure at the begining of test
+// SetupTestCtx sets up all fields of TestCtx structure at the begining of test
 func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 
@@ -51,13 +51,13 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	return ctx
 }
 
-//TeardownTestCtx politely close all used resources
+// TeardownTestCtx politely close all used resources
 func (ctx *TestCtx) TeardownTestCtx() {
 	ctx.channel.Close()
 	ctx.conn.Disconnect()
 }
 
-//MockedChannel implements ChannelIntf for testing purposes
+// MockedChannel implements ChannelIntf for testing purposes
 type mockedChannel struct {
 	channel *govppapi.Channel
 
@@ -68,16 +68,32 @@ type mockedChannel struct {
 	Msgs []govppapi.Message
 }
 
-//SendRequest just save input argument to structure field for future check
+// SendRequest just save input argument to structure field for future check
 func (m *mockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendRequest(msg)
 }
 
-//SendMultiRequest just save input argument to structure field for future check
+// SendMultiRequest just save input argument to structure field for future check
 func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendMultiRequest(msg)
+}
+
+// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
+// which the library is connected to
+func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
+	return m.channel.CheckMessageCompatibility(msgs...)
+}
+
+// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel
+func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, msgFactory func() govppapi.Message) (*govppapi.NotifSubscription, error) {
+	return m.channel.SubscribeNotification(notifChan, msgFactory)
+}
+
+// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription
+func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubscription) error {
+	return m.channel.UnsubscribeNotification(subscription)
 }
