@@ -36,7 +36,7 @@ type BDIndex interface {
 	LookupBdForInterface(ifName string) (bdIdx uint32, metadata *l2.BridgeDomains_BridgeDomain, bvi bool, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
+	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto)
 }
 
 // BDIndexRW is mapping between indices (used internally in VPP) and Bridge Domain names.
@@ -53,15 +53,15 @@ type BDIndexRW interface {
 	UpdateMetadata(name string, metadata *l2.BridgeDomains_BridgeDomain) (success bool)
 }
 
-// bdIndex is type-safe implementation of mapping between Software interface index
-// and interface name. It holds as well metadata of type *InterfaceMeta.
+// bdIndex is type-safe implementation of mapping between bridge domain name and index.
+// It holds as well metadata of type *l2.BridgeDomains_BridgeDomain.
 type bdIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
 
 // ChangeDto represents an item sent through watch channel in bdIndex.
 // In contrast to NameToIdxDto, it contains typed metadata.
-type ChangeDto struct {
+type BdChangeDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *l2.BridgeDomains_BridgeDomain
 }
@@ -155,12 +155,12 @@ func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.Br
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
-func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
+func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	bdi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {
 		for c := range ch {
-			pluginChannel <- ChangeDto{
+			pluginChannel <- BdChangeDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
 				Metadata:                castMetadata(c.Metadata),
 			}

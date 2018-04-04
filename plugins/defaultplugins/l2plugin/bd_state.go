@@ -45,7 +45,7 @@ type BridgeDomainStateUpdater struct {
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
 	notificationChan        chan BridgeDomainStateMessage
-	bdIdxChan               chan bdidx.ChangeDto
+	bdIdxChan               chan bdidx.BdChangeDto
 
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -72,7 +72,7 @@ func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdid
 		return err
 	}
 
-	plugin.bdIdxChan = make(chan bdidx.ChangeDto, 100)
+	plugin.bdIdxChan = make(chan bdidx.BdChangeDto, 100)
 	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
 	plugin.notificationChan = notificationChan
 
@@ -158,7 +158,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 }
 
 func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {
-	bdStateInterfaces := []*l2.BridgeDomainState_BridgeDomain_Interfaces{}
+	var bdStateInterfaces []*l2.BridgeDomainState_BridgeDomain_Interfaces
 	for _, swIfaceDetails := range msg.SwIfDetails {
 		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
 		name, _, found := plugin.swIfIndexes.LookupName(swIfaceDetails.SwIfIndex)

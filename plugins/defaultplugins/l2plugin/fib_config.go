@@ -144,9 +144,9 @@ func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callba
 		})
 }
 
-// Diff provides changes for FIB entry. Old fib entry is removed (if possible) and a new one is registered
+// Modify provides changes for FIB entry. Old fib entry is removed (if possible) and a new one is registered
 // if all the conditions are fulfilled (interface and bridge domain presence), otherwise new configuration is cached.
-func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
+func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTableEntries_FibTableEntry,
 	newFib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
 	plugin.Log.Infof("Modifying FIB table entry with MAC ", newFib.PhysAddress)
 

@@ -796,7 +796,7 @@ func (ctl *VppAgentCtl) createFib() {
 	fib := l2.FibTableEntries{
 		FibTableEntry: []*l2.FibTableEntries_FibTableEntry{
 			{
-				PhysAddress:             "34:EA:FE:3C:64:A7",
+				PhysAddress:             "EA:FE:3C:64:A7:44",
 				BridgeDomain:            "bd1",
 				OutgoingInterface:       "loop1",
 				StaticConfig:            true,

@@ -110,7 +110,7 @@ type Plugin struct {
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
-	bdIdxWatchCh      chan bdidx.ChangeDto
+	bdIdxWatchCh      chan bdidx.BdChangeDto
 
 	// Bidirectional forwarding detection fields
 	bfdSessionIndexes    idxvpp.NameToIdxRW
@@ -342,7 +342,7 @@ func (plugin *Plugin) Init() error {
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
-	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
+	plugin.bdIdxWatchCh = make(chan bdidx.BdChangeDto, 100)
 	plugin.linuxIfIdxWatchCh = make(chan ifaceLinux.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
