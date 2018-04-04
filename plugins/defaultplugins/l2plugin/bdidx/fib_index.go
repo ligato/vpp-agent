@@ -81,7 +81,7 @@ func (fib *fibIndex) RegisterName(name string, idx uint32, ifMeta *l2.FibTableEn
 // UnregisterName removes an item identified by name from mapping.
 func (fib *fibIndex) UnregisterName(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
 	idx, meta, exists := fib.mapping.UnregisterName(name)
-	return idx, fib.castMetadata(meta), exists
+	return idx, castFibMetadata(meta), exists
 }
 
 // UpdateMetadata updates metadata in existing FIB entry.
@@ -93,7 +93,7 @@ func (fib *fibIndex) UpdateMetadata(name string, metadata *l2.FibTableEntries_Fi
 func (fib *fibIndex) LookupIdx(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
 	idx, meta, exists := fib.mapping.LookupIdx(name)
 	if exists {
-		metadata = fib.castMetadata(meta)
+		metadata = castFibMetadata(meta)
 	}
 	return idx, metadata, exists
 }
@@ -102,17 +102,9 @@ func (fib *fibIndex) LookupIdx(name string) (idx uint32, metadata *l2.FibTableEn
 func (fib *fibIndex) LookupName(idx uint32) (name string, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
 	name, meta, exists := fib.mapping.LookupName(idx)
 	if exists {
-		metadata = fib.castMetadata(meta)
+		metadata = castFibMetadata(meta)
 	}
 	return name, metadata, exists
-}
-
-func (fib *fibIndex) castMetadata(meta interface{}) *l2.FibTableEntries_FibTableEntry {
-	ifMeta, ok := meta.(*l2.FibTableEntries_FibTableEntry)
-	if !ok {
-		return nil
-	}
-	return ifMeta
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in fibIndex mapping.
@@ -123,9 +115,17 @@ func (fib *fibIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel ch
 		for c := range ch {
 			pluginChannel <- FibChangeDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
-				Metadata:                fib.castMetadata(c.Metadata),
+				Metadata:                castFibMetadata(c.Metadata),
 			}
 
 		}
 	}()
+}
+
+func castFibMetadata(meta interface{}) *l2.FibTableEntries_FibTableEntry {
+	ifMeta, ok := meta.(*l2.FibTableEntries_FibTableEntry)
+	if !ok {
+		return nil
+	}
+	return ifMeta
 }
