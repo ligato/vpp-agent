@@ -51,7 +51,8 @@ examples:
 	cd examples/idx_mapping_watcher     && go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_linux/veth 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp 	    && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:

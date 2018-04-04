@@ -16,10 +16,13 @@ Current examples:
   un-registration)
 * **[idx_mapping_watcher](idx_mapping_watcher/main.go)** shows how to 
   watch on changes in a name-to-index mapping
-* **[localclient_vpp](localclient_vpp/main.go)** demonstrates how to use
-  the localclient package to push example configuration into VPP plugins 
-  that run in the same agent instance (i.e. in the same OS process). 
+* **[localclient_vpp_plugins](localclient_vpp/plugins/main.go)** demonstrates 
+  how to use the localclient package to push example configuration into 
+  VPP plugins that run in the same agent instance (i.e. in the same OS process). 
   Behind the scenes, configuration data is transported via go channels.
+* **[localclient_vpp_nat](localclient_vpp/nat/main.go)** demonstrates
+  how to set up NAT global configuration and Destination NAT. The example
+  uses localclient to put example data to the respective VPP plugins.
 * **[localclient_linux_tap](localclient_linux/tap/main.go)** configures 
   simple topology consisting of VPP Tap interfaces with linux host 
   counterparts. Example demonstrates how to use the localclient package 
