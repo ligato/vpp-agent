@@ -67,7 +67,7 @@ type ChangeDto struct {
 }
 
 const (
-	ifaceNameIndexKey = "ipAddrKey" //TODO interfaces in the bridge domain
+	ifaceNameIndexKey = "ipAddrKey" // TODO: interfaces in the bridge domain
 )
 
 // NewBDIndex creates new instance of bdIndex.
@@ -88,12 +88,13 @@ func (bdi *bdIndex) RegisterName(name string, idx uint32, ifMeta *l2.BridgeDomai
 // IndexMetadata creates indices for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
 	indexes := map[string][]string{}
-	ifMeta, ok := metaData.(*l2.BridgeDomains_BridgeDomain)
-	if !ok || ifMeta == nil {
+
+	ifMeta := castMetadata(metaData)
+	if ifMeta == nil {
 		return indexes
 	}
 
-	ifacenNames := []string{}
+	var ifacenNames []string
 	for _, bdIface := range ifMeta.Interfaces {
 		if bdIface != nil {
 			ifacenNames = append(ifacenNames, bdIface.Name)
@@ -107,7 +108,7 @@ func IndexMetadata(metaData interface{}) map[string][]string {
 // UnregisterName removes an item identified by name from mapping.
 func (bdi *bdIndex) UnregisterName(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
 	idx, meta, exists := bdi.mapping.UnregisterName(name)
-	return idx, bdi.castMetadata(meta), exists
+	return idx, castMetadata(meta), exists
 }
 
 // UpdateMetadata updates metadata in existing bridge domain entry.
@@ -119,7 +120,7 @@ func (bdi *bdIndex) UpdateMetadata(name string, metadata *l2.BridgeDomains_Bridg
 func (bdi *bdIndex) LookupIdx(name string) (idx uint32, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
 	idx, meta, exists := bdi.mapping.LookupIdx(name)
 	if exists {
-		metadata = bdi.castMetadata(meta)
+		metadata = castMetadata(meta)
 	}
 	return idx, metadata, exists
 }
@@ -128,7 +129,7 @@ func (bdi *bdIndex) LookupIdx(name string) (idx uint32, metadata *l2.BridgeDomai
 func (bdi *bdIndex) LookupName(idx uint32) (name string, metadata *l2.BridgeDomains_BridgeDomain, exists bool) {
 	name, meta, exists := bdi.mapping.LookupName(idx)
 	if exists {
-		metadata = bdi.castMetadata(meta)
+		metadata = castMetadata(meta)
 	}
 	return name, metadata, exists
 }
@@ -139,7 +140,7 @@ func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.Br
 	for _, bdName := range bdNames {
 		bdIdx, meta, exists := bdi.mapping.LookupIdx(bdName)
 		if exists && meta != nil {
-			bd = bdi.castMetadata(meta)
+			bd = castMetadata(meta)
 			if bd != nil {
 				for _, iface := range bd.Interfaces {
 					if iface.Name == ifName {
@@ -153,14 +154,6 @@ func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.Br
 	return bdIdx, nil, bvi, false
 }
 
-func (bdi *bdIndex) castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomain {
-	ifMeta, ok := meta.(*l2.BridgeDomains_BridgeDomain)
-	if !ok {
-		return nil
-	}
-	return ifMeta
-}
-
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
 func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
@@ -169,9 +162,17 @@ func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel cha
 		for c := range ch {
 			pluginChannel <- ChangeDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
-				Metadata:                bdi.castMetadata(c.Metadata),
+				Metadata:                castMetadata(c.Metadata),
 			}
 
 		}
 	}()
+}
+
+func castMetadata(meta interface{}) *l2.BridgeDomains_BridgeDomain {
+	ifMeta, ok := meta.(*l2.BridgeDomains_BridgeDomain)
+	if !ok {
+		return nil
+	}
+	return ifMeta
 }

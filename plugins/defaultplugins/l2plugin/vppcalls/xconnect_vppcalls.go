@@ -18,21 +18,27 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
 
-// VppSetL2XConnect creates xConnect between two existing interfaces.
-func VppSetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
-	log.Debug("Setting up L2 xConnect pair for ", txIfaceIdx, rxIfaceIdx)
+// XconnectMessages is list of used VPP messages for compatibility check
+var XconnectMessages = []govppapi.Message{
+	&l2ba.L2XconnectDump{},
+	&l2ba.L2XconnectDetails{},
+	&l2ba.SwInterfaceSetL2Xconnect{},
+	&l2ba.SwInterfaceSetL2XconnectReply{},
+}
 
+func swInterfaceSetL2Xconnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.SwInterfaceSetL2Xconnect{
-		Enable:      1,
+		Enable:      boolToUint(enable),
 		TxSwIfIndex: txIfaceIdx,
 		RxSwIfIndex: rxIfaceIdx,
 	}
@@ -45,7 +51,20 @@ func VppSetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, 
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).Debug("L2xConnect created")
+	return nil
+}
+
+// VppSetL2XConnect creates xConnect between two existing interfaces.
+func VppSetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+	log.Debug("Setting up L2 xConnect pair for ", txIfaceIdx, rxIfaceIdx)
+
+	if err := swInterfaceSetL2Xconnect(rxIfaceIdx, txIfaceIdx, true, vppChan, stopwatch); err != nil {
+		return err
+	}
+
+	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).
+		Debug("L2xConnect created")
+
 	return nil
 }
 
@@ -53,24 +72,12 @@ func VppSetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, 
 func VppUnsetL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debug("Setting up L2 xConnect pair for ", txIfaceIdx, rxIfaceIdx)
 
-	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &l2ba.SwInterfaceSetL2Xconnect{
-		Enable:      0,
-		TxSwIfIndex: txIfaceIdx,
-		RxSwIfIndex: rxIfaceIdx,
-	}
-
-	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := swInterfaceSetL2Xconnect(rxIfaceIdx, txIfaceIdx, false, vppChan, stopwatch); err != nil {
 		return err
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
-	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).Debug("L2xConnect removed")
+	log.WithFields(logging.Fields{"RxIface": rxIfaceIdx, "TxIface": txIfaceIdx}).
+		Debug("L2xConnect removed")
+
 	return nil
 }

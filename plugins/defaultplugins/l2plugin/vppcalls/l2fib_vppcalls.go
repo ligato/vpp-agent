@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"container/list"
 	"fmt"
 	"net"
 	"time"
@@ -26,130 +25,124 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
 
-// FibLogicalReq groups multiple fields so that all of them do not enumerate in one function call (request, reply/callback).
+// L2FibMessages is list of used VPP messages for compatibility check
+var L2FibMessages = []govppapi.Message{
+	&l2ba.BridgeDomainDump{},
+	&l2ba.BridgeDomainDetails{},
+	&l2ba.L2FibTableDump{},
+	&l2ba.L2FibTableDetails{},
+	&l2ba.L2fibAddDel{},
+	&l2ba.L2fibAddDelReply{},
+}
+
+// FibLogicalReq groups multiple fields so that all of them do
+// not enumerate in one function call (request, reply/callback).
 type FibLogicalReq struct {
+	IsAdd    bool
 	MAC      string
 	BDIdx    uint32
 	SwIfIdx  uint32
 	BVI      bool
 	Static   bool
-	Delete   bool
 	callback func(error)
-}
-
-// NewL2FibVppCalls is a constructor.
-func NewL2FibVppCalls(vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
-	return &L2FibVppCalls{vppChan, stopwatch, list.New()}
 }
 
 // L2FibVppCalls aggregates vpp calls related to l2 fib.
 type L2FibVppCalls struct {
-	vppChan         *govppapi.Channel
-	stopwatch       *measure.Stopwatch
-	waitingForReply *list.List
+	log         logging.Logger
+	vppChan     VPPChannel
+	stopwatch   *measure.Stopwatch
+	requestChan chan *FibLogicalReq
+}
+
+// NewL2FibVppCalls is a constructor.
+func NewL2FibVppCalls(log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
+	return &L2FibVppCalls{
+		log:         log,
+		vppChan:     vppChan,
+		stopwatch:   stopwatch,
+		requestChan: make(chan *FibLogicalReq),
+	}
 }
 
 // Add creates L2 FIB table entry.
-func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error), log logging.Logger) error {
-	log.Debug("Adding L2 FIB table entry, mac: ", mac)
+func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
+	fib.log.Debug("Adding L2 FIB table entry, mac: ", mac)
 
-	defer func(t time.Time) {
-		fib.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	return fib.request(&FibLogicalReq{
+	fib.requestChan <- &FibLogicalReq{
+		IsAdd:    true,
 		MAC:      mac,
 		BDIdx:    bdID,
 		SwIfIdx:  ifIdx,
 		BVI:      bvi,
 		Static:   static,
-		Delete:   false,
 		callback: callback,
-	}, log)
-}
-
-// Delete removes existing L2 FIB table entry.
-func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error), log logging.Logger) error {
-	log.Debug("Removing L2 fib table entry, mac: ", mac)
-
-	defer func(t time.Time) {
-		fib.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	return fib.request(&FibLogicalReq{
-		MAC:      mac,
-		BDIdx:    bdID,
-		SwIfIdx:  ifIdx,
-		Delete:   true,
-		callback: callback,
-	}, log)
-}
-
-func (fib *L2FibVppCalls) request(logicalReq *FibLogicalReq, log logging.Logger) (err error) {
-	// Convert MAC address.
-	var mac []byte
-	if logicalReq.MAC != "" {
-		mac, err = net.ParseMAC(logicalReq.MAC)
 	}
-	if err != nil {
-		return err
-	}
-
-	req := &l2ba.L2fibAddDel{}
-	req.Mac = mac
-	req.BdID = logicalReq.BDIdx
-	req.SwIfIndex = logicalReq.SwIfIdx
-	req.BviMac = boolToUint(logicalReq.BVI)
-	req.StaticMac = boolToUint(logicalReq.Static)
-	if logicalReq.Delete {
-		req.IsAdd = 0
-	} else {
-		req.IsAdd = 1
-	}
-
-	fib.waitingForReply.PushFront(logicalReq)
-	fib.vppChan.ReqChan <- &govppapi.VppRequest{
-		Message: req,
-	}
-
-	log.WithFields(logging.Fields{"Mac": req.Mac, "BD index": req.BdID}).Debug("Static fib entry added/deleted.")
 	return nil
 }
 
-// WatchFIBReplies is meant to be used in go routine.
-func (fib *L2FibVppCalls) WatchFIBReplies(log logging.Logger) {
+// Delete removes existing L2 FIB table entry.
+func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
+	fib.log.Debug("Removing L2 fib table entry, mac: ", mac)
+
+	fib.requestChan <- &FibLogicalReq{
+		IsAdd:    false,
+		MAC:      mac,
+		BDIdx:    bdID,
+		SwIfIdx:  ifIdx,
+		callback: callback,
+	}
+	return nil
+}
+
+// WatchFIBReplies is meant to be used in goroutine.
+func (fib *L2FibVppCalls) WatchFIBReplies() {
 	for {
-		vppReply := <-fib.vppChan.ReplyChan
-		log.Debug("VPP FIB Reply ", vppReply)
-
-		if vppReply.LastReplyReceived {
-			log.Debug("Ping received")
-			//TODO check with Rasto
-			// ERRO[0001] no reply received within the timeout period 1s
-			// loc="vppcalls/dump_vppcalls.go(70)" tag=00000000 D
-			continue
-		}
-
-		if fib.waitingForReply.Len() == 0 {
-			log.WithField("MessageID", vppReply.MessageID). //TODO WithField("err", vppReply.Error).
-									Error("Unexpected message ", vppReply)
-			continue
-		}
-
-		logicalReq := fib.waitingForReply.Remove(fib.waitingForReply.Front()).(*FibLogicalReq)
-		log.WithField("Mac", logicalReq.MAC).Debug("VPP FIB Reply ", vppReply)
-
-		if vppReply.Error != nil {
-			logicalReq.callback(vppReply.Error)
-		} else {
-			reply := &l2ba.L2fibAddDelReply{}
-			err := fib.vppChan.MsgDecoder.DecodeMsg(vppReply.Data, reply)
-			if err != nil || 0 != reply.Retval {
-				err = fmt.Errorf("adding/del Static fib entry returned %d", reply.Retval)
-				logicalReq.callback(err)
+		select {
+		case r := <-fib.requestChan:
+			fib.log.Debug("VPP L2FIB request: ", r)
+			err := l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd, fib.vppChan, fib.stopwatch)
+			if err != nil {
+				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+					Debug("Static fib entry add/delete failed:", err)
 			} else {
-				logicalReq.callback(nil)
+				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+					Debug("Static fib entry added/deleted.")
 			}
+			r.callback(err)
 		}
 	}
+}
+
+func l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) (err error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	var mac []byte
+	if macstr != "" {
+		mac, err = net.ParseMAC(macstr)
+		if err != nil {
+			return err
+		}
+	}
+
+	req := &l2ba.L2fibAddDel{
+		IsAdd:     boolToUint(isAdd),
+		Mac:       mac,
+		BdID:      bdIdx,
+		SwIfIndex: swIfIdx,
+		BviMac:    boolToUint(bvi),
+		StaticMac: boolToUint(static),
+	}
+
+	reply := &l2ba.L2fibAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return nil
 }

@@ -17,10 +17,8 @@ package vppdump
 import (
 	"bytes"
 	"net"
-
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
@@ -30,24 +28,19 @@ import (
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries.
 // returns list of bridge domain IDs (BD IDs). First element of returned slice is 0. It is default BD to which all
 // interfaces belong
-func DumpBridgeDomainIDs(log logging.Logger, vppChannel vppcalls.VPPChannel, timeLog measure.StopWatchEntry) ([]uint32, error) {
-	// BridgeDomainDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DumpBridgeDomainIDs(vppChannel vppcalls.VPPChannel, stopwatch *measure.Stopwatch) ([]uint32, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
-	reqContext := vppChannel.SendMultiRequest(req)
+	reqCtx := vppChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}
-		stop, err := reqContext.ReceiveReply(msg)
+		stop, err := reqCtx.ReceiveReply(msg)
 		if err != nil {
-			log.Error(err)
-			return activeDomains, err
+			return nil, err
 		}
 		if stop {
 			break
@@ -77,14 +70,10 @@ type BridgeDomainInterface struct {
 // LIMITATIONS:
 // - not able to dump ArpTerminationTable - missing binary API
 //
-func DumpBridgeDomains(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog measure.StopWatchEntry) (map[uint32]*BridgeDomain, error) {
-	// BridgeDomainDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DumpBridgeDomains(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (map[uint32]*BridgeDomain, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// map for the resulting BDs
 	bds := make(map[uint32]*BridgeDomain)
@@ -99,7 +88,6 @@ func DumpBridgeDomains(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog 
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 
@@ -138,14 +126,10 @@ type FIBTableEntry struct {
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 // map indexed by destination MAC address.
-func DumpFIBTableEntries(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog measure.StopWatchEntry) (map[string]*FIBTableEntry, error) {
-	// L2FibTableDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DumpFIBTableEntries(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (map[string]*FIBTableEntry, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// map for the resulting FIBs
 	fibs := make(map[string]*FIBTableEntry)
@@ -158,7 +142,6 @@ func DumpFIBTableEntries(log logging.Logger, vppChan vppcalls.VPPChannel, timeLo
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 
@@ -193,14 +176,10 @@ type XConnectPairs struct {
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 // map indexed by rx interface index.
-func DumpXConnectPairs(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog measure.StopWatchEntry) (map[uint32]*XConnectPairs, error) {
-	// L2XconnectDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func DumpXConnectPairs(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (map[uint32]*XConnectPairs, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectPairs)
@@ -213,7 +192,6 @@ func DumpXConnectPairs(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog 
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 

@@ -100,7 +100,6 @@ covers scenarios
 	- interface D - vpp binary call returns incorrect return value
 	- interface E - isn't specified sw index
 */
-//TestVppSetAllInterfacesToBridgeDomainWithInterfaces tests method VppSetAllInterfacesToBridgeDomain
 func TestVppSetAllInterfacesToBridgeDomainWithInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -110,14 +109,25 @@ func TestVppSetAllInterfacesToBridgeDomainWithInterfaces(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{Retval: dummyRetVal})
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 
-	//call testing method
+	// call testing method
 	vppcalls.SetInterfacesToBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
 		testDataIfaces, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
-	//Four VPP call - only two of them are successfull
+	// Four VPP call - only two of them are successfull
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(4))
 	Expect(ctx.MockChannel.Msgs[0]).To(Equal(testDataOutBDIfaces[0]))
 	Expect(ctx.MockChannel.Msgs[1]).To(Equal(testDataOutBDIfaces[1]))
+}
+
+func TestVppSetAllInterfacesToBridgeDomainWithInterfacesError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	vppcalls.SetInterfacesToBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
+		nil, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+
+	// Four VPP call - only two of them are successfull
+	Expect(ctx.MockChannel.Msgs).To(HaveLen(0))
 }
 
 /**
@@ -129,7 +139,6 @@ covers scenarios
 	- interface D - vpp binary call returns incorrect return value
 	- interface E - isn't specified sw index
 */
-//TestVppUnsetAllInterfacesFromBridgeDomain tests method VppUnsetAllInterfacesFromBridgeDomain
 func TestVppUnsetAllInterfacesFromBridgeDomain(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -139,13 +148,24 @@ func TestVppUnsetAllInterfacesFromBridgeDomain(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{Retval: dummyRetVal})
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 
-	//call testing method
+	// call testing method
 	vppcalls.UnsetInterfacesFromBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
 		testDataIfaces, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(ctx.MockChannel.Msgs).To(HaveLen(4))
 	Expect(ctx.MockChannel.Msgs[0]).To(Equal(testDataOutBDIfaces[2]))
 	Expect(ctx.MockChannel.Msgs[1]).To(Equal(testDataOutBDIfaces[3]))
+}
+
+func TestVppUnsetAllInterfacesFromBridgeDomainError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	vppcalls.UnsetInterfacesFromBridgeDomain(testDataInBDIfaces[0], dummyBridgeDomain,
+		nil, testDataInDummySwIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+
+	// Four VPP call - only two of them are successfull
+	Expect(ctx.MockChannel.Msgs).To(HaveLen(0))
 }
 
 var testDatasInInterfaceToBd = []struct {
@@ -168,17 +188,38 @@ scenarios:
 - BVI - true
 - BVI - false
 */
-//TestVppSetInterfaceToBridgeDomain tests VppSetInterfaceToBridgeDomain method
 func TestVppSetInterfaceToBridgeDomain(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
 	for idx, testDataIn := range testDatasInInterfaceToBd {
 		ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
-		vppcalls.SetInterfaceToBridgeDomain(testDataIn.bdIndex, testDataIn.swIfIndex, testDataIn.bvi,
+
+		err := vppcalls.SetInterfaceToBridgeDomain(
+			testDataIn.bdIndex, testDataIn.swIfIndex, testDataIn.bvi,
 			logrus.DefaultLogger(), ctx.MockChannel, nil)
+
+		Expect(err).ShouldNot(HaveOccurred())
 		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutInterfaceToBd[idx]))
 	}
+}
+
+func TestVppSetInterfaceToBridgeDomainError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{Retval: 1})
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+
+	err := vppcalls.SetInterfaceToBridgeDomain(
+		dummyBridgeDomain, 1, true,
+		logrus.DefaultLogger(), ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+
+	err = vppcalls.SetInterfaceToBridgeDomain(
+		dummyBridgeDomain, 1, true,
+		logrus.DefaultLogger(), ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 }
 
 func initSwIfIndex() interface{} {

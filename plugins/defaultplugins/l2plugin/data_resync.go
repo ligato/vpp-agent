@@ -17,8 +17,6 @@ package l2plugin
 import (
 	"strings"
 
-	"github.com/ligato/cn-infra/logging/measure"
-	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	if_dump "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
@@ -36,7 +34,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	}()
 
 	// Dump current state of the VPP bridge domains
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.Log, plugin.vppChan, measure.GetTimeLog(l2ba.BridgeDomainDump{}, plugin.Stopwatch))
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -163,8 +161,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 	}()
 
 	// Get all FIB entries configured on the VPP
-	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.Log, plugin.syncVppChannel,
-		measure.GetTimeLog(l2ba.L2FibTableDump{}, plugin.Stopwatch))
+	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncVppChannel, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -260,8 +257,7 @@ func (plugin *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnect
 	}()
 
 	// Read cross connect from the VPP
-	vppXConns, err := vppdump.DumpXConnectPairs(plugin.Log, plugin.vppChan,
-		measure.GetTimeLog(l2ba.L2XconnectDump{}, plugin.Stopwatch))
+	vppXConns, err := vppdump.DumpXConnectPairs(plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}

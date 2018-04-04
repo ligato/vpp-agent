@@ -16,15 +16,16 @@ package main
 
 import (
 	"context"
+	"net"
 	"os"
 	"sync"
 	"time"
 
-	"net"
-
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/remoteclient"
 	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
@@ -32,8 +33,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 )
@@ -164,7 +163,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
 			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
 			Delete().
-			StaticRoute(0, dstNetAddr, nextHopAddr). /* remove the route going through memif1 */
+			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
 			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
@@ -362,8 +361,8 @@ var (
 	// routeThroughMemif1 is an example route configuration, with memif1 being the next hop.
 	routeThroughMemif1 = l3.StaticRoutes_Route{
 		Description: "Description",
-		VrfID:       0,
-		DstIPAddr:   "192.168.2.1/32",
+		VrfId:       0,
+		DstIpAddr:   "192.168.2.1/32",
 		NextHopAddr: "192.168.1.1", // Memif1AsMaster
 		Weight:      5,
 	}

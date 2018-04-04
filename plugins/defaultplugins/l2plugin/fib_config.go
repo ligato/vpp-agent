@@ -76,12 +76,12 @@ func (plugin *FIBConfigurator) Init() (err error) {
 		return err
 	}
 
-	if err := vppcalls.CheckMsgCompatibilityForL2FIB(plugin.Log, plugin.syncVppChannel); err != nil {
+	if err := plugin.syncVppChannel.CheckMessageCompatibility(vppcalls.L2FibMessages...); err != nil {
 		return err
 	}
 
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.asyncVppChannel, plugin.Stopwatch)
-	go plugin.vppcalls.WatchFIBReplies(plugin.Log)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.Log, plugin.asyncVppChannel, plugin.Stopwatch)
+	go plugin.vppcalls.WatchFIBReplies()
 
 	return nil
 }
@@ -141,7 +141,7 @@ func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callba
 			plugin.Log.Debugf("Fib entry with MAC %v registered", fib.PhysAddress)
 			plugin.FibIndexSeq++
 			callback(err)
-		}, plugin.Log)
+		})
 }
 
 // Diff provides changes for FIB entry. Old fib entry is removed (if possible) and a new one is registered
@@ -166,7 +166,7 @@ func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
 		plugin.FibIndexes.UnregisterName(oldFib.PhysAddress)
 		plugin.FibDesIndexes.UnregisterName(oldFib.PhysAddress)
 		callback(err)
-	}, plugin.Log)
+	})
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (plugin *FIBConfigurator) Diff(oldFib *l2.FibTableEntries_FibTableEntry,
 			plugin.FibIndexes.RegisterName(oldFib.PhysAddress, plugin.FibIndexSeq, meta)
 			plugin.FibIndexSeq++
 			callback(err)
-		}, plugin.Log)
+		})
 }
 
 // Delete removes FIB table entry. The request to be successful, both interface and bridge domain indices
@@ -227,7 +227,7 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, cal
 
 	return plugin.vppcalls.Delete(fib.PhysAddress, bdIndex, ifIndex, func(err error) {
 		callback(err)
-	}, plugin.Log)
+	})
 }
 
 // ResolveCreatedInterface uses FIB cache to additionally configure any FIB entries for this interface. Bridge domain
@@ -277,7 +277,7 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(interfaceName string, int
 					plugin.Log.WithField("Mac", mac).
 						Debugf("Uncofigured FIB entry removed from cache")
 					callback(err)
-				}, plugin.Log)
+				})
 				if err != nil {
 					wasError = err
 				}
@@ -320,7 +320,7 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(interfaceName string, int
 					plugin.FibIndexSeq++
 					plugin.Log.Debugf("uncofigured FIB entry with MAC %v added to cache", mac)
 					callback(err)
-				}, plugin.Log)
+				})
 				if err != nil {
 					wasError = err
 				}
@@ -372,7 +372,7 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(domainName string, dom
 						plugin.FibDesIndexes.UnregisterName(mac)
 						plugin.Log.Debugf("Unconfigured FIB entry with MAC %v removed from cache", mac)
 						callback(err)
-					}, plugin.Log)
+					})
 				if err != nil {
 					wasError = err
 				}
@@ -415,7 +415,7 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(domainName string, dom
 						plugin.FibDesIndexes.UnregisterName(mac) // if exists
 						plugin.Log.Debugf("uncofigured FIB entry with MAC %v removed from cache", mac)
 						callback(err)
-					}, plugin.Log)
+					})
 				if err != nil {
 					wasError = err
 				}
