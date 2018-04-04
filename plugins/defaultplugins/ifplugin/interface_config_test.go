@@ -101,7 +101,6 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 		IsIpv6:   1,
 	}
 	plugin.DhcpChan <- dhcpIpv4
-	time.Sleep(1 * time.Second)
 	Eventually(func() bool {
 		_, _, found := plugin.GetDHCPIndexes().LookupIdx("if1")
 		return found
@@ -177,8 +176,7 @@ func TestInterfacesConfigureTapV1(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1000)
+	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1000)
 	data.Tap = getTestTapInterface(1, "if1")
 	data.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
 	// Test configure TAP
@@ -211,8 +209,7 @@ func TestInterfacesConfigureTapV2(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, addresses, true, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{}, true, "46:06:18:DB:05:3A", 1500)
 	data.Tap = getTestTapInterface(2, "if1")
 	data.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
 	// Test configure TAPv2
@@ -245,8 +242,7 @@ func TestInterfacesConfigureMemif(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, addresses, false, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, false, "46:06:18:DB:05:3A", 1500)
 	data.Memif = getTestMemifInterface(true, 1)
 	data.Unnumbered = getTestUnnumberedSettings("if2")
 	// Register unnumbered interface
@@ -302,10 +298,9 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
-	var addresses []string
-	initialData := getTestInterface("if0", if_api.InterfaceType_MEMORY_INTERFACE, addresses, false, "51:07:28:DB:05:B4", 1000)
+	initialData := getTestInterface("if0", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, false, "51:07:28:DB:05:B4", 1000)
 	initialData.Memif = getTestMemifInterface(false, 2)
-	data := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, addresses, false, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, false, "46:06:18:DB:05:3A", 1500)
 	data.Memif = getTestMemifInterface(true, 1)
 	data.Unnumbered = getTestUnnumberedSettings("if2")
 	// Test configure initial
@@ -324,7 +319,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	Expect(plugin.IsSocketFilenameCached("socket-filename")).To(BeTrue())
 	Expect(plugin.IsUnnumberedIfCached("if1")).To(BeTrue())
 	// Configure Unnumbered interface
-	unnumberedData := getTestInterface("if2", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(addresses, "10.0.0.1/24"), false, "", 0)
+	unnumberedData := getTestInterface("if2", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "", 0)
 	err = plugin.ConfigureVPPInterface(unnumberedData)
 	Expect(err).To(BeNil())
 	_, meta, found = plugin.GetSwIfIndexes().LookupIdx(unnumberedData.Name)
@@ -349,8 +344,7 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, append(addresses, "10.0.0.1/24"), false, "", 0)
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
 	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
@@ -379,8 +373,7 @@ func TestInterfacesConfigureLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 0)
+	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
 	// Test configure loopback
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -406,8 +399,7 @@ func TestInterfacesConfigureEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	data.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
 	// Register ethernet
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
@@ -426,8 +418,7 @@ func TestInterfacesConfigureEthernetNonExisting(t *testing.T) {
 	_, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -453,8 +444,7 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestAfPacket("if1", append(addresses, "10.0.0.1/24"), "host1")
+	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
 	// Register host
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 2)
 	// Test configure AF packet
@@ -472,8 +462,7 @@ func TestInterfacesConfigureAfPacketPending(t *testing.T) {
 	_, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Data
-	var addresses []string
-	data := getTestAfPacket("if1", append(addresses, "10.0.0.1/24"), "host1")
+	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
@@ -513,8 +502,7 @@ func TestInterfacesConfigureInterfaceErrors(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	data.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
@@ -543,8 +531,7 @@ func TestInterfacesConfigureInterfaceAdminUpError(t *testing.T) {
 		Retval: 1,
 	})
 	// Data
-	var addresses []string
-	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(addresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 0)
+	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
 	// Test configure TAP
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).ToNot(BeNil())
@@ -566,12 +553,11 @@ func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var oldAddresses, newAddresses []string
 	tapData := getTestTapInterface(1, "if1")
-	oldData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	oldData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	oldData.Tap = tapData
 	oldData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
-	newData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, append(newAddresses, "10.0.0.2/24"), false, "BC:FE:E9:5E:07:04", 2000)
+	newData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.2/24"}, false, "BC:FE:E9:5E:07:04", 2000)
 	newData.Tap = tapData
 	newData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_INTERRUPT)
 	// Register old config
@@ -612,11 +598,10 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var oldAddresses, newAddresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	oldData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	oldData.Tap = getTestTapInterface(1, "if1")
 	oldData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
-	newData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, append(newAddresses, "10.0.0.2/24"), false, "BC:FE:E9:5E:07:04", 1500)
+	newData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.2/24"}, false, "BC:FE:E9:5E:07:04", 1500)
 	newData.Tap = getTestTapInterface(1, "if2")
 	newData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_INTERRUPT)
 	// Register old config
@@ -644,11 +629,10 @@ func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
-	var oldAddresses, newAddresses []string
 	memifData := getTestMemifInterface(true, 1)
-	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	oldData.Memif = memifData
-	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, newAddresses, true, "46:06:18:DB:05:3A", 1500)
+	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, true, "46:06:18:DB:05:3A", 1500)
 	newData.Memif = memifData
 	newData.Enabled = false
 	newData.ContainerIpAddress = "10.0.0.4"
@@ -699,10 +683,9 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
-	var oldAddresses, newAddresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	oldData.Memif = getTestMemifInterface(true, 1)
-	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, append(newAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	newData.Memif = getTestMemifInterface(false, 2)
 	// Register old config and socket filename
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
@@ -739,10 +722,9 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
-	var addresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, addresses, true, "", 0)
+	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
 	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
-	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, addresses, false, "", 0)
+	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
 	newData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
 	// Register old config and socket filename
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
@@ -785,10 +767,9 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
-	var addresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, addresses, false, "", 0)
+	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
 	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
-	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, addresses, false, "", 0)
+	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
 	newData.Vxlan = getTestVxLanInterface("10.0.0.4", "10.0.0.5", 1)
 	// Register old config and socket filename
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
@@ -830,10 +811,9 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	// Data
-	var oldAddresses, newAddresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 0)
+	oldData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
 	oldData.Vrf = 1
-	newData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, append(newAddresses, "10.0.0.1/24", "10.0.0.2/24"),
+	newData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24", "10.0.0.2/24"},
 		false, "46:06:18:DB:05:3A", 0)
 	newData.Vrf = 2
 	// Test configure loopback
@@ -870,10 +850,9 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	// Data
-	var oldAddresses, newAddresses []string
-	oldData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, append(oldAddresses, "10.0.0.1/24"), false, "46:06:18:DB:05:3A", 1500)
+	oldData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	oldData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
-	newData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, append(newAddresses, "10.0.0.2/24"), false, "46:06:18:DB:05:3A", 1500)
+	newData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.2/24"}, false, "46:06:18:DB:05:3A", 1500)
 	newData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
 	// Register ethernet
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
