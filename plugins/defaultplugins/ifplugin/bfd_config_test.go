@@ -92,8 +92,7 @@ func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.2")
 	// Register
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
@@ -112,8 +111,7 @@ func TestBfdConfiguratorConfigureSession(t *testing.T) {
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).To(BeNil())
@@ -135,8 +133,7 @@ func TestBfdConfiguratorConfigureSessionError(t *testing.T) {
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Test configure BFD session
 	err = plugin.ConfigureBfdSession(data)
 	Expect(err).ToNot(BeNil())
@@ -154,8 +151,7 @@ func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 	oldData := getTestBfdSession("if1", "10.0.0.1")
 	newData := getTestBfdSession("if2", "10.0.0.2")
 	// Register
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -188,8 +184,7 @@ func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 	newData := getTestBfdSession("if1", "10.0.0.2")
 	// Register
 	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.3/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.3/24"}))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -207,8 +202,7 @@ func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 	oldData := getTestBfdSession("if1", "10.0.0.1")
 	newData := getTestBfdSession("if2", "10.0.0.2")
 	// Register
-	var addresses []string
-	ifIndexes.RegisterName("if2", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.2/24")))
+	ifIndexes.RegisterName("if2", 1, getSimpleTestInterface("if1", []string{"10.0.0.2/24"}))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
@@ -230,8 +224,7 @@ func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 	newData := getTestBfdSession("if1", "10.0.0.2")
 	// Register
 	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24", "10.0.0.2/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24", "10.0.0.2/24"}))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).ToNot(BeNil())
@@ -250,8 +243,7 @@ func TestBfdConfiguratorModifySession(t *testing.T) {
 	newData := getTestBfdSession("if1", "10.0.0.1")
 	// Register
 	plugin.GetBfdSessionIndexes().RegisterName(oldData.Interface, 1, nil)
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Test modify BFD session
 	err = plugin.ModifyBfdSession(oldData, newData)
 	Expect(err).To(BeNil())
@@ -289,8 +281,7 @@ func TestBfdConfiguratorDeleteSession(t *testing.T) {
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
 	plugin.GetBfdSessionIndexes().RegisterName(data.Interface, 1, nil)
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Modify BFD session
 	err = plugin.DeleteBfdSession(data)
 	Expect(err).To(BeNil())
@@ -312,8 +303,7 @@ func TestBfdConfiguratorDeleteSessionError(t *testing.T) {
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
 	plugin.GetBfdSessionIndexes().RegisterName(data.Interface, 1, nil)
-	var addresses []string
-	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", append(addresses, "10.0.0.1/24")))
+	ifIndexes.RegisterName("if1", 1, getSimpleTestInterface("if1", []string{"10.0.0.1/24"}))
 	// Modify BFD session
 	err = plugin.DeleteBfdSession(data)
 	Expect(err).ToNot(BeNil())
