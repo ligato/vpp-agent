@@ -73,14 +73,14 @@ type Connection struct {
 	connected uint32             // non-zero if the adapter is connected to VPP
 	codec     *MsgCodec          // message codec
 
-	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 	msgIDsLock sync.RWMutex      // lock for the message IDs map
+	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 
-	channels     map[uint32]*api.Channel // map of all API channels indexed by the channel ID
 	channelsLock sync.RWMutex            // lock for the channels map
+	channels     map[uint32]*api.Channel // map of all API channels indexed by the channel ID
 
-	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 	notifSubscriptionsLock sync.RWMutex                        // lock for the subscriptions map
+	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 
 	maxChannelID uint32 // maximum used client ID
 	pingReqID    uint16 // ID if the ControlPing message
@@ -306,7 +306,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 			failedChecks = 0
 		}
 
-		if failedChecks >= healthCheckThreshold {
+		if failedChecks > healthCheckThreshold {
 			// in case of error, break & disconnect
 			log.Errorf("VPP health check failed: %v", err)
 			// signal disconnected event via channel

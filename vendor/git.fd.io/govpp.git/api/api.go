@@ -78,6 +78,8 @@ type MessageDecoder interface {
 type MessageIdentifier interface {
 	// GetMessageID returns message identifier of given API message.
 	GetMessageID(msg Message) (uint16, error)
+	// LookupByID looks up message name and crc by ID
+	LookupByID(ID uint16) (string, error)
 }
 
 // Channel is the main communication interface with govpp core. It contains two Go channels, one for sending the requests
@@ -231,6 +233,7 @@ func (ch *Channel) receiveReplyInternal(msg Message) (LastReplyReceived bool, er
 				LastReplyReceived = true
 				return
 			}
+
 			// message checks
 			expMsgID, err := ch.MsgIdentifier.GetMessageID(msg)
 			if err != nil {
@@ -238,20 +241,31 @@ func (ch *Channel) receiveReplyInternal(msg Message) (LastReplyReceived bool, er
 					msg.GetMessageName(), msg.GetCrcString())
 				return false, err
 			}
+
 			if vppReply.MessageID != expMsgID {
+				var msgNameCrc string
+				if nameCrc, err := ch.MsgIdentifier.LookupByID(vppReply.MessageID); err != nil {
+					msgNameCrc = err.Error()
+				} else {
+					msgNameCrc = nameCrc
+				}
+
 				if ch.lastTimedOut {
-					logrus.Warnf("received invalid message ID, expected %d (%s), but got %d (probably timed out reply from previous request)",
-						expMsgID, msg.GetMessageName(), vppReply.MessageID)
+					logrus.Warnf("received invalid message ID, expected %d (%s), but got %d (%s) (probably timed out reply from previous request)",
+						expMsgID, msg.GetMessageName(), vppReply.MessageID, msgNameCrc)
 					continue
 				}
-				err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (check if multiple goroutines are not sharing single GoVPP channel)",
-					expMsgID, msg.GetMessageName(), vppReply.MessageID)
+
+				err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (%s) (check if multiple goroutines are not sharing single GoVPP channel)",
+					expMsgID, msg.GetMessageName(), vppReply.MessageID, msgNameCrc)
 				return false, err
 			}
+
 			ch.lastTimedOut = false
 			// decode the message
 			err = ch.MsgDecoder.DecodeMsg(vppReply.Data, msg)
 			return false, err
+
 		case <-timer.C:
 			ch.lastTimedOut = true
 			err = fmt.Errorf("no reply received within the timeout period %s", ch.replyTimeout)
