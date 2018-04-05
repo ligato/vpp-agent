@@ -18,6 +18,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // MessageType represents the type of a VPP message.
@@ -61,7 +63,7 @@ type ChannelProvider interface {
 	// It uses default buffer sizes for the request and reply Go channels.
 	NewAPIChannel() (*Channel, error)
 
-	// NewAPIChannel returns a new channel for communication with VPP via govpp core.
+	// NewAPIChannelBuffered returns a new channel for communication with VPP via govpp core.
 	// It allows to specify custom buffer sizes for the request and reply Go channels.
 	NewAPIChannelBuffered() (*Channel, error)
 }
@@ -94,6 +96,7 @@ type Channel struct {
 
 	replyTimeout time.Duration // maximum time that the API waits for a reply from VPP before returning an error, can be set with SetReplyTimeout
 	metadata     interface{}   // opaque metadata of the API channel
+	lastTimedOut bool          // wether last request timed out
 }
 
 // VppRequest is a request that will be sent to VPP.
@@ -214,34 +217,46 @@ func (ch *Channel) receiveReplyInternal(msg Message) (LastReplyReceived bool, er
 	if msg == nil {
 		return false, errors.New("nil message passed in")
 	}
-	select {
-	// blocks until a reply comes to ReplyChan or until timeout expires
-	case vppReply := <-ch.ReplyChan:
-		if vppReply.Error != nil {
-			err = vppReply.Error
-			return
-		}
-		if vppReply.LastReplyReceived {
-			LastReplyReceived = true
-			return
-		}
-		// message checks
-		expMsgID, err := ch.MsgIdentifier.GetMessageID(msg)
-		if err != nil {
-			err = fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
-				msg.GetMessageName(), msg.GetCrcString())
-			return false, err
-		}
-		if vppReply.MessageID != expMsgID {
-			err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (check if multiple goroutines are not sharing single GoVPP channel)",
-				expMsgID, msg.GetMessageName(), vppReply.MessageID)
-			return false, err
-		}
-		// decode the message
-		err = ch.MsgDecoder.DecodeMsg(vppReply.Data, msg)
 
-	case <-time.After(ch.replyTimeout):
-		err = fmt.Errorf("no reply received within the timeout period %s", ch.replyTimeout)
+	timer := time.NewTimer(ch.replyTimeout)
+	for {
+		select {
+		// blocks until a reply comes to ReplyChan or until timeout expires
+		case vppReply := <-ch.ReplyChan:
+			if vppReply.Error != nil {
+				err = vppReply.Error
+				return
+			}
+			if vppReply.LastReplyReceived {
+				LastReplyReceived = true
+				return
+			}
+			// message checks
+			expMsgID, err := ch.MsgIdentifier.GetMessageID(msg)
+			if err != nil {
+				err = fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
+					msg.GetMessageName(), msg.GetCrcString())
+				return false, err
+			}
+			if vppReply.MessageID != expMsgID {
+				if ch.lastTimedOut {
+					logrus.Warnf("received invalid message ID, expected %d (%s), but got %d (probably timed out reply from previous request)",
+						expMsgID, msg.GetMessageName(), vppReply.MessageID)
+					continue
+				}
+				err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (check if multiple goroutines are not sharing single GoVPP channel)",
+					expMsgID, msg.GetMessageName(), vppReply.MessageID)
+				return false, err
+			}
+			ch.lastTimedOut = false
+			// decode the message
+			err = ch.MsgDecoder.DecodeMsg(vppReply.Data, msg)
+			return false, err
+		case <-timer.C:
+			ch.lastTimedOut = true
+			err = fmt.Errorf("no reply received within the timeout period %s", ch.replyTimeout)
+			return false, err
+		}
 	}
 	return
 }
