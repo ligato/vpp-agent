@@ -25,9 +25,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var ipAddresses = []string{"10.0.0.1", "125.14.0.1", "172.0.0.1", "192.168.0.52"}
-var tags = []string{"tag1", "tag2", "tag3"}
-
 func TestSetNat44Forwarding(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -267,8 +264,8 @@ func TestAddNat44AddressPool(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	firstIP := net.ParseIP(ipAddresses[0]).To4()
-	lastIP := net.ParseIP(ipAddresses[1]).To4()
+	firstIP := net.ParseIP("10.0.0.1").To4()
+	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{})
 	err := vppcalls.AddNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
@@ -288,8 +285,8 @@ func TestAddNat44AddressPoolError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	firstIP := net.ParseIP(ipAddresses[0]).To4()
-	lastIP := net.ParseIP(ipAddresses[1]).To4()
+	firstIP := net.ParseIP("10.0.0.1").To4()
+	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
@@ -302,8 +299,8 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	firstIP := net.ParseIP(ipAddresses[0]).To4()
-	lastIP := net.ParseIP(ipAddresses[1]).To4()
+	firstIP := net.ParseIP("10.0.0.1").To4()
+	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{
 		Retval: 1,
@@ -317,8 +314,8 @@ func TestDelNat44AddressPool(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	firstIP := net.ParseIP(ipAddresses[0]).To4()
-	lastIP := net.ParseIP(ipAddresses[1]).To4()
+	firstIP := net.ParseIP("10.0.0.1").To4()
+	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{})
 	err := vppcalls.DelNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
@@ -338,12 +335,12 @@ func TestAddNat44StaticMapping(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	localIP := net.ParseIP(ipAddresses[0]).To4()
-	externalIP := net.ParseIP(ipAddresses[1]).To4()
+	localIP := net.ParseIP("10.0.0.1").To4()
+	externalIP := net.ParseIP("10.0.0.2").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingContext{
-		Tag:           tags[0],
+		Tag:           "tag1",
 		AddressOnly:   false,
 		LocalIP:       localIP,
 		LocalPort:     24,
@@ -362,7 +359,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
@@ -380,12 +377,12 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	localIP := net.ParseIP(ipAddresses[0]).To4()
-	externalIP := net.ParseIP(ipAddresses[1]).To4()
+	localIP := net.ParseIP("10.0.0.1").To4()
+	externalIP := net.ParseIP("10.0.0.2").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingContext{
-		Tag:         tags[0],
+		Tag:         "tag1",
 		AddressOnly: true,
 		LocalIP:     localIP,
 		ExternalIP:  externalIP,
@@ -398,7 +395,7 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -432,12 +429,12 @@ func TestDelNat44StaticMapping(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	localIP := net.ParseIP(ipAddresses[0]).To4()
-	externalIP := net.ParseIP(ipAddresses[1]).To4()
+	localIP := net.ParseIP("10.0.0.1").To4()
+	externalIP := net.ParseIP("10.0.0.2").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingContext{
-		Tag:         tags[0],
+		Tag:         "tag1",
 		AddressOnly: false,
 		LocalIP:     localIP,
 		ExternalIP:  externalIP,
@@ -450,7 +447,7 @@ func TestDelNat44StaticMapping(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -461,12 +458,12 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	localIP := net.ParseIP(ipAddresses[0]).To4()
-	externalIP := net.ParseIP(ipAddresses[1]).To4()
+	localIP := net.ParseIP("10.0.0.1").To4()
+	externalIP := net.ParseIP("10.0.0.2").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingContext{
-		Tag:         tags[0],
+		Tag:         "tag1",
 		AddressOnly: true,
 		LocalIP:     localIP,
 		ExternalIP:  externalIP,
@@ -479,7 +476,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -490,13 +487,13 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	externalIP := net.ParseIP(ipAddresses[0]).To4()
-	localIP1 := net.ParseIP(ipAddresses[1]).To4()
-	localIP2 := net.ParseIP(ipAddresses[2]).To4()
+	externalIP := net.ParseIP("10.0.0.1").To4()
+	localIP1 := net.ParseIP("10.0.0.2").To4()
+	localIP2 := net.ParseIP("10.0.0.3").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingLbContext{
-		Tag:          tags[0],
+		Tag:          "tag1",
 		LocalIPs:     localIPs(localIP1, localIP2),
 		ExternalIP:   externalIP,
 		ExternalPort: 8080,
@@ -512,7 +509,7 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
@@ -562,13 +559,13 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	externalIP := net.ParseIP(ipAddresses[0]).To4()
-	localIP1 := net.ParseIP(ipAddresses[1]).To4()
-	localIP2 := net.ParseIP(ipAddresses[2]).To4()
+	externalIP := net.ParseIP("10.0.0.1").To4()
+	localIP1 := net.ParseIP("10.0.0.2").To4()
+	localIP2 := net.ParseIP("10.0.0.3").To4()
 
 	// DataContext
 	stmCtx := &vppcalls.StaticMappingLbContext{
-		Tag:          tags[0],
+		Tag:          "tag1",
 		LocalIPs:     localIPs(localIP1, localIP2),
 		ExternalIP:   externalIP,
 		ExternalPort: 8080,
@@ -584,7 +581,7 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
@@ -611,11 +608,11 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	address := net.ParseIP(ipAddresses[0]).To4()
+	address := net.ParseIP("10.0.0.1").To4()
 
 	// DataContext
 	idmCtx := &vppcalls.IdentityMappingContext{
-		Tag:       tags[0],
+		Tag:       "tag1",
 		IPAddress: address,
 		Protocol:  16,
 		Vrf:       1,
@@ -630,7 +627,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
@@ -646,7 +643,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 
 	// DataContext (IPAddress == nil and Port == 0 means it's address only)
 	idmCtx := &vppcalls.IdentityMappingContext{
-		Tag:      tags[0],
+		Tag:      "tag1",
 		Protocol: 16,
 		Vrf:      1,
 		IfIdx:    1,
@@ -659,7 +656,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 }
@@ -668,11 +665,11 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	address := net.ParseIP(ipAddresses[0]).To4()
+	address := net.ParseIP("10.0.0.1").To4()
 
 	// DataContext (IPAddress == nil and Port == 0 means it's address only)
 	idmCtx := &vppcalls.IdentityMappingContext{
-		Tag:       tags[0],
+		Tag:       "tag1",
 		Protocol:  16,
 		Vrf:       1,
 		IPAddress: address,
@@ -686,7 +683,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
@@ -720,11 +717,11 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	address := net.ParseIP(ipAddresses[0]).To4()
+	address := net.ParseIP("10.0.0.1").To4()
 
 	// DataContext
 	idmCtx := &vppcalls.IdentityMappingContext{
-		Tag:       tags[0],
+		Tag:       "tag1",
 		IPAddress: address,
 		Protocol:  16,
 		Vrf:       1,
@@ -738,7 +735,7 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo(tags[0]))
+	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
 	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
@@ -749,13 +746,13 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 func localIPs(addr1, addr2 []byte) []*vppcalls.LocalLbAddress {
 	return []*vppcalls.LocalLbAddress{
 		{
-			Tag:         tags[1],
+			Tag:         "tag2",
 			LocalIP:     addr1,
 			LocalPort:   8080,
 			Probability: 35,
 		},
 		{
-			Tag:         tags[2],
+			Tag:         "tag3",
 			LocalIP:     addr2,
 			LocalPort:   8181,
 			Probability: 65,
