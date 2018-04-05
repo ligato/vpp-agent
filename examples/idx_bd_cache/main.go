@@ -132,7 +132,7 @@ func (plugin *ExamplePlugin) publish() (err error) {
 // Use the NameToIndexMapping to watch changes.
 func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
-	bdIdxChan := make(chan bdidx.ChangeDto)
+	bdIdxChan := make(chan bdidx.BdChangeDto)
 	// Subscribe local bd-idx-mapping and both of cache mapping.
 	plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
 	plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)

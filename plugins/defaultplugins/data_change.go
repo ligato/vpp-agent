@@ -392,7 +392,7 @@ func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTabl
 	if datasync.Delete == changeType {
 		return plugin.fibConfigurator.Delete(prevValue, callback)
 	} else if diff {
-		return plugin.fibConfigurator.Diff(prevValue, value, callback)
+		return plugin.fibConfigurator.Modify(prevValue, value, callback)
 	}
 	return plugin.fibConfigurator.Add(value, callback)
 }

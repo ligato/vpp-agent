@@ -199,7 +199,7 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	e.Done()
 }
 
-func (plugin *Plugin) onVppBdEvent(e bdidx.ChangeDto) {
+func (plugin *Plugin) onVppBdEvent(e bdidx.BdChangeDto) {
 	if !e.IsDelete() {
 		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {

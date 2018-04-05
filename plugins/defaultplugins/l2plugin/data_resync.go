@@ -169,7 +169,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 	// Correlate existing config with the NB
 	var wasErr error
 	for vppFIBmac, vppFIBdata := range vppFIBs {
-		exists, meta := func(nbFIBs []*l2.FibTableEntries_FibTableEntry) (bool, *FIBMeta) {
+		exists, meta := func(nbFIBs []*l2.FibTableEntries_FibTableEntry) (bool, *l2.FibTableEntries_FibTableEntry) {
 			for _, nbFIB := range nbFIBs {
 				// Physical address
 				if strings.ToUpper(vppFIBmac) != strings.ToUpper(nbFIB.PhysAddress) {
@@ -194,18 +194,15 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 					continue
 				}
 
-				// Prepare FIB metadata
-				meta := &FIBMeta{nbFIB.OutgoingInterface, nbFIB.BridgeDomain, nbFIB.BridgedVirtualInterface, nbFIB.StaticConfig}
-
-				return true, meta
+				return true, nbFIB
 			}
 			return false, nil
 		}(nbFIBs)
 
 		// Register existing entries, Remove entries missing in NB config (except non-static)
 		if exists {
-			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.FibIndexSeq, meta)
-			plugin.FibIndexSeq++
+			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.fibIndexSeq, meta)
+			plugin.fibIndexSeq++
 		} else if vppFIBdata.StaticConfig {
 			// Get appropriate interface/bridge domain names
 			ifIdx, _, ifFound := plugin.SwIfIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
