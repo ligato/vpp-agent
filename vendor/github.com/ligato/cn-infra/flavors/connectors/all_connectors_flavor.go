@@ -82,6 +82,7 @@ func (f *AllConnectorsFlavor) Inject() bool {
 	f.FlavorLocal.Inject()
 
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3", local.WithConf())
+	f.ETCD.Deps.Resync = &f.ResyncOrch
 	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal, &f.ResyncOrch)
 
 	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis", local.WithConf())
