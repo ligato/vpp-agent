@@ -93,6 +93,11 @@ func (plugin *Plugin) Register(resyncName string) Registration {
 	return reg
 }
 
+// DoResync can be used to start resync procedure outside of after init
+func (plugin *Plugin) DoResync() {
+	plugin.startResync()
+}
+
 // Call callback on plugins to create/delete/modify objects.
 func (plugin *Plugin) startResync() {
 	plugin.Log.Info("Resync order", plugin.regOrder)

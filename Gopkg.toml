@@ -59,7 +59,7 @@ required = [
 
 [[constraint]]
   name = "github.com/ligato/cn-infra"
-  version = "1.2"
+  revision = "461693b8df7972abf23e1e3a8c7261659f5f5181"
 
 [[constraint]]
   branch = "master"

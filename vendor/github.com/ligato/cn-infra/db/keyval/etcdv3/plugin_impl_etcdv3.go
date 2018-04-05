@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/plugin"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -38,12 +39,14 @@ type Plugin struct {
 	disabled        bool
 	connection      *BytesConnectionEtcd
 	autoCompactDone chan struct{}
+	lastConnErr     error
 }
 
 // Deps lists dependencies of the etcdv3 plugin.
 // If injected, etcd plugin will use StatusCheck to signal the connection status.
 type Deps struct {
 	local.PluginInfraDeps // inject
+	Resync                *resync.Plugin
 }
 
 // Init retrieves etcd configuration and establishes a new connection
@@ -100,8 +103,14 @@ func (p *Plugin) Init() (err error) {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
 			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
+				if p.Resync != nil && p.lastConnErr != nil {
+					p.Log.Info("Starting resync after ETCD reconnect")
+					p.Resync.DoResync()
+					p.lastConnErr = nil
+				}
 				return statuscheck.OK, nil
 			}
+			p.lastConnErr = err
 			return statuscheck.Error, err
 		})
 	} else {
