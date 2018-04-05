@@ -77,7 +77,6 @@ govpp_get_msg_index(char *name_and_crc)
 import "C"
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -130,7 +129,7 @@ func (a *vppAPIClientAdapter) GetMsgID(msgName string, msgCrc string) (uint16, e
 
 	msgID := uint16(C.govpp_get_msg_index(nameAndCrc))
 	if msgID == ^uint16(0) {
-		return msgID, errors.New("unkonwn message")
+		return msgID, fmt.Errorf("unknown message: %v (crc: %v)", msgName, msgCrc)
 	}
 
 	return msgID, nil
