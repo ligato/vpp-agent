@@ -408,7 +408,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 		return
 	}
 
-	ifState.InternalName = string(ifDetails.InterfaceName[:bytes.IndexByte(ifDetails.InterfaceName,0)])
+	ifState.InternalName = string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
 
 	if ifDetails.AdminUpDown == 1 {
 		ifState.AdminStatus = intf.InterfacesState_Interface_UP
