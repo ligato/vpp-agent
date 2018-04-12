@@ -19,7 +19,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -28,19 +27,20 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
 // NewDataChangeDSL is a constructor
-func NewDataChangeDSL(client vppsvc.ChangeConfigServiceClient) *DataChangeDSL {
+func NewDataChangeDSL(client rpc.ChangeConfigServiceClient) *DataChangeDSL {
 	return &DataChangeDSL{client, make(map[string]proto.Message, 0), make(map[string]proto.Message)}
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
-	client vppsvc.ChangeConfigServiceClient
+	client rpc.ChangeConfigServiceClient
 	put    map[string]proto.Message
 	del    map[string]proto.Message
 }
@@ -244,7 +244,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) defaultplugins.DeleteDSL {
 
 // StaticRoute deletes the L3 Static Route.
 func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) defaultplugins.DeleteDSL {
-	dsl.parent.del[l3.RouteKey(vrf, dstAddr, nextHopAddr)] = &vppsvc.DelStaticRoutesRequest_DelStaticRoute{
+	dsl.parent.del[l3.RouteKey(vrf, dstAddr, nextHopAddr)] = &rpc.DelStaticRouteRequest{
 		VRF: vrf, DstAddr: dstAddr, NextHopAddr: nextHopAddr,
 	}
 	return dsl
@@ -336,27 +336,27 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	for _, val := range dsl.put {
 		switch typed := val.(type) {
 		case *interfaces.Interfaces_Interface:
-			_, err := dsl.client.PutInterfaces(context.Background(), &interfaces.Interfaces{Interface: []*interfaces.Interfaces_Interface{typed}})
+			_, err := dsl.client.PutInterface(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
 		case *l2.BridgeDomains_BridgeDomain:
-			_, err := dsl.client.PutBDs(context.Background(), &l2.BridgeDomains{BridgeDomains: []*l2.BridgeDomains_BridgeDomain{typed}})
+			_, err := dsl.client.PutBD(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
 		case *l2.XConnectPairs_XConnectPair:
-			_, err := dsl.client.PutXCons(context.Background(), &l2.XConnectPairs{XConnectPairs: []*l2.XConnectPairs_XConnectPair{typed}})
+			_, err := dsl.client.PutXCon(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
 		case *l3.StaticRoutes_Route:
-			_, err := dsl.client.PutStaticRoutes(context.Background(), &l3.StaticRoutes{Route: []*l3.StaticRoutes_Route{typed}})
+			_, err := dsl.client.PutStaticRoute(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
 		case *acl.AccessLists_Acl:
-			_, err := dsl.client.PutACLs(context.Background(), &acl.AccessLists{Acl: []*acl.AccessLists_Acl{typed}})
+			_, err := dsl.client.PutACL(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
@@ -366,27 +366,27 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	for key, val := range dsl.del {
 		switch typed := val.(type) {
 		case *interfaces.Interfaces_Interface:
-			_, err := dsl.client.DelInterfaces(context.Background(), &vppsvc.DelNamesRequest{Name: []string{key}})
+			_, err := dsl.client.DelInterface(context.Background(), &rpc.DelNameRequest{Name: key})
 			if err != nil {
 				wasErr = err
 			}
 		case *l2.BridgeDomains_BridgeDomain:
-			_, err := dsl.client.DelBDs(context.Background(), &vppsvc.DelNamesRequest{Name: []string{key}})
+			_, err := dsl.client.DelBD(context.Background(), &rpc.DelNameRequest{Name: key})
 			if err != nil {
 				wasErr = err
 			}
 		case *l2.XConnectPairs_XConnectPair:
-			_, err := dsl.client.DelXCons(context.Background(), &vppsvc.DelNamesRequest{Name: []string{key}})
+			_, err := dsl.client.DelXCon(context.Background(), &rpc.DelNameRequest{Name: key})
 			if err != nil {
 				wasErr = err
 			}
-		case *vppsvc.DelStaticRoutesRequest_DelStaticRoute:
-			_, err := dsl.client.DelStaticRoutes(context.Background(), &vppsvc.DelStaticRoutesRequest{Route: []*vppsvc.DelStaticRoutesRequest_DelStaticRoute{typed}})
+		case *rpc.DelStaticRouteRequest:
+			_, err := dsl.client.DelStaticRoute(context.Background(), typed)
 			if err != nil {
 				wasErr = err
 			}
 		case *acl.AccessLists_Acl:
-			_, err := dsl.client.DelACLs(context.Background(), &vppsvc.DelNamesRequest{Name: []string{key}})
+			_, err := dsl.client.DelACL(context.Background(), &rpc.DelNameRequest{Name: key})
 			if err != nil {
 				wasErr = err
 			}

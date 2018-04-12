@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package rpc;
+
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3/l3.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
+
+// ChangeConfigService is a service to submit individual changes in the configuration of the vpp-agent
+service ChangeConfigService {
+    // PutInterfaces creates or updates one or multiple interfaces
+    rpc PutInterface (interfaces.Interfaces.Interface) returns (PutResponse);
+    // DelInterfaces one or multiple interfaces by their unique names
+    rpc DelInterface (DelNameRequest) returns (DelResponse);
+
+    // PutBDs creates or updates one or multiple BDs
+    rpc PutBD (l2.BridgeDomains.BridgeDomain) returns (PutResponse);
+    // DelBDs one or multiple BDs by their unique names
+    rpc DelBD (DelNameRequest) returns (DelResponse);
+
+    // PutXCons creates or updates one or multiple Cross Connects
+    rpc PutXCon (l2.XConnectPairs.XConnectPair) returns (PutResponse);
+    // DelXCons one or multiple Cross Connects by their unique names
+    rpc DelXCon (DelNameRequest) returns (DelResponse);
+
+    // PutACLs creates or updates one or multiple ACLs
+    rpc PutACL (acl.AccessLists.Acl) returns (PutResponse);
+    // DelACLs one or multiple ACLs by their unique names
+    rpc DelACL (DelNameRequest) returns (DelResponse);
+
+    // PutStaticRoutes creates or updates one or multiple ACLs
+    rpc PutStaticRoute (l3.StaticRoutes.Route) returns (PutResponse);
+    // DelStaticRoutes one or multiple ACLs by their unique names
+    rpc DelStaticRoute (DelStaticRouteRequest) returns (DelResponse);
+}
+
+message DelNameRequest {
+    /* Name of interface, bridge domain, etc. */
+    string Name = 1;
+}
+
+message DelStaticRouteRequest {
+    uint32 VRF = 1;
+    string dstAddr = 2; //prefix
+    string nextHopAddr = 3; //nexthop
+}
+
+message PutResponse {
+}
+message DelResponse {
+}
+
+
+// ResyncConfigService is a service to submit full data resync request
+// in the configuration of the vpp-agent
+service ResyncConfigService {
+    rpc ResyncConfig (ResyncConfigRequest) returns (ResyncConfigResponse);
+}
+
+message ResyncConfigResponse {
+}
+
+message ResyncConfigRequest {
+    interfaces.Interfaces Interfaces = 1;
+    l2.BridgeDomains BDs = 2;
+    l2.XConnectPairs XCons = 3;
+    acl.AccessLists ACLs = 4;
+    l3.StaticRoutes StaticRoutes = 5;
+}

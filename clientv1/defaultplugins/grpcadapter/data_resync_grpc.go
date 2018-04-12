@@ -19,7 +19,6 @@ import (
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -28,12 +27,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
 )
 
 // NewDataResyncDSL is a constructor.
-func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
+func NewDataResyncDSL(client rpc.ResyncConfigServiceClient) *DataResyncDSL {
 	return &DataResyncDSL{client,
 		map[string] /*name*/ *interfaces.Interfaces_Interface{},
 		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
@@ -60,7 +60,7 @@ func NewDataResyncDSL(client vppsvc.ResyncConfigServiceClient) *DataResyncDSL {
 // DataResyncDSL is used to conveniently assign all the data that are needed for the RESYNC.
 // This is implementation of Domain Specific Language (DSL) for data RESYNC of the VPP configuration.
 type DataResyncDSL struct {
-	client            vppsvc.ResyncConfigServiceClient
+	client            rpc.ResyncConfigServiceClient
 	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
 	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
 	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
@@ -246,7 +246,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 		putACLs = append(putACLs, acl)
 	}
 
-	_, err := dsl.client.ResyncConfig(context.Background(), &vppsvc.ResyncConfigRequest{
+	_, err := dsl.client.ResyncConfig(context.Background(), &rpc.ResyncConfigRequest{
 		Interfaces:   &interfaces.Interfaces{Interface: putIntfs},
 		BDs:          &l2.BridgeDomains{BridgeDomains: putBDs},
 		XCons:        &l2.XConnectPairs{XConnectPairs: putXCons},
