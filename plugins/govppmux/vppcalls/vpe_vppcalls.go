@@ -29,10 +29,10 @@ func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
 	}
 
 	info := &VersionInfo{
-		Program:        string(bytes.Trim(reply.Program, "\x00")),
-		Version:        string(bytes.Trim(reply.Version, "\x00")),
-		BuildDate:      string(bytes.Trim(reply.BuildDate, "\x00")),
-		BuildDirectory: string(bytes.Trim(reply.BuildDirectory, "\x00")),
+		Program:        string(reply.Program[:bytes.IndexByte(reply.Program, 0)]),
+		Version:        string(reply.Version[:bytes.IndexByte(reply.Version, 0)]),
+		BuildDate:      string(reply.BuildDate[:bytes.IndexByte(reply.BuildDate, 0)]),
+		BuildDirectory: string(reply.BuildDirectory[:bytes.IndexByte(reply.BuildDirectory, 0)]),
 	}
 	return info, nil
 }
