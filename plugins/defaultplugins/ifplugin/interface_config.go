@@ -185,7 +185,7 @@ func (plugin *InterfaceConfigurator) PropagateIfDetailsToStatus() error {
 		_, _, found := plugin.swIfIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			plugin.log.Debugf("Unregistered interface %v with ID %v found on vpp",
-				string(bytes.Trim(msg.InterfaceName, "\x00")), msg.SwIfIndex)
+				string(bytes.SplitN(msg.InterfaceName, []byte{0x00}, 2)[0]), msg.SwIfIndex)
 			// Do not register unknown interface here, cuz it may cause inconsistencies in the ifplugin.
 			// All new interfaces should be registered during configuration
 			continue
@@ -947,7 +947,7 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 				var hwAddr net.HardwareAddr = dhcpNotif.HostMac
 				var ipStr, rIPStr string
 
-				name := string(bytes.Trim(dhcpNotif.Hostname, "\x00"))
+				name := string(bytes.SplitN(dhcpNotif.Hostname, []byte{0x00}, 2)[0])
 
 				if dhcpNotif.IsIpv6 == 1 {
 					ipStr = ipAddr.To16().String()

@@ -180,7 +180,7 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 		exIPAddress := net.IP(msg.ExternalIPAddress)
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Fill data (value)
 		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMappings{
@@ -230,7 +230,7 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 		}
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Prepare localIPs
 		var locals []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
@@ -288,7 +288,7 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 		ipAddress := net.IP(msg.IPAddress)
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Fill data (value)
 		entries[tag] = &nat.Nat44DNat_DNatConfig_IdentityMappings{

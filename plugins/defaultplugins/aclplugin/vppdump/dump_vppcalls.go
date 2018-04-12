@@ -264,7 +264,7 @@ func DumpIPAcls(log logging.Logger, vch *govppapi.Channel,
 
 		identifier := ACLIdentifier{
 			ACLIndex: msg.ACLIndex,
-			Tag:      string(bytes.Trim(msg.Tag, "\x00")),
+			Tag:      string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
 		}
 
 		aclIPRules[identifier] = msg.R
@@ -303,7 +303,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 
 		identifier := ACLIdentifier{
 			ACLIndex: msg.ACLIndex,
-			Tag:      string(bytes.Trim(msg.Tag, "\x00")),
+			Tag:      string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
 		}
 
 		aclMACIPRules[identifier] = msg.R
@@ -407,7 +407,7 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (aclRule *acl.Acc
 		ruleData = append(ruleData, &rule)
 	}
 
-	return &acl.AccessLists_Acl{Rules: ruleData, AclName: string(bytes.Trim(reply.Tag, "\x00"))}, nil
+	return &acl.AccessLists_Acl{Rules: ruleData, AclName: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
 }
 
 // getIPRuleMatches translates an IP rule from the binary VPP API format into the
