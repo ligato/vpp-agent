@@ -196,24 +196,31 @@ func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncCo
 	*rpc.ResyncConfigResponse, error) {
 
 	localReq := localclient.DataResyncRequest("vppsvc")
-	for _, intf := range request.Interfaces.Interface {
-		localReq.VppInterface(intf)
-	}
 
-	for _, bd := range request.BDs.BridgeDomains {
-		localReq.BD(bd)
+	if request.Interfaces != nil && len(request.Interfaces.Interface) > 0 {
+		for _, intf := range request.Interfaces.Interface {
+			localReq.VppInterface(intf)
+		}
 	}
-
-	for _, xcon := range request.XCons.XConnectPairs {
-		localReq.XConnect(xcon)
+	if request.BDs != nil && len(request.BDs.BridgeDomains) > 0 {
+		for _, bd := range request.BDs.BridgeDomains {
+			localReq.BD(bd)
+		}
 	}
-
-	for _, acl := range request.ACLs.Acl {
-		localReq.ACL(acl)
+	if request.XCons != nil && len(request.XCons.XConnectPairs) > 0 {
+		for _, xcon := range request.XCons.XConnectPairs {
+			localReq.XConnect(xcon)
+		}
 	}
-
-	for _, route := range request.StaticRoutes.Route {
-		localReq.StaticRoute(route)
+	if request.ACLs != nil && len(request.ACLs.Acl) > 0 {
+		for _, accessList := range request.ACLs.Acl {
+			localReq.ACL(accessList)
+		}
+	}
+	if request.StaticRoutes != nil && len(request.StaticRoutes.Route) > 0 {
+		for _, route := range request.StaticRoutes.Route {
+			localReq.StaticRoute(route)
+		}
 	}
 
 	err := localReq.Send().ReceiveReply()

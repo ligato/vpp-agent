@@ -17,7 +17,7 @@ package grpcadapter
 import (
 	"strconv"
 
-	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
@@ -34,225 +34,178 @@ import (
 
 // NewDataResyncDSL is a constructor.
 func NewDataResyncDSL(client rpc.ResyncConfigServiceClient) *DataResyncDSL {
-	return &DataResyncDSL{client,
-		map[string] /*name*/ *interfaces.Interfaces_Interface{},
-		map[string] /*name*/ *bfd.SingleHopBFD_Session{},
-		map[string] /*id*/ *bfd.SingleHopBFD_Key{},
-		map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction{},
-		map[string] /*name*/ *l2.BridgeDomains_BridgeDomain{},
-		map[string] /*key*/ *l2.FibTableEntries_FibTableEntry{},
-		map[string] /*name*/ *l2.XConnectPairs_XConnectPair{},
-		map[string] /*key*/ *l3.StaticRoutes_Route{},
-		map[string] /*name*/ *acl.AccessLists_Acl{},
-		map[string] /*id*/ *l4.L4Features{},
-		map[string] /*value*/ *l4.AppNamespaces_AppNamespace{},
-		map[string] /*name*/ *l3.ArpTable_ArpTableEntry{},
-		map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList{},
-		map[string] /*name*/ *l3.ProxyArpRanges_RangeList{},
-		map[string] /*name*/ *stn.StnRule{},
-		map[string] /*label*/ *nat.Nat44Global{},
-		map[string] /*value*/ *nat.Nat44DNat_DNatConfig{},
-		map[string] /*name*/ *ipsec.SecurityAssociations_SA{},
-		map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD{},
-	}
+	return &DataResyncDSL{client, make(map[string]proto.Message)}
 }
 
 // DataResyncDSL is used to conveniently assign all the data that are needed for the RESYNC.
 // This is implementation of Domain Specific Language (DSL) for data RESYNC of the VPP configuration.
 type DataResyncDSL struct {
-	client            rpc.ResyncConfigServiceClient
-	txnPutIntf        map[string] /*name*/ *interfaces.Interfaces_Interface
-	txnPutBfdSession  map[string] /*name*/ *bfd.SingleHopBFD_Session
-	txnPutBfdAuthKey  map[string] /*id*/ *bfd.SingleHopBFD_Key
-	txnPutBfdEcho     map[string] /*name*/ *bfd.SingleHopBFD_EchoFunction
-	txnPutBD          map[string] /*name*/ *l2.BridgeDomains_BridgeDomain
-	txnPutBDFIB       map[string] /*key*/ *l2.FibTableEntries_FibTableEntry
-	txnPutXCon        map[string] /*name*/ *l2.XConnectPairs_XConnectPair
-	txnPutStaticRoute map[string] /*key*/ *l3.StaticRoutes_Route
-	txnPutACL         map[string] /*name*/ *acl.AccessLists_Acl
-	txnPutL4Features  map[string] /*value*/ *l4.L4Features
-	txnPutAppNs       map[string] /*id*/ *l4.AppNamespaces_AppNamespace
-	txnPutArp         map[string] /*key*/ *l3.ArpTable_ArpTableEntry
-	txnPutProxyArpIfs map[string] /*name*/ *l3.ProxyArpInterfaces_InterfaceList
-	txnPutProxyArpRng map[string] /*name*/ *l3.ProxyArpRanges_RangeList
-	txnPutStn         map[string] /*value*/ *stn.StnRule
-	txnPutNatGlobal   map[string] /*label*/ *nat.Nat44Global
-	txnPutDNat        map[string] /*key*/ *nat.Nat44DNat_DNatConfig
-	txnPutIPSecSA     map[string] /*name*/ *ipsec.SecurityAssociations_SA
-	txnPutIPSecSPD    map[string] /*name*/ *ipsec.SecurityPolicyDatabases_SPD
+	client rpc.ResyncConfigServiceClient
+	put    map[string]proto.Message
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) defaultplugins.DataResyncDSL {
-	dsl.txnPutIntf[val.Name] = val
+	dsl.put[val.Name] = val
 
 	return dsl
 }
 
 // BfdSession adds BFD session to the RESYNC request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) defaultplugins.DataResyncDSL {
-	dsl.txnPutBfdSession[val.Interface] = val
+	dsl.put[val.Interface] = val
 
 	return dsl
 }
 
 // BfdAuthKeys adds BFD key to the RESYNC request.
 func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) defaultplugins.DataResyncDSL {
-	dsl.txnPutBfdAuthKey[strconv.Itoa(int(val.Id))] = val
+	dsl.put[strconv.Itoa(int(val.Id))] = val
 
 	return dsl
 }
 
 // BfdEchoFunction adds BFD echo function to the RESYNC request.
 func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) defaultplugins.DataResyncDSL {
-	dsl.txnPutBfdEcho[val.EchoSourceInterface] = val
+	dsl.put[val.EchoSourceInterface] = val
 
 	return dsl
 }
 
 // BD adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.DataResyncDSL {
-	dsl.txnPutBD[val.Name] = val
+	dsl.put[val.Name] = val
 
 	return dsl
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
-	dsl.txnPutBDFIB[l2.FibKey(val.BridgeDomain, val.PhysAddress)] = val
+	dsl.put[l2.FibKey(val.BridgeDomain, val.PhysAddress)] = val
 
 	return dsl
 }
 
 // XConnect adds Cross Connect to the RESYNC request.
 func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) defaultplugins.DataResyncDSL {
-	dsl.txnPutXCon[val.ReceiveInterface] = val
+	dsl.put[val.ReceiveInterface] = val
 
 	return dsl
 }
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
 func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) defaultplugins.DataResyncDSL {
-	dsl.txnPutStaticRoute[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
+	dsl.put[l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)] = val
 
 	return dsl
 }
 
 // ACL adds Access Control List to the RESYNC request.
 func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) defaultplugins.DataResyncDSL {
-	dsl.txnPutACL[val.AclName] = val
+	dsl.put[val.AclName] = val
 
 	return dsl
 }
 
 // L4Features adds L4Features to the RESYNC request.
 func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) defaultplugins.DataResyncDSL {
-	dsl.txnPutL4Features[strconv.FormatBool(val.Enabled)] = val
+	dsl.put[strconv.FormatBool(val.Enabled)] = val
 
 	return dsl
 }
 
 // AppNamespace adds Application Namespace to the RESYNC request.
 func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugins.DataResyncDSL {
-	dsl.txnPutAppNs[val.NamespaceId] = val
+	dsl.put[val.NamespaceId] = val
 
 	return dsl
 }
 
 // Arp adds VPP L3 ARP to the RESYNC request.
 func (dsl *DataResyncDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
-	dsl.txnPutArp[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
+	dsl.put[l3.ArpEntryKey(arp.Interface, arp.IpAddress)] = arp
 	return dsl
 }
 
 // ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.DataResyncDSL {
-	dsl.txnPutProxyArpIfs[val.Label] = val
+	dsl.put[val.Label] = val
 	return dsl
 }
 
 // ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
-	dsl.txnPutProxyArpRng[val.Label] = val
+	dsl.put[val.Label] = val
 	return dsl
 }
 
 // StnRule adds Stn rule to the RESYNC request.
 func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
-	dsl.txnPutStn[val.RuleName] = val
+	dsl.put[val.RuleName] = val
 	return dsl
 }
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.DataResyncDSL {
-	dsl.txnPutNatGlobal["global"] = nat44
+	dsl.put["global"] = nat44
 	return dsl
 }
 
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
-	dsl.txnPutDNat[nat.DNatKey(nat44.Label)] = nat44
+	dsl.put[nat.DNatKey(nat44.Label)] = nat44
 	return dsl
 }
 
 // IPSecSA adds request to create a new Security Association
 func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
-	dsl.txnPutIPSecSA[ipsec.SAKey(sa.Name)] = sa
+	dsl.put[ipsec.SAKey(sa.Name)] = sa
 	return dsl
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
-	dsl.txnPutIPSecSPD[ipsec.SPDKey(spd.Name)] = spd
+	dsl.put[ipsec.SPDKey(spd.Name)] = spd
 	return dsl
 }
-
-// AppendKeys is a helper function that fills the keySet with iterator values.
-func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
-	for {
-		k, _, stop := it.GetNext()
-		if stop {
-			break
-		}
-
-		(*keys)[k] = nil
-	}
-}
-
-// KeySet is a helper type that reuses the map keys to store the set values. The values of the map are nil.
-type keySet map[string] /*key*/ interface{} /*nil*/
 
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
 func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
-	var putIntfs []*interfaces.Interfaces_Interface
-	for _, intf := range dsl.txnPutIntf {
-		putIntfs = append(putIntfs, intf)
-	}
-	var putBDs []*l2.BridgeDomains_BridgeDomain
-	for _, bd := range dsl.txnPutBD {
-		putBDs = append(putBDs, bd)
-	}
-	var putXCons []*l2.XConnectPairs_XConnectPair
-	for _, xcon := range dsl.txnPutXCon {
-		putXCons = append(putXCons, xcon)
-	}
-	var putRoutes []*l3.StaticRoutes_Route
-	for _, route := range dsl.txnPutStaticRoute {
-		putRoutes = append(putRoutes, route)
-	}
-	var putACLs []*acl.AccessLists_Acl
-	for _, acl := range dsl.txnPutACL {
-		putACLs = append(putACLs, acl)
+
+	resyncReq := &rpc.ResyncConfigRequest{}
+
+	for _, val := range dsl.put {
+		switch typed := val.(type) {
+		case *interfaces.Interfaces_Interface:
+			if resyncReq.Interfaces == nil {
+				resyncReq.Interfaces = &interfaces.Interfaces{}
+			}
+			resyncReq.Interfaces.Interface = append(resyncReq.Interfaces.Interface, typed)
+		case *l2.BridgeDomains_BridgeDomain:
+			if resyncReq.BDs == nil {
+				resyncReq.BDs = &l2.BridgeDomains{}
+			}
+			resyncReq.BDs.BridgeDomains = append(resyncReq.BDs.BridgeDomains, typed)
+		case *l2.XConnectPairs_XConnectPair:
+			if resyncReq.XCons == nil {
+				resyncReq.XCons = &l2.XConnectPairs{}
+			}
+			resyncReq.XCons.XConnectPairs = append(resyncReq.XCons.XConnectPairs, typed)
+		case *l3.StaticRoutes_Route:
+			if resyncReq.StaticRoutes == nil {
+				resyncReq.StaticRoutes = &l3.StaticRoutes{}
+			}
+			resyncReq.StaticRoutes.Route = append(resyncReq.StaticRoutes.Route, typed)
+		case *acl.AccessLists_Acl:
+			if resyncReq.ACLs == nil {
+				resyncReq.ACLs = &acl.AccessLists{}
+			}
+			resyncReq.ACLs.Acl = append(resyncReq.ACLs.Acl, typed)
+		}
 	}
 
-	_, err := dsl.client.ResyncConfig(context.Background(), &rpc.ResyncConfigRequest{
-		Interfaces:   &interfaces.Interfaces{Interface: putIntfs},
-		BDs:          &l2.BridgeDomains{BridgeDomains: putBDs},
-		XCons:        &l2.XConnectPairs{XConnectPairs: putXCons},
-		ACLs:         &acl.AccessLists{Acl: putACLs},
-		StaticRoutes: &l3.StaticRoutes{Route: putRoutes},
-	})
+	_, err := dsl.client.ResyncConfig(context.Background(), resyncReq)
 
 	return &Reply{err: err}
 }
