@@ -302,13 +302,14 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 		if err != nil {
 			failedChecks++
+			log.Warnf("VPP health check failed (%d. time): %v", failedChecks, err)
 		} else {
 			failedChecks = 0
 		}
 
 		if failedChecks > healthCheckThreshold {
 			// in case of error, break & disconnect
-			log.Errorf("VPP health check failed: %v", err)
+			log.Errorf("Number of VPP health check fails exceeded treshold (%d)", healthCheckThreshold, err)
 			// signal disconnected event via channel
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Disconnected}
 			break
