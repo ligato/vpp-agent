@@ -124,7 +124,7 @@ func (a *vppAPIClientAdapter) Disconnect() {
 
 // GetMsgID returns a runtime message ID for the given message name and CRC.
 func (a *vppAPIClientAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
-	nameAndCrc := C.CString(fmt.Sprintf("%s_%s", msgName, msgCrc))
+	nameAndCrc := C.CString(msgName + "_" + msgCrc)
 	defer C.free(unsafe.Pointer(nameAndCrc))
 
 	msgID := uint16(C.govpp_get_msg_index(nameAndCrc))
