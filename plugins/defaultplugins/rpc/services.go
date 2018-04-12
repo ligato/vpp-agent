@@ -77,11 +77,13 @@ type ResyncVppSvc struct {
 
 // PutInterfaces creates or updates one or multiple interfaces
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutInterface(ctx context.Context, request *interfaces.Interfaces_Interface) (
+func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.Interfaces) (
 	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	localReqPut.VppInterface(request)
+	for _, intf := range request.Interface {
+		localReqPut.VppInterface(intf)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
@@ -89,10 +91,12 @@ func (svc *ChangeVppSvc) PutInterface(ctx context.Context, request *interfaces.I
 
 // DelInterfaces deletes one or multiple interfaces by their unique names
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelInterface(ctx context.Context, request *rpc.DelNameRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+func (svc *ChangeVppSvc) DelInterfaces(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqDel := localReq.Delete()
-	localReqDel.VppInterface(request.Name)
+	for _, intfName := range request.Name {
+		localReqDel.VppInterface(intfName)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
@@ -100,11 +104,13 @@ func (svc *ChangeVppSvc) DelInterface(ctx context.Context, request *rpc.DelNameR
 
 // PutBDs creates or updates one or multiple BDs
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutBD(ctx context.Context, request *l2.BridgeDomains_BridgeDomain) (
+func (svc *ChangeVppSvc) PutBDs(ctx context.Context, request *l2.BridgeDomains) (
 	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	localReqPut.BD(request)
+	for _, bd := range request.BridgeDomains {
+		localReqPut.BD(bd)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
@@ -112,10 +118,12 @@ func (svc *ChangeVppSvc) PutBD(ctx context.Context, request *l2.BridgeDomains_Br
 
 // DelBDs deletes one or multiple BDs by their unique names
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelBD(ctx context.Context, request *rpc.DelNameRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+func (svc *ChangeVppSvc) DelBDs(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqDel := localReq.Delete()
-	localReqDel.BD(request.Name)
+	for _, bdName := range request.Name {
+		localReqDel.BD(bdName)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
@@ -123,11 +131,13 @@ func (svc *ChangeVppSvc) DelBD(ctx context.Context, request *rpc.DelNameRequest)
 
 // PutXCons creates or updates one or multiple Cross Connects
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutXCon(ctx context.Context, request *l2.XConnectPairs_XConnectPair) (
+func (svc *ChangeVppSvc) PutXCons(ctx context.Context, request *l2.XConnectPairs) (
 	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	localReqPut.XConnect(request)
+	for _, xcon := range request.XConnectPairs {
+		localReqPut.XConnect(xcon)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
@@ -135,10 +145,12 @@ func (svc *ChangeVppSvc) PutXCon(ctx context.Context, request *l2.XConnectPairs_
 
 // DelXCons deletes one or multiple Cross Connects by their unique names
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelXCon(ctx context.Context, request *rpc.DelNameRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+func (svc *ChangeVppSvc) DelXCons(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqDel := localReq.Delete()
-	localReqDel.XConnect(request.Name)
+	for _, rxIfaceName := range request.Name {
+		localReqDel.XConnect(rxIfaceName)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
@@ -146,11 +158,13 @@ func (svc *ChangeVppSvc) DelXCon(ctx context.Context, request *rpc.DelNameReques
 
 // PutACLs creates or updates one or multiple ACLs
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutACL(ctx context.Context, request *acl.AccessLists_Acl) (
+func (svc *ChangeVppSvc) PutACLs(ctx context.Context, request *acl.AccessLists) (
 	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	localReqPut.ACL(request)
+	for _, acl := range request.Acl {
+		localReqPut.ACL(acl)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
@@ -158,10 +172,12 @@ func (svc *ChangeVppSvc) PutACL(ctx context.Context, request *acl.AccessLists_Ac
 
 // DelACLs deletes one or multiple ACLs by their unique names
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelACL(ctx context.Context, request *rpc.DelNameRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+func (svc *ChangeVppSvc) DelACLs(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqDel := localReq.Delete()
-	localReqDel.ACL(request.Name)
+	for _, aclName := range request.Name {
+		localReqDel.ACL(aclName)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
@@ -169,11 +185,13 @@ func (svc *ChangeVppSvc) DelACL(ctx context.Context, request *rpc.DelNameRequest
 
 // PutStaticRoutes creates or updates one or multiple ACLs
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutStaticRoute(ctx context.Context, request *l3.StaticRoutes_Route) (
+func (svc *ChangeVppSvc) PutStaticRoutes(ctx context.Context, request *l3.StaticRoutes) (
 	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	localReqPut.StaticRoute(request)
+	for _, route := range request.Route {
+		localReqPut.StaticRoute(route)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
@@ -181,10 +199,12 @@ func (svc *ChangeVppSvc) PutStaticRoute(ctx context.Context, request *l3.StaticR
 
 // DelStaticRoutes deletes one or multiple ACLs by their unique names
 // (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelStaticRoute(ctx context.Context, request *rpc.DelStaticRouteRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("vppsvc")
+func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *rpc.DelStaticRoutesRequest) (*rpc.DelResponse, error) {
+	localReq := localclient.DataChangeRequest("rpc")
 	localReqDel := localReq.Delete()
-	localReqDel.StaticRoute(request.VRF, request.DstAddr, request.NextHopAddr)
+	for _, route := range request.Route {
+		localReqDel.StaticRoute(route.VRF, route.DstAddr, route.NextHopAddr)
+	}
 
 	err := localReq.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
@@ -195,7 +215,7 @@ func (svc *ChangeVppSvc) DelStaticRoute(ctx context.Context, request *rpc.DelSta
 func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncConfigRequest) (
 	*rpc.ResyncConfigResponse, error) {
 
-	localReq := localclient.DataResyncRequest("vppsvc")
+	localReq := localclient.DataResyncRequest("rpc")
 
 	if request.Interfaces != nil && len(request.Interfaces.Interface) > 0 {
 		for _, intf := range request.Interfaces.Interface {
