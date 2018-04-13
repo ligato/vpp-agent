@@ -75,9 +75,9 @@ func (resp *BytesWatchPutResp) GetRevision() int64 {
 
 // BytesWatchDelResp is sent when a key-value pair has been removed.
 type BytesWatchDelResp struct {
-	key string
+	key       string
 	prevValue []byte
-	rev int64
+	rev       int64
 }
 
 // NewBytesWatchDelResp creates an instance of BytesWatchDelResp.

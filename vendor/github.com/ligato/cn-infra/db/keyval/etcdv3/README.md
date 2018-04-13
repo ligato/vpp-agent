@@ -32,3 +32,11 @@ You can compact Etcd using two ways.
   to the current revision.
 - using config file by setting `auto-compact` option to the duration of
   period that you want the Etcd to be compacted.
+
+## ETCD resynchronization
+
+- If connection to the ETCD is interrupted, resync can be automatically called 
+  after re-connection. This option is disabled by default and has to be allowed
+  in the etcd.conf file.
+  
+  Set `resync-after-reconnect` to `true` to enable the feature.
