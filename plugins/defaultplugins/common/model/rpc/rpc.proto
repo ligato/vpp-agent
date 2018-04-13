@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package vppsvc;
+package rpc;
 
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces/interfaces.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.proto";

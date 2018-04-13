@@ -27,11 +27,11 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins/remoteclient"
-	"github.com/ligato/vpp-agent/flavors/rpc/model/vppsvc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
@@ -129,7 +129,7 @@ func (plugin *ExamplePlugin) Close() error {
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
-	err := remoteclient.DataResyncRequestGRPC(vppsvc.NewResyncConfigServiceClient(plugin.conn)).
+	err := remoteclient.DataResyncRequestGRPC(rpc.NewResyncConfigServiceClient(plugin.conn)).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
 		Interface(&loopback1).
@@ -153,7 +153,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	select {
 	case <-time.After(15 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
-		err := remoteclient.DataChangeRequestGRPC(vppsvc.NewChangeConfigServiceClient(plugin.conn)).
+		err := remoteclient.DataChangeRequestGRPC(rpc.NewChangeConfigServiceClient(plugin.conn)).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
 			Interface(&memif2).            /* newly added memif interface */

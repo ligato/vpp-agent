@@ -53,6 +53,7 @@ examples:
 	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/remoteclient_grpc_vpp   && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:
@@ -129,6 +130,7 @@ generate: get-generators
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/defaultplugins/rpc && go generate
 	cd plugins/linuxplugin/ifplugin && go generate
 	cd plugins/linuxplugin/l3plugin && go generate
 	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect

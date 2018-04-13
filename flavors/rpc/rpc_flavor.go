@@ -18,6 +18,7 @@ package rpc
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
 
 	"github.com/ligato/cn-infra/datasync"
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -64,7 +65,7 @@ type FlavorVppRPC struct {
 	Linux            linuxplugin.Plugin
 	VPP              defaultplugins.Plugin
 
-	GRPCSvcPlugin GRPCSvcPlugin
+	GRPCSvcPlugin rpcsvc.GRPCSvcPlugin
 
 	injected bool
 }

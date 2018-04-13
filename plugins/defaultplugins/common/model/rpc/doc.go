@@ -14,7 +14,4 @@
 
 // Package model is the parent for packages defining various GRPC
 // services generated from protobuf data models.
-package model
-
-//go:generate protoc -I. -I./../../../../../../../ vpp_changes_svc.proto --go_out=plugins=grpc:.
-//go:generate protoc -I. -I./../../../../../../../ vpp_resync_svc.proto --go_out=plugins=grpc:.
+package rpc
