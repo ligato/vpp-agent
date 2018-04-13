@@ -39,6 +39,7 @@ type Config struct {
 	Keyfile               string        `json:"key-file"`
 	CAfile                string        `json:"ca-file"`
 	AutoCompact           time.Duration `json:"auto-compact"`
+	ReconnectResync       bool          `json:"resync-after-reconnect"`
 }
 
 // ClientConfig extends clientv3.Config with configuration options introduced

@@ -39,6 +39,7 @@ type Plugin struct {
 	disabled        bool
 	connection      *BytesConnectionEtcd
 	autoCompactDone chan struct{}
+	reconnectResync bool
 	lastConnErr     error
 }
 
@@ -81,6 +82,9 @@ func (p *Plugin) Init() (err error) {
 			return err
 		}
 
+		// Set flag wheter resync will be started after reconnect
+		p.reconnectResync = cfg.ReconnectResync
+
 		if cfg.AutoCompact > 0 {
 			if cfg.AutoCompact < time.Duration(time.Minute*60) {
 				p.Log.Warnf("auto compact option for ETCD is set to less than 60 minutes!")
@@ -103,10 +107,14 @@ func (p *Plugin) Init() (err error) {
 		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
 			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
-				if p.Resync != nil && p.lastConnErr != nil {
+				if p.reconnectResync && p.lastConnErr != nil {
 					p.Log.Info("Starting resync after ETCD reconnect")
-					p.Resync.DoResync()
-					p.lastConnErr = nil
+					if p.Resync != nil {
+						p.Resync.DoResync()
+						p.lastConnErr = nil
+					} else {
+						p.Log.Warn("Expected resync after ETCD reconnect could not start beacuse of missing Resync plugin")
+					}
 				}
 				return statuscheck.OK, nil
 			}
