@@ -217,27 +217,27 @@ func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncCo
 
 	localReq := localclient.DataResyncRequest("rpc")
 
-	if request.Interfaces != nil && len(request.Interfaces.Interface) > 0 {
+	if request.Interfaces != nil {
 		for _, intf := range request.Interfaces.Interface {
 			localReq.VppInterface(intf)
 		}
 	}
-	if request.BDs != nil && len(request.BDs.BridgeDomains) > 0 {
+	if request.BDs != nil {
 		for _, bd := range request.BDs.BridgeDomains {
 			localReq.BD(bd)
 		}
 	}
-	if request.XCons != nil && len(request.XCons.XConnectPairs) > 0 {
+	if request.XCons != nil {
 		for _, xcon := range request.XCons.XConnectPairs {
 			localReq.XConnect(xcon)
 		}
 	}
-	if request.ACLs != nil && len(request.ACLs.Acl) > 0 {
+	if request.ACLs != nil {
 		for _, accessList := range request.ACLs.Acl {
 			localReq.ACL(accessList)
 		}
 	}
-	if request.StaticRoutes != nil && len(request.StaticRoutes.Route) > 0 {
+	if request.StaticRoutes != nil {
 		for _, route := range request.StaticRoutes.Route {
 			localReq.StaticRoute(route)
 		}
