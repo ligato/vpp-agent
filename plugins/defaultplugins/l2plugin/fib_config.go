@@ -388,14 +388,14 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID ui
 func (plugin *FIBConfigurator) validateFibRequirements(fib *l2.FibTableEntries_FibTableEntry, add bool) (cached bool, ifIdx, bdIdx uint32) {
 	// Check bridge domain presence
 	var ifFound, bdFound bool
-	ifIdx, _, bdFound = plugin.BdIndexes.LookupIdx(fib.BridgeDomain)
+	bdIdx, _, bdFound = plugin.BdIndexes.LookupIdx(fib.BridgeDomain)
 	if !bdFound {
 		plugin.Log.Infof("FIB entry %s is configured for bridge domain %s which does not exists",
 			fib.PhysAddress, fib.BridgeDomain)
 	}
 
 	// Check interface presence
-	bdIdx, _, ifFound = plugin.SwIfIndexes.LookupIdx(fib.OutgoingInterface)
+	ifIdx, _, ifFound = plugin.SwIfIndexes.LookupIdx(fib.OutgoingInterface)
 	if !ifFound {
 		plugin.Log.Infof("FIB entry %s is configured for interface %s which does not exists",
 			fib.PhysAddress, fib.OutgoingInterface)
