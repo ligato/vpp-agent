@@ -6,6 +6,32 @@ package ipsec
 import "git.fd.io/govpp.git/api"
 
 // IpsecSpdAddDel represents the VPP binary API message 'ipsec_spd_add_del'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 79:
+//
+//            "ipsec_spd_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            {
+//                "crc": "0x9ffdf5da"
+//            }
 //
 type IpsecSpdAddDel struct {
 	IsAdd uint8
@@ -19,13 +45,31 @@ func (*IpsecSpdAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSpdAddDel) GetCrcString() string {
-	return "9b42314b"
+	return "9ffdf5da"
 }
 func NewIpsecSpdAddDel() api.Message {
 	return &IpsecSpdAddDel{}
 }
 
 // IpsecSpdAddDelReply represents the VPP binary API message 'ipsec_spd_add_del_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 105:
+//
+//            "ipsec_spd_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecSpdAddDelReply struct {
 	Retval int32
@@ -38,13 +82,43 @@ func (*IpsecSpdAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSpdAddDelReply) GetCrcString() string {
-	return "c7439119"
+	return "e8d4e804"
 }
 func NewIpsecSpdAddDelReply() api.Message {
 	return &IpsecSpdAddDelReply{}
 }
 
 // IpsecInterfaceAddDelSpd represents the VPP binary API message 'ipsec_interface_add_del_spd'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 123:
+//
+//            "ipsec_interface_add_del_spd",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            {
+//                "crc": "0x1e3b8286"
+//            }
 //
 type IpsecInterfaceAddDelSpd struct {
 	IsAdd     uint8
@@ -59,13 +133,31 @@ func (*IpsecInterfaceAddDelSpd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecInterfaceAddDelSpd) GetCrcString() string {
-	return "52de89dc"
+	return "1e3b8286"
 }
 func NewIpsecInterfaceAddDelSpd() api.Message {
 	return &IpsecInterfaceAddDelSpd{}
 }
 
 // IpsecInterfaceAddDelSpdReply represents the VPP binary API message 'ipsec_interface_add_del_spd_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 153:
+//
+//            "ipsec_interface_add_del_spd_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecInterfaceAddDelSpdReply struct {
 	Retval int32
@@ -78,13 +170,103 @@ func (*IpsecInterfaceAddDelSpdReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecInterfaceAddDelSpdReply) GetCrcString() string {
-	return "977b7be9"
+	return "e8d4e804"
 }
 func NewIpsecInterfaceAddDelSpdReply() api.Message {
 	return &IpsecInterfaceAddDelSpdReply{}
 }
 
 // IpsecSpdAddDelEntry represents the VPP binary API message 'ipsec_spd_add_del_entry'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 171:
+//
+//            "ipsec_spd_add_del_entry",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            [
+//                "i32",
+//                "priority"
+//            ],
+//            [
+//                "u8",
+//                "is_outbound"
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "is_ip_any"
+//            ],
+//            [
+//                "u8",
+//                "remote_address_start",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "remote_address_stop",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "local_address_start",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "local_address_stop",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "protocol"
+//            ],
+//            [
+//                "u16",
+//                "remote_port_start"
+//            ],
+//            [
+//                "u16",
+//                "remote_port_stop"
+//            ],
+//            [
+//                "u16",
+//                "local_port_start"
+//            ],
+//            [
+//                "u16",
+//                "local_port_stop"
+//            ],
+//            [
+//                "u8",
+//                "policy"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            {
+//                "crc": "0x7687a364"
+//            }
 //
 type IpsecSpdAddDelEntry struct {
 	IsAdd              uint8
@@ -113,13 +295,31 @@ func (*IpsecSpdAddDelEntry) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSpdAddDelEntry) GetCrcString() string {
-	return "d85e0ed5"
+	return "7687a364"
 }
 func NewIpsecSpdAddDelEntry() api.Message {
 	return &IpsecSpdAddDelEntry{}
 }
 
 // IpsecSpdAddDelEntryReply represents the VPP binary API message 'ipsec_spd_add_del_entry_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 261:
+//
+//            "ipsec_spd_add_del_entry_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecSpdAddDelEntryReply struct {
 	Retval int32
@@ -132,13 +332,99 @@ func (*IpsecSpdAddDelEntryReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSpdAddDelEntryReply) GetCrcString() string {
-	return "f96c8b2d"
+	return "e8d4e804"
 }
 func NewIpsecSpdAddDelEntryReply() api.Message {
 	return &IpsecSpdAddDelEntryReply{}
 }
 
 // IpsecSadAddDelEntry represents the VPP binary API message 'ipsec_sad_add_del_entry'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 279:
+//
+//            "ipsec_sad_add_del_entry",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u32",
+//                "sad_id"
+//            ],
+//            [
+//                "u32",
+//                "spi"
+//            ],
+//            [
+//                "u8",
+//                "protocol"
+//            ],
+//            [
+//                "u8",
+//                "crypto_algorithm"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key_length"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "integrity_algorithm"
+//            ],
+//            [
+//                "u8",
+//                "integrity_key_length"
+//            ],
+//            [
+//                "u8",
+//                "integrity_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "use_extended_sequence_number"
+//            ],
+//            [
+//                "u8",
+//                "use_anti_replay"
+//            ],
+//            [
+//                "u8",
+//                "is_tunnel"
+//            ],
+//            [
+//                "u8",
+//                "is_tunnel_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "tunnel_src_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "tunnel_dst_address",
+//                16
+//            ],
+//            {
+//                "crc": "0x6271f533"
+//            }
 //
 type IpsecSadAddDelEntry struct {
 	IsAdd                     uint8
@@ -166,13 +452,31 @@ func (*IpsecSadAddDelEntry) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSadAddDelEntry) GetCrcString() string {
-	return "37d11da8"
+	return "6271f533"
 }
 func NewIpsecSadAddDelEntry() api.Message {
 	return &IpsecSadAddDelEntry{}
 }
 
 // IpsecSadAddDelEntryReply represents the VPP binary API message 'ipsec_sad_add_del_entry_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 365:
+//
+//            "ipsec_sad_add_del_entry_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecSadAddDelEntryReply struct {
 	Retval int32
@@ -185,13 +489,53 @@ func (*IpsecSadAddDelEntryReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSadAddDelEntryReply) GetCrcString() string {
-	return "5cf382d8"
+	return "e8d4e804"
 }
 func NewIpsecSadAddDelEntryReply() api.Message {
 	return &IpsecSadAddDelEntryReply{}
 }
 
 // IpsecSaSetKey represents the VPP binary API message 'ipsec_sa_set_key'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 383:
+//
+//            "ipsec_sa_set_key",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key_length"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "integrity_key_length"
+//            ],
+//            [
+//                "u8",
+//                "integrity_key",
+//                128
+//            ],
+//            {
+//                "crc": "0x93b4f08a"
+//            }
 //
 type IpsecSaSetKey struct {
 	SaID               uint32
@@ -208,13 +552,31 @@ func (*IpsecSaSetKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSaSetKey) GetCrcString() string {
-	return "99a67c60"
+	return "93b4f08a"
 }
 func NewIpsecSaSetKey() api.Message {
 	return &IpsecSaSetKey{}
 }
 
 // IpsecSaSetKeyReply represents the VPP binary API message 'ipsec_sa_set_key_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 423:
+//
+//            "ipsec_sa_set_key_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecSaSetKeyReply struct {
 	Retval int32
@@ -227,13 +589,40 @@ func (*IpsecSaSetKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSaSetKeyReply) GetCrcString() string {
-	return "5c5b7b46"
+	return "e8d4e804"
 }
 func NewIpsecSaSetKeyReply() api.Message {
 	return &IpsecSaSetKeyReply{}
 }
 
 // Ikev2ProfileAddDel represents the VPP binary API message 'ikev2_profile_add_del'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 441:
+//
+//            "ikev2_profile_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0x405b222e"
+//            }
 //
 type Ikev2ProfileAddDel struct {
 	Name  []byte `struc:"[64]byte"`
@@ -247,13 +636,31 @@ func (*Ikev2ProfileAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileAddDel) GetCrcString() string {
-	return "37b6925c"
+	return "405b222e"
 }
 func NewIkev2ProfileAddDel() api.Message {
 	return &Ikev2ProfileAddDel{}
 }
 
 // Ikev2ProfileAddDelReply represents the VPP binary API message 'ikev2_profile_add_del_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 468:
+//
+//            "ikev2_profile_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2ProfileAddDelReply struct {
 	Retval int32
@@ -266,13 +673,53 @@ func (*Ikev2ProfileAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2ProfileAddDelReply) GetCrcString() string {
-	return "7621f627"
+	return "e8d4e804"
 }
 func NewIkev2ProfileAddDelReply() api.Message {
 	return &Ikev2ProfileAddDelReply{}
 }
 
 // Ikev2ProfileSetAuth represents the VPP binary API message 'ikev2_profile_set_auth'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 486:
+//
+//            "ikev2_profile_set_auth",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "auth_method"
+//            ],
+//            [
+//                "u8",
+//                "is_hex"
+//            ],
+//            [
+//                "u32",
+//                "data_len"
+//            ],
+//            [
+//                "u8",
+//                "data",
+//                0
+//            ],
+//            {
+//                "crc": "0xe4fa45e3"
+//            }
 //
 type Ikev2ProfileSetAuth struct {
 	Name       []byte `struc:"[64]byte"`
@@ -289,13 +736,31 @@ func (*Ikev2ProfileSetAuth) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileSetAuth) GetCrcString() string {
-	return "a0747739"
+	return "e4fa45e3"
 }
 func NewIkev2ProfileSetAuth() api.Message {
 	return &Ikev2ProfileSetAuth{}
 }
 
 // Ikev2ProfileSetAuthReply represents the VPP binary API message 'ikev2_profile_set_auth_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 526:
+//
+//            "ikev2_profile_set_auth_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2ProfileSetAuthReply struct {
 	Retval int32
@@ -308,13 +773,53 @@ func (*Ikev2ProfileSetAuthReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2ProfileSetAuthReply) GetCrcString() string {
-	return "46083d00"
+	return "e8d4e804"
 }
 func NewIkev2ProfileSetAuthReply() api.Message {
 	return &Ikev2ProfileSetAuthReply{}
 }
 
 // Ikev2ProfileSetID represents the VPP binary API message 'ikev2_profile_set_id'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 544:
+//
+//            "ikev2_profile_set_id",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "is_local"
+//            ],
+//            [
+//                "u8",
+//                "id_type"
+//            ],
+//            [
+//                "u32",
+//                "data_len"
+//            ],
+//            [
+//                "u8",
+//                "data",
+//                0
+//            ],
+//            {
+//                "crc": "0x3d0143ba"
+//            }
 //
 type Ikev2ProfileSetID struct {
 	Name    []byte `struc:"[64]byte"`
@@ -331,13 +836,31 @@ func (*Ikev2ProfileSetID) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileSetID) GetCrcString() string {
-	return "0c2331dc"
+	return "3d0143ba"
 }
 func NewIkev2ProfileSetID() api.Message {
 	return &Ikev2ProfileSetID{}
 }
 
 // Ikev2ProfileSetIDReply represents the VPP binary API message 'ikev2_profile_set_id_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 584:
+//
+//            "ikev2_profile_set_id_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2ProfileSetIDReply struct {
 	Retval int32
@@ -350,13 +873,60 @@ func (*Ikev2ProfileSetIDReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2ProfileSetIDReply) GetCrcString() string {
-	return "66803be5"
+	return "e8d4e804"
 }
 func NewIkev2ProfileSetIDReply() api.Message {
 	return &Ikev2ProfileSetIDReply{}
 }
 
 // Ikev2ProfileSetTs represents the VPP binary API message 'ikev2_profile_set_ts'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 602:
+//
+//            "ikev2_profile_set_ts",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "is_local"
+//            ],
+//            [
+//                "u8",
+//                "proto"
+//            ],
+//            [
+//                "u16",
+//                "start_port"
+//            ],
+//            [
+//                "u16",
+//                "end_port"
+//            ],
+//            [
+//                "u32",
+//                "start_addr"
+//            ],
+//            [
+//                "u32",
+//                "end_addr"
+//            ],
+//            {
+//                "crc": "0x481aad89"
+//            }
 //
 type Ikev2ProfileSetTs struct {
 	Name      []byte `struc:"[64]byte"`
@@ -375,13 +945,31 @@ func (*Ikev2ProfileSetTs) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileSetTs) GetCrcString() string {
-	return "69587e0e"
+	return "481aad89"
 }
 func NewIkev2ProfileSetTs() api.Message {
 	return &Ikev2ProfileSetTs{}
 }
 
 // Ikev2ProfileSetTsReply represents the VPP binary API message 'ikev2_profile_set_ts_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 649:
+//
+//            "ikev2_profile_set_ts_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2ProfileSetTsReply struct {
 	Retval int32
@@ -394,13 +982,36 @@ func (*Ikev2ProfileSetTsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2ProfileSetTsReply) GetCrcString() string {
-	return "e1c33583"
+	return "e8d4e804"
 }
 func NewIkev2ProfileSetTsReply() api.Message {
 	return &Ikev2ProfileSetTsReply{}
 }
 
 // Ikev2SetLocalKey represents the VPP binary API message 'ikev2_set_local_key'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 667:
+//
+//            "ikev2_set_local_key",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "key_file",
+//                256
+//            ],
+//            {
+//                "crc": "0xe4996cd5"
+//            }
 //
 type Ikev2SetLocalKey struct {
 	KeyFile []byte `struc:"[256]byte"`
@@ -413,13 +1024,31 @@ func (*Ikev2SetLocalKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2SetLocalKey) GetCrcString() string {
-	return "a99b238a"
+	return "e4996cd5"
 }
 func NewIkev2SetLocalKey() api.Message {
 	return &Ikev2SetLocalKey{}
 }
 
 // Ikev2SetLocalKeyReply represents the VPP binary API message 'ikev2_set_local_key_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 690:
+//
+//            "ikev2_set_local_key_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2SetLocalKeyReply struct {
 	Retval int32
@@ -432,13 +1061,45 @@ func (*Ikev2SetLocalKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2SetLocalKeyReply) GetCrcString() string {
-	return "8f7a80e0"
+	return "e8d4e804"
 }
 func NewIkev2SetLocalKeyReply() api.Message {
 	return &Ikev2SetLocalKeyReply{}
 }
 
 // Ikev2SetResponder represents the VPP binary API message 'ikev2_set_responder'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 708:
+//
+//            "ikev2_set_responder",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "address",
+//                4
+//            ],
+//            {
+//                "crc": "0xa99996f3"
+//            }
 //
 type Ikev2SetResponder struct {
 	Name      []byte `struc:"[64]byte"`
@@ -453,13 +1114,31 @@ func (*Ikev2SetResponder) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2SetResponder) GetCrcString() string {
-	return "519141b4"
+	return "a99996f3"
 }
 func NewIkev2SetResponder() api.Message {
 	return &Ikev2SetResponder{}
 }
 
 // Ikev2SetResponderReply represents the VPP binary API message 'ikev2_set_responder_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 740:
+//
+//            "ikev2_set_responder_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2SetResponderReply struct {
 	Retval int32
@@ -472,13 +1151,52 @@ func (*Ikev2SetResponderReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2SetResponderReply) GetCrcString() string {
-	return "2f1a94d7"
+	return "e8d4e804"
 }
 func NewIkev2SetResponderReply() api.Message {
 	return &Ikev2SetResponderReply{}
 }
 
 // Ikev2SetIkeTransforms represents the VPP binary API message 'ikev2_set_ike_transforms'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 758:
+//
+//            "ikev2_set_ike_transforms",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u32",
+//                "crypto_alg"
+//            ],
+//            [
+//                "u32",
+//                "crypto_key_size"
+//            ],
+//            [
+//                "u32",
+//                "integ_alg"
+//            ],
+//            [
+//                "u32",
+//                "dh_group"
+//            ],
+//            {
+//                "crc": "0x919f5efd"
+//            }
 //
 type Ikev2SetIkeTransforms struct {
 	Name          []byte `struc:"[64]byte"`
@@ -495,13 +1213,31 @@ func (*Ikev2SetIkeTransforms) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2SetIkeTransforms) GetCrcString() string {
-	return "f0bf018e"
+	return "919f5efd"
 }
 func NewIkev2SetIkeTransforms() api.Message {
 	return &Ikev2SetIkeTransforms{}
 }
 
 // Ikev2SetIkeTransformsReply represents the VPP binary API message 'ikev2_set_ike_transforms_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 797:
+//
+//            "ikev2_set_ike_transforms_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2SetIkeTransformsReply struct {
 	Retval int32
@@ -514,13 +1250,52 @@ func (*Ikev2SetIkeTransformsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2SetIkeTransformsReply) GetCrcString() string {
-	return "18883302"
+	return "e8d4e804"
 }
 func NewIkev2SetIkeTransformsReply() api.Message {
 	return &Ikev2SetIkeTransformsReply{}
 }
 
 // Ikev2SetEspTransforms represents the VPP binary API message 'ikev2_set_esp_transforms'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 815:
+//
+//            "ikev2_set_esp_transforms",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u32",
+//                "crypto_alg"
+//            ],
+//            [
+//                "u32",
+//                "crypto_key_size"
+//            ],
+//            [
+//                "u32",
+//                "integ_alg"
+//            ],
+//            [
+//                "u32",
+//                "dh_group"
+//            ],
+//            {
+//                "crc": "0x919f5efd"
+//            }
 //
 type Ikev2SetEspTransforms struct {
 	Name          []byte `struc:"[64]byte"`
@@ -537,13 +1312,31 @@ func (*Ikev2SetEspTransforms) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2SetEspTransforms) GetCrcString() string {
-	return "dadd693a"
+	return "919f5efd"
 }
 func NewIkev2SetEspTransforms() api.Message {
 	return &Ikev2SetEspTransforms{}
 }
 
 // Ikev2SetEspTransformsReply represents the VPP binary API message 'ikev2_set_esp_transforms_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 854:
+//
+//            "ikev2_set_esp_transforms_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2SetEspTransformsReply struct {
 	Retval int32
@@ -556,13 +1349,52 @@ func (*Ikev2SetEspTransformsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2SetEspTransformsReply) GetCrcString() string {
-	return "9f3a1a67"
+	return "e8d4e804"
 }
 func NewIkev2SetEspTransformsReply() api.Message {
 	return &Ikev2SetEspTransformsReply{}
 }
 
 // Ikev2SetSaLifetime represents the VPP binary API message 'ikev2_set_sa_lifetime'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 872:
+//
+//            "ikev2_set_sa_lifetime",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            [
+//                "u64",
+//                "lifetime"
+//            ],
+//            [
+//                "u32",
+//                "lifetime_jitter"
+//            ],
+//            [
+//                "u32",
+//                "handover"
+//            ],
+//            [
+//                "u64",
+//                "lifetime_maxdata"
+//            ],
+//            {
+//                "crc": "0x46d31203"
+//            }
 //
 type Ikev2SetSaLifetime struct {
 	Name            []byte `struc:"[64]byte"`
@@ -579,13 +1411,31 @@ func (*Ikev2SetSaLifetime) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2SetSaLifetime) GetCrcString() string {
-	return "61b715bf"
+	return "46d31203"
 }
 func NewIkev2SetSaLifetime() api.Message {
 	return &Ikev2SetSaLifetime{}
 }
 
 // Ikev2SetSaLifetimeReply represents the VPP binary API message 'ikev2_set_sa_lifetime_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 911:
+//
+//            "ikev2_set_sa_lifetime_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2SetSaLifetimeReply struct {
 	Retval int32
@@ -598,13 +1448,36 @@ func (*Ikev2SetSaLifetimeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2SetSaLifetimeReply) GetCrcString() string {
-	return "7f73b9e3"
+	return "e8d4e804"
 }
 func NewIkev2SetSaLifetimeReply() api.Message {
 	return &Ikev2SetSaLifetimeReply{}
 }
 
 // Ikev2InitiateSaInit represents the VPP binary API message 'ikev2_initiate_sa_init'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 929:
+//
+//            "ikev2_initiate_sa_init",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "name",
+//                64
+//            ],
+//            {
+//                "crc": "0x0cb71b0e"
+//            }
 //
 type Ikev2InitiateSaInit struct {
 	Name []byte `struc:"[64]byte"`
@@ -617,13 +1490,31 @@ func (*Ikev2InitiateSaInit) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2InitiateSaInit) GetCrcString() string {
-	return "991b95f7"
+	return "0cb71b0e"
 }
 func NewIkev2InitiateSaInit() api.Message {
 	return &Ikev2InitiateSaInit{}
 }
 
 // Ikev2InitiateSaInitReply represents the VPP binary API message 'ikev2_initiate_sa_init_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 952:
+//
+//            "ikev2_initiate_sa_init_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2InitiateSaInitReply struct {
 	Retval int32
@@ -636,13 +1527,35 @@ func (*Ikev2InitiateSaInitReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2InitiateSaInitReply) GetCrcString() string {
-	return "66860cf0"
+	return "e8d4e804"
 }
 func NewIkev2InitiateSaInitReply() api.Message {
 	return &Ikev2InitiateSaInitReply{}
 }
 
 // Ikev2InitiateDelIkeSa represents the VPP binary API message 'ikev2_initiate_del_ike_sa'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 970:
+//
+//            "ikev2_initiate_del_ike_sa",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "ispi"
+//            ],
+//            {
+//                "crc": "0x8d125bdd"
+//            }
 //
 type Ikev2InitiateDelIkeSa struct {
 	Ispi uint64
@@ -655,13 +1568,31 @@ func (*Ikev2InitiateDelIkeSa) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2InitiateDelIkeSa) GetCrcString() string {
-	return "2816f367"
+	return "8d125bdd"
 }
 func NewIkev2InitiateDelIkeSa() api.Message {
 	return &Ikev2InitiateDelIkeSa{}
 }
 
 // Ikev2InitiateDelIkeSaReply represents the VPP binary API message 'ikev2_initiate_del_ike_sa_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 992:
+//
+//            "ikev2_initiate_del_ike_sa_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2InitiateDelIkeSaReply struct {
 	Retval int32
@@ -674,13 +1605,35 @@ func (*Ikev2InitiateDelIkeSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2InitiateDelIkeSaReply) GetCrcString() string {
-	return "a5df9a20"
+	return "e8d4e804"
 }
 func NewIkev2InitiateDelIkeSaReply() api.Message {
 	return &Ikev2InitiateDelIkeSaReply{}
 }
 
 // Ikev2InitiateDelChildSa represents the VPP binary API message 'ikev2_initiate_del_child_sa'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1010:
+//
+//            "ikev2_initiate_del_child_sa",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "ispi"
+//            ],
+//            {
+//                "crc": "0x7f004d2e"
+//            }
 //
 type Ikev2InitiateDelChildSa struct {
 	Ispi uint32
@@ -693,13 +1646,31 @@ func (*Ikev2InitiateDelChildSa) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2InitiateDelChildSa) GetCrcString() string {
-	return "26eaba1d"
+	return "7f004d2e"
 }
 func NewIkev2InitiateDelChildSa() api.Message {
 	return &Ikev2InitiateDelChildSa{}
 }
 
 // Ikev2InitiateDelChildSaReply represents the VPP binary API message 'ikev2_initiate_del_child_sa_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1032:
+//
+//            "ikev2_initiate_del_child_sa_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2InitiateDelChildSaReply struct {
 	Retval int32
@@ -712,13 +1683,35 @@ func (*Ikev2InitiateDelChildSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2InitiateDelChildSaReply) GetCrcString() string {
-	return "b31728ac"
+	return "e8d4e804"
 }
 func NewIkev2InitiateDelChildSaReply() api.Message {
 	return &Ikev2InitiateDelChildSaReply{}
 }
 
 // Ikev2InitiateRekeyChildSa represents the VPP binary API message 'ikev2_initiate_rekey_child_sa'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1050:
+//
+//            "ikev2_initiate_rekey_child_sa",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "ispi"
+//            ],
+//            {
+//                "crc": "0x7f004d2e"
+//            }
 //
 type Ikev2InitiateRekeyChildSa struct {
 	Ispi uint32
@@ -731,13 +1724,31 @@ func (*Ikev2InitiateRekeyChildSa) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2InitiateRekeyChildSa) GetCrcString() string {
-	return "48a0ad23"
+	return "7f004d2e"
 }
 func NewIkev2InitiateRekeyChildSa() api.Message {
 	return &Ikev2InitiateRekeyChildSa{}
 }
 
 // Ikev2InitiateRekeyChildSaReply represents the VPP binary API message 'ikev2_initiate_rekey_child_sa_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1072:
+//
+//            "ikev2_initiate_rekey_child_sa_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type Ikev2InitiateRekeyChildSaReply struct {
 	Retval int32
@@ -750,13 +1761,39 @@ func (*Ikev2InitiateRekeyChildSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Ikev2InitiateRekeyChildSaReply) GetCrcString() string {
-	return "7e5a8a19"
+	return "e8d4e804"
 }
 func NewIkev2InitiateRekeyChildSaReply() api.Message {
 	return &Ikev2InitiateRekeyChildSaReply{}
 }
 
 // IpsecSpdDump represents the VPP binary API message 'ipsec_spd_dump'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1090:
+//
+//            "ipsec_spd_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            {
+//                "crc": "0xafefbf7d"
+//            }
 //
 type IpsecSpdDump struct {
 	SpdID uint32
@@ -770,13 +1807,99 @@ func (*IpsecSpdDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSpdDump) GetCrcString() string {
-	return "5e9ae88e"
+	return "afefbf7d"
 }
 func NewIpsecSpdDump() api.Message {
 	return &IpsecSpdDump{}
 }
 
 // IpsecSpdDetails represents the VPP binary API message 'ipsec_spd_details'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1116:
+//
+//            "ipsec_spd_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            [
+//                "i32",
+//                "priority"
+//            ],
+//            [
+//                "u8",
+//                "is_outbound"
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "local_start_addr",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "local_stop_addr",
+//                16
+//            ],
+//            [
+//                "u16",
+//                "local_start_port"
+//            ],
+//            [
+//                "u16",
+//                "local_stop_port"
+//            ],
+//            [
+//                "u8",
+//                "remote_start_addr",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "remote_stop_addr",
+//                16
+//            ],
+//            [
+//                "u16",
+//                "remote_start_port"
+//            ],
+//            [
+//                "u16",
+//                "remote_stop_port"
+//            ],
+//            [
+//                "u8",
+//                "protocol"
+//            ],
+//            [
+//                "u8",
+//                "policy"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            [
+//                "u64",
+//                "bytes"
+//            ],
+//            [
+//                "u64",
+//                "packets"
+//            ],
+//            {
+//                "crc": "0x1560895d"
+//            }
 //
 type IpsecSpdDetails struct {
 	SpdID           uint32
@@ -805,13 +1928,105 @@ func (*IpsecSpdDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSpdDetails) GetCrcString() string {
-	return "6f7821b0"
+	return "1560895d"
 }
 func NewIpsecSpdDetails() api.Message {
 	return &IpsecSpdDetails{}
 }
 
 // IpsecTunnelIfAddDel represents the VPP binary API message 'ipsec_tunnel_if_add_del'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1202:
+//
+//            "ipsec_tunnel_if_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u8",
+//                "esn"
+//            ],
+//            [
+//                "u8",
+//                "anti_replay"
+//            ],
+//            [
+//                "u8",
+//                "local_ip",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "remote_ip",
+//                4
+//            ],
+//            [
+//                "u32",
+//                "local_spi"
+//            ],
+//            [
+//                "u32",
+//                "remote_spi"
+//            ],
+//            [
+//                "u8",
+//                "crypto_alg"
+//            ],
+//            [
+//                "u8",
+//                "local_crypto_key_len"
+//            ],
+//            [
+//                "u8",
+//                "local_crypto_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "remote_crypto_key_len"
+//            ],
+//            [
+//                "u8",
+//                "remote_crypto_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "integ_alg"
+//            ],
+//            [
+//                "u8",
+//                "local_integ_key_len"
+//            ],
+//            [
+//                "u8",
+//                "local_integ_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "remote_integ_key_len"
+//            ],
+//            [
+//                "u8",
+//                "remote_integ_key",
+//                128
+//            ],
+//            {
+//                "crc": "0xd9a582bc"
+//            }
 //
 type IpsecTunnelIfAddDel struct {
 	IsAdd              uint8
@@ -840,13 +2055,35 @@ func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "8218980f"
+	return "d9a582bc"
 }
 func NewIpsecTunnelIfAddDel() api.Message {
 	return &IpsecTunnelIfAddDel{}
 }
 
 // IpsecTunnelIfAddDelReply represents the VPP binary API message 'ipsec_tunnel_if_add_del_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1294:
+//
+//            "ipsec_tunnel_if_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0xfda5941f"
+//            }
 //
 type IpsecTunnelIfAddDelReply struct {
 	Retval    int32
@@ -860,13 +2097,35 @@ func (*IpsecTunnelIfAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecTunnelIfAddDelReply) GetCrcString() string {
-	return "bf5ebd7c"
+	return "fda5941f"
 }
 func NewIpsecTunnelIfAddDelReply() api.Message {
 	return &IpsecTunnelIfAddDelReply{}
 }
 
 // IpsecSaDump represents the VPP binary API message 'ipsec_sa_dump'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1316:
+//
+//            "ipsec_sa_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            {
+//                "crc": "0x2076c2f4"
+//            }
 //
 type IpsecSaDump struct {
 	SaID uint32
@@ -879,13 +2138,115 @@ func (*IpsecSaDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSaDump) GetCrcString() string {
-	return "c67387b5"
+	return "2076c2f4"
 }
 func NewIpsecSaDump() api.Message {
 	return &IpsecSaDump{}
 }
 
 // IpsecSaDetails represents the VPP binary API message 'ipsec_sa_details'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1338:
+//
+//            "ipsec_sa_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "spi"
+//            ],
+//            [
+//                "u8",
+//                "protocol"
+//            ],
+//            [
+//                "u8",
+//                "crypto_alg"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key_len"
+//            ],
+//            [
+//                "u8",
+//                "crypto_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "integ_alg"
+//            ],
+//            [
+//                "u8",
+//                "integ_key_len"
+//            ],
+//            [
+//                "u8",
+//                "integ_key",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "use_esn"
+//            ],
+//            [
+//                "u8",
+//                "use_anti_replay"
+//            ],
+//            [
+//                "u8",
+//                "is_tunnel"
+//            ],
+//            [
+//                "u8",
+//                "is_tunnel_ip6"
+//            ],
+//            [
+//                "u8",
+//                "tunnel_src_addr",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "tunnel_dst_addr",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "salt"
+//            ],
+//            [
+//                "u64",
+//                "seq_outbound"
+//            ],
+//            [
+//                "u64",
+//                "last_seq_inbound"
+//            ],
+//            [
+//                "u64",
+//                "replay_window"
+//            ],
+//            [
+//                "u64",
+//                "total_data_size"
+//            ],
+//            {
+//                "crc": "0x77fa2e6b"
+//            }
 //
 type IpsecSaDetails struct {
 	SaID           uint32
@@ -918,13 +2279,52 @@ func (*IpsecSaDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSaDetails) GetCrcString() string {
-	return "74c88bdf"
+	return "77fa2e6b"
 }
 func NewIpsecSaDetails() api.Message {
 	return &IpsecSaDetails{}
 }
 
 // IpsecTunnelIfSetKey represents the VPP binary API message 'ipsec_tunnel_if_set_key'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1440:
+//
+//            "ipsec_tunnel_if_set_key",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "key_type"
+//            ],
+//            [
+//                "u8",
+//                "alg"
+//            ],
+//            [
+//                "u8",
+//                "key_len"
+//            ],
+//            [
+//                "u8",
+//                "key",
+//                128
+//            ],
+//            {
+//                "crc": "0x326169a8"
+//            }
 //
 type IpsecTunnelIfSetKey struct {
 	SwIfIndex uint32
@@ -941,13 +2341,31 @@ func (*IpsecTunnelIfSetKey) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecTunnelIfSetKey) GetCrcString() string {
-	return "b0df024c"
+	return "326169a8"
 }
 func NewIpsecTunnelIfSetKey() api.Message {
 	return &IpsecTunnelIfSetKey{}
 }
 
 // IpsecTunnelIfSetKeyReply represents the VPP binary API message 'ipsec_tunnel_if_set_key_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1479:
+//
+//            "ipsec_tunnel_if_set_key_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecTunnelIfSetKeyReply struct {
 	Retval int32
@@ -960,13 +2378,43 @@ func (*IpsecTunnelIfSetKeyReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecTunnelIfSetKeyReply) GetCrcString() string {
-	return "9d12b5bc"
+	return "e8d4e804"
 }
 func NewIpsecTunnelIfSetKeyReply() api.Message {
 	return &IpsecTunnelIfSetKeyReply{}
 }
 
 // IpsecTunnelIfSetSa represents the VPP binary API message 'ipsec_tunnel_if_set_sa'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1497:
+//
+//            "ipsec_tunnel_if_set_sa",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "sa_id"
+//            ],
+//            [
+//                "u8",
+//                "is_outbound"
+//            ],
+//            {
+//                "crc": "0x6ab567f2"
+//            }
 //
 type IpsecTunnelIfSetSa struct {
 	SwIfIndex  uint32
@@ -981,13 +2429,31 @@ func (*IpsecTunnelIfSetSa) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecTunnelIfSetSa) GetCrcString() string {
-	return "bfc45218"
+	return "6ab567f2"
 }
 func NewIpsecTunnelIfSetSa() api.Message {
 	return &IpsecTunnelIfSetSa{}
 }
 
 // IpsecTunnelIfSetSaReply represents the VPP binary API message 'ipsec_tunnel_if_set_sa_reply'.
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1527:
+//
+//            "ipsec_tunnel_if_set_sa_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type IpsecTunnelIfSetSaReply struct {
 	Retval int32
@@ -1000,7 +2466,7 @@ func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecTunnelIfSetSaReply) GetCrcString() string {
-	return "dbe0f959"
+	return "e8d4e804"
 }
 func NewIpsecTunnelIfSetSaReply() api.Message {
 	return &IpsecTunnelIfSetSaReply{}
