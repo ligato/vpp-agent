@@ -227,6 +227,9 @@ func (c *Connection) LookupByID(ID uint16) (string, error) {
 		return "", errors.New("nil connection passed in")
 	}
 
+	c.msgIDsLock.Lock()
+	defer c.msgIDsLock.Unlock()
+
 	for key, id := range c.msgIDs {
 		if id == ID {
 			return key, nil
