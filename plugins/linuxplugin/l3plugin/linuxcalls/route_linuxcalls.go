@@ -25,7 +25,7 @@ import (
 
 // AddStaticRoute creates the new static route
 func AddStaticRoute(name string, route *netlink.Route, log logging.Logger, timeLog measure.StopWatchEntry) error {
-	log.Debugf("Creating the new static route %v", name)
+	log.Debugf("Creating the new static route %s", name)
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -38,7 +38,7 @@ func AddStaticRoute(name string, route *netlink.Route, log logging.Logger, timeL
 
 // ModifyStaticRoute removes the static route
 func ModifyStaticRoute(name string, route *netlink.Route, log logging.Logger, timeLog measure.StopWatchEntry) error {
-	log.Debugf("Updating static route %v", name)
+	log.Debugf("Updating static route %s", name)
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -51,7 +51,7 @@ func ModifyStaticRoute(name string, route *netlink.Route, log logging.Logger, ti
 
 // DeleteStaticRoute removes the static route
 func DeleteStaticRoute(name string, route *netlink.Route, log logging.Logger, timeLog measure.StopWatchEntry) error {
-	log.Debugf("Removing static route %v", name)
+	log.Debugf("Removing static route %s", name)
 	start := time.Now()
 	defer func() {
 		if timeLog != nil {
@@ -60,18 +60,4 @@ func DeleteStaticRoute(name string, route *netlink.Route, log logging.Logger, ti
 	}()
 
 	return netlink.RouteDel(route)
-}
-
-// ReadStaticRoutes reads static routes
-// // <link> and <family> parameters works as filters, if they are set to nil/zero values, all routes are returned
-func ReadStaticRoutes(link netlink.Link, family int, log logging.Logger, timeLog measure.StopWatchEntry) ([]netlink.Route, error) {
-	log.Debug("Reading static routes")
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
-
-	return netlink.RouteList(link, family)
 }
