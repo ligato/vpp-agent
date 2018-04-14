@@ -31,7 +31,11 @@ required = [
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
-  revision = "e7cec91c8720eddd1ccff3403099b60ee3da0ccd"
+  revision = "0456d22f67865977065886ed58778621b21b7ede"
+
+[[constraint]]
+  name = "github.com/ligato/cn-infra"
+  revision = "ebc1ecb08236c7c07de1b288b3f42d493d5ef1ea"
 
 [[constraint]]
   branch = "master"
@@ -56,10 +60,6 @@ required = [
 [[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.1"
-
-[[constraint]]
-  name = "github.com/ligato/cn-infra"
-  revision = "ebc1ecb08236c7c07de1b288b3f42d493d5ef1ea"
 
 [[constraint]]
   branch = "master"
