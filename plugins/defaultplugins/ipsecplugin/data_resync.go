@@ -3,7 +3,7 @@ package ipsecplugin
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 
 // Resync writes missing IPSec configs to the VPP and removes obsolete ones.
-func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA) error {
+func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA, tunnels []*ipsec.TunnelInterfaces_Tunnel) error {
 	plugin.Log.Debug("RESYNC IPSec begin.")
 
 	defer func() {
@@ -23,6 +23,13 @@ func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SP
 
 	for _, spd := range spds {
 		if err := plugin.ConfigureSPD(spd); err != nil {
+			plugin.Log.Error(err)
+			continue
+		}
+	}
+
+	for _, tunnel := range tunnels {
+		if err := plugin.ConfigureTunnel(tunnel); err != nil {
 			plugin.Log.Error(err)
 			continue
 		}

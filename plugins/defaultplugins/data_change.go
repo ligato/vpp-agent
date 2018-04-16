@@ -299,6 +299,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			} else {
 				return false, err
 			}
+		} else if strings.HasPrefix(key, ipsec.KeyPrefixTunnel) {
+			var value, prevValue ipsec.TunnelInterfaces_Tunnel
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecTunnel(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
 		}
 	} else {
 		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
@@ -551,7 +563,7 @@ func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.Secu
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.ipsecConfigurator.DeleteSA(prevValue)
@@ -559,4 +571,16 @@ func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.Secur
 		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
 	}
 	return plugin.ipsecConfigurator.ConfigureSA(value)
+}
+
+// dataChangeIPSecTunnel propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.TunnelInterfaces_Tunnel, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecTunnel diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteTunnel(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifyTunnel(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureTunnel(value)
 }

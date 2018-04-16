@@ -134,20 +134,20 @@ func (s *suiteMemif) TC04() {
 var IPsecSA10 = ipsec.SecurityAssociations_SA{
 	Name:      "sa10",
 	Spi:       1001,
-	Protocol:  ipsec.SecurityAssociations_SA_ESP,
-	CryptoAlg: ipsec.SecurityAssociations_SA_AES_CBC_128,
+	Protocol:  ipsec.IPSecProtocol_ESP,
+	CryptoAlg: ipsec.CryptoAlgorithm_AES_CBC_128,
 	CryptoKey: "4a506a794f574265564551694d653768",
-	IntegAlg:  ipsec.SecurityAssociations_SA_SHA1_96,
+	IntegAlg:  ipsec.IntegAlgorithm_SHA1_96,
 	IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 }
 
 var IPsecSA20 = ipsec.SecurityAssociations_SA{
 	Name:      "sa20",
 	Spi:       1000,
-	Protocol:  ipsec.SecurityAssociations_SA_ESP,
-	CryptoAlg: ipsec.SecurityAssociations_SA_AES_CBC_128,
+	Protocol:  ipsec.IPSecProtocol_ESP,
+	CryptoAlg: ipsec.CryptoAlgorithm_AES_CBC_128,
 	CryptoKey: "4a506a794f574265564551694d653768",
-	IntegAlg:  ipsec.SecurityAssociations_SA_SHA1_96,
+	IntegAlg:  ipsec.IntegAlgorithm_SHA1_96,
 	IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 }
 

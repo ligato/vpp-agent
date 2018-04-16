@@ -77,6 +77,8 @@ type DataResyncReq struct {
 	IPSecSPDs []*ipsec.SecurityPolicyDatabases_SPD
 	// IPSecSAs is a list of all IPSec Security Associations expected to be in VPP after RESYNC
 	IPSecSAs []*ipsec.SecurityAssociations_SA
+	// IPSecTunnels is a list of all IPSec Tunnel interfaces expected to be in VPP after RESYNC
+	IPSecTunnels []*ipsec.TunnelInterfaces_Tunnel
 }
 
 // NewDataResyncReq is a constructor.
@@ -102,6 +104,7 @@ func NewDataResyncReq() *DataResyncReq {
 		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
 		IPSecSPDs:           []*ipsec.SecurityPolicyDatabases_SPD{},
 		IPSecSAs:            []*ipsec.SecurityAssociations_SA{},
+		IPSecTunnels:        []*ipsec.TunnelInterfaces_Tunnel{},
 	}
 }
 
@@ -196,7 +199,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
 		resyncErrs = append(resyncErrs, err)
 	}
-	if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs); err != nil {
+	if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
 		resyncErrs = append(resyncErrs, err)
 	}
 	// log errors if any
@@ -627,8 +630,13 @@ func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (
 					req.IPSecSAs = append(req.IPSecSAs, value)
 					num++
 				}
+			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixTunnel) {
+				value := &ipsec.TunnelInterfaces_Tunnel{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecTunnels = append(req.IPSecTunnels, value)
+					num++
+				}
 			}
-
 		}
 	}
 	return
