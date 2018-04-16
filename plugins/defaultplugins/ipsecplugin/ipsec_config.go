@@ -297,6 +297,10 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 	plugin.SwIfIndexes.RegisterName(tunnel.Name, ifIdx, nil)
 	plugin.Log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
 
+	if err := iface_vppcalls.SetInterfaceVRF(ifIdx, tunnel.Vrf, plugin.Log, plugin.vppCh); err != nil {
+		return err
+	}
+
 	ipAddrs, err := addrs.StrAddrsToStruct(tunnel.IpAddresses)
 	if err != nil {
 		return err
