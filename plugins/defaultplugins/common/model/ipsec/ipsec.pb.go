@@ -161,6 +161,10 @@ type TunnelInterfaces_Tunnel struct {
 	IntegAlg        IntegAlgorithm  `protobuf:"varint,11,opt,name=integ_alg,proto3,enum=ipsec.IntegAlgorithm" json:"integ_alg,omitempty"`
 	LocalIntegKey   string          `protobuf:"bytes,12,opt,name=local_integ_key,proto3" json:"local_integ_key,omitempty"`
 	RemoteIntegKey  string          `protobuf:"bytes,13,opt,name=remote_integ_key,proto3" json:"remote_integ_key,omitempty"`
+	// Extra fields related to interface
+	Enabled     bool     `protobuf:"varint,14,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	IpAddresses []string `protobuf:"bytes,15,rep,name=ip_addresses" json:"ip_addresses,omitempty"`
+	Vrf         uint32   `protobuf:"varint,16,opt,name=vrf,proto3" json:"vrf,omitempty"`
 }
 
 func (m *TunnelInterfaces_Tunnel) Reset()         { *m = TunnelInterfaces_Tunnel{} }

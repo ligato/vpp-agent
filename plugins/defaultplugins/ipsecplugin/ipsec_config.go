@@ -23,6 +23,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
@@ -296,9 +297,22 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 	plugin.SwIfIndexes.RegisterName(tunnel.Name, ifIdx, nil)
 	plugin.Log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
 
-	if err := iface_vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
-		plugin.Log.Debugf("setting interface up failed: %v", err)
+	ipAddrs, err := addrs.StrAddrsToStruct(tunnel.IpAddresses)
+	if err != nil {
 		return err
+	}
+	for _, ip := range ipAddrs {
+		if err := iface_vppcalls.AddInterfaceIP(ifIdx, ip, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("adding interface IP address failed: %v", err)
+			return err
+		}
+	}
+
+	if tunnel.Enabled {
+		if err := iface_vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Debugf("setting interface up failed: %v", err)
+			return err
+		}
 	}
 
 	return nil
