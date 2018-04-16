@@ -27,8 +27,9 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	iface_vppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
+	vppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -294,6 +295,11 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 
 	plugin.SwIfIndexes.RegisterName(tunnel.Name, ifIdx, nil)
 	plugin.Log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
+
+	if err := iface_vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+		plugin.Log.Debugf("setting interface up failed: %v", err)
+		return err
+	}
 
 	return nil
 }
