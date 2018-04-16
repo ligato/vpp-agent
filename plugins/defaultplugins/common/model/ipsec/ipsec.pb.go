@@ -9,6 +9,7 @@ It is generated from these files:
 	ipsec.proto
 
 It has these top-level messages:
+	TunnelInterfaces
 	SecurityPolicyDatabases
 	SecurityAssociations
 */
@@ -18,6 +19,90 @@ import proto "github.com/gogo/protobuf/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+
+// IPSec protocol
+type IPSecProtocol int32
+
+const (
+	IPSecProtocol_AH  IPSecProtocol = 0
+	IPSecProtocol_ESP IPSecProtocol = 1
+)
+
+var IPSecProtocol_name = map[int32]string{
+	0: "AH",
+	1: "ESP",
+}
+var IPSecProtocol_value = map[string]int32{
+	"AH":  0,
+	"ESP": 1,
+}
+
+func (x IPSecProtocol) String() string {
+	return proto.EnumName(IPSecProtocol_name, int32(x))
+}
+
+// Cryptographic algorithm for encryption
+type CryptoAlgorithm int32
+
+const (
+	CryptoAlgorithm_NONE_CRYPTO CryptoAlgorithm = 0
+	CryptoAlgorithm_AES_CBC_128 CryptoAlgorithm = 1
+	CryptoAlgorithm_AES_CBC_192 CryptoAlgorithm = 2
+	CryptoAlgorithm_AES_CBC_256 CryptoAlgorithm = 3
+)
+
+var CryptoAlgorithm_name = map[int32]string{
+	0: "NONE_CRYPTO",
+	1: "AES_CBC_128",
+	2: "AES_CBC_192",
+	3: "AES_CBC_256",
+}
+var CryptoAlgorithm_value = map[string]int32{
+	"NONE_CRYPTO": 0,
+	"AES_CBC_128": 1,
+	"AES_CBC_192": 2,
+	"AES_CBC_256": 3,
+}
+
+func (x CryptoAlgorithm) String() string {
+	return proto.EnumName(CryptoAlgorithm_name, int32(x))
+}
+
+// Cryptographic algorithm for authentication
+type IntegAlgorithm int32
+
+const (
+	IntegAlgorithm_NONE_INTEG  IntegAlgorithm = 0
+	IntegAlgorithm_MD5_96      IntegAlgorithm = 1
+	IntegAlgorithm_SHA1_96     IntegAlgorithm = 2
+	IntegAlgorithm_SHA_256_96  IntegAlgorithm = 3
+	IntegAlgorithm_SHA_256_128 IntegAlgorithm = 4
+	IntegAlgorithm_SHA_384_192 IntegAlgorithm = 5
+	IntegAlgorithm_SHA_512_256 IntegAlgorithm = 6
+)
+
+var IntegAlgorithm_name = map[int32]string{
+	0: "NONE_INTEG",
+	1: "MD5_96",
+	2: "SHA1_96",
+	3: "SHA_256_96",
+	4: "SHA_256_128",
+	5: "SHA_384_192",
+	6: "SHA_512_256",
+}
+var IntegAlgorithm_value = map[string]int32{
+	"NONE_INTEG":  0,
+	"MD5_96":      1,
+	"SHA1_96":     2,
+	"SHA_256_96":  3,
+	"SHA_256_128": 4,
+	"SHA_384_192": 5,
+	"SHA_512_256": 6,
+}
+
+func (x IntegAlgorithm) String() string {
+	return proto.EnumName(IntegAlgorithm_name, int32(x))
+}
 
 // Policy action
 type SecurityPolicyDatabases_SPD_PolicyEntry_Action int32
@@ -46,89 +131,41 @@ func (x SecurityPolicyDatabases_SPD_PolicyEntry_Action) String() string {
 	return proto.EnumName(SecurityPolicyDatabases_SPD_PolicyEntry_Action_name, int32(x))
 }
 
-// IPSec protocol
-type SecurityAssociations_SA_IPSecProtocol int32
-
-const (
-	SecurityAssociations_SA_AH  SecurityAssociations_SA_IPSecProtocol = 0
-	SecurityAssociations_SA_ESP SecurityAssociations_SA_IPSecProtocol = 1
-)
-
-var SecurityAssociations_SA_IPSecProtocol_name = map[int32]string{
-	0: "AH",
-	1: "ESP",
-}
-var SecurityAssociations_SA_IPSecProtocol_value = map[string]int32{
-	"AH":  0,
-	"ESP": 1,
+// Tunnel Interfaces
+type TunnelInterfaces struct {
+	Tunnels []*TunnelInterfaces_Tunnel `protobuf:"bytes,1,rep,name=tunnels" json:"tunnels,omitempty"`
 }
 
-func (x SecurityAssociations_SA_IPSecProtocol) String() string {
-	return proto.EnumName(SecurityAssociations_SA_IPSecProtocol_name, int32(x))
+func (m *TunnelInterfaces) Reset()         { *m = TunnelInterfaces{} }
+func (m *TunnelInterfaces) String() string { return proto.CompactTextString(m) }
+func (*TunnelInterfaces) ProtoMessage()    {}
+
+func (m *TunnelInterfaces) GetTunnels() []*TunnelInterfaces_Tunnel {
+	if m != nil {
+		return m.Tunnels
+	}
+	return nil
 }
 
-// Cryptographic algorithm for encryption
-type SecurityAssociations_SA_CryptoAlgorithm int32
-
-const (
-	SecurityAssociations_SA_NONE_CRYPTO SecurityAssociations_SA_CryptoAlgorithm = 0
-	SecurityAssociations_SA_AES_CBC_128 SecurityAssociations_SA_CryptoAlgorithm = 1
-	SecurityAssociations_SA_AES_CBC_192 SecurityAssociations_SA_CryptoAlgorithm = 2
-	SecurityAssociations_SA_AES_CBC_256 SecurityAssociations_SA_CryptoAlgorithm = 3
-)
-
-var SecurityAssociations_SA_CryptoAlgorithm_name = map[int32]string{
-	0: "NONE_CRYPTO",
-	1: "AES_CBC_128",
-	2: "AES_CBC_192",
-	3: "AES_CBC_256",
-}
-var SecurityAssociations_SA_CryptoAlgorithm_value = map[string]int32{
-	"NONE_CRYPTO": 0,
-	"AES_CBC_128": 1,
-	"AES_CBC_192": 2,
-	"AES_CBC_256": 3,
+type TunnelInterfaces_Tunnel struct {
+	Name            string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Esn             bool            `protobuf:"varint,2,opt,name=esn,proto3" json:"esn,omitempty"`
+	AntiReplay      bool            `protobuf:"varint,3,opt,name=anti_replay,proto3" json:"anti_replay,omitempty"`
+	LocalIp         string          `protobuf:"bytes,4,opt,name=local_ip,proto3" json:"local_ip,omitempty"`
+	RemoteIp        string          `protobuf:"bytes,5,opt,name=remote_ip,proto3" json:"remote_ip,omitempty"`
+	LocalSpi        uint32          `protobuf:"varint,6,opt,name=local_spi,proto3" json:"local_spi,omitempty"`
+	RemoteSpi       uint32          `protobuf:"varint,7,opt,name=remote_spi,proto3" json:"remote_spi,omitempty"`
+	CryptoAlg       CryptoAlgorithm `protobuf:"varint,8,opt,name=crypto_alg,proto3,enum=ipsec.CryptoAlgorithm" json:"crypto_alg,omitempty"`
+	LocalCryptoKey  string          `protobuf:"bytes,9,opt,name=local_crypto_key,proto3" json:"local_crypto_key,omitempty"`
+	RemoteCryptoKey string          `protobuf:"bytes,10,opt,name=remote_crypto_key,proto3" json:"remote_crypto_key,omitempty"`
+	IntegAlg        IntegAlgorithm  `protobuf:"varint,11,opt,name=integ_alg,proto3,enum=ipsec.IntegAlgorithm" json:"integ_alg,omitempty"`
+	LocalIntegKey   string          `protobuf:"bytes,12,opt,name=local_integ_key,proto3" json:"local_integ_key,omitempty"`
+	RemoteIntegKey  string          `protobuf:"bytes,13,opt,name=remote_integ_key,proto3" json:"remote_integ_key,omitempty"`
 }
 
-func (x SecurityAssociations_SA_CryptoAlgorithm) String() string {
-	return proto.EnumName(SecurityAssociations_SA_CryptoAlgorithm_name, int32(x))
-}
-
-// Cryptographic algorithm for authentication
-type SecurityAssociations_SA_IntegAlgorithm int32
-
-const (
-	SecurityAssociations_SA_NONE_INTEG  SecurityAssociations_SA_IntegAlgorithm = 0
-	SecurityAssociations_SA_MD5_96      SecurityAssociations_SA_IntegAlgorithm = 1
-	SecurityAssociations_SA_SHA1_96     SecurityAssociations_SA_IntegAlgorithm = 2
-	SecurityAssociations_SA_SHA_256_96  SecurityAssociations_SA_IntegAlgorithm = 3
-	SecurityAssociations_SA_SHA_256_128 SecurityAssociations_SA_IntegAlgorithm = 4
-	SecurityAssociations_SA_SHA_384_192 SecurityAssociations_SA_IntegAlgorithm = 5
-	SecurityAssociations_SA_SHA_512_256 SecurityAssociations_SA_IntegAlgorithm = 6
-)
-
-var SecurityAssociations_SA_IntegAlgorithm_name = map[int32]string{
-	0: "NONE_INTEG",
-	1: "MD5_96",
-	2: "SHA1_96",
-	3: "SHA_256_96",
-	4: "SHA_256_128",
-	5: "SHA_384_192",
-	6: "SHA_512_256",
-}
-var SecurityAssociations_SA_IntegAlgorithm_value = map[string]int32{
-	"NONE_INTEG":  0,
-	"MD5_96":      1,
-	"SHA1_96":     2,
-	"SHA_256_96":  3,
-	"SHA_256_128": 4,
-	"SHA_384_192": 5,
-	"SHA_512_256": 6,
-}
-
-func (x SecurityAssociations_SA_IntegAlgorithm) String() string {
-	return proto.EnumName(SecurityAssociations_SA_IntegAlgorithm_name, int32(x))
-}
+func (m *TunnelInterfaces_Tunnel) Reset()         { *m = TunnelInterfaces_Tunnel{} }
+func (m *TunnelInterfaces_Tunnel) String() string { return proto.CompactTextString(m) }
+func (*TunnelInterfaces_Tunnel) ProtoMessage()    {}
 
 // Security Policy Database (SPD)
 type SecurityPolicyDatabases struct {
@@ -219,17 +256,17 @@ func (m *SecurityAssociations) GetSas() []*SecurityAssociations_SA {
 }
 
 type SecurityAssociations_SA struct {
-	Name          string                                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Spi           uint32                                  `protobuf:"varint,2,opt,name=spi,proto3" json:"spi,omitempty"`
-	Protocol      SecurityAssociations_SA_IPSecProtocol   `protobuf:"varint,3,opt,name=protocol,proto3,enum=ipsec.SecurityAssociations_SA_IPSecProtocol" json:"protocol,omitempty"`
-	CryptoAlg     SecurityAssociations_SA_CryptoAlgorithm `protobuf:"varint,4,opt,name=crypto_alg,proto3,enum=ipsec.SecurityAssociations_SA_CryptoAlgorithm" json:"crypto_alg,omitempty"`
-	CryptoKey     string                                  `protobuf:"bytes,5,opt,name=crypto_key,proto3" json:"crypto_key,omitempty"`
-	IntegAlg      SecurityAssociations_SA_IntegAlgorithm  `protobuf:"varint,6,opt,name=integ_alg,proto3,enum=ipsec.SecurityAssociations_SA_IntegAlgorithm" json:"integ_alg,omitempty"`
-	IntegKey      string                                  `protobuf:"bytes,7,opt,name=integ_key,proto3" json:"integ_key,omitempty"`
-	UseEsn        bool                                    `protobuf:"varint,8,opt,name=use_esn,proto3" json:"use_esn,omitempty"`
-	UseAntiReplay bool                                    `protobuf:"varint,9,opt,name=use_anti_replay,proto3" json:"use_anti_replay,omitempty"`
-	TunnelSrcAddr string                                  `protobuf:"bytes,10,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
-	TunnelDstAddr string                                  `protobuf:"bytes,11,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
+	Name          string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Spi           uint32          `protobuf:"varint,2,opt,name=spi,proto3" json:"spi,omitempty"`
+	Protocol      IPSecProtocol   `protobuf:"varint,3,opt,name=protocol,proto3,enum=ipsec.IPSecProtocol" json:"protocol,omitempty"`
+	CryptoAlg     CryptoAlgorithm `protobuf:"varint,4,opt,name=crypto_alg,proto3,enum=ipsec.CryptoAlgorithm" json:"crypto_alg,omitempty"`
+	CryptoKey     string          `protobuf:"bytes,5,opt,name=crypto_key,proto3" json:"crypto_key,omitempty"`
+	IntegAlg      IntegAlgorithm  `protobuf:"varint,6,opt,name=integ_alg,proto3,enum=ipsec.IntegAlgorithm" json:"integ_alg,omitempty"`
+	IntegKey      string          `protobuf:"bytes,7,opt,name=integ_key,proto3" json:"integ_key,omitempty"`
+	UseEsn        bool            `protobuf:"varint,8,opt,name=use_esn,proto3" json:"use_esn,omitempty"`
+	UseAntiReplay bool            `protobuf:"varint,9,opt,name=use_anti_replay,proto3" json:"use_anti_replay,omitempty"`
+	TunnelSrcAddr string          `protobuf:"bytes,10,opt,name=tunnel_src_addr,proto3" json:"tunnel_src_addr,omitempty"`
+	TunnelDstAddr string          `protobuf:"bytes,11,opt,name=tunnel_dst_addr,proto3" json:"tunnel_dst_addr,omitempty"`
 }
 
 func (m *SecurityAssociations_SA) Reset()         { *m = SecurityAssociations_SA{} }
@@ -237,8 +274,8 @@ func (m *SecurityAssociations_SA) String() string { return proto.CompactTextStri
 func (*SecurityAssociations_SA) ProtoMessage()    {}
 
 func init() {
+	proto.RegisterEnum("ipsec.IPSecProtocol", IPSecProtocol_name, IPSecProtocol_value)
+	proto.RegisterEnum("ipsec.CryptoAlgorithm", CryptoAlgorithm_name, CryptoAlgorithm_value)
+	proto.RegisterEnum("ipsec.IntegAlgorithm", IntegAlgorithm_name, IntegAlgorithm_value)
 	proto.RegisterEnum("ipsec.SecurityPolicyDatabases_SPD_PolicyEntry_Action", SecurityPolicyDatabases_SPD_PolicyEntry_Action_name, SecurityPolicyDatabases_SPD_PolicyEntry_Action_value)
-	proto.RegisterEnum("ipsec.SecurityAssociations_SA_IPSecProtocol", SecurityAssociations_SA_IPSecProtocol_name, SecurityAssociations_SA_IPSecProtocol_value)
-	proto.RegisterEnum("ipsec.SecurityAssociations_SA_CryptoAlgorithm", SecurityAssociations_SA_CryptoAlgorithm_name, SecurityAssociations_SA_CryptoAlgorithm_value)
-	proto.RegisterEnum("ipsec.SecurityAssociations_SA_IntegAlgorithm", SecurityAssociations_SA_IntegAlgorithm_name, SecurityAssociations_SA_IntegAlgorithm_value)
 }

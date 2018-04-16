@@ -1,6 +1,54 @@
 syntax = "proto3";
 package ipsec;
 
+/* IPSec protocol */
+enum IPSecProtocol {
+    AH = 0;
+    ESP = 1;
+}
+
+/* Cryptographic algorithm for encryption */
+enum CryptoAlgorithm {
+    NONE_CRYPTO = 0;
+    AES_CBC_128 = 1;
+    AES_CBC_192 = 2;
+    AES_CBC_256 = 3;
+}
+/* Cryptographic algorithm for authentication */
+enum IntegAlgorithm {
+    NONE_INTEG = 0;
+    MD5_96 = 1;
+    SHA1_96 = 2;
+    SHA_256_96 = 3;
+    SHA_256_128 = 4;
+    SHA_384_192 = 5;
+    SHA_512_256 = 6;
+}
+
+/* Tunnel Interfaces */
+message TunnelInterfaces {
+    message Tunnel {
+        string name = 1; /* tunnel name */
+
+        bool esn = 2; /* extended sequence number */
+        bool anti_replay = 3; /* anti replay option */
+
+        string local_ip = 4;
+        string remote_ip = 5;
+        uint32 local_spi = 6;
+        uint32 remote_spi = 7;
+
+        CryptoAlgorithm crypto_alg = 8;
+        string local_crypto_key = 9;
+        string remote_crypto_key = 10;
+
+        IntegAlgorithm integ_alg = 11;
+        string local_integ_key = 12;
+        string remote_integ_key = 13;
+    }
+    repeated Tunnel tunnels = 1;
+}
+
 /* Security Policy Database (SPD) */
 message SecurityPolicyDatabases {
     message SPD {
@@ -21,7 +69,6 @@ message SecurityPolicyDatabases {
             string remote_addr_stop = 4;
             string local_addr_start = 5;
             string local_addr_stop = 6;
-
             uint32 protocol = 7;
             uint32 remote_port_start = 8;
             uint32 remote_port_stop = 9;
@@ -49,33 +96,11 @@ message SecurityAssociations {
         string name = 1;    /* security association name */
         uint32 spi = 2;     /* security parameter index */
 
-        /* IPSec protocol */
-        enum IPSecProtocol {
-            AH = 0;
-            ESP = 1;
-        }
         IPSecProtocol protocol = 3;
 
-        /* Cryptographic algorithm for encryption */
-        enum CryptoAlgorithm {
-            NONE_CRYPTO = 0;
-            AES_CBC_128 = 1;
-            AES_CBC_192 = 2;
-            AES_CBC_256 = 3;
-        }
         CryptoAlgorithm crypto_alg = 4;
         string crypto_key = 5;
 
-        /* Cryptographic algorithm for authentication */
-        enum IntegAlgorithm {
-            NONE_INTEG = 0;
-            MD5_96 = 1;
-            SHA1_96 = 2;
-            SHA_256_96 = 3;
-            SHA_256_128 = 4;
-            SHA_384_192 = 5;
-            SHA_512_256 = 6;
-        }
         IntegAlgorithm integ_alg = 6;
         string integ_key = 7;
 

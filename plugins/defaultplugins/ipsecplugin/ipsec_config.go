@@ -283,6 +283,57 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 	return nil
 }
 
+// ConfigureTunnel configures Tunnel interface in VPP
+func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Configuring Tunnel %v", tunnel.Name)
+
+	ifIdx, err := vppcalls.AddTunnelInterface(tunnel, plugin.vppCh, plugin.Stopwatch)
+	if err != nil {
+		return err
+	}
+
+	plugin.SwIfIndexes.RegisterName(tunnel.Name, ifIdx, nil)
+	plugin.Log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
+
+	return nil
+}
+
+// ModifyTunnel modifies Tunnel interface in VPP
+func (plugin *IPSecConfigurator) ModifyTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel, newTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Modifying Tunnel %v", oldTunnel.Name)
+
+	if err := plugin.DeleteTunnel(oldTunnel); err != nil {
+		plugin.Log.Error("deleting old Tunnel failed:", err)
+		return err
+	}
+	if err := plugin.ConfigureTunnel(newTunnel); err != nil {
+		plugin.Log.Error("configuring new Tunnel failed:", err)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteTunnel deletes Tunnel interface in VPP
+func (plugin *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Deleting Tunnel %v", oldTunnel.Name)
+
+	ifIdx, _, exists := plugin.SwIfIndexes.LookupIdx(oldTunnel.Name)
+	if !exists {
+		plugin.Log.Warnf("Tunnel %q not found", oldTunnel.Name)
+		return nil
+	}
+
+	if err := vppcalls.DelTunnelInterface(ifIdx, oldTunnel, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SwIfIndexes.UnregisterName(oldTunnel.Name)
+	plugin.Log.Infof("Deleted Tunnel %v", oldTunnel.Name)
+
+	return nil
+}
+
 // ResolveCreatedInterface is responsible for reconfiguring cached assignments
 func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint32) {
 	for i, entry := range plugin.SPDIfCache {

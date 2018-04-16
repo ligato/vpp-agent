@@ -27,6 +27,71 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 )
 
+func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+	defer func(t time.Time) {
+		stopwatch.TimeLog(ipsec_api.IpsecTunnelIfAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	localCryptoKey, err := hex.DecodeString(tunnel.LocalCryptoKey)
+	if err != nil {
+		return 0, err
+	}
+	remoteCryptoKey, err := hex.DecodeString(tunnel.RemoteCryptoKey)
+	if err != nil {
+		return 0, err
+	}
+	localIntegKey, err := hex.DecodeString(tunnel.LocalIntegKey)
+	if err != nil {
+		return 0, err
+	}
+	remoteIntegKey, err := hex.DecodeString(tunnel.RemoteIntegKey)
+	if err != nil {
+		return 0, err
+	}
+
+	req := &ipsec_api.IpsecTunnelIfAddDel{
+		IsAdd:              boolToUint(isAdd),
+		Esn:                boolToUint(tunnel.Esn),
+		AntiReplay:         boolToUint(tunnel.AntiReplay),
+		LocalIP:            net.ParseIP(tunnel.LocalIp).To4(),
+		RemoteIP:           net.ParseIP(tunnel.RemoteIp).To4(),
+		LocalSpi:           tunnel.LocalSpi,
+		RemoteSpi:          tunnel.RemoteSpi,
+		CryptoAlg:          uint8(tunnel.CryptoAlg),
+		LocalCryptoKey:     localCryptoKey,
+		LocalCryptoKeyLen:  uint8(len(localCryptoKey)),
+		RemoteCryptoKey:    remoteCryptoKey,
+		RemoteCryptoKeyLen: uint8(len(remoteCryptoKey)),
+		IntegAlg:           uint8(tunnel.IntegAlg),
+		LocalIntegKey:      localIntegKey,
+		LocalIntegKeyLen:   uint8(len(localIntegKey)),
+		RemoteIntegKey:     remoteIntegKey,
+		RemoteIntegKeyLen:  uint8(len(remoteIntegKey)),
+	}
+
+	reply := &ipsec_api.IpsecTunnelIfAddDelReply{}
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return 0, err
+	}
+	if reply.Retval != 0 {
+		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return reply.SwIfIndex, nil
+}
+
+// AddSPD adds SPD to VPP via binary API
+func AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+	return tunnelIfAddDel(tunnel, true, vppChan, stopwatch)
+}
+
+// DelSPD deletes SPD from VPP via binary API
+func DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+	// Note: ifIdx is not used now, tunnel shiould be matched based on paramters
+	_, err := tunnelIfAddDel(tunnel, false, vppChan, stopwatch)
+	return err
+}
+
 func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDel{}).LogTimeEntry(time.Since(t))
