@@ -90,7 +90,7 @@ func arpIdentifier(iface, ip, mac string) string {
 }
 
 // AddArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
+func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.Log.Infof("Configuring new ARP entry %v", *entry)
 
 	if !isValidARP(entry, plugin.Log) {
@@ -140,7 +140,7 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpTableEntry) error {
 }
 
 // ChangeArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevEntry *l3.ArpTable_ArpTableEntry) error {
+func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpEntry, prevEntry *l3.ArpTable_ArpEntry) error {
 	plugin.Log.Infof("Modifying ARP entry %v to %v", *prevEntry, *entry)
 
 	if err := plugin.DeleteArp(prevEntry); err != nil {
@@ -155,7 +155,7 @@ func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpTableEntry, prevE
 }
 
 // DeleteArp processes the NB config and propagates it to bin api call
-func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpTableEntry) error {
+func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.Log.Infof("Removing ARP entry %v", *entry)
 
 	if !isValidARP(entry, plugin.Log) {
@@ -262,7 +262,7 @@ func (plugin *ArpConfigurator) ResolveDeletedInterface(interfaceName string, int
 }
 
 // Verify ARP entry contains all required fields
-func isValidARP(arpInput *l3.ArpTable_ArpTableEntry, log logging.Logger) bool {
+func isValidARP(arpInput *l3.ArpTable_ArpEntry, log logging.Logger) bool {
 	if arpInput == nil {
 		log.Info("ARP input is empty")
 		return false
@@ -284,7 +284,7 @@ func isValidARP(arpInput *l3.ArpTable_ArpTableEntry, log logging.Logger) bool {
 }
 
 // transformArp converts raw entry data to ARP object
-func transformArp(arpInput *l3.ArpTable_ArpTableEntry, ifIndex uint32) (*vppcalls.ArpEntry, error) {
+func transformArp(arpInput *l3.ArpTable_ArpEntry, ifIndex uint32) (*vppcalls.ArpEntry, error) {
 	ipAddr := net.ParseIP(arpInput.IpAddress)
 	macAddr, err := net.ParseMAC(arpInput.PhysAddress)
 	if err != nil {

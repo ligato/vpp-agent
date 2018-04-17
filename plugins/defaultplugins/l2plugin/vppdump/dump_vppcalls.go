@@ -121,7 +121,7 @@ func DumpBridgeDomains(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch
 type FIBTableEntry struct {
 	BridgeDomainIdx          uint32 `json:"bridge_domain_idx"`
 	OutgoingInterfaceSwIfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
-	l2nb.FibTableEntries_FibTableEntry
+	l2nb.FibTable_FibEntry
 }
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
@@ -146,17 +146,17 @@ func DumpFIBTableEntries(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwat
 		}
 
 		mac := net.HardwareAddr(fibDetails.Mac).String()
-		var action l2nb.FibTableEntries_FibTableEntry_Action
+		var action l2nb.FibTable_FibEntry_Action
 		if fibDetails.FilterMac > 0 {
-			action = l2nb.FibTableEntries_FibTableEntry_DROP
+			action = l2nb.FibTable_FibEntry_DROP
 		} else {
-			action = l2nb.FibTableEntries_FibTableEntry_FORWARD
+			action = l2nb.FibTable_FibEntry_FORWARD
 		}
 
 		fibs[mac] = &FIBTableEntry{
 			BridgeDomainIdx:          uint32(fibDetails.BdID),
 			OutgoingInterfaceSwIfIdx: fibDetails.SwIfIndex,
-			FibTableEntries_FibTableEntry: l2nb.FibTableEntries_FibTableEntry{
+			FibTable_FibEntry: l2nb.FibTable_FibEntry{
 				PhysAddress:             mac,
 				Action:                  action,
 				StaticConfig:            fibDetails.StaticMac > 0,

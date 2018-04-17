@@ -85,7 +85,7 @@ func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.PutDSL 
 }
 
 // BDFIB deletes request for the L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.PutDSL {
+func (dsl *PutDSL) BDFIB(val *l2.FibTable_FibEntry) defaultplugins.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
@@ -121,7 +121,7 @@ func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugi
 }
 
 // Arp adds a request to create or update VPP L3 ARP entry.
-func (dsl *PutDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+func (dsl *PutDSL) Arp(val *l3.ArpTable_ArpEntry) defaultplugins.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
@@ -139,7 +139,7 @@ func (dsl *PutDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugi
 }
 
 // StnRule adds a request to create or update STN rule.
-func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
+func (dsl *PutDSL) StnRule(val *stn.STN_Rule) defaultplugins.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
@@ -233,7 +233,7 @@ func (dsl *DeleteDSL) BD(bdName string) defaultplugins.DeleteDSL {
 
 // BDFIB deletes request for the L2 Forwarding Information Base.
 func (dsl *DeleteDSL) BDFIB(bdName string, mac string) defaultplugins.DeleteDSL {
-	dsl.parent.del = append(dsl.parent.del, &l2.FibTableEntries_FibTableEntry{
+	dsl.parent.del = append(dsl.parent.del, &l2.FibTable_FibEntry{
 		PhysAddress:  mac,
 		BridgeDomain: bdName,
 	})
@@ -282,7 +282,7 @@ func (dsl *DeleteDSL) AppNamespace(id string) defaultplugins.DeleteDSL {
 
 // Arp adds a request to delete an existing VPP L3 ARP entry.
 func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) defaultplugins.DeleteDSL {
-	dsl.parent.del = append(dsl.parent.del, &l3.ArpTable_ArpTableEntry{
+	dsl.parent.del = append(dsl.parent.del, &l3.ArpTable_ArpEntry{
 		Interface: ifaceName,
 		IpAddress: ipAddr,
 	})
@@ -307,7 +307,7 @@ func (dsl *DeleteDSL) ProxyArpRanges(label string) defaultplugins.DeleteDSL {
 
 // StnRule adds request to delete Stn rule.
 func (dsl *DeleteDSL) StnRule(name string) defaultplugins.DeleteDSL {
-	dsl.parent.del = append(dsl.parent.del, &stn.StnRule{
+	dsl.parent.del = append(dsl.parent.del, &stn.STN_Rule{
 		RuleName: name,
 	})
 	return dsl
@@ -425,7 +425,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	}
 
 	// Call 'PUT'
-	if _, err := dsl.client.PutInterfaces(ctx, &interfaces.Interfaces{Interface: ifsPut}); err != nil {
+	if _, err := dsl.client.PutInterfaces(ctx, &interfaces.Interfaces{Interfaces: ifsPut}); err != nil {
 		wasErr = err
 	}
 	if _, err := dsl.client.PutBDs(ctx, &l2.BridgeDomains{BridgeDomains: bdsPut}); err != nil {
@@ -434,7 +434,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	if _, err := dsl.client.PutXCons(ctx, &l2.XConnectPairs{XConnectPairs: xCsPut}); err != nil {
 		wasErr = err
 	}
-	if _, err := dsl.client.PutStaticRoutes(ctx, &l3.StaticRoutes{Route: rtsPut}); err != nil {
+	if _, err := dsl.client.PutStaticRoutes(ctx, &l3.StaticRoutes{Routes: rtsPut}); err != nil {
 		wasErr = err
 	}
 	if _, err := dsl.client.PutACLs(ctx, &acl.AccessLists{Acl: aclPut}); err != nil {

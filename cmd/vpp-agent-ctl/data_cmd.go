@@ -78,12 +78,12 @@ func (ctl *VppAgentCtl) createACL() {
 				Rules: []*acl.AccessLists_Acl_Rule{
 					// ACL IP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Actions{
+						Actions: &acl.AccessLists_Acl_Rule_Action{
 							AclAction: acl.AclAction_PERMIT,
 						},
-						Matches: &acl.AccessLists_Acl_Rule_Matches{
-							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-								Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+						Matches: &acl.AccessLists_Acl_Rule_Match{
+							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+								Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
 									SourceNetwork:      "192.168.1.1/32",
 									DestinationNetwork: "10.20.0.1/24",
 								},
@@ -92,18 +92,18 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL ICMP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Actions{
+						Actions: &acl.AccessLists_Acl_Rule_Action{
 							AclAction: acl.AclAction_PERMIT,
 						},
-						Matches: &acl.AccessLists_Acl_Rule_Matches{
-							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-								Icmp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp{
+						Matches: &acl.AccessLists_Acl_Rule_Match{
+							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+								Icmp: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp{
 									Icmpv6: false,
-									IcmpCodeRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpCodeRange{
+									IcmpCodeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpCodeRange{
 										First: 150,
 										Last:  250,
 									},
-									IcmpTypeRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Icmp_IcmpTypeRange{
+									IcmpTypeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpTypeRange{
 										First: 1150,
 										Last:  1250,
 									},
@@ -113,19 +113,19 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL TCP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Actions{
+						Actions: &acl.AccessLists_Acl_Rule_Action{
 							AclAction: acl.AclAction_PERMIT,
 						},
-						Matches: &acl.AccessLists_Acl_Rule_Matches{
-							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-								Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
+						Matches: &acl.AccessLists_Acl_Rule_Match{
+							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+								Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
 									TcpFlagsMask:  20,
 									TcpFlagsValue: 10,
-									SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_SourcePortRange{
 										LowerPort: 150,
 										UpperPort: 250,
 									},
-									DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_DestinationPortRange{
 										LowerPort: 1150,
 										UpperPort: 1250,
 									},
@@ -135,17 +135,17 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL UDP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Actions{
+						Actions: &acl.AccessLists_Acl_Rule_Action{
 							AclAction: acl.AclAction_PERMIT,
 						},
-						Matches: &acl.AccessLists_Acl_Rule_Matches{
-							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-								Udp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp{
-									SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_SourcePortRange{
+						Matches: &acl.AccessLists_Acl_Rule_Match{
+							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+								Udp: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp{
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp_SourcePortRange{
 										LowerPort: 150,
 										UpperPort: 250,
 									},
-									DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Udp_DestinationPortRange{
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp_DestinationPortRange{
 										LowerPort: 1150,
 										UpperPort: 1250,
 									},
@@ -155,12 +155,12 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL other rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Actions{
+						Actions: &acl.AccessLists_Acl_Rule_Action{
 							AclAction: acl.AclAction_PERMIT,
 						},
-						Matches: &acl.AccessLists_Acl_Rule_Matches{
-							IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-								Other: &acl.AccessLists_Acl_Rule_Matches_IpRule_Other{
+						Matches: &acl.AccessLists_Acl_Rule_Match{
+							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+								Other: &acl.AccessLists_Acl_Rule_Match_IpRule_Other{
 									Protocol: 0,
 								},
 							},
@@ -171,8 +171,8 @@ func (ctl *VppAgentCtl) createACL() {
 					//	Actions: &acl.AccessLists_Acl_Rule_Actions{
 					//		AclAction: acl.AclAction_PERMIT,
 					//	},
-					//	Matches: &acl.AccessLists_Acl_Rule_Matches{
-					//		MacipRule: &acl.AccessLists_Acl_Rule_Matches_MacIpRule{
+					//	Match: &acl.AccessLists_Acl_Rule_Match{
+					//		MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
 					//			SourceAddress: "192.168.0.1",
 					//			SourceAddressPrefix: uint32(16),
 					//			SourceMacAddress: "11:44:0A:B8:4A:35",
@@ -182,7 +182,7 @@ func (ctl *VppAgentCtl) createACL() {
 					//},
 				},
 				// Interfaces
-				Interfaces: &acl.AccessLists_Acl_Interfaces{
+				Interfaces: &acl.AccessLists_Acl_Interface{
 					Ingress: []string{"tap1", "tap2"},
 					Egress:  []string{"tap1", "tap2"},
 				},
@@ -285,7 +285,7 @@ func (ctl *VppAgentCtl) deleteBfdEcho() {
 // CreateEthernet puts ethernet type interface config to the ETCD
 func (ctl *VppAgentCtl) createEthernet() {
 	ethernet := &interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:    "GigabitEthernet0/8/0",
 				Type:    interfaces.InterfaceType_ETHERNET_CSMACD,
@@ -303,7 +303,7 @@ func (ctl *VppAgentCtl) createEthernet() {
 	}
 
 	ctl.Log.Println(ethernet)
-	ctl.broker.Put(interfaces.InterfaceKey(ethernet.Interface[0].Name), ethernet.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(ethernet.Interfaces[0].Name), ethernet.Interfaces[0])
 }
 
 // DeleteEthernet removes ethernet type interface config from the ETCD
@@ -317,7 +317,7 @@ func (ctl *VppAgentCtl) deleteEthernet() {
 // CreateTap puts TAP type interface config to the ETCD
 func (ctl *VppAgentCtl) createTap() {
 	tap := &interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:        "tap1",
 				Type:        interfaces.InterfaceType_TAP_INTERFACE,
@@ -338,7 +338,7 @@ func (ctl *VppAgentCtl) createTap() {
 	}
 
 	ctl.Log.Println(tap)
-	ctl.broker.Put(interfaces.InterfaceKey(tap.Interface[0].Name), tap.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(tap.Interfaces[0].Name), tap.Interfaces[0])
 }
 
 // DeleteTap removes TAP type interface config from the ETCD
@@ -352,7 +352,7 @@ func (ctl *VppAgentCtl) deleteTap() {
 // CreateLoopback puts loopback type interface config to the ETCD
 func (ctl *VppAgentCtl) createLoopback() {
 	loopback := &interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:        "loop1",
 				Type:        interfaces.InterfaceType_SOFTWARE_LOOPBACK,
@@ -372,7 +372,7 @@ func (ctl *VppAgentCtl) createLoopback() {
 	}
 
 	ctl.Log.Println(loopback)
-	ctl.broker.Put(interfaces.InterfaceKey(loopback.Interface[0].Name), loopback.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(loopback.Interfaces[0].Name), loopback.Interfaces[0])
 }
 
 // DeleteLoopback removes loopback type interface config from the ETCD
@@ -386,7 +386,7 @@ func (ctl *VppAgentCtl) deleteLoopback() {
 // CreateMemif puts memif type interface config to the ETCD
 func (ctl *VppAgentCtl) createMemif() {
 	memif := &interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:        "memif1",
 				Type:        interfaces.InterfaceType_MEMORY_INTERFACE,
@@ -411,7 +411,7 @@ func (ctl *VppAgentCtl) createMemif() {
 	}
 
 	ctl.Log.Println(memif)
-	ctl.broker.Put(interfaces.InterfaceKey(memif.Interface[0].Name), memif.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(memif.Interfaces[0].Name), memif.Interfaces[0])
 }
 
 // DeleteMemif removes memif type interface config from the ETCD
@@ -425,7 +425,7 @@ func (ctl *VppAgentCtl) deleteMemif() {
 // CreateVxLan puts VxLAN type interface config to the ETCD
 func (ctl *VppAgentCtl) createVxlan() {
 	vxlan := &interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:    "vxlan1",
 				Type:    interfaces.InterfaceType_VXLAN_TUNNEL,
@@ -448,7 +448,7 @@ func (ctl *VppAgentCtl) createVxlan() {
 	}
 
 	ctl.Log.Println(vxlan)
-	ctl.broker.Put(interfaces.InterfaceKey(vxlan.Interface[0].Name), vxlan.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(vxlan.Interfaces[0].Name), vxlan.Interfaces[0])
 }
 
 // DeleteVxlan removes VxLAN type interface config from the ETCD
@@ -462,7 +462,7 @@ func (ctl *VppAgentCtl) deleteVxlan() {
 // CreateAfPacket puts Af-packet type interface config to the ETCD
 func (ctl *VppAgentCtl) createAfPacket() {
 	ifs := interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:    "afpacket1",
 				Type:    interfaces.InterfaceType_AF_PACKET_INTERFACE,
@@ -485,7 +485,7 @@ func (ctl *VppAgentCtl) createAfPacket() {
 	}
 
 	ctl.Log.Println(ifs)
-	ctl.broker.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
+	ctl.broker.Put(interfaces.InterfaceKey(ifs.Interfaces[0].Name), ifs.Interfaces[0])
 }
 
 // DeleteAfPacket removes AF-Packet type interface config from the ETCD
@@ -594,7 +594,7 @@ func (ctl *VppAgentCtl) deleteLinuxTap() {
 
 // CreateStn puts STN configuration to the ETCD
 func (ctl *VppAgentCtl) createStn() {
-	stnRule := stn.StnRule{
+	stnRule := stn.STN_Rule{
 		RuleName:  "rule1",
 		IpAddress: "192.168.50.12",
 		Interface: "memif1",
@@ -618,7 +618,7 @@ func (ctl *VppAgentCtl) deleteStn() {
 func (ctl *VppAgentCtl) createGlobalNat() {
 	natGlobal := &nat.Nat44Global{
 		Forwarding: false,
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
+		NatInterfaces: []*nat.Nat44Global_NatInterface{
 			{
 				Name:          "tap1",
 				IsInside:      false,
@@ -635,7 +635,7 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 				OutputFeature: false,
 			},
 		},
-		AddressPools: []*nat.Nat44Global_AddressPools{
+		AddressPools: []*nat.Nat44Global_AddressPool{
 			{
 				VrfId:           0,
 				FirstSrcAddress: "192.168.0.1",
@@ -692,20 +692,20 @@ func (ctl *VppAgentCtl) createDNat() {
 	// DNat config
 	dNat := &nat.Nat44DNat_DNatConfig{
 		Label: "dnat1",
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
+		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
 				VrfId:             0,
 				ExternalInterface: "tap1",
-				ExternalIP:        "192.168.0.1",
+				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
+				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
-						LocalIP:     "172.124.0.2",
+						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
-						LocalIP:     "172.125.10.5",
+						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
 					},
@@ -714,7 +714,7 @@ func (ctl *VppAgentCtl) createDNat() {
 				TwiceNat: false,
 			},
 		},
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
+		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMapping{
 			{
 				VrfId:     0,
 				IpAddress: "10.10.0.1",
@@ -767,7 +767,7 @@ func (ctl *VppAgentCtl) createBridgeDomain() {
 						SplitHorizonGroup:       0,
 					},
 				},
-				ArpTerminationTable: []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable{
+				ArpTerminationTable: []*l2.BridgeDomains_BridgeDomain_ArpTerminationEntry{
 					{
 						IpAddress:   "192.168.50.20",
 						PhysAddress: "A7:5D:44:D8:E6:51",
@@ -793,21 +793,21 @@ func (ctl *VppAgentCtl) deleteBridgeDomain() {
 
 // CreateFib puts L2 FIB entry configuration to the ETCD
 func (ctl *VppAgentCtl) createFib() {
-	fib := l2.FibTableEntries{
-		FibTableEntry: []*l2.FibTableEntries_FibTableEntry{
+	fib := l2.FibTable{
+		FibTableEntries: []*l2.FibTable_FibEntry{
 			{
 				PhysAddress:             "EA:FE:3C:64:A7:44",
 				BridgeDomain:            "bd1",
 				OutgoingInterface:       "loop1",
 				StaticConfig:            true,
 				BridgedVirtualInterface: true,
-				Action:                  l2.FibTableEntries_FibTableEntry_FORWARD, // or DROP
+				Action:                  l2.FibTable_FibEntry_FORWARD, // or DROP
 			},
 		},
 	}
 
 	ctl.Log.Println(fib)
-	ctl.broker.Put(l2.FibKey(fib.FibTableEntry[0].BridgeDomain, fib.FibTableEntry[0].PhysAddress), fib.FibTableEntry[0])
+	ctl.broker.Put(l2.FibKey(fib.FibTableEntries[0].BridgeDomain, fib.FibTableEntries[0].PhysAddress), fib.FibTableEntries[0])
 }
 
 // DeleteFib removes FIB entry configuration from the ETCD
@@ -848,7 +848,7 @@ func (ctl *VppAgentCtl) deleteXConn() {
 // CreateRoute puts VPP route configuration to the ETCD
 func (ctl *VppAgentCtl) createRoute() {
 	routes := l3.StaticRoutes{
-		Route: []*l3.StaticRoutes_Route{
+		Routes: []*l3.StaticRoutes_Route{
 			{
 				VrfId:             0,
 				DstIpAddr:         "10.1.1.3/32",
@@ -859,8 +859,8 @@ func (ctl *VppAgentCtl) createRoute() {
 		},
 	}
 
-	ctl.Log.Print(routes.Route[0])
-	ctl.broker.Put(l3.RouteKey(routes.Route[0].VrfId, routes.Route[0].DstIpAddr, routes.Route[0].NextHopAddr), routes.Route[0])
+	ctl.Log.Print(routes.Routes[0])
+	ctl.broker.Put(l3.RouteKey(routes.Routes[0].VrfId, routes.Routes[0].DstIpAddr, routes.Routes[0].NextHopAddr), routes.Routes[0])
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
@@ -924,7 +924,7 @@ func (ctl *VppAgentCtl) deleteLinuxRoute() {
 // CreateArp puts VPP ARP entry configuration to the ETCD
 func (ctl *VppAgentCtl) createArp() {
 	arp := l3.ArpTable{
-		ArpTableEntries: []*l3.ArpTable_ArpTableEntry{
+		ArpEntries: []*l3.ArpTable_ArpEntry{
 			{
 				Interface:   "tap1",
 				IpAddress:   "192.168.10.21",
@@ -935,7 +935,7 @@ func (ctl *VppAgentCtl) createArp() {
 	}
 
 	ctl.Log.Println(arp)
-	ctl.broker.Put(l3.ArpEntryKey(arp.ArpTableEntries[0].Interface, arp.ArpTableEntries[0].IpAddress), arp.ArpTableEntries[0])
+	ctl.broker.Put(l3.ArpEntryKey(arp.ArpEntries[0].Interface, arp.ArpEntries[0].IpAddress), arp.ArpEntries[0])
 }
 
 // DeleteArp removes VPP ARP entry configuration from the ETCD
@@ -949,7 +949,7 @@ func (ctl *VppAgentCtl) deleteArp() {
 // AddProxyArpInterfaces puts VPP proxy ARP interface configuration to the ETCD
 func (ctl *VppAgentCtl) addProxyArpInterfaces() {
 	proxyArpIf := l3.ProxyArpInterfaces{
-		InterfaceList: []*l3.ProxyArpInterfaces_InterfaceList{
+		InterfaceLists: []*l3.ProxyArpInterfaces_InterfaceList{
 			{
 				Label: "proxyArpIf1",
 				Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{
@@ -965,7 +965,7 @@ func (ctl *VppAgentCtl) addProxyArpInterfaces() {
 	}
 
 	log.Println(proxyArpIf)
-	ctl.broker.Put(l3.ProxyArpInterfaceKey(proxyArpIf.InterfaceList[0].Label), proxyArpIf.InterfaceList[0])
+	ctl.broker.Put(l3.ProxyArpInterfaceKey(proxyArpIf.InterfaceLists[0].Label), proxyArpIf.InterfaceLists[0])
 }
 
 // DeleteProxyArpInterfaces removes VPP proxy ARP interface configuration from the ETCD
@@ -979,7 +979,7 @@ func (ctl *VppAgentCtl) deleteProxyArpInterfaces() {
 // AddProxyArpRanges puts VPP proxy ARP range configuration to the ETCD
 func (ctl *VppAgentCtl) addProxyArpRanges() {
 	proxyArpRng := l3.ProxyArpRanges{
-		RangeList: []*l3.ProxyArpRanges_RangeList{
+		RangeLists: []*l3.ProxyArpRanges_RangeList{
 			{
 				Label: "proxyArpRng1",
 				Ranges: []*l3.ProxyArpRanges_RangeList_Range{
@@ -997,7 +997,7 @@ func (ctl *VppAgentCtl) addProxyArpRanges() {
 	}
 
 	log.Println(proxyArpRng)
-	ctl.broker.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeList[0].Label), proxyArpRng.RangeList[0])
+	ctl.broker.Put(l3.ProxyArpRangeKey(proxyArpRng.RangeLists[0].Label), proxyArpRng.RangeLists[0])
 }
 
 // DeleteProxyArpranges removes VPP proxy ARP range configuration from the ETCD
@@ -1094,7 +1094,7 @@ func (ctl *VppAgentCtl) deleteAppNamespace() {
 // CreateTxn demonstrates transaction - two interfaces and bridge domain put to the ETCD using txn
 func (ctl *VppAgentCtl) createTxn() {
 	ifs := interfaces.Interfaces{
-		Interface: []*interfaces.Interfaces_Interface{
+		Interfaces: []*interfaces.Interfaces_Interface{
 			{
 				Name:    "tap1",
 				Type:    interfaces.InterfaceType_TAP_INTERFACE,
@@ -1149,8 +1149,8 @@ func (ctl *VppAgentCtl) createTxn() {
 	}
 
 	t := ctl.broker.NewTxn()
-	t.Put(interfaces.InterfaceKey(ifs.Interface[0].Name), ifs.Interface[0])
-	t.Put(interfaces.InterfaceKey(ifs.Interface[1].Name), ifs.Interface[1])
+	t.Put(interfaces.InterfaceKey(ifs.Interfaces[0].Name), ifs.Interfaces[0])
+	t.Put(interfaces.InterfaceKey(ifs.Interfaces[1].Name), ifs.Interfaces[1])
 	t.Put(l2.BridgeDomainKey(bd.BridgeDomains[0].Name), bd.BridgeDomains[0])
 
 	t.Commit()

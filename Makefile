@@ -117,6 +117,7 @@ test-cover-xml: test-cover
 
 # Get generator tools
 get-generators:
+	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 	go install -v ./vendor/github.com/ungerik/pkgreflect
 

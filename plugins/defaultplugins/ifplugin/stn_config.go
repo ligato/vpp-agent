@@ -118,7 +118,7 @@ func (plugin *StnConfigurator) ResolveCreatedInterface(interfaceName string) {
 }
 
 // Add create a new STN rule.
-func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
+func (plugin *StnConfigurator) Add(rule *modelStn.STN_Rule) error {
 	plugin.log.Infof("Configuring new STN rule %v", rule)
 
 	// Check stn data
@@ -144,7 +144,7 @@ func (plugin *StnConfigurator) Add(rule *modelStn.StnRule) error {
 }
 
 // Delete removes STN rule.
-func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
+func (plugin *StnConfigurator) Delete(rule *modelStn.STN_Rule) error {
 	plugin.log.Infof("Removing STN rule on if: %v with IP: %v", rule.Interface, rule.IpAddress)
 	// Check stn data
 	stnRule, _, err := plugin.checkStn(rule, plugin.ifIndexes)
@@ -170,7 +170,7 @@ func (plugin *StnConfigurator) Delete(rule *modelStn.StnRule) error {
 }
 
 // Modify configured rule.
-func (plugin *StnConfigurator) Modify(ruleOld *modelStn.StnRule, ruleNew *modelStn.StnRule) error {
+func (plugin *StnConfigurator) Modify(ruleOld *modelStn.STN_Rule, ruleNew *modelStn.STN_Rule) error {
 	plugin.log.Infof("Modifying STN %v", ruleNew)
 
 	if ruleOld == nil {
@@ -211,7 +211,7 @@ func (plugin *StnConfigurator) Close() error {
 
 // checkStn will check the rule raw data and change it to internal data structure.
 // In case the rule contains a interface that doesn't exist yet, rule is stored into index map.
-func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifaceidx.SwIfIndex) (stnRule *vppcalls.StnRule, doVPPCall bool, err error) {
+func (plugin *StnConfigurator) checkStn(stnInput *modelStn.STN_Rule, index ifaceidx.SwIfIndex) (stnRule *vppcalls.StnRule, doVPPCall bool, err error) {
 	plugin.log.Debugf("Checking stn rule: %+v", stnInput)
 
 	if stnInput == nil {
@@ -252,7 +252,7 @@ func (plugin *StnConfigurator) checkStn(stnInput *modelStn.StnRule, index ifacei
 	return
 }
 
-func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface bool) {
+func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.STN_Rule, withoutIface bool) {
 	idx := StnIdentifier(rule.Interface)
 	if withoutIface {
 		plugin.unstoredIndexes.RegisterName(idx, plugin.unstoredIndexSeq, rule)
@@ -262,14 +262,14 @@ func (plugin *StnConfigurator) indexSTNRule(rule *modelStn.StnRule, withoutIface
 	plugin.allIndexesSeq++
 }
 
-func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.StnRule) {
+func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface bool, rule *modelStn.STN_Rule) {
 	idx := StnIdentifier(iface)
 
 	// Removing rule from main index
 	_, ruleIface, exists := plugin.allIndexes.LookupIdx(idx)
 	if exists {
 		plugin.allIndexes.UnregisterName(idx)
-		stnRule, ok := ruleIface.(*modelStn.StnRule)
+		stnRule, ok := ruleIface.(*modelStn.STN_Rule)
 		if ok {
 			rule = stnRule
 		}
@@ -285,7 +285,7 @@ func (plugin *StnConfigurator) removeRuleFromIndex(iface string) (withoutIface b
 	return
 }
 
-func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (rule *modelStn.StnRule) {
+func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (rule *modelStn.STN_Rule) {
 	idx := StnIdentifier(iface)
 
 	var ruleIface interface{}
@@ -298,7 +298,7 @@ func (plugin *StnConfigurator) ruleFromIndex(iface string, fromAllRules bool) (r
 	}
 	plugin.log.Debugf("Rule exists: %+v returned rule: %+v", exists, &ruleIface)
 	if exists {
-		stnRule, ok := ruleIface.(*modelStn.StnRule)
+		stnRule, ok := ruleIface.(*modelStn.STN_Rule)
 		if ok {
 			rule = stnRule
 		}

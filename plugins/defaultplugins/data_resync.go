@@ -50,13 +50,13 @@ type DataResyncReq struct {
 	// BridgeDomains is a list af all BDs that are expected to be in VPP after RESYNC.
 	BridgeDomains []*l2.BridgeDomains_BridgeDomain
 	// FibTableEntries is a list af all FIBs that are expected to be in VPP after RESYNC.
-	FibTableEntries []*l2.FibTableEntries_FibTableEntry
+	FibTableEntries []*l2.FibTable_FibEntry
 	// XConnects is a list af all XCons that are expected to be in VPP after RESYNC.
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC.
 	StaticRoutes []*l3.StaticRoutes_Route
 	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC.
-	ArpEntries []*l3.ArpTable_ArpTableEntry
+	ArpEntries []*l3.ArpTable_ArpEntry
 	// ProxyArpInterfaces is a list af all proxy ARP interface entries that are expected to be in VPP after RESYNC.
 	ProxyArpInterfaces []*l3.ProxyArpInterfaces_InterfaceList
 	// ProxyArpRanges is a list af all proxy ARP ranges that are expected to be in VPP after RESYNC.
@@ -66,7 +66,7 @@ type DataResyncReq struct {
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC.
 	AppNamespaces []*l4.AppNamespaces_AppNamespace
 	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
-	StnRules []*stn.StnRule
+	StnRules []*stn.STN_Rule
 	// NatGlobal is a definition of global NAT config
 	Nat44Global *nat.Nat44Global
 	// Nat44SNat is a list of all SNAT configurations expected to be in VPP after RESYNC
@@ -90,15 +90,15 @@ func NewDataResyncReq() *DataResyncReq {
 		SingleHopBFDKey:     []*bfd.SingleHopBFD_Key{},
 		SingleHopBFDEcho:    []*bfd.SingleHopBFD_EchoFunction{},
 		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
-		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
+		FibTableEntries:     []*l2.FibTable_FibEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
-		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
+		ArpEntries:          []*l3.ArpTable_ArpEntry{},
 		ProxyArpInterfaces:  []*l3.ProxyArpInterfaces_InterfaceList{},
 		ProxyArpRanges:      []*l3.ProxyArpRanges_RangeList{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
-		StnRules:            []*stn.StnRule{},
+		StnRules:            []*stn.STN_Rule{},
 		Nat44Global:         &nat.Nat44Global{},
 		Nat44SNat:           []*nat.Nat44SNat_SNatConfig{},
 		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
@@ -298,7 +298,7 @@ func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			entry := &l3.ArpTable_ArpTableEntry{}
+			entry := &l3.ArpTable_ArpEntry{}
 			if err := arpData.GetValue(entry); err == nil {
 				req.ArpEntries = append(req.ArpEntries, entry)
 				num++
@@ -400,7 +400,7 @@ func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 	return num
 }
 func resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) error {
-	value := &l2.FibTableEntries_FibTableEntry{}
+	value := &l2.FibTable_FibEntry{}
 	err := fibData.GetValue(value)
 	if err == nil {
 		req.FibTableEntries = append(req.FibTableEntries, value)
@@ -557,7 +557,7 @@ func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq
 		if stnData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &stn.StnRule{}
+			value := &stn.STN_Rule{}
 			err := stnData.GetValue(value)
 			if err == nil {
 				req.StnRules = append(req.StnRules, value)

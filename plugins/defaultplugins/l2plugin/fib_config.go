@@ -95,7 +95,7 @@ func (plugin *FIBConfigurator) Close() error {
 
 // Add configures provided FIB input. Every entry has to contain info about MAC address, interface, and bridge domain.
 // If interface or bridge domain is missing, FIB data is cached and recalled if particular entity is registered.
-func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
+func (plugin *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) error {
 	plugin.Log.Infof("Configuring new FIB table entry with MAC %v", fib.PhysAddress)
 
 	if fib.PhysAddress == "" {
@@ -130,8 +130,8 @@ func (plugin *FIBConfigurator) Add(fib *l2.FibTableEntries_FibTableEntry, callba
 
 // Modify provides changes for FIB entry. Old fib entry is removed (if possible) and a new one is registered
 // if all the conditions are fulfilled (interface and bridge domain presence), otherwise new configuration is cached.
-func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTableEntries_FibTableEntry,
-	newFib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
+func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTable_FibEntry,
+	newFib *l2.FibTable_FibEntry, callback func(error)) error {
 	plugin.Log.Infof("Modifying FIB table entry with MAC %s", newFib.PhysAddress)
 
 	// Remove FIB from (add) cache if present
@@ -178,7 +178,7 @@ func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTableEntries_FibTableEntry,
 // Delete removes FIB table entry. The request to be successful, both interface and bridge domain indices
 // have to be available. Request does nothing without this info. If interface (or bridge domain) was removed before,
 // provided FIB data is just unregistered and agent assumes, that VPP removed FIB entry itself.
-func (plugin *FIBConfigurator) Delete(fib *l2.FibTableEntries_FibTableEntry, callback func(error)) error {
+func (plugin *FIBConfigurator) Delete(fib *l2.FibTable_FibEntry, callback func(error)) error {
 	plugin.Log.Infof("Deleting FIB table entry with MAC %s", fib.PhysAddress)
 
 	// Check if FIB is in cache (add). In such a case, just remove it.
@@ -385,7 +385,7 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID ui
 	return nil
 }
 
-func (plugin *FIBConfigurator) validateFibRequirements(fib *l2.FibTableEntries_FibTableEntry, add bool) (cached bool, ifIdx, bdIdx uint32) {
+func (plugin *FIBConfigurator) validateFibRequirements(fib *l2.FibTable_FibEntry, add bool) (cached bool, ifIdx, bdIdx uint32) {
 	// Check bridge domain presence
 	var ifFound, bdFound bool
 	bdIdx, _, bdFound = plugin.BdIndexes.LookupIdx(fib.BridgeDomain)

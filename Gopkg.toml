@@ -26,7 +26,8 @@
 
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
-    "github.com/ungerik/pkgreflect"
+    "github.com/ungerik/pkgreflect",
+    "github.com/gogo/protobuf/protoc-gen-gogo"
 ]
 
 [[constraint]]

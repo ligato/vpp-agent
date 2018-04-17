@@ -959,6 +959,6 @@ func getTestRxModeSettings(mode if_api.RxModeType) *if_api.Interfaces_Interface_
 func getTestUnnumberedSettings(ifNameWithIP string) *if_api.Interfaces_Interface_Unnumbered {
 	return &if_api.Interfaces_Interface_Unnumbered{
 		IsUnnumbered:    true,
-		InterfaceWithIP: ifNameWithIP,
+		InterfaceWithIp: ifNameWithIP,
 	}
 }

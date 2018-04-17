@@ -11,13 +11,13 @@ enum InterfaceType {
     VXLAN_TUNNEL = 5;
 };
 
-//from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
+// from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
 enum RxModeType {
-  UNKNOWN = 0;
-  POLLING = 1;
-  INTERRUPT = 2;
-  ADAPTIVE = 3;
-  DEFAULT = 4;
+    UNKNOWN = 0;
+    POLLING = 1;
+    INTERRUPT = 2;
+    ADAPTIVE = 3;
+    DEFAULT = 4;
 };
 
 message Interfaces {
@@ -34,18 +34,19 @@ message Interfaces {
 
         // Required format is "ipAddress/ipPrefix"
         repeated string ip_addresses = 10;
+
         message Unnumbered {
-            bool isUnnumbered = 1;
-            string interfaceWithIP = 2;
+            bool is_unnumbered = 1;
+            string interface_with_ip = 2;
         }
         Unnumbered unnumbered = 11;
 
         message RxModeSettings {
             RxModeType rx_mode = 1;
-            uint32 QueueID  = 2;
-            uint32 QueueIDValid  = 3;
+            uint32 queue_id  = 2;
+            uint32 queue_id_valid  = 3;
         }
-        RxModeSettings rxModeSettings = 12;
+        RxModeSettings rx_mode_settings = 12;
 
         message Memif {
             enum MemifMode {
@@ -86,7 +87,7 @@ message Interfaces {
         }
         Tap tap = 104;
     };
-    repeated Interface interface = 1;
+    repeated Interface interfaces = 1;
 };
 
 
@@ -131,7 +132,7 @@ message InterfacesState {
         }
         Statistics statistics = 100;
     }
-    repeated Interface interface = 1;
+    repeated Interface interfaces = 1;
 }
 
 message InterfaceErrors {
@@ -144,5 +145,5 @@ message InterfaceErrors {
         }
         repeated ErrorData error_data = 2;
     }
-    repeated Interface interface = 1;
+    repeated Interface interfaces = 1;
 }

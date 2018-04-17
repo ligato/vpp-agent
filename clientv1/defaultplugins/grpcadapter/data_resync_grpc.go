@@ -73,7 +73,7 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) defaultplugins.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
@@ -109,7 +109,7 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 }
 
 // Arp adds VPP L3 ARP to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) defaultplugins.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
@@ -127,7 +127,7 @@ func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defau
 }
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) defaultplugins.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
@@ -168,7 +168,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 			if resyncReq.Interfaces == nil {
 				resyncReq.Interfaces = &interfaces.Interfaces{}
 			}
-			resyncReq.Interfaces.Interface = append(resyncReq.Interfaces.Interface, typed)
+			resyncReq.Interfaces.Interfaces = append(resyncReq.Interfaces.Interfaces, typed)
 		case *l2.BridgeDomains_BridgeDomain:
 			if resyncReq.BDs == nil {
 				resyncReq.BDs = &l2.BridgeDomains{}
@@ -183,7 +183,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 			if resyncReq.StaticRoutes == nil {
 				resyncReq.StaticRoutes = &l3.StaticRoutes{}
 			}
-			resyncReq.StaticRoutes.Route = append(resyncReq.StaticRoutes.Route, typed)
+			resyncReq.StaticRoutes.Routes = append(resyncReq.StaticRoutes.Routes, typed)
 		case *acl.AccessLists_Acl:
 			if resyncReq.ACLs == nil {
 				resyncReq.ACLs = &acl.AccessLists{}
