@@ -292,21 +292,21 @@ var (
 		Rules: []*acl.AccessLists_Acl_Rule{
 			{
 				RuleName: "rule1",
-				Actions: &acl.AccessLists_Acl_Rule_Actions{
+				Actions: &acl.AccessLists_Acl_Rule_Action{
 					AclAction: acl.AclAction_DENY,
 				},
-				Matches: &acl.AccessLists_Acl_Rule_Matches{
-					IpRule: &acl.AccessLists_Acl_Rule_Matches_IpRule{
-						Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+				Matches: &acl.AccessLists_Acl_Rule_Match{
+					IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
+						Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
 							DestinationNetwork: "10.1.1.0/24",
 							SourceNetwork:      "10.1.2.0/24",
 						},
-						Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
-							DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+						Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
+							DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_DestinationPortRange{
 								LowerPort: 50,
 								UpperPort: 150,
 							},
-							SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+							SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_SourcePortRange{
 								LowerPort: 1000,
 								UpperPort: 2000,
 							},
@@ -315,7 +315,7 @@ var (
 				},
 			},
 		},
-		Interfaces: &acl.AccessLists_Acl_Interfaces{
+		Interfaces: &acl.AccessLists_Acl_Interface{
 			Egress: []string{"tap1"},
 		},
 	}

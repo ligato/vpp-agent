@@ -182,7 +182,7 @@ func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfac
 		}
 	}
 	sort.Strings(keyset)
-	ifaceRoot.Interface = ifaces
+	ifaceRoot.Interfaces = ifaces
 
 	return &ifaceRoot, keyset
 }
@@ -201,7 +201,7 @@ func getInterfaceStateData(interfaceData map[string]InterfaceWithMD) (*interface
 		}
 	}
 	sort.Strings(keyset)
-	ifaceStateRoot.Interface = ifaceStates
+	ifaceStateRoot.Interfaces = ifaceStates
 
 	return &ifaceStateRoot, keyset
 }
@@ -243,9 +243,9 @@ func getL2StateData(l2Data map[string]BdWithMD) (*l2.BridgeDomainState, []string
 }
 
 // Get L2 FIB data and create full L2 FIB proto structure.
-func getL2FIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
-	fibRoot := l2.FibTableEntries{}
-	fibRoot.FibTableEntry = fibData.FibTable
+func getL2FIBData(fibData FibTableWithMD) (*l2.FibTable, []string) {
+	fibRoot := l2.FibTable{}
+	fibRoot.FibTableEntries = fibData.FibTable
 	var keyset []string
 	for _, fib := range fibData.FibTable {
 		keyset = append(keyset, l2.FibKey(fib.BridgeDomain, fib.PhysAddress))
@@ -258,7 +258,7 @@ func getL2FIBData(fibData FibTableWithMD) (*l2.FibTableEntries, []string) {
 // Get L3 FIB data and create full L3 FIB proto structure.
 func getL3FIBData(fibData StaticRoutesWithMD) (*l3.StaticRoutes, []string) {
 	fibRoot := l3.StaticRoutes{}
-	fibRoot.Route = fibData.Routes
+	fibRoot.Routes = fibData.Routes
 	var keyset []string
 	for _, fib := range fibData.Routes {
 		keyset = append(keyset, l3.RouteKey(fib.VrfId, fib.DstIpAddr, fib.NextHopAddr))

@@ -67,7 +67,7 @@ type PutDSL interface {
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomains_BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-	BDFIB(fib *l2.FibTableEntries_FibTableEntry) PutDSL
+	BDFIB(fib *l2.FibTable_FibEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPairs_XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
@@ -75,7 +75,7 @@ type PutDSL interface {
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
-	Arp(arp *l3.ArpTable_ArpTableEntry) PutDSL
+	Arp(arp *l3.ArpTable_ArpEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
 	ProxyArpInterfaces(pArpIfs *l3.ProxyArpInterfaces_InterfaceList) PutDSL
 	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
@@ -85,7 +85,7 @@ type PutDSL interface {
 	// AppNamespace adds a request to create or update VPP Application namespace
 	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update Stn rule.
-	StnRule(stn *stn.StnRule) PutDSL
+	StnRule(stn *stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration

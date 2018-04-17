@@ -381,7 +381,7 @@ func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interfa
 
 func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx uint32, addresses []*net.IPNet, unnumbered *intf.Interfaces_Interface_Unnumbered) error {
 	if unnumbered != nil && unnumbered.IsUnnumbered {
-		ifWithIP := unnumbered.InterfaceWithIP
+		ifWithIP := unnumbered.InterfaceWithIp
 		if ifWithIP == "" {
 			return fmt.Errorf("unnubered interface %s has no interface with IP address set", ifName)
 		}

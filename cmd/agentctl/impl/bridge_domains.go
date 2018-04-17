@@ -162,7 +162,7 @@ func AddUpdateArpEntry(endpoints []string, label string, arp *BridgeDomainArpFie
 		}
 	}
 	// Create new bridge domain ARP and add it to the list.
-	arpToAdd := new(l2.BridgeDomains_BridgeDomain_ArpTerminationTable)
+	arpToAdd := new(l2.BridgeDomains_BridgeDomain_ArpTerminationEntry)
 	arpToAdd.IpAddress = arp.IPAddress
 	arpToAdd.PhysAddress = arp.PhysAddress
 	arpTable = append(arpTable, arpToAdd)
@@ -183,7 +183,7 @@ func DeleteArpEntry(endpoints []string, label string, arp *BridgeDomainArpFields
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Unable to remove ARP entry from a nonexisting bridge domain"))
 	}
 	// Remove ARP table from the list.
-	var newArpTable []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable
+	var newArpTable []*l2.BridgeDomains_BridgeDomain_ArpTerminationEntry
 	for _, existingArpEntry := range bd.ArpTerminationTable {
 		if existingArpEntry.IpAddress == arp.IPAddress {
 			continue
@@ -212,13 +212,13 @@ func AddFibEntry(endpoints []string, label string, fib *L2FIBEntryFields) {
 		utils.DeleteFibDataFromDb(db, key)
 	}
 	// Create new FIB entry.
-	fibToAdd := new(l2.FibTableEntries_FibTableEntry)
+	fibToAdd := new(l2.FibTable_FibEntry)
 	fibToAdd.PhysAddress = fib.PhysAddress
 	fibToAdd.BridgeDomain = fib.BdName
 	if fib.Action == 0 {
-		fibToAdd.Action = l2.FibTableEntries_FibTableEntry_FORWARD
+		fibToAdd.Action = l2.FibTable_FibEntry_FORWARD
 	} else {
-		fibToAdd.Action = l2.FibTableEntries_FibTableEntry_DROP
+		fibToAdd.Action = l2.FibTable_FibEntry_DROP
 	}
 	fibToAdd.OutgoingInterface = fib.OutgoingInterface
 	fibToAdd.StaticConfig = fib.StaticConfig

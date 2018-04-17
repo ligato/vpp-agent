@@ -115,7 +115,7 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 }
 
 // Resync confgures the empty VPP (overwrites the arp entries)
-func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpTableEntry) error {
+func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp begin. ")
 	// Calculate and log arp resync
 	defer func() {

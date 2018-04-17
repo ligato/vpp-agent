@@ -104,7 +104,7 @@ func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.PutDSL 
 }
 
 // BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.PutDSL {
+func (dsl *PutDSL) BDFIB(val *l2.FibTable_FibEntry) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(l2.FibKey(val.BridgeDomain, val.PhysAddress), val)
 	return dsl
 }
@@ -142,7 +142,7 @@ func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defaultplugi
 }
 
 // Arp adds a request to create or update VPP L3 ARP entry.
-func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpTableEntry) defaultplugins.PutDSL {
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpEntry) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(l3.ArpEntryKey(arp.Interface, arp.IpAddress), arp)
 	return dsl
 }
@@ -160,7 +160,7 @@ func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) defaultplugi
 }
 
 // StnRule adds a request to create or update STN rule.
-func (dsl *PutDSL) StnRule(val *stn.StnRule) defaultplugins.PutDSL {
+func (dsl *PutDSL) StnRule(val *stn.STN_Rule) defaultplugins.PutDSL {
 	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
 	return dsl
 }

@@ -97,8 +97,8 @@ func SimpleBridgeDomain2XIfaceBuilder(name string, iface1 string, iface2 string,
 }
 
 // FIBBuilder builds FIB table entry.
-func FIBBuilder(mac string, bdName string, iface string, bvi bool) l2.FibTableEntries_FibTableEntry {
-	return l2.FibTableEntries_FibTableEntry{
+func FIBBuilder(mac string, bdName string, iface string, bvi bool) l2.FibTable_FibEntry {
+	return l2.FibTable_FibEntry{
 		PhysAddress:             mac,
 		BridgeDomain:            bdName,
 		OutgoingInterface:       iface,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/rpc --proto_path=$GOPATH/src --go_out=plugins=grpc:../common/model/rpc ../common/model/rpc/rpc.proto
+//go:generate protoc --proto_path=../common/model/rpc --proto_path=$GOPATH/src --gogo_out=plugins=grpc:../common/model/rpc ../common/model/rpc/rpc.proto
 
 package rpc
 
@@ -81,7 +81,7 @@ func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.
 	*rpc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	for _, intf := range request.Interface {
+	for _, intf := range request.Interfaces {
 		localReqPut.VppInterface(intf)
 	}
 
@@ -189,7 +189,7 @@ func (svc *ChangeVppSvc) PutStaticRoutes(ctx context.Context, request *l3.Static
 	*rpc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	for _, route := range request.Route {
+	for _, route := range request.Routes {
 		localReqPut.StaticRoute(route)
 	}
 
@@ -218,7 +218,7 @@ func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncCo
 	localReq := localclient.DataResyncRequest("rpc")
 
 	if request.Interfaces != nil {
-		for _, intf := range request.Interfaces.Interface {
+		for _, intf := range request.Interfaces.Interfaces {
 			localReq.VppInterface(intf)
 		}
 	}
@@ -238,7 +238,7 @@ func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncCo
 		}
 	}
 	if request.StaticRoutes != nil {
-		for _, route := range request.StaticRoutes.Route {
+		for _, route := range request.StaticRoutes.Routes {
 			localReq.StaticRoute(route)
 		}
 	}

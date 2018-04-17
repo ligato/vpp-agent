@@ -27,10 +27,10 @@ type FIBIndex interface {
 	GetMapping() idxvpp.NameToIdxRW
 
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupIdx(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool)
+	LookupIdx(name string) (idx uint32, metadata *l2.FibTable_FibEntry, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupName(idx uint32) (name string, metadata *l2.FibTableEntries_FibTableEntry, exists bool)
+	LookupName(idx uint32) (name string, metadata *l2.FibTable_FibEntry, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan FibChangeDto)
@@ -41,13 +41,13 @@ type FIBIndexRW interface {
 	FIBIndex
 
 	// RegisterName adds new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, metadata *l2.FibTableEntries_FibTableEntry)
+	RegisterName(name string, idx uint32, metadata *l2.FibTable_FibEntry)
 
 	// UnregisterName removes an item identified by name from mapping.
-	UnregisterName(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool)
+	UnregisterName(name string) (idx uint32, metadata *l2.FibTable_FibEntry, exists bool)
 
 	// UpdateMetadata updates metadata in existing FIB entry.
-	UpdateMetadata(name string, metadata *l2.FibTableEntries_FibTableEntry) (success bool)
+	UpdateMetadata(name string, metadata *l2.FibTable_FibEntry) (success bool)
 }
 
 // fibIndex is type-safe implementation of mapping between FIB physical address and index.
@@ -60,7 +60,7 @@ type fibIndex struct {
 // In contrast to NameToIdxDto, it contains typed metadata.
 type FibChangeDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
-	Metadata *l2.FibTableEntries_FibTableEntry
+	Metadata *l2.FibTable_FibEntry
 }
 
 // NewFIBIndex creates new instance of bdIndex.
@@ -74,23 +74,23 @@ func (fib *fibIndex) GetMapping() idxvpp.NameToIdxRW {
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (fib *fibIndex) RegisterName(name string, idx uint32, ifMeta *l2.FibTableEntries_FibTableEntry) {
+func (fib *fibIndex) RegisterName(name string, idx uint32, ifMeta *l2.FibTable_FibEntry) {
 	fib.mapping.RegisterName(name, idx, ifMeta)
 }
 
 // UnregisterName removes an item identified by name from mapping.
-func (fib *fibIndex) UnregisterName(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
+func (fib *fibIndex) UnregisterName(name string) (idx uint32, metadata *l2.FibTable_FibEntry, exists bool) {
 	idx, meta, exists := fib.mapping.UnregisterName(name)
 	return idx, castFibMetadata(meta), exists
 }
 
 // UpdateMetadata updates metadata in existing FIB entry.
-func (fib *fibIndex) UpdateMetadata(name string, metadata *l2.FibTableEntries_FibTableEntry) (success bool) {
+func (fib *fibIndex) UpdateMetadata(name string, metadata *l2.FibTable_FibEntry) (success bool) {
 	return fib.mapping.UpdateMetadata(name, metadata)
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.
-func (fib *fibIndex) LookupIdx(name string) (idx uint32, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
+func (fib *fibIndex) LookupIdx(name string) (idx uint32, metadata *l2.FibTable_FibEntry, exists bool) {
 	idx, meta, exists := fib.mapping.LookupIdx(name)
 	if exists {
 		metadata = castFibMetadata(meta)
@@ -99,7 +99,7 @@ func (fib *fibIndex) LookupIdx(name string) (idx uint32, metadata *l2.FibTableEn
 }
 
 // LookupName looks up previously stored item identified by name in mapping.
-func (fib *fibIndex) LookupName(idx uint32) (name string, metadata *l2.FibTableEntries_FibTableEntry, exists bool) {
+func (fib *fibIndex) LookupName(idx uint32) (name string, metadata *l2.FibTable_FibEntry, exists bool) {
 	name, meta, exists := fib.mapping.LookupName(idx)
 	if exists {
 		metadata = castFibMetadata(meta)
@@ -122,8 +122,8 @@ func (fib *fibIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel ch
 	}()
 }
 
-func castFibMetadata(meta interface{}) *l2.FibTableEntries_FibTableEntry {
-	ifMeta, ok := meta.(*l2.FibTableEntries_FibTableEntry)
+func castFibMetadata(meta interface{}) *l2.FibTable_FibEntry {
+	ifMeta, ok := meta.(*l2.FibTable_FibEntry)
 	if !ok {
 		return nil
 	}

@@ -16,12 +16,12 @@ message AccessLists {
         // List of access list entries(Rule)
         message Rule {
             // Definitions of action criteria for this Access List Rule
-            message Actions {
+            message Action {
                 AclAction acl_action = 1;
             }
-            Actions actions = 2;
+            Action actions = 2;
             // Definitions for match criteria for this Access List Rule
-            message Matches {
+            message Match {
                 // Access List entry that can define:
                 // - IP4/IP6 src/dst ip prefix- Internet Protocol number
                 // - Internet Protocol number
@@ -40,7 +40,7 @@ message AccessLists {
                     Ip ip = 1;
                     message Icmp {
                         // ICMPv6 flag, if false ICMPv4 will be used
-                        bool Icmpv6 = 1;
+                        bool icmpv6 = 1;
                         // Inclusive range representing icmp codes to be used.
                         message IcmpCodeRange {
                             // Lower boundary for range
@@ -135,7 +135,7 @@ message AccessLists {
                 }
                 MacIpRule macip_rule = 4;
             }
-            Matches matches = 3;
+            Match matches = 3;
             // Access List entry that can define:
             // - IP4/IP6 src ip prefix
             // - src MAC address mask
@@ -150,12 +150,12 @@ message AccessLists {
         // and value of this name, possibly spRule and special
         // characters are not allowed.
         string acl_name = 3;
-        message Interfaces {
+        message Interface {
             repeated string egress = 1;
             repeated string ingress = 2;
         }
         // The set of interfRules that has assigned this ACL on ingres or egress
-        Interfaces interfaces = 2;
+        Interface interfaces = 2;
     }
     repeated Acl acl = 1;
 }

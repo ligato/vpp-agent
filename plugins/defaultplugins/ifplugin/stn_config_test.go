@@ -435,8 +435,8 @@ func stnTestTeardown(connection *core.Connection, plugin *ifplugin.StnConfigurat
 
 /* STN Test Data */
 
-func getTestStnRule(name, ifName, ip string) *stn.StnRule {
-	return &stn.StnRule{
+func getTestStnRule(name, ifName, ip string) *stn.STN_Rule {
+	return &stn.STN_Rule{
 		RuleName:  name,
 		Interface: ifName,
 		IpAddress: ip,
