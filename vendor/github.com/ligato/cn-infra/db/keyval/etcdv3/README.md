@@ -2,11 +2,6 @@
 
 The Etcd plugin provides access to an etcd key-value data store.
 
-## API
-
-Implements API described in the [skeleton](../plugin):
-The plugin is documented in more detail in the [doc.go](doc.go) file.
-
 ## Configuration
 
 - Location of the Etcd configuration file can be defined either by the 

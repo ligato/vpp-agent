@@ -202,6 +202,27 @@ func (reg *WatchDataReg) Close() error {
 	return nil
 }
 
+// Register starts watching of particular key prefix. Method returns error if key which should be added
+// already exists
+func (reg *WatchDataReg) Register(resyncName, keyPrefix string) error {
+	reg.adapter.access.Lock()
+	defer reg.adapter.access.Unlock()
+
+	for resName, sub := range reg.adapter.subscriptions {
+		if resName == resyncName {
+			// Verify that prefix does not exist yet
+			for _, regPrefix := range sub.KeyPrefixes {
+				if regPrefix == keyPrefix {
+					return fmt.Errorf("prefix %s already exists", keyPrefix)
+				}
+			}
+			sub.KeyPrefixes = append(sub.KeyPrefixes, keyPrefix)
+			return nil
+		}
+	}
+	return fmt.Errorf("cannot register prefix %s, resync name %s not found", keyPrefix, resyncName)
+}
+
 // Unregister stops watching of particular key prefix. Method returns error if key which should be removed
 // does not exist or in case the channel to close goroutine is nil
 func (reg *WatchDataReg) Unregister(keyPrefix string) error {
