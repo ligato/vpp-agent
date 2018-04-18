@@ -15,15 +15,15 @@
 package etcdv3
 
 import (
-	"fmt"
 	"time"
 
+	"fmt"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/db/keyval/plugin"
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
@@ -34,10 +34,14 @@ const (
 
 // Plugin implements etcdv3 plugin.
 type Plugin struct {
-	Deps // inject
-	*plugin.Skeleton
-	disabled        bool
-	connection      *BytesConnectionEtcd
+	Deps
+	// Plugin is disabled if there is no config file available
+	disabled bool
+	// ETCD connection encapsulation
+	connection *BytesConnectionEtcd
+	// Read/Write proto modelled data
+	protoWrapper *kvproto.ProtoWrapper
+
 	autoCompactDone chan struct{}
 	reconnectResync bool
 	lastConnErr     error
@@ -46,11 +50,11 @@ type Plugin struct {
 // Deps lists dependencies of the etcdv3 plugin.
 // If injected, etcd plugin will use StatusCheck to signal the connection status.
 type Deps struct {
-	local.PluginInfraDeps // inject
-	Resync                *resync.Plugin
+	local.PluginInfraDeps
+	Resync *resync.Plugin
 }
 
-// Init retrieves etcd configuration and establishes a new connection
+// Init retrieves ETCD configuration and establishes a new connection
 // with the etcd data store.
 // If the configuration file doesn't exist or cannot be read, the returned error
 // will be of os.PathError type. An untyped error is returned in case the file
@@ -59,143 +63,127 @@ type Deps struct {
 // CA or client certificate is not accessible(os.PathError)/valid(untyped).
 // Check clientv3.New from coreos/etcd for possible errors returned in case
 // the connection cannot be established.
-func (p *Plugin) Init() (err error) {
-	// Init connection
-	if p.Skeleton == nil {
-		// Retrieve config
-		var cfg Config
-		if found, err := p.PluginConfig.GetValue(&cfg); err != nil {
-			return err
-		} else if !found {
-			p.Log.Info("etcd config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
-			p.disabled = true
-			return nil
-		}
-
-		etcdConfig, err := ConfigToClientv3(&cfg)
-		if err != nil {
-			return err
-		}
-
-		p.connection, err = NewEtcdConnectionWithBytes(*etcdConfig, p.Log)
-		if err != nil {
-			return err
-		}
-
-		// Set flag wheter resync will be started after reconnect
-		p.reconnectResync = cfg.ReconnectResync
-
-		if cfg.AutoCompact > 0 {
-			if cfg.AutoCompact < time.Duration(time.Minute*60) {
-				p.Log.Warnf("auto compact option for ETCD is set to less than 60 minutes!")
-			}
-			p.startPeriodicAutoCompact(cfg.AutoCompact)
-		}
-
-		p.Skeleton = plugin.NewSkeleton(p.String(),
-			p.ServiceLabel,
-			p.connection,
-		)
-	}
-
-	if err := p.Skeleton.Init(); err != nil {
+func (plugin *Plugin) Init() (err error) {
+	// Read ETCD configuration file. Returns error if does not exists.
+	etcdCfg, err := plugin.getEtcdConfig()
+	if err != nil || plugin.disabled {
 		return err
 	}
+	// Transforms .yaml config to ETCD client configuration
+	etcdClientCfg, err := ConfigToClient(&etcdCfg)
+	if err != nil {
+		return err
+	}
+	// Uses config file to establish connection with the database
+	plugin.connection, err = NewEtcdConnectionWithBytes(*etcdClientCfg, plugin.Log)
+	if err != nil {
+		plugin.Log.Errorf("Err: %v", err)
+		return err
+	}
+	plugin.reconnectResync = etcdCfg.ReconnectResync
+	if etcdCfg.AutoCompact > 0 {
+		if etcdCfg.AutoCompact < time.Duration(time.Minute*60) {
+			plugin.Log.Warnf("Auto compact option for ETCD is set to less than 60 minutes!")
+		}
+		plugin.startPeriodicAutoCompact(etcdCfg.AutoCompact)
+	}
+	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.connection, &keyval.SerializerJSON{})
 
 	// Register for providing status reports (polling mode).
-	if p.StatusCheck != nil {
-		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, _, err := p.connection.GetValue(healthCheckProbeKey)
+	if plugin.StatusCheck != nil {
+		plugin.StatusCheck.Register(core.PluginName(plugin.PluginName), func() (statuscheck.PluginState, error) {
+			_, _, _, err := plugin.connection.GetValue(healthCheckProbeKey)
 			if err == nil {
-				if p.reconnectResync && p.lastConnErr != nil {
-					p.Log.Info("Starting resync after ETCD reconnect")
-					if p.Resync != nil {
-						p.Resync.DoResync()
-						p.lastConnErr = nil
+				if plugin.reconnectResync && plugin.lastConnErr != nil {
+					plugin.Log.Info("Starting resync after ETCD reconnect")
+					if plugin.Resync != nil {
+						plugin.Resync.DoResync()
+						plugin.lastConnErr = nil
 					} else {
-						p.Log.Warn("Expected resync after ETCD reconnect could not start beacuse of missing Resync plugin")
+						plugin.Log.Warn("Expected resync after ETCD reconnect could not start beacuse of missing Resync plugin")
 					}
 				}
 				return statuscheck.OK, nil
 			}
-			p.lastConnErr = err
+			plugin.lastConnErr = err
 			return statuscheck.Error, err
 		})
 	} else {
-		p.Log.Warnf("Unable to start status check for etcd")
+		plugin.Log.Warnf("Unable to start status check for etcd")
 	}
 
 	return nil
-}
-
-// AfterInit registers status polling function with StatusCheck plugin
-// (if injected).
-func (p *Plugin) AfterInit() error {
-	return nil
-}
-
-func (p *Plugin) startPeriodicAutoCompact(period time.Duration) {
-	p.autoCompactDone = make(chan struct{})
-	go func() {
-		p.Log.Infof("Starting periodic auto compacting every %v", period)
-		for {
-			select {
-			case <-time.After(period):
-				p.Log.Debugf("Executing auto compact")
-				if toRev, err := p.connection.Compact(); err != nil {
-					p.Log.Errorf("Periodic auto compacting failed: %v", err)
-				} else {
-					p.Log.Infof("Auto compacting finished (to revision %v)", toRev)
-				}
-			case <-p.autoCompactDone:
-				return
-			}
-		}
-	}()
-}
-
-// FromExistingConnection is used mainly for testing of existing connection
-// injection into the plugin.
-// Note, need to set Deps for returned value!
-func FromExistingConnection(connection *BytesConnectionEtcd, sl servicelabel.ReaderAPI) *Plugin {
-	skel := plugin.NewSkeleton("testing", sl, connection)
-	return &Plugin{Skeleton: skel, connection: connection}
 }
 
 // Close shutdowns the connection.
-func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton, p.autoCompactDone)
+func (plugin *Plugin) Close() error {
+	err := safeclose.Close(plugin.autoCompactDone)
 	return err
 }
 
-// String returns the plugin name from dependencies if injected,
-// "kvdbsync" otherwise.
-func (p *Plugin) String() string {
-	if len(p.Deps.PluginName) == 0 {
-		return "kvdbsync"
-	}
-	return string(p.Deps.PluginName)
+// NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message.
+func (plugin *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
+	return plugin.protoWrapper.NewBroker(keyPrefix)
+}
+
+// NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
+func (plugin *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
+	return plugin.protoWrapper.NewWatcher(keyPrefix)
 }
 
 // Disabled returns *true* if the plugin is not in use due to missing
 // etcd configuration.
-func (p *Plugin) Disabled() (disabled bool) {
-	return p.disabled
+func (plugin *Plugin) Disabled() (disabled bool) {
+	return plugin.disabled
 }
 
 // PutIfNotExists puts given key-value pair into etcd if there is no value set for the key. If the put was successful
 // succeeded is true. If the key already exists succeeded is false and the value for the key is untouched.
-func (p *Plugin) PutIfNotExists(key string, value []byte) (succeeded bool, err error) {
-	if p.connection != nil {
-		return p.connection.PutIfNotExists(key, value)
+func (plugin *Plugin) PutIfNotExists(key string, value []byte) (succeeded bool, err error) {
+	if plugin.connection != nil {
+		return plugin.connection.PutIfNotExists(key, value)
 	}
 	return false, fmt.Errorf("connection is not established")
 }
 
 // Compact compatcs the ETCD database to the specific revision
-func (p *Plugin) Compact(rev ...int64) (toRev int64, err error) {
-	if p.connection != nil {
-		return p.connection.Compact(rev...)
+func (plugin *Plugin) Compact(rev ...int64) (toRev int64, err error) {
+	if plugin.connection != nil {
+		return plugin.connection.Compact(rev...)
 	}
 	return 0, fmt.Errorf("connection is not established")
+}
+
+func (plugin *Plugin) getEtcdConfig() (Config, error) {
+	var etcdCfg Config
+	found, err := plugin.PluginConfig.GetValue(&etcdCfg)
+	if err != nil {
+		return etcdCfg, err
+	}
+	if !found {
+		plugin.Log.Info("ETCD config not found, skip loading this plugin")
+		plugin.disabled = true
+		return etcdCfg, nil
+	}
+	return etcdCfg, nil
+}
+
+func (plugin *Plugin) startPeriodicAutoCompact(period time.Duration) {
+	plugin.autoCompactDone = make(chan struct{})
+	go func() {
+		plugin.Log.Infof("Starting periodic auto compacting every %v", period)
+		for {
+			select {
+			case <-time.After(period):
+				plugin.Log.Debugf("Executing auto compact")
+				if toRev, err := plugin.connection.Compact(); err != nil {
+					plugin.Log.Errorf("Periodic auto compacting failed: %v", err)
+				} else {
+					plugin.Log.Infof("Auto compacting finished (to revision %v)", toRev)
+				}
+			case <-plugin.autoCompactDone:
+				return
+			}
+		}
+	}()
 }

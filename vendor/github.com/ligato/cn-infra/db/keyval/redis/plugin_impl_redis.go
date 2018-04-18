@@ -15,24 +15,26 @@
 package redis
 
 import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/db/keyval/plugin"
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
 const (
 	// healthCheckProbeKey is a key used to probe Redis state.
-	healthCheckProbeKey string = "probe-redis-connection"
+	healthCheckProbeKey = "probe-redis-connection"
 )
 
 // Plugin implements redis plugin.
 type Plugin struct {
 	Deps
-	*plugin.Skeleton
-	disabled   bool
-	connection *BytesConnectionRedis
+	// Plugin is disabled if there is no config file available
+	disabled     bool
+	// Redis connection encapsulation
+	connection   *BytesConnectionRedis
+	// Read/Write proto modelled data
+	protoWrapper *kvproto.ProtoWrapper
 }
 
 // Deps lists dependencies of the redis plugin.
@@ -45,89 +47,73 @@ type Deps struct {
 // If the configuration file doesn't exist or cannot be read, the returned error
 // will be of os.PathError type. An untyped error is returned in case the file
 // doesn't contain a valid YAML configuration.
-func (p *Plugin) Init() error {
-	cfg, err := p.retrieveConfig()
+func (plugin *Plugin) Init() (err error) {
+	redisCfg, err := plugin.getRedisConfig()
+	if err != nil || plugin.disabled {
+		return err
+	}
+	// Create client according to config
+	client, err := ConfigToClient(redisCfg)
 	if err != nil {
 		return err
 	}
-	if p.disabled {
-		return nil
-	}
-
-	client, err := CreateClient(cfg)
+	// Uses config file to establish connection with the database
+	plugin.connection, err = NewBytesConnection(client, plugin.Log)
 	if err != nil {
 		return err
 	}
-
-	p.connection, err = NewBytesConnection(client, p.Log)
-	if err != nil {
-		return err
-	}
-
-	p.Skeleton = plugin.NewSkeleton(string(p.PluginName), p.ServiceLabel, p.connection)
-	err = p.Skeleton.Init()
-	if err != nil {
-		return err
-	}
+	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.connection, &keyval.SerializerJSON{})
 
 	// Register for providing status reports (polling mode)
-	if p.StatusCheck != nil {
-		p.StatusCheck.Register(core.PluginName(p.String()), func() (statuscheck.PluginState, error) {
-			_, _, err := p.Skeleton.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+	if plugin.StatusCheck != nil {
+		plugin.StatusCheck.Register(plugin.PluginName, func() (statuscheck.PluginState, error) {
+			_, _, err := plugin.NewBroker("/").GetValue(healthCheckProbeKey, nil)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
 			return statuscheck.Error, err
 		})
 	} else {
-		p.Log.Warnf("Unable to start status check for redis")
+		plugin.Log.Warnf("Unable to start status check for redis")
 	}
 
 	return nil
 }
 
-// AfterInit is called by the Agent Core after all plugins have been initialized.
-func (p *Plugin) AfterInit() error {
-	if p.disabled {
-		return nil
-	}
-
+// Close does nothing for redis plugin.
+func (plugin *Plugin) Close() error {
 	return nil
 }
 
-// Close shutdowns the connection to redis.
-func (p *Plugin) Close() error {
-	_, err := safeclose.CloseAll(p.Skeleton)
-	return err
+// NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message.
+func (plugin *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
+	return plugin.protoWrapper.NewBroker(keyPrefix)
 }
 
-func (p *Plugin) retrieveConfig() (cfg interface{}, err error) {
-	found, _ := p.PluginConfig.GetValue(&struct{}{})
-	if !found {
-		p.Log.Info("redis config not found ", p.PluginConfig.GetConfigName(), " - skip loading this plugin")
-		p.disabled = true
-		return nil, nil
-	}
-	configFile := p.PluginConfig.GetConfigName()
-	if configFile != "" {
-		cfg, err = LoadConfig(configFile)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return cfg, nil
-}
-
-// String returns Deps.PluginName if set, "redis-client" otherwise.
-func (p *Plugin) String() string {
-	if len(p.Deps.PluginName) == 0 {
-		return "redis-client"
-	}
-	return string(p.Deps.PluginName)
+// NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
+func (plugin *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
+	return plugin.protoWrapper.NewWatcher(keyPrefix)
 }
 
 // Disabled returns *true* if the plugin is not in use due to missing
 // redis configuration.
-func (p *Plugin) Disabled() (disabled bool) {
-	return p.disabled
+func (plugin *Plugin) Disabled() (disabled bool) {
+	return plugin.disabled
+}
+
+func (plugin *Plugin) getRedisConfig() (cfg interface{}, err error) {
+	found, _ := plugin.PluginConfig.GetValue(&struct{}{})
+	if !found {
+		plugin.Log.Info("Redis config not found, skip loading this plugin")
+		plugin.disabled = true
+		return
+	}
+	configFile := plugin.PluginConfig.GetConfigName()
+	if configFile != "" {
+		cfg, err = LoadConfig(configFile)
+		if err != nil {
+			return
+		}
+	}
+	return
 }

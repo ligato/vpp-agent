@@ -303,7 +303,6 @@
     "db/keyval",
     "db/keyval/etcdv3",
     "db/keyval/kvproto",
-    "db/keyval/plugin",
     "db/keyval/redis",
     "db/sql",
     "db/sql/cassandra",
@@ -332,7 +331,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "ebc1ecb08236c7c07de1b288b3f42d493d5ef1ea"
+  revision = "e5bff3cae460e0e45770b9840ddf863da8540d72"
 
 [[projects]]
   branch = "master"
@@ -624,6 +623,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8e15cc616f68f01b044f3b6608b52971e34faa34480860dd0ce1efa7a842d7a7"
+  inputs-digest = "a9dc69d8d8ad3c40d09628a4411cc95bf4f8f6ee4bb4660f0969a6c27ec79853"
   solver-name = "gps-cdcl"
   solver-version = 1
