@@ -264,16 +264,17 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 
 		plugin.Deps.Log.Info("Getting example acl")
 
-		ipRule := acl.AccessLists_Acl_Rule_Match_IpRule{
+		ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
 			Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
 				DestinationNetwork: "1.2.3.4/24",
-				SourceNetwork:      "5.6.7.8/24"},
+				SourceNetwork:      "5.6.7.8/24",
+			},
 			Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
-				DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_DestinationPortRange{
+				DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 					LowerPort: 80,
 					UpperPort: 8080,
 				},
-				SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_SourcePortRange{
+				SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 					LowerPort: 10,
 					UpperPort: 1010,
 				},
@@ -281,23 +282,17 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 				TcpFlagsValue: 9,
 			},
 		}
-		matches := acl.AccessLists_Acl_Rule_Match{
-			IpRule: &ipRule,
-		}
 
-		actions := acl.AccessLists_Acl_Rule_Action{
+		rule := &acl.AccessLists_Acl_Rule{
+			Match: &acl.AccessLists_Acl_Rule_Match{
+				IpRule: ipRule,
+			},
 			AclAction: acl.AclAction_PERMIT,
 		}
 
-		rule := acl.AccessLists_Acl_Rule{
-			Matches: &matches,
-			Actions: &actions,
-		}
-		rules := []*acl.AccessLists_Acl_Rule{&rule}
-
 		aclRes := acl.AccessLists_Acl{
 			AclName: "example",
-			Rules:   rules,
+			Rules:   []*acl.AccessLists_Acl_Rule{rule},
 		}
 
 		plugin.Deps.Log.Debug(aclRes)

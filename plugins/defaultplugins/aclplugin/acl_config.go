@@ -105,55 +105,57 @@ func (plugin *ACLConfigurator) Close() error {
 func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 	plugin.Log.Infof("Configuring new ACL %v", acl.AclName)
 
-	if acl.Rules != nil && len(acl.Rules) > 0 {
-		// Validate rules.
-		rules, isL2MacIP := plugin.validateRules(acl.AclName, acl.Rules)
-		// Configure ACL rules.
-		var vppACLIndex uint32
-		var err error
-		if isL2MacIP {
-			vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-			if err != nil {
-				return err
-			}
-			// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0).
-			agentACLIndex := vppACLIndex + 1
-			plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
-			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
-		} else {
-			vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
-			if err != nil {
-				return err
-			}
-			// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0).
-			agentACLIndex := vppACLIndex + 1
-			plugin.ACLL3L4Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
-			plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
-		}
+	if len(acl.Rules) == 0 {
+		plugin.Log.Debugf("ACL %v has no rules set, skipping configuration", acl.AclName)
+		return nil
+	}
 
-		// Set ACL to interfaces.
-		if acl.Interfaces != nil {
-			if isL2MacIP {
-				aclIfIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
-				err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, aclIfIndices, plugin.Log)
-				if err != nil {
-					return err
-				}
-			} else {
-				aclIfInIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
-				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices, plugin.Log)
-				if err != nil {
-					return err
-				}
-				aclIfEgIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
-				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices, plugin.Log)
-				if err != nil {
-					return err
-				}
+	rules, isL2MacIP := plugin.validateRules(acl.AclName, acl.Rules)
+	// Configure ACL rules.
+	var vppACLIndex uint32
+	var err error
+	if isL2MacIP {
+		vppACLIndex, err = vppcalls.AddMacIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+		if err != nil {
+			return err
+		}
+		// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0).
+		agentACLIndex := vppACLIndex + 1
+		plugin.ACLL2Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
+		plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
+	} else {
+		vppACLIndex, err = vppcalls.AddIPAcl(rules, acl.AclName, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+		if err != nil {
+			return err
+		}
+		// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0).
+		agentACLIndex := vppACLIndex + 1
+		plugin.ACLL3L4Indexes.RegisterName(acl.AclName, agentACLIndex, acl)
+		plugin.Log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
+	}
+
+	// Set ACL to interfaces.
+	if ifaces := acl.GetInterfaces(); ifaces != nil {
+		if isL2MacIP {
+			aclIfIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
+			err := plugin.vppcalls.SetMacIPAclToInterface(vppACLIndex, aclIfIndices, plugin.Log)
+			if err != nil {
+				return err
 			}
 		} else {
-			plugin.Log.Infof("No interface configured for ACL %v", acl.AclName)
+			aclIfInIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
+			err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices, plugin.Log)
+			if err != nil {
+				return err
+			}
+			aclIfEgIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
+			err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices, plugin.Log)
+			if err != nil {
+				return err
+			}
 		}
+	} else {
+		plugin.Log.Infof("No interface configured for ACL %v", acl.AclName)
 	}
 
 	return nil
@@ -391,10 +393,10 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			continue
 		}
 		vppAclIdx := aclIdx - 1
-		if aclData != nil && aclData.Interfaces != nil {
+		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
-			for _, ingressIf := range aclData.Interfaces.Ingress {
-				if ingressIf == ifName {
+			for _, iface := range ifaces.Ingress {
+				if iface == ifName {
 					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
 						ifName: ifName,
 						aclID:  vppAclIdx,
@@ -403,8 +405,8 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 				}
 			}
 			// Look over egress interfaces
-			for _, ingressIf := range aclData.Interfaces.Egress {
-				if ingressIf == ifName {
+			for _, iface := range ifaces.Egress {
+				if iface == ifName {
 					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
 						ifName: ifName,
 						aclID:  vppAclIdx,
@@ -422,9 +424,9 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			continue
 		}
 		vppAclIdx := aclIdx - 1
-		if aclData != nil && aclData.Interfaces != nil {
+		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
-			for _, ingressIf := range aclData.Interfaces.Ingress {
+			for _, ingressIf := range ifaces.Ingress {
 				if ingressIf == ifName {
 					plugin.ACLIfCache = append(plugin.ACLIfCache, &ACLIfCacheEntry{
 						ifName: ifName,
@@ -469,18 +471,14 @@ func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.Access
 	var validL2Rules []*acl.AccessLists_Acl_Rule
 
 	for index, rule := range rules {
-		if rule.Actions == nil {
-			plugin.Log.Warnf("Rule %v from acl %v does not contain actions", index, aclName)
+		if rule.GetMatch() == nil {
+			plugin.Log.Warnf("Rule %v from acl %v does not contain match", index, aclName)
 			continue
 		}
-		if rule.Matches == nil {
-			plugin.Log.Warnf("Rule %v from acl %v does not contain matches", index, aclName)
-			continue
-		}
-		if rule.Matches.IpRule != nil {
+		if rule.GetMatch().GetIpRule() != nil {
 			validL3L4Rules = append(validL3L4Rules, rule)
 		}
-		if rule.Matches.MacipRule != nil {
+		if rule.GetMatch().GetMacipRule() != nil {
 			validL2Rules = append(validL2Rules, rule)
 		}
 	}
