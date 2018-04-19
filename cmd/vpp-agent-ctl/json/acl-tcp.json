@@ -12,10 +12,8 @@
     },
     "rules": [
         {
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.20.1.0/24",
