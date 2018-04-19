@@ -62,7 +62,7 @@ message Nat44DNat {
             repeated LocalIP local_ips = 5;    /* List of local IP addresses. If there is more than one entry,
                                                    Load ballancer is enabled. */
             Protocol protocol = 6;              /* Protocol used for static mapping. */
-            TwiceNatMode twiceNat = 7;          /* Enable/disable (self-)twice NAT. */
+            TwiceNatMode twice_nat = 7;          /* Enable/disable (self-)twice NAT. */
         }
         repeated StaticMapping st_mappings = 4;
 

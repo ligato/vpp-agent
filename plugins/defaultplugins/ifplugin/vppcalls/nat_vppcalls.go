@@ -56,7 +56,7 @@ type StaticMappingLbContext struct {
 	Protocol     uint8
 	Vrf          uint32
 	TwiceNat     bool
-	SelfTwiceNat  bool
+	SelfTwiceNat bool
 }
 
 // IdentityMappingContext groups common fields required for identity mapping
