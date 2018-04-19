@@ -70,7 +70,7 @@ func initCtl(etcdCfg string, cmdSet []string) (*VppAgentCtl, error) {
 // CreateACL puts access list config to the ETCD
 func (ctl *VppAgentCtl) createACL() {
 	accessList := acl.AccessLists{
-		Acl: []*acl.AccessLists_Acl{
+		Acls: []*acl.AccessLists_Acl{
 			// Single ACL entry
 			{
 				AclName: "acl1",
@@ -78,10 +78,8 @@ func (ctl *VppAgentCtl) createACL() {
 				Rules: []*acl.AccessLists_Acl_Rule{
 					// ACL IP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Action{
-							AclAction: acl.AclAction_PERMIT,
-						},
-						Matches: &acl.AccessLists_Acl_Rule_Match{
+						AclAction: acl.AclAction_PERMIT,
+						Match: &acl.AccessLists_Acl_Rule_Match{
 							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
 								Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
 									SourceNetwork:      "192.168.1.1/32",
@@ -92,18 +90,16 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL ICMP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Action{
-							AclAction: acl.AclAction_PERMIT,
-						},
-						Matches: &acl.AccessLists_Acl_Rule_Match{
+						AclAction: acl.AclAction_PERMIT,
+						Match: &acl.AccessLists_Acl_Rule_Match{
 							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
 								Icmp: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp{
 									Icmpv6: false,
-									IcmpCodeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpCodeRange{
+									IcmpCodeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{
 										First: 150,
 										Last:  250,
 									},
-									IcmpTypeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpTypeRange{
+									IcmpTypeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{
 										First: 1150,
 										Last:  1250,
 									},
@@ -113,19 +109,17 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL TCP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Action{
-							AclAction: acl.AclAction_PERMIT,
-						},
-						Matches: &acl.AccessLists_Acl_Rule_Match{
+						AclAction: acl.AclAction_PERMIT,
+						Match: &acl.AccessLists_Acl_Rule_Match{
 							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
 								Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
 									TcpFlagsMask:  20,
 									TcpFlagsValue: 10,
-									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_SourcePortRange{
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 										LowerPort: 150,
 										UpperPort: 250,
 									},
-									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_DestinationPortRange{
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 										LowerPort: 1150,
 										UpperPort: 1250,
 									},
@@ -135,33 +129,18 @@ func (ctl *VppAgentCtl) createACL() {
 					},
 					// ACL UDP rule
 					{
-						Actions: &acl.AccessLists_Acl_Rule_Action{
-							AclAction: acl.AclAction_PERMIT,
-						},
-						Matches: &acl.AccessLists_Acl_Rule_Match{
+						AclAction: acl.AclAction_PERMIT,
+						Match: &acl.AccessLists_Acl_Rule_Match{
 							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
 								Udp: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp{
-									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp_SourcePortRange{
+									SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 										LowerPort: 150,
 										UpperPort: 250,
 									},
-									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Udp_DestinationPortRange{
+									DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 										LowerPort: 1150,
 										UpperPort: 1250,
 									},
-								},
-							},
-						},
-					},
-					// ACL other rule
-					{
-						Actions: &acl.AccessLists_Acl_Rule_Action{
-							AclAction: acl.AclAction_PERMIT,
-						},
-						Matches: &acl.AccessLists_Acl_Rule_Match{
-							IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
-								Other: &acl.AccessLists_Acl_Rule_Match_IpRule_Other{
-									Protocol: 0,
 								},
 							},
 						},
@@ -181,8 +160,7 @@ func (ctl *VppAgentCtl) createACL() {
 					//	},
 					//},
 				},
-				// Interfaces
-				Interfaces: &acl.AccessLists_Acl_Interface{
+				Interfaces: &acl.AccessLists_Acl_Interfaces{
 					Ingress: []string{"tap1", "tap2"},
 					Egress:  []string{"tap1", "tap2"},
 				},
@@ -190,8 +168,8 @@ func (ctl *VppAgentCtl) createACL() {
 		},
 	}
 
-	ctl.Log.Print(accessList.Acl[0])
-	ctl.broker.Put(acl.Key(accessList.Acl[0].AclName), accessList.Acl[0])
+	ctl.Log.Print(accessList.Acls[0])
+	ctl.broker.Put(acl.Key(accessList.Acls[0].AclName), accessList.Acls[0])
 }
 
 // DeleteACL removes access list config from the ETCD

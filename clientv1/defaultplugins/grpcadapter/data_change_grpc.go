@@ -437,7 +437,7 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	if _, err := dsl.client.PutStaticRoutes(ctx, &l3.StaticRoutes{Routes: rtsPut}); err != nil {
 		wasErr = err
 	}
-	if _, err := dsl.client.PutACLs(ctx, &acl.AccessLists{Acl: aclPut}); err != nil {
+	if _, err := dsl.client.PutACLs(ctx, &acl.AccessLists{Acls: aclPut}); err != nil {
 		wasErr = err
 	}
 

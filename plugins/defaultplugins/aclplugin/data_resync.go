@@ -47,7 +47,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := checkIPRules(vppACL.ACLDetails.Rules)
+		ipRulesExist := len(vppACL.ACLDetails.Rules) > 0 && vppACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
@@ -72,14 +72,4 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	}
 
 	return wasErr
-}
-
-// Method checks first rule whether it is IP rule type and returns true in such a case
-func checkIPRules(rules []*acl.AccessLists_Acl_Rule) bool {
-	if len(rules) > 0 {
-		if rules[0].Matches != nil && rules[0].Matches.IpRule != nil {
-			return true
-		}
-	}
-	return false
 }
