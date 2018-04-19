@@ -711,7 +711,7 @@ func (ctl *VppAgentCtl) createDNat() {
 					},
 				},
 				Protocol: 1,
-				TwiceNat: false,
+				TwiceNat: nat.TwiceNatMode_ENABLED,
 			},
 		},
 		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMapping{

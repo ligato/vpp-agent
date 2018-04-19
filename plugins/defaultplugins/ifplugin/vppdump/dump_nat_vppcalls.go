@@ -199,7 +199,7 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 				LocalPort: uint32(msg.LocalPort),
 			}),
 			Protocol: getNatProtocol(msg.Protocol, log),
-			TwiceNat: uintToBool(msg.TwiceNat),
+			TwiceNat: getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 
@@ -250,12 +250,7 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
 			Protocol:     getNatProtocol(msg.Protocol, log),
-			TwiceNat: func(twiceNat uint8) bool {
-				if twiceNat == 1 {
-					return true
-				}
-				return false
-			}(msg.TwiceNat),
+			TwiceNat:     getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 
@@ -458,6 +453,20 @@ func getNatProtocol(protocol uint8, log logging.Logger) (proto nat.Protocol) {
 		log.Warnf("Unknown protocol %v", protocol)
 		return 0
 	}
+}
+
+func getTwiceNatMode(twiceNat, selfTwiceNat uint8, log logging.Logger) nat.TwiceNatMode {
+	if twiceNat > 0 {
+		if selfTwiceNat > 0 {
+			log.Warnf("Both TwiceNAT and self-TwiceNAT are enabled")
+			return 0
+		}
+		return nat.TwiceNatMode_ENABLED
+	}
+	if selfTwiceNat > 0 {
+		return nat.TwiceNatMode_SELF
+	}
+	return nat.TwiceNatMode_DISABLED
 }
 
 func uintToBool(value uint8) bool {
