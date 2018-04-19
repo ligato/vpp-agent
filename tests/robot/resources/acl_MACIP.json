@@ -12,7 +12,7 @@
     },
     "rules": [
         {
-            "rule_name":"${rule_nm}",
+            "rule_name": "${rule_nm}",
             "acl_action": ${acl_action},
             "match": {
                 "macip_rule": {
