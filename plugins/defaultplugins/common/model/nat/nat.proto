@@ -5,7 +5,13 @@ package nat;
 enum Protocol {                                 /* Available protocols. */
     TCP = 0;
     UDP = 1;
-    ICMP = 2;                                   /* ICMP is not permitted for load ballanced entries. */
+    ICMP = 2;                                   /* ICMP is not permitted for load balanced entries. */
+};
+
+enum TwiceNatMode {                             /* Available twice-NAT modes */
+    DISABLED = 0;
+    ENABLED = 1;
+    SELF = 2;
 };
 
 /* NAT44 global config */
@@ -56,7 +62,7 @@ message Nat44DNat {
             repeated LocalIP local_ips = 5;    /* List of local IP addresses. If there is more than one entry,
                                                    Load ballancer is enabled. */
             Protocol protocol = 6;              /* Protocol used for static mapping. */
-            bool twice_nat = 7;                  /* Enable/disable twice NAT. */
+            TwiceNatMode twiceNat = 7;          /* Enable/disable (self-)twice NAT. */
         }
         repeated StaticMapping st_mappings = 4;
 

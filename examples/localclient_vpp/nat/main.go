@@ -331,7 +331,7 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 					},
 				},
 				Protocol: 1,
-				TwiceNat: false,
+				TwiceNat: nat.TwiceNatMode_ENABLED,
 			},
 			{
 				// DNAT static mapping without load balancer (single local address)
@@ -347,7 +347,7 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 					},
 				},
 				Protocol: 1,
-				TwiceNat: false,
+				TwiceNat: nat.TwiceNatMode_ENABLED,
 			},
 		},
 		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMapping{
