@@ -188,7 +188,7 @@ func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
 			if resyncReq.ACLs == nil {
 				resyncReq.ACLs = &acl.AccessLists{}
 			}
-			resyncReq.ACLs.Acl = append(resyncReq.ACLs.Acl, typed)
+			resyncReq.ACLs.Acls = append(resyncReq.ACLs.Acls, typed)
 		}
 	}
 

@@ -162,7 +162,7 @@ func (svc *ChangeVppSvc) PutACLs(ctx context.Context, request *acl.AccessLists) 
 	*rpc.PutResponse, error) {
 	localReq := localclient.DataChangeRequest("rpc")
 	localReqPut := localReq.Put()
-	for _, acl := range request.Acl {
+	for _, acl := range request.Acls {
 		localReqPut.ACL(acl)
 	}
 
@@ -233,7 +233,7 @@ func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncCo
 		}
 	}
 	if request.ACLs != nil {
-		for _, accessList := range request.ACLs.Acl {
+		for _, accessList := range request.ACLs.Acls {
 			localReq.ACL(accessList)
 		}
 	}

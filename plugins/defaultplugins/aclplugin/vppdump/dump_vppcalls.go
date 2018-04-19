@@ -148,7 +148,7 @@ func DumpACLRules(log logging.Logger, vppChannel *govppapi.Channel,
 
 // DumpACLInterfaces returns a map of ACL indices with interfaces
 func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel *govppapi.Channel,
-	timeLog measure.StopWatchEntry) (map[uint32]*acl.AccessLists_Acl_Interface, error) {
+	timeLog measure.StopWatchEntry) (map[uint32]*acl.AccessLists_Acl_Interfaces, error) {
 	// ACLInterfaceListDump time measurement
 	start := time.Now()
 	defer func() {
@@ -158,7 +158,7 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 	}()
 
 	// list of ACL-to-interfaces
-	aclsWithInterfaces := make(map[uint32]*acl.AccessLists_Acl_Interface)
+	aclsWithInterfaces := make(map[uint32]*acl.AccessLists_Acl_Interfaces)
 	if swIfIndices == nil {
 		return aclsWithInterfaces, nil
 	}
@@ -225,7 +225,7 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 			}
 		}
 
-		aclsWithInterfaces[aclIdx] = &acl.AccessLists_Acl_Interface{
+		aclsWithInterfaces[aclIdx] = &acl.AccessLists_Acl_Interfaces{
 			Egress:  egress,
 			Ingress: ingress,
 		}
@@ -315,7 +315,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel *govppapi.Channel,
 func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.Channel, stopwatch *measure.Stopwatch) (acl.AccessLists, uint8, error) {
 	log.Info("DumpInterfaceAcls")
 	alAcls := acl.AccessLists{
-		Acl: []*acl.AccessLists_Acl{},
+		Acls: []*acl.AccessLists_Acl{},
 	}
 
 	res, err := vppcalls.DumpInterface(swIndex, vppChannel, stopwatch)
@@ -333,78 +333,78 @@ func DumpInterfaceAcls(log logging.Logger, swIndex uint32, vppChannel *govppapi.
 		if err != nil {
 			log.Error(err)
 		} else {
-			alAcls.Acl = append(alAcls.Acl, ipACL)
+			alAcls.Acls = append(alAcls.Acls, ipACL)
 		}
 	}
 	return alAcls, res.NInput, nil
 }
 
-func getIPRuleDetails(rule acl_api.ACLRule) (aclRule *acl.AccessLists_Acl_Rule, err error) {
+func getIPRuleDetails(rule acl_api.ACLRule) (*acl.AccessLists_Acl_Rule, error) {
 	// Resolve rule actions
-	actions := &acl.AccessLists_Acl_Rule_Action{}
-	if actions.AclAction, err = resolveRuleAction(rule.IsPermit); err != nil {
+	aclAction, err := resolveRuleAction(rule.IsPermit)
+	if err != nil {
 		return nil, err
 	}
 
 	// Resolve rule matches
-	matches := &acl.AccessLists_Acl_Rule_Match{
+	match := &acl.AccessLists_Acl_Rule_Match{
 		IpRule: getIPRuleMatches(rule),
 	}
 
 	return &acl.AccessLists_Acl_Rule{
-		Actions: actions,
-		Matches: matches,
+		AclAction: aclAction,
+		Match:     match,
 	}, nil
 }
 
-func getMACIPRuleDetails(rule acl_api.MacipACLRule) (aclRule *acl.AccessLists_Acl_Rule, err error) {
+func getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.AccessLists_Acl_Rule, error) {
 	// Resolve rule actions
-	actions := &acl.AccessLists_Acl_Rule_Action{}
-	if actions.AclAction, err = resolveRuleAction(rule.IsPermit); err != nil {
+	aclAction, err := resolveRuleAction(rule.IsPermit)
+	if err != nil {
 		return nil, err
 	}
 
 	// Resolve rule matches
-	matches := &acl.AccessLists_Acl_Rule_Match{
+	match := &acl.AccessLists_Acl_Rule_Match{
 		MacipRule: getMACIPRuleMatches(rule),
 	}
 
 	return &acl.AccessLists_Acl_Rule{
-		Actions: actions,
-		Matches: matches,
+		AclAction: aclAction,
+		Match:     match,
 	}, nil
 }
 
 // getIPACLDetails gets details for a given IP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
 func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
-	req := &acl_api.ACLDump{}
-	req.ACLIndex = uint32(idx)
+	req := &acl_api.ACLDump{
+		ACLIndex: uint32(idx),
+	}
 
 	reply := &acl_api.ACLDetails{}
-	err = vppChannel.SendRequest(req).ReceiveReply(reply)
-	if err != nil {
+	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
 	var ruleData []*acl.AccessLists_Acl_Rule
 	for _, r := range reply.R {
-		rule := acl.AccessLists_Acl_Rule{}
+		rule := &acl.AccessLists_Acl_Rule{}
 
 		ipRule, _ := getIPRuleDetails(r)
 
-		matches := acl.AccessLists_Acl_Rule_Match{
-			IpRule: ipRule.Matches.GetIpRule(),
+		match := &acl.AccessLists_Acl_Rule_Match{
+			IpRule: ipRule.GetMatch().GetIpRule(),
 		}
 
-		actions := acl.AccessLists_Acl_Rule_Action{}
-		if actions.AclAction, err = resolveRuleAction(r.IsPermit); err != nil {
+		aclAction, err := resolveRuleAction(r.IsPermit)
+		if err != nil {
 			return nil, err
 		}
 
-		rule.Matches = &matches
-		rule.Actions = &actions
-		ruleData = append(ruleData, &rule)
+		rule.Match = match
+		rule.AclAction = aclAction
+		ruleData = append(ruleData, rule)
 	}
 
 	return &acl.AccessLists_Acl{Rules: ruleData, AclName: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
@@ -413,8 +413,6 @@ func getIPACLDetails(vppChannel *govppapi.Channel, idx uint32) (aclRule *acl.Acc
 // getIPRuleMatches translates an IP rule from the binary VPP API format into the
 // ACL Plugin's NB format
 func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule {
-	ipRule := acl.AccessLists_Acl_Rule_Match_IpRule{}
-
 	var srcIP, dstIP string
 	if r.IsIpv6 == 1 {
 		srcIP = net.IP(r.SrcIPAddr).To16().String()
@@ -424,29 +422,22 @@ func getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule 
 		dstIP = net.IP(r.DstIPAddr[:4]).To4().String()
 	}
 
-	ip := acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
-		SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
-		DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
+	ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
+		Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
+			SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
+			DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
+		},
 	}
-	ipRule.Ip = &ip
 
 	switch r.Proto {
 	case vppcalls.TCPProto:
 		ipRule.Tcp = getTCPMatchRule(r)
-		break
 	case vppcalls.UDPProto:
 		ipRule.Udp = getUDPMatchRule(r)
-		break
-	case vppcalls.ICMPv4Proto:
-	case vppcalls.ICMPv6Proto:
+	case vppcalls.ICMPv4Proto, vppcalls.ICMPv6Proto:
 		ipRule.Icmp = getIcmpMatchRule(r)
-		break
-	default:
-		ipRule.Other = &acl.AccessLists_Acl_Rule_Match_IpRule_Other{
-			Protocol: uint32(r.Proto),
-		}
 	}
-	return &ipRule
+	return ipRule
 }
 
 func getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.AccessLists_Acl_Rule_Match_MacIpRule {
@@ -467,17 +458,17 @@ func getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.AccessLists_Acl_Rule_Ma
 // getTCPMatchRule translates a TCP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
 func getTCPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp {
-	dstPortRange := acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_DestinationPortRange{
+	dstPortRange := &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := acl.AccessLists_Acl_Rule_Match_IpRule_Tcp_SourcePortRange{
+	srcPortRange := &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
 	tcp := acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
-		DestinationPortRange: &dstPortRange,
-		SourcePortRange:      &srcPortRange,
+		DestinationPortRange: dstPortRange,
+		SourcePortRange:      srcPortRange,
 		TcpFlagsMask:         uint32(r.TCPFlagsMask),
 		TcpFlagsValue:        uint32(r.TCPFlagsValue),
 	}
@@ -487,17 +478,17 @@ func getTCPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_T
 // getUDPMatchRule translates a UDP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
 func getUDPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_Udp {
-	dstPortRange := acl.AccessLists_Acl_Rule_Match_IpRule_Udp_DestinationPortRange{
+	dstPortRange := &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := acl.AccessLists_Acl_Rule_Match_IpRule_Udp_SourcePortRange{
+	srcPortRange := &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
 	udp := acl.AccessLists_Acl_Rule_Match_IpRule_Udp{
-		DestinationPortRange: &dstPortRange,
-		SourcePortRange:      &srcPortRange,
+		DestinationPortRange: dstPortRange,
+		SourcePortRange:      srcPortRange,
 	}
 	return &udp
 }
@@ -505,15 +496,12 @@ func getUDPMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_U
 // getIcmpMatchRule translates an ICMP match rule from the binary VPP API
 // format into the ACL Plugin's NB format
 func getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp {
-	codeRange := acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpCodeRange{}
-	typeRange := acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_IcmpTypeRange{}
-
-	icmp := acl.AccessLists_Acl_Rule_Match_IpRule_Icmp{
+	icmp := &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp{
 		Icmpv6:        r.IsIpv6 > 0,
-		IcmpCodeRange: &codeRange,
-		IcmpTypeRange: &typeRange,
+		IcmpCodeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{},
+		IcmpTypeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{},
 	}
-	return &icmp
+	return icmp
 }
 
 // Returns rule action representation in model according to the vpp input
