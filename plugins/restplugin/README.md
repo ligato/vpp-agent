@@ -30,32 +30,34 @@ curl -H "Content-Type: application/json" -X POST -d '<acl-json>' http://0.0.0.0:
 
 For example:
 ```
-curl -H "Content-Type: application/json" -X POST -d '{"rules": [                                                                                                            {                                                                                                                     "actions": {                                                           
-        "acl_action": 1
-      },
-      "matches": {
-        "ip_rule": {
-          "ip": {
-            "destination_network": "1.2.3.4/24",
-            "source_network": "5.6.7.8/24"
-          },
-          "tcp": {
-            "destination_port_range": {
-              "lower_port": 80,
-              "upper_port": 8080
-            },
-            "source_port_range": {
-              "lower_port": 10,
-              "upper_port": 1010
-            },
-            "tcp_flags_mask": 255,
-            "tcp_flags_value": 9
-          }
+curl -H "Content-Type: application/json" -X POST -d '{
+    "acl_name": "example"
+    "rules": [
+        {
+            "rule_name": "acl1_rule1",                                                                                                        {                                                                                                                     "actions": {
+            "acl_action": 1,
+            "match": {
+                "ip_rule": {
+                    "ip": {
+                        "destination_network": "1.2.3.4/24",
+                        "source_network": "5.6.7.8/24"
+                    },
+                    "tcp": {
+                        "destination_port_range": {
+                            "lower_port": 80,
+                            "upper_port": 8080
+                        },
+                        "source_port_range": {
+                            "lower_port": 10,
+                            "upper_port": 1010
+                        },
+                        "tcp_flags_mask": 255,
+                        "tcp_flags_value": 9
+                    }
+                }
+            }
         }
-      }
-    }
-  ],
-  "acl_name": "example"
+    ]
 }' http://0.0.0.0:9191/interface/acl/ip
 ```
 ## Logging mechanism
