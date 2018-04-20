@@ -128,9 +128,14 @@ spec:
           mountPath: /etc/vpp
         - name: agent-config
           mountPath: /opt/vpp-agent/dev
+        - mountPath: /usr/bin/runvpp
+          name: vpp-run
         - name: memif-sockets
           mountPath: /tmp
   volumes:
+  - name: vpp-run
+    hostPath:
+      path: /usr/bin/runvpp
   - name: vpp-config
     configMap:
       name: vswitch-k8-vpp-cfg
