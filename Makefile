@@ -19,7 +19,7 @@ clean: clean-cmd clean-examples
 
 # Install commands
 install:
-	@echo "# installing commands"
+	@echo " => installing commands"
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-grpc
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
@@ -27,7 +27,7 @@ install:
 
 # Build commands
 cmd:
-	@echo "# building commands"
+	@echo " => building commands"
 	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/vpp-agent-grpc	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
@@ -35,7 +35,7 @@ cmd:
 
 # Clean commands
 clean-cmd:
-	@echo "# cleaning binaries"
+	@echo " => cleaning binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-grpc/vpp-agent-grpc
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
@@ -43,7 +43,7 @@ clean-cmd:
 
 # Build examples
 examples:
-	@echo "# building examples"
+	@echo " => building examples"
 	cd examples/govpp_call 		    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/idx_bd_cache 	    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/idx_iface_cache     	&& go build -v -i -tags="${GO_BUILD_TAGS}"
@@ -57,7 +57,7 @@ examples:
 
 # Clean examples
 clean-examples:
-	@echo "# cleaning examples"
+	@echo " => cleaning examples"
 	rm -f examples/govpp_call/govpp_call
 	rm -f examples/idx_bd_cache/idx_bd_cache
 	rm -f examples/idx_iface_cache/idx_iface_cache
@@ -69,9 +69,9 @@ clean-examples:
 
 # Run tests
 test:
-	@echo "# running scenario tests"
+	@echo " => running scenario tests"
 	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	@echo "# running unit tests"
+	@echo " => running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
 	go test ./plugins/defaultplugins/l2plugin/bdidx
@@ -85,7 +85,7 @@ get-covtools:
 
 # Run coverage report
 test-cover: get-covtools
-	@echo "# running unit tests with coverage analysis"
+	@echo " => running unit tests with coverage analysis"
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
@@ -94,7 +94,7 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	@echo "# merging coverage results"
+	@echo " => merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
@@ -105,15 +105,15 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \
 		> ${COVER_DIR}coverage.out
-	@echo "# coverage data generated into ${COVER_DIR}coverage.out"
+	@echo " => coverage data generated into ${COVER_DIR}coverage.out"
 
 test-cover-html: test-cover
 	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-	@echo "# coverage report generated into ${COVER_DIR}coverage.html"
+	@echo " => coverage report generated into ${COVER_DIR}coverage.html"
 
 test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
+	@echo " => coverage report generated into ${COVER_DIR}coverage.xml"
 
 # Get generator tools
 get-generators:
@@ -123,7 +123,7 @@ get-generators:
 
 # Generate sources
 generate: get-generators
-	@echo "# generating sources"
+	@echo " => generating sources"
 	cd plugins/linuxplugin && go generate
 	cd plugins/defaultplugins/aclplugin && go generate
 	cd plugins/defaultplugins/ifplugin && go generate
@@ -158,28 +158,28 @@ get-dep:
 
 # Install the project's dependencies
 dep-install: get-dep
-	@echo "# installing project's dependencies"
+	@echo " => installing project's dependencies"
 	dep ensure
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
-	@echo "# updating all dependencies"
+	@echo " => updating all dependencies"
 	dep ensure -update
 
 # Get linter tools
 get-linters:
-	@echo "# installing linters"
+	@echo " => installing linters"
 	go get -v github.com/alecthomas/gometalinter
 	gometalinter --install
 
 # Run linters
 lint: get-linters
-	@echo "# running code analysis"
+	@echo " => running code analysis"
 	./scripts/static_analysis.sh golint vet
 
 # Format code
 format:
-	@echo "# formatting the code"
+	@echo " => formatting the code"
 	./scripts/gofmt.sh
 
 # Get link check tool
