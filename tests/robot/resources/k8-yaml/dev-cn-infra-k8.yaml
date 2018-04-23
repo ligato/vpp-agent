@@ -1,0 +1,54 @@
+#docker create -e MICROSERVICE_LABEL=node_1
+#--sysctl net.ipv6.conf.all.disable_ipv6=0
+#-it
+#-p 9195:9191
+#--name node_1
+#ligato/dev-cn-infra:latest
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cn-infra-k8-agent-cfg
+data:
+  etcd.conf: |
+    insecure-transport: true
+    dial-timeout: 1000000000
+    endpoints:
+     - "172.17.0.1:22379"
+  kafka.conf: |
+    addrs:
+     - "172.17.0.1:9092"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dev-cn-infra
+spec:
+  hostNetwork: true
+  containers:
+    - name: "dev-cn-infra"
+      image: ligato/dev-cn-infra:latest
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        privileged: true
+      ports:
+        - containerPort: 9191
+      env:
+        - name: MICROSERVICE_LABEL
+          value: node_1
+      #args:
+      #    - "--sysctl net.ipv6.conf.all.disable_ipv6=0"
+      volumeMounts:
+        - name: agent-config
+          mountPath: /opt/agent/dev
+        - name: memif-sockets
+          mountPath: /tmp
+  volumes:
+  - name: agent-config
+    configMap:
+      name: vswitch-k8-agent-cfg
+  - name: memif-sockets
+    hostPath:
+      path: /tmp
+

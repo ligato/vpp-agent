@@ -71,13 +71,13 @@ data:
     nodaemon=true
 
     [program:vpp]
-    command=/usr/bin/runvpp
+    command=/usr/bin/vpp -c /etc/vpp/vpp.conf
     autorestart=false
     redirect_stderr=true
     priority=1
 
     [program:agent]
-    command=/usr/bin/agent_start.py
+    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --default-plugins-config=/opt/vpp-agent/dev/defaultplugins.conf --linuxplugin-config=/opt/vpp-agent/dev/linuxplugin.conf
     autorestart=false
     redirect_stderr=true
     priority=2
@@ -119,8 +119,8 @@ spec:
           value: vswitch
         - name: DP_STATUS_PUBLISHERS
           value: etcd
-      args:
-          - "--sysctl net.ipv6.conf.all.disable_ipv6=0"
+      #args:
+      #    - "--sysctl net.ipv6.conf.all.disable_ipv6=0"
       volumeMounts:
         - name: supervisor-config
           mountPath: /etc/supervisord
@@ -128,14 +128,9 @@ spec:
           mountPath: /etc/vpp
         - name: agent-config
           mountPath: /opt/vpp-agent/dev
-        - mountPath: /usr/bin/runvpp
-          name: vpp-run
         - name: memif-sockets
           mountPath: /tmp
   volumes:
-  - name: vpp-run
-    hostPath:
-      path: /usr/bin/runvpp
   - name: vpp-config
     configMap:
       name: vswitch-k8-vpp-cfg
