@@ -26,20 +26,18 @@ import (
 )
 
 // AddTapInterface calls TapConnect bin API.
-func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan VPPChannel, stopwatch *measure.Stopwatch) (uint32, error) {
+func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIfIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(tap.TapConnect{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	if tapIf == nil || tapIf.HostIfName == "" {
-		return 0, errors.New("host interface name was not provided for the TAP interface")
+		return swIfIdx, errors.New("host interface name was not provided for the TAP interface")
 	}
 
 	var (
-		err       error
-		retval    int32
-		swIfIndex uint32
-		msgName   string
+		retval  int32
+		msgName string
 	)
 	if tapIf.Version == 2 {
 		// Configure fast virtio-based TAP interface
@@ -59,7 +57,7 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 		reply := &tapv2.TapCreateV2Reply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
-		swIfIndex = reply.SwIfIndex
+		swIfIdx = reply.SwIfIndex
 		msgName = reply.GetMessageName()
 	} else {
 		// Configure the original TAP interface
@@ -71,17 +69,17 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 		reply := &tap.TapConnectReply{}
 		err = vppChan.SendRequest(req).ReceiveReply(reply)
 		retval = reply.Retval
-		swIfIndex = reply.SwIfIndex
+		swIfIdx = reply.SwIfIndex
 		msgName = reply.GetMessageName()
 	}
 	if err != nil {
-		return 0, err
+		return swIfIdx, err
 	}
 	if retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", msgName, retval)
+		return swIfIdx, fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
-	return swIfIndex, SetInterfaceTag(ifName, swIfIndex, vppChan, stopwatch)
+	return swIfIdx, SetInterfaceTag(ifName, swIfIdx, vppChan, stopwatch)
 }
 
 // DeleteTapInterface calls TapDelete bin API.

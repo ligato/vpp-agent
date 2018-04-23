@@ -33,6 +33,7 @@ import (
 	modelStn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -196,7 +197,7 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.STN_Rule, ruleNew *model
 
 // Dump STN rules configured on the VPP
 func (plugin *StnConfigurator) Dump() ([]*stn.StnRuleDetails, error) {
-	rules, err := vppcalls.DumpStnRules(plugin.vppChan, plugin.stopwatch)
+	rules, err := vppdump.DumpStnRules(plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return nil, err
 	}

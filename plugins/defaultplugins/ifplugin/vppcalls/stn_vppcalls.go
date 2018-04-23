@@ -75,26 +75,3 @@ func AddStnRule(ifIdx uint32, addr *net.IP, vppChan VPPChannel, stopwatch *measu
 func DelStnRule(ifIdx uint32, addr *net.IP, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return addDelStnRule(ifIdx, addr, false, vppChan, stopwatch)
 }
-
-// DumpStnRules returns a list of all STN rules configured on the VPP
-func DumpStnRules(vppChan VPPChannel, stopwatch *measure.Stopwatch) (rules []*stn.StnRuleDetails, err error) {
-	defer func(t time.Time) {
-		stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &stn.StnRulesDump{}
-	reqCtx := vppChan.SendMultiRequest(req)
-	for {
-		msg := &stn.StnRuleDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, msg)
-	}
-
-	return rules, nil
-}
