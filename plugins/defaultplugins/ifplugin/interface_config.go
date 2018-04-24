@@ -33,7 +33,6 @@ package ifplugin
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -475,13 +474,6 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 	oldConfig *intf.Interfaces_Interface) error {
 	plugin.log.Infof("Modifying Interface %v", newConfig.Name)
 
-	if newConfig == nil {
-		return errors.New("newConfig is null")
-	}
-	if oldConfig == nil {
-		return errors.New("oldConfig is null")
-	}
-
 	if newConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE && plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
 		return plugin.recreateVPPInterface(newConfig, oldConfig, 0)
 	}
@@ -550,7 +542,9 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 
 	var wasError error
 	// rx mode
-	wasError = plugin.modifyRxModeForInterfaces(oldConfig, newConfig, ifIdx)
+	if !(oldConfig.RxModeSettings == nil && newConfig.RxModeSettings == nil) {
+		wasError = plugin.modifyRxModeForInterfaces(oldConfig, newConfig, ifIdx)
+	}
 
 	// admin status
 	if newConfig.Enabled != oldConfig.Enabled {
@@ -673,37 +667,35 @@ Modify rx-mode on specified VPP interface
 */
 func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Interfaces_Interface, newIntf *intf.Interfaces_Interface,
 	ifIdx uint32) error {
-	oldRxSettings := oldIntf.RxModeSettings
-	newRxSettings := newIntf.RxModeSettings
-	if oldRxSettings != newRxSettings {
-		var oldRxMode intf.RxModeType
-		if oldRxSettings != nil {
-			oldRxMode = oldRxSettings.RxMode
-		}
-		if newRxSettings != nil {
+	oldRx := oldIntf.RxModeSettings
+	newRx := newIntf.RxModeSettings
+
+	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil ||
+		oldRx.RxMode != newRx.RxMode || oldRx.QueueId != newRx.QueueId || oldRx.QueueIdValid != newRx.QueueIdValid {
+		if newRx != nil {
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:
-				if newRxSettings.RxMode == intf.RxModeType_POLLING {
-					return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+				if newRx.RxMode == intf.RxModeType_POLLING {
+					return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
 				}
-				plugin.log.WithFields(logging.Fields{"rx-mode": newRxSettings.RxMode}).
+				plugin.log.WithFields(logging.Fields{"rx-mode": newRx.RxMode}).
 					Warn("Attempt to set unsupported rx-mode on Ethernet interface.")
 			default:
-				return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+				return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
 			}
 		} else {
 			// reset rx-mode to default value
-			newRxSettings = &intf.Interfaces_Interface_RxModeSettings{}
+			newRx = &intf.Interfaces_Interface_RxModeSettings{}
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:
-				newRxSettings.RxMode = intf.RxModeType_POLLING
+				newRx.RxMode = intf.RxModeType_POLLING
 			case intf.InterfaceType_AF_PACKET_INTERFACE:
-				newRxSettings.RxMode = intf.RxModeType_INTERRUPT
+				newRx.RxMode = intf.RxModeType_INTERRUPT
 			default:
-				newRxSettings.RxMode = intf.RxModeType_DEFAULT
+				newRx.RxMode = intf.RxModeType_DEFAULT
 			}
-			newIntf.RxModeSettings = newRxSettings
-			return plugin.modifyRxMode(ifIdx, newIntf, oldRxMode, *newRxSettings)
+			newIntf.RxModeSettings = newRx
+			return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
 		}
 	}
 	return nil
