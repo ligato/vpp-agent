@@ -32,7 +32,7 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 	}(time.Now())
 
 	if tapIf == nil || tapIf.HostIfName == "" {
-		return swIfIdx, errors.New("host interface name was not provided for the TAP interface")
+		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
 
 	var (
@@ -73,10 +73,10 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 		msgName = reply.GetMessageName()
 	}
 	if err != nil {
-		return swIfIdx, err
+		return 0, err
 	}
 	if retval != 0 {
-		return swIfIdx, fmt.Errorf("%s returned %d", msgName, retval)
+		return 0, fmt.Errorf("%s returned %d", msgName, retval)
 	}
 
 	return swIfIdx, SetInterfaceTag(ifName, swIfIdx, vppChan, stopwatch)
