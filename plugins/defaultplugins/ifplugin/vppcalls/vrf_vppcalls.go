@@ -88,7 +88,7 @@ func CreateVrfIfNeeded(vrf uint32, vppChan VPPChannel) error {
 	}
 	if _, ok := tables[vrf]; !ok {
 		logrus.DefaultLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
-		return vppAddDelIPTable(vrf, vppChan, false)
+		return vppAddIPTable(vrf, vppChan)
 	}
 
 	return nil
@@ -115,14 +115,10 @@ func dumpVrfTables(vppChan VPPChannel) (map[uint32][]*ip.IPFibDetails, error) {
 	return fibs, nil
 }
 
-func vppAddDelIPTable(tableID uint32, vppChan VPPChannel, delete bool) error {
+func vppAddIPTable(tableID uint32, vppChan VPPChannel) error {
 	req := &ip.IPTableAddDel{
 		TableID: tableID,
-	}
-	if delete {
-		req.IsAdd = 0
-	} else {
-		req.IsAdd = 1
+		IsAdd:   1,
 	}
 
 	// Send message
