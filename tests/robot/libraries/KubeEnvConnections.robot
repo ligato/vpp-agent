@@ -4,7 +4,7 @@ Resource          ${CURDIR}/all_libs.robot
 
 *** Keywords ***
 Open_CCMTS1_Connections
-    [Arguments]    ${node_index}=1    ${cluster_id}
+    [Arguments]    ${node_index}=1    ${cluster_id}=CCMTS1
     BuiltIn.Log    ${node_index}     ${cluster_id}
     ${vswitch_connection}=    KubeEnv.Open_Connection_To_Node    vswitch    ${cluster_id}     ${node_index}
     BuiltIn.Set_Suite_Variable    ${vswitch_connection}

@@ -8,16 +8,16 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
+Suite Setup       BasicCcmtsSetup
+Suite Teardown    BasicCcmtsTeardown
+Test Setup        TestSetup
+Test Teardown     TestTeardown
+
 *** Variables ***
 ${REPLY_DATA_FOLDER}            replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
 ${CLUSTRER_ID}=     CCMTS1
-
-Suite Setup       BasicCcmtsSetup
-Suite Teardown    BasicCcmtsTeardown
-Test Setup        TestSetup
-Test Teardown     TestTeardown
 
 *** Test Cases ***
 Pod_To_Pod_Ping
