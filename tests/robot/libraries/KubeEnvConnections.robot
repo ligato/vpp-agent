@@ -6,7 +6,7 @@ Resource          ${CURDIR}/all_libs.robot
 Open_CCMTS1_Connections
     [Arguments]    ${node_index}=1    ${cluster_id}
     BuiltIn.Log    ${node_index}     ${cluster_id}
-    ${client_connection}=    KubeEnv.Open_Connection_To_Node    vswitch    ${cluster_id}     ${node_index}
+    ${vswitch_connection}=    KubeEnv.Open_Connection_To_Node    vswitch    ${cluster_id}     ${node_index}
     BuiltIn.Set_Suite_Variable    ${vswitch_connection}
     KubeEnv.Get_Into_Container_Prompt_In_Pod    ${vswitch_connection}    ${vswitch_pod_name}    prompt=#
     ${vswitch_pod_details} =     KubeCtl.Describe_Pod    ${testbed_connection}    ${vswitch_pod_name}
@@ -45,3 +45,20 @@ Open_CCMTS1_Connections
     BuiltIn.Set_Suite_Variable    ${vpp_connection}
     SshCommons.Switch_And_Write_Command    ${vpp_connection}    vppctl
 
+
+Close_CCMTS1_Connections
+    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${vswitch_connection}
+    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${cn_infra_connection}
+    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${sfc_connection}
+    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${etcd_connection}
+    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${kafka_connection}
+    SSHLibrary.Switch_Connection    ${vswitch_connection}
+    SSHLibrary.Close_Connection
+    SSHLibrary.Switch_Connection    ${cn_infra_connection}
+    SSHLibrary.Close_Connection
+    SSHLibrary.Switch_Connection    ${sfc_connection}
+    SSHLibrary.Close_Connection
+    SSHLibrary.Switch_Connection    ${etcd_connection}
+    SSHLibrary.Close_Connection
+    SSHLibrary.Switch_Connection    ${kafka_connection}
+    SSHLibrary.Close_Connection
