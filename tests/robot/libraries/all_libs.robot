@@ -22,3 +22,4 @@ Resource    KubeCtl.robot
 Resource    KubeEnv.robot
 Resource    KubeEnvConnections.robot
 Resource    SshCommons.robot
+Resource    kube_parser.py

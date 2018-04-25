@@ -145,4 +145,6 @@ ${K8_CLUSTER_CCMTS1_VM_1_LABEL}       ccmts_node
 ${K8_CLUSTER_CCMTS1_VM_1_PROMPT}      $
 ${K8_CLUSTER_CCMTS1_DOCKER_COMMAND}   docker
 
+${SSH_READ_DELAY}                  3
+${SSH_TIMEOUT}                     30
 ${POD_DEPLOY_TIMEOUT}       600
