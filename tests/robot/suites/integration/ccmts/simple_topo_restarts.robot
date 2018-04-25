@@ -121,7 +121,7 @@ BasicCcmtsSetup
 BasicCcmtsTeardown
     [Documentation]    Log leftover output from pods, remove pods, execute common teardown.
     KubeEnv.Log_Pods_For_Debug    ${testbed_connection}    exp_nr_vswitch=1
-    KubeEnv.Remove_ETCD_KAFKA_And_Verify_Removed    ${testbed_connection}
+    KubeEnv.Remove_ETCD And_KAFKA_Pod_And_Verify_Removed    ${testbed_connection}
     KubeEnv.Remove_VSwitch_Pod_And_Verify_Removed   ${testbed_connection}
     KubeEnv.Remove_SFC_Pod_And_Verify_Removed   ${testbed_connection}
     KubeEnv.Remove_Cn-Infra_Pod_And_Verify_Removed   ${testbed_connection}
