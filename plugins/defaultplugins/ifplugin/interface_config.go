@@ -670,8 +670,7 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 	oldRx := oldIntf.RxModeSettings
 	newRx := newIntf.RxModeSettings
 
-	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil ||
-		oldRx.RxMode != newRx.RxMode || oldRx.QueueId != newRx.QueueId || oldRx.QueueIdValid != newRx.QueueIdValid {
+	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil || *oldRx != *newRx {
 		if newRx != nil {
 			switch newIntf.Type {
 			case intf.InterfaceType_ETHERNET_CSMACD:
