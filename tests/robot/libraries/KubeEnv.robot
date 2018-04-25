@@ -12,12 +12,13 @@ Documentation     This is a library to handle actions related to kubernetes clus
 Resource          ${CURDIR}/all_libs.robot
 
 *** Variables ***
-${YAML_FILES_PATH}    ${CURDIR}/../../../k8s/contiv-vpp.yaml
-${CRI_INSTALL_PATH}    ${CURDIR}/../../../k8s/cri-install.sh
-${PULL_IMAGES_PATH}    ${CURDIR}/../../../k8s/pull-images.sh
-${PROXY_INSTALL_PATH}    ${CURDIR}/../../../k8s/proxy-install.sh
-${VSWITCH_POD_FILE}    ${CURDIR}/../resources/ubuntu-client.yaml
-${POD_FILE_NODE1}    ${CURDIR}/../resources/ubuntu-client-node1.yaml
+${ETCD_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/etcd-k8.yaml
+${KAFKA_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/kafka-k8.yaml
+${SFC_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/sfc-k8.yaml
+${VSWITCH_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/vswitch-k8.yaml
+${CN_INFRA_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/dev-vn-infra-k8.yaml
+${PULL_IMAGES_PATH}    ${CURDIR}/../resources/k8-scripts/pull-images.sh
+
 
 *** Keywords ***
 # TODO: Passing ${ssh_session} around is annoying. Make keywords assume the correct SSH session is already active.
@@ -86,26 +87,66 @@ Get_Pod_Name_List_By_Prefix
     Builtin.Log    ${output}
     [Return]    ${output}
 
-Deploy_Vswitch_Pod_And_Verify_Running
-    [Arguments]    ${ssh_session}    ${client_file}=${CLIENT_POD_FILE}    ${server_file}=${SERVER_POD_FILE}
-    [Documentation]     Deploy and verify switch pod and store its name.
-    BuiltIn.Log_Many    ${ssh_session}    ${client_file}    ${server_file}
-    ${client_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${client_file}    ubuntu-client-    timeout=${POD_DEPLOY_CLIENT_TIMEOUT}
+Deploy_Etcd_Kafka_And_Verify_Running
+    [Arguments]    ${ssh_session}    ${etcd_file}=${ETCD_YAML_FILE_PATH}    ${kafka_file}=${KAFKA_YAML_FILE_PATH}
+    [Documentation]     Deploy and verify ETCD and KAFKA pods and store its name.
+    BuiltIn.Log_Many    ${ssh_session}    ${etcd_file}    ${kafka_file}
+    ${etcd_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${etcd_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    ${kafka_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${kafka_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${client_pod_name}
+
+Deploy_Vswitch_Pod_And_Verify_Running
+    [Arguments]    ${ssh_session}    ${vswitch_file}=${VSWITCH_YAML_FILE_PATH}
+    [Documentation]     Deploy and verify switch pod and store its name.
+    BuiltIn.Log_Many    ${ssh_session}    ${vswitch_file}
+    ${vswitch_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${vswitch_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    BuiltIn.Set_Suite_Variable    ${vswitch_pod_name}
+
+Deploy_SFC_Pod_And_Verify_Running
+    [Arguments]    ${ssh_session}    ${sfc_file}=${SFC_YAML_FILE_PATH}
+    [Documentation]     Deploy and verify switch pod and store its name.
+    BuiltIn.Log_Many    ${ssh_session}    ${sfc_file}
+    ${sfc_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${sfc_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    BuiltIn.Set_Suite_Variable    ${sfc_pod_name}
+
+
+Deploy_Cn-Infra_Pod_And_Verify_Running
+    [Arguments]    ${ssh_session}    ${cn-infra_file}=${CN_INFRA_YAML_FILE_PATH}
+    [Documentation]     Deploy and verify cn-infra pod and store its name.
+    BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
+    ${cn-infra_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    BuiltIn.Set_Suite_Variable    ${cn-infra_pod_name}
+
 
 Remove_VSwitch_Pod_And_Verify_Removed
-    [Arguments]    ${ssh_session}    ${client_file}=${CLIENT_POD_FILE}    ${server_file}=${SERVER_POD_FILE}
+    [Arguments]    ${ssh_session}    ${vswitch_file}=${VSWITCH_YAML_FILE_PATH}
     [Documentation]    Execute delete commands, wait until  pod is removed.
-    BuiltIn.Log_Many    ${ssh_session}    ${client_file}    ${server_file}
-    KubeCtl.Delete_F    ${ssh_session}    ${client_file}
-    Wait_Until_Pod_Removed    ${ssh_session}    ${client_pod_name}
+    BuiltIn.Log_Many    ${ssh_session}    ${vswitch_file}
+    KubeCtl.Delete_F    ${ssh_session}    ${vswitch_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${vswitch_pod_name}
 
-Deploy_NonVPP_Pod_And_Verify_Running
-    [Arguments]    ${ssh_session}    ${client_file}=${CLIENT_POD_FILE}    ${nginx_file}=${NGINX_POD_FILE}
-    [Documentation]     Deploy and verify one ubuntu client (from \${client_file}) and one nginx pod (from \${nginx_file}), store their names.
-    BuiltIn.Log_Many    ${ssh_session}    ${client_file}    ${nginx_file}
-    ${client_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${client_file}    ubuntu-client-    timeout=${POD_DEPLOY_CLIENT_TIMEOUT}
-    BuiltIn.Set_Suite_Variable    ${client_pod_name}
+Remove_SFC_Pod_And_Verify_Removed
+    [Arguments]    ${ssh_session}    ${sfc_file}=${CN_INFRA_YAML_FILE_PATH}
+    [Documentation]    Execute delete commands, wait until  pod is removed.
+    BuiltIn.Log_Many    ${ssh_session}    ${sfc_file}
+    KubeCtl.Delete_F    ${ssh_session}    ${sfc_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${sfc_pod_name}
+
+Remove_Cn-Infra_Pod_And_Verify_Removed
+    [Arguments]    ${ssh_session}    ${cn-infra_file}=${SFC_YAML_FILE_PATH}
+    [Documentation]    Execute delete commands, wait until  pod is removed.
+    BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
+    KubeCtl.Delete_F    ${ssh_session}    ${cn-infra_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${cn-infra_pod_name}
+
+Remove_ETCD And_KAFKA_Pod_And_Verify_Removed
+    [Arguments]    ${ssh_session}    ${etcd_file}=${CN_INFRA_YAML_FILE_PATH}    ${kafka_file}=${KAFKA_YAML_FILE_PATH}
+    [Documentation]    Execute delete commands, wait until  pod is removed.
+    BuiltIn.Log_Many    ${ssh_session}    ${etcd_file}    ${kafka_file}
+    KubeCtl.Delete_F    ${ssh_session}    ${etcd_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${etcd_pod_name}
+    KubeCtl.Delete_F    ${ssh_session}    ${kafka_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${kafka_pod_name}
 
 Verify_Multireplica_Pods_Running
     [Arguments]    ${ssh_session}    ${pod_prefix}    ${nr_replicas}    ${namespace}
@@ -351,7 +392,7 @@ Log_Pods_For_Debug
     Log_Kube_Dns    ${ssh_session}
 
 Open_Connection_To_Node
-    [Arguments]    ${name}    ${node_index}
+    [Arguments]    ${name}    ${cluster_id}    ${node_index}
     BuiltIn.Log_Many    ${name}    ${node_index}
-    ${connection}=    SshCommons.Open_Ssh_Connection    ${name}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${node_index}_PUBLIC_IP}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${node_index}_USER}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${node_index}_PSWD}
+    ${connection}=    SshCommons.Open_Ssh_Connection    ${name}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PSWD}
     [Return]    ${connection}

@@ -12,17 +12,20 @@ Resource     ../../libraries/all_libs.robot
 ${REPLY_DATA_FOLDER}            replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
+${CLUSTRER_ID}=     CCMTS1
 
 Suite Setup       BasicCcmtsSetup
 Suite Teardown    BasicCcmtsTeardown
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Test Cases ***
 Pod_To_Pod_Ping
     [Documentation]    Execute "ping -c 5" command between pods (both ways), require no packet loss.
     [Setup]    Setup_Hosts_Connections
-    ${stdout} =    KubernetesEnv.Run_Finite_Command_In_Pod    ping -c 5 ${server_ip}    ssh_session=${client_connection}
+    ${stdout} =    KubeEnv.Run_Finite_Command_In_Pod    ping -c 5 ${server_ip}    ssh_session=${client_connection}
     BuiltIn.Should_Contain   ${stdout}    5 received, 0% packet loss
-    ${stdout} =    KubernetesEnv.Run_Finite_Command_In_Pod    ping -c 5 ${client_ip}    ssh_session=${server_connection}
+    ${stdout} =    KubeEnv.Run_Finite_Command_In_Pod    ping -c 5 ${client_ip}    ssh_session=${server_connection}
     BuiltIn.Should_Contain   ${stdout}    5 received, 0% packet loss
     [Teardown]    Teardown_Hosts_Connections
 
@@ -33,8 +36,8 @@ Pod_To_Pod_Udp
     KubernetesEnv.Init_Infinite_Command_in_Pod    nc -u ${server_ip} 7000    ssh_session=${client_connection}
     ${text} =    BuiltIn.Set_Variable    Text to be received
     SSHLibrary.Write    ${text}
-    ${client_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${client_connection}
-    ${server_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
+    ${client_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${client_connection}
+    ${server_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
     BuiltIn.Should_Contain   ${server_stdout}    ${text}
     [Teardown]    Teardown_Hosts_Connections
 
@@ -42,12 +45,12 @@ Pod_To_Pod_Tcp
     [Documentation]    Start TCP server, start client sending the message, stop server, check message has been received, stop client.
     [Setup]    Setup_Hosts_Connections
     ${text} =    BuiltIn.Set_Variable    Text to be received
-    KubernetesEnv.Run_Finite_Command_In_Pod    cd; echo "${text}" > some.file    ssh_session=${client_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -l -p 4444    ssh_session=${server_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    cd; nc ${server_ip} 4444 < some.file    ssh_session=${client_connection}
-    ${server_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
+    KubeEnv.Run_Finite_Command_In_Pod    cd; echo "${text}" > some.file    ssh_session=${client_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -l -p 4444    ssh_session=${server_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    cd; nc ${server_ip} 4444 < some.file    ssh_session=${client_connection}
+    ${server_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
     BuiltIn.Should_Contain   ${server_stdout}    ${text}
-    ${client_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${client_connection}
+    ${client_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${client_connection}
     [Teardown]    Teardown_Hosts_Connections
 
 Host_To_Pod_Ping
@@ -62,12 +65,12 @@ Host_To_Pod_Ping
 Host_To_Pod_Udp
     [Documentation]    The same as Pod_To_Pod_Udp but client is on host instead of pod.
     [Setup]    Setup_Hosts_Connections
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -ul -p 7000    ssh_session=${server_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -u ${server_ip} 7000    ssh_session=${testbed_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -ul -p 7000    ssh_session=${server_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -u ${server_ip} 7000    ssh_session=${testbed_connection}
     ${text} =    BuiltIn.Set_Variable    Text to be received
     SSHLibrary.Write    ${text}
-    ${client_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${testbed_connection}    prompt=$
-    ${server_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
+    ${client_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${testbed_connection}    prompt=$
+    ${server_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
     BuiltIn.Should_Contain   ${server_stdout}    ${text}
     [Teardown]    Teardown_Hosts_Connections
 
@@ -75,17 +78,17 @@ Host_To_Pod_Tcp
     [Documentation]    The same as Pod_To_Pod_Tcp but client is on host instead of pod.
     [Setup]    Setup_Hosts_Connections
     ${text} =    BuiltIn.Set_Variable    Text to be received
-    KubernetesEnv.Run_Finite_Command_In_Pod    cd; echo "${text}" > some.file    ssh_session=${testbed_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -l -p 4444    ssh_session=${server_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    cd; nc ${server_ip} 4444 < some.file    ssh_session=${testbed_connection}
-    ${server_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
+    KubeEnv.Run_Finite_Command_In_Pod    cd; echo "${text}" > some.file    ssh_session=${testbed_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -l -p 4444    ssh_session=${server_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    cd; nc ${server_ip} 4444 < some.file    ssh_session=${testbed_connection}
+    ${server_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${server_connection}
     BuiltIn.Should_Contain   ${server_stdout}    ${text}
-    ${client_stdout} =    KubernetesEnv.Stop_Infinite_Command_In_Pod    ssh_session=${testbed_connection}    prompt=$
+    ${client_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${testbed_connection}    prompt=$
     [Teardown]    Teardown_Hosts_Connections
 
 *** Keywords ***
 Cleanup_Basic_Ccmts_Deployment_On_Cluster
-    [Documentation]    Assuming active SSH connection, store its index, execute multiple commands to cleanup 1node cluster, wait to see it running.
+    [Documentation]    Assuming active SSH connection, store its index, execute multiple commands to cleanup 1node cluster, wait for running.
     BuiltIn.Set_Suite_Variable    ${testbed_connection}    ${VM_SSH_ALIAS_PREFIX}1
     SSHLibrary.Switch_Connection  ${testbed_connection}
     #KubeCtl.Taint    ${testbed_connection}    nodes --all node-role.kubernetes.io/master-
@@ -107,16 +110,22 @@ Cleanup_Basic_Ccmts_Deployment_On_Cluster
 
 BasicCcmtsSetup
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
-    setup-teardown-kube.Testsuite_Setup
-    #KubernetesEnv.Reinit_1_Node_Cluster
+    setup-teardown.Testsuite_K8Setup    ${CLUSTRER_ID}
+    #KubeEnv.Reinit_1_Node_Cluster
     Cleanup_Basic_Ccmts_Deployment_On_Cluster
-    KubernetesEnv.Deploy_Client_And_Server_Pod_And_Verify_Running    ${testbed_connection}
+    KubeEnv.Deploy_Etcd_Kafka_And_Verify_Running    ${testbed_connection}
+    KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
+    KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
+    KubeEnv.Deploy_Cn-Infra_Pod_And_Verify_Running    ${testbed_connection}
 
-BasicCcmtsSetupTeardown
+BasicCcmtsTeardown
     [Documentation]    Log leftover output from pods, remove pods, execute common teardown.
-    KubernetesEnv.Log_Pods_For_Debug    ${testbed_connection}    exp_nr_vswitch=1
-    KubernetesEnv.Remove_Client_And_Server_Pod_And_Verify_Removed    ${testbed_connection}
-    setup-teardown-kube.Testsuite Teardown
+    KubeEnv.Log_Pods_For_Debug    ${testbed_connection}    exp_nr_vswitch=1
+    KubeEnv.Remove_Etcd_Kafka_And_Verify_Removed    ${testbed_connection}
+    KubeEnv.Remove_VSwitch_Pod_And_Verify_Removed   ${testbed_connection}
+    KubeEnv.Remove_SFC_Pod_And_Verify_Removed   ${testbed_connection}
+    KubeEnv.Remove_Cn-Infra_Pod_And_Verify_Removed   ${testbed_connection}
+    setup-teardown.Testsuite_K8Teardown
 
 Setup_Hosts_Connections
     [Documentation]    Open and store two more SSH connections to master host, in them open
@@ -133,148 +142,9 @@ Teardown_Hosts_Connections
     SSHLibrary.Switch_Connection    ${server_connection}
     SSHLibrary.Close_Connection
 
-
-
-
-
-*** Test Cases ***
-Configure Environment
-    [Tags]    setup
-    Configure Environment 2        acl_basic.conf
-
-Show ACL Before Setup
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
-Add ACL1_TCP
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL1 is created
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl1_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl1_tcp_term.txt
-
-
-Add ACL2_TCP
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM2_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL2 is created and ACL1 still Configured
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL2_NAME}   ${REPLY_DATA_FOLDER}/reply_acl2_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl2_tcp_term.txt
-
-
-
-Update ACL1
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL1 Is Changed and ACL2 not changed
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl1_update_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl1_update_tcp_term.txt
-
-Delete ACL2
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL2_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL2 Is Deleted and ACL1 Is Not Changed
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL2_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl2_delete_tcp_term.txt
-
-Delete ACL1
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL1_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL1 Is Deleted
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt   ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
-
-ADD ACL3_UDP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM3_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL3 Is Created
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl3_udp.txt    ${REPLY_DATA_FOLDER}/reply_acl3_udp_term.txt
-
-ADD ACL4_UDP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM4_1}     ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL4 Is Created And ACL3 Still Configured
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL4_NAME}    ${REPLY_DATA_FOLDER}/reply_acl4_udp.txt     ${REPLY_DATA_FOLDER}/reply_acl4_udp_term.txt
-
-Delete ACL4
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL4_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL4 Is Deleted and ACL3 Is Not Changed
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL4_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl3_udp_term.txt
-
-Delete ACL3
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL3_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL3 Is Deleted
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
-ADD ACL5_ICMP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM5_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL5 Is Created
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL5_NAME}   ${REPLY_DATA_FOLDER}/reply_acl5_icmp.txt    ${REPLY_DATA_FOLDER}/reply_acl5_icmp_term.txt
-
-ADD ACL6_ICMP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM6_1}    ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL6 Is Created And ACL5 Still Configured
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL6_NAME}    ${REPLY_DATA_FOLDER}/reply_acl6_icmp.txt    ${REPLY_DATA_FOLDER}/reply_acl6_icmp_term.txt
-
-Delete ACL6
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL6_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL6 Is Deleted and ACL5 Is Not Changed
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL6_NAME}     ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl5_icmp_term.txt
-
-Delete ACL5
-    vpp_ctl: Delete ACL     agent_vpp_1    ${ACL5_NAME}
-    Sleep    ${SYNC_SLEEP}
-
-Check ACL5 Is Deleted
-    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL5_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
-
-Add 6 ACL
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM2_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM3_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM4_1}     ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM5_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM6_1}    ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-
-Check All 6 ACLs Added
-    Check ACL All Reply    agent_vpp_1     ${REPLY_DATA_FOLDER}/reply_acl_all.txt        ${REPLY_DATA_FOLDER}/reply_acl_all_term.txt
-
-*** Keywords ***
-
-Check ACL All Reply
-    [Arguments]         ${node}    ${reply_json}     ${reply_term}
-    Log Many            ${node}    ${reply_json}     ${reply_term}
-    ${acl_d}=           vpp_ctl: Get All ACL As Json    ${node}
-    ${term_d}=          vat_term: Check All ACL     ${node}
-    ${term_d_lines}=    Split To Lines    ${term_d}
-    Log                 ${term_d_lines}
-    ${data}=            OperatingSystem.Get File    ${reply_json}
-    Should Be Equal     ${data}   ${acl_d}
-    ${data}=            OperatingSystem.Get File    ${reply_term}
-    ${t_data_lines}=    Split To Lines    ${data}
-    Log                 ${t_data_lines}
-    List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
-
-
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup
 
 TestTeardown
     Make Datastore Snapshots    ${TEST_NAME}_test_teardown
 
-Suite Cleanup
-    Stop SFC Controller Container
-    Testsuite Teardown
