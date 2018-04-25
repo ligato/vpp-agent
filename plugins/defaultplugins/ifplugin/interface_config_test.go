@@ -1153,6 +1153,37 @@ func TestInterfacesDeletePendingAfPacketInterface(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
+func TestModifyRxMode(t *testing.T) {
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
+
+	// Data
+	memifData := getTestMemifInterface(true, 1)
+	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	oldData.Memif = memifData
+	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	newData.Memif = memifData
+	newData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
+	newData.RxModeSettings.QueueId = 5
+
+	// Register old config
+	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
+	// Test configure
+	err := plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).ToNot(HaveOccurred())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	Expect(meta.RxModeSettings.QueueId).To(Equal(5))
+}
+
 /* Interface Test Setup */
 
 func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.InterfaceConfigurator) {
