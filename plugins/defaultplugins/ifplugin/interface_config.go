@@ -359,10 +359,10 @@ func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interf
 		switch iface.Type {
 		case intf.InterfaceType_ETHERNET_CSMACD:
 			if rxModeSettings.RxMode == intf.RxModeType_POLLING {
-				return plugin.configRxMode(iface, ifIdx, *rxModeSettings)
+				return plugin.configRxMode(iface, ifIdx, rxModeSettings)
 			}
 		default:
-			return plugin.configRxMode(iface, ifIdx, *rxModeSettings)
+			return plugin.configRxMode(iface, ifIdx, rxModeSettings)
 		}
 	}
 	return nil
@@ -371,7 +371,7 @@ func (plugin *InterfaceConfigurator) configRxModeForInterface(iface *intf.Interf
 /**
 Call specific vpp API method for setting rx-mode
 */
-func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings) error {
+func (plugin *InterfaceConfigurator) configRxMode(iface *intf.Interfaces_Interface, ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings) error {
 	err := vppcalls.SetRxMode(ifIdx, rxModeSettings, plugin.vppCh, plugin.stopwatch)
 	plugin.log.WithFields(logging.Fields{"ifName": iface.Name, "rxMode": rxModeSettings.RxMode}).
 		Debug("RX-mode configuration for ", iface.Type, ".")
@@ -671,44 +671,36 @@ func (plugin *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf *intf.Int
 	newRx := newIntf.RxModeSettings
 
 	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil || *oldRx != *newRx {
-		if newRx != nil {
-			switch newIntf.Type {
-			case intf.InterfaceType_ETHERNET_CSMACD:
-				if newRx.RxMode == intf.RxModeType_POLLING {
-					return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
-				}
-				plugin.log.WithFields(logging.Fields{"rx-mode": newRx.RxMode}).
-					Warn("Attempt to set unsupported rx-mode on Ethernet interface.")
-			default:
-				return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
+		// If new rx mode is nil, value is reset to default version (differs for interface types)
+		switch newIntf.Type {
+		case intf.InterfaceType_ETHERNET_CSMACD:
+			if newRx == nil {
+				return plugin.modifyRxMode(newIntf.Name, ifIdx, &intf.Interfaces_Interface_RxModeSettings{RxMode: intf.RxModeType_POLLING})
+			} else if newRx.RxMode != intf.RxModeType_POLLING {
+				return fmt.Errorf("attempt to set unsupported rx-mode %s on Ethernet interface %s", newRx.RxMode, newIntf.Name)
 			}
-		} else {
-			// reset rx-mode to default value
-			newRx = &intf.Interfaces_Interface_RxModeSettings{}
-			switch newIntf.Type {
-			case intf.InterfaceType_ETHERNET_CSMACD:
-				newRx.RxMode = intf.RxModeType_POLLING
-			case intf.InterfaceType_AF_PACKET_INTERFACE:
-				newRx.RxMode = intf.RxModeType_INTERRUPT
-			default:
-				newRx.RxMode = intf.RxModeType_DEFAULT
+		case intf.InterfaceType_AF_PACKET_INTERFACE:
+			if newRx == nil {
+				return plugin.modifyRxMode(newIntf.Name, ifIdx, &intf.Interfaces_Interface_RxModeSettings{RxMode: intf.RxModeType_INTERRUPT})
 			}
-			newIntf.RxModeSettings = newRx
-			return plugin.modifyRxMode(ifIdx, newIntf, oldRx.RxMode, *newRx)
+		default: // All the other interface types
+			if newRx == nil {
+				return plugin.modifyRxMode(newIntf.Name, ifIdx, &intf.Interfaces_Interface_RxModeSettings{RxMode: intf.RxModeType_DEFAULT})
+			}
 		}
+
+		return plugin.modifyRxMode(newIntf.Name, ifIdx, newRx)
 	}
+
 	return nil
 }
 
 /**
 Direct call of vpp api to change rx-mode of specified interface
 */
-func (plugin *InterfaceConfigurator) modifyRxMode(ifIdx uint32, newIntf *intf.Interfaces_Interface,
-	oldRxMode intf.RxModeType, newRxMode intf.Interfaces_Interface_RxModeSettings) error {
-	err := vppcalls.SetRxMode(ifIdx, *newIntf.RxModeSettings, plugin.vppCh, plugin.stopwatch)
-	plugin.log.WithFields(
-		logging.Fields{"ifName": newIntf.Name, "rxMode old": oldRxMode, "rxMode new": newRxMode.RxMode}).
-		Debug("RX-mode modification for ", newIntf.Type, ".")
+func (plugin *InterfaceConfigurator) modifyRxMode(ifName string, ifIdx uint32, rxMode *intf.Interfaces_Interface_RxModeSettings) error {
+	err := vppcalls.SetRxMode(ifIdx, rxMode, plugin.vppCh, plugin.stopwatch)
+	plugin.log.Debugf("RX-mode for %s set to %v", ifName, rxMode.RxMode)
 	return err
 }
 

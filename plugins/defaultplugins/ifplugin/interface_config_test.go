@@ -1158,6 +1158,7 @@ func TestModifyRxMode(t *testing.T) {
 	defer ifTestTeardown(connection, plugin)
 
 	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
@@ -1181,7 +1182,7 @@ func TestModifyRxMode(t *testing.T) {
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	Expect(meta.RxModeSettings.QueueId).To(Equal(5))
+	Expect(meta.RxModeSettings.QueueId).To(Equal(uint32(5)))
 }
 
 /* Interface Test Setup */
