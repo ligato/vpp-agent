@@ -8,6 +8,7 @@ Library       SSHLibrary            timeout=60s
 Resource      ${ENV}_setup-teardown.robot
 
 *** Variables ***
+${VM_SSH_ALIAS_PREFIX}     vm_
 ${snapshot_num}       0
 @{NODES}              
 
@@ -60,9 +61,10 @@ Test Teardown
     Close All Connections
 
 Testsuite_K8Setup
+    [Arguments]    ${cluster_id}
     [Documentation]    Perform actions common for setup of every suite.
     Discard_Old_Results
-    Create_Connections_To_Kube_Cluster
+    Create_Connections_To_Kube_Cluster      ${cluster_id}
 
 Testsuite_K8Teardown
     [Documentation]    Perform actions common for teardown of every suite.
@@ -129,10 +131,11 @@ Get_K8_Machine_Status
     SshCommons.Execute_Command_And_Log    kubectl get pods    ignore_stderr=True    ignore_rc=True
     
 Create_Connections_To_Kube_Cluster
+    [Arguments]    ${cluster_id}
     [Documentation]    Create connection and log machine status for each node.
-    : FOR    ${index}    IN RANGE    1    ${KUBE_CLUSTER_${CLUSTER_ID}_NODES}+1
-    \    SshCommons.Open_Ssh_Connection    ${VM_SSH_ALIAS_PREFIX}${index}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${index}_PUBLIC_IP}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${index}_USER}    ${KUBE_CLUSTER_${CLUSTER_ID}_VM_${index}_PSWD}
-    \    SSHLibrary.Set_Client_Configuration    prompt=${KUBE_CLUSTER_${CLUSTER_ID}_VM_${index}_PROMPT}
+    : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${cluster_id}_NODES}+1
+    \    SshCommons.Open_Ssh_Connection_Kube    ${VM_SSH_ALIAS_PREFIX}${index}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PSWD}
+    \    SSHLibrary.Set_Client_Configuration    prompt=${K8_CLUSTER_${cluster_id}_VM_${index}_PROMPT}
     \    Get_Machine_Status    ${VM_SSH_ALIAS_PREFIX}${index}
     
 Get Machine Status

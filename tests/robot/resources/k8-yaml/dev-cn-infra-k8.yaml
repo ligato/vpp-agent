@@ -47,7 +47,7 @@ spec:
   volumes:
   - name: agent-config
     configMap:
-      name: vswitch-k8-agent-cfg
+      name: cn-infra-k8-agent-cfg
   - name: memif-sockets
     hostPath:
       path: /tmp

@@ -133,3 +133,16 @@ ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 
 # temporary vars
 ${DEV_IMAGE}                       dev_vpp_agent
+
+# CCMTS VM 1 node BASIC
+${K8_CLUSTER_CCMTS1_NODES}            1
+${K8_CLUSTER_CCMTS1_VM_1_PUBLIC_IP}   localhost
+${K8_CLUSTER_CCMTS1_VM_1_LOCAL_IP}    localhost
+${K8_CLUSTER_CCMTS1_VM_1_HOST_NAME}   dp-profile-master-01
+${K8_CLUSTER_CCMTS1_VM_1_USER}        jenkins_ccmts
+${K8_CLUSTER_CCMTS1_VM_1_PSWD}        ccmts_jenkins
+${K8_CLUSTER_CCMTS1_VM_1_LABEL}       ccmts_node
+${K8_CLUSTER_CCMTS1_VM_1_PROMPT}      $
+${K8_CLUSTER_CCMTS1_DOCKER_COMMAND}   docker
+
+${POD_DEPLOY_TIMEOUT}       600
