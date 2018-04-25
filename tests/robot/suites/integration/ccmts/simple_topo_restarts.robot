@@ -4,9 +4,9 @@ Library      OperatingSystem
 
 Library      Collections
 
-Resource     ../../variables/${VARIABLES}_variables.robot
+Resource     ../../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../libraries/all_libs.robot
+Resource     ../../../libraries/all_libs.robot
 
 *** Variables ***
 ${REPLY_DATA_FOLDER}            replyACL
@@ -130,17 +130,11 @@ BasicCcmtsTeardown
 Setup_Hosts_Connections
     [Documentation]    Open and store two more SSH connections to master host, in them open
     ...    pod shells to client and server pod, parse their IP addresses and store them.
-    EnvConnections.Open_Client_Connection
-    EnvConnections.Open_Server_Connection
+    KubeEnvConnections.Open_CCMTS1_Connection
 
 Teardown_Hosts_Connections
     [Documentation]    Exit pod shells, close corresponding SSH connections.
-    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${client_connection}
-    KubernetesEnv.Leave_Container_Prompt_In_Pod    ${server_connection}
-    SSHLibrary.Switch_Connection    ${client_connection}
-    SSHLibrary.Close_Connection
-    SSHLibrary.Switch_Connection    ${server_connection}
-    SSHLibrary.Close_Connection
+    KubeEnvConnections.Close_CCMTS1_Connection
 
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup
