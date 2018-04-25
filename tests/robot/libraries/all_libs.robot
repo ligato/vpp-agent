@@ -5,6 +5,7 @@ Documentation     Library which includes all other libs
 ...
 
 Library     basic_operations.py
+Library     kube_parser.py
 Resource    setup-teardown.robot
 Resource    ssh.robot
 Resource    docker.robot
@@ -22,4 +23,4 @@ Resource    KubeCtl.robot
 Resource    KubeEnv.robot
 Resource    KubeEnvConnections.robot
 Resource    SshCommons.robot
-Resource    kube_parser.py
+Library     kube_parser.py
