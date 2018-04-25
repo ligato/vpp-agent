@@ -30,7 +30,7 @@ func TestSetRxMode(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 
-	err := vppcalls.SetRxMode(1, ifModel.Interfaces_Interface_RxModeSettings{
+	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
@@ -51,7 +51,7 @@ func TestSetRxModeError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxMode{})
 
-	err := vppcalls.SetRxMode(1, ifModel.Interfaces_Interface_RxModeSettings{
+	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
@@ -68,7 +68,7 @@ func TestSetRxModeRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := vppcalls.SetRxMode(1, ifModel.Interfaces_Interface_RxModeSettings{
+	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,

@@ -846,8 +846,7 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Modify
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -870,6 +869,320 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	Expect(meta).ToNot(BeNil())
 	Expect(meta.IpAddresses).To(HaveLen(1))
 	Expect(meta.IpAddresses[0]).To(BeEquivalentTo("10.0.0.2/24"))
+}
+
+// Modify Af-packet interface
+func TestInterfacesModifyAfPacket(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Modify
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	// Data
+	oldData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
+	oldData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
+	oldData.Enabled = false
+	newData := getTestAfPacket("if1", []string{"10.0.0.2/24"}, "host1")
+	// Register host
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 2)
+	// Test configure af-packet
+	err = plugin.ConfigureVPPInterface(oldData)
+	Expect(err).To(BeNil())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(oldData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	// Test modify af-packet
+	err = plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).To(BeNil())
+	_, meta, found = plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	Expect(meta.IpAddresses).To(HaveLen(1))
+	Expect(meta.IpAddresses[0]).To(BeEquivalentTo("10.0.0.2/24"))
+}
+
+// Modify Af-packet interface
+func TestInterfacesModifyAfPacketPending(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{}) // Modify
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	oldData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
+	newData := getTestAfPacket("if1", []string{"10.0.0.2/24"}, "host1")
+	// Test configure af-packet
+	err = plugin.ConfigureVPPInterface(oldData)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(oldData.Name)
+	Expect(found).To(BeFalse())
+	// Test modify af-packet
+	err = plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).To(BeNil())
+	_, _, found = plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{}) // Modify
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	// Data
+	oldData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
+	newData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host2")
+	// Register hosts
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 2)
+	plugin.ResolveCreatedLinuxInterface("host2", "host2", 3)
+	// Test configure af-packet
+	err = plugin.ConfigureVPPInterface(oldData)
+	Expect(err).To(BeNil())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(oldData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	// Test modify af-packet
+	err = plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).To(BeNil())
+	_, meta, found = plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+}
+
+func TestInterfacesDeleteTapInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&tap.TapDeleteReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestInterface("if", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, true, "46:06:18:DB:05:3A", 1500)
+	data.Tap = getTestTapInterface(1, "tap-host")
+	// Register interface (as if it is configured)
+	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesDeleteMemifInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestInterface("if", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	// Register interface (as if it is configured)
+	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesDeleteVxlanInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestInterface("if", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	data.Vxlan = getTestVxLanInterface("10.0.0.1", "20.0.0.1", 1)
+	// Register interface (as if it is configured)
+	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesDeleteLoopbackInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestInterface("if", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	// Register interface (as if it is configured)
+	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesDeleteEthernetInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	// Data
+	data := getTestInterface("if", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	// Register interface (as if it is configured)
+	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeTrue()) // Still in mapping
+}
+
+func TestInterfacesDeleteAfPacketInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
+	// Register hosts
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 2)
+	// Test delete
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestInterfacesDeletePendingAfPacketInterface(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	// Data
+	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
+	// Register hosts
+	plugin.ResolveCreatedLinuxInterface("host1", "host1", 2)
+	// Test delete
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	plugin.ResolveDeletedLinuxInterface("host1", "host1", 2)
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found = plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+}
+
+func TestModifyRxMode(t *testing.T) {
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
+
+	// Data
+	memifData := getTestMemifInterface(true, 1)
+	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	oldData.Memif = memifData
+	newData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
+	newData.Memif = memifData
+	newData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_DEFAULT)
+	newData.RxModeSettings.QueueId = 5
+
+	// Register old config
+	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
+	// Test configure
+	err := plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).ToNot(HaveOccurred())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	Expect(meta.RxModeSettings.QueueId).To(Equal(uint32(5)))
 }
 
 /* Interface Test Setup */

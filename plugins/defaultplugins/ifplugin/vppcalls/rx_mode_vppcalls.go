@@ -24,7 +24,7 @@ import (
 )
 
 // SetRxMode calls SwInterfaceSetRxMode bin
-func SetRxMode(ifIdx uint32, rxModeSettings intf.Interfaces_Interface_RxModeSettings, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
