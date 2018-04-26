@@ -15,13 +15,14 @@
 package ifplugin
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"os"
 	"sync"
 	"time"
+
+	"bytes"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
@@ -266,13 +267,16 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
 	iface *intf.InterfacesState_Interface, found bool, err error) {
 
-	ifState, ok := plugin.ifState[swIfIndex]
-	if ok {
-		return ifState, true, nil
-	}
 	ifName, _, found := plugin.swIfIndexes.LookupName(swIfIndex)
 	if !found {
 		return nil, found, nil
+	}
+
+	ifState, ok := plugin.ifState[swIfIndex]
+	// check also if the cached logical name is the same as the one associated
+	// with swIfindex, because swIfIndexes might be reused
+	if ok && ifState.Name == ifName {
+		return ifState, true, nil
 	}
 
 	ifState = &intf.InterfacesState_Interface{
