@@ -342,7 +342,7 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
 	defer stnTestTeardown(conn, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&stn_api.StnRuleDetails{
+	ctx.MockVpp.MockReply(&stn_api.StnRulesDetails{
 		IsIP4:     1,
 		IPAddress: net.ParseIP("10.0.0.1"),
 		SwIfIndex: 1,
