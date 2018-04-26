@@ -196,7 +196,7 @@ type FibPath struct {
 	NextHopID         uint32
 	RpfID             uint32
 	ViaLabel          uint32
-	NLabels           uint8 `struc:"sizeof=LabelStack"`
+	NLabels           uint8 `struc:"sizeof=LabelStack"` // MANUALLY FIXED, see https://jira.fd.io/browse/VPP-1261
 	LabelStack        []FibMplsLabel
 }
 
