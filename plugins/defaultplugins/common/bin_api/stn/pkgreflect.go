@@ -7,14 +7,14 @@ import "reflect"
 var Types = map[string]reflect.Type{
 	"StnAddDelRule":      reflect.TypeOf((*StnAddDelRule)(nil)).Elem(),
 	"StnAddDelRuleReply": reflect.TypeOf((*StnAddDelRuleReply)(nil)).Elem(),
-	"StnRuleDetails":     reflect.TypeOf((*StnRuleDetails)(nil)).Elem(),
+	"StnRulesDetails":    reflect.TypeOf((*StnRulesDetails)(nil)).Elem(),
 	"StnRulesDump":       reflect.TypeOf((*StnRulesDump)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
 	"NewStnAddDelRule":      reflect.ValueOf(NewStnAddDelRule),
 	"NewStnAddDelRuleReply": reflect.ValueOf(NewStnAddDelRuleReply),
-	"NewStnRuleDetails":     reflect.ValueOf(NewStnRuleDetails),
+	"NewStnRulesDetails":    reflect.ValueOf(NewStnRulesDetails),
 	"NewStnRulesDump":       reflect.ValueOf(NewStnRulesDump),
 }
 

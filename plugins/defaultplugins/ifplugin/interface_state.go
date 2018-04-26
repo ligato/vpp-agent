@@ -15,14 +15,13 @@
 package ifplugin
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"os"
 	"sync"
 	"time"
-
-	"bytes"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
@@ -134,13 +133,13 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	}
 
 	// subscribe for receiving VnetInterfaceSimpleCounters notifications
-	plugin.vppCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewVnetInterfaceSimpleCounters)
+	plugin.vppCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, stats.NewVnetInterfaceSimpleCounters)
 	if err != nil {
 		return err
 	}
 
 	// subscribe for receiving VnetInterfaceCombinedCounters notifications
-	plugin.vppCombinedCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewVnetInterfaceCombinedCounters)
+	plugin.vppCombinedCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, stats.NewVnetInterfaceCombinedCounters)
 	if err != nil {
 		return err
 	}
@@ -213,14 +212,15 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
 				plugin.processIfStateNotification(notif)
-			case *interfaces.VnetInterfaceSimpleCounters:
+			case *stats.VnetInterfaceSimpleCounters:
 				plugin.processIfCounterNotification(notif)
-			case *interfaces.VnetInterfaceCombinedCounters:
+			case *stats.VnetInterfaceCombinedCounters:
 				plugin.processIfCombinedCounterNotification(notif)
 			case *interfaces.SwInterfaceDetails:
 				plugin.updateIfStateDetails(notif)
 			default:
-				plugin.Log.WithFields(logging.Fields{"MessageName": msg.GetMessageName()}).Debug("Ignoring unknown VPP notification")
+				plugin.Log.Debugf("Ignoring unknown VPP notification: %s %+v",
+					msg.GetMessageName(), msg)
 			}
 
 		case swIdxDto := <-plugin.swIdxChan:
@@ -317,7 +317,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInt
 }
 
 // processIfCounterNotification processes a VPP (simple) counter message.
-func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *interfaces.VnetInterfaceSimpleCounters) {
+func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
@@ -355,7 +355,7 @@ func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *inter
 }
 
 // processIfCombinedCounterNotification processes a VPP message with combined counters.
-func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *interfaces.VnetInterfaceCombinedCounters) {
+func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *stats.VnetInterfaceCombinedCounters) {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
