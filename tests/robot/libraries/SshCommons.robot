@@ -8,8 +8,10 @@ Open_Ssh_Connection_Kube
     [Documentation]    Create SSH connection to \{ip} aliased as \${name} and log in using \${user} and \${pswd} (or rsa).
     ...    Log to output file. The new connection is left active.
     BuiltIn.Log_Many    ${name}    ${ip}    ${user}    ${pswd}
-    ${connection}=    SSHLibrary.Open_Connection    ${ip}    alias=${name}    timeout=${SSH_TIMEOUT}
-    ${out} =    BuiltIn.Run_Keyword_If    """${pswd}""" != "rsa_id"    SSHLibrary.Login    ${user}    ${pswd}
+    ${connection}=    Open Connection    ${ip}    alias=${name}    timeout=${SSH_TIMEOUT}
+    #${out} =    BuiltIn.Run_Keyword_If    """${pswd}""" != "rsa_id"    SSHLibrary.Login    ${user}    ${pswd}
+    #${out2} =    BuiltIn.Run_Keyword_If    """${pswd}""" == "rsa_id"    SSHLibrary.Login_With_Public_Key    ${user}    %{HOME}/.ssh/id_rsa    any
+    ${out} =    BuiltIn.Run_Keyword_If    """${pswd}""" != "rsa_id"     Login    ${user}    ${pswd}
     ${out2} =    BuiltIn.Run_Keyword_If    """${pswd}""" == "rsa_id"    SSHLibrary.Login_With_Public_Key    ${user}    %{HOME}/.ssh/id_rsa    any
     BuiltIn.Run_Keyword_If    """${out}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    *** Command: Login${\n}${out}${\n}
     BuiltIn.Run_Keyword_If    """${out2}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    *** Command: Login${\n}${out2}${\n}
