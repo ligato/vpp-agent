@@ -196,7 +196,7 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.STN_Rule, ruleNew *model
 }
 
 // Dump STN rules configured on the VPP
-func (plugin *StnConfigurator) Dump() ([]*stn.StnRuleDetails, error) {
+func (plugin *StnConfigurator) Dump() ([]*stn.StnRulesDetails, error) {
 	rules, err := vppdump.DumpStnRules(plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return nil, err
