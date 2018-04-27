@@ -47,6 +47,6 @@ func DataResyncRequestGRPC(client rpc.ResyncConfigServiceClient) defaultplugins.
 
 // DataChangeRequestGRPC allows sending Data Change requests conveniently (even without directly using Broker).
 // User of the API does not need to be aware of keys.
-func DataChangeRequestGRPC(client rpc.ChangeConfigServiceClient) defaultplugins.DataChangeDSL {
-	return grpcadapter.NewDataChangeDSL(client)
+func DataChangeRequestGRPC(client rpc.ChangeConfigServiceClient, newClient rpc.DataChangeServiceClient) defaultplugins.DataChangeDSL {
+	return grpcadapter.NewDataChangeDSL(client, newClient)
 }

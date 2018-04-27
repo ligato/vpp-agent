@@ -16,7 +16,6 @@ package grpcadapter
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
@@ -29,17 +28,19 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 	"golang.org/x/net/context"
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // NewDataChangeDSL is a constructor
-func NewDataChangeDSL(client rpc.ChangeConfigServiceClient) *DataChangeDSL {
-	return &DataChangeDSL{client, make([]proto.Message, 0), make([]proto.Message, 0)}
+func NewDataChangeDSL(client rpc.ChangeConfigServiceClient, newClient rpc.DataChangeServiceClient) *DataChangeDSL {
+	return &DataChangeDSL{client, newClient, make([]proto.Message, 0), make([]proto.Message, 0)}
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
 	client rpc.ChangeConfigServiceClient
+	newClient rpc.DataChangeServiceClient
 	put    []proto.Message
 	del    []proto.Message
 }
@@ -357,91 +358,57 @@ func (dsl *DeleteDSL) Send() defaultplugins.Reply {
 func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	var wasErr error
 
-	var (
-		ifsPut                         []*interfaces.Interfaces_Interface
-		bdsPut                         []*l2.BridgeDomains_BridgeDomain
-		xCsPut                         []*l2.XConnectPairs_XConnectPair
-		rtsPut                         []*l3.StaticRoutes_Route
-		aclPut                         []*acl.AccessLists_Acl
-		ifsDel, bdsDel, xCsDel, aclDel []string
-		rtsDel                         []*rpc.DelStaticRoutesRequest_DelStaticRoute
-	)
-
-	// 'PUT'
-	for _, val := range dsl.put {
-		switch typed := val.(type) {
-		case *interfaces.Interfaces_Interface:
-			ifsPut = append(ifsPut, typed)
-		case *l2.BridgeDomains_BridgeDomain:
-			bdsPut = append(bdsPut, typed)
-		case *l2.XConnectPairs_XConnectPair:
-			xCsPut = append(xCsPut, typed)
-		case *l3.StaticRoutes_Route:
-			rtsPut = append(rtsPut, typed)
-		case *acl.AccessLists_Acl:
-			aclPut = append(aclPut, typed)
-		default:
-			logrus.DefaultLogger().Error("Unsupported data type: %v", val)
-		}
-	}
-
-	// 'DEL'
-	for _, val := range dsl.put {
-		switch typed := val.(type) {
-		case *interfaces.Interfaces_Interface:
-			ifsDel = append(ifsDel, typed.Name)
-		case *l2.BridgeDomains_BridgeDomain:
-			bdsDel = append(bdsDel, typed.Name)
-		case *l2.XConnectPairs_XConnectPair:
-			xCsDel = append(xCsDel, typed.ReceiveInterface)
-		case *l3.StaticRoutes_Route:
-			rtsDel = append(rtsDel, &rpc.DelStaticRoutesRequest_DelStaticRoute{
-				VRF: typed.VrfId, DstAddr: typed.DstIpAddr, NextHopAddr: typed.NextHopAddr,
-			})
-		case *acl.AccessLists_Acl:
-			aclDel = append(aclDel, typed.AclName)
-		default:
-			logrus.DefaultLogger().Error("Unsupported data type: %v", val)
-		}
-	}
+	// Prepare requests with data todo can be scalable
+	delRequest := getRequestFromData(dsl.del)
+	putRequest := getRequestFromData(dsl.put)
 
 	ctx := context.Background()
 
-	// Call 'DEL'
-	if _, err := dsl.client.DelInterfaces(ctx, &rpc.DelNamesRequest{Name: ifsDel}); err != nil {
+	if _, err := dsl.newClient.Del(ctx, delRequest); err != nil {
 		wasErr = err
 	}
-	if _, err := dsl.client.DelBDs(ctx, &rpc.DelNamesRequest{Name: bdsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelXCons(ctx, &rpc.DelNamesRequest{Name: xCsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelStaticRoutes(ctx, &rpc.DelStaticRoutesRequest{Route: rtsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelACLs(ctx, &rpc.DelNamesRequest{Name: aclDel}); err != nil {
-		wasErr = err
-	}
-
-	// Call 'PUT'
-	if _, err := dsl.client.PutInterfaces(ctx, &interfaces.Interfaces{Interfaces: ifsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutBDs(ctx, &l2.BridgeDomains{BridgeDomains: bdsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutXCons(ctx, &l2.XConnectPairs{XConnectPairs: xCsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutStaticRoutes(ctx, &l3.StaticRoutes{Routes: rtsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutACLs(ctx, &acl.AccessLists{Acls: aclPut}); err != nil {
+	if _, err := dsl.newClient.Put(ctx, putRequest); err != nil {
 		wasErr = err
 	}
 
 	return &Reply{wasErr}
+}
+
+func getRequestFromData(data []proto.Message) *rpc.DataRequest {
+	request := &rpc.DataRequest{}
+	for _, item := range data {
+		switch typedItem := item.(type) {
+		case *acl.AccessLists_Acl:
+			if request.ACLs == nil {
+				request.ACLs = make([]*acl.AccessLists_Acl, 0)
+			}
+			request.ACLs = append(request.ACLs, typedItem)
+		case *interfaces.Interfaces_Interface:
+			if request.Interfaces == nil {
+				request.Interfaces = make([]*interfaces.Interfaces_Interface, 0)
+			}
+			request.Interfaces = append(request.Interfaces, typedItem)
+		case *l2.BridgeDomains_BridgeDomain:
+			if request.BDs == nil {
+				request.BDs = make([]*l2.BridgeDomains_BridgeDomain, 0)
+			}
+			request.BDs = append(request.BDs, typedItem)
+		case *l2.XConnectPairs_XConnectPair:
+			if request.XCons == nil {
+				request.XCons = make([]*l2.XConnectPairs_XConnectPair, 0)
+			}
+			request.XCons = append(request.XCons, typedItem)
+		case *l3.StaticRoutes_Route:
+			if request.StaticRoutes == nil {
+				request.StaticRoutes = make([]*l3.StaticRoutes_Route, 0)
+			}
+			request.StaticRoutes = append(request.StaticRoutes, typedItem)
+		default:
+			logrus.DefaultLogger().Warn("Unsupported data for GRPC request: %s", typedItem.String())
+		}
+	}
+
+	return request
 }
 
 // Reply enables waiting for the reply and getting result (success/error).

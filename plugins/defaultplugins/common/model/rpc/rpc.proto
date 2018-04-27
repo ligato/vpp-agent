@@ -7,6 +7,37 @@ import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.pr
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3/l3.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
 
+service DataChangeService {
+    rpc Put(DataRequest) returns (PutResponse);
+    rpc Del(DataRequest) returns (DelResponse);
+}
+
+service DataResyncService {
+    rpc Resync (DataRequest) returns (ResyncResponse);
+}
+
+message DataRequest {
+    repeated interfaces.Interfaces.Interface Interfaces = 1;
+    repeated l2.BridgeDomains.BridgeDomain BDs = 2;
+    repeated l2.XConnectPairs.XConnectPair XCons = 3;
+    repeated acl.AccessLists.Acl ACLs = 4;
+    repeated l3.StaticRoutes.Route StaticRoutes = 5;
+}
+
+message PutResponse {
+}
+
+message DelResponse {
+}
+
+message ResyncResponse {
+}
+
+
+
+
+
+
 // ChangeConfigService is a service to submit individual changes in the configuration of the vpp-agent
 service ChangeConfigService {
     // PutInterfaces creates or updates one or multiple interfaces
@@ -49,10 +80,7 @@ message DelStaticRoutesRequest {
     repeated DelStaticRoute Route = 1;
 }
 
-message PutResponse {
-}
-message DelResponse {
-}
+
 
 
 // ResyncConfigService is a service to submit full data resync request
