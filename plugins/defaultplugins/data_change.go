@@ -102,7 +102,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		fib, _, _ := l2.ParseFibKey(key)
 		if fib {
 			// L2 FIB entry
-			var value, prevValue l2.FibTableEntries_FibTableEntry
+			var value, prevValue l2.FibTable_FibEntry
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
@@ -164,7 +164,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		if err != nil {
 			return false, err
 		}
-		var value, prevValue l3.ArpTable_ArpTableEntry
+		var value, prevValue l3.ArpTable_ArpEntry
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -224,7 +224,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
-		var value, prevValue stn.StnRule
+		var value, prevValue stn.STN_Rule
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -294,6 +294,18 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			}
 			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 				if err := plugin.dataChangeIPSecSA(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		} else if strings.HasPrefix(key, ipsec.KeyPrefixTunnel) {
+			var value, prevValue ipsec.TunnelInterfaces_Tunnel
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecTunnel(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 					return false, err
 				}
 			} else {
@@ -385,14 +397,14 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator.
-func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTableEntry, prevValue *l2.FibTableEntries_FibTableEntry,
+func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTable_FibEntry, prevValue *l2.FibTable_FibEntry,
 	changeType datasync.PutDel, callback func(error)) error {
 	plugin.Log.Debug("dataChangeFIB diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.fibConfigurator.Delete(prevValue, callback)
 	} else if diff {
-		return plugin.fibConfigurator.Diff(prevValue, value, callback)
+		return plugin.fibConfigurator.Modify(prevValue, value, callback)
 	}
 	return plugin.fibConfigurator.Add(value, callback)
 }
@@ -425,7 +437,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 }
 
 // dataChangeARP propagates data change to the arpConfigurator
-func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prevValue *l3.ArpTable_ArpEntry,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
@@ -490,7 +502,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
-func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.PutDel) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -551,7 +563,7 @@ func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.Secu
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.ipsecConfigurator.DeleteSA(prevValue)
@@ -559,4 +571,16 @@ func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.Secur
 		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
 	}
 	return plugin.ipsecConfigurator.ConfigureSA(value)
+}
+
+// dataChangeIPSecTunnel propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.TunnelInterfaces_Tunnel, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecTunnel diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteTunnel(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifyTunnel(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureTunnel(value)
 }

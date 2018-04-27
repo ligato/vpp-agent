@@ -70,9 +70,9 @@ func DumpInterfaces(log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *
 		}
 
 		iface := &Interface{
-			VPPInternalName: string(bytes.Trim(ifDetails.InterfaceName, "\x00")),
+			VPPInternalName: string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0]),
 			Interfaces_Interface: ifnb.Interfaces_Interface{
-				Name:        string(bytes.Trim(ifDetails.Tag, "\x00")),
+				Name:        string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
 				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
@@ -165,7 +165,7 @@ func DumpMemifSocketDetails(log logging.Logger, vppChan vppcalls.VPPChannel, tim
 			return memifSocketMap, err
 		}
 
-		filename := string(bytes.Trim(socketDetails.SocketFilename, "\x00"))
+		filename := string(bytes.SplitN(socketDetails.SocketFilename, []byte{0x00}, 2)[0])
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 
@@ -328,7 +328,7 @@ func dumpTapDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uin
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    1,
-			HostIfName: string(bytes.Trim(tapDetails.DevName, "\x00")),
+			HostIfName: string(bytes.SplitN(tapDetails.DevName, []byte{0x00}, 2)[0]),
 		}
 		ifs[tapDetails.SwIfIndex].Type = ifnb.InterfaceType_TAP_INTERFACE
 	}
@@ -351,7 +351,7 @@ func dumpTapDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uin
 		}
 		ifs[tapDetails.SwIfIndex].Tap = &ifnb.Interfaces_Interface_Tap{
 			Version:    2,
-			HostIfName: string(bytes.Trim(tapDetails.HostIfName, "\x00")),
+			HostIfName: string(bytes.SplitN(tapDetails.HostIfName, []byte{0x00}, 2)[0]),
 			// Other parameters are not not yet part of the dump.
 
 		}

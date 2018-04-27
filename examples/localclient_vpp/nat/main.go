@@ -269,7 +269,7 @@ func interface3() *vpp_intf.Interfaces_Interface {
 func globalNat() *nat.Nat44Global {
 	return &nat.Nat44Global{
 		Forwarding: false,
-		NatInterfaces: []*nat.Nat44Global_NatInterfaces{
+		NatInterfaces: []*nat.Nat44Global_NatInterface{
 			{
 				Name:          "memif1",
 				IsInside:      false,
@@ -286,7 +286,7 @@ func globalNat() *nat.Nat44Global {
 				OutputFeature: false,
 			},
 		},
-		AddressPools: []*nat.Nat44Global_AddressPools{
+		AddressPools: []*nat.Nat44Global_AddressPool{
 			{
 				VrfId:           0,
 				FirstSrcAddress: "192.168.0.1",
@@ -311,46 +311,46 @@ func globalNat() *nat.Nat44Global {
 func dNat() *nat.Nat44DNat_DNatConfig {
 	return &nat.Nat44DNat_DNatConfig{
 		Label: "dnat1",
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMappings{
+		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
 				// DNAT static mapping with load balancer (multiple local addresses)
 				VrfId:             0,
 				ExternalInterface: "memif1",
-				ExternalIP:        "192.168.0.1",
+				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
+				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
-						LocalIP:     "172.124.0.2",
+						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
-						LocalIP:     "172.125.10.5",
+						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
 					},
 				},
 				Protocol: 1,
-				TwiceNat: false,
+				TwiceNat: nat.TwiceNatMode_ENABLED,
 			},
 			{
 				// DNAT static mapping without load balancer (single local address)
 				VrfId:             0,
 				ExternalInterface: "memif2",
-				ExternalIP:        "192.168.0.2",
+				ExternalIp:        "192.168.0.2",
 				ExternalPort:      8989,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
+				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
-						LocalIP:     "172.124.0.3",
+						LocalIp:     "172.124.0.3",
 						LocalPort:   6501,
 						Probability: 50,
 					},
 				},
 				Protocol: 1,
-				TwiceNat: false,
+				TwiceNat: nat.TwiceNatMode_ENABLED,
 			},
 		},
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMappings{
+		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMapping{
 			{
 				VrfId:     0,
 				IpAddress: "10.10.0.1",

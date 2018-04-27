@@ -266,13 +266,16 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
 	iface *intf.InterfacesState_Interface, found bool, err error) {
 
-	ifState, ok := plugin.ifState[swIfIndex]
-	if ok {
-		return ifState, true, nil
-	}
 	ifName, _, found := plugin.swIfIndexes.LookupName(swIfIndex)
 	if !found {
 		return nil, found, nil
+	}
+
+	ifState, ok := plugin.ifState[swIfIndex]
+	// check also if the cached logical name is the same as the one associated
+	// with swIfindex, because swIfIndexes might be reused
+	if ok && ifState.Name == ifName {
+		return ifState, true, nil
 	}
 
 	ifState = &intf.InterfacesState_Interface{
@@ -408,7 +411,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 		return
 	}
 
-	ifState.InternalName = string(bytes.Trim(ifDetails.InterfaceName, "\x00"))
+	ifState.InternalName = string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
 
 	if ifDetails.AdminUpDown == 1 {
 		ifState.AdminStatus = intf.InterfacesState_Interface_UP

@@ -10,11 +10,9 @@
     },
     "rules": [
         {
-            "rule_name":"${rule_nm}",
-            "actions": {
-                "acl_action": ${acl_action}
-            },
-            "matches": {
+            "rule_name": "${rule_nm}",
+            "acl_action": ${acl_action},
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "${dest_ntw}",

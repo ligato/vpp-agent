@@ -52,10 +52,10 @@ func FromExisting(server *grpc.Server) *Plugin {
 
 // Deps lists the dependencies of the Rest plugin.
 type Deps struct {
-	Log        logging.PluginLogger //inject
-	PluginName core.PluginName      //inject
-	config.PluginConfig             //inject
-	HTTP       rest.HTTPHandlers    //inject optional
+	Log                 logging.PluginLogger //inject
+	PluginName          core.PluginName      //inject
+	config.PluginConfig                      //inject
+	HTTP                rest.HTTPHandlers    //inject optional
 }
 
 // Init is the plugin entry point called by Agent Core

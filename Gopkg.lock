@@ -13,7 +13,7 @@
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "37c71c06371e9bf791fd1573051fa774fcb66602"
+  revision = "0456d22f67865977065886ed58778621b21b7ede"
 
 [[projects]]
   branch = "master"
@@ -199,7 +199,33 @@
 
 [[projects]]
   name = "github.com/gogo/protobuf"
-  packages = ["proto"]
+  packages = [
+    "gogoproto",
+    "plugin/compare",
+    "plugin/defaultcheck",
+    "plugin/description",
+    "plugin/embedcheck",
+    "plugin/enumstringer",
+    "plugin/equal",
+    "plugin/face",
+    "plugin/gostring",
+    "plugin/marshalto",
+    "plugin/oneofcheck",
+    "plugin/populate",
+    "plugin/size",
+    "plugin/stringer",
+    "plugin/testgen",
+    "plugin/union",
+    "plugin/unmarshal",
+    "proto",
+    "protoc-gen-gogo",
+    "protoc-gen-gogo/descriptor",
+    "protoc-gen-gogo/generator",
+    "protoc-gen-gogo/grpc",
+    "protoc-gen-gogo/plugin",
+    "vanity",
+    "vanity/command"
+  ]
   revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
   version = "v0.5"
 
@@ -277,7 +303,6 @@
     "db/keyval",
     "db/keyval/etcdv3",
     "db/keyval/kvproto",
-    "db/keyval/plugin",
     "db/keyval/redis",
     "db/sql",
     "db/sql/cassandra",
@@ -306,8 +331,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "e3b8c2a73fdfb66fe7654d1c3377ed5c1762a3b2"
-  version = "v1.2"
+  revision = "e5bff3cae460e0e45770b9840ddf863da8540d72"
 
 [[projects]]
   branch = "master"
@@ -599,6 +623,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b4ef8b777cb5d88a677974ac85f8f86508cc8d258885cee99b9a49c33eced773"
+  inputs-digest = "a9dc69d8d8ad3c40d09628a4411cc95bf4f8f6ee4bb4660f0969a6c27ec79853"
   solver-name = "gps-cdcl"
   solver-version = 1

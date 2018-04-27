@@ -130,7 +130,7 @@ func (dsl *PutDSL) BD(val *vpp_l2.BridgeDomains_BridgeDomain) linux.PutDSL {
 }
 
 // BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(fib *vpp_l2.FibTableEntries_FibTableEntry) linux.PutDSL {
+func (dsl *PutDSL) BDFIB(fib *vpp_l2.FibTable_FibEntry) linux.PutDSL {
 	dsl.vppPut.BDFIB(fib)
 	return dsl
 }
@@ -154,7 +154,7 @@ func (dsl *PutDSL) ACL(acl *vpp_acl.AccessLists_Acl) linux.PutDSL {
 }
 
 // Arp adds a request to create or update VPP L3 ARP.
-func (dsl *PutDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.PutDSL {
+func (dsl *PutDSL) Arp(arp *vpp_l3.ArpTable_ArpEntry) linux.PutDSL {
 	dsl.vppPut.Arp(arp)
 	return dsl
 }
@@ -184,7 +184,7 @@ func (dsl *PutDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) linux.
 }
 
 // StnRule adds a request to create or update VPP Stn rule.
-func (dsl *PutDSL) StnRule(stn *vpp_stn.StnRule) linux.PutDSL {
+func (dsl *PutDSL) StnRule(stn *vpp_stn.STN_Rule) linux.PutDSL {
 	dsl.vppPut.StnRule(stn)
 	return dsl
 }

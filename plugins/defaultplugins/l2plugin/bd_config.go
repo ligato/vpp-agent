@@ -469,7 +469,7 @@ func (plugin *BDConfigurator) calculateIfaceDiff(newIfaces, oldIfaces []*l2.Brid
 }
 
 // resolve diff of ARP entries
-func (plugin *BDConfigurator) calculateARPDiff(newARPs, oldARPs []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable) (toAdd, toRemove []*l2.BridgeDomains_BridgeDomain_ArpTerminationTable) {
+func (plugin *BDConfigurator) calculateARPDiff(newARPs, oldARPs []*l2.BridgeDomains_BridgeDomain_ArpTerminationEntry) (toAdd, toRemove []*l2.BridgeDomains_BridgeDomain_ArpTerminationEntry) {
 	// Resolve ARPs to add
 	for _, newARP := range newARPs {
 		var exists bool

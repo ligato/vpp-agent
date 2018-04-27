@@ -52,12 +52,12 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 	}
 
 	// Combine interfaces with output feature with the rest of them
-	var nat44GlobalInterfaces []*nat.Nat44Global_NatInterfaces
+	var nat44GlobalInterfaces []*nat.Nat44Global_NatInterface
 	for _, natInterface := range natInterfaces {
-		nat44GlobalInterfaces = append(nat44GlobalInterfaces, &nat.Nat44Global_NatInterfaces{
+		nat44GlobalInterfaces = append(nat44GlobalInterfaces, &nat.Nat44Global_NatInterface{
 			Name:     natInterface.Name,
 			IsInside: natInterface.IsInside,
-			OutputFeature: func(ofIfs []*nat.Nat44Global_NatInterfaces, ifName string) bool {
+			OutputFeature: func(ofIfs []*nat.Nat44Global_NatInterface, ifName string) bool {
 				for _, ofIf := range ofIfs {
 					if ofIf.Name == ifName {
 						return true
@@ -117,13 +117,13 @@ func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan v
 	log.Debugf("dumped %d NAT44DNat configs", len(dNatCfgs))
 
 	return &nat.Nat44DNat{
-		DnatConfig: dNatCfgs,
+		DnatConfigs: dNatCfgs,
 	}, wasErr
 }
 
 // nat44AddressDump returns a list of NAT44 address pools configured in the VPP
 func nat44AddressDump(log logging.Logger, vppChan vppcalls.VPPChannel,
-	stopwatch *measure.Stopwatch) (addresses []*nat.Nat44Global_AddressPools, err error) {
+	stopwatch *measure.Stopwatch) (addresses []*nat.Nat44Global_AddressPool, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44AddressDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -143,7 +143,7 @@ func nat44AddressDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 
 		ipAddress := net.IP(msg.IPAddress)
 
-		addresses = append(addresses, &nat.Nat44Global_AddressPools{
+		addresses = append(addresses, &nat.Nat44Global_AddressPool{
 			FirstSrcAddress: ipAddress.To4().String(),
 			VrfId:           msg.VrfID,
 			TwiceNat:        uintToBool(msg.TwiceNat),
@@ -157,12 +157,12 @@ func nat44AddressDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
 func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMapping)
 	req := &bin_api.Nat44StaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
 
@@ -175,15 +175,15 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 		if stop {
 			break
 		}
-		var locals []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
+		var locals []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
 		lcIPAddress := net.IP(msg.LocalIPAddress)
 		exIPAddress := net.IP(msg.ExternalIPAddress)
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Fill data (value)
-		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMappings{
+		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMapping{
 			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
@@ -192,14 +192,14 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 				}
 				return ifName
 			}(msg.ExternalSwIfIndex),
-			ExternalIP:   exIPAddress.To4().String(),
+			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
-			LocalIps: append(locals, &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{ // single-value
-				LocalIP:   lcIPAddress.To4().String(),
+			LocalIps: append(locals, &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{ // single-value
+				LocalIp:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
 			Protocol: getNatProtocol(msg.Protocol, log),
-			TwiceNat: uintToBool(msg.TwiceNat),
+			TwiceNat: getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 
@@ -210,12 +210,12 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 
 // nat44StaticMappingLbDump returns a map of static mapping tag/data pairs with load balancer
 func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMappings, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMappings)
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMapping)
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
 
@@ -230,32 +230,27 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 		}
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Prepare localIPs
-		var locals []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs
+		var locals []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
 		for _, localIPVal := range msg.Locals {
 			localIP := net.IP(localIPVal.Addr)
-			locals = append(locals, &nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs{
-				LocalIP:     localIP.To4().String(),
+			locals = append(locals, &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+				LocalIp:     localIP.To4().String(),
 				LocalPort:   uint32(localIPVal.Port),
 				Probability: uint32(localIPVal.Probability),
 			})
 		}
 		exIPAddress := net.IP(msg.ExternalAddr)
 
-		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMappings{
+		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMapping{
 			VrfId:        msg.VrfID,
-			ExternalIP:   exIPAddress.To4().String(),
+			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
 			Protocol:     getNatProtocol(msg.Protocol, log),
-			TwiceNat: func(twiceNat uint8) bool {
-				if twiceNat == 1 {
-					return true
-				}
-				return false
-			}(msg.TwiceNat),
+			TwiceNat:     getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 
@@ -266,12 +261,12 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 
 // nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
 func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMappings, err error) {
+	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	entries = make(map[string]*nat.Nat44DNat_DNatConfig_IdentityMappings)
+	entries = make(map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping)
 	req := &bin_api.Nat44IdentityMappingDump{}
 	reqContext := vppChan.SendMultiRequest(req)
 
@@ -288,10 +283,10 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 		ipAddress := net.IP(msg.IPAddress)
 
 		// Parse tag (key)
-		tag := string(bytes.Trim(msg.Tag, "\x00"))
+		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 
 		// Fill data (value)
-		entries[tag] = &nat.Nat44DNat_DNatConfig_IdentityMappings{
+		entries[tag] = &nat.Nat44DNat_DNatConfig_IdentityMapping{
 			VrfId: msg.VrfID,
 			AddressedInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
@@ -313,7 +308,7 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 
 // nat44InterfaceDump returns a list of interfaces enabled for NAT44
 func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan vppcalls.VPPChannel,
-	stopwatch *measure.Stopwatch) (interfaces []*nat.Nat44Global_NatInterfaces, err error) {
+	stopwatch *measure.Stopwatch) (interfaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -338,7 +333,7 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 			continue
 		}
 
-		interfaces = append(interfaces, &nat.Nat44Global_NatInterfaces{
+		interfaces = append(interfaces, &nat.Nat44Global_NatInterface{
 			Name:     ifName,
 			IsInside: uintToBool(msg.IsInside),
 		})
@@ -351,7 +346,7 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 
 // nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
 func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (ifaces []*nat.Nat44Global_NatInterfaces, err error) {
+	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (ifaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -376,7 +371,7 @@ func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging
 			continue
 		}
 
-		ifaces = append(ifaces, &nat.Nat44Global_NatInterfaces{
+		ifaces = append(ifaces, &nat.Nat44Global_NatInterface{
 			Name:          ifName,
 			IsInside:      uintToBool(msg.IsInside),
 			OutputFeature: true,
@@ -427,8 +422,8 @@ func processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DN
 	if dNat == nil {
 		dNat = &nat.Nat44DNat_DNatConfig{
 			Label:      label,
-			StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMappings, 0),
-			IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMappings, 0),
+			StMappings: make([]*nat.Nat44DNat_DNatConfig_StaticMapping, 0),
+			IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMapping, 0),
 		}
 		*dNatCfgs = append(*dNatCfgs, dNat)
 		log.Debugf("Created new DNAT configuration %s", label)
@@ -436,10 +431,10 @@ func processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DN
 
 	// Add data to config
 	switch mapping := data.(type) {
-	case *nat.Nat44DNat_DNatConfig_StaticMappings:
+	case *nat.Nat44DNat_DNatConfig_StaticMapping:
 		log.Debugf("Static mapping added to DNAT %s", label)
 		dNat.StMappings = append(dNat.StMappings, mapping)
-	case *nat.Nat44DNat_DNatConfig_IdentityMappings:
+	case *nat.Nat44DNat_DNatConfig_IdentityMapping:
 		log.Debugf("Identity mapping added to DNAT %s", label)
 		dNat.IdMappings = append(dNat.IdMappings, mapping)
 	}
@@ -458,6 +453,20 @@ func getNatProtocol(protocol uint8, log logging.Logger) (proto nat.Protocol) {
 		log.Warnf("Unknown protocol %v", protocol)
 		return 0
 	}
+}
+
+func getTwiceNatMode(twiceNat, selfTwiceNat uint8, log logging.Logger) nat.TwiceNatMode {
+	if twiceNat > 0 {
+		if selfTwiceNat > 0 {
+			log.Warnf("Both TwiceNAT and self-TwiceNAT are enabled")
+			return 0
+		}
+		return nat.TwiceNatMode_ENABLED
+	}
+	if selfTwiceNat > 0 {
+		return nat.TwiceNatMode_SELF
+	}
+	return nat.TwiceNatMode_DISABLED
 }
 
 func uintToBool(value uint8) bool {

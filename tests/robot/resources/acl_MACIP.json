@@ -12,11 +12,9 @@
     },
     "rules": [
         {
-            "rule_name":"${rule_nm}",
-            "actions": {
-                "acl_action": ${acl_action}
-            },
-            "matches": {
+            "rule_name": "${rule_nm}",
+            "acl_action": ${acl_action},
+            "match": {
                 "macip_rule": {
                     "source_address": "${src_addr}",
                     "source_address_prefix": "${src_addr_prefix}",

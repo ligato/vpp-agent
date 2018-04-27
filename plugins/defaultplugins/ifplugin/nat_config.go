@@ -73,9 +73,9 @@ type NatConfigurator struct {
 	natMappingTagSeq     uint32             // Static/identity mapping tag sequence
 
 	// a map of missing interfaces which should be enabled for NAT (format ifName/data)
-	notEnabledIfs map[string]*nat.Nat44Global_NatInterfaces
+	notEnabledIfs map[string]*nat.Nat44Global_NatInterface
 	// a map of NAT-enabled interfaces which should be disabled (format ifName/data)
-	notDisabledIfs map[string]*nat.Nat44Global_NatInterfaces
+	notDisabledIfs map[string]*nat.Nat44Global_NatInterface
 
 	// VPP channels
 	vppChan     vppcalls.VPPChannel
@@ -93,8 +93,8 @@ func (plugin *NatConfigurator) Init(pluginName core.PluginName, logger logging.P
 
 	// Mappings
 	plugin.ifIndexes = ifIndexes
-	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterfaces)
-	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterfaces)
+	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 	plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "snat-indices", nil)
 	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "snat-mapping-indices", nil)
 	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "dnat-indices", nil)
@@ -423,7 +423,7 @@ func (plugin *NatConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 	var wasErr error
 
 	// Check for interfaces which should be enabled
-	var enabledIf []*nat.Nat44Global_NatInterfaces
+	var enabledIf []*nat.Nat44Global_NatInterface
 	for cachedName, data := range plugin.notEnabledIfs {
 		if cachedName == ifName {
 			delete(plugin.notEnabledIfs, cachedName)
@@ -434,7 +434,7 @@ func (plugin *NatConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 		}
 	}
 	// Check for interfaces which could be disabled
-	var disabledIf []*nat.Nat44Global_NatInterfaces
+	var disabledIf []*nat.Nat44Global_NatInterface
 	for cachedName, data := range plugin.notDisabledIfs {
 		if cachedName == ifName {
 			delete(plugin.notDisabledIfs, cachedName)
@@ -478,7 +478,7 @@ func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
 }
 
 // enables set of interfaces as inside/outside in NAT
-func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterfaces) (err error) {
+func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
 	for _, natInterface := range natInterfaces {
 		ifIdx, _, found := plugin.ifIndexes.LookupIdx(natInterface.Name)
 		if !found {
@@ -513,7 +513,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 }
 
 // disables set of interfaces in NAT
-func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterfaces) (err error) {
+func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
 	for _, natInterface := range natInterfaces {
 		// Check if interface is not in the cache
 		for ifName := range plugin.notEnabledIfs {
@@ -555,7 +555,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 }
 
 // adds NAT address pool
-func (plugin *NatConfigurator) addDelAddressPool(addressPools []*nat.Nat44Global_AddressPools, isAdd bool) (err error) {
+func (plugin *NatConfigurator) addDelAddressPool(addressPools []*nat.Nat44Global_AddressPool, isAdd bool) (err error) {
 	var wasErr error
 	for _, addressPool := range addressPools {
 		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
@@ -609,7 +609,7 @@ func (plugin *NatConfigurator) addDelAddressPool(addressPools []*nat.Nat44Global
 }
 
 // configures a list of static mappings for provided label
-func (plugin *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMappings) error {
+func (plugin *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
 	var wasErr error
 	for _, mappingEntry := range mappings {
 		var tag string
@@ -647,7 +647,7 @@ func (plugin *NatConfigurator) configureStaticMappings(label string, mappings []
 }
 
 // removes static mappings from configuration with provided label
-func (plugin *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DNatConfig_StaticMappings) error {
+func (plugin *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
 	var wasErr error
 	for mappingIdx, mappingEntry := range mappings {
 		localIPList := mappingEntry.LocalIps
@@ -680,15 +680,15 @@ func (plugin *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DN
 }
 
 // configures single static mapping entry with load balancer
-func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMappings, tag string, add bool) (err error) {
+func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
 	// Validate tag
 	if tag == dummyTag && add {
 		plugin.log.Warn("Static mapping will be configured with generic tag")
 	}
 	// Parse external IP address
-	exIPAddrByte := net.ParseIP(staticMappingLb.ExternalIP).To4()
+	exIPAddrByte := net.ParseIP(staticMappingLb.ExternalIp).To4()
 	if exIPAddrByte == nil {
-		return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", staticMappingLb.ExternalIP)
+		return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", staticMappingLb.ExternalIp)
 	}
 
 	// In this case, external port is required
@@ -704,7 +704,8 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 		Protocol:     getProtocol(staticMappingLb.Protocol, plugin.log),
 		LocalIPs:     getLocalIPs(staticMappingLb.LocalIps, plugin.log),
 		Vrf:          staticMappingLb.VrfId,
-		TwiceNat:     staticMappingLb.TwiceNat,
+		TwiceNat:     staticMappingLb.TwiceNat == nat.TwiceNatMode_ENABLED,
+		SelfTwiceNat: staticMappingLb.TwiceNat == nat.TwiceNatMode_SELF,
 	}
 
 	if len(ctx.LocalIPs) == 0 {
@@ -718,7 +719,7 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 }
 
 // handler for single static mapping entry
-func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMappings, tag string, add bool) (err error) {
+func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
 	var ifIdx uint32 = 0xffffffff // default value - means no external interface is set
 	var exIPAddr []byte
 
@@ -728,7 +729,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	}
 
 	// Parse local IP address and port
-	lcIPAddr := net.ParseIP(staticMapping.LocalIps[0].LocalIP).To4()
+	lcIPAddr := net.ParseIP(staticMapping.LocalIps[0].LocalIp).To4()
 	lcPort := staticMapping.LocalIps[0].LocalPort
 	if lcIPAddr == nil {
 		return fmt.Errorf("cannot configure DNAT mapping: unable to parse local IP %v", lcIPAddr)
@@ -744,7 +745,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 		}
 	} else {
 		// Parse external IP address
-		exIPAddr = net.ParseIP(staticMapping.ExternalIP).To4()
+		exIPAddr = net.ParseIP(staticMapping.ExternalIp).To4()
 		if exIPAddr == nil {
 			return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", exIPAddr)
 		}
@@ -767,7 +768,8 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 		ExternalIfIdx: ifIdx,
 		Protocol:      getProtocol(staticMapping.Protocol, plugin.log),
 		Vrf:           staticMapping.VrfId,
-		TwiceNat:      staticMapping.TwiceNat,
+		TwiceNat:      staticMapping.TwiceNat == nat.TwiceNatMode_ENABLED,
+		SelfTwiceNat:  staticMapping.TwiceNat == nat.TwiceNatMode_SELF,
 	}
 
 	if add {
@@ -777,7 +779,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 }
 
 // configures a list of identity mappings with label
-func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) error {
+func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
 	var wasErr error
 	for _, idMapping := range mappings {
 		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
@@ -805,7 +807,7 @@ func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings 
 }
 
 // removes identity mappings from configuration with provided label
-func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) error {
+func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
 	var wasErr error
 	for mappingIdx, idMapping := range mappings {
 		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
@@ -831,7 +833,7 @@ func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44
 }
 
 // handler for single identity mapping entry
-func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMappings, tag string, isAdd bool) (err error) {
+func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMapping, tag string, isAdd bool) (err error) {
 	// Verify interface if exists
 	var ifIdx uint32
 	if idMapping.AddressedInterface != "" {
@@ -870,7 +872,7 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 }
 
 // looks for new and obsolete IN interfaces
-func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterfaces) (toSetIn, toSetOut, toUnsetIn, toUnsetOut []*nat.Nat44Global_NatInterfaces) {
+func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterface) (toSetIn, toSetOut, toUnsetIn, toUnsetOut []*nat.Nat44Global_NatInterface) {
 	// Find new interfaces
 	for _, newIf := range newIfs {
 		var found bool
@@ -910,7 +912,7 @@ func diffInterfaces(oldIfs, newIfs []*nat.Nat44Global_NatInterfaces) (toSetIn, t
 }
 
 // looks for new and obsolete address pools
-func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, toRemove []*nat.Nat44Global_AddressPools) {
+func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPool) (toAdd, toRemove []*nat.Nat44Global_AddressPool) {
 	// Find new address pools
 	for _, newAp := range newAPs {
 		// If new address pool is a range, add it
@@ -960,7 +962,7 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPools) (toAdd, to
 }
 
 // returns a list of static mappings to add/remove
-func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_StaticMappings) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_StaticMappings) {
+func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_StaticMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_StaticMapping) {
 	// Find missing mappings
 	for _, newMap := range newMappings {
 		var found bool
@@ -970,7 +972,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 				continue
 			}
 			// External interface, IP and port
-			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIP != oldMap.ExternalIP ||
+			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIp != oldMap.ExternalIp ||
 				newMap.ExternalPort != oldMap.ExternalPort {
 				continue
 			}
@@ -993,7 +995,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 				continue
 			}
 			// External interface, IP and port
-			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIP != oldMap.ExternalIP ||
+			if newMap.ExternalInterface != oldMap.ExternalInterface || newMap.ExternalIp != oldMap.ExternalIp ||
 				newMap.ExternalPort != oldMap.ExternalPort {
 				continue
 			}
@@ -1012,7 +1014,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 }
 
 // returns a list of identity mappings to add/remove
-func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_IdentityMappings) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_IdentityMappings) {
+func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Find missing mappings
 	for _, newMap := range newMappings {
 		var found bool
@@ -1056,14 +1058,14 @@ func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat4
 }
 
 // comapares two lists of Local IP addresses, returns true if lists are equal, false otherwise
-func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs) bool {
+func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) bool {
 	if len(oldIPs) != len(newIPs) {
 		return false
 	}
 	for _, newIP := range newIPs {
 		var found bool
 		for _, oldIP := range oldIPs {
-			if newIP.LocalIP == oldIP.LocalIP && newIP.LocalPort == oldIP.LocalPort && newIP.Probability == oldIP.Probability {
+			if newIP.LocalIp == oldIP.LocalIp && newIP.LocalPort == oldIP.LocalPort && newIP.Probability == oldIP.Probability {
 				found = true
 			}
 		}
@@ -1076,16 +1078,16 @@ func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_D
 }
 
 // returns a list of validated local IP addresses with port and probability value
-func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMappings_LocalIPs, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
+func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP, log logging.Logger) (locals []*vppcalls.LocalLbAddress) {
 	for _, ipPort := range ipPorts {
 		if ipPort.LocalPort == 0 {
 			log.Error("cannot set local IP/Port to mapping: port is missing")
 			continue
 		}
 
-		localIP := net.ParseIP(ipPort.LocalIP).To4()
+		localIP := net.ParseIP(ipPort.LocalIp).To4()
 		if localIP == nil {
-			log.Errorf("cannot set local IP/Port to mapping: unable to parse local IP %v", ipPort.LocalIP)
+			log.Errorf("cannot set local IP/Port to mapping: unable to parse local IP %v", ipPort.LocalIp)
 			continue
 		}
 
@@ -1115,16 +1117,16 @@ func getProtocol(protocol nat.Protocol, log logging.Logger) uint8 {
 }
 
 // GetStMappingIdentifier returns unique ID of the mapping
-func GetStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMappings) string {
-	extIP := strings.Replace(mapping.ExternalIP, ".", "", -1)
+func GetStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMapping) string {
+	extIP := strings.Replace(mapping.ExternalIp, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
-	locIP := strings.Replace(mapping.LocalIps[0].LocalIP, ".", "", -1)
+	locIP := strings.Replace(mapping.LocalIps[0].LocalIp, ".", "", -1)
 	locIP = strings.Replace(locIP, "/", "", -1)
 	return extIP + locIP + strconv.Itoa(int(mapping.VrfId))
 }
 
 // GetIdMappingIdentifier returns unique ID of the mapping
-func GetIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMappings) string {
+func GetIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) string {
 	extIP := strings.Replace(mapping.IpAddress, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
 	if mapping.AddressedInterface == "" {

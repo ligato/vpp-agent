@@ -107,15 +107,14 @@ type Plugin struct {
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
-	bdIdxWatchCh      chan bdidx.ChangeDto
+	bdIdxWatchCh      chan bdidx.BdChangeDto
 
 	// Bidirectional forwarding detection fields
 	bfdConfigurator *ifplugin.BFDConfigurator
 
 	// Forwarding information base fields
 	fibConfigurator *l2plugin.FIBConfigurator
-	fibIndexes      idxvpp.NameToIdxRW
-	fibDesIndexes   idxvpp.NameToIdxRW
+	fibIndexes      bdidx.FIBIndexRW
 
 	// xConnect fields
 	xcConfigurator *l2plugin.XConnectConfigurator
@@ -237,7 +236,7 @@ func (plugin *Plugin) GetBDIndexes() bdidx.BDIndex {
 }
 
 // GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
-func (plugin *Plugin) GetFIBIndexes() idxvpp.NameToIdx {
+func (plugin *Plugin) GetFIBIndexes() bdidx.FIBIndexRW {
 	return plugin.fibIndexes
 }
 
@@ -331,7 +330,7 @@ func (plugin *Plugin) Init() error {
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
-	plugin.bdIdxWatchCh = make(chan bdidx.ChangeDto, 100)
+	plugin.bdIdxWatchCh = make(chan bdidx.BdChangeDto, 100)
 	plugin.linuxIfIdxWatchCh = make(chan ifaceLinux.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
@@ -579,7 +578,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil)
+	plugin.fibIndexes = bdidx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
@@ -591,8 +590,6 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		BdIndexes:     plugin.bdIndexes,
 		IfToBdIndexes: plugin.ifToBdDesIndexes,
 		FibIndexes:    plugin.fibIndexes,
-		FibIndexSeq:   1,
-		FibDesIndexes: plugin.fibDesIndexes,
 		Stopwatch:     stopwatch,
 	}
 

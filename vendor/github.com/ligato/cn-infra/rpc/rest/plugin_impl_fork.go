@@ -47,9 +47,9 @@ type ForkDeps struct {
 	// DefaultHTTP is used if there is no different configuration
 	DefaultHTTP HTTPHandlers //inject
 
-	Log        logging.PluginLogger //inject
-	PluginName core.PluginName      //inject
-	config.PluginConfig             //inject
+	Log                 logging.PluginLogger //inject
+	PluginName          core.PluginName      //inject
+	config.PluginConfig                      //inject
 }
 
 // Init checks config if the port is different that it creates ne HTTP server

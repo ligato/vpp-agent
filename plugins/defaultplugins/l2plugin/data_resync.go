@@ -151,7 +151,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 }
 
 // Resync writes missing FIBs to the VPP and removes obsolete ones.
-func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry) error {
+func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 	// Calculate and log fib resync.
 	defer func() {
@@ -169,7 +169,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 	// Correlate existing config with the NB
 	var wasErr error
 	for vppFIBmac, vppFIBdata := range vppFIBs {
-		exists, meta := func(nbFIBs []*l2.FibTableEntries_FibTableEntry) (bool, *FIBMeta) {
+		exists, meta := func(nbFIBs []*l2.FibTable_FibEntry) (bool, *l2.FibTable_FibEntry) {
 			for _, nbFIB := range nbFIBs {
 				// Physical address
 				if strings.ToUpper(vppFIBmac) != strings.ToUpper(nbFIB.PhysAddress) {
@@ -194,18 +194,15 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 					continue
 				}
 
-				// Prepare FIB metadata
-				meta := &FIBMeta{nbFIB.OutgoingInterface, nbFIB.BridgeDomain, nbFIB.BridgedVirtualInterface, nbFIB.StaticConfig}
-
-				return true, meta
+				return true, nbFIB
 			}
 			return false, nil
 		}(nbFIBs)
 
 		// Register existing entries, Remove entries missing in NB config (except non-static)
 		if exists {
-			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.FibIndexSeq, meta)
-			plugin.FibIndexSeq++
+			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.fibIndexSeq, meta)
+			plugin.fibIndexSeq++
 		} else if vppFIBdata.StaticConfig {
 			// Get appropriate interface/bridge domain names
 			ifIdx, _, ifFound := plugin.SwIfIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
@@ -216,7 +213,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTableEntries_FibTableEntry
 				continue
 			}
 
-			plugin.Delete(&l2.FibTableEntries_FibTableEntry{
+			plugin.Delete(&l2.FibTable_FibEntry{
 				PhysAddress:       vppFIBmac,
 				OutgoingInterface: ifIdx,
 				BridgeDomain:      bdIdx,

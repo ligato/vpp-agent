@@ -8,6 +8,7 @@ Library       SSHLibrary            timeout=60s
 Resource      ${ENV}_setup-teardown.robot
 
 *** Variables ***
+${VM_SSH_ALIAS_PREFIX}     vm_
 ${snapshot_num}       0
 @{NODES}              
 
@@ -59,10 +60,29 @@ Test Teardown
     Get Connections
     Close All Connections
 
+Testsuite_K8Setup
+    [Arguments]    ${cluster_id}
+    [Documentation]    Perform actions common for setup of every suite.
+    Discard_Old_Results
+    Create_Connections_To_Kube_Cluster      ${cluster_id}
+
+Testsuite_K8Teardown
+    [Documentation]    Perform actions common for teardown of every suite.
+    Log_All_K8_SSH_Outputs
+    SSHLibrary.Get_Connections
+    SSHLibrary.Close_All_Connections    
+    
 Discard old results
+    [Documentation]    Remove and re-create ${RESULTS_FOLDER}.
     Remove Directory    ${RESULTS_FOLDER}                 recursive=True
     Create Directory    ${RESULTS_FOLDER}
 
+Log_All_K8_Ssh_Outputs
+    [Documentation]    Call Log_\${machine}_Output for every cluster node.
+    [Timeout]    ${SSH_LOG_OUTPUTS_TIMEOUT}
+    : FOR    ${index}    IN RANGE    1    ${KUBE_CLUSTER_${CLUSTER_ID}_NODES}+1
+    \    Log_K8_${VM_SSH_ALIAS_PREFIX}${index}_Output    
+    
 Log All SSH Outputs
     [Documentation]           *Log All SSH Outputs*
     ...                       Logs all connections outputs
@@ -73,6 +93,17 @@ Log All SSH Outputs
     \    Run Keyword If    "vpp" in "${id}"    Log ${id}_vat Output          
     Log docker Output
 
+Log_K8_${machine}_Output
+    [Documentation]    Switch to \${machine} SSH connection, read with delay of ${SSH_READ_DELAY}, Log and append to log file.
+    BuiltIn.Log_Many    ${machine}
+    BuiltIn.Comment    TODO: Rewrite this keyword with ${machine} being explicit argument.
+    SSHLibrary.Switch_Connection    ${machine}
+    ${out} =    SSHLibrary.Read    delay=${SSH_READ_DELAY}s
+    BuiltIn.Log    ${out}
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${machine}.log    ${out}
+    
+    
+    
 Log ${machine} Output
     [Documentation]         *Log ${machine} Output*
     ...                     Logs actual ${machine} output from begining
@@ -82,6 +113,31 @@ Log ${machine} Output
     Log                     ${out}
     Append To File          ${RESULTS_FOLDER}/output_${machine}.log                ${out}
 
+Get_K8_Machine_Status
+    [Arguments]    ${machine}
+    [Documentation]    Execute df, free, ifconfig -a, ps -aux... on \${machine}, assuming ssh connection there is active.
+    BuiltIn.Log_Many    ${machine}
+    SshCommons.Execute_Command_And_Log    whoami
+    SshCommons.Execute_Command_And_Log    pwd
+    SshCommons.Execute_Command_And_Log    df
+    SshCommons.Execute_Command_And_Log    free
+    SshCommons.Execute_Command_And_Log    ifconfig -a
+    SshCommons.Execute_Command_And_Log    ps aux
+    SshCommons.Execute_Command_And_Log    export
+    SshCommons.Execute_Command_And_Log    docker images
+    SshCommons.Execute_Command_And_Log    docker ps -as
+    BuiltIn.Return_From_Keyword_If    """${machine}""" != """${VM_SSH_ALIAS_PREFIX}1"""
+    SshCommons.Execute_Command_And_Log    kubectl get nodes    ignore_stderr=True    ignore_rc=True
+    SshCommons.Execute_Command_And_Log    kubectl get pods    ignore_stderr=True    ignore_rc=True
+    
+Create_Connections_To_Kube_Cluster
+    [Arguments]    ${cluster_id}
+    [Documentation]    Create connection and log machine status for each node.
+    : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${cluster_id}_NODES}+1
+    \    SshCommons.Open_Ssh_Connection_Kube    ${VM_SSH_ALIAS_PREFIX}${index}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PSWD}
+    \    SSHLibrary.Set_Client_Configuration    prompt=${K8_CLUSTER_${cluster_id}_VM_${index}_PROMPT}
+    \    Get_Machine_Status    ${VM_SSH_ALIAS_PREFIX}${index}
+    
 Get Machine Status
     [Arguments]              ${machine}
     [Documentation]          *Get Machine Status ${machine}*
@@ -103,6 +159,20 @@ Create Connections For ETCD And Kafka
     Open SSH Connection    etcd    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Open SSH Connection    kafka    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
 
+Make_K8_Datastore_Snapshots
+    [Arguments]    ${tag}=notag
+    [Documentation]    Log ${tag}, compute next prefix (and do nothing with it).
+    BuiltIn.Log_Many    ${tag}
+    ${prefix} =    Create_K8_Next_Snapshot_Prefix
+
+Create_K8_Next_Snapshot_Prefix
+    [Documentation]    Contruct new prefix, store next snapshot num. Return the prefix.
+    ${prefix} =    BuiltIn.Evaluate    str(${snapshot_num}).zfill(3)
+    ${snapshot_num} =    BuiltIn.Evaluate    ${snapshot_num}+1
+    BuiltIn.Set_Global_Variable    ${snapshot_num}
+    [Return]    ${prefix}
+    
+    
 Make Datastore Snapshots
     [Arguments]            ${tag}=notag
     Log                    ${tag}

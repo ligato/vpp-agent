@@ -24,11 +24,11 @@ message SingleHopBFD {
     message Key {
         string name = 1;                            /* Unique name to identify this BFD auth key */
         uint32 auth_key_index = 2;                  /* BFD auth key index */
+        uint32 id = 3;                               /* local key ID, used to uniquely identify this key */
         enum AuthenticationType {
             KEYED_SHA1 = 0;
             METICULOUS_KEYED_SHA1 = 1;
         };
-        uint32 id = 3;                               /* local key ID, used to uniquely identify this key */
         AuthenticationType authentication_type = 4;  /* authentication type */
         string secret = 5;                           /* shared secret (hex data) */
     }

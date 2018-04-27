@@ -10,11 +10,9 @@
     },
     "rules": [
         {
-            "rule_name":"acl1_rule1",
-            "actions": {
-                "acl_action": 2
-            },
-            "matches": {
+            "rule_name": "acl1_rule1",
+            "acl_action": 2,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",

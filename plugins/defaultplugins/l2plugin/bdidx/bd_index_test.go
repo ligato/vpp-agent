@@ -289,12 +289,12 @@ func TestWatchNameToIdx(t *testing.T) {
 		bdName0: {ifaceAName, ifaceBName},
 	})
 
-	c := make(chan bdidx.ChangeDto)
+	c := make(chan bdidx.BdChangeDto)
 	bdIndex.WatchNameToIdx("testName", c)
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
-	var dto bdidx.ChangeDto
+	var dto bdidx.BdChangeDto
 	Eventually(c).Should(Receive(&dto))
 
 	Expect(dto.Name).To(Equal(bridgeDomains[0].Name))

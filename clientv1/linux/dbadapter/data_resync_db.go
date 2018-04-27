@@ -114,7 +114,7 @@ func (dsl *DataResyncDSL) BD(bd *vpp_l2.BridgeDomains_BridgeDomain) linux.DataRe
 }
 
 // BDFIB adds VPP L2 FIB to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(fib *vpp_l2.FibTableEntries_FibTableEntry) linux.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(fib *vpp_l2.FibTable_FibEntry) linux.DataResyncDSL {
 	dsl.vppDataResync.BDFIB(fib)
 	return dsl
 }
@@ -138,7 +138,7 @@ func (dsl *DataResyncDSL) ACL(acl *vpp_acl.AccessLists_Acl) linux.DataResyncDSL 
 }
 
 // Arp adds VPP L3 ARP to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(arp *vpp_l3.ArpTable_ArpTableEntry) linux.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(arp *vpp_l3.ArpTable_ArpEntry) linux.DataResyncDSL {
 	dsl.vppDataResync.Arp(arp)
 	return dsl
 }
@@ -168,7 +168,7 @@ func (dsl *DataResyncDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace)
 }
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(stn *vpp_stn.StnRule) linux.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(stn *vpp_stn.STN_Rule) linux.DataResyncDSL {
 	dsl.vppDataResync.StnRule(stn)
 	return dsl
 }

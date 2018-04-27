@@ -135,9 +135,9 @@ var testDataOutFIBs = []*FIBTableEntry{
 	{
 		BridgeDomainIdx:          10,
 		OutgoingInterfaceSwIfIdx: 1,
-		FibTableEntries_FibTableEntry: l2nb.FibTableEntries_FibTableEntry{
+		FibTable_FibEntry: l2nb.FibTable_FibEntry{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
-			Action:                  l2nb.FibTableEntries_FibTableEntry_DROP,
+			Action:                  l2nb.FibTable_FibEntry_DROP,
 			StaticConfig:            true,
 			BridgedVirtualInterface: true,
 		},
@@ -145,9 +145,9 @@ var testDataOutFIBs = []*FIBTableEntry{
 	{
 		BridgeDomainIdx:          20,
 		OutgoingInterfaceSwIfIdx: 2,
-		FibTableEntries_FibTableEntry: l2nb.FibTableEntries_FibTableEntry{
+		FibTable_FibEntry: l2nb.FibTable_FibEntry{
 			PhysAddress:             "bb:bb:bb:bb:bb:bb",
-			Action:                  l2nb.FibTableEntries_FibTableEntry_FORWARD,
+			Action:                  l2nb.FibTable_FibEntry_FORWARD,
 			StaticConfig:            false,
 			BridgedVirtualInterface: false,
 		},

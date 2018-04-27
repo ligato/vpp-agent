@@ -351,7 +351,7 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHop
 }
 
 // Resync writes stn rule to the the empty VPP
-func (plugin *StnConfigurator) Resync(nbStnRules []*stn.StnRule) error {
+func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync
 	defer func() {
@@ -457,13 +457,13 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
-	if len(vppDNatCfg.DnatConfig) == 0 {
+	if len(vppDNatCfg.DnatConfigs) == 0 {
 		return nil
 	}
 
 	// Correlate with existing config
 	for _, nbDNat := range nbDNatConfig {
-		for _, vppDNat := range vppDNatCfg.DnatConfig {
+		for _, vppDNat := range vppDNatCfg.DnatConfigs {
 			if nbDNat.Label != vppDNat.Label {
 				continue
 			}
@@ -541,7 +541,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 	}
 
 	// Remove obsolete DNAT configurations which are not registered
-	for _, vppDNat := range vppDNatCfg.DnatConfig {
+	for _, vppDNat := range vppDNatCfg.DnatConfigs {
 		_, _, found := plugin.dNatIndexes.LookupIdx(vppDNat.Label)
 		if !found {
 			if err := plugin.DeleteDNat(vppDNat); err != nil {
@@ -558,7 +558,7 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 
 // Looks for the same mapping in the VPP, register existing ones
 func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMappings, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMappings) {
+	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.StMappings {
 		if len(nbMapping.LocalIps) > 1 {
@@ -570,7 +570,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					continue
 				}
 				// Compare external IP/Port
-				if nbMapping.ExternalIP != vppLbMapping.ExternalIP || nbMapping.ExternalPort != vppLbMapping.ExternalPort {
+				if nbMapping.ExternalIp != vppLbMapping.ExternalIp || nbMapping.ExternalPort != vppLbMapping.ExternalPort {
 					continue
 				}
 				// Compare protocol
@@ -584,7 +584,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				for _, nbLocal := range nbMapping.LocalIps {
 					var found bool
 					for _, vppLocal := range vppLbMapping.LocalIps {
-						if nbLocal.LocalIP == vppLocal.LocalIP || nbLocal.LocalPort == vppLocal.LocalPort ||
+						if nbLocal.LocalIp == vppLocal.LocalIp || nbLocal.LocalPort == vppLocal.LocalPort ||
 							nbLocal.Probability == vppLocal.Probability {
 							found = true
 						}
@@ -611,7 +611,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 					continue
 				}
 				// Compare external IP/Port and interface
-				if nbMapping.ExternalIP != vppMapping.ExternalIP || nbMapping.ExternalPort != vppMapping.ExternalPort {
+				if nbMapping.ExternalIp != vppMapping.ExternalIp || nbMapping.ExternalPort != vppMapping.ExternalPort {
 					continue
 				}
 				// Compare external interface
@@ -629,7 +629,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				}
 				nbLocal := nbMapping.LocalIps[0]
 				vppLocal := vppMapping.LocalIps[0]
-				if nbLocal.LocalIP != vppLocal.LocalIP || nbLocal.LocalPort != vppLocal.LocalPort ||
+				if nbLocal.LocalIp != vppLocal.LocalIp || nbLocal.LocalPort != vppLocal.LocalPort ||
 					nbLocal.Probability != vppLocal.Probability {
 					continue
 				}
@@ -827,16 +827,16 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 
 		}
 		// QueueID
-		if nbIf.RxModeSettings.QueueID != vppIf.RxModeSettings.QueueID {
+		if nbIf.RxModeSettings.QueueId != vppIf.RxModeSettings.QueueId {
 			plugin.log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
-				nbIf.RxModeSettings.QueueID, vppIf.RxModeSettings.QueueID)
+				nbIf.RxModeSettings.QueueId, vppIf.RxModeSettings.QueueId)
 			return true
 
 		}
 		// QueueIDValid
-		if nbIf.RxModeSettings.QueueIDValid != vppIf.RxModeSettings.QueueIDValid {
+		if nbIf.RxModeSettings.QueueIdValid != vppIf.RxModeSettings.QueueIdValid {
 			plugin.log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
-				nbIf.RxModeSettings.QueueIDValid, vppIf.RxModeSettings.QueueIDValid)
+				nbIf.RxModeSettings.QueueIdValid, vppIf.RxModeSettings.QueueIdValid)
 			return true
 
 		}

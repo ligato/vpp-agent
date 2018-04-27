@@ -1,25 +1,27 @@
 # VPP Agent
 
+[![Latest release](https://img.shields.io/github/release/ligato/vpp-agent.svg)](https://github.com/ligato/vpp-agent/releases/latest)
 [![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
 [![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
-Please note that the content of this repository is currently **WORK IN PROGRESS**.
+###### Please note that the content of this repository is currently **WORK IN PROGRESS**.
 
-The VPP Agent is a Golang implementation of a control/management plane for 
+The VPP Agent is a Go implementation of a control/management plane for
 [VPP][1] based cloud-native [Virtual Network Functions][2] (VNFs). The VPP
 Agent is built on top of the [CN-Infra platform][16] for developing 
-cloud-native Virtual Network Functions (VNFs). 
+cloud-native VNFs.
 
 The VPP Agent can be used as-is as a management/control agent for VNFs 
 based on off-the-shelf VPP (for example, a VPP-based vswitch), or as a
 platform for developing customized VNFs with customized VPP-based data.
 
 ## Architecture
+
 The VPP Agent is basically a set of VPP-specific plugins that use the 
-CN-Infra platform to interact with other services / microservices in the
+CN-Infra platform to interact with other services/microservices in the
 cloud (e.g. a KV data store, messaging, log warehouse, etc.). The VPP Agent
 exposes VPP functionality to client apps via a higher-level model-driven 
 API. Clients that consume this API may be either external (connecting to 
@@ -39,18 +41,16 @@ over multiple transport protocols (HTTP, gRPC, Etcd, ...). Plugins use the
 [GoVPP library][4] to interact with the VPP.
 
 The following figure shows the VPP Agent in context of a cloud-native VNF, 
-where the VNF's data plane is implemented using VPP/DPDK and its management
-/ control planes are implemented using the VNF agent:
+where the VNF's data plane is implemented using VPP/DPDK and its management/control planes are implemented using the VNF agent:
 
 ![context](docs/imgs/context.png "VPP Agent & its Plugins on top of cn-infra")
-
 
 ## Plugins
  
 The set of plugins in the VPP Agent is as follows:
 * [Default VPP Plugins][5] - plugins providing northbound APIs to "default" 
   VPP functionality (i.e. VPP functions available "out-of-the-box"): 
-  * [NET Interfaces][6] - network interface configuration (PCI Ethernet, MEMIF, 
+  * [Interfaces][6] - network interface configuration (PCI Ethernet, MEMIF,
     AF_Packet, VXLAN, Loopback...) + BFD
   * [L2][7] - Bridge Domains, L2 cross-connects
   * [L3][8] - IP Routes, VRFs...
@@ -65,6 +65,7 @@ The set of plugins in the VPP Agent is as follows:
 * [RESTAPI](plugins/restplugin) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
 
 ## Tools
+
 The VPP agent repository also contains tools for building and troubleshooting 
 of VNFs based on the VPP Agent:
 
@@ -77,6 +78,7 @@ of VNFs based on the VPP Agent:
   agent and for app/extension plugins.
 
 ## Quickstart
+
 For a quick start with the VPP Agent, you can use pre-built Docker images with
 the Agent and VPP on [Dockerhub][14].
 
@@ -107,16 +109,14 @@ GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 ## Next Steps
 Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
 
-
-### Deployment:
+#### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
 
-### Extensibility:
+#### Extensibility:
 [![VPP Agent Extensibility](docs/imgs/extensibility_thumb.png "VPP Agent - example of extensibility")](https://github.com/ligato/cn-sample-service)
 
-### Design & architecture:
+#### Design & architecture:
 [![VPP agent 10.000 feet](docs/imgs/vpp_agent_10K_feet_thumb.png "VPP Agent - 10.000 feet view on the architecture")](docs/Design.md)
-
 
 ## Contribution:
 If you are interested in contributing, please see the [contribution guidelines](CONTRIBUTING.md).

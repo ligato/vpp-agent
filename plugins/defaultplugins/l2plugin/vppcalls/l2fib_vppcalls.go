@@ -104,7 +104,7 @@ func (fib *L2FibVppCalls) WatchFIBReplies() {
 			err := l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd, fib.vppChan, fib.stopwatch)
 			if err != nil {
 				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
-					Debug("Static fib entry add/delete failed:", err)
+					Error("Static fib entry add/delete failed:", err)
 			} else {
 				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
 					Debug("Static fib entry added/deleted.")

@@ -95,7 +95,7 @@ type BdStateWithMD struct {
 // metadata.
 type FibTableWithMD struct {
 	VppMetaData
-	FibTable []*l2.FibTableEntries_FibTableEntry
+	FibTable []*l2.FibTable_FibEntry
 }
 
 // XconnectWithMD contains an l2 cross-Connect data record and its
@@ -327,7 +327,7 @@ func readBdErrorFromDb(db keyval.ProtoBroker, vd *VppData, key string, name stri
 }
 
 func readFibFromDb(db keyval.ProtoBroker, vd *VppData, key string) (*VppData, error) {
-	fibEntry := &l2.FibTableEntries_FibTableEntry{}
+	fibEntry := &l2.FibTable_FibEntry{}
 	found, rev, err := readDataFromDb(db, key, fibEntry)
 	if found && err == nil {
 		fibTable := vd.FibTableEntries.FibTable

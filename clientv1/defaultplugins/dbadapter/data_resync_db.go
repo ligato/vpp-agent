@@ -94,7 +94,7 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) defaultplugins.DataResyncDSL {
 	key := l2.FibKey(val.BridgeDomain, val.PhysAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -166,7 +166,7 @@ func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defau
 }
 
 // Arp adds L3 ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) defaultplugins.DataResyncDSL {
 	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -175,7 +175,7 @@ func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.Dat
 }
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) defaultplugins.DataResyncDSL {
 	key := stn.Key(val.RuleName)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)

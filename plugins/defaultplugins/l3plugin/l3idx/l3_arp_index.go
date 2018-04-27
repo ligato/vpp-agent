@@ -27,13 +27,13 @@ type ARPIndex interface {
 	GetMapping() idxvpp.NameToIdxRW
 
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupIdx(name string) (idx uint32, metadata *l3.ArpTable_ArpTableEntry, exists bool)
+	LookupIdx(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupName(idx uint32) (name string, metadata *l3.ArpTable_ArpTableEntry, exists bool)
+	LookupName(idx uint32) (name string, metadata *l3.ArpTable_ArpEntry, exists bool)
 
 	// LookupNamesByInterface returns names of items that contains given interface name in metadata
-	LookupNamesByInterface(ifName string) []*l3.ArpTable_ArpTableEntry
+	LookupNamesByInterface(ifName string) []*l3.ArpTable_ArpEntry
 
 	// WatchNameToIdx allows to subscribe for watching changes in SwIfIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ARPIndexDto)
@@ -45,17 +45,17 @@ type ARPIndexRW interface {
 	ARPIndex
 
 	// RegisterName adds new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, ifMeta *l3.ArpTable_ArpTableEntry)
+	RegisterName(name string, idx uint32, ifMeta *l3.ArpTable_ArpEntry)
 
 	// UnregisterName removes an item identified by name from mapping
-	UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpTableEntry, exists bool)
+	UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool)
 }
 
 // ARPIndexDto represents an item sent through watch channel in ARPIndex.
 // In contrast to NameToIdxDto it contains typed metadata.
 type ARPIndexDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
-	Metadata *l3.ArpTable_ArpTableEntry
+	Metadata *l3.ArpTable_ArpEntry
 }
 
 // ArpIndex is type-safe implementation of mapping between Software ARP index
@@ -75,7 +75,7 @@ func (arpIndex *ArpIndex) GetMapping() idxvpp.NameToIdxRW {
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.
-func (arpIndex *ArpIndex) LookupIdx(name string) (idx uint32, metadata *l3.ArpTable_ArpTableEntry, exists bool) {
+func (arpIndex *ArpIndex) LookupIdx(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool) {
 	idx, meta, exists := arpIndex.mapping.LookupIdx(name)
 	if exists {
 		metadata = arpIndex.castMetadata(meta)
@@ -84,7 +84,7 @@ func (arpIndex *ArpIndex) LookupIdx(name string) (idx uint32, metadata *l3.ArpTa
 }
 
 // LookupName looks up previously stored item identified by name in mapping.
-func (arpIndex *ArpIndex) LookupName(idx uint32) (name string, metadata *l3.ArpTable_ArpTableEntry, exists bool) {
+func (arpIndex *ArpIndex) LookupName(idx uint32) (name string, metadata *l3.ArpTable_ArpEntry, exists bool) {
 	name, meta, exists := arpIndex.mapping.LookupName(idx)
 	if exists {
 		metadata = arpIndex.castMetadata(meta)
@@ -93,8 +93,8 @@ func (arpIndex *ArpIndex) LookupName(idx uint32) (name string, metadata *l3.ArpT
 }
 
 // LookupNamesByInterface returns all names related to the provided interface
-func (arpIndex *ArpIndex) LookupNamesByInterface(ifName string) []*l3.ArpTable_ArpTableEntry {
-	var match []*l3.ArpTable_ArpTableEntry
+func (arpIndex *ArpIndex) LookupNamesByInterface(ifName string) []*l3.ArpTable_ArpEntry {
+	var match []*l3.ArpTable_ArpEntry
 	for _, name := range arpIndex.mapping.ListNames() {
 		_, meta, found := arpIndex.LookupIdx(name)
 		if found && meta != nil && meta.Interface == ifName {
@@ -105,12 +105,12 @@ func (arpIndex *ArpIndex) LookupNamesByInterface(ifName string) []*l3.ArpTable_A
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (arpIndex *ArpIndex) RegisterName(name string, idx uint32, ifMeta *l3.ArpTable_ArpTableEntry) {
+func (arpIndex *ArpIndex) RegisterName(name string, idx uint32, ifMeta *l3.ArpTable_ArpEntry) {
 	arpIndex.mapping.RegisterName(name, idx, ifMeta)
 }
 
 // UnregisterName removes an item identified by name from mapping
-func (arpIndex *ArpIndex) UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpTableEntry, exists bool) {
+func (arpIndex *ArpIndex) UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool) {
 	idx, meta, exists := arpIndex.mapping.UnregisterName(name)
 	return idx, arpIndex.castMetadata(meta), exists
 }
@@ -130,8 +130,8 @@ func (arpIndex *ArpIndex) WatchNameToIdx(subscriber core.PluginName, pluginChann
 	}()
 }
 
-func (arpIndex *ArpIndex) castMetadata(meta interface{}) *l3.ArpTable_ArpTableEntry {
-	if ifMeta, ok := meta.(*l3.ArpTable_ArpTableEntry); ok {
+func (arpIndex *ArpIndex) castMetadata(meta interface{}) *l3.ArpTable_ArpEntry {
+	if ifMeta, ok := meta.(*l3.ArpTable_ArpEntry); ok {
 		return ifMeta
 	}
 

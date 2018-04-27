@@ -21,17 +21,17 @@ message BridgeDomains {
         }
         repeated Interfaces interfaces = 100;        /* list of interfaces */
 
-        message ArpTerminationTable {
+        message ArpTerminationEntry {
             string ip_address = 1;               /* IP address */
             string phys_address = 2;             /* MAC address matching to the IP */
         }
-        repeated ArpTerminationTable arp_termination_table = 102; /* list of ARP termination entries */
+        repeated ArpTerminationEntry arp_termination_table = 102; /* list of ARP termination entries */
     }
     repeated BridgeDomain bridge_domains = 1;  /* list of all bridge domains */
 }
 
-message FibTableEntries {
-    message FibTableEntry {
+message FibTable {
+    message FibEntry {
         string phys_address = 1;                    /* unique destination MAC address */
         string bridge_domain = 2;                   /* name of bridge domain this FIB table entry belongs to */
         enum Action {
@@ -43,7 +43,7 @@ message FibTableEntries {
         bool static_config = 5;                     /* true if this is a statically configured FIB entry */
         bool bridged_virtual_interface = 6;         /* the MAC address is a bridge virtual interface MAC */
     }
-    repeated FibTableEntry fib_table_entry = 100;   /* List of FIB entries */
+    repeated FibEntry fib_table_entries = 100;   /* List of FIB entries */
 }
 
 message XConnectPairs {
