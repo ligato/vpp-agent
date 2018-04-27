@@ -12,8 +12,6 @@ It has these top-level messages:
 	PutResponse
 	DelResponse
 	ResyncResponse
-	DelNamesRequest
-	DelStaticRoutesRequest
 	ResyncConfigResponse
 	ResyncConfigRequest
 */
@@ -115,80 +113,13 @@ func (m *ResyncResponse) String() string            { return proto.CompactTextSt
 func (*ResyncResponse) ProtoMessage()               {}
 func (*ResyncResponse) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{3} }
 
-type DelNamesRequest struct {
-	// List of interface/bd/... names with errors
-	Name []string `protobuf:"bytes,1,rep,name=Name" json:"Name,omitempty"`
-}
-
-func (m *DelNamesRequest) Reset()                    { *m = DelNamesRequest{} }
-func (m *DelNamesRequest) String() string            { return proto.CompactTextString(m) }
-func (*DelNamesRequest) ProtoMessage()               {}
-func (*DelNamesRequest) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{4} }
-
-func (m *DelNamesRequest) GetName() []string {
-	if m != nil {
-		return m.Name
-	}
-	return nil
-}
-
-type DelStaticRoutesRequest struct {
-	Route []*DelStaticRoutesRequest_DelStaticRoute `protobuf:"bytes,1,rep,name=Route" json:"Route,omitempty"`
-}
-
-func (m *DelStaticRoutesRequest) Reset()                    { *m = DelStaticRoutesRequest{} }
-func (m *DelStaticRoutesRequest) String() string            { return proto.CompactTextString(m) }
-func (*DelStaticRoutesRequest) ProtoMessage()               {}
-func (*DelStaticRoutesRequest) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{5} }
-
-func (m *DelStaticRoutesRequest) GetRoute() []*DelStaticRoutesRequest_DelStaticRoute {
-	if m != nil {
-		return m.Route
-	}
-	return nil
-}
-
-type DelStaticRoutesRequest_DelStaticRoute struct {
-	VRF         uint32 `protobuf:"varint,1,opt,name=VRF,proto3" json:"VRF,omitempty"`
-	DstAddr     string `protobuf:"bytes,2,opt,name=dstAddr,proto3" json:"dstAddr,omitempty"`
-	NextHopAddr string `protobuf:"bytes,3,opt,name=nextHopAddr,proto3" json:"nextHopAddr,omitempty"`
-}
-
-func (m *DelStaticRoutesRequest_DelStaticRoute) Reset()         { *m = DelStaticRoutesRequest_DelStaticRoute{} }
-func (m *DelStaticRoutesRequest_DelStaticRoute) String() string { return proto.CompactTextString(m) }
-func (*DelStaticRoutesRequest_DelStaticRoute) ProtoMessage()    {}
-func (*DelStaticRoutesRequest_DelStaticRoute) Descriptor() ([]byte, []int) {
-	return fileDescriptorRpc, []int{5, 0}
-}
-
-func (m *DelStaticRoutesRequest_DelStaticRoute) GetVRF() uint32 {
-	if m != nil {
-		return m.VRF
-	}
-	return 0
-}
-
-func (m *DelStaticRoutesRequest_DelStaticRoute) GetDstAddr() string {
-	if m != nil {
-		return m.DstAddr
-	}
-	return ""
-}
-
-func (m *DelStaticRoutesRequest_DelStaticRoute) GetNextHopAddr() string {
-	if m != nil {
-		return m.NextHopAddr
-	}
-	return ""
-}
-
 type ResyncConfigResponse struct {
 }
 
 func (m *ResyncConfigResponse) Reset()                    { *m = ResyncConfigResponse{} }
 func (m *ResyncConfigResponse) String() string            { return proto.CompactTextString(m) }
 func (*ResyncConfigResponse) ProtoMessage()               {}
-func (*ResyncConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{6} }
+func (*ResyncConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{4} }
 
 type ResyncConfigRequest struct {
 	Interfaces   *interfaces.Interfaces `protobuf:"bytes,1,opt,name=Interfaces" json:"Interfaces,omitempty"`
@@ -201,7 +132,7 @@ type ResyncConfigRequest struct {
 func (m *ResyncConfigRequest) Reset()                    { *m = ResyncConfigRequest{} }
 func (m *ResyncConfigRequest) String() string            { return proto.CompactTextString(m) }
 func (*ResyncConfigRequest) ProtoMessage()               {}
-func (*ResyncConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{7} }
+func (*ResyncConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptorRpc, []int{5} }
 
 func (m *ResyncConfigRequest) GetInterfaces() *interfaces.Interfaces {
 	if m != nil {
@@ -243,9 +174,6 @@ func init() {
 	proto.RegisterType((*PutResponse)(nil), "rpc.PutResponse")
 	proto.RegisterType((*DelResponse)(nil), "rpc.DelResponse")
 	proto.RegisterType((*ResyncResponse)(nil), "rpc.ResyncResponse")
-	proto.RegisterType((*DelNamesRequest)(nil), "rpc.DelNamesRequest")
-	proto.RegisterType((*DelStaticRoutesRequest)(nil), "rpc.DelStaticRoutesRequest")
-	proto.RegisterType((*DelStaticRoutesRequest_DelStaticRoute)(nil), "rpc.DelStaticRoutesRequest.DelStaticRoute")
 	proto.RegisterType((*ResyncConfigResponse)(nil), "rpc.ResyncConfigResponse")
 	proto.RegisterType((*ResyncConfigRequest)(nil), "rpc.ResyncConfigRequest")
 }
@@ -419,387 +347,6 @@ var _DataResyncService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "rpc.proto",
 }
 
-// Client API for ChangeConfigService service
-
-type ChangeConfigServiceClient interface {
-	// PutInterfaces creates or updates one or multiple interfaces
-	PutInterfaces(ctx context.Context, in *interfaces.Interfaces, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelInterfaces one or multiple interfaces by their unique names
-	DelInterfaces(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutBDs creates or updates one or multiple BDs
-	PutBDs(ctx context.Context, in *l2.BridgeDomains, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelBDs one or multiple BDs by their unique names
-	DelBDs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutXCons creates or updates one or multiple Cross Connects
-	PutXCons(ctx context.Context, in *l2.XConnectPairs, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelXCons one or multiple Cross Connects by their unique names
-	DelXCons(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutACLs creates or updates one or multiple ACLs
-	PutACLs(ctx context.Context, in *acl.AccessLists, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelACLs one or multiple ACLs by their unique names
-	DelACLs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-	// PutStaticRoutes creates or updates one or multiple ACLs
-	PutStaticRoutes(ctx context.Context, in *l3.StaticRoutes, opts ...grpc.CallOption) (*PutResponse, error)
-	// DelStaticRoutes one or multiple ACLs by their unique names
-	DelStaticRoutes(ctx context.Context, in *DelStaticRoutesRequest, opts ...grpc.CallOption) (*DelResponse, error)
-}
-
-type changeConfigServiceClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewChangeConfigServiceClient(cc *grpc.ClientConn) ChangeConfigServiceClient {
-	return &changeConfigServiceClient{cc}
-}
-
-func (c *changeConfigServiceClient) PutInterfaces(ctx context.Context, in *interfaces.Interfaces, opts ...grpc.CallOption) (*PutResponse, error) {
-	out := new(PutResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/PutInterfaces", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) DelInterfaces(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error) {
-	out := new(DelResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/DelInterfaces", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) PutBDs(ctx context.Context, in *l2.BridgeDomains, opts ...grpc.CallOption) (*PutResponse, error) {
-	out := new(PutResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/PutBDs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) DelBDs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error) {
-	out := new(DelResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/DelBDs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) PutXCons(ctx context.Context, in *l2.XConnectPairs, opts ...grpc.CallOption) (*PutResponse, error) {
-	out := new(PutResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/PutXCons", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) DelXCons(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error) {
-	out := new(DelResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/DelXCons", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) PutACLs(ctx context.Context, in *acl.AccessLists, opts ...grpc.CallOption) (*PutResponse, error) {
-	out := new(PutResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/PutACLs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) DelACLs(ctx context.Context, in *DelNamesRequest, opts ...grpc.CallOption) (*DelResponse, error) {
-	out := new(DelResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/DelACLs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) PutStaticRoutes(ctx context.Context, in *l3.StaticRoutes, opts ...grpc.CallOption) (*PutResponse, error) {
-	out := new(PutResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/PutStaticRoutes", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *changeConfigServiceClient) DelStaticRoutes(ctx context.Context, in *DelStaticRoutesRequest, opts ...grpc.CallOption) (*DelResponse, error) {
-	out := new(DelResponse)
-	err := grpc.Invoke(ctx, "/rpc.ChangeConfigService/DelStaticRoutes", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for ChangeConfigService service
-
-type ChangeConfigServiceServer interface {
-	// PutInterfaces creates or updates one or multiple interfaces
-	PutInterfaces(context.Context, *interfaces.Interfaces) (*PutResponse, error)
-	// DelInterfaces one or multiple interfaces by their unique names
-	DelInterfaces(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutBDs creates or updates one or multiple BDs
-	PutBDs(context.Context, *l2.BridgeDomains) (*PutResponse, error)
-	// DelBDs one or multiple BDs by their unique names
-	DelBDs(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutXCons creates or updates one or multiple Cross Connects
-	PutXCons(context.Context, *l2.XConnectPairs) (*PutResponse, error)
-	// DelXCons one or multiple Cross Connects by their unique names
-	DelXCons(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutACLs creates or updates one or multiple ACLs
-	PutACLs(context.Context, *acl.AccessLists) (*PutResponse, error)
-	// DelACLs one or multiple ACLs by their unique names
-	DelACLs(context.Context, *DelNamesRequest) (*DelResponse, error)
-	// PutStaticRoutes creates or updates one or multiple ACLs
-	PutStaticRoutes(context.Context, *l3.StaticRoutes) (*PutResponse, error)
-	// DelStaticRoutes one or multiple ACLs by their unique names
-	DelStaticRoutes(context.Context, *DelStaticRoutesRequest) (*DelResponse, error)
-}
-
-func RegisterChangeConfigServiceServer(s *grpc.Server, srv ChangeConfigServiceServer) {
-	s.RegisterService(&_ChangeConfigService_serviceDesc, srv)
-}
-
-func _ChangeConfigService_PutInterfaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(interfaces.Interfaces)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).PutInterfaces(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/PutInterfaces",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).PutInterfaces(ctx, req.(*interfaces.Interfaces))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_DelInterfaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DelNamesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).DelInterfaces(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/DelInterfaces",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).DelInterfaces(ctx, req.(*DelNamesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_PutBDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(l2.BridgeDomains)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).PutBDs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/PutBDs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).PutBDs(ctx, req.(*l2.BridgeDomains))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_DelBDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DelNamesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).DelBDs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/DelBDs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).DelBDs(ctx, req.(*DelNamesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_PutXCons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(l2.XConnectPairs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).PutXCons(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/PutXCons",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).PutXCons(ctx, req.(*l2.XConnectPairs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_DelXCons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DelNamesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).DelXCons(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/DelXCons",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).DelXCons(ctx, req.(*DelNamesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_PutACLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(acl.AccessLists)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).PutACLs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/PutACLs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).PutACLs(ctx, req.(*acl.AccessLists))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_DelACLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DelNamesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).DelACLs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/DelACLs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).DelACLs(ctx, req.(*DelNamesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_PutStaticRoutes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(l3.StaticRoutes)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).PutStaticRoutes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/PutStaticRoutes",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).PutStaticRoutes(ctx, req.(*l3.StaticRoutes))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ChangeConfigService_DelStaticRoutes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DelStaticRoutesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChangeConfigServiceServer).DelStaticRoutes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/rpc.ChangeConfigService/DelStaticRoutes",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChangeConfigServiceServer).DelStaticRoutes(ctx, req.(*DelStaticRoutesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ChangeConfigService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "rpc.ChangeConfigService",
-	HandlerType: (*ChangeConfigServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "PutInterfaces",
-			Handler:    _ChangeConfigService_PutInterfaces_Handler,
-		},
-		{
-			MethodName: "DelInterfaces",
-			Handler:    _ChangeConfigService_DelInterfaces_Handler,
-		},
-		{
-			MethodName: "PutBDs",
-			Handler:    _ChangeConfigService_PutBDs_Handler,
-		},
-		{
-			MethodName: "DelBDs",
-			Handler:    _ChangeConfigService_DelBDs_Handler,
-		},
-		{
-			MethodName: "PutXCons",
-			Handler:    _ChangeConfigService_PutXCons_Handler,
-		},
-		{
-			MethodName: "DelXCons",
-			Handler:    _ChangeConfigService_DelXCons_Handler,
-		},
-		{
-			MethodName: "PutACLs",
-			Handler:    _ChangeConfigService_PutACLs_Handler,
-		},
-		{
-			MethodName: "DelACLs",
-			Handler:    _ChangeConfigService_DelACLs_Handler,
-		},
-		{
-			MethodName: "PutStaticRoutes",
-			Handler:    _ChangeConfigService_PutStaticRoutes_Handler,
-		},
-		{
-			MethodName: "DelStaticRoutes",
-			Handler:    _ChangeConfigService_DelStaticRoutes_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "rpc.proto",
-}
-
 // Client API for ResyncConfigService service
 
 type ResyncConfigServiceClient interface {
@@ -867,50 +414,36 @@ var _ResyncConfigService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("rpc.proto", fileDescriptorRpc) }
 
 var fileDescriptorRpc = []byte{
-	// 713 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0x61, 0x6b, 0xd4, 0x4c,
-	0x10, 0xc7, 0x49, 0x73, 0xbd, 0xb6, 0x73, 0xbd, 0xf6, 0xba, 0x2d, 0x25, 0xcf, 0x3d, 0x20, 0xc7,
-	0xa9, 0x78, 0x0a, 0x4d, 0x6a, 0xae, 0x2a, 0xfa, 0xaa, 0xd7, 0x0b, 0x62, 0xb1, 0x4a, 0xd8, 0x82,
-	0x88, 0x82, 0x90, 0xe6, 0xb6, 0x69, 0x60, 0x2f, 0x89, 0xd9, 0x4d, 0xd1, 0x0f, 0xe3, 0x17, 0xf0,
-	0x23, 0xf8, 0xc5, 0x7c, 0x2b, 0xd9, 0x6d, 0xee, 0x36, 0x97, 0x54, 0x0e, 0xea, 0x8b, 0xd2, 0xcc,
-	0xec, 0x7f, 0x66, 0x32, 0x33, 0xbf, 0xcd, 0xc1, 0x46, 0x9a, 0xf8, 0x66, 0x92, 0xc6, 0x3c, 0x46,
-	0x7a, 0x9a, 0xf8, 0xdd, 0xcf, 0x41, 0xc8, 0xaf, 0xb2, 0x0b, 0xd3, 0x8f, 0xa7, 0x16, 0x0d, 0x03,
-	0x8f, 0xc7, 0xd6, 0x75, 0x92, 0x1c, 0x78, 0x01, 0x89, 0xb8, 0x95, 0xd0, 0x2c, 0x08, 0x23, 0x66,
-	0x4d, 0xc8, 0xa5, 0x97, 0x51, 0x5e, 0x98, 0x7e, 0x3c, 0x9d, 0xc6, 0x91, 0x35, 0x8d, 0x27, 0x84,
-	0x5a, 0x61, 0xc4, 0x49, 0x7a, 0xe9, 0xf9, 0x84, 0x29, 0x8f, 0xb2, 0x42, 0xf7, 0xed, 0x5d, 0x93,
-	0x53, 0xdb, 0xa2, 0xf6, 0x3f, 0x4b, 0x36, 0xb4, 0xe8, 0xf0, 0x26, 0xd9, 0xbb, 0xbb, 0x26, 0xf3,
-	0x7c, 0xf1, 0x27, 0xd3, 0xf5, 0x7f, 0xac, 0x40, 0xcb, 0xf1, 0xb8, 0x87, 0xc9, 0xd7, 0x8c, 0x30,
-	0x8e, 0x8e, 0x01, 0x4e, 0x67, 0xc3, 0x30, 0xb4, 0x9e, 0x3e, 0x68, 0xd9, 0x3d, 0x53, 0x99, 0xcf,
-	0x69, 0xcd, 0x23, 0x56, 0x62, 0xd0, 0x21, 0xe8, 0x27, 0x0e, 0x33, 0x56, 0x44, 0xe8, 0x3d, 0x93,
-	0xda, 0xe6, 0x49, 0x1a, 0x4e, 0x02, 0xe2, 0xc4, 0x53, 0x2f, 0x8c, 0x58, 0xc9, 0xc2, 0xb9, 0x14,
-	0x1d, 0xc1, 0xea, 0xc7, 0x71, 0x1c, 0x31, 0x43, 0x9f, 0xc7, 0xe4, 0x8e, 0x88, 0xf8, 0xdc, 0xf5,
-	0xc2, 0x94, 0x95, 0x2c, 0x2c, 0xc5, 0x68, 0x00, 0x8d, 0xd1, 0xf8, 0x8c, 0x19, 0x0d, 0x11, 0xb4,
-	0x67, 0xe6, 0x3d, 0x8d, 0x7c, 0x9f, 0x30, 0x76, 0x16, 0x32, 0xce, 0xcc, 0x91, 0x4f, 0xb1, 0x50,
-	0xa0, 0x57, 0xb0, 0x79, 0xce, 0x3d, 0x1e, 0xfa, 0x38, 0xce, 0x38, 0x61, 0xc6, 0xaa, 0x88, 0xd8,
-	0x37, 0xe9, 0xd0, 0x54, 0xfd, 0xa6, 0xf8, 0x87, 0x4b, 0xda, 0x7e, 0x1b, 0x5a, 0x6e, 0xc6, 0x31,
-	0x61, 0x49, 0x1c, 0x31, 0x92, 0x9b, 0x0e, 0xa1, 0x33, 0xb3, 0x03, 0x5b, 0x98, 0xb0, 0xef, 0x91,
-	0x3f, 0xf3, 0x3c, 0x84, 0x6d, 0x87, 0xd0, 0xf7, 0xde, 0x94, 0xb0, 0x62, 0xa4, 0x08, 0x1a, 0xb9,
-	0x2d, 0x86, 0xb9, 0x81, 0xc5, 0x73, 0xff, 0x97, 0x06, 0xfb, 0x0e, 0xa1, 0x6a, 0xa9, 0xf9, 0x06,
-	0x56, 0x85, 0xe3, 0x66, 0xf8, 0x4f, 0xcc, 0x9c, 0xfb, 0x7a, 0xed, 0x82, 0x1b, 0xcb, 0xc0, 0xee,
-	0x17, 0xd8, 0x2a, 0x1f, 0xa0, 0x0e, 0xe8, 0x1f, 0xf0, 0x6b, 0x43, 0xeb, 0x69, 0x83, 0x36, 0xce,
-	0x1f, 0x91, 0x01, 0x6b, 0x13, 0xc6, 0x47, 0x93, 0x49, 0x6a, 0xac, 0xf4, 0xb4, 0xc1, 0x06, 0x2e,
-	0x4c, 0xd4, 0x83, 0x56, 0x44, 0xbe, 0xf1, 0x37, 0x71, 0x22, 0x4e, 0x75, 0x71, 0xaa, 0xba, 0xfa,
-	0xfb, 0xb0, 0x27, 0xbb, 0x1e, 0xc7, 0xd1, 0x65, 0x18, 0xcc, 0x7a, 0xff, 0xad, 0xc1, 0x6e, 0xf9,
-	0x40, 0x76, 0xf4, 0x7c, 0x81, 0x29, 0x4d, 0x4c, 0xbf, 0x96, 0xa9, 0x12, 0x49, 0xf7, 0x0b, 0x92,
-	0xf2, 0x80, 0x9d, 0x0a, 0x49, 0x12, 0x9e, 0x47, 0x73, 0x78, 0x66, 0xb2, 0x12, 0x3c, 0x05, 0x2f,
-	0x0f, 0x66, 0xbc, 0xe4, 0xba, 0xce, 0x22, 0x2f, 0x37, 0xac, 0x1c, 0x55, 0x58, 0x91, 0xea, 0x05,
-	0x56, 0xca, 0x94, 0xd8, 0x21, 0xec, 0xe4, 0x97, 0x68, 0x7c, 0xe5, 0x45, 0x01, 0x39, 0x27, 0xe9,
-	0x75, 0xe8, 0x13, 0xf4, 0x18, 0x74, 0x37, 0xe3, 0xa8, 0x23, 0x17, 0x38, 0xbf, 0x63, 0x5d, 0xe9,
-	0x51, 0xb0, 0xca, 0xa5, 0x0e, 0xa1, 0xb7, 0x4a, 0x15, 0xe4, 0x6c, 0x47, 0x96, 0x92, 0x73, 0x2e,
-	0x4a, 0x59, 0xd0, 0x94, 0x8e, 0x9a, 0x14, 0xbb, 0xc2, 0x53, 0xc6, 0xd4, 0xfe, 0xd9, 0x80, 0x5d,
-	0xf9, 0xb6, 0x72, 0x55, 0x45, 0xa2, 0x97, 0xd0, 0x76, 0x33, 0xae, 0xec, 0xe0, 0x96, 0x3d, 0xd5,
-	0xf4, 0xf0, 0x02, 0xda, 0x0e, 0xa1, 0x4a, 0xe8, 0x5e, 0xf1, 0xee, 0xea, 0x6d, 0xa8, 0x76, 0x84,
-	0x0e, 0xa0, 0xe9, 0x66, 0x3c, 0xdf, 0x65, 0x75, 0xc7, 0x35, 0x75, 0x0e, 0xa1, 0xe9, 0x10, 0x9a,
-	0xcb, 0x97, 0x2d, 0x60, 0xc1, 0xba, 0x9b, 0x71, 0x49, 0x41, 0x95, 0x8f, 0x9a, 0x12, 0x36, 0xac,
-	0x3b, 0x84, 0xca, 0x80, 0xe5, 0xbb, 0x58, 0x73, 0x33, 0x2e, 0x18, 0xaa, 0xb0, 0x55, 0x53, 0xe2,
-	0x29, 0xac, 0x39, 0x84, 0x0a, 0xf9, 0xb2, 0x15, 0x9e, 0xc1, 0xb6, 0x9b, 0x71, 0x95, 0x3b, 0x54,
-	0xe1, 0xb2, 0xa6, 0xd2, 0xb1, 0xf8, 0x22, 0x95, 0xc2, 0xfe, 0xff, 0xcb, 0x37, 0xa5, 0x06, 0xb9,
-	0x4f, 0xe5, 0x6b, 0x5d, 0xb0, 0x32, 0x86, 0x4d, 0xd5, 0x8d, 0x0c, 0x05, 0xb4, 0xd2, 0x07, 0xa0,
-	0xfb, 0x5f, 0xcd, 0x89, 0xcc, 0x7d, 0xd1, 0x14, 0x3f, 0x43, 0xc3, 0x3f, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0x54, 0xf6, 0x80, 0x41, 0xde, 0x07, 0x00, 0x00,
+	// 482 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x93, 0xc1, 0x6f, 0xd3, 0x30,
+	0x14, 0xc6, 0xd5, 0x65, 0x9b, 0x84, 0x3b, 0x50, 0x97, 0x4d, 0x53, 0xe8, 0x01, 0x4d, 0x03, 0x89,
+	0x71, 0xc0, 0x41, 0xe9, 0xc4, 0x81, 0x13, 0x5d, 0x72, 0x99, 0x18, 0x52, 0x95, 0x5d, 0x10, 0x9c,
+	0x3c, 0xf7, 0x35, 0xb3, 0xe4, 0xd8, 0x21, 0x76, 0x26, 0xf1, 0xc7, 0xf0, 0x77, 0x72, 0x45, 0xb6,
+	0x97, 0xcc, 0xee, 0xca, 0xa9, 0x1c, 0xaa, 0xfa, 0x7d, 0xfe, 0xde, 0xe7, 0xf6, 0xf7, 0x6c, 0xf4,
+	0xac, 0x6d, 0x28, 0x6e, 0x5a, 0xa9, 0x65, 0x1c, 0xb5, 0x0d, 0x9d, 0xfe, 0xa8, 0x98, 0xbe, 0xeb,
+	0x6e, 0x31, 0x95, 0x75, 0xca, 0x59, 0x45, 0xb4, 0x4c, 0xef, 0x9b, 0xe6, 0x3d, 0xa9, 0x40, 0xe8,
+	0xb4, 0xe1, 0x5d, 0xc5, 0x84, 0x4a, 0x97, 0xb0, 0x22, 0x1d, 0xd7, 0x7d, 0x49, 0x65, 0x5d, 0x4b,
+	0x91, 0xd6, 0x72, 0x09, 0x3c, 0x65, 0x42, 0x43, 0xbb, 0x22, 0x14, 0x94, 0xb7, 0x74, 0x27, 0x4c,
+	0xbf, 0x6c, 0x1b, 0xce, 0xb3, 0x94, 0x67, 0xff, 0x2d, 0x6c, 0x96, 0xf2, 0xd9, 0x43, 0xd8, 0xd7,
+	0x6d, 0xc3, 0x08, 0xb5, 0x1f, 0x17, 0x77, 0xf6, 0x7b, 0x07, 0x8d, 0x0b, 0xa2, 0x49, 0x09, 0x3f,
+	0x3b, 0x50, 0x3a, 0xfe, 0x8c, 0xd0, 0xd5, 0x00, 0x23, 0x19, 0x9d, 0x46, 0xe7, 0xe3, 0xec, 0x14,
+	0x7b, 0x7c, 0xae, 0x36, 0x2c, 0x4b, 0xaf, 0x27, 0xfe, 0x80, 0xa2, 0xcb, 0x42, 0x25, 0x3b, 0xb6,
+	0xf5, 0x15, 0xe6, 0x19, 0xbe, 0x6c, 0xd9, 0xb2, 0x82, 0x42, 0xd6, 0x84, 0x09, 0x15, 0x54, 0xa5,
+	0xb1, 0xc6, 0x17, 0x68, 0xef, 0x5b, 0x2e, 0x85, 0x4a, 0xa2, 0xc7, 0x1e, 0x23, 0x08, 0xa0, 0x7a,
+	0x41, 0x58, 0xab, 0x82, 0xaa, 0x74, 0xe6, 0xf8, 0x1c, 0xed, 0xce, 0xf3, 0x6b, 0x95, 0xec, 0xda,
+	0xa6, 0x63, 0x6c, 0xfe, 0xd3, 0x9c, 0x52, 0x50, 0xea, 0x9a, 0x29, 0xad, 0xf0, 0x9c, 0xf2, 0xd2,
+	0x3a, 0xe2, 0x4f, 0xe8, 0xe0, 0x46, 0x13, 0xcd, 0x68, 0x29, 0x3b, 0x0d, 0x2a, 0xd9, 0xb3, 0x1d,
+	0x27, 0x98, 0xcf, 0xb0, 0xaf, 0x63, 0xfb, 0x55, 0x06, 0xde, 0xb3, 0xe7, 0x68, 0xbc, 0xe8, 0x74,
+	0x09, 0xaa, 0x91, 0x42, 0x81, 0x29, 0x0b, 0xe0, 0x43, 0x39, 0x41, 0x2f, 0x4a, 0x50, 0xbf, 0x04,
+	0x1d, 0x94, 0x13, 0x74, 0xec, 0x94, 0x5c, 0x8a, 0x15, 0xab, 0x06, 0xfd, 0xcf, 0x08, 0x1d, 0x85,
+	0x1b, 0x8e, 0xf7, 0xc7, 0x35, 0xde, 0x23, 0xfb, 0xcb, 0x36, 0xf2, 0x0e, 0x28, 0xbf, 0xee, 0x29,
+	0x9b, 0x86, 0xc3, 0x27, 0x94, 0x1d, 0xd8, 0xb7, 0x8f, 0x60, 0x07, 0x5b, 0x00, 0xb6, 0x67, 0xf9,
+	0x66, 0x60, 0x69, 0x7c, 0x93, 0x75, 0x96, 0x0f, 0x1c, 0x2f, 0x9e, 0x70, 0x74, 0xee, 0x35, 0x8e,
+	0x21, 0xc1, 0x8c, 0xa1, 0x43, 0x73, 0xc1, 0xf2, 0x3b, 0x22, 0x2a, 0xb8, 0x81, 0xf6, 0x9e, 0x51,
+	0x88, 0xdf, 0xa1, 0x68, 0xd1, 0xe9, 0x78, 0x82, 0xcd, 0xa3, 0xf6, 0xee, 0xdf, 0xd4, 0x29, 0x1e,
+	0x72, 0x63, 0x2d, 0x80, 0xff, 0xd3, 0xea, 0x8d, 0x23, 0x2b, 0xdc, 0x51, 0x8e, 0x73, 0x7f, 0x54,
+	0x8a, 0xf6, 0x9d, 0xb0, 0x21, 0xe2, 0xc8, 0x2a, 0xe1, 0x08, 0xb3, 0xef, 0xe1, 0xa4, 0xfa, 0x9c,
+	0x1c, 0x1d, 0xf8, 0x72, 0x9c, 0x78, 0xbd, 0xc1, 0x4c, 0xa7, 0x2f, 0x37, 0xec, 0xb8, 0xec, 0xdb,
+	0x7d, 0xfb, 0xea, 0x66, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xa3, 0x59, 0x24, 0x52, 0xcd, 0x04,
+	0x00, 0x00,
 }

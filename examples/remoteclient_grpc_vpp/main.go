@@ -153,7 +153,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	select {
 	case <-time.After(3 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
-		err := remoteclient.DataChangeRequestGRPC(rpc.NewChangeConfigServiceClient(plugin.conn), rpc.NewDataChangeServiceClient(plugin.conn)).
+		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
 			Interface(&memif2).            /* newly added memif interface */

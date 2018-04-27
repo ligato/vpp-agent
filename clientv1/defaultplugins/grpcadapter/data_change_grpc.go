@@ -32,15 +32,14 @@ import (
 )
 
 // NewDataChangeDSL is a constructor
-func NewDataChangeDSL(client rpc.ChangeConfigServiceClient, newClient rpc.DataChangeServiceClient) *DataChangeDSL {
-	return &DataChangeDSL{client, newClient, make([]proto.Message, 0), make([]proto.Message, 0)}
+func NewDataChangeDSL(client rpc.DataChangeServiceClient) *DataChangeDSL {
+	return &DataChangeDSL{client, make([]proto.Message, 0), make([]proto.Message, 0)}
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
-	client rpc.ChangeConfigServiceClient
-	newClient rpc.DataChangeServiceClient
+	client rpc.DataChangeServiceClient
 	put    []proto.Message
 	del    []proto.Message
 }
@@ -364,10 +363,10 @@ func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 
 	ctx := context.Background()
 
-	if _, err := dsl.newClient.Del(ctx, delRequest); err != nil {
+	if _, err := dsl.client.Del(ctx, delRequest); err != nil {
 		wasErr = err
 	}
-	if _, err := dsl.newClient.Put(ctx, putRequest); err != nil {
+	if _, err := dsl.client.Put(ctx, putRequest); err != nil {
 		wasErr = err
 	}
 
