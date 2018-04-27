@@ -79,6 +79,7 @@ func DumpACLs(log logging.Logger, swIfIndices ifaceidx.SwIfIndex, vppChannel *go
 		ACLs = append(ACLs, &ACLEntry{
 			Identifier: &identifier,
 			ACLDetails: &acl.AccessLists_Acl{
+				AclName:    identifier.Tag,
 				Rules:      rules,
 				Interfaces: interfaceData[identifier.ACLIndex],
 			},
@@ -186,7 +187,7 @@ func DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log log
 		data := &ACLToInterface{}
 		data.SwIfIdx = reply.SwIfIndex
 		for i, aclIdx := range reply.Acls {
-			if i <= int(reply.NInput) {
+			if i < int(reply.NInput) {
 				data.IngressACL = append(data.IngressACL, aclIdx)
 			} else {
 				data.EgressACL = append(data.EgressACL, aclIdx)
