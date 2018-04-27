@@ -145,62 +145,100 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
-		resyncErrs = append(resyncErrs, errs...)
+	if !plugin.droppedFromResync(interfaces.InterfaceKeyPrefix()) {
+		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
+			resyncErrs = append(resyncErrs, errs...)
+		}
 	}
-	if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(acl.KeyPrefix()) {
+		if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.AuthKeysKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.SessionKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.EchoFunctionKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.BridgeDomainKeyPrefix()) {
+		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.FibKeyPrefix()) {
+		if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.XConnectKeyPrefix()) {
+		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.RouteKeyPrefix()) {
+		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ArpKeyPrefix()) {
+		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ProxyArpInterfacePrefix()) {
+		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ProxyArpRangePrefix()) {
+		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l4.FeatureKeyPrefix()) {
+		if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l4.AppNamespacesKeyPrefix()) {
+		if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(stn.KeyPrefix()) {
+		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(nat.GlobalConfigPrefix()) {
+		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(nat.SNatPrefix()) {
+		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(nat.DNatPrefix()) {
+		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
+		if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
