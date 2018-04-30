@@ -28,7 +28,7 @@ Execute_Command_With_Copied_File
     [Arguments]    ${file_path}    ${command_prefix}    ${expected_rc}=0    ${ignore_stderr}=${False}    ${ignore_rc}=${False}
     [Documentation]    Put file to current remote directory and execute command which takes computed file name as argument.
     BuiltIn.Log_Many    ${file_path}    ${command_prefix}    ${expected_rc}    ${ignore_stderr}    ${ignore_rc}
-    Builtin.Comment    TODO: Do not pollute current remote directory. See https://github.com/contiv/vpp/issues/195
+    Builtin.Comment    TODO: Do not pollute current remote directory.
     SSHLibrary.Put_File    ${file_path}    .
     ${splitted_path} =    String.Split_String    ${file_path}    separator=${/}
     BuiltIn.Run_Keyword_And_Return    Execute_Command_And_Log    ${command_prefix} @{splitted_path}[-1]    expected_rc=${expected_rc}    ignore_stderr=${ignore_stderr}    ignore_rc=${ignore_rc}
