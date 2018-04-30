@@ -22,6 +22,6 @@ import (
 )
 
 // NewVppAdapter returns real vpp api adapter, used for building with vppapiclient library.
-func NewVppAdapter() adapter.VppAdapter {
-	return vppapiclient.NewVppAdapter()
+func NewVppAdapter(shmPrefix string) adapter.VppAdapter {
+	return vppapiclient.NewVppAdapter(shmPrefix)
 }
