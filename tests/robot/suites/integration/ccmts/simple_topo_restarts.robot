@@ -14,7 +14,6 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${REPLY_DATA_FOLDER}            replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
 ${CLUSTRER_ID}=     CCMTS1
@@ -112,7 +111,7 @@ BasicCcmtsSetup
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
     setup-teardown.Testsuite_K8Setup    ${CLUSTRER_ID}
     #KubeEnv.Reinit_1_Node_Cluster
-    Cleanup_Basic_Ccmts_Deployment_On_Cluster
+    #Cleanup_Basic_Ccmts_Deployment_On_Cluster
     KubeEnv.Deploy_Etcd_Kafka_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}

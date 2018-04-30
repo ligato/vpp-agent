@@ -23,7 +23,7 @@ ${PULL_IMAGES_PATH}    ${CURDIR}/../resources/k8-scripts/pull-images.sh
 *** Keywords ***
 # TODO: Passing ${ssh_session} around is annoying. Make keywords assume the correct SSH session is already active.
 
-# TODO: Exact steps should be invetigated how to reinit
+# TODO: Exact steps should be investigated how to reinit Kubernetes properly
 Reinit_1_Node_Cluster
     [Documentation]    Assuming active SSH connection, store its index, execute multiple commands to reinstall and restart 1node cluster, wait to see it running.
     ${normal_tag}    ${vpp_tag} =    Get_Docker_Tags
@@ -34,8 +34,7 @@ Reinit_1_Node_Cluster
     SshCommons.Switch_And_Execute_Command    ${testbed_connection}    sudo rm -rf $HOME/.kube
     KubeAdm.Reset    ${testbed_connection}
     Uninstall_Cri    ${normal_tag}
-    Docker_Pull_Contiv_Vpp    ${normal_tag}    ${vpp_tag}
-    Docker_Pull_Custom_Kube_Proxy
+    Docker_Pull_Images    ${normal_tag}    ${vpp_tag}
     Install_Cri    ${normal_tag}
     ${stdout} =    KubeAdm.Init    ${testbed_connection}
     BuiltIn.Log    ${stdout}
@@ -352,22 +351,22 @@ Log_Etcd
     [Documentation]    Check there is exactly one etcd pod, get its logs
     ...    (and do nothing with them, except the implicit Log).
     Builtin.Log_Many    ${ssh_session}
-    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    contiv-etcd-
+    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    etcd
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    1
     KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system
 
 Log_Vswitch
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
-    [Documentation]    Check there is expected number of vswitch pods, get logs from them an cni containers
+    [Documentation]    Check there is expected number of vswitch pods, get logs from them an cn-infra containers
     ...    (and do nothing except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
-    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    contiv-vswitch-
+    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    vswitch
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=contiv-cni
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=contiv-vswitch
+    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=cn-infra
+    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=vswitch
 
 Log_Kube_Dns
     [Arguments]    ${ssh_session}
@@ -378,17 +377,14 @@ Log_Kube_Dns
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    1
     KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system    container=kubedns
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system    container=dnsmasq
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system    container=sidecar
 
 Log_Pods_For_Debug
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
     [Documentation]    Call multiple keywords to get various logs
     ...    (and do nothing with them, except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
-    Log_Contiv_Etcd    ${ssh_session}
-    Log_Contiv_Ksr    ${ssh_session}
-    Log_Contiv_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
+    Log_Etcd    ${ssh_session}
+    Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
     Log_Kube_Dns    ${ssh_session}
 
 Open_Connection_To_Node
