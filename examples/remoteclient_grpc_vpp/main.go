@@ -129,7 +129,7 @@ func (plugin *ExamplePlugin) Close() error {
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
-	err := remoteclient.DataResyncRequestGRPC(rpc.NewResyncConfigServiceClient(plugin.conn)).
+	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
 		Interface(&loopback1).

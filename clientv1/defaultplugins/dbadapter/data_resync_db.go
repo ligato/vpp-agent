@@ -16,6 +16,7 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
@@ -47,6 +48,7 @@ type DataResyncDSL struct {
 
 // Interface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) defaultplugins.DataResyncDSL {
+	logrus.DefaultLogger().Warnf("item: %v", val.Name)
 	key := intf.InterfaceKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)

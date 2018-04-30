@@ -32,21 +32,3 @@ message DelResponse {
 
 message ResyncResponse {
 }
-
-
-// ResyncConfigService is a service to submit full data resync request
-// in the configuration of the vpp-agent
-service ResyncConfigService {
-    rpc ResyncConfig (ResyncConfigRequest) returns (ResyncConfigResponse);
-}
-
-message ResyncConfigResponse {
-}
-
-message ResyncConfigRequest {
-    interfaces.Interfaces Interfaces = 1;
-    l2.BridgeDomains BDs = 2;
-    l2.XConnectPairs XCons = 3;
-    acl.AccessLists ACLs = 4;
-    l3.StaticRoutes StaticRoutes = 5;
-}

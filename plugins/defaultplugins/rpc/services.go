@@ -17,16 +17,18 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
-	"golang.org/x/net/context"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
+	"golang.org/x/net/context"
 )
 
 // GRPCSvcPlugin registers VPP GRPC services in *grpc.Server.
@@ -55,8 +57,7 @@ func (plugin *GRPCSvcPlugin) Init() error {
 func (plugin *GRPCSvcPlugin) AfterInit() error {
 	grpcServer := plugin.Deps.GRPC.Server()
 	rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
-	//rpc.RegisterChangeConfigServiceServer(grpcServer, &plugin.changeVppSvc)
-	rpc.RegisterResyncConfigServiceServer(grpcServer, &plugin.resyncVppSvc)
+	rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
 
 	return nil
 }
@@ -77,33 +78,50 @@ type ResyncVppSvc struct {
 }
 
 // Put adds configuration data present in request to the VPP/Linux
-func (svc *ChangeVppSvc) Put(ctx context.Context, request *rpc.DataRequest) (*rpc.PutResponse, error) {
-	err := svc.putOrDelRequest(ctx, request, false)
+func (svc *ChangeVppSvc) Put(ctx context.Context, data *rpc.DataRequest) (*rpc.PutResponse, error) {
+	request := localclient.DataChangeRequest("rpc").Put()
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
+	}
+	err := request.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
 }
 
 // Del removes configuration data present in request from the VPP/linux
-func (svc *ChangeVppSvc) Del(ctx context.Context, request *rpc.DataRequest) (*rpc.DelResponse, error) {
-	err := svc.putOrDelRequest(ctx, request, true)
+func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.DelResponse, error) {
+	request := localclient.DataChangeRequest("rpc").Delete()
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
+	}
+	err := request.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
 }
 
+func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.ResyncResponse, error) {
+	request := localclient.DataResyncRequest("rpc")
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
+	}
+	err := request.Send().ReceiveReply()
+	return &rpc.ResyncResponse{}, err
+}
+
 // Common method which puts or deletes data of every configuration type separately
-func (svc *ChangeVppSvc) putOrDelRequest(ctx context.Context, request *rpc.DataRequest, isDelete bool) error {
+func processRequest(ctx context.Context, data *rpc.DataRequest, request interface{}) error {
 	var wasErr error
-	if err := aclRequest(request.ACLs, isDelete); err != nil {
+	if err := aclRequest(data.ACLs, request); err != nil {
 		wasErr = err
 	}
-	if err := vppInterfaceRequest(request.Interfaces, isDelete); err != nil {
+	if err := vppInterfaceRequest(data.Interfaces, request); err != nil {
 		wasErr = err
 	}
-	if err := bridgeDomainRequest(request.BDs, isDelete); err != nil {
+	if err := bridgeDomainRequest(data.BDs, request); err != nil {
 		wasErr = err
 	}
-	if err := xConnectRequest(request.XCons, isDelete); err != nil {
+	if err := xConnectRequest(data.XCons, request); err != nil {
 		wasErr = err
 	}
-	if err := staticRouteRequest(request.StaticRoutes, isDelete); err != nil {
+	if err := staticRouteRequest(data.StaticRoutes, request); err != nil {
 		wasErr = err
 	}
 
@@ -111,123 +129,106 @@ func (svc *ChangeVppSvc) putOrDelRequest(ctx context.Context, request *rpc.DataR
 }
 
 // ACL request forwards multiple access lists to the localclient
-func aclRequest(data []*acl.AccessLists_Acl, delete bool) error {
-	changeRequest := localclient.DataChangeRequest("rpc")
-	if delete {
-		delChangeRequest := changeRequest.Delete()
+func aclRequest(data []*acl.AccessLists_Acl, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
 		for _, aclItem := range data {
-			delChangeRequest.ACL(aclItem.AclName)
+			r.ACL(aclItem)
 		}
-	} else {
-		putChangeRequest := changeRequest.Put()
+	case linux.DeleteDSL:
 		for _, aclItem := range data {
-			putChangeRequest.ACL(aclItem)
+			r.ACL(aclItem.AclName)
 		}
+	case linux.DataResyncDSL:
+		for _, aclItem := range data {
+			r.ACL(aclItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
-	return changeRequest.Send().ReceiveReply()
+	return nil
 }
 
 // VPP interface request forwards multiple interfaces to the localclient
-func vppInterfaceRequest(data []*interfaces.Interfaces_Interface, delete bool) error {
-	changeRequest := localclient.DataChangeRequest("rpc")
-	if delete {
-		delChangeRequest := changeRequest.Delete()
+func vppInterfaceRequest(data []*interfaces.Interfaces_Interface, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
 		for _, ifItem := range data {
-			delChangeRequest.VppInterface(ifItem.Name)
+			r.VppInterface(ifItem)
 		}
-	} else {
-		putChangeRequest := changeRequest.Put()
+	case linux.DeleteDSL:
 		for _, ifItem := range data {
-			putChangeRequest.VppInterface(ifItem)
+			r.VppInterface(ifItem.Name)
 		}
+	case linux.DataResyncDSL:
+		for _, ifItem := range data {
+			r.VppInterface(ifItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
-	return changeRequest.Send().ReceiveReply()
+	return nil
 }
 
 // BD request forwards multiple bridge domains to the localclient
-func bridgeDomainRequest(data []*l2.BridgeDomains_BridgeDomain, delete bool) error {
-	changeRequest := localclient.DataChangeRequest("rpc")
-	if delete {
-		delChangeRequest := changeRequest.Delete()
+func bridgeDomainRequest(data []*l2.BridgeDomains_BridgeDomain, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
 		for _, bdItem := range data {
-			delChangeRequest.BD(bdItem.Name)
+			r.BD(bdItem)
 		}
-	} else {
-		putChangeRequest := changeRequest.Put()
+	case linux.DeleteDSL:
 		for _, bdItem := range data {
-			putChangeRequest.BD(bdItem)
+			r.BD(bdItem.Name)
 		}
+	case linux.DataResyncDSL:
+		for _, bdItem := range data {
+			r.BD(bdItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
-	return changeRequest.Send().ReceiveReply()
+	return nil
 }
 
 // XConnect request forwards multiple cross connects to the localclient
-func xConnectRequest(data []*l2.XConnectPairs_XConnectPair, delete bool) error {
-	changeRequest := localclient.DataChangeRequest("rpc")
-	if delete {
-		delChangeRequest := changeRequest.Delete()
+func xConnectRequest(data []*l2.XConnectPairs_XConnectPair, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
 		for _, xcItem := range data {
-			delChangeRequest.XConnect(xcItem.ReceiveInterface)
+			r.XConnect(xcItem)
 		}
-	} else {
-		putChangeRequest := changeRequest.Put()
+	case linux.DeleteDSL:
 		for _, xcItem := range data {
-			putChangeRequest.XConnect(xcItem)
+			r.XConnect(xcItem.ReceiveInterface)
 		}
+	case linux.DataResyncDSL:
+		for _, xcItem := range data {
+			r.XConnect(xcItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
-	return changeRequest.Send().ReceiveReply()
+	return nil
 }
 
 // VPP static route request forwards multiple static routes to the localclient
-func staticRouteRequest(data []*l3.StaticRoutes_Route, delete bool) error {
-	changeRequest := localclient.DataChangeRequest("rpc")
-	if delete {
-		delChangeRequest := changeRequest.Delete()
-		for _, routeItem := range data {
-			delChangeRequest.StaticRoute(routeItem.VrfId, routeItem.DstIpAddr, routeItem.NextHopAddr)
+func staticRouteRequest(data []*l3.StaticRoutes_Route, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
+		for _, rtItem := range data {
+			r.StaticRoute(rtItem)
 		}
-	} else {
-		putChangeRequest := changeRequest.Put()
-		for _, routeItem := range data {
-			putChangeRequest.StaticRoute(routeItem)
+	case linux.DeleteDSL:
+		for _, rtItem := range data {
+			r.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
 		}
+	case linux.DataResyncDSL:
+		for _, rtItem := range data {
+			r.StaticRoute(rtItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
-	return changeRequest.Send().ReceiveReply()
-}
-
-// ResyncConfig fills data resync request of defaultvppplugin configuration
-// , i.e. forwards the input to the localclient.
-func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncConfigRequest) (
-	*rpc.ResyncConfigResponse, error) {
-
-	localReq := localclient.DataResyncRequest("rpc")
-
-	if request.Interfaces != nil {
-		for _, intf := range request.Interfaces.Interfaces {
-			localReq.VppInterface(intf)
-		}
-	}
-	if request.BDs != nil {
-		for _, bd := range request.BDs.BridgeDomains {
-			localReq.BD(bd)
-		}
-	}
-	if request.XCons != nil {
-		for _, xcon := range request.XCons.XConnectPairs {
-			localReq.XConnect(xcon)
-		}
-	}
-	if request.ACLs != nil {
-		for _, accessList := range request.ACLs.Acls {
-			localReq.ACL(accessList)
-		}
-	}
-	if request.StaticRoutes != nil {
-		for _, route := range request.StaticRoutes.Routes {
-			localReq.StaticRoute(route)
-		}
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.ResyncConfigResponse{}, err
+	return nil
 }

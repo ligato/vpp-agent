@@ -41,7 +41,7 @@ func DataChangeRequestDB(broker keyval.ProtoBroker) defaultplugins.DataChangeDSL
 // DataResyncRequestGRPC allows sending RESYNC requests conveniently.
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys during RESYNC.
-func DataResyncRequestGRPC(client rpc.ResyncConfigServiceClient) defaultplugins.DataResyncDSL {
+func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) defaultplugins.DataResyncDSL {
 	return grpcadapter.NewDataResyncDSL(client)
 }
 

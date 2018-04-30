@@ -31,14 +31,14 @@ import (
 )
 
 // NewDataResyncDSL is a constructor.
-func NewDataResyncDSL(client rpc.ResyncConfigServiceClient) *DataResyncDSL {
+func NewDataResyncDSL(client rpc.DataResyncServiceClient) *DataResyncDSL {
 	return &DataResyncDSL{client, make([]proto.Message, 0)}
 }
 
 // DataResyncDSL is used to conveniently assign all the data that are needed for the RESYNC.
 // This is implementation of Domain Specific Language (DSL) for data RESYNC of the VPP configuration.
 type DataResyncDSL struct {
-	client rpc.ResyncConfigServiceClient
+	client rpc.DataResyncServiceClient
 	put    []proto.Message
 }
 
@@ -159,40 +159,16 @@ func (dsl *DataResyncDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) defau
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
 func (dsl *DataResyncDSL) Send() defaultplugins.Reply {
+	var wasErr error
 
-	resyncReq := &rpc.ResyncConfigRequest{}
+	// Prepare requests with data todo can be scalable
+	resyncRequest := getRequestFromData(dsl.put)
 
-	for _, val := range dsl.put {
-		switch typed := val.(type) {
-		case *interfaces.Interfaces_Interface:
-			if resyncReq.Interfaces == nil {
-				resyncReq.Interfaces = &interfaces.Interfaces{}
-			}
-			resyncReq.Interfaces.Interfaces = append(resyncReq.Interfaces.Interfaces, typed)
-		case *l2.BridgeDomains_BridgeDomain:
-			if resyncReq.BDs == nil {
-				resyncReq.BDs = &l2.BridgeDomains{}
-			}
-			resyncReq.BDs.BridgeDomains = append(resyncReq.BDs.BridgeDomains, typed)
-		case *l2.XConnectPairs_XConnectPair:
-			if resyncReq.XCons == nil {
-				resyncReq.XCons = &l2.XConnectPairs{}
-			}
-			resyncReq.XCons.XConnectPairs = append(resyncReq.XCons.XConnectPairs, typed)
-		case *l3.StaticRoutes_Route:
-			if resyncReq.StaticRoutes == nil {
-				resyncReq.StaticRoutes = &l3.StaticRoutes{}
-			}
-			resyncReq.StaticRoutes.Routes = append(resyncReq.StaticRoutes.Routes, typed)
-		case *acl.AccessLists_Acl:
-			if resyncReq.ACLs == nil {
-				resyncReq.ACLs = &acl.AccessLists{}
-			}
-			resyncReq.ACLs.Acls = append(resyncReq.ACLs.Acls, typed)
-		}
+	ctx := context.Background()
+
+	if _, err := dsl.client.Resync(ctx, resyncRequest); err != nil {
+		wasErr = err
 	}
 
-	_, err := dsl.client.ResyncConfig(context.Background(), resyncReq)
-
-	return &Reply{err: err}
+	return &Reply{err: wasErr}
 }
