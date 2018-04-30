@@ -16,6 +16,7 @@ package grpcadapter
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
@@ -27,8 +28,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"golang.org/x/net/context"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // NewDataChangeDSL is a constructor
@@ -378,20 +380,37 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 	for _, item := range data {
 		switch typedItem := item.(type) {
 		case *acl.AccessLists_Acl:
-			if request.ACLs == nil {
-				request.ACLs = make([]*acl.AccessLists_Acl, 0)
+			if request.AccessLists == nil {
+				request.AccessLists = make([]*acl.AccessLists_Acl, 0)
 			}
-			request.ACLs = append(request.ACLs, typedItem)
+			request.AccessLists = append(request.AccessLists, typedItem)
 		case *interfaces.Interfaces_Interface:
 			if request.Interfaces == nil {
 				request.Interfaces = make([]*interfaces.Interfaces_Interface, 0)
 			}
 			request.Interfaces = append(request.Interfaces, typedItem)
-		case *l2.BridgeDomains_BridgeDomain:
-			if request.BDs == nil {
-				request.BDs = make([]*l2.BridgeDomains_BridgeDomain, 0)
+		case *bfd.SingleHopBFD_Session:
+			if request.BfdSessions == nil {
+				request.BfdSessions = make([]*bfd.SingleHopBFD_Session, 0)
 			}
-			request.BDs = append(request.BDs, typedItem)
+			request.BfdSessions = append(request.BfdSessions, typedItem)
+		case *bfd.SingleHopBFD_Key:
+			if request.BfdAuthKeys == nil {
+				request.BfdAuthKeys = make([]*bfd.SingleHopBFD_Key, 0)
+			}
+			request.BfdAuthKeys = append(request.BfdAuthKeys, typedItem)
+		case *bfd.SingleHopBFD_EchoFunction:
+			request.BfdEchoFunction = typedItem
+		case *l2.BridgeDomains_BridgeDomain:
+			if request.BridgeDomains == nil {
+				request.BridgeDomains = make([]*l2.BridgeDomains_BridgeDomain, 0)
+			}
+			request.BridgeDomains = append(request.BridgeDomains, typedItem)
+		case *l2.FibTable_FibEntry:
+			if request.FIBs == nil {
+				request.FIBs = make([]*l2.FibTable_FibEntry, 0)
+			}
+			request.FIBs = append(request.FIBs, typedItem)
 		case *l2.XConnectPairs_XConnectPair:
 			if request.XCons == nil {
 				request.XCons = make([]*l2.XConnectPairs_XConnectPair, 0)
@@ -402,6 +421,55 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 				request.StaticRoutes = make([]*l3.StaticRoutes_Route, 0)
 			}
 			request.StaticRoutes = append(request.StaticRoutes, typedItem)
+		case *l3.ArpTable_ArpEntry:
+			if request.ArpEntries == nil {
+				request.ArpEntries = make([]*l3.ArpTable_ArpEntry, 0)
+			}
+			request.ArpEntries = append(request.ArpEntries, typedItem)
+		case *l3.ProxyArpInterfaces_InterfaceList:
+			if request.ProxyArpInterfaces == nil {
+				request.ProxyArpInterfaces = make([]*l3.ProxyArpInterfaces_InterfaceList, 0)
+			}
+			request.ProxyArpInterfaces = append(request.ProxyArpInterfaces, typedItem)
+		case *l3.ProxyArpRanges_RangeList:
+			if request.ProxyArpRanges == nil {
+				request.ProxyArpRanges = make([]*l3.ProxyArpRanges_RangeList, 0)
+			}
+			request.ProxyArpRanges = append(request.ProxyArpRanges, typedItem)
+		case *l4.L4Features:
+			request.L4Feature = typedItem
+		case *l4.AppNamespaces_AppNamespace:
+			if request.ApplicationNamespaces == nil {
+				request.ApplicationNamespaces = make([]*l4.AppNamespaces_AppNamespace, 0)
+			}
+			request.ApplicationNamespaces = append(request.ApplicationNamespaces, typedItem)
+		case *stn.STN_Rule:
+			if request.StnRules == nil {
+				request.StnRules = make([]*stn.STN_Rule, 0)
+			}
+			request.StnRules = append(request.StnRules, typedItem)
+		case *nat.Nat44Global:
+			request.NatGlobal = typedItem
+		case *nat.Nat44DNat_DNatConfig:
+			if request.DNATs == nil {
+				request.DNATs = make([]*nat.Nat44DNat_DNatConfig, 0)
+			}
+			request.DNATs = append(request.DNATs, typedItem)
+		case *linuxIf.LinuxInterfaces_Interface:
+			if request.LinuxInterfaces == nil {
+				request.LinuxInterfaces = make([]*linuxIf.LinuxInterfaces_Interface, 0)
+			}
+			request.LinuxInterfaces = append(request.LinuxInterfaces, typedItem)
+		case *linuxL3.LinuxStaticArpEntries_ArpEntry:
+			if request.LinuxArpEntries == nil {
+				request.LinuxArpEntries = make([]*linuxL3.LinuxStaticArpEntries_ArpEntry, 0)
+			}
+			request.LinuxArpEntries = append(request.LinuxArpEntries, typedItem)
+		case *linuxL3.LinuxStaticRoutes_Route:
+			if request.LinuxRoutes == nil {
+				request.LinuxRoutes = make([]*linuxL3.LinuxStaticRoutes_Route, 0)
+			}
+			request.LinuxRoutes = append(request.LinuxRoutes, typedItem)
 		default:
 			logrus.DefaultLogger().Warn("Unsupported data for GRPC request: %s", typedItem.String())
 		}
