@@ -77,7 +77,7 @@ type ResyncVppSvc struct {
 	Log logging.Logger
 }
 
-// Put adds configuration data present in request to the VPP/Linux
+// Put adds configuration data present in data request to the VPP/Linux
 func (svc *ChangeVppSvc) Put(ctx context.Context, data *rpc.DataRequest) (*rpc.PutResponse, error) {
 	request := localclient.DataChangeRequest("rpc").Put()
 	if err := processRequest(ctx, data, request); err != nil {
@@ -87,7 +87,7 @@ func (svc *ChangeVppSvc) Put(ctx context.Context, data *rpc.DataRequest) (*rpc.P
 	return &rpc.PutResponse{}, err
 }
 
-// Del removes configuration data present in request from the VPP/linux
+// Del removes configuration data present in data request from the VPP/linux
 func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.DelResponse, error) {
 	request := localclient.DataChangeRequest("rpc").Delete()
 	if err := processRequest(ctx, data, request); err != nil {
@@ -97,6 +97,7 @@ func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.D
 	return &rpc.DelResponse{}, err
 }
 
+// Resync creates a resync request which adds data tp the VPP/linux
 func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.ResyncResponse, error) {
 	request := localclient.DataResyncRequest("rpc")
 	if err := processRequest(ctx, data, request); err != nil {

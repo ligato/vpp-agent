@@ -7,15 +7,23 @@ import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.pr
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3/l3.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
 
+// Data change service is a service which submits cumulative request consisting of all
+// configuration types supported in the vpp-agent
 service DataChangeService {
+    // Creates or updates one or multiple configuration items
     rpc Put(DataRequest) returns (PutResponse);
+    // Removes one or multiple configuration items
     rpc Del(DataRequest) returns (DelResponse);
 }
 
+// Data resync service is a service which submits data resync to the vpp-agent
 service DataResyncService {
+    // Calls vpp-agent resync
     rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
+// Data request is an inventory of supported data types with one or multiple
+// items of every type. Universal type for every data change/resync request
 message DataRequest {
     repeated interfaces.Interfaces.Interface Interfaces = 1;
     repeated l2.BridgeDomains.BridgeDomain BDs = 2;
@@ -24,11 +32,14 @@ message DataRequest {
     repeated l3.StaticRoutes.Route StaticRoutes = 5;
 }
 
+// Response to data change 'put'
 message PutResponse {
 }
 
+// Response to data change 'del'
 message DelResponse {
 }
 
+// Response to data resync
 message ResyncResponse {
 }
