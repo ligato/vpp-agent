@@ -28,18 +28,20 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
 	"golang.org/x/net/context"
 )
 
 // NewDataChangeDSL is a constructor
-func NewDataChangeDSL(client rpc.ChangeConfigServiceClient) *DataChangeDSL {
+func NewDataChangeDSL(client rpc.DataChangeServiceClient) *DataChangeDSL {
 	return &DataChangeDSL{client, make([]proto.Message, 0), make([]proto.Message, 0)}
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
-	client rpc.ChangeConfigServiceClient
+	client rpc.DataChangeServiceClient
 	put    []proto.Message
 	del    []proto.Message
 }
@@ -357,91 +359,72 @@ func (dsl *DeleteDSL) Send() defaultplugins.Reply {
 func (dsl *DataChangeDSL) Send() defaultplugins.Reply {
 	var wasErr error
 
-	var (
-		ifsPut                         []*interfaces.Interfaces_Interface
-		bdsPut                         []*l2.BridgeDomains_BridgeDomain
-		xCsPut                         []*l2.XConnectPairs_XConnectPair
-		rtsPut                         []*l3.StaticRoutes_Route
-		aclPut                         []*acl.AccessLists_Acl
-		ifsDel, bdsDel, xCsDel, aclDel []string
-		rtsDel                         []*rpc.DelStaticRoutesRequest_DelStaticRoute
-	)
-
-	// 'PUT'
-	for _, val := range dsl.put {
-		switch typed := val.(type) {
-		case *interfaces.Interfaces_Interface:
-			ifsPut = append(ifsPut, typed)
-		case *l2.BridgeDomains_BridgeDomain:
-			bdsPut = append(bdsPut, typed)
-		case *l2.XConnectPairs_XConnectPair:
-			xCsPut = append(xCsPut, typed)
-		case *l3.StaticRoutes_Route:
-			rtsPut = append(rtsPut, typed)
-		case *acl.AccessLists_Acl:
-			aclPut = append(aclPut, typed)
-		default:
-			logrus.DefaultLogger().Error("Unsupported data type: %v", val)
-		}
-	}
-
-	// 'DEL'
-	for _, val := range dsl.put {
-		switch typed := val.(type) {
-		case *interfaces.Interfaces_Interface:
-			ifsDel = append(ifsDel, typed.Name)
-		case *l2.BridgeDomains_BridgeDomain:
-			bdsDel = append(bdsDel, typed.Name)
-		case *l2.XConnectPairs_XConnectPair:
-			xCsDel = append(xCsDel, typed.ReceiveInterface)
-		case *l3.StaticRoutes_Route:
-			rtsDel = append(rtsDel, &rpc.DelStaticRoutesRequest_DelStaticRoute{
-				VRF: typed.VrfId, DstAddr: typed.DstIpAddr, NextHopAddr: typed.NextHopAddr,
-			})
-		case *acl.AccessLists_Acl:
-			aclDel = append(aclDel, typed.AclName)
-		default:
-			logrus.DefaultLogger().Error("Unsupported data type: %v", val)
-		}
-	}
+	// Prepare requests with data todo can be scalable
+	delRequest := getRequestFromData(dsl.del)
+	putRequest := getRequestFromData(dsl.put)
 
 	ctx := context.Background()
 
-	// Call 'DEL'
-	if _, err := dsl.client.DelInterfaces(ctx, &rpc.DelNamesRequest{Name: ifsDel}); err != nil {
+	if _, err := dsl.client.Del(ctx, delRequest); err != nil {
 		wasErr = err
 	}
-	if _, err := dsl.client.DelBDs(ctx, &rpc.DelNamesRequest{Name: bdsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelXCons(ctx, &rpc.DelNamesRequest{Name: xCsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelStaticRoutes(ctx, &rpc.DelStaticRoutesRequest{Route: rtsDel}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.DelACLs(ctx, &rpc.DelNamesRequest{Name: aclDel}); err != nil {
-		wasErr = err
-	}
-
-	// Call 'PUT'
-	if _, err := dsl.client.PutInterfaces(ctx, &interfaces.Interfaces{Interfaces: ifsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutBDs(ctx, &l2.BridgeDomains{BridgeDomains: bdsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutXCons(ctx, &l2.XConnectPairs{XConnectPairs: xCsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutStaticRoutes(ctx, &l3.StaticRoutes{Routes: rtsPut}); err != nil {
-		wasErr = err
-	}
-	if _, err := dsl.client.PutACLs(ctx, &acl.AccessLists{Acls: aclPut}); err != nil {
+	if _, err := dsl.client.Put(ctx, putRequest); err != nil {
 		wasErr = err
 	}
 
 	return &Reply{wasErr}
+}
+
+func getRequestFromData(data []proto.Message) *rpc.DataRequest {
+	request := &rpc.DataRequest{}
+	for _, item := range data {
+		switch typedItem := item.(type) {
+		case *acl.AccessLists_Acl:
+			request.AccessLists = append(request.AccessLists, typedItem)
+		case *interfaces.Interfaces_Interface:
+			request.Interfaces = append(request.Interfaces, typedItem)
+		case *bfd.SingleHopBFD_Session:
+			request.BfdSessions = append(request.BfdSessions, typedItem)
+		case *bfd.SingleHopBFD_Key:
+			request.BfdAuthKeys = append(request.BfdAuthKeys, typedItem)
+		case *bfd.SingleHopBFD_EchoFunction:
+			request.BfdEchoFunction = typedItem
+		case *l2.BridgeDomains_BridgeDomain:
+			request.BridgeDomains = append(request.BridgeDomains, typedItem)
+		case *l2.FibTable_FibEntry:
+			request.FIBs = append(request.FIBs, typedItem)
+		case *l2.XConnectPairs_XConnectPair:
+			request.XCons = append(request.XCons, typedItem)
+		case *l3.StaticRoutes_Route:
+			request.StaticRoutes = append(request.StaticRoutes, typedItem)
+		case *l3.ArpTable_ArpEntry:
+			request.ArpEntries = append(request.ArpEntries, typedItem)
+		case *l3.ProxyArpInterfaces_InterfaceList:
+			request.ProxyArpInterfaces = append(request.ProxyArpInterfaces, typedItem)
+		case *l3.ProxyArpRanges_RangeList:
+			request.ProxyArpRanges = append(request.ProxyArpRanges, typedItem)
+		case *l4.L4Features:
+			request.L4Feature = typedItem
+		case *l4.AppNamespaces_AppNamespace:
+			request.ApplicationNamespaces = append(request.ApplicationNamespaces, typedItem)
+		case *stn.STN_Rule:
+			request.StnRules = append(request.StnRules, typedItem)
+		case *nat.Nat44Global:
+			request.NatGlobal = typedItem
+		case *nat.Nat44DNat_DNatConfig:
+			request.DNATs = append(request.DNATs, typedItem)
+		case *linuxIf.LinuxInterfaces_Interface:
+			request.LinuxInterfaces = append(request.LinuxInterfaces, typedItem)
+		case *linuxL3.LinuxStaticArpEntries_ArpEntry:
+			request.LinuxArpEntries = append(request.LinuxArpEntries, typedItem)
+		case *linuxL3.LinuxStaticRoutes_Route:
+			request.LinuxRoutes = append(request.LinuxRoutes, typedItem)
+		default:
+			logrus.DefaultLogger().Warn("Unsupported data for GRPC request: %s", typedItem.String())
+		}
+	}
+
+	return request
 }
 
 // Reply enables waiting for the reply and getting result (success/error).

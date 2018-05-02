@@ -2,72 +2,68 @@ syntax = "proto3";
 
 package rpc;
 
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd/bfd.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces/interfaces.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2/l2.proto";
 import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3/l3.proto";
-import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl/acl.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4/l4.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat/nat.proto";
+import "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn/stn.proto";
+import "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3/l3.proto";
 
-// ChangeConfigService is a service to submit individual changes in the configuration of the vpp-agent
-service ChangeConfigService {
-    // PutInterfaces creates or updates one or multiple interfaces
-    rpc PutInterfaces (interfaces.Interfaces) returns (PutResponse);
-    // DelInterfaces one or multiple interfaces by their unique names
-    rpc DelInterfaces (DelNamesRequest) returns (DelResponse);
 
-    // PutBDs creates or updates one or multiple BDs
-    rpc PutBDs (l2.BridgeDomains) returns (PutResponse);
-    // DelBDs one or multiple BDs by their unique names
-    rpc DelBDs (DelNamesRequest) returns (DelResponse);
-
-    // PutXCons creates or updates one or multiple Cross Connects
-    rpc PutXCons (l2.XConnectPairs) returns (PutResponse);
-    // DelXCons one or multiple Cross Connects by their unique names
-    rpc DelXCons (DelNamesRequest) returns (DelResponse);
-
-    // PutACLs creates or updates one or multiple ACLs
-    rpc PutACLs (acl.AccessLists) returns (PutResponse);
-    // DelACLs one or multiple ACLs by their unique names
-    rpc DelACLs (DelNamesRequest) returns (DelResponse);
-
-    // PutStaticRoutes creates or updates one or multiple ACLs
-    rpc PutStaticRoutes (l3.StaticRoutes) returns (PutResponse);
-    // DelStaticRoutes one or multiple ACLs by their unique names
-    rpc DelStaticRoutes (DelStaticRoutesRequest) returns (DelResponse);
+// Data change service is a service which submits cumulative request consisting of all
+// configuration types supported in the vpp-agent
+service DataChangeService {
+    // Creates or updates one or multiple configuration items
+    rpc Put(DataRequest) returns (PutResponse);
+    // Removes one or multiple configuration items
+    rpc Del(DataRequest) returns (DelResponse);
 }
 
-message DelNamesRequest {
-    /* List of interface/bd/... names with errors */
-    repeated string Name = 1;
+// Data resync service is a service which submits data resync to the vpp-agent
+service DataResyncService {
+    // Calls vpp-agent resync
+    rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
-message DelStaticRoutesRequest {
-    message DelStaticRoute {
-        uint32 VRF = 1;
-        string dstAddr = 2; //prefix
-        string nextHopAddr = 3; //nexthop
-    }
-    repeated DelStaticRoute Route = 1;
+// Data request is an inventory of supported data types with one or multiple
+// items of every type. Universal type for every data change/resync request
+message DataRequest {
+    // Defaultplugins
+    repeated acl.AccessLists.Acl AccessLists = 10;
+    repeated interfaces.Interfaces.Interface Interfaces = 20;
+    repeated bfd.SingleHopBFD.Session BfdSessions = 30;
+    repeated bfd.SingleHopBFD.Key BfdAuthKeys = 31;
+    bfd.SingleHopBFD.EchoFunction BfdEchoFunction = 32;
+    repeated l2.BridgeDomains.BridgeDomain BridgeDomains = 40;
+    repeated l2.FibTable.FibEntry FIBs= 41;
+    repeated l2.XConnectPairs.XConnectPair XCons = 42;
+    repeated l3.StaticRoutes.Route StaticRoutes = 50;
+    repeated l3.ArpTable.ArpEntry ArpEntries= 51;
+    repeated l3.ProxyArpInterfaces.InterfaceList ProxyArpInterfaces = 52;
+    repeated l3.ProxyArpRanges.RangeList ProxyArpRanges = 53;
+    l4.L4Features L4Feature = 60;
+    repeated l4.AppNamespaces.AppNamespace ApplicationNamespaces = 61;
+    repeated stn.STN.Rule StnRules = 70;
+    nat.Nat44Global NatGlobal = 71;
+    repeated nat.Nat44DNat.DNatConfig DNATs= 72;
+    // Linuxplugin
+    repeated interfaces.LinuxInterfaces.Interface LinuxInterfaces = 80;
+    repeated l3.LinuxStaticArpEntries.ArpEntry LinuxArpEntries = 90;
+    repeated l3.LinuxStaticRoutes.Route LinuxRoutes = 91;
 }
 
+// Response to data change 'put'
 message PutResponse {
 }
+
+// Response to data change 'del'
 message DelResponse {
 }
 
-
-// ResyncConfigService is a service to submit full data resync request
-// in the configuration of the vpp-agent
-service ResyncConfigService {
-    rpc ResyncConfig (ResyncConfigRequest) returns (ResyncConfigResponse);
-}
-
-message ResyncConfigResponse {
-}
-
-message ResyncConfigRequest {
-    interfaces.Interfaces Interfaces = 1;
-    l2.BridgeDomains BDs = 2;
-    l2.XConnectPairs XCons = 3;
-    acl.AccessLists ACLs = 4;
-    l3.StaticRoutes StaticRoutes = 5;
+// Response to data resync
+message ResyncResponse {
 }

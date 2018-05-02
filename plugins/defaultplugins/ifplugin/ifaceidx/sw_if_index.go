@@ -16,7 +16,6 @@ package ifaceidx
 
 import (
 	"github.com/ligato/cn-infra/core"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
@@ -90,8 +89,6 @@ func (swi *swIfIndex) RegisterName(name string, idx uint32, ifMeta *intf.Interfa
 
 // IndexMetadata creates indexes for metadata. Index for IPAddress will be created.
 func IndexMetadata(metaData interface{}) map[string][]string {
-	log.DefaultLogger().Debug("IndexMetadata ", metaData)
-
 	indexes := map[string][]string{}
 	ifMeta, ok := metaData.(*intf.Interfaces_Interface)
 	if !ok || ifMeta == nil {

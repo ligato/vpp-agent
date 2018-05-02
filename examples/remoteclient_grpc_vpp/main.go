@@ -129,7 +129,7 @@ func (plugin *ExamplePlugin) Close() error {
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
-	err := remoteclient.DataResyncRequestGRPC(rpc.NewResyncConfigServiceClient(plugin.conn)).
+	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
 		Interface(&loopback1).
@@ -151,9 +151,9 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	nextHopAddr := net.ParseIP("192.168.1.1")
 
 	select {
-	case <-time.After(15 * time.Second):
+	case <-time.After(3 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
-		err := remoteclient.DataChangeRequestGRPC(rpc.NewChangeConfigServiceClient(plugin.conn)).
+		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
 			Interface(&memif2).            /* newly added memif interface */

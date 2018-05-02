@@ -17,14 +17,12 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"golang.org/x/net/context"
 )
@@ -54,8 +52,8 @@ func (plugin *GRPCSvcPlugin) Init() error {
 // (be sure that defaultvppplugins are totally initialized).
 func (plugin *GRPCSvcPlugin) AfterInit() error {
 	grpcServer := plugin.Deps.GRPC.Server()
-	rpc.RegisterChangeConfigServiceServer(grpcServer, &plugin.changeVppSvc)
-	rpc.RegisterResyncConfigServiceServer(grpcServer, &plugin.resyncVppSvc)
+	rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
+	rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
 
 	return nil
 }
@@ -75,174 +73,225 @@ type ResyncVppSvc struct {
 	Log logging.Logger
 }
 
-// PutInterfaces creates or updates one or multiple interfaces
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutInterfaces(ctx context.Context, request *interfaces.Interfaces) (
-	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqPut := localReq.Put()
-	for _, intf := range request.Interfaces {
-		localReqPut.VppInterface(intf)
+// Put adds configuration data present in data request to the VPP/Linux
+func (svc *ChangeVppSvc) Put(ctx context.Context, data *rpc.DataRequest) (*rpc.PutResponse, error) {
+	request := localclient.DataChangeRequest("rpc").Put()
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
 	}
-
-	err := localReq.Send().ReceiveReply()
+	err := request.Send().ReceiveReply()
 	return &rpc.PutResponse{}, err
 }
 
-// DelInterfaces deletes one or multiple interfaces by their unique names
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelInterfaces(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqDel := localReq.Delete()
-	for _, intfName := range request.Name {
-		localReqDel.VppInterface(intfName)
+// Del removes configuration data present in data request from the VPP/linux
+func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.DelResponse, error) {
+	request := localclient.DataChangeRequest("rpc").Delete()
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
 	}
-
-	err := localReq.Send().ReceiveReply()
+	err := request.Send().ReceiveReply()
 	return &rpc.DelResponse{}, err
 }
 
-// PutBDs creates or updates one or multiple BDs
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutBDs(ctx context.Context, request *l2.BridgeDomains) (
-	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqPut := localReq.Put()
-	for _, bd := range request.BridgeDomains {
-		localReqPut.BD(bd)
+// Resync creates a resync request which adds data tp the VPP/linux
+func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.ResyncResponse, error) {
+	request := localclient.DataResyncRequest("rpc")
+	if err := processRequest(ctx, data, request); err != nil {
+		return nil, err
 	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.PutResponse{}, err
+	err := request.Send().ReceiveReply()
+	return &rpc.ResyncResponse{}, err
 }
 
-// DelBDs deletes one or multiple BDs by their unique names
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelBDs(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqDel := localReq.Delete()
-	for _, bdName := range request.Name {
-		localReqDel.BD(bdName)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.DelResponse{}, err
-}
-
-// PutXCons creates or updates one or multiple Cross Connects
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutXCons(ctx context.Context, request *l2.XConnectPairs) (
-	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqPut := localReq.Put()
-	for _, xcon := range request.XConnectPairs {
-		localReqPut.XConnect(xcon)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.PutResponse{}, err
-}
-
-// DelXCons deletes one or multiple Cross Connects by their unique names
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelXCons(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqDel := localReq.Delete()
-	for _, rxIfaceName := range request.Name {
-		localReqDel.XConnect(rxIfaceName)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.DelResponse{}, err
-}
-
-// PutACLs creates or updates one or multiple ACLs
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutACLs(ctx context.Context, request *acl.AccessLists) (
-	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqPut := localReq.Put()
-	for _, acl := range request.Acls {
-		localReqPut.ACL(acl)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.PutResponse{}, err
-}
-
-// DelACLs deletes one or multiple ACLs by their unique names
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelACLs(ctx context.Context, request *rpc.DelNamesRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqDel := localReq.Delete()
-	for _, aclName := range request.Name {
-		localReqDel.ACL(aclName)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.DelResponse{}, err
-}
-
-// PutStaticRoutes creates or updates one or multiple ACLs
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) PutStaticRoutes(ctx context.Context, request *l3.StaticRoutes) (
-	*rpc.PutResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqPut := localReq.Put()
-	for _, route := range request.Routes {
-		localReqPut.StaticRoute(route)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.PutResponse{}, err
-}
-
-// DelStaticRoutes deletes one or multiple ACLs by their unique names
-// (forwards the input to the localclient).
-func (svc *ChangeVppSvc) DelStaticRoutes(ctx context.Context, request *rpc.DelStaticRoutesRequest) (*rpc.DelResponse, error) {
-	localReq := localclient.DataChangeRequest("rpc")
-	localReqDel := localReq.Delete()
-	for _, route := range request.Route {
-		localReqDel.StaticRoute(route.VRF, route.DstAddr, route.NextHopAddr)
-	}
-
-	err := localReq.Send().ReceiveReply()
-	return &rpc.DelResponse{}, err
-}
-
-// ResyncConfig fills data resync request of defaultvppplugin configuration
-// , i.e. forwards the input to the localclient.
-func (svc *ResyncVppSvc) ResyncConfig(ctx context.Context, request *rpc.ResyncConfigRequest) (
-	*rpc.ResyncConfigResponse, error) {
-
-	localReq := localclient.DataResyncRequest("rpc")
-
-	if request.Interfaces != nil {
-		for _, intf := range request.Interfaces.Interfaces {
-			localReq.VppInterface(intf)
+// Common method which puts or deletes data of every configuration type separately
+func processRequest(ctx context.Context, data *rpc.DataRequest, request interface{}) error {
+	switch r := request.(type) {
+	case linux.PutDSL:
+		for _, aclItem := range data.AccessLists {
+			r.ACL(aclItem)
 		}
-	}
-	if request.BDs != nil {
-		for _, bd := range request.BDs.BridgeDomains {
-			localReq.BD(bd)
+		for _, ifItem := range data.Interfaces {
+			r.VppInterface(ifItem)
 		}
-	}
-	if request.XCons != nil {
-		for _, xcon := range request.XCons.XConnectPairs {
-			localReq.XConnect(xcon)
+		for _, sessionItem := range data.BfdSessions {
+			r.BfdSession(sessionItem)
 		}
-	}
-	if request.ACLs != nil {
-		for _, accessList := range request.ACLs.Acls {
-			localReq.ACL(accessList)
+		for _, keyItem := range data.BfdAuthKeys {
+			r.BfdAuthKeys(keyItem)
 		}
-	}
-	if request.StaticRoutes != nil {
-		for _, route := range request.StaticRoutes.Routes {
-			localReq.StaticRoute(route)
+		if data.BfdEchoFunction != nil {
+			r.BfdEchoFunction(data.BfdEchoFunction)
 		}
+		for _, bdItem := range data.BridgeDomains {
+			r.BD(bdItem)
+		}
+		for _, fibItem := range data.FIBs {
+			r.BDFIB(fibItem)
+		}
+		for _, xcItem := range data.XCons {
+			r.XConnect(xcItem)
+		}
+		for _, rtItem := range data.StaticRoutes {
+			r.StaticRoute(rtItem)
+		}
+		for _, arpItem := range data.ArpEntries {
+			r.Arp(arpItem)
+		}
+		for _, paiItem := range data.ProxyArpInterfaces {
+			r.ProxyArpInterfaces(paiItem)
+		}
+		for _, parItem := range data.ProxyArpRanges {
+			r.ProxyArpRanges(parItem)
+		}
+		if data.L4Feature != nil {
+			r.L4Features(data.L4Feature)
+		}
+		for _, anItem := range data.ApplicationNamespaces {
+			r.AppNamespace(anItem)
+		}
+		for _, stnItem := range data.StnRules {
+			r.StnRule(stnItem)
+		}
+		if data.NatGlobal != nil {
+			r.NAT44Global(data.NatGlobal)
+		}
+		for _, natItem := range data.DNATs {
+			r.NAT44DNat(natItem)
+		}
+		for _, ifItem := range data.LinuxInterfaces {
+			r.LinuxInterface(ifItem)
+		}
+		for _, arpItem := range data.LinuxArpEntries {
+			r.LinuxArpEntry(arpItem)
+		}
+		for _, rtItem := range data.LinuxRoutes {
+			r.LinuxRoute(rtItem)
+		}
+	case linux.DeleteDSL:
+		for _, aclItem := range data.AccessLists {
+			r.ACL(aclItem.AclName)
+		}
+		for _, ifItem := range data.Interfaces {
+			r.VppInterface(ifItem.Name)
+		}
+		for _, sessionItem := range data.BfdSessions {
+			r.BfdSession(sessionItem.Interface)
+		}
+		for _, keyItem := range data.BfdAuthKeys {
+			r.BfdAuthKeys(keyItem.Name)
+		}
+		if data.BfdEchoFunction != nil {
+			r.BfdEchoFunction(data.BfdEchoFunction.Name)
+		}
+		for _, bdItem := range data.BridgeDomains {
+			r.BD(bdItem.Name)
+		}
+		for _, fibItem := range data.FIBs {
+			r.BDFIB(fibItem.BridgeDomain, fibItem.PhysAddress)
+		}
+		for _, xcItem := range data.XCons {
+			r.XConnect(xcItem.ReceiveInterface)
+		}
+		for _, rtItem := range data.StaticRoutes {
+			r.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
+		}
+		for _, arpItem := range data.ArpEntries {
+			r.Arp(arpItem.Interface, arpItem.IpAddress)
+		}
+		for _, paiItem := range data.ProxyArpInterfaces {
+			r.ProxyArpInterfaces(paiItem.Label)
+		}
+		for _, parItem := range data.ProxyArpRanges {
+			r.ProxyArpRanges(parItem.Label)
+		}
+		if data.L4Feature != nil {
+			r.L4Features()
+		}
+		for _, anItem := range data.ApplicationNamespaces {
+			r.AppNamespace(anItem.NamespaceId)
+		}
+		for _, stnItem := range data.StnRules {
+			r.StnRule(stnItem.RuleName)
+		}
+		if data.NatGlobal != nil {
+			r.NAT44Global()
+		}
+		for _, natItem := range data.DNATs {
+			r.NAT44DNat(natItem.Label)
+		}
+		for _, ifItem := range data.LinuxInterfaces {
+			r.LinuxInterface(ifItem.Name)
+		}
+		for _, arpItem := range data.LinuxArpEntries {
+			r.LinuxArpEntry(arpItem.Name)
+		}
+		for _, rtItem := range data.LinuxRoutes {
+			r.LinuxRoute(rtItem.Name)
+		}
+	case linux.DataResyncDSL:
+		for _, aclItem := range data.AccessLists {
+			r.ACL(aclItem)
+		}
+		for _, ifItem := range data.Interfaces {
+			r.VppInterface(ifItem)
+		}
+		for _, sessionItem := range data.BfdSessions {
+			r.BfdSession(sessionItem)
+		}
+		for _, keyItem := range data.BfdAuthKeys {
+			r.BfdAuthKeys(keyItem)
+		}
+		if data.BfdEchoFunction != nil {
+			r.BfdEchoFunction(data.BfdEchoFunction)
+		}
+		for _, bdItem := range data.BridgeDomains {
+			r.BD(bdItem)
+		}
+		for _, fibItem := range data.FIBs {
+			r.BDFIB(fibItem)
+		}
+		for _, xcItem := range data.XCons {
+			r.XConnect(xcItem)
+		}
+		for _, rtItem := range data.StaticRoutes {
+			r.StaticRoute(rtItem)
+		}
+		for _, arpItem := range data.ArpEntries {
+			r.Arp(arpItem)
+		}
+		for _, paiItem := range data.ProxyArpInterfaces {
+			r.ProxyArpInterfaces(paiItem)
+		}
+		for _, parItem := range data.ProxyArpRanges {
+			r.ProxyArpRanges(parItem)
+		}
+		if data.L4Feature != nil {
+			r.L4Features(data.L4Feature)
+		}
+		for _, anItem := range data.ApplicationNamespaces {
+			r.AppNamespace(anItem)
+		}
+		for _, stnItem := range data.StnRules {
+			r.StnRule(stnItem)
+		}
+		if data.NatGlobal != nil {
+			r.NAT44Global(data.NatGlobal)
+		}
+		for _, natItem := range data.DNATs {
+			r.NAT44DNat(natItem)
+		}
+		for _, ifItem := range data.LinuxInterfaces {
+			r.LinuxInterface(ifItem)
+		}
+		for _, arpItem := range data.LinuxArpEntries {
+			r.LinuxArpEntry(arpItem)
+		}
+		for _, rtItem := range data.LinuxRoutes {
+			r.LinuxRoute(rtItem)
+		}
+	default:
+		return fmt.Errorf("unknown type of request: %v", r)
 	}
 
-	err := localReq.Send().ReceiveReply()
-	return &rpc.ResyncConfigResponse{}, err
+	return nil
 }
