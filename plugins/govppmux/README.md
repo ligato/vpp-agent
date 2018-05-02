@@ -12,10 +12,12 @@ initialization using govpp core.
 
 *Connection*
 
-Parameters of the VPP connection are fixed and cannot be configured. GoVPP connects to
-that instance of VPP which uses the default shared memory segment prefix. This is because it is assumed
-that there is really only a single VPP running in a sand-boxed environment together with the agent
-(e.g. through containerization)
+By default, GoVPP connects to that instance of VPP which uses the default shared memory segment prefix. 
+This is because it is assumed that there is only a single VPP running in a sand-boxed environment 
+together with the agent (e.g. through containerization). In case VPP runs with customized SHM prefix,
+or there are several VPP instances running, GoVPP needs to know the prefix in order to connect to the 
+correct VPP instance - the prefix has to be put in the govppmux configuration file (govpp.conf) with 
+key `shm-prefix` and value matching VPP shared memory prefix.
 
 *Multiplexing*
 
@@ -74,6 +76,9 @@ elapses probe is considered failed
 until an error is reported
 - *reply timeout* - if the reply from channel doesn't arrive until timeout
 elapses, the request fails
+- *shm-prefix* - used for connection to a VPP instance which is not using 
+default shared memory prefix
+
 
 Example govpp.conf:
 
@@ -82,4 +87,5 @@ health-check-probe-interval: 1000000000
 health-check-reply-timeout: 100000000
 health-check-threshold: 1
 reply-timeout: 1000000000
+shm-prefix: vpp1
 ```
