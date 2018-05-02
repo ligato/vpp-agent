@@ -40,9 +40,9 @@ import (
 
 // Mapping labels
 const (
-	static   = "-static-"
-	staticLb = "-staticLb-"
-	identity = "-identity-"
+	static   = "|static|"
+	staticLb = "|staticLb|"
+	identity = "|identity|"
 	dummyTag = "dummy-tag" // used for deletion where tag is not needed
 )
 

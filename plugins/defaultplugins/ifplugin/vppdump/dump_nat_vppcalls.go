@@ -57,14 +57,14 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 		nat44GlobalInterfaces = append(nat44GlobalInterfaces, &nat.Nat44Global_NatInterface{
 			Name:     natInterface.Name,
 			IsInside: natInterface.IsInside,
-			OutputFeature: func(ofIfs []*nat.Nat44Global_NatInterface, ifName string) bool {
-				for _, ofIf := range ofIfs {
-					if ofIf.Name == ifName {
-						return true
-					}
-				}
-				return false
-			}(natOutputFeature, natInterface.Name),
+			OutputFeature: false,
+		})
+	}
+	for _, natInterface := range natOutputFeature {
+		nat44GlobalInterfaces = append(nat44GlobalInterfaces, &nat.Nat44Global_NatInterface{
+			Name:          natInterface.Name,
+			IsInside:      natInterface.IsInside,
+			OutputFeature: true,
 		})
 	}
 
@@ -333,10 +333,18 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 			continue
 		}
 
-		interfaces = append(interfaces, &nat.Nat44Global_NatInterface{
-			Name:     ifName,
-			IsInside: uintToBool(msg.IsInside),
-		})
+		if msg.IsInside == 0 || msg.IsInside == 2 {
+			interfaces = append(interfaces, &nat.Nat44Global_NatInterface{
+				Name:     ifName,
+				IsInside: false,
+			})
+		}
+		if msg.IsInside == 1 || msg.IsInside == 2 {
+			interfaces = append(interfaces, &nat.Nat44Global_NatInterface{
+				Name:     ifName,
+				IsInside: true,
+			})
+		}
 	}
 
 	log.Debugf("NAT44 interface dump complete, found %d entries", len(interfaces))
@@ -478,8 +486,8 @@ func uintToBool(value uint8) bool {
 
 // Obtain DNAT label from provided tag
 func getDnatLabel(tag string, log logging.Logger) (label string) {
-	parts := strings.Split(tag, "-")
-	// Tag should be in format label-mappingType-index
+	parts := strings.Split(tag, "|")
+	// Tag should be in format label|mappingType|index
 	if len(parts) == 0 {
 		log.Errorf("Unable to obtain DNAT label, incorrect mapping tag format: '%s'", tag)
 		return
