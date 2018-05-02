@@ -89,21 +89,66 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin.out -tags=mockvpp ./plugins/defaultplugins/aclplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_aclidx.out -tags=mockvpp ./plugins/defaultplugins/aclplugin/aclidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppcalls.out -tags=mockvpp ./plugins/defaultplugins/aclplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out -tags=mockvpp ./plugins/defaultplugins/aclplugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_ifaceidx.out ./plugins/defaultplugins/ifplugin/ifaceidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ipsecplugin.out -tags=mockvpp ./plugins/defaultplugins/ipsecplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ipsecplugin_ipsecidx.out ./plugins/defaultplugins/ipsecplugin/ipsecidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ipsecplugin_vppcalls.out ./plugins/defaultplugins/ipsecplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l3plugin.out -tags=mockvpp ./plugins/defaultplugins/l3plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l3plugin_l3idx.out ./plugins/defaultplugins/l3plugin/l3idx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l3plugin_vppcalls.out ./plugins/defaultplugins/l3plugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l3plugin_vppdump.out ./plugins/defaultplugins/l3plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l4plugin.out -tags=mockvpp ./plugins/defaultplugins/l4plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l4plugin_nsidx.out ./plugins/defaultplugins/l4plugin/nsidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l4plugin_vppcalls.out ./plugins/defaultplugins/l4plugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_ifplugin.out -tags=mockvpp ./plugins/linuxplugin/ifplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_ifplugin_ifaceidx.out ./plugins/linuxplugin/ifplugin/ifaceidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_ifplugin_linuxcalls.out ./plugins/linuxplugin/ifplugin/linuxcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_l3plugin.out -tags=mockvpp ./plugins/linuxplugin/l3plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_l3plugin_l3idx.out ./plugins/linuxplugin/l3plugin/l3idx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_l3plugin_linuxcalls.out ./plugins/linuxplugin/l3plugin/linuxcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_linux_nsplugin.out ./plugins/linuxplugin/nsplugin
 	@echo " => merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
 			${COVER_DIR}coverage_unit2.out \
+			${COVER_DIR}coverage_aclplugin.out \
+			${COVER_DIR}coverage_aclplugin_aclidx.out \
+			${COVER_DIR}coverage_aclplugin_vppcalls.out \
+			${COVER_DIR}coverage_aclplugin_vppdump.out \
 			${COVER_DIR}coverage_ifplugin.out \
+			${COVER_DIR}coverage_ifplugin_ifaceidx.out \
 			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+			${COVER_DIR}coverage_ifplugin_vppdump.out \
+			${COVER_DIR}coverage_l2plugin.out \
 			${COVER_DIR}coverage_l2plugin_bdidx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
-			${COVER_DIR}coverage_l2plugin_vppdump.out  \
+			${COVER_DIR}coverage_l2plugin_vppdump.out \
+			${COVER_DIR}coverage_l3plugin.out \
+			${COVER_DIR}coverage_l3plugin_l3idx.out \
+			${COVER_DIR}coverage_l3plugin_vppcalls.out \
+			${COVER_DIR}coverage_l3plugin_vppdump.out \
+			${COVER_DIR}coverage_l4plugin.out \
+			${COVER_DIR}coverage_l4plugin_nsidx.out \
+			${COVER_DIR}coverage_l4plugin_vppcalls.out \
+			${COVER_DIR}coverage_linux_ifplugin.out \
+			${COVER_DIR}coverage_linux_ifplugin_ifaceidx.out \
+			${COVER_DIR}coverage_linux_ifplugin_linuxcalls.out \
+			${COVER_DIR}coverage_linux_l3plugin.out \
+			${COVER_DIR}coverage_linux_l3plugin_l3idx.out \
+			${COVER_DIR}coverage_linux_l3plugin_linuxcalls.out \
+			${COVER_DIR}coverage_linux_nsplugin.out \
 		> ${COVER_DIR}coverage.out
 	@echo " => coverage data generated into ${COVER_DIR}coverage.out"
 
