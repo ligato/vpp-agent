@@ -42,7 +42,7 @@ const ifTempName = "temp-if-name"
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
 func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
-	plugin.log.WithField("cfg", plugin).Warnf("RESYNC Interface begin for %v", nbIfs)
+	plugin.log.WithField("cfg", plugin).Debugf("RESYNC Interface begin for %v", nbIfs)
 	// Calculate and log interface resync
 	defer func() {
 		if plugin.stopwatch != nil {
