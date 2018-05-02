@@ -49,9 +49,9 @@ govpp_msg_callback (unsigned char *data, int size)
 }
 
 static int
-govpp_connect()
+govpp_connect (char *shm)
 {
-    return vac_connect("govpp", NULL, govpp_msg_callback, 32);
+    return vac_connect("govpp", shm, govpp_msg_callback, 32);
 }
 
 static int
@@ -90,27 +90,36 @@ const (
 	// watchedFolder is a folder where vpp's shared memory is supposed to be created.
 	// File system events are monitored in this folder.
 	watchedFolder = "/dev/shm/"
-	// watchedFile is a name of the file in the watchedFolder. Once the file is present
+	// watchedFile is a default name of the file in the watchedFolder. Once the file is present,
 	// the vpp is ready to accept a new connection.
-	watchedFile = watchedFolder + "vpe-api"
+	watchedFile = "vpe-api"
 )
 
 // vppAPIClientAdapter is the opaque context of the adapter.
 type vppAPIClientAdapter struct {
-	callback func(context uint32, msgId uint16, data []byte)
+	shmPrefix string
+	callback  func(context uint32, msgId uint16, data []byte)
 }
 
 var vppClient *vppAPIClientAdapter // global vpp API client adapter context
 
 // NewVppAdapter returns a new vpp API client adapter.
-func NewVppAdapter() adapter.VppAdapter {
-	return &vppAPIClientAdapter{}
+func NewVppAdapter(shmPrefix string) adapter.VppAdapter {
+	return &vppAPIClientAdapter{
+		shmPrefix: shmPrefix,
+	}
 }
 
 // Connect connects the process to VPP.
 func (a *vppAPIClientAdapter) Connect() error {
 	vppClient = a
-	rc := C.govpp_connect()
+	var rc _Ctype_int
+	if a.shmPrefix == "" {
+		rc = C.govpp_connect(nil)
+	} else {
+		shm := C.CString(a.shmPrefix)
+		rc = C.govpp_connect(shm)
+	}
 	if rc != 0 {
 		return fmt.Errorf("unable to connect to VPP (error=%d)", rc)
 	}
@@ -162,14 +171,20 @@ func (a *vppAPIClientAdapter) WaitReady() error {
 	if err != nil {
 		return err
 	}
-
-	if fileExists(watchedFile) {
+	// Path to the shared memory segment with prefix, if set
+	var path string
+	if a.shmPrefix == "" {
+		path = watchedFolder + watchedFile
+	} else {
+		path = watchedFolder + a.shmPrefix + "-" + watchedFile
+	}
+	if fileExists(path) {
 		return nil
 	}
 
 	for {
 		ev := <-watcher.Events
-		if ev.Name == watchedFile && (ev.Op&fsnotify.Create) == fsnotify.Create {
+		if ev.Name == path && (ev.Op&fsnotify.Create) == fsnotify.Create {
 			break
 		}
 	}

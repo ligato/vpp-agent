@@ -46,8 +46,10 @@ type GOVPPPlugin struct {
 
 	replyTimeout time.Duration
 
-	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
-	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
+	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	cancel context.CancelFunc
+	// Wait group allows to wait until all goroutines of the plugin have finished.
+	wg sync.WaitGroup
 }
 
 // Deps groups injected dependencies of plugin
@@ -62,6 +64,9 @@ type Config struct {
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
+	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
+	// shared memory segments are created directly in the SHM directory /dev/shm.
+	ShmPrefix string `json:"shm-prefix"`
 }
 
 func defaultConfig() Config {
@@ -98,16 +103,18 @@ func (plugin *GOVPPPlugin) Init() error {
 	if err != nil {
 		return err
 	}
+	var shmPrefix string
 	if found {
 		govpp.SetHealthCheckProbeInterval(cfg.HealthCheckProbeInterval)
 		govpp.SetHealthCheckReplyTimeout(cfg.HealthCheckReplyTimeout)
 		govpp.SetHealthCheckThreshold(cfg.HealthCheckThreshold)
 		plugin.replyTimeout = cfg.ReplyTimeout
+		shmPrefix = cfg.ShmPrefix
 		plugin.Log.Debug("Setting govpp parameters", cfg)
 	}
 
 	if plugin.vppAdapter == nil {
-		plugin.vppAdapter = NewVppAdapter()
+		plugin.vppAdapter = NewVppAdapter(shmPrefix)
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}
