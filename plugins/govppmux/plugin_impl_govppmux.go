@@ -49,7 +49,7 @@ type GOVPPPlugin struct {
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
 	// Wait group allows to wait until all goroutines of the plugin have finished.
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // Deps groups injected dependencies of plugin
@@ -66,7 +66,7 @@ type Config struct {
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix                string        `json:"shm-prefix"`
+	ShmPrefix string `json:"shm-prefix"`
 }
 
 func defaultConfig() Config {
