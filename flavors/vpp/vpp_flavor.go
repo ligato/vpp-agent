@@ -6,11 +6,13 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
+	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/msgsync"
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
@@ -52,6 +54,7 @@ type Flavor struct {
 	Linux linuxplugin.Plugin
 	VPP   defaultplugins.Plugin
 
+	GRPCSvcPlugin rpcsvc.GRPCSvcPlugin
 	RESTAPIPlugin restplugin.RESTAPIPlugin
 
 	injected bool
@@ -91,15 +94,19 @@ func (f *Flavor) Inject() bool {
 	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
 
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
-	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get(), &f.AllConnectorsFlavor.ETCDDataSync}}
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
-	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
+	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get(), &f.AllConnectorsFlavor.ETCDDataSync}}
 
 	// Mutex for synchronizing watching events
 	var watchEventsMutex sync.Mutex
 	f.VPP.Deps.WatchEventsMutex = &watchEventsMutex
 	f.Linux.Deps.WatchEventsMutex = &watchEventsMutex
+
+	// Init GRPC service after VPP & Linux plugins
+	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
+	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
