@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bdidx
+package l2idx
 
 import (
 	"github.com/ligato/cn-infra/core"

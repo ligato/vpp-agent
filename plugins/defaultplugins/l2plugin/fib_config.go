@@ -41,12 +41,12 @@ type FIBConfigurator struct {
 	GoVppmux govppmux.API
 	// Injected mappings
 	SwIfIndexes ifaceidx.SwIfIndex
-	BdIndexes   bdidx.BDIndex
+	BdIndexes   l2idx.BDIndex
 	// FIB-related mappings
 	IfToBdIndexes   idxvpp.NameToIdxRW // TODO: use rather BdIndexes.LookupNameByIfaceName
-	FibIndexes      bdidx.FIBIndexRW
-	addCacheIndexes bdidx.FIBIndexRW // Serves as a cache for FIBs which cannot be configured immediately
-	delCacheIndexes bdidx.FIBIndexRW // Serves as a cache for FIBs which cannot be removed immediately
+	FibIndexes      l2idx.FIBIndexRW
+	addCacheIndexes l2idx.FIBIndexRW // Serves as a cache for FIBs which cannot be configured immediately
+	delCacheIndexes l2idx.FIBIndexRW // Serves as a cache for FIBs which cannot be removed immediately
 	fibIndexSeq     uint32
 
 	syncVppChannel  *govppapi.Channel
@@ -61,9 +61,9 @@ func (plugin *FIBConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 Bridge domains")
 
 	// Init local mapping
-	plugin.addCacheIndexes = bdidx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
+	plugin.addCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
 		"fib_add_indexes", nil))
-	plugin.delCacheIndexes = bdidx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
+	plugin.delCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
 		"fib_del_indexes", nil))
 	plugin.fibIndexSeq = 1
 

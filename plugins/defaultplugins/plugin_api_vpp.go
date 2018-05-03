@@ -63,7 +63,7 @@ type API interface {
 
 	// GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes. The mapping consists
 	// from the unique Bridge domain name and the bridge domain ID.
-	GetBDIndexes() bdidx.BDIndex
+	GetBDIndexes() l2idx.BDIndex
 
 	// GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes. The FIB's physical
 	// address is the name in the mapping. The key is generated. The FIB mapping also contains a metadata, FIBMeta with various
@@ -72,7 +72,7 @@ type API interface {
 	// - Bridge domain name
 	// - BVI (bool flag for interface)
 	// - Static config
-	GetFIBIndexes() bdidx.FIBIndexRW
+	GetFIBIndexes() l2idx.FIBIndexRW
 
 	// GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes. The mapping
 	// uses the name and the index of receive interface (the one all packets are received on). XConnectMeta is a container

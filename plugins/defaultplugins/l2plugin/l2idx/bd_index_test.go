@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bdidx_test
+package l2idx_test
 
 import (
 	"testing"
@@ -42,12 +42,12 @@ const (
 	ifaceNameIndexKey = "ipAddrKey"
 )
 
-func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.NameToIdxRW, bdidx.BDIndexRW, []*l2.BridgeDomains_BridgeDomain) {
+func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.NameToIdxRW, l2idx.BDIndexRW, []*l2.BridgeDomains_BridgeDomain) {
 	RegisterTestingT(t)
 
 	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "bd_indexes_test", bdidx.IndexMetadata)
-	bdIndex := bdidx.NewBDIndex(nameToIdx)
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "bd_indexes_test", l2idx.IndexMetadata)
+	bdIndex := l2idx.NewBDIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 	Expect(names).To(BeEmpty())
 
@@ -76,10 +76,10 @@ func TestIndexMetadatat(t *testing.T) {
 
 	bridgeDomain := prepareBridgeDomainData(bdName0, []string{ifaceAName, ifaceBName})
 
-	result := bdidx.IndexMetadata(nil)
+	result := l2idx.IndexMetadata(nil)
 	Expect(result).To(HaveLen(0))
 
-	result = bdidx.IndexMetadata(bridgeDomain)
+	result = l2idx.IndexMetadata(bridgeDomain)
 	Expect(result).To(HaveLen(1))
 
 	ifaceNames := result[ifaceNameIndexKey]
@@ -289,12 +289,12 @@ func TestWatchNameToIdx(t *testing.T) {
 		bdName0: {ifaceAName, ifaceBName},
 	})
 
-	c := make(chan bdidx.BdChangeDto)
+	c := make(chan l2idx.BdChangeDto)
 	bdIndex.WatchNameToIdx("testName", c)
 
 	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, bridgeDomains[0])
 
-	var dto bdidx.BdChangeDto
+	var dto l2idx.BdChangeDto
 	Eventually(c).Should(Receive(&dto))
 
 	Expect(dto.Name).To(Equal(bridgeDomains[0].Name))

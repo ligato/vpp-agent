@@ -43,7 +43,7 @@ type BDConfigurator struct {
 	ServiceLabel servicelabel.ReaderAPI
 
 	// bridge domains
-	BdIndices bdidx.BDIndexRW
+	BdIndices l2idx.BDIndexRW
 	// interface indices
 	SwIfIndices ifaceidx.SwIfIndex
 

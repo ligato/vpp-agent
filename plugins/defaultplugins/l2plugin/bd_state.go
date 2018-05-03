@@ -33,7 +33,7 @@ import (
 type BridgeDomainStateUpdater struct {
 	Log         logging.Logger
 	GoVppmux    govppmux.API
-	bdIndex     bdidx.BDIndex
+	bdIndex     l2idx.BDIndex
 	swIfIndexes ifaceidx.SwIfIndex
 
 	publishBdState func(notification *BridgeDomainStateNotification)
@@ -45,7 +45,7 @@ type BridgeDomainStateUpdater struct {
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
 	notificationChan        chan BridgeDomainStateMessage
-	bdIdxChan               chan bdidx.BdChangeDto
+	bdIdxChan               chan l2idx.BdChangeDto
 
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -57,7 +57,7 @@ type BridgeDomainStateNotification struct {
 }
 
 // Init bridge domain state updater.
-func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
+func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
 	plugin.Log.Info("Initializing BridgeDomainStateUpdater")
@@ -72,7 +72,7 @@ func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdid
 		return err
 	}
 
-	plugin.bdIdxChan = make(chan bdidx.BdChangeDto, 100)
+	plugin.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
 	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
 	plugin.notificationChan = notificationChan
 
