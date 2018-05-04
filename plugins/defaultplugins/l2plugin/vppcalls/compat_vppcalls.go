@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
 
-// VPPChannel is interface for send request to VPP channel
-type VPPChannel interface {
-	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
-
-	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
-
-	CheckMessageCompatibility(messages ...govppapi.Message) error
-}
-
-// TODO: maybe add other function of VPP channel.
-
-func boolToUint(value bool) uint8 {
-	if value {
-		return 1
+func CheckMsgCompatibilityForXConnect(log logging.Logger, vppChan VPPChannel) error {
+	msgs := []govppapi.Message{
+		&l2.L2XconnectDump{},
+		&l2.L2XconnectDetails{},
+		&l2.SwInterfaceSetL2Xconnect{},
+		&l2.SwInterfaceSetL2XconnectReply{},
 	}
-	return 0
+	err := vppChan.CheckMessageCompatibility(msgs...)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
 }

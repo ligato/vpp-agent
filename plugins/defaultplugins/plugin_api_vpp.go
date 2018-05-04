@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 )
 
@@ -77,7 +77,7 @@ type API interface {
 	// GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes. The mapping
 	// uses the name and the index of receive interface (the one all packets are received on). XConnectMeta is a container
 	// for the transmit interface name.
-	GetXConnectIndexes() idxvpp.NameToIdx
+	GetXConnectIndexes() l2idx.XcIndexRW
 
 	// GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 	// to their respective indices as assigned by VPP.

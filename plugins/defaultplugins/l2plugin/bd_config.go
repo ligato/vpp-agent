@@ -28,7 +28,7 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
