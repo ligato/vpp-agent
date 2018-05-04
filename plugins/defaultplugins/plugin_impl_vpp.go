@@ -37,7 +37,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
@@ -101,24 +101,23 @@ type Plugin struct {
 
 	// Bridge domain fields
 	bdConfigurator    *l2plugin.BDConfigurator
-	bdIndexes         bdidx.BDIndexRW
+	bdIndexes         l2idx.BDIndexRW
 	ifToBdDesIndexes  idxvpp.NameToIdxRW
 	ifToBdRealIndexes idxvpp.NameToIdxRW
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
 	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
-	bdIdxWatchCh      chan bdidx.BdChangeDto
+	bdIdxWatchCh      chan l2idx.BdChangeDto
 
 	// Bidirectional forwarding detection fields
 	bfdConfigurator *ifplugin.BFDConfigurator
 
 	// Forwarding information base fields
 	fibConfigurator *l2plugin.FIBConfigurator
-	fibIndexes      bdidx.FIBIndexRW
+	fibIndexes      l2idx.FIBIndexRW
 
 	// xConnect fields
 	xcConfigurator *l2plugin.XConnectConfigurator
-	xcIndexes      idxvpp.NameToIdxRW
 
 	// NAT fields
 	natConfigurator *ifplugin.NatConfigurator
@@ -231,18 +230,18 @@ func (plugin *Plugin) GetBfdEchoFunctionIndexes() idxvpp.NameToIdx {
 }
 
 // GetBDIndexes gives access to mapping of logical names (used in ETCD configuration) as bd_indexes.
-func (plugin *Plugin) GetBDIndexes() bdidx.BDIndex {
+func (plugin *Plugin) GetBDIndexes() l2idx.BDIndex {
 	return plugin.bdIndexes
 }
 
 // GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
-func (plugin *Plugin) GetFIBIndexes() bdidx.FIBIndexRW {
+func (plugin *Plugin) GetFIBIndexes() l2idx.FIBIndexRW {
 	return plugin.fibIndexes
 }
 
 // GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
-func (plugin *Plugin) GetXConnectIndexes() idxvpp.NameToIdx {
-	return plugin.xcIndexes
+func (plugin *Plugin) GetXConnectIndexes() l2idx.XcIndexRW {
+	return plugin.xcConfigurator.GetXcIndexes()
 }
 
 // GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
@@ -330,7 +329,7 @@ func (plugin *Plugin) Init() error {
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.ifIdxWatchCh = make(chan ifaceidx.SwIfIdxDto, 100)
-	plugin.bdIdxWatchCh = make(chan bdidx.BdChangeDto, 100)
+	plugin.bdIdxWatchCh = make(chan l2idx.BdChangeDto, 100)
 	plugin.linuxIfIdxWatchCh = make(chan ifaceLinux.LinuxIfIndexDto, 100)
 	plugin.errorChannel = make(chan ErrCtx, 100)
 
@@ -546,10 +545,9 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	bdLogger := plugin.Log.NewLogger("-l2-bd-conf")
 	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
 	fibLogger := plugin.Log.NewLogger("-l2-fib-conf")
-	xcLogger := plugin.Log.NewLogger("-l2-xc-conf")
 	// Bridge domain indices
-	plugin.bdIndexes = bdidx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
-		"bd_indexes", bdidx.IndexMetadata))
+	plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
+		"bd_indexes", l2idx.IndexMetadata))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
@@ -578,7 +576,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = bdidx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil))
+	plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
@@ -591,22 +589,6 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 		IfToBdIndexes: plugin.ifToBdDesIndexes,
 		FibIndexes:    plugin.fibIndexes,
 		Stopwatch:     stopwatch,
-	}
-
-	// L2 xConnect indexes
-
-	plugin.xcIndexes = nametoidx.NewNameToIdx(xcLogger, plugin.PluginName, "xc_indexes", nil)
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("XConnectConfigurator", xcLogger)
-	}
-	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{
-		Log:         xcLogger,
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
-		XcIndexes:   plugin.xcIndexes,
-		XcIndexSeq:  1,
-		Stopwatch:   stopwatch,
 	}
 
 	// Init
@@ -624,11 +606,11 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	plugin.Log.Debug("fibConfigurator Initialized")
 
-	err = plugin.xcConfigurator.Init()
-	if err != nil {
+	// L2 cross connect
+	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{}
+	if err := plugin.xcConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("xcConfigurator Initialized")
 
 	return nil
