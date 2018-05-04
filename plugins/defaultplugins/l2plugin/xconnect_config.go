@@ -89,6 +89,16 @@ func (plugin *XConnectConfigurator) GetXcIndexes() l2idx.XcIndexRW {
 	return plugin.xcIndexes
 }
 
+// GetXcAddCache returns cross connect 'add' cache (test purposes)
+func (plugin *XConnectConfigurator) GetXcAddCache() l2idx.XcIndexRW {
+	return plugin.xcAddCacheIndexes
+}
+
+// GetXcDelCache returns cross connect 'del' cache (test purposes)
+func (plugin *XConnectConfigurator) GetXcDelCache() l2idx.XcIndexRW {
+	return plugin.xcDelCacheIndexes
+}
+
 // ConfigureXConnectPair adds new cross connect pair
 func (plugin *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
 	plugin.log.Infof("Configuring L2 xConnect pair %s-%s", xc.ReceiveInterface, xc.TransmitInterface)
@@ -132,6 +142,7 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newXc, oldXc *l2.XConnect
 	if !rxFound {
 		plugin.log.Debugf("XC Modify: Receive interface %s not found.", newXc.ReceiveInterface)
 		plugin.putOrUpdateCache(newXc, true)
+		plugin.xcIndexes.UnregisterName(oldXc.ReceiveInterface)
 		// Can return, without receive interface the entry cannot exist
 		return nil
 	}

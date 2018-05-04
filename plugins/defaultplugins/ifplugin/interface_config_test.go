@@ -69,7 +69,7 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-// Test init function
+// Test dhcp
 func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	var err error
 	// Setup
