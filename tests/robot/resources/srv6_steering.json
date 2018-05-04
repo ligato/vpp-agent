@@ -1,0 +1,7 @@
+{
+  "l3Traffic": {
+    "fibTableID": ${fibtable},
+    "prefixAddress": "${prefixAddress}"
+  },
+  "policyBSID": "${bsid}"
+}

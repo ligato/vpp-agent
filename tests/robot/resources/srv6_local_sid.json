@@ -1,0 +1,7 @@
+{
+  "fibTableID": ${fibtable},
+  "endFunctionDX6": {
+    "outgoingInterface":"${outinterface}",
+    "nextHop":"${nexthop}"
+  }
+}
