@@ -338,8 +338,8 @@ func (ctl *VppAgentCtl) createLoopback() {
 				PhysAddress: "7C:4E:E7:8A:63:68",
 				Mtu:         1478,
 				IpAddresses: []string{
-					"192.168.20.3/24",
-					"172.125.40.1/24",
+					"192.168.25.3/24",
+					"172.125.45.1/24",
 				},
 				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
 				//	IsUnnumbered: true,
@@ -803,8 +803,8 @@ func (ctl *VppAgentCtl) createXConn() {
 	xc := l2.XConnectPairs{
 		XConnectPairs: []*l2.XConnectPairs_XConnectPair{
 			{
-				ReceiveInterface:  "loop1",
-				TransmitInterface: "tap1",
+				ReceiveInterface:  "tap1",
+				TransmitInterface: "loop1",
 			},
 		},
 	}

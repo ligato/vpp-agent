@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bdidx
+package l2idx
 
 import (
 	"github.com/ligato/cn-infra/core"
@@ -32,7 +32,7 @@ type FIBIndex interface {
 	// LookupName looks up previously stored item identified by name in mapping.
 	LookupName(idx uint32) (name string, metadata *l2.FibTable_FibEntry, exists bool)
 
-	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
+	// WatchNameToIdx allows to subscribe for watching changes in fibIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan FibChangeDto)
 }
 
@@ -56,19 +56,19 @@ type fibIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
 
-// ChangeDto represents an item sent through watch channel in fibIndex.
+// FibChangeDto represents an item sent through watch channel in fibIndex.
 // In contrast to NameToIdxDto, it contains typed metadata.
 type FibChangeDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *l2.FibTable_FibEntry
 }
 
-// NewFIBIndex creates new instance of bdIndex.
+// NewFIBIndex creates new instance of fibIndex.
 func NewFIBIndex(mapping idxvpp.NameToIdxRW) FIBIndexRW {
 	return &fibIndex{mapping: mapping}
 }
 
-// GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the bdIndex.
+// GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the fibIndex.
 func (fib *fibIndex) GetMapping() idxvpp.NameToIdxRW {
 	return fib.mapping
 }

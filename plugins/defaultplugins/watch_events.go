@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"golang.org/x/net/context"
 )
@@ -156,7 +156,7 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 				plugin.Log.Error(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.l4Configurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
@@ -199,7 +199,7 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	e.Done()
 }
 
-func (plugin *Plugin) onVppBdEvent(e bdidx.BdChangeDto) {
+func (plugin *Plugin) onVppBdEvent(e l2idx.BdChangeDto) {
 	if !e.IsDelete() {
 		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {

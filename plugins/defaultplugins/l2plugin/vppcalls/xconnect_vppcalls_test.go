@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/logrus"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -57,8 +56,8 @@ func TestVppSetL2XConnect(t *testing.T) {
 
 	for i := 0; i < len(setTestDataInXConnect); i++ {
 		ctx.MockVpp.MockReply(setTestDataInXConnect[i].message)
-		err := VppSetL2XConnect(setTestDataInXConnect[i].receiveIfaceIndex,
-			setTestDataInXConnect[i].transmitIfaceIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+		err := AddL2XConnect(setTestDataInXConnect[i].receiveIfaceIndex,
+			setTestDataInXConnect[i].transmitIfaceIndex, ctx.MockChannel, nil)
 
 		if setTestDataOutXConnect[i].isResultOk {
 			Expect(err).To(BeNil())
@@ -102,8 +101,8 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 
 	for i := 0; i < len(unsetTestDataInXConnect); i++ {
 		ctx.MockVpp.MockReply(unsetTestDataInXConnect[i].message)
-		err := VppUnsetL2XConnect(unsetTestDataInXConnect[i].receiveIfaceIndex,
-			unsetTestDataInXConnect[i].transmitIfaceIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+		err := DeleteL2XConnect(unsetTestDataInXConnect[i].receiveIfaceIndex,
+			unsetTestDataInXConnect[i].transmitIfaceIndex, ctx.MockChannel, nil)
 
 		if unsetTestDataOutXConnect[i].isResultOk {
 			Expect(err).To(BeNil())

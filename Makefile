@@ -74,7 +74,7 @@ test:
 	@echo " => running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
-	go test ./plugins/defaultplugins/l2plugin/bdidx
+	go test ./plugins/defaultplugins/l2plugin/l2idx
 	go test ./plugins/defaultplugins/l2plugin/vppcalls
 	go test ./plugins/defaultplugins/l2plugin/vppdump
 	go test ./plugins/defaultplugins/ifplugin/vppcalls
@@ -91,7 +91,8 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
 	@echo " => merging coverage results"
@@ -101,7 +102,8 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_unit2.out \
 			${COVER_DIR}coverage_ifplugin.out \
 			${COVER_DIR}coverage_ifplugin_vppcalls.out \
-			${COVER_DIR}coverage_l2plugin_bdidx.out \
+			${COVER_DIR}coverage_l2plugin.out \
+			${COVER_DIR}coverage_l2plugin_l2idx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \
 		> ${COVER_DIR}coverage.out
