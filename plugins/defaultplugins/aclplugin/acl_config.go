@@ -30,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -229,26 +228,33 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 			}
 
 		} else {
-			// Remove L3/L4 ACL from old interfaces.
-			if oldACL.Interfaces != nil {
-				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Ingress), plugin.Log)
-				if err != nil {
-					return err
-				}
-				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Egress), plugin.Log)
+			aclOldInInterfaces := plugin.getInterfaces(oldACL.Interfaces.Ingress)
+			aclOldEgInterfaces := plugin.getInterfaces(oldACL.Interfaces.Egress)
+			aclNewInInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
+			aclNewEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
+			addedInInterfaces, removedInInterfaces := diffInterfaces(aclOldInInterfaces, aclNewInInterfaces)
+			addedEgInterfaces, removedEgInterfaces := diffInterfaces(aclOldEgInterfaces, aclNewEgInterfaces)
+
+			if len(removedInInterfaces) > 0 {
+				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, removedInInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
 			}
-			// Put L3/L4 ACL to new interfaces.
-			if newACL.Interfaces != nil {
-				aclInInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
-				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, aclInInterfaces, plugin.Log)
+			if len(removedEgInterfaces) > 0 {
+				err = plugin.vppcalls.RemoveIPEgressACLFromInterfaces(vppACLIndex, removedEgInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
-				aclEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
-				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, aclEgInterfaces, plugin.Log)
+			}
+			if len(addedInInterfaces) > 0 {
+				err = plugin.vppcalls.SetACLToInterfacesAsIngress(vppACLIndex, addedInInterfaces, plugin.Log)
+				if err != nil {
+					return err
+				}
+			}
+			if len(addedEgInterfaces) > 0 {
+				err = plugin.vppcalls.SetACLToInterfacesAsEgress(vppACLIndex, addedEgInterfaces, plugin.Log)
 				if err != nil {
 					return err
 				}
@@ -314,7 +320,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 
 // DumpACL returns all configured ACLs in proto format
 func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppDumpChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppDumpChannel, plugin.Stopwatch)
 	if err != nil {
 		plugin.Log.Error(err)
 		return nil, err
@@ -335,6 +341,25 @@ func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableI
 		configurableIfs = append(configurableIfs, ifIdx)
 	}
 	return configurableIfs
+}
+
+// diffInterfaces returns a difference between two lists of interfaces
+func diffInterfaces(oldInterfaces, newInterfaces []uint32) (added, removed []uint32) {
+	intfMap := make(map[uint32]struct{})
+	for _, intf := range oldInterfaces {
+		intfMap[intf] = struct{}{}
+	}
+	for _, intf := range newInterfaces {
+		if _, has := intfMap[intf]; !has {
+			added = append(added, intf)
+		} else {
+			delete(intfMap, intf)
+		}
+	}
+	for intf := range intfMap {
+		removed = append(removed, intf)
+	}
+	return added, removed
 }
 
 // ResolveCreatedInterface configures new interface for every ACL found in cache
