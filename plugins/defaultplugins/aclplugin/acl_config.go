@@ -30,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -321,7 +320,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 
 // DumpACL returns all configured ACLs in proto format
 func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppDumpChannel, measure.GetTimeLog(acl_api.ACLDump{}, plugin.Stopwatch))
+	aclsWithIndex, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppDumpChannel, plugin.Stopwatch)
 	if err != nil {
 		plugin.Log.Error(err)
 		return nil, err

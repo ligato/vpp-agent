@@ -16,10 +16,8 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
@@ -34,7 +32,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	}()
 
 	// Retrieve existing ACL config
-	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(&acl_api.ACLDump{}, plugin.Stopwatch))
+	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
