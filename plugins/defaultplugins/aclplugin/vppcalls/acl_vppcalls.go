@@ -192,7 +192,7 @@ func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel *api.Channel
 }
 
 // DumpInterface finds interface in VPP and returns its ACL configuration.
-func DumpInterface(swIndex uint32, vppChannel *api.Channel, stopwatch *measure.Stopwatch) (*acl_api.ACLInterfaceListDetails, error) {
+func DumpInterface(swIndex uint32, vppChannel VPPChannel, stopwatch *measure.Stopwatch) (*acl_api.ACLInterfaceListDetails, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -210,7 +210,7 @@ func DumpInterface(swIndex uint32, vppChannel *api.Channel, stopwatch *measure.S
 }
 
 // DumpInterfaces finds  all interfaces in VPP and returns their ACL configurations
-func DumpInterfaces(vppChannel *api.Channel, stopwatch *measure.Stopwatch) ([]*acl_api.ACLInterfaceListDetails, error) {
+func DumpInterfaces(vppChannel VPPChannel, stopwatch *measure.Stopwatch) ([]*acl_api.ACLInterfaceListDetails, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

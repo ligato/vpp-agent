@@ -233,8 +233,8 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 			aclOldEgInterfaces := plugin.getInterfaces(oldACL.Interfaces.Egress)
 			aclNewInInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
 			aclNewEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
-			addedInInterfaces, removedInInterfaces := plugin.diffInterfaces(aclOldInInterfaces, aclNewInInterfaces)
-			addedEgInterfaces, removedEgInterfaces := plugin.diffInterfaces(aclOldEgInterfaces, aclNewEgInterfaces)
+			addedInInterfaces, removedInInterfaces := diffInterfaces(aclOldInInterfaces, aclNewInInterfaces)
+			addedEgInterfaces, removedEgInterfaces := diffInterfaces(aclOldEgInterfaces, aclNewEgInterfaces)
 
 			if len(removedInInterfaces) > 0 {
 				err = plugin.vppcalls.RemoveIPIngressACLFromInterfaces(vppACLIndex, removedInInterfaces, plugin.Log)
@@ -345,7 +345,7 @@ func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableI
 }
 
 // diffInterfaces returns a difference between two lists of interfaces
-func (plugin *ACLConfigurator) diffInterfaces(oldInterfaces, newInterfaces []uint32) (added, removed []uint32) {
+func diffInterfaces(oldInterfaces, newInterfaces []uint32) (added, removed []uint32) {
 	intfMap := make(map[uint32]struct{})
 	for _, intf := range oldInterfaces {
 		intfMap[intf] = struct{}{}

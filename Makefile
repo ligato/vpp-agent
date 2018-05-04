@@ -89,8 +89,10 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/defaultplugins/aclplugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
@@ -99,8 +101,10 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
 			${COVER_DIR}coverage_unit2.out \
+			${COVER_DIR}coverage_aclplugin_vppdump.out  \
 			${COVER_DIR}coverage_ifplugin.out \
 			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+			${COVER_DIR}coverage_ifplugin_vppdump.out \
 			${COVER_DIR}coverage_l2plugin_bdidx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \

@@ -55,8 +55,8 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 	var nat44GlobalInterfaces []*nat.Nat44Global_NatInterface
 	for _, natInterface := range natInterfaces {
 		nat44GlobalInterfaces = append(nat44GlobalInterfaces, &nat.Nat44Global_NatInterface{
-			Name:     natInterface.Name,
-			IsInside: natInterface.IsInside,
+			Name:          natInterface.Name,
+			IsInside:      natInterface.IsInside,
 			OutputFeature: false,
 		})
 	}
@@ -366,7 +366,7 @@ func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging
 		msg := &bin_api.Nat44InterfaceOutputFeatureDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to dump NAT44 interface: %v", err)
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 		}
 		if stop {
 			break
