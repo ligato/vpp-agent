@@ -61,9 +61,9 @@ func (plugin *FIBConfigurator) Init() (err error) {
 	plugin.Log.Debug("Initializing L2 Bridge domains")
 
 	// Init local mapping
-	plugin.addCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
+	plugin.addCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin",
 		"fib_add_indexes", nil))
-	plugin.delCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin", ""+
+	plugin.delCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "l2plugin",
 		"fib_del_indexes", nil))
 	plugin.fibIndexSeq = 1
 

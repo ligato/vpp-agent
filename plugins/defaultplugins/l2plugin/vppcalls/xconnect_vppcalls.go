@@ -18,9 +18,18 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 )
+
+// XConnectMessages is list of used VPP messages for compatibility check
+var XConnectMessages = []govppapi.Message{
+	&l2ba.L2XconnectDump{},
+	&l2ba.L2XconnectDetails{},
+	&l2ba.SwInterfaceSetL2Xconnect{},
+	&l2ba.SwInterfaceSetL2XconnectReply{},
+}
 
 // AddL2XConnect creates xConnect between two existing interfaces.
 func AddL2XConnect(rxIfIdx uint32, txIfIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {

@@ -71,7 +71,7 @@ func (plugin *XConnectConfigurator) Init(pluginName core.PluginName, logger logg
 	}
 
 	// Message compatibility
-	if err = vppcalls.CheckMsgCompatibilityForXConnect(plugin.log, plugin.vppChan); err != nil {
+	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.XConnectMessages...); err != nil {
 		plugin.log.Error(err)
 		return err
 	}
@@ -123,6 +123,8 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_X
 		plugin.log.Errorf("Adding l2xConnect failed: %v", err)
 		return err
 	}
+	// Unregister from 'del' cache in case it is present
+	plugin.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
 	// Register
 	plugin.xcIndexes.RegisterName(xc.ReceiveInterface, plugin.xcIndexSeq, xc)
 	plugin.xcIndexSeq++
@@ -197,7 +199,8 @@ func (plugin *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XCon
 	// interfaces
 	txIfIdx, _, txFound := plugin.ifIndexes.LookupIdx(xc.TransmitInterface)
 	if !txFound {
-		plugin.log.Debugf("XC Del: Transmit interface %s not found.", xc.ReceiveInterface)
+		plugin.log.Debugf("XC Del: Transmit interface %s for XConnect %s not found.",
+			xc.TransmitInterface, xc.ReceiveInterface)
 		plugin.putOrUpdateCache(xc, false)
 		// Remove from other caches
 		plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
@@ -211,7 +214,6 @@ func (plugin *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XCon
 	}
 	// Unregister
 	plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
-	plugin.xcIndexSeq++
 	plugin.log.Infof("L2 xConnect pair %s-%s removed", xc.ReceiveInterface, xc.TransmitInterface)
 
 	return nil
