@@ -135,6 +135,16 @@ message InterfacesState {
     repeated Interface interfaces = 1;
 }
 
+message InterfaceNotification {
+    enum NotifType {                        /* Type of notification */
+        UNKNOWN = 0;                        /* Default type */
+        UPDOWN = 1;                         /* Link UP/DOWN notification */
+        COUNTERS = 2;                       /* Interface state with updated counters */
+    }
+    NotifType Type = 1;                     /* Type of the notification */
+    InterfacesState.Interface state = 2;    /* State of the network interface */
+}
+
 message InterfaceErrors {
     message Interface {                     /* List of interfaces with errors */
         string interface_name = 1;
