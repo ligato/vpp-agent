@@ -51,7 +51,7 @@ examples:
 	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/grpc_vpp/remote_client  && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/grpc_vpp/statistics  && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/grpc_vpp/notifications  && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:

@@ -42,6 +42,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
@@ -90,7 +91,7 @@ type Plugin struct {
 	linuxIfIndexes       ifaceLinux.LinuxIfIndex
 	ifStateUpdater       *ifplugin.InterfaceStateUpdater
 	ifVppNotifChan       chan govppapi.Message
-	ifStateChan          chan *intf.InterfaceStateNotification
+	ifStateChan          chan *intf.InterfaceNotification
 	ifStateNotifications messaging.ProtoPublisher
 	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
 	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
@@ -176,6 +177,7 @@ type Deps struct {
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             linuxpluginAPI
+	GRPCSvc           rpc.GRPCService
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
 	WatchEventsMutex *sync.Mutex
@@ -323,7 +325,7 @@ func (plugin *Plugin) Init() error {
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// All channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
-	plugin.ifStateChan = make(chan *intf.InterfaceStateNotification, 100)
+	plugin.ifStateChan = make(chan *intf.InterfaceNotification, 100)
 	plugin.bdStateChan = make(chan *l2plugin.BridgeDomainStateNotification, 100)
 	plugin.resyncConfigChan = make(chan datasync.ResyncEvent)
 	plugin.resyncStatusChan = make(chan datasync.ResyncEvent)
@@ -436,7 +438,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Log: ifStateLogger, GoVppmux: plugin.GoVppmux}
-	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceStateNotification) {
+	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK

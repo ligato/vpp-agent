@@ -18,44 +18,79 @@ package rpc
 
 import (
 	"fmt"
+
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"golang.org/x/net/context"
 )
 
 // GRPCSvcPlugin registers VPP GRPC services in *grpc.Server.
 type GRPCSvcPlugin struct {
-	Deps         GRPCSvcPluginDeps
+	Deps GRPCSvcPluginDeps
+
+	// GRPC client is instance of plugin implementing client API
+	grpcClient grpc.Client
+
+	// Services
 	changeVppSvc ChangeVppSvc
 	resyncVppSvc ResyncVppSvc
+	notifSvc     NotificationSvc
 }
 
 // GRPCSvcPluginDeps - dependencies of GRPCSvcPlugin
 type GRPCSvcPluginDeps struct {
 	local.PluginLogDeps
-	GRPC grpc.Server
+	GRPCServer grpc.Server
+}
+
+// ChangeVppSvc forwards GRPC request to the localclient.
+type ChangeVppSvc struct {
+	log logging.Logger
+}
+
+// ResyncVppSvc forwards GRPC request to the localclient.
+type ResyncVppSvc struct {
+	log logging.Logger
 }
 
 // Init sets plugin child loggers for changeVppSvc & resyncVppSvc.
 func (plugin *GRPCSvcPlugin) Init() error {
-	plugin.changeVppSvc.Log = plugin.Deps.Log.NewLogger("changeVppSvc")
-	plugin.resyncVppSvc.Log = plugin.Deps.Log.NewLogger("resyncVppSvc")
+	plugin.grpcClient = plugin.Deps.GRPCServer.GetClientFromServer()
+	// Data change
+	plugin.changeVppSvc.log = plugin.Deps.Log.NewLogger("changeVppSvc")
+	// Data resync
+	plugin.resyncVppSvc.log = plugin.Deps.Log.NewLogger("resyncVppSvc")
+	// Notification service (represents GRPC client)
+	plugin.notifSvc.log = plugin.Deps.Log.NewLogger("notifSvc")
+	plugin.notifSvc.GRPCClient = plugin.grpcClient
 
 	return nil
 }
 
 // AfterInit registers all GRPC services in vppscv package
-// (be sure that defaultvppplugins are totally initialized).
+// (be sure that defaultvppplugins are completely initialized).
 func (plugin *GRPCSvcPlugin) AfterInit() error {
-	grpcServer := plugin.Deps.GRPC.Server()
+	if plugin.Deps.GRPCServer == nil {
+		return nil
+	}
+	grpcServer := plugin.Deps.GRPCServer.GetServer()
 	if grpcServer != nil {
 		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
 		rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
 	}
+
+	notifEndpoints := plugin.grpcClient.GetNotificationEndpoints()
+	if len(notifEndpoints) == 0 {
+		return nil
+	}
+
+	// todo retry & timeout
+	plugin.notifSvc.connectEndpoints(notifEndpoints)
 
 	return nil
 }
@@ -65,14 +100,9 @@ func (plugin *GRPCSvcPlugin) Close() error {
 	return nil
 }
 
-// ChangeVppSvc forwards GRPC request to the localclient.
-type ChangeVppSvc struct {
-	Log logging.Logger
-}
-
-// ResyncVppSvc forwards GRPC request to the localclient.
-type ResyncVppSvc struct {
-	Log logging.Logger
+// SendNotification passes data to the notification service
+func (plugin *GRPCSvcPlugin) SendNotification(ctx context.Context, state *interfaces.InterfaceNotification) {
+	plugin.notifSvc.sendNotification(ctx, state)
 }
 
 // Put adds configuration data present in data request to the VPP/Linux
