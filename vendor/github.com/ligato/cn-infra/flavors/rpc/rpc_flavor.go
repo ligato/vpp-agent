@@ -47,8 +47,7 @@ func WithPlugins(listPlugins func(local *FlavorRPC) []*core.NamedPlugin) core.Wi
 type FlavorRPC struct {
 	*local.FlavorLocal
 
-	HTTP rest.Plugin
-	//TODO GRPC (& enable/disable using config)
+	HTTP       rest.Plugin
 	HTTPProbe  rest.ForkPlugin
 	Prometheus prometheus.Plugin
 
@@ -88,7 +87,7 @@ func (f *FlavorRPC) Inject() bool {
 	f.GRPC.Deps.Log = grpcPlugDeps.Log
 	f.GRPC.Deps.PluginConfig = grpcPlugDeps.PluginConfig
 	f.GRPC.Deps.PluginName = grpcPlugDeps.PluginName
-	//TODO f.GRPC.Deps.HTTP = &f.HTTP
+	f.GRPC.Deps.HTTP = &f.HTTP
 
 	rest.DeclareHTTPPortFlag("http-probe")
 	httpProbeDeps := *f.InfraDeps("http-probe", local.WithConf())

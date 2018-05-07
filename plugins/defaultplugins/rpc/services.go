@@ -52,8 +52,10 @@ func (plugin *GRPCSvcPlugin) Init() error {
 // (be sure that defaultvppplugins are totally initialized).
 func (plugin *GRPCSvcPlugin) AfterInit() error {
 	grpcServer := plugin.Deps.GRPC.Server()
-	rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
-	rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
+	if grpcServer != nil {
+		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
+		rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
+	}
 
 	return nil
 }

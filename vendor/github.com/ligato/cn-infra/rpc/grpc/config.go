@@ -20,41 +20,8 @@ import (
 
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/namsral/flag"
 )
-
-// PluginConfig tries :
-// - to load flag <plugin-name>-port and then FixConfig() just in case
-// - alternatively <plugin-name>-config and then FixConfig() just in case
-// - alternatively DefaultConfig()
-func PluginConfig(pluginCfg config.PluginConfig, cfg *Config, pluginName core.PluginName) error {
-	portFlag := flag.Lookup(grpcPortFlag(pluginName))
-	if portFlag != nil && portFlag.Value != nil && portFlag.Value.String() != "" && cfg != nil {
-		cfg.Endpoint = rest.DefaultIP + ":" + portFlag.Value.String()
-	}
-
-	if pluginCfg != nil {
-		_, err := pluginCfg.GetValue(cfg)
-		if err != nil {
-			return err
-		}
-	}
-
-	FixConfig(cfg)
-
-	return nil
-}
-
-// DefaultConfig returns new instance of config with default endpoint
-func DefaultConfig() *Config {
-	return &Config{} //endpoint is not set intentionally
-}
-
-// FixConfig fill default values for empty fields (does nothing yet)
-func FixConfig(cfg *Config) {
-
-}
 
 // Config is a configuration for GRPC netListener
 // It is meant to be extended with security (TLS...)
