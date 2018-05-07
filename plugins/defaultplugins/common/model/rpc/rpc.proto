@@ -29,6 +29,10 @@ service DataResyncService {
     rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
+service StatisticsService {
+    rpc Send(Statistics) returns (StatisticsResponse);
+}
+
 // Data request is an inventory of supported data types with one or multiple
 // items of every type. Universal type for every data change/resync request
 message DataRequest {
@@ -66,4 +70,11 @@ message DelResponse {
 
 // Response to data resync
 message ResyncResponse {
+}
+
+message Statistics {
+    interfaces.InterfaceNotification ifNotif = 1;
+}
+
+message StatisticsResponse {
 }

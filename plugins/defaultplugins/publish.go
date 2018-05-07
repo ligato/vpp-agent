@@ -72,7 +72,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			}
 
 			// Marshall data into JSON & send kafka message.
-			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
+			if plugin.ifStateNotifications != nil && ifState.Type == intf.InterfaceNotification_UPDOWN {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
 					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {
