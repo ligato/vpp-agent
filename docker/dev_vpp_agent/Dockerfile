@@ -1,4 +1,5 @@
-FROM ubuntu:16.04
+ARG BASE_IMG=ubuntu:16.04
+FROM ${BASE_IMG}
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -9,7 +10,6 @@ RUN apt-get update \
     make autoconf automake libtool curl unzip ipsec-tools \
  && apt-get remove -y --purge gcc \
  && rm -rf /var/lib/apt/lists/*
-
 
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test \
  && apt-get update \
@@ -24,9 +24,10 @@ RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 WORKDIR /opt/vpp-agent/dev
 
 ARG VPP_COMMIT
+ARG VPP_REPO_URL
 
 RUN /bin/bash -c "\
-    git clone https://github.com/ligato/vpp.git \
+    git clone ${VPP_REPO_URL} \
     && cd vpp \
     && git checkout ${VPP_COMMIT} \
     && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"
@@ -45,8 +46,9 @@ RUN /bin/bash -c "\
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
 # install Go
-ENV GOLANG_VERSION 1.10
-RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" \
+ENV GOLANG_VERSION 1.10.2
+ARG GOLANG_OS_ARCH=linux-amd64
+RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
