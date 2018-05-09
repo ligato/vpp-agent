@@ -28,7 +28,7 @@ import (
 type NotificationSvc struct {
 	GRPCClient rpcServer.Client
 
-	clients []rpc.StatisticsServiceClient
+	clients []rpc.NotificationServiceClient
 	log     logging.Logger
 }
 
@@ -47,7 +47,7 @@ func (plugin *NotificationSvc) connectEndpoints(addresses []string) {
 			continue
 		}
 
-		client := rpc.NewStatisticsServiceClient(conn)
+		client := rpc.NewNotificationServiceClient(conn)
 		plugin.clients = append(plugin.clients, client)
 		plugin.log.Debugf("Address %s registered for GRPC notifications", address)
 	}
@@ -56,7 +56,7 @@ func (plugin *NotificationSvc) connectEndpoints(addresses []string) {
 // Calls notification service to send data to every client
 func (plugin *NotificationSvc) sendNotification(ctx context.Context, notification *interfaces.InterfaceNotification) {
 	for _, client := range plugin.clients {
-		client.Send(ctx, &rpc.Statistics{
+		client.Send(ctx, &rpc.Notifications{
 			IfNotif: notification,
 		})
 	}

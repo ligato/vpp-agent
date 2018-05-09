@@ -34,9 +34,12 @@ Current examples:
   simple topology consisting of VPP af-packet interfaces attached to 
   linux Veth pairs. As before, this example also uses localclient to push 
   the configuration to vpp-agent plugins.  
-* **[remoteclient_grpc_vpp](remoteclient_grpc_vpp/main.go)** demonstrates how to
+* **[grpc_vpp_remote_client](grpc_vpp/remote_client/main.go)** demonstrates how to
   use the remoteclient package to push example configuration into
   VPP default plugins running within different vpp-agent OS process.
+* **[grpc_vpp_notifications](grpc_vpp/notifications/main.go)** demonstrates how to
+  use the notifications package to  receive VPP notifications streamed by different 
+  vpp-agent process.
 
 * **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra platform
   plugins.

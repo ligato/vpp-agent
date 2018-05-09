@@ -29,8 +29,10 @@ service DataResyncService {
     rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
-service StatisticsService {
-    rpc Send(Statistics) returns (StatisticsResponse);
+// Notification service streams VPP notifications to provided servers
+service NotificationService {
+    // Send notification stack
+    rpc Send(Notifications) returns (NotificationsResponse);
 }
 
 // Data request is an inventory of supported data types with one or multiple
@@ -60,6 +62,11 @@ message DataRequest {
     repeated l3.LinuxStaticRoutes.Route LinuxRoutes = 91;
 }
 
+// Notifications represent a list of VPP data statistics
+message Notifications {
+    interfaces.InterfaceNotification ifNotif = 1;
+}
+
 // Response to data change 'put'
 message PutResponse {
 }
@@ -72,9 +79,7 @@ message DelResponse {
 message ResyncResponse {
 }
 
-message Statistics {
-    interfaces.InterfaceNotification ifNotif = 1;
-}
 
-message StatisticsResponse {
+// Response to notification
+message NotificationsResponse {
 }

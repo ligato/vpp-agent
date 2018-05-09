@@ -78,7 +78,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	// Initialize new GRPC server
 	plugin.grpcServer = grpc.NewServer()
 	// Register statistics service to the server
-	rpc.RegisterStatisticsServiceServer(plugin.grpcServer, &StatisticsService{})
+	rpc.RegisterNotificationServiceServer(plugin.grpcServer, &StatisticsService{})
 	// Start GRPC listener
 	plugin.listener, err = Listen(plugin.grpcServer)
 
@@ -97,13 +97,13 @@ func (plugin *ExamplePlugin) Close() error {
 }
 
 // Send is an implementation of client-side statistics streaming.
-func (svc *StatisticsService) Send(ctx context.Context, stats *rpc.Statistics) (*rpc.StatisticsResponse, error) {
+func (svc *StatisticsService) Send(ctx context.Context, stats *rpc.Notifications) (*rpc.NotificationsResponse, error) {
 	if stats.IfNotif != nil {
 		log.DefaultLogger().Infof("Received interface notification (type %s) for interface %s:\n,%v",
 			stats.IfNotif.Type, stats.IfNotif.State.Name, stats.IfNotif.State)
 	}
-	// todo add other notification types
-	return &rpc.StatisticsResponse{}, nil
+	// todo add output for other notification types
+	return &rpc.NotificationsResponse{}, nil
 }
 
 // Listen on provided address
