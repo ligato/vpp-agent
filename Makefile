@@ -21,7 +21,6 @@ clean: clean-cmd clean-examples
 install:
 	@echo " => installing commands"
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-grpc
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
@@ -29,7 +28,6 @@ install:
 cmd:
 	@echo " => building commands"
 	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
-	cd cmd/vpp-agent-grpc	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 
@@ -37,7 +35,6 @@ cmd:
 clean-cmd:
 	@echo " => cleaning binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
-	rm -f ./cmd/vpp-agent-grpc/vpp-agent-grpc
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
