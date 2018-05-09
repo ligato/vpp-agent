@@ -30,7 +30,6 @@ RUN cd /opt/vpp/ && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb
 COPY --from=devimg \
     /root/go/bin/vpp-agent \
     /root/go/bin/vpp-agent-ctl \
-    /root/go/bin/vpp-agent-grpc \
     /root/go/bin/agentctl \
  /bin/
 
