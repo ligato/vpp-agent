@@ -15,17 +15,14 @@
 package redis
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
-
-	"strings"
-
-	"fmt"
-
-	"github.com/ligato/cn-infra/datasync"
 )
 
 // BytesConnectionRedis allows to store, read and watch values from Redis.

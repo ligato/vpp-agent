@@ -74,7 +74,10 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
-	f.VPP.Deps.Publish = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.Publish = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
 
 	/* note: now configurable with `status-publishers` in defaultplugins
 		f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
@@ -94,10 +97,18 @@ func (f *Flavor) Inject() bool {
 	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
 
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
-	f.VPP.Deps.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get(), &f.AllConnectorsFlavor.ETCDDataSync}}
+	f.VPP.Deps.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
+		local_sync.Get(),
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
-	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get(), &f.AllConnectorsFlavor.ETCDDataSync}}
+	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
+		local_sync.Get(),
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
 
 	// Mutex for synchronizing watching events
 	var watchEventsMutex sync.Mutex
