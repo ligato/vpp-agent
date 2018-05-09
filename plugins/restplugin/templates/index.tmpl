@@ -6,9 +6,9 @@
 <body>
 <h2>Index:</h2>
 <ul>
-{{range $name, $url := .}}
+{{range .}}
     <li>
-        <a href="{{$url}}">{{$name}}</a>
+        <a href="{{.Path}}">{{.Name}}</a>
     </li>
 {{end}}
 </ul>

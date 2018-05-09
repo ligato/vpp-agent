@@ -351,8 +351,8 @@ func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.Han
 	}
 }
 
-// showCommandHandler - used to execute VPP CLI commands
-func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
+// commandHandler - used to execute VPP CLI commands
+func (plugin *RESTAPIPlugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		body, err := ioutil.ReadAll(req.Body)
@@ -478,8 +478,6 @@ func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.Handler
 	return func(w http.ResponseWriter, req *http.Request) {
 		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
 
-		r.HTML(w, http.StatusOK, "index", map[string]string{
-			"Telemetry": "/telemetry",
-		})
+		r.HTML(w, http.StatusOK, "index", plugin.indexItems)
 	}
 }

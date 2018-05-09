@@ -29,6 +29,8 @@ const (
 // RESTAPIPlugin - registers VPP REST API Plugin
 type RESTAPIPlugin struct {
 	Deps
+
+	indexItems []indexItem
 }
 
 // Deps - dependencies of RESTAPIPlugin
@@ -38,14 +40,29 @@ type Deps struct {
 	GoVppmux     govppmux.API
 }
 
+type indexItem struct {
+	Name string
+	Path string
+}
+
 // Init - initializes the RESTAPIPlugin
 func (plugin *RESTAPIPlugin) Init() (err error) {
+	plugin.indexItems = []indexItem{
+		{Name: "Interfaces", Path: "/interfaces"},
+		{Name: "Bridge domains", Path: "/bridgedomains"},
+		{Name: "Fibs", Path: "/fibs"},
+		{Name: "XConnector", Path: "/xconnectorpairs"},
+		{Name: "Static routes", Path: "/staticroutes"},
+		{Name: "ACL IP", Path: "/acl/ip"},
+		{Name: "Telemetry", Path: "/telemetry"},
+	}
 	return nil
 }
 
 // AfterInit - used to register HTTP handlers
 func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
+
 	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
@@ -57,7 +74,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLPostHandler, "POST")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip/example", plugin.exampleACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.showCommandHandler, "POST")
+	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.commandHandler, "POST")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry", plugin.telemetryHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/", plugin.indexHandler, "GET")
 
