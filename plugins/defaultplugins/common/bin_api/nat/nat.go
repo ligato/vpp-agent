@@ -925,6 +925,7 @@ type Nat44UserSessionDetails struct {
 	LastHeard        uint64
 	TotalBytes       uint64
 	TotalPkts        uint32
+	IsClosed         uint8
 }
 
 func (*Nat44UserSessionDetails) GetMessageName() string {
@@ -934,7 +935,7 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Nat44UserSessionDetails) GetCrcString() string {
-	return "9abeddd4"
+	return "6f831394"
 }
 func NewNat44UserSessionDetails() api.Message {
 	return &Nat44UserSessionDetails{}
