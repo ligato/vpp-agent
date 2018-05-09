@@ -260,10 +260,28 @@
   revision = "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
 
 [[projects]]
+  name = "github.com/hashicorp/consul"
+  packages = ["api"]
+  revision = "fb848fc48818f58690db09d14640513aa6bf3c02"
+  version = "v1.0.7"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
   revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-rootcerts"
+  packages = ["."]
+  revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  name = "github.com/hashicorp/serf"
+  packages = ["coordinate"]
+  revision = "d6574a5bb1226678d7010325fb6c985db20ee458"
+  version = "v0.8.1"
 
 [[projects]]
   branch = "master"
@@ -301,6 +319,7 @@
     "datasync/resync",
     "datasync/syncbase",
     "db/keyval",
+    "db/keyval/consul",
     "db/keyval/etcdv3",
     "db/keyval/kvproto",
     "db/keyval/redis",
@@ -331,7 +350,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "f2751ec3ef878a4d925dc7259162090378fe36de"
+  revision = "240148c19a67f605155802a843dd5d0606f1f3ee"
 
 [[projects]]
   branch = "master"
@@ -356,6 +375,12 @@
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   name = "github.com/namsral/flag"
@@ -623,6 +648,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "461c94babb78e70a2debd26d9f116ddc4fa3f2c59971f95fb33ca101dfcba504"
+  inputs-digest = "65a53d59e3d34e581f3be29b4ccd04823f7d6996de944090481dd67807631df9"
   solver-name = "gps-cdcl"
   solver-version = 1

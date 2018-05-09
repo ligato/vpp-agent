@@ -17,12 +17,13 @@ package etcdv3
 import (
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/clientv3/namespace"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
+
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/namespace"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 )
 
@@ -42,7 +43,6 @@ type BytesConnectionEtcd struct {
 // to all keys in its methods in order to shorten keys used in arguments.
 type BytesBrokerWatcherEtcd struct {
 	logging.Logger
-	closeCh   chan string
 	lessor    clientv3.Lease
 	kv        clientv3.KV
 	watcher   clientv3.Watcher
@@ -61,7 +61,6 @@ type bytesKeyIterator struct {
 	index int
 	len   int
 	resp  *clientv3.GetResponse
-	db    *BytesConnectionEtcd
 }
 
 // bytesKeyVal represents a single key-value pair.
@@ -115,21 +114,31 @@ func (db *BytesConnectionEtcd) Close() error {
 // NewBroker creates a new instance of a proxy that provides
 // access to etcd. The proxy will reuse the connection from BytesConnectionEtcd.
 // <prefix> will be prepended to the key argument in all calls from the created
-// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval.Root constant as
+// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval. Root constant as
 // an argument.
 func (db *BytesConnectionEtcd) NewBroker(prefix string) keyval.BytesBroker {
-	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
+	return &BytesBrokerWatcherEtcd{
+		Logger:    db.Logger,
+		kv:        namespace.NewKV(db.etcdClient, prefix),
+		lessor:    db.lessor,
+		opTimeout: db.opTimeout,
+		watcher:   namespace.NewWatcher(db.etcdClient, prefix),
+	}
 }
 
 // NewWatcher creates a new instance of a proxy that provides
 // access to etcd. The proxy will reuse the connection from BytesConnectionEtcd.
 // <prefix> will be prepended to the key argument in all calls on created
-// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval.Root constant as
+// BytesBrokerWatcherEtcd. To avoid using a prefix, pass keyval. Root constant as
 // an argument.
 func (db *BytesConnectionEtcd) NewWatcher(prefix string) keyval.BytesWatcher {
-	return &BytesBrokerWatcherEtcd{Logger: db.Logger, kv: namespace.NewKV(db.etcdClient, prefix), lessor: db.lessor,
-		opTimeout: db.opTimeout, watcher: namespace.NewWatcher(db.etcdClient, prefix)}
+	return &BytesBrokerWatcherEtcd{
+		Logger:    db.Logger,
+		kv:        namespace.NewKV(db.etcdClient, prefix),
+		lessor:    db.lessor,
+		opTimeout: db.opTimeout,
+		watcher:   namespace.NewWatcher(db.etcdClient, prefix),
+	}
 }
 
 // Put calls 'Put' function of the underlying BytesConnectionEtcd.
@@ -158,13 +167,6 @@ func (pdb *BytesBrokerWatcherEtcd) ListValues(key string) (keyval.BytesKeyValIte
 	return listValuesInternal(pdb.Logger, pdb.kv, pdb.opTimeout, key)
 }
 
-// ListValuesRange calls 'ListValuesRange' function of the underlying
-// BytesConnectionEtcd. KeyPrefix defined in constructor is prepended
-// to the arguments. The prefix is removed from the keys of the returned values.
-func (pdb *BytesBrokerWatcherEtcd) ListValuesRange(fromPrefix string, toPrefix string) (keyval.BytesKeyValIterator, error) {
-	return listValuesRangeInternal(pdb.Logger, pdb.kv, pdb.opTimeout, fromPrefix, toPrefix)
-}
-
 // ListKeys calls 'ListKeys' function of the underlying BytesConnectionEtcd.
 // KeyPrefix defined in constructor is prepended to the argument.
 func (pdb *BytesBrokerWatcherEtcd) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
@@ -175,6 +177,20 @@ func (pdb *BytesBrokerWatcherEtcd) ListKeys(prefix string) (keyval.BytesKeyItera
 // KeyPrefix defined in constructor is prepended to the key argument.
 func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	return deleteInternal(pdb.Logger, pdb.kv, pdb.opTimeout, key, opts...)
+}
+
+// Watch starts subscription for changes associated with the selected <keys>.
+// KeyPrefix defined in constructor is prepended to all <keys> in the argument
+// list. The prefix is removed from the keys returned in watch events.
+// Watch events will be delivered to <resp> callback.
+func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
+	for _, k := range keys {
+		err := watchInternal(pdb.Logger, pdb.watcher, closeChan, k, resp)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func handleWatchEvent(log logging.Logger, resp func(keyval.BytesWatchResp), ev *clientv3.Event) {
@@ -223,25 +239,28 @@ func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan
 }
 
 // watchInternal starts the watch subscription for the key.
-func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan string, key string, resp func(keyval.BytesWatchResp)) error {
-	recvChan := watcher.Watch(context.Background(), key, clientv3.WithPrefix(), clientv3.WithPrevKV())
+func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan string, prefix string, resp func(keyval.BytesWatchResp)) error {
+	recvChan := watcher.Watch(context.Background(), prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
-	go func() {
-		registeredKey := key
+	go func(registeredKey string) {
 		for {
 			select {
-			case wresp := <-recvChan:
+			case wresp, ok := <-recvChan:
+				if !ok {
+					log.WithField("prefix", prefix).Debug("Watch recv chan was closed")
+					return
+				}
 				for _, ev := range wresp.Events {
 					handleWatchEvent(log, resp, ev)
 				}
 			case closeVal, ok := <-closeCh:
-				if !ok || registeredKey == closeVal {
-					log.WithField("key", key).Debug("Watch ended")
+				if !ok || closeVal == registeredKey {
+					log.WithField("prefix", prefix).Debug("Watch ended")
 					return
 				}
 			}
 		}
-	}()
+	}(prefix)
 	return nil
 }
 

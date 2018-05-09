@@ -15,9 +15,9 @@
 package etcdv3
 
 import (
+	"fmt"
 	"time"
 
-	"fmt"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval"

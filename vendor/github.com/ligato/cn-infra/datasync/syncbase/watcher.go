@@ -15,13 +15,11 @@
 package syncbase
 
 import (
-	"sync"
-
 	"errors"
-	"strings"
-	"time"
-
 	"fmt"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -41,7 +39,7 @@ type Registry struct {
 	lastRev       *PrevRevisions
 }
 
-// Subscription TODO
+// Subscription represents single subscription for Registry.
 type Subscription struct {
 	ResyncName  string
 	ChangeChan  chan datasync.ChangeEvent
@@ -79,13 +77,6 @@ func (adapter *Registry) LastRev() *PrevRevisions {
 func (adapter *Registry) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
-	return adapter.WatchDataBase(resyncName, changeChan, resyncChan, keyPrefixes...)
-}
-
-// WatchDataBase only appends channels.
-func (adapter *Registry) WatchDataBase(resyncName string, changeChan chan datasync.ChangeEvent,
-	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (*WatchDataReg, error) {
-
 	adapter.access.Lock()
 	defer adapter.access.Unlock()
 
@@ -105,7 +96,7 @@ func (adapter *Registry) WatchDataBase(resyncName string, changeChan chan datasy
 }
 
 // PropagateChanges fills registered channels with the data.
-func (adapter *Registry) PropagateChanges(txData map[string] /*key*/ datasync.ChangeValue) error {
+func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue) error {
 	var events []func(done chan error)
 
 	for _, sub := range adapter.subscriptions {
@@ -161,9 +152,9 @@ func (adapter *Registry) PropagateChanges(txData map[string] /*key*/ datasync.Ch
 }
 
 // PropagateResync fills registered channels with the data.
-func (adapter *Registry) PropagateResync(txData map[ /*key*/ string]datasync.ChangeValue) error {
+func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue) error {
 	for _, sub := range adapter.subscriptions {
-		resyncEv := NewResyncEventDB(map[string] /*keyPrefix*/ datasync.KeyValIterator{})
+		resyncEv := NewResyncEventDB(map[string]datasync.KeyValIterator{})
 
 		for _, prefix := range sub.KeyPrefixes {
 			var kvs []datasync.KeyVal

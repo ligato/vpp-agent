@@ -17,14 +17,13 @@ package defaultplugins
 import (
 	"strings"
 
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
@@ -313,7 +312,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			}
 		}
 	} else {
-		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
+		plugin.Log.Warnf("ignoring change %v by VPP standard plugins: %q", dataChng, key) //NOT ERROR!
 	}
 	return false, nil
 }
