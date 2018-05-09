@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate go-bindata-assetfs -pkg restplugin -o bindata.go ./templates/...
+
 package restplugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -391,16 +394,82 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 		reply := &vpe.CliInbandReply{}
 		err = ch.SendRequest(r).ReceiveReply(reply)
 		if err != nil {
-			plugin.Log.Errorf("Error processing request: %v", err)
+			err = fmt.Errorf("Sending request failed: %v", err)
+			plugin.Log.Error(err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		} else if reply.Retval > 0 {
-			plugin.Log.Errorf("Command returned code: %v", reply.Retval)
+			err = fmt.Errorf("Request returned error code: %v", reply.Retval)
+			plugin.Log.Error(err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		plugin.Log.Debugf("VPPCLI response: %s", reply.Reply)
 		formatter.Text(w, http.StatusOK, string(reply.Reply))
+	}
+}
+
+// indexHandler - used to get index page
+func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.HandlerFunc {
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+	return func(w http.ResponseWriter, req *http.Request) {
+		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		var sendCommand = func(command string) ([]byte, error) {
+			r := &vpe.CliInband{
+				Length: uint32(len(command)),
+				Cmd:    []byte(command),
+			}
+			reply := &vpe.CliInbandReply{}
+			err = ch.SendRequest(r).ReceiveReply(reply)
+			if err != nil {
+				return nil, fmt.Errorf("Sending request failed: %v", err)
+			} else if reply.Retval > 0 {
+				return nil, fmt.Errorf("Request returned error code: %v", reply.Retval)
+			}
+			return reply.Reply[:reply.Length], nil
+		}
+
+		type cmdOut struct {
+			Command string
+			Output  string
+		}
+		var cmdOuts []cmdOut
+
+		var runCmd = func(command string) {
+			out, err := sendCommand(command)
+			if err != nil {
+				plugin.Log.Errorf("Sending command failed: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, err)
+				return
+			}
+			cmdOuts = append(cmdOuts, cmdOut{
+				Command: command,
+				Output:  string(out),
+			})
+		}
+
+		runCmd("show interface")
+		runCmd("show node counters")
+		runCmd("show runtime")
+		runCmd("show buffers")
+		runCmd("show memory")
+		runCmd("show ip fib")
+		runCmd("show ip6 fib")
+
+		r.HTML(w, http.StatusOK, "index", cmdOuts)
 	}
 }

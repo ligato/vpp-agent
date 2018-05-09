@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Index</title>
+</head>
+<body>
+<h2>Index:</h2>
+<ul>
+{{range .}}
+    <li>
+        <b>{{.Command}}:</b>
+        <pre>{{.Output}}</pre>
+    </li>
+{{end}}
+</ul>
+</body>
+</html>
