@@ -6,10 +6,9 @@
 <body>
 <h2>Index:</h2>
 <ul>
-{{range .}}
+{{range $name, $url := .}}
     <li>
-        <b>{{.Command}}:</b>
-        <pre>{{.Output}}</pre>
+        <a href="{{$url}}">{{$name}}</a>
     </li>
 {{end}}
 </ul>

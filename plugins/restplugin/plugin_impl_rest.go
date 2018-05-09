@@ -58,6 +58,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip/example", plugin.exampleACLGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.showCommandHandler, "POST")
+	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry", plugin.telemetryHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/", plugin.indexHandler, "GET")
 
 	return nil

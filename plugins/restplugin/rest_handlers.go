@@ -410,15 +410,9 @@ func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.H
 	}
 }
 
-// indexHandler - used to get index page
-func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.HandlerFunc {
-	r := render.New(render.Options{
-		Directory:  "templates",
-		Asset:      Asset,
-		AssetNames: AssetNames,
-	})
+// telemetryHandler - returns various telemetry data
+func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
@@ -470,6 +464,22 @@ func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.Handler
 		runCmd("show ip fib")
 		runCmd("show ip6 fib")
 
-		r.HTML(w, http.StatusOK, "index", cmdOuts)
+		formatter.JSON(w, http.StatusOK, cmdOuts)
+	}
+}
+
+// indexHandler - used to get index page
+func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.HandlerFunc {
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+	return func(w http.ResponseWriter, req *http.Request) {
+		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
+
+		r.HTML(w, http.StatusOK, "index", map[string]string{
+			"Telemetry": "/telemetry",
+		})
 	}
 }
