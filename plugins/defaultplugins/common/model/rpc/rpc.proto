@@ -83,6 +83,6 @@ message ResyncResponse {
 
 // Response to 'from index' request. Returns indexed notification.
 message NotificationsResponse {
-    string index = 1;
+    uint32 index = 1;
     interfaces.InterfaceNotification ifNotif = 2;
 }

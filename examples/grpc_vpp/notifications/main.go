@@ -18,7 +18,6 @@ import (
 	"flag"
 	"io"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/ligato/cn-infra/core"
@@ -88,7 +87,7 @@ func (plugin *ExamplePlugin) Close() error {
 // Get is an implementation of client-side statistics streaming.
 func (plugin *ExamplePlugin) watchNotifications() {
 	// Index of last received notification
-	var lastIndex int
+	var lastIndex uint32
 
 	for {
 		// Get client for notification service
@@ -116,11 +115,8 @@ func (plugin *ExamplePlugin) watchNotifications() {
 				return
 			}
 
-			log.DefaultLogger().Infof("Received notification: %v (index: %s)", notification.IfNotif, notification.Index)
-			lastIndex, err = strconv.Atoi(notification.Index)
-			if err != nil {
-				log.DefaultLogger().Error(err)
-			}
+			log.DefaultLogger().Infof("Received notification: %v (index: %d)", notification.IfNotif, notification.Index)
+			lastIndex = notification.Index
 		}
 
 		// Wait till next request

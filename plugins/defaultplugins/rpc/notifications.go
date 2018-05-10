@@ -19,35 +19,28 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
-	"strconv"
 	"sync"
 )
 
 // NotificationSvc forwards GRPC messages to external servers.
 type NotificationSvc struct {
-	mx sync.Mutex
+	mx sync.RWMutex
 
 	// VPP notifications available for clients
 	notifications []*rpc.NotificationsResponse
-	idxSeq        int
+	idxSeq        uint32
 
 	log logging.Logger
 }
 
 // Get returns available VPP notifications in the same order as they were received
 func (svc *NotificationSvc) Get(fromIdx *rpc.FromIndex, server rpc.NotificationService_GetServer) error {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
+	svc.mx.RLock()
+	defer svc.mx.RUnlock()
 
 	for _, entry := range svc.notifications {
-		// Get index of current notification.
-		index, err := strconv.Atoi(entry.Index)
-		if err != nil {
-			svc.log.Error("Incorrect notification index: %s", entry.Index)
-			continue
-		}
 		// Skip notifications which are older than desired
-		if fromIdx.Index >= uint32(index) {
+		if fromIdx.Index >= entry.Index {
 			continue
 		}
 		if err := server.Send(entry); err != nil {
@@ -64,7 +57,7 @@ func (svc *NotificationSvc) updateNotifications(ctx context.Context, notificatio
 
 	svc.idxSeq++
 	svc.notifications = append(svc.notifications, &rpc.NotificationsResponse{
-		Index:   strconv.Itoa(svc.idxSeq),
+		Index:   svc.idxSeq,
 		IfNotif: notification,
 	})
 }
