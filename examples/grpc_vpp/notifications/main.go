@@ -17,10 +17,8 @@ package main
 import (
 	"flag"
 	"io"
-	"net"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/core"
@@ -65,12 +63,9 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
-	wg   sync.WaitGroup
 	conn *grpc.ClientConn
 	// GRPC server instance
 	grpcServer *grpc.Server
-	//
-	listener net.Listener
 }
 
 // Init initializes example plugin.
@@ -90,13 +85,10 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 // Close cleans up the resources.
 func (plugin *ExamplePlugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.listener, plugin.grpcServer)
-	if err != nil {
-		return err
-	}
+	err := safeclose.Close(plugin.grpcServer)
 
 	log.DefaultLogger().Info("Closed example plugin")
-	return nil
+	return err
 }
 
 // Get is an implementation of client-side statistics streaming.
