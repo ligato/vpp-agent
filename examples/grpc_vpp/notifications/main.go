@@ -25,7 +25,6 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -64,8 +63,6 @@ const PluginID core.PluginName = "example-plugin"
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
 	conn *grpc.ClientConn
-	// GRPC server instance
-	grpcServer *grpc.Server
 }
 
 // Init initializes example plugin.
@@ -83,12 +80,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	return err
 }
 
-// Close cleans up the resources.
+// Close does nothing
 func (plugin *ExamplePlugin) Close() error {
-	err := safeclose.Close(plugin.grpcServer)
-
-	log.DefaultLogger().Info("Closed example plugin")
-	return err
+	return nil
 }
 
 // Get is an implementation of client-side statistics streaming.
