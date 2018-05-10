@@ -1,7 +1,7 @@
 # GRPC remote client example
 
 The example uses vpp-agent as a GRPC server. The configuration uses GRPC service to call remote 
-procedure in the agent to create desired configuration. The example shows how to crate data change
+procedure in the agent to create desired configuration. The example shows how to create data change
 and resync request.
 
 How to run example:
