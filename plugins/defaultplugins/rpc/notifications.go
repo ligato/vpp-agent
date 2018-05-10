@@ -16,48 +16,55 @@ package rpc
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/ligato/cn-infra/logging"
-	rpcServer "github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
+	"strconv"
+	"sync"
 )
 
 // NotificationSvc forwards GRPC messages to external servers.
 type NotificationSvc struct {
-	GRPCClient rpcServer.Client
+	mx sync.Mutex
 
-	clients []rpc.NotificationServiceClient
-	log     logging.Logger
+	// VPP notifications available for clients
+	notifications []*rpc.NotificationsResponse
+	idxSeq        int
+
+	log logging.Logger
 }
 
-// ConnectEndpoints tries to make connection to every external GRPC server defined by address list
-func (plugin *NotificationSvc) connectEndpoints(addresses []string) {
-	if plugin.GRPCClient == nil || plugin.GRPCClient.IsDisabled() {
-		plugin.log.Warn("failed to connect grpc endpoints, GRPC plugin not available")
-		return
-	}
+// Get returns available VPP notifications in the same order as they were received
+func (svc *NotificationSvc) Get(fromIdx *rpc.FromIndex, server rpc.NotificationService_GetServer) error {
+	svc.mx.Lock()
+	defer svc.mx.Unlock()
 
-	for _, address := range addresses {
-		conn, err := plugin.GRPCClient.Connect(address)
+	for _, entry := range svc.notifications {
+		// Get index of current notification.
+		index, err := strconv.Atoi(entry.Index)
 		if err != nil {
-			err := fmt.Errorf("failed to establish connection to %s: %v", address, err)
-			plugin.log.Error(err)
+			svc.log.Error("Incorrect notification index: %s", entry.Index)
 			continue
 		}
-
-		client := rpc.NewNotificationServiceClient(conn)
-		plugin.clients = append(plugin.clients, client)
-		plugin.log.Debugf("Address %s registered for GRPC notifications", address)
+		// Skip notifications which are older than desired
+		if fromIdx.Index >= uint32(index) {
+			continue
+		}
+		if err := server.Send(entry); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-// Calls notification service to send data to every client
-func (plugin *NotificationSvc) sendNotification(ctx context.Context, notification *interfaces.InterfaceNotification) {
-	for _, client := range plugin.clients {
-		client.Send(ctx, &rpc.Notifications{
-			IfNotif: notification,
-		})
-	}
+// Adds new notification to the pool. The order of notifications is preserved
+func (svc *NotificationSvc) updateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
+	svc.mx.Lock()
+	defer svc.mx.Unlock()
+
+	svc.idxSeq++
+	svc.notifications = append(svc.notifications, &rpc.NotificationsResponse{
+		Index:   strconv.Itoa(svc.idxSeq),
+		IfNotif: notification,
+	})
 }

@@ -16,6 +16,13 @@ package main
 
 import (
 	"flag"
+	"io"
+	"net"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
@@ -24,13 +31,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"sync"
-	"time"
 )
 
-const defaultAddress = "localhost:9112"
+const defaultAddress = "localhost:9111"
 
 var address = defaultAddress
 
@@ -62,26 +65,26 @@ const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
-	wg sync.WaitGroup
+	wg   sync.WaitGroup
+	conn *grpc.ClientConn
 	// GRPC server instance
 	grpcServer *grpc.Server
 	//
 	listener net.Listener
 }
 
-type StatisticsService struct {
-}
-
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
-	log.DefaultLogger().Infof("Initializing GRPC server on tcp://%s", address)
-	// Initialize new GRPC server
-	plugin.grpcServer = grpc.NewServer()
-	// Register statistics service to the server
-	rpc.RegisterNotificationServiceServer(plugin.grpcServer, &StatisticsService{})
-	// Start GRPC listener
-	plugin.listener, err = Listen(plugin.grpcServer)
+	// Set up connection to the server.
+	plugin.conn, err = grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
 
+	// Start notification watcher.
+	go plugin.watchNotifications()
+
+	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return err
 }
 
@@ -96,36 +99,46 @@ func (plugin *ExamplePlugin) Close() error {
 	return nil
 }
 
-// Send is an implementation of client-side statistics streaming.
-func (svc *StatisticsService) Send(ctx context.Context, stats *rpc.Notifications) (*rpc.NotificationsResponse, error) {
-	if stats.IfNotif != nil {
-		log.DefaultLogger().Infof("Received interface notification (type %s) for interface %s:\n,%v",
-			stats.IfNotif.Type, stats.IfNotif.State.Name, stats.IfNotif.State)
-	}
-	// todo add output for other notification types
-	return &rpc.NotificationsResponse{}, nil
-}
+// Get is an implementation of client-side statistics streaming.
+func (plugin *ExamplePlugin) watchNotifications() {
+	// Index of last received notification
+	var lastIndex int
 
-// Listen on provided address
-func Listen(grpc *grpc.Server) (net.Listener, error) {
-	netListener, err := net.Listen("tcp", address)
-	if err != nil {
-		return nil, err
-	}
-
-	var errCh chan error
-	go func() {
-		if err := grpc.Serve(netListener); err != nil {
-			errCh <- err
-		} else {
-			errCh <- nil
+	for {
+		// Get client for notification service
+		client := rpc.NewNotificationServiceClient(plugin.conn)
+		// Prepare request with the last index
+		request := &rpc.FromIndex{
+			Index: uint32(lastIndex),
 		}
-	}()
+		// Get stream object
+		stream, err := client.Get(context.Background(), request)
+		if err != nil {
+			log.DefaultLogger().Error(err)
+			return
+		}
+		// Receive all message from the stream
+		log.DefaultLogger().Info("Sending request ... ")
+		for {
+			notification, err := stream.Recv()
+			if err == io.EOF {
+				log.DefaultLogger().Info("All new notifications received")
+				break
+			}
+			if err != nil {
+				log.DefaultLogger().Error(err)
+				return
+			}
 
-	select {
-	case err := <-errCh:
-		return nil, err
-	case <-time.After(100 * time.Millisecond):
-		return netListener, nil
+			log.DefaultLogger().Infof("Received notification: %v (index: %s)", notification.IfNotif, notification.Index)
+			lastIndex, err = strconv.Atoi(notification.Index)
+			if err != nil {
+				log.DefaultLogger().Error(err)
+			}
+		}
+
+		// Wait till next request
+		time.Sleep(3 * time.Second)
+
 	}
 }

@@ -23,9 +23,8 @@ import (
 // GRPCService allows to send VPP notifications to external GRPC endpoints
 type GRPCService interface {
 
-	// sendNotification allows to send VPP notifications/statistic data. All the logic about
-	// endpoint registration and connection is done in grpc plugin using appropriate configuration
-	// file
+	// updateNotification stores VPP notifications/statistic data. The notification can be read by any client
+	// connected to the notification service server
 	// todo make type independent
-	SendNotification(ctx context.Context, notification *interfaces.InterfaceNotification)
+	UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification)
 }

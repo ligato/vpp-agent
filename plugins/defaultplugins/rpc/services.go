@@ -33,9 +33,6 @@ import (
 type GRPCSvcPlugin struct {
 	Deps GRPCSvcPluginDeps
 
-	// GRPC client is instance of plugin implementing client API
-	grpcClient grpc.Client
-
 	// Services
 	changeVppSvc ChangeVppSvc
 	resyncVppSvc ResyncVppSvc
@@ -60,14 +57,12 @@ type ResyncVppSvc struct {
 
 // Init sets plugin child loggers for changeVppSvc & resyncVppSvc.
 func (plugin *GRPCSvcPlugin) Init() error {
-	plugin.grpcClient = plugin.Deps.GRPCServer.GetClientFromServer()
 	// Data change
 	plugin.changeVppSvc.log = plugin.Deps.Log.NewLogger("changeVppSvc")
 	// Data resync
 	plugin.resyncVppSvc.log = plugin.Deps.Log.NewLogger("resyncVppSvc")
 	// Notification service (represents GRPC client)
 	plugin.notifSvc.log = plugin.Deps.Log.NewLogger("notifSvc")
-	plugin.notifSvc.GRPCClient = plugin.grpcClient
 
 	return nil
 }
@@ -82,15 +77,8 @@ func (plugin *GRPCSvcPlugin) AfterInit() error {
 	if grpcServer != nil {
 		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
 		rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
+		rpc.RegisterNotificationServiceServer(grpcServer, &plugin.notifSvc)
 	}
-
-	notifEndpoints := plugin.grpcClient.GetNotificationEndpoints()
-	if len(notifEndpoints) == 0 {
-		return nil
-	}
-
-	// todo retry & timeout
-	plugin.notifSvc.connectEndpoints(notifEndpoints)
 
 	return nil
 }
@@ -100,9 +88,9 @@ func (plugin *GRPCSvcPlugin) Close() error {
 	return nil
 }
 
-// SendNotification passes data to the notification service
-func (plugin *GRPCSvcPlugin) SendNotification(ctx context.Context, state *interfaces.InterfaceNotification) {
-	plugin.notifSvc.sendNotification(ctx, state)
+// UpdateNotifications stores new notification data
+func (plugin *GRPCSvcPlugin) UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
+	plugin.notifSvc.updateNotifications(ctx, notification)
 }
 
 // Put adds configuration data present in data request to the VPP/Linux
