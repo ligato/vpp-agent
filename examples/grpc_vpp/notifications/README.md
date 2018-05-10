@@ -4,8 +4,7 @@ The example shows how to use vpp-agent to receive VPP notifications from the vpp
 Vpp-agent streams VPP notifications to all servers provided via grpc.conf file. 
 
 How to run example:
-1. Run vpp-agent with GRPC notification client enabled - start it with the grpc configuration file
-with at least one entry in `notification-endpoints`.
+1. Run vpp-agent with GRPC endpoint set.
 
 ```
 vpp-agent --grpc-config=/opt/vpp-agent/dev/grpc.conf
