@@ -29,9 +29,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-const defaultAddress = "localhost:9111"
+const (
+	defaultAddress = "localhost:9111"
+	requestPeriod  = 3
+)
 
-var address = defaultAddress
+var (
+	address = defaultAddress
+	reqPer = requestPeriod
+)
 
 // init sets the default logging level
 func init() {
@@ -45,10 +51,11 @@ func main() {
 	closeChannel := make(chan struct{}, 1)
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
+	flag.IntVar(&reqPer, "request period", requestPeriod, "notification request period in seconds")
 
 	// Example plugin
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+		examplePlugin := &core.NamedPlugin{PluginName: "example-plugin", Plugin: &ExamplePlugin{}}
 
 		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
 	}))
@@ -56,10 +63,7 @@ func main() {
 	core.EventLoopWithInterrupt(agent, closeChannel)
 }
 
-// PluginID of example plugin
-const PluginID core.PluginName = "example-plugin"
-
-// ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
+// ExamplePlugin demonstrates the use of grpc to watch on VPP notifications using vpp-agent.
 type ExamplePlugin struct {
 	conn *grpc.ClientConn
 }
@@ -86,15 +90,14 @@ func (plugin *ExamplePlugin) Close() error {
 
 // Get is an implementation of client-side statistics streaming.
 func (plugin *ExamplePlugin) watchNotifications() {
-	// Index of last received notification
-	var lastIndex uint32
+	var nextIdx uint32 = 60
 
 	for {
 		// Get client for notification service
 		client := rpc.NewNotificationServiceClient(plugin.conn)
-		// Prepare request with the last index
-		request := &rpc.FromIndex{
-			Index: uint32(lastIndex),
+		// Prepare request with the initial index
+		request := &rpc.NotificationRequest{
+			Idx: nextIdx,
 		}
 		// Get stream object
 		stream, err := client.Get(context.Background(), request)
@@ -104,10 +107,15 @@ func (plugin *ExamplePlugin) watchNotifications() {
 		}
 		// Receive all message from the stream
 		log.DefaultLogger().Info("Sending request ... ")
+		var recvNotifs int
 		for {
-			notification, err := stream.Recv()
+			notif, err := stream.Recv()
 			if err == io.EOF {
-				log.DefaultLogger().Info("All new notifications received")
+				if recvNotifs == 0 {
+					log.DefaultLogger().Info("No new notifications")
+				} else {
+					log.DefaultLogger().Infof("%d new notifications received", recvNotifs)
+				}
 				break
 			}
 			if err != nil {
@@ -115,12 +123,13 @@ func (plugin *ExamplePlugin) watchNotifications() {
 				return
 			}
 
-			log.DefaultLogger().Infof("Received notification: %v (index: %d)", notification.IfNotif, notification.Index)
-			lastIndex = notification.Index
+			log.DefaultLogger().Infof("Received notif: %v (index: %d) msg: '%s'",
+				notif.NIf, notif.NextIdx-1, notif.Message)
+			nextIdx = notif.NextIdx
+			recvNotifs++
 		}
 
 		// Wait till next request
-		time.Sleep(3 * time.Second)
-
+		time.Sleep(requestPeriod * time.Second)
 	}
 }

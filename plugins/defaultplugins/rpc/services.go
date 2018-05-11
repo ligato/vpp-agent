@@ -63,6 +63,7 @@ func (plugin *GRPCSvcPlugin) Init() error {
 	plugin.resyncVppSvc.log = plugin.Deps.Log.NewLogger("resyncVppSvc")
 	// Notification service (represents GRPC client)
 	plugin.notifSvc.log = plugin.Deps.Log.NewLogger("notifSvc")
+	plugin.notifSvc.nIdx = 1 // Starting index
 
 	return nil
 }
