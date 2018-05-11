@@ -42,11 +42,6 @@ func (svc *NotificationSvc) Get(from *rpc.NotificationRequest, server rpc.Notifi
 	svc.mx.RLock()
 	defer svc.mx.RUnlock()
 
-	// If required index was not provided, return all notifications in the buffer
-	if from.Idx == 0 {
-		from.Idx = 1
-	}
-
 	// Send messages on the 'right' side of the buffer if needed. If required notification is stored on higher index
 	// than the latest (or the gap between required and latest is bigger that buffer size), send all notifications
 	// from desired index to the end of the buffer first
