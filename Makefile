@@ -72,17 +72,17 @@ test:
 	@echo "=> running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
-	go test ./plugins/defaultplugins/aclplugin/vppdump
-	go test ./plugins/defaultplugins/ifplugin
-	go test ./plugins/defaultplugins/ifplugin/vppcalls
-	go test ./plugins/defaultplugins/ifplugin/vppdump
-	go test ./plugins/defaultplugins/l2plugin
-	go test ./plugins/defaultplugins/l2plugin/l2idx
-	go test ./plugins/defaultplugins/l2plugin/vppcalls
-	go test ./plugins/defaultplugins/l2plugin/vppdump
-	go test ./plugins/defaultplugins/rpc
-	go test ./plugins/defaultplugins/srplugin
-	go test ./plugins/defaultplugins/srplugin/vppcalls
+	go test ./plugins/vppplugin/aclplugin/vppdump
+	go test ./plugins/vppplugin/ifplugin
+	go test ./plugins/vppplugin/ifplugin/vppcalls
+	go test ./plugins/vppplugin/ifplugin/vppdump
+	go test ./plugins/vppplugin/l2plugin
+	go test ./plugins/vppplugin/l2plugin/l2idx
+	go test ./plugins/vppplugin/l2plugin/vppcalls
+	go test ./plugins/vppplugin/l2plugin/vppdump
+	go test ./plugins/vppplugin/rpc
+	go test ./plugins/vppplugin/srplugin
+	go test ./plugins/vppplugin/srplugin/vppcalls
 
 # Get coverage report tools
 get-covtools:
@@ -94,14 +94,14 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/defaultplugins/aclplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/vppplugin/aclplugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/vppplugin/ifplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/vppplugin/ifplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/vppplugin/ifplugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/vppplugin/l2plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/vppplugin/l2plugin/l2idx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/vppplugin/l2plugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/vppplugin/l2plugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin/vppcalls
@@ -142,33 +142,33 @@ get-generators:
 generate: get-generators
 	@echo "=> generating sources"
 	cd plugins/linuxplugin && go generate
-	cd plugins/defaultplugins/aclplugin && go generate
-	cd plugins/defaultplugins/ifplugin && go generate
-	cd plugins/defaultplugins/ipsecplugin && go generate
-	cd plugins/defaultplugins/l2plugin && go generate
-	cd plugins/defaultplugins/l3plugin && go generate
-	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/vppplugin/aclplugin && go generate
+	cd plugins/vppplugin/ifplugin && go generate
+	cd plugins/vppplugin/ipsecplugin && go generate
+	cd plugins/vppplugin/l2plugin && go generate
+	cd plugins/vppplugin/l3plugin && go generate
+	cd plugins/vppplugin/l4plugin && go generate
 	cd plugins/defaultplugins/srplugin && go generate
-	cd plugins/defaultplugins/rpc && go generate
+	cd plugins/vppplugin/rpc && go generate
 	cd plugins/linuxplugin/ifplugin && go generate
 	cd plugins/linuxplugin/l3plugin && go generate
-	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stn && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
+	cd plugins/vppplugin/common/bin_api/acl && pkgreflect
+	cd plugins/vppplugin/common/bin_api/af_packet && pkgreflect
+	cd plugins/vppplugin/common/bin_api/bfd && pkgreflect
+	cd plugins/vppplugin/common/bin_api/dhcp && pkgreflect
+	cd plugins/vppplugin/common/bin_api/interfaces && pkgreflect
+	cd plugins/vppplugin/common/bin_api/ip && pkgreflect
+	cd plugins/vppplugin/common/bin_api/ipsec && pkgreflect
+	cd plugins/vppplugin/common/bin_api/l2 && pkgreflect
+	cd plugins/vppplugin/common/bin_api/memif && pkgreflect
+	cd plugins/vppplugin/common/bin_api/nat && pkgreflect
+	cd plugins/vppplugin/common/bin_api/session && pkgreflect
+	cd plugins/vppplugin/common/bin_api/stats && pkgreflect
+	cd plugins/vppplugin/common/bin_api/stn && pkgreflect
+	cd plugins/vppplugin/common/bin_api/tap && pkgreflect
+	cd plugins/vppplugin/common/bin_api/tapv2 && pkgreflect
+	cd plugins/vppplugin/common/bin_api/vpe && pkgreflect
+	cd plugins/vppplugin/common/bin_api/vxlan && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
 
 get-bindata:

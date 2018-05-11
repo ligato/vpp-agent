@@ -8,8 +8,8 @@ import (
 	localsync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
@@ -86,7 +86,7 @@ type VppOnlyTestingFlavor struct {
 	IfStatePub *MockIfStatePub
 
 	GoVPP govppmux.GOVPPPlugin
-	VPP   defaultplugins.Plugin
+	VPP   vppplugin.Plugin
 
 	injected bool
 }

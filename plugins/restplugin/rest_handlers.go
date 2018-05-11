@@ -29,12 +29,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
-	aclvpp "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
-	acldump "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
-	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
-	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
+	aclvpp "github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppcalls"
+	acldump "github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
+	ifplugin "github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppdump"
+	l2plugin "github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/vppdump"
+	l3plugin "github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/vppdump"
 )
 
 // interfacesGetHandler - used to get list of all interfaces

@@ -22,10 +22,10 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
+	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat"
 	"github.com/namsral/flag"
 )
 

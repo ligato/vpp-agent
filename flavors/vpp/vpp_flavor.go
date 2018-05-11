@@ -11,8 +11,8 @@ import (
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	rpcsvc "github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/vppplugin/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
@@ -53,7 +53,7 @@ type Flavor struct {
 
 	GoVPP govppmux.GOVPPPlugin
 	Linux linuxplugin.Plugin
-	VPP   defaultplugins.Plugin
+	VPP   vppplugin.Plugin
 
 	GRPCSvcPlugin   rpcsvc.GRPCSvcPlugin
 	RESTAPIPlugin   restplugin.Plugin
@@ -81,7 +81,7 @@ func (f *Flavor) Inject() bool {
 		&f.AllConnectorsFlavor.ConsulDataSync,
 	}}
 
-	/* note: now configurable with `status-publishers` in defaultplugins
+	/* note: now configurable with `status-publishers` in vppplugin
 		f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
 		&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
 	}*/

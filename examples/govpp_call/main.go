@@ -21,9 +21,9 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	bin_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	bin_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
 )
 
 // *************************************************************************
@@ -60,7 +60,7 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
-	VPP defaultplugins.API
+	VPP vppplugin.API
 
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP

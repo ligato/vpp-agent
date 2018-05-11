@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
 	"github.com/onsi/gomega"
 )
 

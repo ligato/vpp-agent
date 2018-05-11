@@ -23,7 +23,7 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/utils/safeclose"
-	vppIfIdx "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	vppIfIdx "github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"
 

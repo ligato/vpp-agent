@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 )
@@ -53,7 +53,7 @@ type FlavorVppLocal struct {
 	LinuxLocalClient localclient.Plugin
 	GoVPP            govppmux.GOVPPPlugin
 	Linux            linuxplugin.Plugin
-	VPP              defaultplugins.Plugin
+	VPP              vppplugin.Plugin
 
 	injected bool
 }

@@ -122,11 +122,11 @@ If you are interested in contributing, please see the [contribution guidelines](
 [2]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
 [3]: https://developers.google.com/protocol-buffers/
 [4]: https://wiki.fd.io/view/GoVPP
-[5]: plugins/defaultplugins
-[6]: plugins/defaultplugins/ifplugin
-[7]: plugins/defaultplugins/l2plugin
-[8]: plugins/defaultplugins/l3plugin
-[9]: plugins/defaultplugins/aclplugin
+[5]: plugins/vppplugin
+[6]: plugins/vppplugin/ifplugin
+[7]: plugins/vppplugin/l2plugin
+[8]: plugins/vppplugin/l3plugin
+[9]: plugins/vppplugin/aclplugin
 [10]: plugins/govppmux
 [11]: plugins/linuxplugin
 [12]: https://github.com/ligato/cn-infra/tree/master/datasync

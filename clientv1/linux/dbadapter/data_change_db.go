@@ -17,17 +17,17 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat"
 
-	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/defaultplugins/dbadapter"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
-	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
+	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
+	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
+	vpp_bfd "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/bfd"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l4"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/stn"
 
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
@@ -35,7 +35,7 @@ import (
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
 // the data change DSL for both Linux and VPP config (inherits dbadapter
-// from defaultplugins).
+// from vppplugin).
 // Transaction <txn> is used to propagate changes to plugins.
 func NewDataChangeDSL(txn keyval.ProtoTxn) *DataChangeDSL {
 	vppDbAdapter := vpp_dbadapter.NewDataChangeDSL(txn)
