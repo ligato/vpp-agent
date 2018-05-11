@@ -38,10 +38,7 @@ func TestNotificationCases(t *testing.T) {
 			RegisterTestingT(t)
 
 			mockSrv := &mockServer{}
-			svc := NotificationSvc{
-				log:  logrus.DefaultLogger(),
-				nIdx: 1,
-			}
+			svc := NotificationSvc{log: logrus.DefaultLogger()}
 
 			for i := 0; i < test.inputN; i++ {
 				svc.updateNotifications(context.Background(), &interfaces.InterfaceNotification{
@@ -53,9 +50,7 @@ func TestNotificationCases(t *testing.T) {
 				})
 			}
 
-			from := &rpc.NotificationRequest{
-				Idx: 0,
-			}
+			from := &rpc.NotificationRequest{Idx: 0}
 			Expect(svc.Get(from, mockSrv)).To(Succeed())
 			Expect(mockSrv.notifs).To(HaveLen(test.expectN))
 		})
@@ -65,9 +60,16 @@ func TestNotificationCases(t *testing.T) {
 func TestNotifications(t *testing.T) {
 	RegisterTestingT(t)
 
-	svc := NotificationSvc{
-		log:  logrus.DefaultLogger(),
-		nIdx: 1,
+	svc := NotificationSvc{log: logrus.DefaultLogger()}
+
+	from := &rpc.NotificationRequest{Idx: 0}
+	mockSrv := &mockServer{}
+	Expect(svc.Get(from, mockSrv)).To(Succeed())
+	Expect(mockSrv.notifs).To(HaveLen(0))
+
+	t.Logf("got %d notifs", len(mockSrv.notifs))
+	for i, notif := range mockSrv.notifs {
+		t.Logf(" #%d: %+v nextIndex: %v", i, notif.NIf, notif.NextIdx)
 	}
 
 	n := 1
@@ -81,15 +83,15 @@ func TestNotifications(t *testing.T) {
 		})
 	}
 
-	from := &rpc.NotificationRequest{Idx: 0}
-	mockSrv := &mockServer{}
+	from = &rpc.NotificationRequest{Idx: 0}
+	mockSrv = &mockServer{}
 	Expect(svc.Get(from, mockSrv)).To(Succeed())
 	Expect(mockSrv.notifs).To(HaveLen(bufferSize / 2))
 
-	/*t.Logf("got %d notifs", len(mockSrv.notifs))
+	t.Logf("got %d notifs", len(mockSrv.notifs))
 	for i, notif := range mockSrv.notifs {
 		t.Logf(" #%d: %+v nextIndex: %v", i, notif.NIf, notif.NextIdx)
-	}*/
+	}
 
 	for ; n <= bufferSize; n++ {
 		svc.updateNotifications(context.Background(), &interfaces.InterfaceNotification{
@@ -106,18 +108,38 @@ func TestNotifications(t *testing.T) {
 	Expect(svc.Get(from, mockSrv)).To(Succeed())
 	Expect(mockSrv.notifs).To(HaveLen(bufferSize / 2))
 
-	/*t.Logf("got %d notifs", len(mockSrv.notifs))
+	t.Logf("got %d notifs", len(mockSrv.notifs))
 	for i, notif := range mockSrv.notifs {
 		t.Logf(" #%d: %+v nextIndex: %v", i, notif.NIf, notif.NextIdx)
-	}*/
+	}
 
 	from = &rpc.NotificationRequest{Idx: 0}
 	mockSrv = &mockServer{}
 	Expect(svc.Get(from, mockSrv)).To(Succeed())
 	Expect(mockSrv.notifs).To(HaveLen(bufferSize))
 
-	/*t.Logf("got %d notifs", len(mockSrv.notifs))
+	t.Logf("got %d notifs", len(mockSrv.notifs))
 	for i, notif := range mockSrv.notifs {
 		t.Logf(" #%d: %+v nextIndex: %v", i, notif.NIf, notif.NextIdx)
-	}*/
+	}
+
+	for ; n <= bufferSize+bufferSize/2; n++ {
+		svc.updateNotifications(context.Background(), &interfaces.InterfaceNotification{
+			Type: interfaces.InterfaceNotification_UPDOWN,
+			State: &interfaces.InterfacesState_Interface{
+				Name:    fmt.Sprintf("if%d", n),
+				IfIndex: uint32(n),
+			},
+		})
+	}
+
+	from = &rpc.NotificationRequest{Idx: 0}
+	mockSrv = &mockServer{}
+	Expect(svc.Get(from, mockSrv)).To(Succeed())
+	Expect(mockSrv.notifs).To(HaveLen(bufferSize))
+
+	t.Logf("got %d notifs", len(mockSrv.notifs))
+	for i, notif := range mockSrv.notifs {
+		t.Logf(" #%d: %+v nextIndex: %v", i, notif.NIf, notif.NextIdx)
+	}
 }
