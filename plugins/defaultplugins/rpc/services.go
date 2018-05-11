@@ -91,6 +91,9 @@ func (plugin *GRPCSvcPlugin) Close() error {
 
 // UpdateNotifications stores new notification data
 func (plugin *GRPCSvcPlugin) UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
+	if notification == nil {
+		return
+	}
 	plugin.notifSvc.updateNotifications(ctx, notification)
 }
 

@@ -15,7 +15,6 @@
 package main
 
 import (
-	"flag"
 	"io"
 	"os"
 	"time"
@@ -25,6 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
+	"github.com/namsral/flag"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -36,7 +36,7 @@ const (
 
 var (
 	address = defaultAddress
-	reqPer = requestPeriod
+	reqPer  = requestPeriod
 )
 
 // init sets the default logging level
@@ -51,7 +51,7 @@ func main() {
 	closeChannel := make(chan struct{}, 1)
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	flag.IntVar(&reqPer, "request period", requestPeriod, "notification request period in seconds")
+	flag.IntVar(&reqPer, "request-period", requestPeriod, "notification request period in seconds")
 
 	// Example plugin
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
@@ -90,7 +90,7 @@ func (plugin *ExamplePlugin) Close() error {
 
 // Get is an implementation of client-side statistics streaming.
 func (plugin *ExamplePlugin) watchNotifications() {
-	var nextIdx uint32 = 60
+	var nextIdx uint32 = 1
 
 	for {
 		// Get client for notification service
@@ -123,13 +123,13 @@ func (plugin *ExamplePlugin) watchNotifications() {
 				return
 			}
 
-			log.DefaultLogger().Infof("Received notif: %v (index: %d) msg: '%s'",
-				notif.NIf, notif.NextIdx-1, notif.Message)
+			log.DefaultLogger().Infof("(IDX: %d) Received notif: %v",
+				notif.NextIdx-1, notif.NIf)
 			nextIdx = notif.NextIdx
 			recvNotifs++
 		}
 
 		// Wait till next request
-		time.Sleep(requestPeriod * time.Second)
+		time.Sleep(time.Duration(reqPer) * time.Second)
 	}
 }

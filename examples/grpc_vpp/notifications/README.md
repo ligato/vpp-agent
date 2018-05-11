@@ -15,4 +15,8 @@ vpp-agent --grpc-config=/opt/vpp-agent/dev/grpc.conf
 go run main.go
 ```
 
+Two flags can be set:
+* `-address=<address>` - for grpc server address (otherwise localhost will be used)
+* `request-period=<time_in_sec>` - time between grpc requests
+
 The example prints all received VPP notifications.

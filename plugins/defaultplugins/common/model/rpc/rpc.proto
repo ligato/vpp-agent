@@ -62,8 +62,8 @@ message DataRequest {
     repeated l3.LinuxStaticRoutes.Route LinuxRoutes = 91;
 }
 
-// NotificationRequest represent a notification request which contains index of the last
-// received message.
+// NotificationRequest represent a notification request which contains index of next required
+// message
 message NotificationRequest {
     uint32 idx = 1;
 }
@@ -86,6 +86,4 @@ message NotificationsResponse {
     uint32 nextIdx = 1;
     // Notification data
     interfaces.InterfaceNotification nIf = 2;
-    // Optional message from the server
-    string message = 3;
 }

@@ -22,50 +22,63 @@ import (
 	"sync"
 )
 
-//
+// Maximum number of messages stored in the buffer. Buffer is always filled from left
+// to right (it means that if the buffer is full, a new entry is written to the index 0)
 const bufferSize = 100
 
 // NotificationSvc forwards GRPC messages to external servers.
 type NotificationSvc struct {
 	mx sync.RWMutex
 
+	log logging.Logger
+
 	// VPP notifications available for clients
 	nBuffer [bufferSize]*rpc.NotificationsResponse
 	nIdx    uint32
-
-	log logging.Logger
 }
 
-// Get returns available VPP notifications in the same order as they were received
+// Get returns all required VPP notifications (or those available in the buffer) in the same order as they were received
 func (svc *NotificationSvc) Get(from *rpc.NotificationRequest, server rpc.NotificationService_GetServer) error {
 	svc.mx.RLock()
 	defer svc.mx.RUnlock()
 
-	var msg string
-	// If index was not provided, return all notifications in the buffer
+	// If required index was not provided, return all notifications in the buffer
 	if from.Idx == 0 {
-		from.Idx = 1 // reset index
+		from.Idx = 1
 	}
 
-	// If desired index is older than buffer capacity, return all
-	// available notifications and inform client about it
-	if from.Idx > svc.nIdx%bufferSize {
-		from.Idx = 1 // reset index
-		msg = "Requested message exceeds notification buffer capacity"
-	}
-
+	// Send messages on the 'right' side of the buffer if needed. If required notification is stored on higher index
+	// than the latest (or the gap between required and latest is bigger that buffer size), send all notifications
+	// from desired index to the end of the buffer first
 	var wasErr error
+	if svc.nIdx-from.Idx > bufferSize || from.Idx%bufferSize > svc.nIdx%bufferSize {
+		for bufferIdx, entry := range svc.nBuffer {
+			// Skip empty entries (should happen only in the beginning while the buffer is empty)
+			if entry == nil {
+				continue
+			}
+			if uint32(bufferIdx) >= svc.nIdx%bufferSize && uint32(bufferIdx) >= from.Idx%bufferSize {
+				if err := server.Send(entry); err != nil {
+					svc.log.Error("Send notification error: %v", err)
+					wasErr = err
+				}
+			}
+		}
+	}
+	// Send all new notifications, looping from the beginning of the buffer.
 	for bufferIdx, entry := range svc.nBuffer {
+		// Skip empty entries (should happen only in the beginning while the buffer is empty)
 		if entry == nil {
 			continue
 		}
-		// Skip notifications which are older than desired
-		if from.Idx >= entry.NextIdx {
-			continue
-		} else if  uint32(bufferIdx) <= svc.nIdx%bufferSize {
-			entry.Message = msg
+		// Most recent notification reached
+		if uint32(bufferIdx) >= svc.nIdx%bufferSize {
+			break
+		}
+		// Send only new entries
+		if from.Idx < entry.NextIdx {
 			if err := server.Send(entry); err != nil {
-				svc.log.Error("Notification send error: %v", err)
+				svc.log.Error("Send notification error: %v", err)
 				wasErr = err
 			}
 		}
@@ -78,6 +91,7 @@ func (svc *NotificationSvc) updateNotifications(ctx context.Context, notificatio
 	svc.mx.Lock()
 	defer svc.mx.Unlock()
 
+	// Notification index starts with 1
 	svc.nBuffer[svc.nIdx%bufferSize] = &rpc.NotificationsResponse{
 		NextIdx: svc.nIdx + 1,
 		NIf:     notification,
