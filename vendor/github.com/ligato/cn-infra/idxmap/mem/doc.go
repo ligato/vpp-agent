@@ -18,9 +18,9 @@
 // To create new mapping run:
 //	   import "github.com/ligato/cn-infra/idxmap/mem"
 //
-//     mapping := mem.NewNamedMapping(logger, "owner", "title", indexFunc)
+//     mapping := mem.NewNamedMapping(logger, "title", indexFunc)
 //
-// Owner and title are used for identification of the mapping.
+// Title is used for identification of the mapping.
 // IndexFunc extracts secondary indexes from the stored item.
 //
 // To insert a new item into the mapping, execute:

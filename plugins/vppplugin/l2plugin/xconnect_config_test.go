@@ -44,7 +44,7 @@ func TestXConnectConfiguratorInit(t *testing.T) {
 	defer connection.Disconnect()
 	plugin := &l2plugin.XConnectConfigurator{}
 	// Test init
-	err = plugin.Init("test-plugin", logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
+	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
 		nil, false)
 	Expect(err).To(BeNil())
 	// Test close
@@ -621,10 +621,10 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugi
 	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-configurator-test", "nat", nil))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat", nil))
 	// Configurator
 	plugin := &l2plugin.XConnectConfigurator{}
-	err = plugin.Init("test-xc", log, connection, swIfIndexes, false)
+	err = plugin.Init(log, connection, swIfIndexes, false)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndexes

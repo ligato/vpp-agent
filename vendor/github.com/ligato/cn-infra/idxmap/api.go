@@ -71,8 +71,6 @@ type NamedMappingRW interface {
 // part that does not contain metadata of type interface{} thus it can be reused
 // in mapping with typed metadata.
 type NamedMappingEvent struct {
-	// The owner plugin of the registry (use also as namespace)
-	Owner core.PluginName
 	// Logical name of the object
 	Name string
 	// Del denotes a type of change

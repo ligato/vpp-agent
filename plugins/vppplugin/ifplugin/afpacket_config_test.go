@@ -404,7 +404,7 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
-	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
@@ -459,7 +459,7 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
-	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
@@ -510,7 +510,7 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketCo
 	log.SetLevel(logging.DebugLevel)
 
 	// Interface indices
-	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket-configurator-test", "afpacket", nil))
+	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	err := plugin.Init(log, ctx.MockChannel, struct{}{}, swIfIndices, nil)

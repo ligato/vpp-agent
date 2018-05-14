@@ -39,7 +39,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -85,15 +84,15 @@ type InterfaceConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *InterfaceConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
+func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
 	notifChan chan govppapi.Message, defaultMtu uint32, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
 
 	// Mappings
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, pluginName, "sw_if_indexes", ifaceidx.IndexMetadata))
-	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, pluginName, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
+	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
 
 	// State notification channel
 	plugin.NotifChan = notifChan

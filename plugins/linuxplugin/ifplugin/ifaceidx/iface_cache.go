@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
@@ -28,9 +27,9 @@ import (
 
 // Cache the VETH interfaces of a particular agent by watching transport.
 // If change appears, it is registered in idx map.
-func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) LinuxIfIndex {
-	resyncName := fmt.Sprintf("linux-iface-cache-%s-%s", caller, watcher)
-	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
+func Cache(watcher datasync.KeyValProtoWatcher) LinuxIfIndex {
+	resyncName := fmt.Sprintf("linux-iface-cache-%s", watcher)
+	linuxIfIdx := NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        linux_ifaces.InterfaceKeyPrefix(),

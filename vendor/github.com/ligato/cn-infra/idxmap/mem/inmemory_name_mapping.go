@@ -45,7 +45,6 @@ type memNamedMapping struct {
 	indexes map[string] /* index name */ map[string] /* index value */ *nameSet
 	// subscribers to whom notifications are delivered
 	subscribers sync.Map //map[core.PluginName]func(idxmap.NamedMappingGenericEvent)
-	owner       core.PluginName
 	title       string
 }
 
@@ -53,14 +52,13 @@ type memNamedMapping struct {
 // of idxmap.NamedMappingRW
 // An index function that builds secondary indexes for an item can be defined
 // and passed as <indexFunction>.
-func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
+func NewNamedMapping(logger logging.Logger, title string,
 	indexFunction func(interface{}) map[string][]string) idxmap.NamedMappingRW {
 	mem := memNamedMapping{}
 	mem.Logger = logger
 	mem.nameToIdx = map[string]*mappingItem{}
 	mem.indexes = map[string]map[string]*nameSet{}
 	mem.createIndexes = indexFunction
-	mem.owner = owner
 	mem.title = title
 	return &mem
 }
@@ -236,7 +234,6 @@ func (mem *memNamedMapping) publishToChannel(name string, value interface{}) {
 
 		if clb != nil {
 			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
-				Owner:         mem.owner,
 				RegistryTitle: mem.title,
 				Name:          name,
 				Del:           false},
@@ -257,7 +254,6 @@ func (mem *memNamedMapping) publishDelToChannel(name string, value interface{}) 
 
 		if clb != nil {
 			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
-				Owner:         mem.owner,
 				RegistryTitle: mem.title,
 				Name:          name,
 				Del:           true},

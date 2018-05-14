@@ -17,7 +17,6 @@ package ifaceidx
 import (
 	"fmt"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
@@ -27,9 +26,9 @@ import (
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport).
 // Beware: the indices in cache do not correspond with the real indices.
-func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) SwIfIndex {
-	resyncName := fmt.Sprintf("iface-cache-%s-%s", caller, watcher)
-	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
+func Cache(watcher datasync.KeyValProtoWatcher) SwIfIndex {
+	resyncName := fmt.Sprintf("iface-cache-%s", watcher)
+	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        interfaces.InterfaceKeyPrefix(),

@@ -105,8 +105,8 @@ func (plugin *ExamplePlugin) Init() error {
 	go plugin.consume()
 
 	// Cache the agent1/agent2 name-to-idx mapping to separate mapping within plugin example.
-	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1, plugin.PluginName)
-	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1)
+	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2)
 
 	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 

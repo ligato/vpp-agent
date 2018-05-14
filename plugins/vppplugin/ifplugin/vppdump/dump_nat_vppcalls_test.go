@@ -23,7 +23,7 @@ func TestNat44InterfaceDump(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", "test-sw_if_indexes", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
@@ -42,7 +42,7 @@ func TestNat44InterfaceDump2(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", "test-sw_if_indexes", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
@@ -61,7 +61,7 @@ func TestNat44InterfaceDump3(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", "test-sw_if_indexes", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)

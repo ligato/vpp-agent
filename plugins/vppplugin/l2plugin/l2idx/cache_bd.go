@@ -17,7 +17,6 @@ package l2idx
 import (
 	"fmt"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/cacheutil"
@@ -26,9 +25,9 @@ import (
 )
 
 // Cache the network interfaces of a particular agent by watching (ETCD or different transport).
-func Cache(watcher datasync.KeyValProtoWatcher, caller core.PluginName) BDIndex {
+func Cache(watcher datasync.KeyValProtoWatcher) BDIndex {
 	resyncName := fmt.Sprintf("bd-cache-%s", watcher)
-	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), caller, resyncName, IndexMetadata))
+	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
 		Prefix:        l2.BridgeDomainKeyPrefix(),

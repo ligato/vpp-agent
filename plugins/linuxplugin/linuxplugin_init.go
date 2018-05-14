@@ -20,7 +20,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -35,9 +34,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 )
-
-// PluginID used in the Agent Core flavors
-const PluginID core.PluginName = "linuxplugin"
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins.
 type Plugin struct {
@@ -175,7 +171,7 @@ func (plugin *Plugin) initNs() error {
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init Linux interface plugin")
 	// Interface indexes
-	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 		"linux_if_indexes", nil))
 
 	// Linux interface configurator
@@ -208,7 +204,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 func (plugin *Plugin) initL3() error {
 	plugin.Log.Infof("Init Linux L3 plugin")
 	// ARP indexes
-	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 		"linux_arp_indexes", nil))
 
 	// Linux ARP configurator
@@ -228,11 +224,11 @@ func (plugin *Plugin) initL3() error {
 	}
 
 	// Route indexes
-	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+	plugin.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 		"linux_route_indexes", nil))
-	plugin.rtAutoIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+	plugin.rtAutoIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 		"linux_auto_route_indexes", nil))
-	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), PluginID,
+	plugin.rtCachedIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 		"linux_cached_route_indexes", nil))
 
 	// Linux Route configurator
