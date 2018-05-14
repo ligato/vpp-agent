@@ -50,8 +50,8 @@ func (plugin *RESTAPIPlugin) Init() (err error) {
 	plugin.indexItems = []indexItem{
 		{Name: "Interfaces", Path: "/interfaces"},
 		{Name: "Bridge domains", Path: "/bridgedomains"},
-		{Name: "Fibs", Path: "/fibs"},
-		{Name: "XConnector", Path: "/xconnectorpairs"},
+		{Name: "L2Fibs", Path: "/l2fibs"},
+		{Name: "XConnectorPairs", Path: "/xconnectpairs"},
 		{Name: "Static routes", Path: "/staticroutes"},
 		{Name: "ACL IP", Path: "/acl/ip"},
 		{Name: "Telemetry", Path: "/telemetry"},
@@ -66,7 +66,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/fibs", plugin.fibTableEntriesGetHandler, "GET")
+	plugin.HTTPHandlers.RegisterHTTPHandler("/l2fibs", plugin.fibTableEntriesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/xconnectpairs", plugin.xconnectPairsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),

@@ -23,8 +23,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
 	aclvpp "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
@@ -410,6 +412,22 @@ func (plugin *RESTAPIPlugin) commandHandler(formatter *render.Render) http.Handl
 	}
 }
 
+func (plugin *RESTAPIPlugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+	r := &vpe.CliInband{
+		Length: uint32(len(command)),
+		Cmd:    []byte(command),
+	}
+
+	reply := &vpe.CliInbandReply{}
+	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
+		return nil, fmt.Errorf("Sending request failed: %v", err)
+	} else if reply.Retval > 0 {
+		return nil, fmt.Errorf("Request returned error code: %v", reply.Retval)
+	}
+
+	return reply.Reply[:reply.Length], nil
+}
+
 // telemetryHandler - returns various telemetry data
 func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -422,29 +440,14 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 		}
 		defer ch.Close()
 
-		var sendCommand = func(command string) ([]byte, error) {
-			r := &vpe.CliInband{
-				Length: uint32(len(command)),
-				Cmd:    []byte(command),
-			}
-			reply := &vpe.CliInbandReply{}
-			err = ch.SendRequest(r).ReceiveReply(reply)
-			if err != nil {
-				return nil, fmt.Errorf("Sending request failed: %v", err)
-			} else if reply.Retval > 0 {
-				return nil, fmt.Errorf("Request returned error code: %v", reply.Retval)
-			}
-			return reply.Reply[:reply.Length], nil
-		}
-
 		type cmdOut struct {
 			Command string
-			Output  string
+			Output  interface{}
 		}
 		var cmdOuts []cmdOut
 
 		var runCmd = func(command string) {
-			out, err := sendCommand(command)
+			out, err := plugin.sendCommand(ch, command)
 			if err != nil {
 				plugin.Log.Errorf("Sending command failed: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, err)
@@ -456,13 +459,34 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 			})
 		}
 
-		runCmd("show interface")
 		runCmd("show node counters")
 		runCmd("show runtime")
 		runCmd("show buffers")
 		runCmd("show memory")
 		runCmd("show ip fib")
 		runCmd("show ip6 fib")
+
+		nodeCounters, err := vppcalls.GetNodeCounters(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		cmdOuts = append(cmdOuts, cmdOut{
+			Command: "NODE COUNTERS",
+			Output:  nodeCounters,
+		})
+
+		runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		cmdOuts = append(cmdOuts, cmdOut{
+			Command: "RUNTIME INFO",
+			Output:  runtimeInfo,
+		})
 
 		formatter.JSON(w, http.StatusOK, cmdOuts)
 	}
