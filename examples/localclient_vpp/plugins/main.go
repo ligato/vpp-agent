@@ -25,10 +25,10 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 )
 
 // init sets the default logging level.

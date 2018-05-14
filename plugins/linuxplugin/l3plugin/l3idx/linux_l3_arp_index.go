@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 )
 
 const hostARPNameKey = "hostARPName"

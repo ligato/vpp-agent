@@ -19,8 +19,8 @@ import (
 
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
+	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 )
 
 // Resync deletes obsolete operation status of network interfaces in DB.

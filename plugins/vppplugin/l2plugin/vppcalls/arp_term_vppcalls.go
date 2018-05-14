@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	l2ba "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/l2"
 )
 
 func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {

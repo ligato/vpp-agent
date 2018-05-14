@@ -16,7 +16,7 @@ package l3idx
 
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 )
 
 // RouteIndex provides read-only access to mapping between routes data and route names

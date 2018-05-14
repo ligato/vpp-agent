@@ -20,9 +20,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	bfd_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/vpe"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/bfd"
+	bfd_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/bfd"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"

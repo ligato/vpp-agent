@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 )
 
 // ErrCtx is an error context struct which stores an event change with object identifier (name, etc.) and returns an error (can be nil).

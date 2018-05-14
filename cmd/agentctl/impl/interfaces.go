@@ -22,7 +22,7 @@ import (
 	"os"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/spf13/cobra"
 )
 

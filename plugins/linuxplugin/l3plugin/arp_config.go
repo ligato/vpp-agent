@@ -22,7 +22,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/l3plugin/linuxcalls"

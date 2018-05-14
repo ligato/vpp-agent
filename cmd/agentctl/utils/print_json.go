@@ -21,9 +21,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 	"github.com/logrusorgru/aurora.git"
 )
 

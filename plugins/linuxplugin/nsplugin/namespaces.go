@@ -24,8 +24,8 @@ import (
 	"syscall"
 
 	"github.com/ligato/cn-infra/logging"
-	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	intf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/vishvananda/netns"
 )
 

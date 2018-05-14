@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/dhcp"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/dhcp"
 )
 
 func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {

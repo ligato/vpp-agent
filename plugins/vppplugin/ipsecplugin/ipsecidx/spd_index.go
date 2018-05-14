@@ -16,7 +16,7 @@ package ipsecidx
 
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
 )
 
 // SPDIndex provides read-only access to mapping between SPD data and SPD names

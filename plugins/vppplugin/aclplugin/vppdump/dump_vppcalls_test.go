@@ -6,8 +6,8 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppcalls"
-	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/vpe"
+	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 

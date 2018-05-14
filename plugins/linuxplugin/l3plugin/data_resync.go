@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/nsplugin"
 	"github.com/vishvananda/netlink"

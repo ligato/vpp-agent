@@ -22,7 +22,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 )
 

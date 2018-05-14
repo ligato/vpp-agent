@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 )
 
 // FIBIndex provides read-only access to mapping between indexes (used internally in VPP) and FIB entries.

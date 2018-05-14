@@ -24,8 +24,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
-	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
+	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 )
 
 // Protocol types that can occur in ACLs

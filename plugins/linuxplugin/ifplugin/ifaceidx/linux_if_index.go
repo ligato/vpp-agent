@@ -19,7 +19,7 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
 )
 
 // DefNs is name for default namespace

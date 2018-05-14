@@ -23,8 +23,8 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
-	bfd_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/bfd"
+	bfd_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/bfd"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 )
 

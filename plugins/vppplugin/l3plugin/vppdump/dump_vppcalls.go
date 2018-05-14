@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	l3ba "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/ip"
+	l3ba "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/vppcalls"
 )
 

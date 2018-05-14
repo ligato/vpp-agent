@@ -16,8 +16,8 @@ package l3plugin
 
 import (
 	"github.com/ligato/cn-infra/logging/measure"
-	l3ba "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/ip"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	l3ba "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/vppdump"
 )
 

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/session"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/session"
 )
 
 // EnableL4Features sets L4 feature flag on VPP to true

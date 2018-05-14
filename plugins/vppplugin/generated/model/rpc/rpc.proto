@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package rpc;
 
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl/acl.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/bfd/bfd.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces/interfaces.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2/l2.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3/l3.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l4/l4.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat/nat.proto";
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/stn/stn.proto";
-import "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces/interfaces.proto";
-import "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3/l3.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl/acl.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd/bfd.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2/l2.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3/l3.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4/l4.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat/nat.proto";
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn/stn.proto";
+import "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3/l3.proto";
 
 
 // Data change service is a service which submits cumulative request consisting of all

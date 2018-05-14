@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/interfaces"
 )
 
 // SetInterfaceMac calls SwInterfaceSetMacAddress bin API.

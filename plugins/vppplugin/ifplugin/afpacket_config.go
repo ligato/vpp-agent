@@ -19,7 +19,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 )

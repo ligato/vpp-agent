@@ -1,6 +1,6 @@
 package ipsecplugin
 
-import "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/ipsec"
+import "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
 
 // Resync writes missing IPSec configs to the VPP and removes obsolete ones.
 func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA, tunnels []*ipsec.TunnelInterfaces_Tunnel) error {

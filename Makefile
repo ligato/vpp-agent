@@ -152,23 +152,23 @@ generate: get-generators
 	cd plugins/vppplugin/rpc && go generate
 	cd plugins/linuxplugin/ifplugin && go generate
 	cd plugins/linuxplugin/l3plugin && go generate
-	cd plugins/vppplugin/common/bin_api/acl && pkgreflect
-	cd plugins/vppplugin/common/bin_api/af_packet && pkgreflect
-	cd plugins/vppplugin/common/bin_api/bfd && pkgreflect
-	cd plugins/vppplugin/common/bin_api/dhcp && pkgreflect
-	cd plugins/vppplugin/common/bin_api/interfaces && pkgreflect
-	cd plugins/vppplugin/common/bin_api/ip && pkgreflect
-	cd plugins/vppplugin/common/bin_api/ipsec && pkgreflect
-	cd plugins/vppplugin/common/bin_api/l2 && pkgreflect
-	cd plugins/vppplugin/common/bin_api/memif && pkgreflect
-	cd plugins/vppplugin/common/bin_api/nat && pkgreflect
-	cd plugins/vppplugin/common/bin_api/session && pkgreflect
-	cd plugins/vppplugin/common/bin_api/stats && pkgreflect
-	cd plugins/vppplugin/common/bin_api/stn && pkgreflect
-	cd plugins/vppplugin/common/bin_api/tap && pkgreflect
-	cd plugins/vppplugin/common/bin_api/tapv2 && pkgreflect
-	cd plugins/vppplugin/common/bin_api/vpe && pkgreflect
-	cd plugins/vppplugin/common/bin_api/vxlan && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/acl && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/af_packet && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/bfd && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/dhcp && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/interfaces && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/ip && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/ipsec && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/l2 && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/memif && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/nat && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/session && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/stats && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/stn && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/tap && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/tapv2 && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/vpe && pkgreflect
+	cd plugins/vppplugin/generated/bin_api/vxlan && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
 
 get-bindata:

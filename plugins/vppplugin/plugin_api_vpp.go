@@ -18,8 +18,8 @@ package vppplugin
 
 import (
 	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l4plugin/nsidx"

@@ -22,7 +22,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/vppcalls"
 )

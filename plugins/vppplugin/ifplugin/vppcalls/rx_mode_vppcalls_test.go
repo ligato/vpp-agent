@@ -17,8 +17,8 @@ package vppcalls_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/interfaces"
-	ifModel "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/interfaces"
+	ifModel "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"

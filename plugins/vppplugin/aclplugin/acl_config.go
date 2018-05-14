@@ -30,7 +30,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppdump"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )

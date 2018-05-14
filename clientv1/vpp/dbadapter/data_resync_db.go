@@ -17,16 +17,16 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements

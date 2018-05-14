@@ -23,8 +23,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	bin_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/nat"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/nat"
+	bin_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/nat"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 )

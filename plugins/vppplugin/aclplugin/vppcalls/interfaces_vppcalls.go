@@ -21,7 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/acl"
+	acl_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 )
 

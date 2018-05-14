@@ -23,7 +23,7 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/vpe"
 
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"

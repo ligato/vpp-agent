@@ -17,8 +17,8 @@ package vppcalls_test
 import (
 	"testing"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vppplugin/common/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/common/model/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
