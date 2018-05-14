@@ -39,11 +39,18 @@ func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
 	return info, nil
 }
 
+type NodeCounterInfo struct {
+	Counters []NodeCounter
+}
+
 type NodeCounter struct {
+	Count  uint
+	Node   string
+	Reason string
 }
 
 // GetNodeCounters retrieves node counters info
-func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounter, error) {
+func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 	const cmd = "show node counters"
 	req := &vpe.CliInband{
 		Cmd:    []byte(cmd),
@@ -61,7 +68,32 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounter, error) {
 	fmt.Printf("%q\n", string(data))
 	fmt.Printf("%v\n", strings.Fields(string(data)))
 
-	info := &NodeCounter{}
+	var counters []NodeCounter
+
+	for _, line := range strings.Split(string(data), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 3 {
+			if fields[0] == "Count" {
+				counters = []NodeCounter{}
+				continue
+			}
+			if counters != nil {
+				count, err := strconv.ParseUint(fields[0], 10, 32)
+				if err != nil {
+					return nil, err
+				}
+				counters = append(counters, NodeCounter{
+					Count:  uint(count),
+					Node:   fields[1],
+					Reason: fields[2],
+				})
+			}
+		}
+	}
+
+	info := &NodeCounterInfo{
+		Counters: counters,
+	}
 
 	return info, nil
 }
@@ -73,9 +105,9 @@ type RuntimeInfo struct {
 type RuntimeItem struct {
 	Name        string
 	State       string
-	Calls       uint
-	Vendors     uint
-	Suspends    uint
+	Calls       uint64
+	Vendors     uint64
+	Suspends    uint64
 	Clocks      float64
 	VectorsCall float64
 }
@@ -111,15 +143,15 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 				continue
 			}
 			if items != nil {
-				calls, err := strconv.ParseUint(fields[2], 10, 32)
+				calls, err := strconv.ParseUint(fields[2], 10, 64)
 				if err != nil {
 					return nil, err
 				}
-				vendors, err := strconv.ParseUint(fields[3], 10, 32)
+				vendors, err := strconv.ParseUint(fields[3], 10, 64)
 				if err != nil {
 					return nil, err
 				}
-				suspends, err := strconv.ParseUint(fields[4], 10, 32)
+				suspends, err := strconv.ParseUint(fields[4], 10, 64)
 				if err != nil {
 					return nil, err
 				}
@@ -134,15 +166,13 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 				items = append(items, RuntimeItem{
 					Name:        fields[0],
 					State:       fields[1],
-					Calls:       uint(calls),
-					Vendors:     uint(vendors),
-					Suspends:    uint(suspends),
+					Calls:       calls,
+					Vendors:     vendors,
+					Suspends:    suspends,
 					Clocks:      clocks,
 					VectorsCall: vectorsCall,
 				})
 			}
-		} else {
-			fmt.Printf("fields: %+v\n", fields)
 		}
 	}
 

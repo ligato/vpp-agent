@@ -466,16 +466,21 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 		runCmd("show ip fib")
 		runCmd("show ip6 fib")
 
-		nodeCounters, err := vppcalls.GetNodeCounters(ch)
+		formatter.JSON(w, http.StatusOK, cmdOuts)
+	}
+}
+
+// telemetryHandler - returns various telemetry data
+func (plugin *RESTAPIPlugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Sending command failed: %v", err)
+			plugin.Log.Errorf("Error creating channel: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
-		cmdOuts = append(cmdOuts, cmdOut{
-			Command: "NODE COUNTERS",
-			Output:  nodeCounters,
-		})
+		defer ch.Close()
 
 		runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
 		if err != nil {
@@ -483,12 +488,31 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
-		cmdOuts = append(cmdOuts, cmdOut{
-			Command: "RUNTIME INFO",
-			Output:  runtimeInfo,
-		})
 
-		formatter.JSON(w, http.StatusOK, cmdOuts)
+		formatter.JSON(w, http.StatusOK, runtimeInfo)
+	}
+}
+
+// telemetryHandler - returns various telemetry data
+func (plugin *RESTAPIPlugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		nodeCounters, err := vppcalls.GetNodeCounters(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, nodeCounters)
 	}
 }
 
