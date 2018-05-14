@@ -72,7 +72,7 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			}
 
 			// Marshall data into JSON & send kafka message.
-			if plugin.ifStateNotifications != nil && ifState.Type == intf.UPDOWN {
+			if plugin.ifStateNotifications != nil && ifState.Type == intf.InterfaceNotification_UPDOWN {
 				err := plugin.ifStateNotifications.Put(key, ifState.State)
 				if err != nil {
 					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {
@@ -90,6 +90,11 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 					Status:       ifState.State.AdminStatus.String(),
 					MacAddress:   ifState.State.PhysAddress,
 				})
+			}
+
+			// Update interface notification data enabled for external GRPC endpoints
+			if plugin.GRPCSvc != nil {
+				plugin.GRPCSvc.UpdateNotifications(context.Background(), ifState)
 			}
 
 		case <-ctx.Done():

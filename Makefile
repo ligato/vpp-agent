@@ -50,7 +50,8 @@ examples:
 	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
 	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/remoteclient_grpc_vpp   && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/grpc_vpp/remote_client  && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/grpc_vpp/notifications  && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:
@@ -79,6 +80,7 @@ test:
 	go test ./plugins/defaultplugins/l2plugin/l2idx
 	go test ./plugins/defaultplugins/l2plugin/vppcalls
 	go test ./plugins/defaultplugins/l2plugin/vppdump
+	go test ./plugins/defaultplugins/rpc
 
 # Get coverage report tools
 get-covtools:
@@ -98,6 +100,7 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
 	@echo " => merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
@@ -111,6 +114,7 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_l2plugin_l2idx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \
+			${COVER_DIR}coverage_rpc.out  \
 		> ${COVER_DIR}coverage.out
 	@echo " => coverage data generated into ${COVER_DIR}coverage.out"
 
