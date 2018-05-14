@@ -17,7 +17,7 @@ package rpc
 import (
 	"context"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 )
 
 // GRPCService allows to send VPP notifications to external GRPC endpoints

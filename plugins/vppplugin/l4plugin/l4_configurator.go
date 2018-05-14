@@ -25,11 +25,11 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l4plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // L4Configurator runs in the background in its own goroutine where it watches for any changes

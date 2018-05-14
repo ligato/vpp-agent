@@ -16,8 +16,8 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
 	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"

@@ -22,11 +22,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/l2idx"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state.

@@ -26,12 +26,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/ip"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 var msgCompatibilityRoute = []govppapi.Message{

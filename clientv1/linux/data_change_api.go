@@ -16,6 +16,8 @@ package linux
 
 import (
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
@@ -24,8 +26,6 @@ import (
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change

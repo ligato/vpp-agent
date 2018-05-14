@@ -27,6 +27,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
@@ -35,8 +37,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/namsral/flag"
 )
 

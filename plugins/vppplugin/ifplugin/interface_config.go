@@ -45,6 +45,7 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/memif"
@@ -52,7 +53,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppdump"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes

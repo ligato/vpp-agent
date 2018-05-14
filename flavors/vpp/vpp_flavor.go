@@ -16,8 +16,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/vppplugin/rpc"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
-)
+	)
 
 // kafkaIfStateTopic is the topic where interface state changes are published.
 const kafkaIfStateTopic = "if_state"

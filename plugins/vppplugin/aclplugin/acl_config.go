@@ -27,12 +27,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // Interface attribute according to the configuration

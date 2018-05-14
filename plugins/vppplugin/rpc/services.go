@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/rpc"
 	"golang.org/x/net/context"
 )

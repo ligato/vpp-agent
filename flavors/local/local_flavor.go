@@ -22,9 +22,9 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
+	"github.com/ligato/vpp-agent/plugins/vppplugin"
 )
 
 // NewAgent returns a new instance of the Agent with plugins.

@@ -18,11 +18,11 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
+	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/l2idx"
-	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"golang.org/x/net/context"
 )
 

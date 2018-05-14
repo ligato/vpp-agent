@@ -19,8 +19,8 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/rpc"
 )
 
 // Maximum number of messages stored in the buffer. Buffer is always filled from left

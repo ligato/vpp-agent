@@ -18,6 +18,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
@@ -28,8 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/l3"
 	"golang.org/x/net/context"
 )
 

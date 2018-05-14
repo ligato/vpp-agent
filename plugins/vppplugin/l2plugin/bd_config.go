@@ -25,12 +25,12 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2ba "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes

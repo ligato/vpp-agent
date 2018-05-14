@@ -26,12 +26,12 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/ifaceidx"
 	iface_vppcalls "github.com/ligato/vpp-agent/plugins/vppplugin/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/ipsecplugin/ipsecidx"
 	vppcalls "github.com/ligato/vpp-agent/plugins/vppplugin/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // SPDIfCacheEntry contains info about cached assignment of interface to SPD
