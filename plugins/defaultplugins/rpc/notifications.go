@@ -43,15 +43,15 @@ func (svc *NotificationSvc) Get(from *rpc.NotificationRequest, server rpc.Notifi
 	svc.mx.RLock()
 	defer svc.mx.RUnlock()
 
-	// copy requested index locally
+	// Copy requested index locally
 	fromIdx := from.Idx
 
-	// check if requested index overflows buffer length
+	// Check if requested index overflows buffer length
 	if svc.nIdx-from.Idx > bufferSize {
 		fromIdx = svc.nIdx - bufferSize
 	}
 
-	// start from requested index until the most recent entry
+	// Start from requested index until the most recent entry
 	for i := fromIdx; i < svc.nIdx; i++ {
 		entry := svc.nBuffer[i%bufferSize]
 		if err := server.Send(entry); err != nil {
@@ -61,47 +61,6 @@ func (svc *NotificationSvc) Get(from *rpc.NotificationRequest, server rpc.Notifi
 	}
 
 	return nil
-
-	// TODO:
-
-	// Send messages on the 'right' side of the buffer if needed. If required notification is stored on higher index
-	// than the latest (or the gap between required and latest is bigger that buffer size), send all notifications
-	// from desired index to the end of the buffer first
-	/*var wasErr error
-	if svc.nIdx-from.Idx > bufferSize || from.Idx%bufferSize > svc.nIdx%bufferSize {
-		for bufferIdx, entry := range svc.nBuffer {
-			// Skip empty entries (should happen only in the beginning while the buffer is empty)
-			if entry == nil {
-				continue
-			}
-			if uint32(bufferIdx) >= svc.nIdx%bufferSize && uint32(bufferIdx) >= from.Idx%bufferSize {
-				if err := server.Send(entry); err != nil {
-					svc.log.Error("Send notification error: %v", err)
-					wasErr = err
-				}
-			}
-		}
-	}
-	// Send all new notifications, looping from the beginning of the buffer.
-	for bufferIdx, entry := range svc.nBuffer {
-		// Skip empty entries (should happen only in the beginning while the buffer is empty)
-		if entry == nil {
-			continue
-		}
-		// Most recent notification reached
-		if uint32(bufferIdx) >= svc.nIdx%bufferSize {
-			break
-		}
-		// Send only new entries
-		if from.Idx < entry.NextIdx {
-			if err := server.Send(entry); err != nil {
-				svc.log.Error("Send notification error: %v", err)
-				wasErr = err
-			}
-		}
-	}
-
-	return wasErr*/
 }
 
 // Adds new notification to the pool. The order of notifications is preserved
