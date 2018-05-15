@@ -8,8 +8,8 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
 	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/ipsec"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 )

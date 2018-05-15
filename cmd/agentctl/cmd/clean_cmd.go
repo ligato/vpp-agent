@@ -27,9 +27,9 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l3"
 )
 
 const dataTypeFlagName = "dataType"

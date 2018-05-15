@@ -9,8 +9,8 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
@@ -86,7 +86,7 @@ type VppOnlyTestingFlavor struct {
 	IfStatePub *MockIfStatePub
 
 	GoVPP govppmux.GOVPPPlugin
-	VPP   vppplugin.Plugin
+	VPP   vpp.Plugin
 
 	injected bool
 }

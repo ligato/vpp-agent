@@ -62,7 +62,7 @@ The set of plugins in the VPP Agent is as follows:
 * [CN-Infra datasync][12] - data synchronization after HA events
 * [CN-Infra core][13] - lifecycle management of plugins (loading, 
   initialization, unloading)
-* [RESTAPI](plugins/restplugin) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
+* [RESTAPI](plugins/rest) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
 
 ## Tools
 
@@ -122,13 +122,13 @@ If you are interested in contributing, please see the [contribution guidelines](
 [2]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
 [3]: https://developers.google.com/protocol-buffers/
 [4]: https://wiki.fd.io/view/GoVPP
-[5]: plugins/vppplugin
-[6]: plugins/vppplugin/ifplugin
-[7]: plugins/vppplugin/l2plugin
-[8]: plugins/vppplugin/l3plugin
-[9]: plugins/vppplugin/aclplugin
+[5]: plugins/vpp
+[6]: plugins/vpp/ifplugin
+[7]: plugins/vpp/l2plugin
+[8]: plugins/vpp/l3plugin
+[9]: plugins/vpp/aclplugin
 [10]: plugins/govppmux
-[11]: plugins/linuxplugin
+[11]: plugins/linux
 [12]: https://github.com/ligato/cn-infra/tree/master/datasync
 [13]: https://github.com/ligato/cn-infra/tree/master/core
 [14]: https://hub.docker.com/r/ligato/vpp-agent/

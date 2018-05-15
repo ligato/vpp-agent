@@ -14,10 +14,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppplugin"
 	rpcsvc "github.com/ligato/vpp-agent/plugins/vppplugin/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/vpp-agent/plugins/restplugin"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
-	rpcsvc "github.com/ligato/vpp-agent/plugins/vppplugin/rpc"
+	"github.com/ligato/vpp-agent/plugins/linux"
+	"github.com/ligato/vpp-agent/plugins/rest"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/vpp/rpc"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	)
 
@@ -54,11 +54,11 @@ type Flavor struct {
 	IfStatePub msgsync.PubPlugin
 
 	GoVPP govppmux.GOVPPPlugin
-	Linux linuxplugin.Plugin
-	VPP   vppplugin.Plugin
+	Linux linux.Plugin
+	VPP   vpp.Plugin
 
-	GRPCSvcPlugin   rpcsvc.GRPCSvcPlugin
-	RESTAPIPlugin   restplugin.Plugin
+	GRPCSvcPlugin rpcsvc.GRPCSvcPlugin
+	RESTAPIPlugin rest.Plugin
 	TelemetryPlugin telemetry.Plugin
 
 	injected bool

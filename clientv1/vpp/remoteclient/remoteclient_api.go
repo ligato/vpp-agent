@@ -19,7 +19,7 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/vpp"
 	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/clientv1/vpp/grpcadapter"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/rpc"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/rpc"
 )
 
 // DataResyncRequestDB allows creating a RESYNC request using convenient RESYNC

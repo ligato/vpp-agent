@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	idx "github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp"
 	. "github.com/onsi/gomega"
 )
 
@@ -21,7 +21,7 @@ type ThenIface struct {
 	OperState ifstateGetter
 
 	Log logging.Logger
-	VPP vppplugin.API
+	VPP vpp.API
 }
 
 type ifstateGetter interface {
@@ -54,7 +54,7 @@ func (step *ThenIface) ContainsIPSecSPD(name string) bool {
 
 // SwIfIndexesAssertions is a helper struct for fluent DSL in tests for interfaces.
 type SwIfIndexesAssertions struct {
-	VPP vppplugin.API
+	VPP vpp.API
 }
 
 // BfdIndexesAssertions is a helper struct for fluent DSL in tests for bfd.

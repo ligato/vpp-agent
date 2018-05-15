@@ -3,7 +3,7 @@
 package l2tst
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 

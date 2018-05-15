@@ -15,15 +15,15 @@
 package vppplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/stn"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC

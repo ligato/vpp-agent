@@ -17,7 +17,7 @@ package cmd
 import (
 	"github.com/ligato/vpp-agent/cmd/agentctl/impl"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
 	"github.com/spf13/cobra"
 )
 

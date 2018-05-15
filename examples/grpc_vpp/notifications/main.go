@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/rpc"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/rpc"
 	"github.com/namsral/flag"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

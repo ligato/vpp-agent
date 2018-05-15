@@ -44,11 +44,11 @@ For a visual explanation, see the diagram below:
 See example [caching IP addresses of different containers](https://github.com/ligato/vpp-agent/tree/master/examples/idx_iface_cache).
 The constructor that combines `CacheHelper` with `idxmap` to build
 the cache from the example can be found
-[here](https://github.com/ligato/vpp-agent/blob/master/plugins/vppplugin/ifplugin/ifaceidx/cache_iface.go)
+[here](https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/ifplugin/ifaceidx/cache_iface.go)
 
 
 ## Examples
-* Real world example from [VPP-agent plugin API](https://github.com/ligato/vpp-agent/blob/master/plugins/vppplugin/plugin_api_vpp.go)
+* Real world example from [VPP-agent plugin API](https://github.com/ligato/vpp-agent/blob/master/plugins/vpp/plugin_api_vpp.go)
 * Isolated and simplified examples can be found here: 
   * [lookup](https://github.com/ligato/vpp-agent/tree/master/examples/idx_mapping_lookup)
   * [watch](https://github.com/ligato/vpp-agent/tree/master/examples/idx_mapping_watcher)

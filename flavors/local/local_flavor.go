@@ -23,8 +23,8 @@ import (
 	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
+	"github.com/ligato/vpp-agent/plugins/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp"
 )
 
 // NewAgent returns a new instance of the Agent with plugins.
@@ -52,8 +52,8 @@ type FlavorVppLocal struct {
 	*local.FlavorLocal
 	LinuxLocalClient localclient.Plugin
 	GoVPP            govppmux.GOVPPPlugin
-	Linux            linuxplugin.Plugin
-	VPP              vppplugin.Plugin
+	Linux            linux.Plugin
+	VPP              vpp.Plugin
 
 	injected bool
 }

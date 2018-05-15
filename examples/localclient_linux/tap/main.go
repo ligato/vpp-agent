@@ -24,9 +24,9 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	"github.com/ligato/vpp-agent/flavors/local"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linux/generated/model/interfaces"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
 	"github.com/namsral/flag"
 )
 

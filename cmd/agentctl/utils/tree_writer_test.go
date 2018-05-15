@@ -20,7 +20,7 @@ import (
 	"text/template"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
 	"github.com/onsi/gomega"
 )
 

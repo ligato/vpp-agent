@@ -20,10 +20,10 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
-	bin_api "github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	l2Api "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
 )
 
 // *************************************************************************
@@ -46,12 +46,12 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor
-	vppFlavor := vpp.Flavor{}
+	flavor := vppFlavor.Flavor{}
 	exampleFlavor := ExampleFlavor{
 		GovppExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:       &vppFlavor, // inject VPP flavor
+		Flavor:       &flavor, // inject VPP flavor
 	}
-	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
 
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -60,7 +60,7 @@ func main() {
 type ExamplePlugin struct {
 	Deps
 
-	VPP vppplugin.API
+	VPP vpp.API
 
 	exampleIDSeq uint32       // Plugin-specific ID initialization
 	vppChannel   *api.Channel // Vpp channel to communicate with VPP
@@ -116,7 +116,7 @@ func (plugin *ExamplePlugin) VppCall() {
 	plugin.exampleIDSeq++
 
 	// Generic bin api reply (request: BridgeDomainAddDel)
-	reply := &bin_api.BridgeDomainAddDelReply{}
+	reply := &l2Api.BridgeDomainAddDelReply{}
 
 	plugin.Log.Info("Sending data to VPP ...")
 
@@ -159,8 +159,8 @@ func buildData(name string) *l2.BridgeDomains {
 }
 
 // Auxiliary method to transform agent model data to binary api format
-func buildBinapiMessage(data *l2.BridgeDomains, id uint32) *bin_api.BridgeDomainAddDel {
-	req := &bin_api.BridgeDomainAddDel{}
+func buildBinapiMessage(data *l2.BridgeDomains, id uint32) *l2Api.BridgeDomainAddDel {
+	req := &l2Api.BridgeDomainAddDel{}
 	req.IsAdd = 1
 	req.BdID = id
 	req.Flood = boolToInt(data.BridgeDomains[0].Flood)

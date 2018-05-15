@@ -7,9 +7,9 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	vppclient "github.com/ligato/vpp-agent/clientv1/vpp"
 	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
 )
 
 const pluginName = core.PluginName("when_iface")
@@ -20,7 +20,7 @@ type WhenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
 	NewResync func(name core.PluginName) vppclient.DataResyncDSL
 	Log       logging.Logger
-	VPP       vppplugin.API
+	VPP       vpp.API
 	MockVpp   *govppmock.VppAdapter
 }
 

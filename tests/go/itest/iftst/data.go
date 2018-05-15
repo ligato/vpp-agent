@@ -3,9 +3,9 @@
 package iftst
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
 )
 
 var (

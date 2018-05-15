@@ -25,9 +25,9 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/generated/model/interfaces"
-	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linux/generated/model/interfaces"
+	linux_if "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 )
 
 // *************************************************************************
@@ -70,7 +70,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	Linux linuxplugin.API
+	Linux linux.API
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex

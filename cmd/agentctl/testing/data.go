@@ -18,9 +18,9 @@ import (
 	"strconv"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l3"
 )
 
 // TableData with 3x VPP, each with 3 interfaces. With such a data, all filtering options can be tested.
