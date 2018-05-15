@@ -22,8 +22,8 @@ ${RESYNC_SLEEP}=       1s
 ${RESYNC_WAIT}=        30s
 ${VETH_IP1}=              fd33::1:b:0:0:1
 ${VETH_IP2}=              fd33::1:b:0:0:2
-${VETH_IP1}=              fd31::1:a:0:0:1
-${VETH_IP2}=              fd31::1:a:0:0:2
+${VETH_IP3}=              fd31::1:a:0:0:1
+${VETH_IP4}=              fd31::1:a:0:0:2
 ${GOOGLE_IP}=             2001:4860:4860::8888
 ${QUAD9_IP}=              2620:fe::fe
 *** Test Cases ***

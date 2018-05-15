@@ -21,9 +21,9 @@ ${NAME_LOOP2}=      vpp1_loop2
 ${MAC_LOOP1}=       12:21:21:11:11:11
 ${MAC_LOOP1_2}=     22:21:21:11:11:11
 ${MAC_LOOP2}=       32:21:21:11:11:11
-${IP_LOOP1}=        fd30:0:0:1:e::1
-${IP_LOOP1_2}=      fd31:0:0:1:e::1
-${IP_LOOP2}=        fd30:0:0:1:e::2
+${IP_LOOP1}=        fd30::1:e:0:0:1
+${IP_LOOP1_2}=      fd31::1:e:0:0:1
+${IP_LOOP2}=        fd30::1:e:0:0:2
 ${PREFIX}=          64
 ${MTU}=             4800
 

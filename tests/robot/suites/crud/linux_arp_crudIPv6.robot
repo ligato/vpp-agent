@@ -22,13 +22,13 @@ ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
 ${NAMESPACE}=
 ${NSTYPE}=            3
-${VETH1_IP}=             fd30:0:0:1:e::1
+${VETH1_IP}=             fd30::1:e:0:0:1
 ${PREFIX}=               64
-${VETH1_IP_PREFIX}=      fd30:0:0:1:e::1
-${ARP_IP1}=              fd33:0:0:1:a::1
-${ARP_IP2}=              fd33:0:0:1:a::2
-${ARP_IP3}=              fd33:0:0:1:b::1
-${ARP_IP4}=              fd33:0:0:1:b::2
+${VETH1_IP_PREFIX}=      fd30::1:e:0:0:1/64
+${ARP_IP1}=              fd33::1:a:0:0:1
+${ARP_IP2}=              fd33::1:a:0:0:2
+${ARP_IP3}=              fd33::1:b:0:0:1
+${ARP_IP4}=              fd33::1:b:0:0:2
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
