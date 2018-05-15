@@ -68,7 +68,7 @@ cn-infra v1.1
   * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
-  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+  * [vpp-agent-grpc](cmd/vpp-agent) (removed in 1.4 release) now compiles properly
     together with other commands.
 
 ### Dependencies
@@ -301,7 +301,7 @@ Miscellaneous:
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/vpp/ifplugin/ifaceidx),
-[Bridge domains](plugins/vpp/l2plugin/bdidx) and [VETHs](plugins/linux/ifplugin/ifaceidx)
+[Bridge domains](plugins/vpp/l2plugin/l2idx) and [VETHs](plugins/linux/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
