@@ -109,9 +109,15 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// TODO: possibly check acl plugin version on vpp using bin api acl_plugin_get_version
-
+	// VPP calls helper object
 	plugin.vppCalls = vppcalls.NewACLInterfacesVppCalls(plugin.log, plugin.vppChan, plugin.ifIndexes, plugin.stopwatch)
+
+	// Get VPP ACL plugin version
+	var minorVer, majorVer uint32
+	if err, minorVer, majorVer = vppcalls.GetAclPluginVersion(plugin.vppChan, plugin.stopwatch); err != nil {
+		return err
+	}
+	plugin.log.Infof("VPP ACL plugin version is %d.%d", majorVer, minorVer)
 
 	return nil
 }

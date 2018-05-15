@@ -7,6 +7,7 @@ import (
 	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/adapter/mock/binapi"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/bfd"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/bin_api/interfaces"
@@ -24,6 +25,7 @@ var swIfIndexSeq uint32
 
 // RepliesSuccess replies with success binary API message.
 func RepliesSuccess(vppMock *govppmock.VppAdapter) {
+	vppMock.RegisterBinAPITypes(acl.Types)
 	vppMock.RegisterBinAPITypes(af_packet.Types)
 	vppMock.RegisterBinAPITypes(bfd.Types)
 	vppMock.RegisterBinAPITypes(interfaces.Types)
