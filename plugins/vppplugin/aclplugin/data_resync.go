@@ -26,19 +26,19 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
 	// Retrieve existing ACL config
-	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, plugin.Stopwatch)
+	vppACLs, err := vppdump.DumpACLs(plugin.log, plugin.ifIndexes, plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return err
 	}
 
 	// Remove all configured VPP ACLs
-	// Note: due to unablity to dump ACL interfaces, it is not currently possible to correctly
+	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
 	var wasErr error
 	for _, vppACL := range vppACLs {
@@ -48,13 +48,13 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 		ipRulesExist := len(vppACL.ACLDetails.Rules) > 0 && vppACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
+			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
 			continue
 		} else {
-			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
+			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
@@ -64,7 +64,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	// Configure new ACLs
 	for _, nbACL := range nbACLs {
 		if err := plugin.ConfigureACL(nbACL); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			wasErr = err
 		}
 	}

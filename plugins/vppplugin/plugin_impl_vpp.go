@@ -30,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vppplugin/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppplugin/generated/model/nat"
@@ -87,8 +86,6 @@ type Plugin struct {
 
 	// ACL plugin fields
 	aclConfigurator *aclplugin.ACLConfigurator
-	aclL3L4Indexes  aclidx.AclIndexRW
-	aclL2Indexes    aclidx.AclIndexRW
 
 	// Interface plugin fields
 	ifConfigurator       *ifplugin.InterfaceConfigurator
@@ -523,27 +520,10 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.Log.Infof("Init ACL plugin")
-	// logger
-	aclLogger := plugin.Log.NewLogger("-acl-plugin")
-	var err error
-	plugin.aclL3L4Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, "acl_l3_l4_indexes", nil))
-	plugin.aclL2Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, "acl_l2_indexes", nil))
-
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("ACLConfigurator", aclLogger)
-	}
-	plugin.aclConfigurator = &aclplugin.ACLConfigurator{
-		Log:            aclLogger,
-		GoVppmux:       plugin.GoVppmux,
-		ACLL3L4Indexes: plugin.aclL3L4Indexes,
-		ACLL2Indexes:   plugin.aclL2Indexes,
-		SwIfIndexes:    plugin.swIfIndexes,
-		Stopwatch:      stopwatch,
-	}
 
 	// Init ACL plugin
-	err = plugin.aclConfigurator.Init()
+	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
+	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch)
 	if err != nil {
 		return err
 	}

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -35,6 +36,28 @@ const (
 	UDPProto    = 17
 	ICMPv6Proto = 58
 )
+
+// AclMessages is list of used VPP messages for compatibility check
+var AclMessages = []govppapi.Message{
+	&acl_api.ACLAddReplace{},
+	&acl_api.ACLAddReplaceReply{},
+	&acl_api.ACLDel{},
+	&acl_api.ACLDelReply{},
+	&acl_api.MacipACLAdd{},
+	&acl_api.MacipACLAddReply{},
+	&acl_api.MacipACLDel{},
+	&acl_api.MacipACLDelReply{},
+	&acl_api.ACLDump{},
+	&acl_api.ACLDetails{},
+	&acl_api.MacipACLDump{},
+	&acl_api.MacipACLDetails{},
+	&acl_api.ACLInterfaceListDump{},
+	&acl_api.ACLInterfaceListDetails{},
+	&acl_api.ACLInterfaceSetACLList{},
+	&acl_api.ACLInterfaceSetACLListReply{},
+	&acl_api.MacipACLInterfaceAddDel{},
+	&acl_api.MacipACLInterfaceAddDelReply{},
+}
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
