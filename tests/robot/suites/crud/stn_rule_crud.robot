@@ -52,7 +52,7 @@ Add STN Rule
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ipv4=${IP_STN_RULE}
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
 
 Check TAP1 Interface Is Still Configured
     ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
@@ -69,13 +69,13 @@ Update STN Rule
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Updated
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP2}    ipv4=${IP_STN_RULE}
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
 
 Delete STN Rule
     vpp_ctl: Delete STN Rule    node=agent_vpp_1    rule_name=${RULE_NAME}
 
 Check Deleted STN Rule
-    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ipv4=${IP_STN_RULE}
+    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
 
 
 
@@ -83,7 +83,7 @@ Add STN Rule Again
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created Again
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ipv4=${IP_STN_RULE}
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
 
 Remove VPP And Two Nodes
     Remove Node     agent_vpp_1
@@ -95,7 +95,7 @@ Start VPP And Two Nodes
     Show Interfaces And Other Objects
 
 Check STN Rule Is Created After Resync
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ipv4=${IP_STN_RULE}
+    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
 
 
 *** Keywords ***

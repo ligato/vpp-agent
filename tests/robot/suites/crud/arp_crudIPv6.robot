@@ -22,15 +22,15 @@ ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
 ${VETH1_IP}=             fd30:0:0:1:e::1
 ${PREFIX}=               64
-${VETH1_IP_PREFIX}=      fd30:0:0:1:e::1/64
-${MEMIF1_IP}=            fd31:0:0:1:1::1
-${MEMIF1_IP_PREFIX}=     fd31:0:0:1:1::1/64
-${VXLAN_IP}=             fd31:0:0:1:1::2
-${VXLAN_IP_PREFIX}=      fd31:0:0:1:1::1/64
-${LOOPBACK_IP}=          fd32:0:0:1:1::1
-${LOOPBACK_IP_PREFIX}=   fd32:0:0:1:1::1/64
-${TAP_IP}=               fd33:0:0:1:1::1
-${TAP_IP_PREFIX}=        fd33:0:0:1:1::1/64
+${VETH1_IP_PREFIX}=      fd30::1:e:0:0:1/64
+${MEMIF1_IP}=            fd31::1:1:0:0:1
+${MEMIF1_IP_PREFIX}=     fd31::1:1:0:0:1/64
+${VXLAN_IP}=             fd31::1:1:0:0:2
+${VXLAN_IP_PREFIX}=      fd31::1:1:0:0:1/64
+${LOOPBACK_IP}=          fd32::1:1:0:0:1
+${LOOPBACK_IP_PREFIX}=   fd32::1:1:0:0:1/64
+${TAP_IP}=               fd33::1:1:0:0:1
+${TAP_IP_PREFIX}=        fd33::1:1:0:0:1/64
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
