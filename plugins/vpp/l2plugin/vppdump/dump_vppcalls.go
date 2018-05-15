@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/l2"
-	l2nb "github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 )
 

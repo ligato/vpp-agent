@@ -20,11 +20,11 @@ import (
 	"net"
 	"strings"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/bfd"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/stn"
+	_ "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 )

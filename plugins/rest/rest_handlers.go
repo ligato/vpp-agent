@@ -31,7 +31,7 @@ import (
 
 	aclvpp "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"

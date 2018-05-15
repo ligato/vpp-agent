@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/rpc"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 )

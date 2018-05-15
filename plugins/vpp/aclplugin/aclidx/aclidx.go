@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	acl_model "github.com/ligato/vpp-agent/plugins/vpp/generated/model/acl"
+	acl_model "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 // AclIndex provides read-only access to mapping between ACL indices (used internally in VPP)

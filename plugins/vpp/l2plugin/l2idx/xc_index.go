@@ -18,7 +18,7 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // XcIndex provides read-only access to mapping between indexes (used internally in VPP) and cross connects.

@@ -17,16 +17,16 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/af_packet"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/vxlan"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
 // CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.

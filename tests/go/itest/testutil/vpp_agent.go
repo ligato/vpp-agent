@@ -10,7 +10,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/l2"
+	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

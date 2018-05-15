@@ -18,7 +18,7 @@ import (
 	"errors"
 
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/spf13/cobra"
 )
 

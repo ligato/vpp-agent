@@ -23,8 +23,8 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	l2_api "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	l2_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 )

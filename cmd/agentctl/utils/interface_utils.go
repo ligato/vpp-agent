@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // Interface flag names

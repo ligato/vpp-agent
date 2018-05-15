@@ -23,8 +23,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/acl"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 

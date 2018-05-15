@@ -19,8 +19,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
 // GetInterfaceVRF assigns VRF table to interface

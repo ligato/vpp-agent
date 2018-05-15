@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/af_packet"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.

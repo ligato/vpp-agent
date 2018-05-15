@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/idxtst"
 
 	"github.com/ligato/cn-infra/logging"

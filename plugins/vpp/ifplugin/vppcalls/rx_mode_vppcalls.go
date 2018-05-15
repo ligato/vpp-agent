@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // SetRxMode calls SwInterfaceSetRxMode bin

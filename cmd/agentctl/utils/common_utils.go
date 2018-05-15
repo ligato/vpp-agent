@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // Common exit flags

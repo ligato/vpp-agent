@@ -22,8 +22,8 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp"
-	l2Api "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
+	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // *************************************************************************

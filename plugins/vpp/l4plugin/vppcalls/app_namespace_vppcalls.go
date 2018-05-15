@@ -20,7 +20,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/session"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace

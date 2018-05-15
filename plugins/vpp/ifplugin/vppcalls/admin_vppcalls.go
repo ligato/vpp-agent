@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {

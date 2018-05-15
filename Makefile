@@ -152,23 +152,23 @@ generate: get-generators
 	cd plugins/vpp/rpc && go generate
 	cd plugins/linux/ifplugin && go generate
 	cd plugins/linux/l3plugin && go generate
-	cd plugins/vpp/generated/bin_api/acl && pkgreflect
-	cd plugins/vpp/generated/bin_api/af_packet && pkgreflect
-	cd plugins/vpp/generated/bin_api/bfd && pkgreflect
-	cd plugins/vpp/generated/bin_api/dhcp && pkgreflect
-	cd plugins/vpp/generated/bin_api/interfaces && pkgreflect
-	cd plugins/vpp/generated/bin_api/ip && pkgreflect
-	cd plugins/vpp/generated/bin_api/ipsec && pkgreflect
-	cd plugins/vpp/generated/bin_api/l2 && pkgreflect
-	cd plugins/vpp/generated/bin_api/memif && pkgreflect
-	cd plugins/vpp/generated/bin_api/nat && pkgreflect
-	cd plugins/vpp/generated/bin_api/session && pkgreflect
-	cd plugins/vpp/generated/bin_api/stats && pkgreflect
-	cd plugins/vpp/generated/bin_api/stn && pkgreflect
-	cd plugins/vpp/generated/bin_api/tap && pkgreflect
-	cd plugins/vpp/generated/bin_api/tapv2 && pkgreflect
-	cd plugins/vpp/generated/bin_api/vpe && pkgreflect
-	cd plugins/vpp/generated/bin_api/vxlan && pkgreflect
+	cd plugins/vpp/binapi/acl && pkgreflect
+	cd plugins/vpp/binapi/af_packet && pkgreflect
+	cd plugins/vpp/binapi/bfd && pkgreflect
+	cd plugins/vpp/binapi/dhcp && pkgreflect
+	cd plugins/vpp/binapi/interfaces && pkgreflect
+	cd plugins/vpp/binapi/ip && pkgreflect
+	cd plugins/vpp/binapi/ipsec && pkgreflect
+	cd plugins/vpp/binapi/l2 && pkgreflect
+	cd plugins/vpp/binapi/memif && pkgreflect
+	cd plugins/vpp/binapi/nat && pkgreflect
+	cd plugins/vpp/binapi/session && pkgreflect
+	cd plugins/vpp/binapi/stats && pkgreflect
+	cd plugins/vpp/binapi/stn && pkgreflect
+	cd plugins/vpp/binapi/tap && pkgreflect
+	cd plugins/vpp/binapi/tapv2 && pkgreflect
+	cd plugins/vpp/binapi/vpe && pkgreflect
+	cd plugins/vpp/binapi/vxlan && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
 
 get-bindata:

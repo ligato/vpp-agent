@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 )
 
 // Num protocol representation

@@ -18,11 +18,11 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/vxlan"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

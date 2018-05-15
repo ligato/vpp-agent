@@ -19,16 +19,16 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, callback func(error)) (callbackCalled bool, err error) {

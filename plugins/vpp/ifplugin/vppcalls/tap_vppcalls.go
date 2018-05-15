@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AddTapInterface calls TapConnect bin API.

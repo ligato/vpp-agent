@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/vxlan"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/generated/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf uint32, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {

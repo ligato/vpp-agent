@@ -23,8 +23,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/generated/bin_api/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/generated/model/ipsec"
+	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
 func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
