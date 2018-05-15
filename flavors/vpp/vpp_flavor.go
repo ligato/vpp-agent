@@ -73,8 +73,8 @@ func (f *Flavor) Inject() bool {
 
 	f.injectEmbedded()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins", local.WithConf())
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp-plugin", local.WithConf())
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("vpp-plugin", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
@@ -108,7 +108,7 @@ func (f *Flavor) Inject() bool {
 	}}
 	f.VPP.Deps.GRPCSvc = &f.GRPCSvcPlugin
 
-	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
+	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linux-plugin", local.WithConf())
 	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
 		local_sync.Get(),
 		&f.AllConnectorsFlavor.ETCDDataSync,
@@ -124,7 +124,7 @@ func (f *Flavor) Inject() bool {
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPCServer = &f.FlavorRPC.GRPC
 
-	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapi-plugin")
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("rest-plugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
 
