@@ -4,7 +4,7 @@ The `ifplugin` is a Core Agent Plugin for configuration of NICs, memifs,
 VXLANs, loopback interfaces and STN rules.
 
 The plugin watches the northbound configuration of network interfaces,
-which is modelled by [interfaces proto file](../common/model/interfaces/interfaces.proto)
+which is modelled by [interfaces proto file](../model/interfaces/interfaces.proto)
 and stored in ETCD under the following key:
 
 ```
@@ -130,7 +130,7 @@ and the only way to find out what a given command does is to
 `iflplugin` is also able to configure BFD sessions, authentication keys
 and echo function.
 
-BFD is modelled by [bfd proto file](../common/model/bfd/bfd.proto). Every part of BFD
+BFD is modelled by [bfd proto file](../model/bfd/bfd.proto). Every part of BFD
 is stored in ETCD under unique. Every BFD session is stored under following
 key:
 
@@ -190,7 +190,7 @@ if it is used in any BFD session.
 
 NAT configuration can be set up on the VPP using `ifplugin`.
 
-NAT is modelled by [nat proto file](../common/model/nat/nat.proto). Model is divided to two parts; the 
+NAT is modelled by [nat proto file](../model/nat/nat.proto). Model is divided to two parts; the 
 general configuration with defined interfaces and enabled IP address pools, and DNAT configuration 
 with a set of static and/or identity mappings. 
 
@@ -241,7 +241,7 @@ vpp-agent-ctl -dnat
 
 `iflplugin` is also able to configure STN rules.
 
-STN is modelled by [stn proto file](../common/model/stn/stn.proto). Every part of STN
+STN is modelled by [stn proto file](../model/stn/stn.proto). Every part of STN
 is stored in ETCD under unique. Every STN rule is store under following key:
 ```
 /vnf-agent/{agent-lanbel}/vpp/config/v1/stn/rules/{rule-name}

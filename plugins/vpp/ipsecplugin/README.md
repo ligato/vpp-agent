@@ -2,7 +2,7 @@
 
 The **ipsecplugin** is a Core Agent Plugin that is designed to configure
 IPsec for VPP. Configuration managed by this plugin is modelled
-by the [proto file](../common/model/ipsec/ipsec.proto).
+by the [proto file](../model/ipsec/ipsec.proto).
 
 The configuration must be stored in etcd using the following keys:
 
