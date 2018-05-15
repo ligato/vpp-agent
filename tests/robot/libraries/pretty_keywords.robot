@@ -102,6 +102,12 @@ IP Fib Table ${id} On ${node} Should Be Empty
     log many    ${out}
     Should Be Equal    ${out}   vpp#${SPACE}
 
+IP6 Fib Table ${id} On ${node} Should Be Empty
+    Log many    ${node} ${id}
+    ${out}=    vpp_term: Show IP6 Fib Table    ${node}   ${id}
+    log many    ${out}
+    Should Be Equal    ${out}   vpp#${SPACE}
+
 IP Fib Table ${id} On ${node} Should Not Be Empty
     Log many    ${node} ${id}
     ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
