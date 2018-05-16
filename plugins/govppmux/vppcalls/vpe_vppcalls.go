@@ -40,6 +40,23 @@ func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
 	return info, nil
 }
 
+// RunCliCommand executes CLI command and returns output
+func RunCliCommand(vppChan *govppapi.Channel, cmd string) ([]byte, error) {
+	req := &vpe.CliInband{
+		Cmd:    []byte(cmd),
+		Length: uint32(len(cmd)),
+	}
+	reply := &vpe.CliInbandReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	} else if reply.Retval != 0 {
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return reply.Reply[:reply.Length], nil
+}
+
 // MemoryInfo contains values returned from 'show memory'
 type MemoryInfo struct {
 	Threads []MemoryThread `json:"threads"`
@@ -60,20 +77,10 @@ type MemoryThread struct {
 
 // GetNodeCounters retrieves node counters info
 func GetMemory(vppChan *govppapi.Channel) (*MemoryInfo, error) {
-	const cmd = "show memory"
-	req := &vpe.CliInband{
-		Cmd:    []byte(cmd),
-		Length: uint32(len(cmd)),
-	}
-	reply := &vpe.CliInbandReply{}
-
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	data, err := RunCliCommand(vppChan, "show memory")
+	if err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-
-	data := reply.Reply[:reply.Length]
 
 	var threads []MemoryThread
 	var thread *MemoryThread
@@ -141,20 +148,10 @@ type NodeCounter struct {
 
 // GetNodeCounters retrieves node counters info
 func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
-	const cmd = "show node counters"
-	req := &vpe.CliInband{
-		Cmd:    []byte(cmd),
-		Length: uint32(len(cmd)),
-	}
-	reply := &vpe.CliInbandReply{}
-
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	data, err := RunCliCommand(vppChan, "show node counters")
+	if err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-
-	data := reply.Reply[:reply.Length]
 
 	var counters []NodeCounter
 
@@ -204,20 +201,10 @@ type RuntimeItem struct {
 
 // GetNodeCounters retrieves node counters info
 func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
-	const cmd = "show runtime"
-	req := &vpe.CliInband{
-		Cmd:    []byte(cmd),
-		Length: uint32(len(cmd)),
-	}
-	reply := &vpe.CliInbandReply{}
-
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	data, err := RunCliCommand(vppChan, "show runtime")
+	if err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-
-	data := reply.Reply[:reply.Length]
 
 	var items []RuntimeItem
 
@@ -294,20 +281,10 @@ var buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d
 
 // GetBuffersInfo retrieves buffers info
 func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
-	const cmd = "show buffers"
-	req := &vpe.CliInband{
-		Cmd:    []byte(cmd),
-		Length: uint32(len(cmd)),
-	}
-	reply := &vpe.CliInbandReply{}
-
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	data, err := RunCliCommand(vppChan, "show buffers")
+	if err != nil {
 		return nil, err
-	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
-
-	data := reply.Reply[:reply.Length]
 
 	var items []BuffersItem
 
