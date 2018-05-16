@@ -39,14 +39,103 @@ func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
 	return info, nil
 }
 
-type NodeCounterInfo struct {
-	Counters []NodeCounter
+// MemoryInfo contains values returned from 'show memory'
+type MemoryInfo struct {
+	Threads []MemoryThread `json:"threads"`
 }
 
+// MemoryThread represents single thread memory counters
+type MemoryThread struct {
+	ID        uint   `json:"id"`
+	Name      string `json:"name"`
+	Objects   uint64 `json:"objects"`
+	Used      uint64 `json:"used"`
+	Total     uint64 `json:"total"`
+	Free      uint64 `json:"free"`
+	Reclaimed uint64 `json:"reclaimed"`
+	Overhead  uint64 `json:"overhead"`
+	Capacity  uint64 `json:"capacity"`
+}
+
+// GetNodeCounters retrieves node counters info
+func GetMemory(vppChan *govppapi.Channel) (*MemoryInfo, error) {
+	const cmd = "show memory"
+	req := &vpe.CliInband{
+		Cmd:    []byte(cmd),
+		Length: uint32(len(cmd)),
+	}
+	reply := &vpe.CliInbandReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	} else if reply.Retval != 0 {
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	data := reply.Reply[:reply.Length]
+
+	var threads []MemoryThread
+	var thread *MemoryThread
+
+	for _, line := range strings.Split(string(data), "\n") {
+		if thread != nil {
+			for _, part := range strings.Split(line, ",") {
+				fields := strings.Fields(strings.TrimSpace(part))
+				if len(fields) > 1 {
+					switch fields[1] {
+					case "objects":
+						thread.Objects = strToUint64(fields[0])
+					case "of":
+						thread.Used = strToUint64(fields[0])
+						thread.Total = strToUint64(fields[2])
+					case "free":
+						thread.Free = strToUint64(fields[0])
+					case "reclaimed":
+						thread.Reclaimed = strToUint64(fields[0])
+					case "overhead":
+						thread.Overhead = strToUint64(fields[0])
+					case "capacity":
+						thread.Capacity = strToUint64(fields[0])
+					}
+				}
+			}
+			threads = append(threads, *thread)
+			thread = nil
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) == 3 {
+			if fields[0] == "Thread" {
+				id, err := strconv.ParseUint(fields[1], 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				thread = &MemoryThread{
+					ID:   uint(id),
+					Name: strings.SplitN(fields[2], string(0x00), 2)[0],
+				}
+				continue
+			}
+		}
+	}
+
+	info := &MemoryInfo{
+		Threads: threads,
+	}
+
+	return info, nil
+}
+
+// NodeCounterInfo contains values returned from 'show node counters'
+type NodeCounterInfo struct {
+	Counters []NodeCounter `json:"counters"`
+}
+
+// NodeCounter represents single node counter
 type NodeCounter struct {
-	Count  uint
-	Node   string
-	Reason string
+	Count  uint64 `json:"count"`
+	Node   string `json:"node"`
+	Reason string `json:"reason"`
 }
 
 // GetNodeCounters retrieves node counters info
@@ -65,8 +154,6 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 	}
 
 	data := reply.Reply[:reply.Length]
-	fmt.Printf("%q\n", string(data))
-	fmt.Printf("%v\n", strings.Fields(string(data)))
 
 	var counters []NodeCounter
 
@@ -78,12 +165,12 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 				continue
 			}
 			if counters != nil {
-				count, err := strconv.ParseUint(fields[0], 10, 32)
+				count, err := strconv.ParseUint(fields[0], 10, 64)
 				if err != nil {
 					return nil, err
 				}
 				counters = append(counters, NodeCounter{
-					Count:  uint(count),
+					Count:  count,
 					Node:   fields[1],
 					Reason: fields[2],
 				})
@@ -98,18 +185,20 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 	return info, nil
 }
 
+// RuntimeInfo contains values returned from 'show runtime'
 type RuntimeInfo struct {
-	Items []RuntimeItem
+	Items []RuntimeItem `json:"items"`
 }
 
+// NodeCounter represents single runtime item
 type RuntimeItem struct {
-	Name        string
-	State       string
-	Calls       uint64
-	Vendors     uint64
-	Suspends    uint64
-	Clocks      float64
-	VectorsCall float64
+	Name        string  `json:"name"`
+	State       string  `json:"state"`
+	Calls       uint64  `json:"calls"`
+	Vectors     uint64  `json:"vectors"`
+	Suspends    uint64  `json:"suspends"`
+	Clocks      float64 `json:"clocks"`
+	VectorsCall float64 `json:"vectors_call"`
 }
 
 // GetNodeCounters retrieves node counters info
@@ -128,8 +217,6 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 	}
 
 	data := reply.Reply[:reply.Length]
-	fmt.Printf("%q\n", string(data))
-	fmt.Printf("%v\n", strings.Fields(string(data)))
 
 	var items []RuntimeItem
 
@@ -147,7 +234,7 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 				if err != nil {
 					return nil, err
 				}
-				vendors, err := strconv.ParseUint(fields[3], 10, 64)
+				vectors, err := strconv.ParseUint(fields[3], 10, 64)
 				if err != nil {
 					return nil, err
 				}
@@ -167,7 +254,7 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 					Name:        fields[0],
 					State:       fields[1],
 					Calls:       calls,
-					Vendors:     vendors,
+					Vectors:     vectors,
 					Suspends:    suspends,
 					Clocks:      clocks,
 					VectorsCall: vectorsCall,
@@ -181,6 +268,15 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 	}
 
 	return info, nil
+}
+
+func strToUint64(s string) uint64 {
+	s = strings.Replace(s, "k", "000", 1)
+	num, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return num
 }
 
 func cleanBytes(b []byte) []byte {

@@ -470,6 +470,29 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 	}
 }
 
+// telemetryMemoryHandler - returns various telemetry data
+func (plugin *RESTAPIPlugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		info, err := vppcalls.GetMemory(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, info)
+	}
+}
+
 // telemetryHandler - returns various telemetry data
 func (plugin *RESTAPIPlugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
