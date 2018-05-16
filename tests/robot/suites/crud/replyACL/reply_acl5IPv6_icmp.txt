@@ -12,11 +12,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl5_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "fd30:0000:0000:0001:000e:0000:0000:0000/64",

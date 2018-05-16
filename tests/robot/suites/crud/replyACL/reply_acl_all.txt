@@ -11,11 +11,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl1_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
@@ -52,11 +49,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl2_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
@@ -95,11 +89,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl3_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
@@ -141,11 +132,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl4_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
@@ -187,11 +175,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl5_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
@@ -233,11 +218,8 @@
     },
     "rules": [
         {
-            "rule_name":"acl6_rule1",
-            "actions": {
-                "acl_action": 1
-            },
-            "matches": {
+            "acl_action": 1,
+            "match": {
                 "ip_rule": {
                     "ip": {
                         "destination_network": "10.0.0.0/32",
