@@ -103,8 +103,8 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out ./plugins/defaultplugins/srplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out ./plugins/defaultplugins/srplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin/vppcalls
 	@echo " => merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
