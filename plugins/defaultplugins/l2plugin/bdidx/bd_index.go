@@ -33,7 +33,7 @@ type BDIndex interface {
 	LookupName(idx uint32) (name string, metadata *l2.BridgeDomains_BridgeDomain, exists bool)
 
 	// LookupBdForInterface looks up for bridge domain the interface belongs to
-	LookupBdForInterface(ifName string) (bdIdx uint32, metadata *l2.BridgeDomains_BridgeDomain, bvi bool, exists bool)
+	LookupBdForInterface(ifName string) (bdIdx uint32, bdName string, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto)
@@ -134,24 +134,24 @@ func (bdi *bdIndex) LookupName(idx uint32) (name string, metadata *l2.BridgeDoma
 	return name, metadata, exists
 }
 
-// LookupBdForInterface returns a bridge domain which contains provided interface
-func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, bvi bool, exists bool) {
+// LookupBdForInterface returns a bridge domain which contains provided interface with bvi/shg details about it
+func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bdName string, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool) {
 	bdNames := bdi.mapping.ListNames()
 	for _, bdName := range bdNames {
 		bdIdx, meta, exists := bdi.mapping.LookupIdx(bdName)
 		if exists && meta != nil {
-			bd = castBdMetadata(meta)
+			bd := castBdMetadata(meta)
 			if bd != nil {
 				for _, iface := range bd.Interfaces {
 					if iface.Name == ifName {
-						return bdIdx, bd, iface.BridgedVirtualInterface, true
+						return bdIdx, bd.Name, iface, true
 					}
 				}
 			}
 		}
 	}
 
-	return bdIdx, nil, bvi, false
+	return bdIdx, bdName, nil, false
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
