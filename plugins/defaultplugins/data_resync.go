@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -712,6 +713,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			nat.SNatPrefix(),
 			nat.DNatPrefix(),
 			ipsec.KeyPrefix,
+			srv6.BasePrefix(),
 		)
 	if err != nil {
 		return err
