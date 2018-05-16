@@ -12,7 +12,7 @@
     },
     "rules": [
         {
-            "Facl_action": 1,
+            "acl_action": 1,
             "match": {
                 "ip_rule": {
                     "ip": {
