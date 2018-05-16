@@ -38,7 +38,7 @@ import (
 )
 
 // interfacesGetHandler - used to get list of all interfaces
-func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all interfaces")
@@ -65,7 +65,7 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 }
 
 // bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
-func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all bridge domain ids")
@@ -92,7 +92,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 }
 
 // bridgeDomainsGetHandler - used to get list of all bridge domains
-func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all bridge domains")
@@ -119,7 +119,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) h
 }
 
 // fibTableEntriesGetHandler - used to get list of all fib entries
-func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all fibs")
@@ -146,7 +146,7 @@ func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render)
 }
 
 // xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
-func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all xconnect pairs")
@@ -172,7 +172,7 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 }
 
 // staticRoutesGetHandler - used to get list of all static routes
-func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting list of all static routes")
@@ -199,7 +199,7 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 }
 
 // interfaceACLGetHandler - used to get acl configuration for a particular interface
-func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting acl configuration of interface")
@@ -243,7 +243,7 @@ func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) ht
 }
 
 // ipACLGetHandler - used to get configuration of IP ACLs
-func (plugin *RESTAPIPlugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting acls")
@@ -270,7 +270,7 @@ func (plugin *RESTAPIPlugin) ipACLGetHandler(formatter *render.Render) http.Hand
 }
 
 // exampleACLGetHandler - used to get an example ACL configuration
-func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) exampleACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting example acl")
@@ -312,7 +312,7 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 }
 
 // ipACLPostHandler - used to get acl configuration for a particular interface
-func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		body, err := ioutil.ReadAll(req.Body)
@@ -354,7 +354,7 @@ func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.Han
 }
 
 // commandHandler - used to execute VPP CLI commands
-func (plugin *RESTAPIPlugin) commandHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		body, err := ioutil.ReadAll(req.Body)
@@ -412,7 +412,7 @@ func (plugin *RESTAPIPlugin) commandHandler(formatter *render.Render) http.Handl
 	}
 }
 
-func (plugin *RESTAPIPlugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+func (plugin *Plugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
 	r := &vpe.CliInband{
 		Length: uint32(len(command)),
 		Cmd:    []byte(command),
@@ -429,7 +429,7 @@ func (plugin *RESTAPIPlugin) sendCommand(ch *api.Channel, command string) ([]byt
 }
 
 // telemetryHandler - returns various telemetry data
-func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
@@ -471,7 +471,7 @@ func (plugin *RESTAPIPlugin) telemetryHandler(formatter *render.Render) http.Han
 }
 
 // telemetryMemoryHandler - returns various telemetry data
-func (plugin *RESTAPIPlugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
@@ -494,7 +494,7 @@ func (plugin *RESTAPIPlugin) telemetryMemoryHandler(formatter *render.Render) ht
 }
 
 // telemetryHandler - returns various telemetry data
-func (plugin *RESTAPIPlugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
@@ -517,7 +517,7 @@ func (plugin *RESTAPIPlugin) telemetryRuntimeHandler(formatter *render.Render) h
 }
 
 // telemetryHandler - returns various telemetry data
-func (plugin *RESTAPIPlugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
@@ -540,7 +540,7 @@ func (plugin *RESTAPIPlugin) telemetryNodeCountHandler(formatter *render.Render)
 }
 
 // indexHandler - used to get index page
-func (plugin *RESTAPIPlugin) indexHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) indexHandler(formatter *render.Render) http.HandlerFunc {
 	r := render.New(render.Options{
 		Directory:  "templates",
 		Asset:      Asset,

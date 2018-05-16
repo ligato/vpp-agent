@@ -16,35 +16,28 @@ package restplugin
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/cn-infra/flavors/local"
-	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
 	swIndexVarName = "swindex"
 )
 
-// RESTAPIPlugin - registers VPP REST API Plugin
-type RESTAPIPlugin struct {
+// Plugin registers Rest Plugin
+type Plugin struct {
 	Deps
 
-	gaugeVecs    map[string]*prometheus.GaugeVec
-	runtimeStats map[string]*runtimeStats
-	indexItems   []indexItem
+	indexItems []indexItem
 }
 
-// Deps - dependencies of RESTAPIPlugin
+// Deps represents dependencies of Rest Plugin
 type Deps struct {
 	local.PluginInfraDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
-	Prometheus   prom.API
 }
 
 type indexItem struct {
@@ -52,8 +45,8 @@ type indexItem struct {
 	Path string
 }
 
-// Init - initializes the RESTAPIPlugin
-func (plugin *RESTAPIPlugin) Init() (err error) {
+// Init initializes the Rest Plugin
+func (plugin *Plugin) Init() (err error) {
 	plugin.indexItems = []indexItem{
 		{Name: "Interfaces", Path: "/interfaces"},
 		{Name: "Bridge domains", Path: "/bridgedomains"},
@@ -63,14 +56,11 @@ func (plugin *RESTAPIPlugin) Init() (err error) {
 		{Name: "ACL IP", Path: "/acl/ip"},
 		{Name: "Telemetry", Path: "/telemetry"},
 	}
-
-	plugin.setupPrometheus()
-
 	return nil
 }
 
-// AfterInit - used to register HTTP handlers
-func (plugin *RESTAPIPlugin) AfterInit() (err error) {
+// AfterInit is used to register HTTP handlers
+func (plugin *Plugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
 
 	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
@@ -94,100 +84,7 @@ func (plugin *RESTAPIPlugin) AfterInit() (err error) {
 	return nil
 }
 
-// Close - used to clean up resources used by RESTAPIPlugin
-func (plugin *RESTAPIPlugin) Close() (err error) {
+// Close is used to clean up resources used by Plugin
+func (plugin *Plugin) Close() (err error) {
 	return nil
-}
-
-const (
-	callsMetric          = "calls"
-	vectorsMetric        = "vectors"
-	suspendsMetric       = "suspends"
-	clocksMetric         = "clocks"
-	vectorsPerCallMetric = "vectorsPerCall"
-
-	agentLabel       = "agent"
-	runtimeItemLabel = "runtimeItem"
-)
-
-func (plugin *RESTAPIPlugin) setupPrometheus() error {
-	plugin.gaugeVecs = make(map[string]*prometheus.GaugeVec)
-	plugin.runtimeStats = make(map[string]*runtimeStats)
-
-	for _, metric := range [][2]string{
-		{callsMetric, "Number of calls"},
-		{vectorsMetric, "Number of vectors"},
-		{suspendsMetric, "Number of suspends"},
-		{clocksMetric, "Number of clocks"},
-		{vectorsPerCallMetric, "Number of vectors per call"},
-	} {
-		name := metric[0]
-		plugin.gaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: name,
-			Help: metric[1],
-			ConstLabels: prometheus.Labels{
-				agentLabel: plugin.ServiceLabel.GetAgentLabel(),
-			},
-		}, []string{runtimeItemLabel})
-
-	}
-
-	// register created vectors to prometheus
-	for name, metric := range plugin.gaugeVecs {
-		if err := plugin.Prometheus.Register(prom.DefaultRegistry, metric); err != nil {
-			plugin.Log.Errorf("failed to register %v metric: %v", name, err)
-			return err
-		}
-	}
-
-	ch, err := plugin.GoVppmux.NewAPIChannel()
-	if err != nil {
-		plugin.Log.Errorf("Error creating channel: %v", err)
-		return err
-	}
-
-	go func() {
-		defer ch.Close()
-		for {
-			runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
-			if err != nil {
-				plugin.Log.Errorf("Sending command failed: %v", err)
-				return
-			}
-
-			for _, item := range runtimeInfo.Items {
-				stats, ok := plugin.runtimeStats[item.Name]
-				if !ok {
-					stats = &runtimeStats{
-						itemName: item.Name,
-						metrics:  map[string]prometheus.Gauge{},
-					}
-
-					// add gauges with corresponding labels into vectors
-					for k, vec := range plugin.gaugeVecs {
-						stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-							runtimeItemLabel: item.Name,
-						})
-						if err != nil {
-							plugin.Log.Error(err)
-						}
-					}
-				}
-
-				stats.metrics[callsMetric].Set(float64(item.Calls))
-				stats.metrics[vectorsMetric].Set(float64(item.Vectors))
-				stats.metrics[suspendsMetric].Set(float64(item.Suspends))
-				stats.metrics[clocksMetric].Set(item.Clocks)
-				stats.metrics[vectorsPerCallMetric].Set(item.VectorsCall)
-			}
-			time.Sleep(time.Second * 5)
-		}
-	}()
-
-	return nil
-}
-
-type runtimeStats struct {
-	itemName string
-	metrics  map[string]prometheus.Gauge
 }

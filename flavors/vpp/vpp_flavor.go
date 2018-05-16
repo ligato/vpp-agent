@@ -16,6 +16,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
+	"github.com/ligato/vpp-agent/plugins/telemetry"
 )
 
 // kafkaIfStateTopic is the topic where interface state changes are published.
@@ -54,8 +55,9 @@ type Flavor struct {
 	Linux linuxplugin.Plugin
 	VPP   defaultplugins.Plugin
 
-	GRPCSvcPlugin rpcsvc.GRPCSvcPlugin
-	RESTAPIPlugin restplugin.RESTAPIPlugin
+	GRPCSvcPlugin   rpcsvc.GRPCSvcPlugin
+	RESTAPIPlugin   restplugin.Plugin
+	TelemetryPlugin telemetry.Plugin
 
 	injected bool
 }
@@ -122,7 +124,10 @@ func (f *Flavor) Inject() bool {
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
-	f.RESTAPIPlugin.Deps.Prometheus = &f.FlavorRPC.Prometheus
+
+	f.TelemetryPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("telemetry")
+	f.TelemetryPlugin.Deps.Prometheus = &f.FlavorRPC.Prometheus
+	f.TelemetryPlugin.Deps.GoVppmux = &f.GoVPP
 
 	return true
 }
