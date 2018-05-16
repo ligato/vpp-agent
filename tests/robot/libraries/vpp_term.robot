@@ -90,7 +90,6 @@ vpp_term: Show IP6 Fib Table
     ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib table ${id}
     [Return]           ${out}
 
-
 vpp_term: Show L2fib
     [Arguments]        ${node}
     Log Many           ${node}
@@ -183,6 +182,19 @@ vpp_term: Get Interface IPs
     Log                  ${ipv4_list}
     [Return]             ${ipv4_list}
 
+vpp_term: Get Interface IP6 IPs
+    [Arguments]          ${node}     ${interface}
+    [Documentation]    Get all IPv6 addresses for the specified interface.
+    Log Many             ${node}     ${interface}
+    ${int_addr}=         vpp_term: Show Interfaces Address    ${node}    ${interface}
+    Log                  ${int_addr}
+    @{ipv6_list}=        Find IPV6 In Text    ${int_addr}
+    # Remove link-local address as it is hardware-dependent
+    :FOR    ${address}    IN    @{ipv6_list}
+    \    Run Keyword If    ${address.startswith('fd80:')}    Remove Values From List    ${ipv6_list}    ${address}
+    Log                  ${ipv6_list}
+    [Return]             ${ipv6_list}
+
 vpp_term: Get Interface MAC
     [Arguments]          ${node}     ${interface}
     Log Many             ${node}     ${interface}
@@ -229,7 +241,7 @@ vpp_term: Check TAP Interface State
     Log                  ${interface}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
-    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
     Log                  ${tap_int_state}
     ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
     ${ipv4_string}=      Get From List    ${ipv4}    0
@@ -237,6 +249,29 @@ vpp_term: Check TAP Interface State
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     Log                  ${mac}
     ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Check TAP IP6 Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    [Documentation]    Get operational state of the specified interface and compare with expected state.
+    Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
+    Log                  ${tap_int_state}
+    ${ipv6}=             vpp_term: Get Interface IP6 IPs    ${node}     ${internal_name}
+    ${ipv6_string}=      Get From List    ${ipv6}    0
+    Log                  ${ipv6}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv6=${ipv6_string}    state=${tap_int_state}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
@@ -275,7 +310,6 @@ vpp_term: Check ARP
     ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
     Log                ${status}
     Should Be Equal As Strings   ${status}   ${presence}
-
 
 vpp_term: Show Application Namespaces
     [Arguments]        ${node}
@@ -320,7 +354,7 @@ vpp_term: Check TAPv2 Interface State
     Log                  ${interface}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
-    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
     Log                  ${tap_int_state}
     ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
     ${ipv4_string}=      Get From List    ${ipv4}    0
@@ -328,6 +362,28 @@ vpp_term: Check TAPv2 Interface State
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     Log                  ${mac}
     ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Check TAPv2 IP6 Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tapv2 interface.
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
+    Log                  ${tap_int_state}
+    ${ipv6}=             vpp_term: Get Interface IP6 IPs    ${node}     ${internal_name}
+    ${ipv6_string}=      Get From List    ${ipv6}    0
+    Log                  ${ipv6}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv6=${ipv6_string}    state=${tap_int_state}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
@@ -356,8 +412,8 @@ vpp_term: Show STN Rules
     [Return]           ${out}
 
 vpp_term: Check STN Rule State
-    [Arguments]        ${node}  ${interface}  ${ipv4}
-    Log Many    ${node}    ${ipv4}
+    [Arguments]        ${node}  ${interface}  ${ip}
+    Log Many    ${node}    ${ip}
     [Documentation]    Check STN Rules
     Log Many           ${node}
     ${out}=            vpp_term: Show STN Rules    ${node}
@@ -366,21 +422,21 @@ vpp_term: Check STN Rule State
     Log                ${internal_name}
     ${ip_address}  ${iface}  ${next_node}  Parse STN Rule    ${out}
     Log                ${ip_address}
-    Should Be Equal As Strings   ${ipv4}  ${ip_address}
+    Should Be Equal As Strings   ${ip}  ${ip_address}
     Log                ${iface}
     Should Be Equal As Strings   ${internal_name}  ${iface}
     Log                ${next_node}
 
 vpp_term: Check STN Rule Deleted
-    [Arguments]        ${node}  ${interface}  ${ipv4}
-    Log Many    ${node}    ${ipv4}
+    [Arguments]        ${node}  ${interface}  ${ip}
+    Log Many    ${node}    ${ip}
     [Documentation]    Check STN Rules
     Log Many           ${node}
     ${out}=            vpp_term: Show STN Rules    ${node}
     Log                ${out}
     ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
     Log                ${internal_name}
-    Should Not Contain     ${out}    ${ipv4}
+    Should Not Contain     ${out}    ${ip}
     Should Not Contain     ${out}    ${internal_name}
 
 vpp_term: Add Trace Afpacket

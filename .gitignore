@@ -14,7 +14,8 @@ examples/localclient_linux/veth/veth
 examples/localclient_linux/tap/tap
 examples/localclient_vpp/plugins/plugins
 examples/localclient_vpp/nat/nat
-examples/remoteclient_grpc_vpp/remoteclient_grpc_vpp
+examples/grpc_vpp/remote_client/remote_client
+examples/grpc_vpp/notifications/notifications
 tests/perf/log
 tests/perf/logresult.zip
 tests/robot/variables/jozo_local_variables.robot

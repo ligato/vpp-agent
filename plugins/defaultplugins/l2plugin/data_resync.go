@@ -110,12 +110,15 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			}
 			// Remove interfaces from bridge domain. Attempt to unset interface which does not belong to the bridge domain
 			// does not cause an error
-			vppcalls.UnsetInterfacesFromBridgeDomain(nbBD, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
-				plugin.vppChan, nil)
-
+			if err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
+				plugin.vppChan, nil); err != nil {
+				return err
+			}
 			// Set all new interfaces to the bridge domain
-			vppcalls.SetInterfacesToBridgeDomain(nbBD, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
-				plugin.vppChan, nil)
+			if err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
+				plugin.vppChan, nil); err != nil {
+				return err
+			}
 
 			// todo VPP does not support ARP dump, they can be only added at this time
 			// Resolve new ARP entries

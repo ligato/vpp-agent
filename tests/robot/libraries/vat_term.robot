@@ -184,6 +184,7 @@ vat_term: Check Loopback Interface State
     ${int_state}=        Get Interface State    ${interfaces}    ${internal_index}
     Log                  ${int_state}
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
     ${enabled}=          Set Variable    ${int_state["admin_up_down"]}
     ${mtu}=              Set Variable    ${int_state["mtu"]}
     ${dec_mac}=          Set Variable    ${int_state["l2_address"]}
@@ -191,6 +192,8 @@ vat_term: Check Loopback Interface State
     ${actual_state}=     Create List    enabled=${enabled}    mtu=${mtu}    mac=${mac}
     :FOR    ${ip}    IN    @{ipv4_list}
     \    Append To List    ${actual_state}    ipv4=${ip}
+    :FOR    ${ip}    IN    @{ipv6_list}
+    \    Append To List    ${actual_state}    ipv6=${ip}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
@@ -205,10 +208,13 @@ vat_term: Check Memif Interface State
     ${memif_state}=      Parse Memif Info    ${memif_info}
     Log                  ${memif_state}    
     ${ipv4_list}=        vpp_term: Get Interface IPs    ${node}    ${internal_name}
+    ${ipv6_list}=        vpp_term: Get Interface IP6 IPs    ${node}    ${internal_name}
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     ${actual_state}=     Create List    mac=${mac}
     :FOR    ${ip}    IN    @{ipv4_list}
     \    Append To List    ${actual_state}    ipv4=${ip}
+    :FOR    ${ip}    IN    @{ipv6_list}
+    \    Append To List    ${actual_state}    ipv6=${ip}
     Append To List       ${actual_state}    @{memif_state}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}

@@ -29,6 +29,12 @@ service DataResyncService {
     rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
+// Notification service streams VPP notifications to connected servers
+service NotificationService {
+    // Get notification stack
+    rpc Get(NotificationRequest) returns (stream NotificationsResponse);
+}
+
 // Data request is an inventory of supported data types with one or multiple
 // items of every type. Universal type for every data change/resync request
 message DataRequest {
@@ -56,6 +62,12 @@ message DataRequest {
     repeated l3.LinuxStaticRoutes.Route LinuxRoutes = 91;
 }
 
+// NotificationRequest represent a notification request which contains index of next required
+// message
+message NotificationRequest {
+    uint32 idx = 1;
+}
+
 // Response to data change 'put'
 message PutResponse {
 }
@@ -66,4 +78,12 @@ message DelResponse {
 
 // Response to data resync
 message ResyncResponse {
+}
+
+// Response to notification request 'get'. Returns indexed notification.
+message NotificationsResponse {
+    // Index of following notification
+    uint32 nextIdx = 1;
+    // Notification data
+    interfaces.InterfaceNotification nIf = 2;
 }

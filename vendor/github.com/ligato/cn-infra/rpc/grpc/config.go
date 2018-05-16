@@ -27,15 +27,15 @@ import (
 // It is meant to be extended with security (TLS...)
 type Config struct {
 	// Endpoint is an address of GRPC netListener
-	Endpoint string
+	Endpoint string `json:"endpoint"`
 
 	// MaxMsgSize returns a ServerOption to set the max message size in bytes for inbound mesages.
 	// If this is not set, gRPC uses the default 4MB.
-	MaxMsgSize int
+	MaxMsgSize int `json:"max-msg-size"`
 
 	// MaxConcurrentStreams returns a ServerOption that will apply a limit on the number
 	// of concurrent streams to each ServerTransport.
-	MaxConcurrentStreams uint32
+	MaxConcurrentStreams uint32 `json:"mac-conncurrent-streams"`
 
 	// Compression for inbound/outbound messages.
 	// Supported only gzip.

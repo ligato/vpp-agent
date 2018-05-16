@@ -104,6 +104,7 @@ func (f *Flavor) Inject() bool {
 		&f.AllConnectorsFlavor.ETCDDataSync,
 		&f.AllConnectorsFlavor.ConsulDataSync,
 	}}
+	f.VPP.Deps.GRPCSvc = &f.GRPCSvcPlugin
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
 	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
@@ -119,7 +120,7 @@ func (f *Flavor) Inject() bool {
 
 	// Init GRPC service after VPP & Linux plugins
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
-	f.GRPCSvcPlugin.Deps.GRPC = &f.FlavorRPC.GRPC
+	f.GRPCSvcPlugin.Deps.GRPCServer = &f.FlavorRPC.GRPC
 
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP

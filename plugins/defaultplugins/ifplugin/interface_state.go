@@ -69,7 +69,7 @@ type InterfaceStateUpdater struct {
 	Log            logging.Logger
 	GoVppmux       govppmux.API
 	swIfIndexes    ifaceidx.SwIfIndex
-	publishIfState func(notification *intf.InterfaceStateNotification)
+	publishIfState func(notification *intf.InterfaceNotification)
 
 	ifState map[uint32]*intf.InterfacesState_Interface // swIfIndex to state data map
 	access  sync.Mutex                                 // lock for the state data map
@@ -88,7 +88,7 @@ type InterfaceStateUpdater struct {
 // Init members (channels, maps...) and start go routines
 func (plugin *InterfaceStateUpdater) Init(ctx context.Context,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
-	publishIfState func(notification *intf.InterfaceStateNotification)) (err error) {
+	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 
 	plugin.Log.Info("Initializing InterfaceStateUpdater")
 
@@ -258,8 +258,8 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 		"LinkUpDown": notif.LinkUpDown, "Deleted": notif.Deleted}).Debug("Interface state change notification.")
 
 	// store data in ETCD
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.UPDOWN, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 }
 
 // getIfStateData returns interface state data structure for the specified interface index (creates it if it does not exist).
@@ -390,8 +390,8 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		// store counters of all interfaces into ETCD
 		for _, counter := range plugin.ifState {
 			//plugin.deps.DB.Put(intf.InterfaceStateKey(c.Name), counter)
-			plugin.publishIfState(&intf.InterfaceStateNotification{
-				Type: intf.COUNTERS, State: counter})
+			plugin.publishIfState(&intf.InterfaceNotification{
+				Type: intf.InterfaceNotification_UPDOWN, State: counter})
 		}
 	}
 }
@@ -457,8 +457,8 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 		ifState.Duplex = intf.InterfacesState_Interface_UNKNOWN_DUPLEX
 	}
 
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.UNKNOWN, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
@@ -481,6 +481,6 @@ func (plugin *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32) {
 	ifState.LastChange = time.Now().Unix()
 
 	// this can be post-processed by multiple plugins
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.COUNTERS, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
