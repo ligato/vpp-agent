@@ -12,7 +12,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl5_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
