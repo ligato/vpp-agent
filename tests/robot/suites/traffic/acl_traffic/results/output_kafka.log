@@ -1,0 +1,17 @@
+*** Time:2018-05-16 15:15:49.052 Command: sudo docker create -it -p 2181:2181 -p 9092:9092 --env ADVERTISED_PORT=9092 --name kafka spotify/kafka
+dbef312b260f0794c6620b2ab230a76886e53d6bb38bc91ab1cf624acd59f448
+*** Time:2018-05-16 15:15:49.229 Command: sudo docker start -i kafka
+/usr/lib/python2.7/dist-packages/supervisor/options.py:296: UserWarning: Supervisord is running as root and it is searching for its configuration file in default locations (including its current working directory); you probably want to specify a "-c" argument specifying an absolute path to a configuration file for improved security.
+  'Supervisord is running as root and it is searching '
+2018-05-16 13:15:49,776 CRIT Supervisor running as root (no user in config file)
+2018-05-16 13:15:49,776 WARN Included extra file "/etc/supervisor/conf.d/kafka.conf" during parsing
+2018-05-16 13:15:49,776 WARN Included extra file "/etc/supervisor/conf.d/zookeeper.conf" during parsing
+2018-05-16 13:15:49,786 INFO RPC interface 'supervisor' initialized
+2018-05-16 13:15:49,786 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2018-05-16 13:15:49,786 INFO supervisord started with pid 1
+2018-05-16 13:15:50,788 INFO spawned: 'zookeeper' with pid 7
+2018-05-16 13:15:50,790 INFO spawned: 'kafka' with pid 8
+2018-05-16 13:15:51,816 INFO success: zookeeper entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2018-05-16 13:15:51,816 INFO success: kafka entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+
+msestak@msestak-VirtualBox:~$ 

@@ -1,0 +1,125 @@
+2018-05-16T13:16:53.745731558Z  2018-05-16 13:16:53,745 CRIT Supervisor running as root (no user in config file)
+2018-05-16T13:16:53.748191060Z  2018-05-16 13:16:53,747 INFO supervisord started with pid 1
+2018-05-16T13:16:54.749723391Z  2018-05-16 13:16:54,748 INFO spawned: 'agent' with pid 7
+2018-05-16T13:16:54.765544787Z  2018-05-16 13:16:54,763 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.765574837Z  time="2018-05-16 13:16:54.76290" level=info msg="Starting agent v1.1-5-g55e9977" BuildDate="2018-03-06T11:05+00:00" CommitHash=55e99770087087fa8e41a980a8b6257c80c93f4c loc="core/agent_core.go(195)" logger=defaultLogger
+2018-05-16T13:16:54.765580232Z  
+2018-05-16T13:16:54.766502416Z  2018-05-16 13:16:54,764 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.766511249Z  time="2018-05-16 13:16:54.76461" level=info msg="plugin Logs: Init took 54.702µs" durationInNs=54702 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.766514588Z  
+2018-05-16T13:16:54.766516814Z  2018-05-16 13:16:54,765 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.766519054Z  time="2018-05-16 13:16:54.76577" level=debug msg="Microservice label is set to node_1" loc="servicelabel/plugin_impl_servicelabel.go(49)" logger=defaultLogger
+2018-05-16T13:16:54.766521521Z  
+2018-05-16T13:16:54.766523606Z  2018-05-16 13:16:54,766 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.766525735Z  time="2018-05-16 13:16:54.76594" level=info msg="plugin ServiceLabel: Init took 175.065µs" durationInNs=175065 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.766528238Z  
+2018-05-16T13:16:54.766530281Z  2018-05-16 13:16:54,766 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.766532538Z  time="2018-05-16 13:16:54.76610" level=info msg="plugin StatusCheck: Init took 2.308µs" durationInNs=2308 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.766535048Z  
+2018-05-16T13:16:54.772370700Z  2018-05-16 13:16:54,770 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.772384139Z  time="2018-05-16 13:16:54.76871" level=info msg="Connecting to etcd took 1.122894ms" durationInNs=1122894 loc="etcdv3/bytes_broker_impl.go(85)" logger=etcdv3
+2018-05-16T13:16:54.772387594Z  time="2018-05-16 13:16:54.76877" level=info msg="Plugin etcdv3: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-05-16T13:16:54.772390385Z  time="2018-05-16 13:16:54.76879" level=info msg="plugin ETCD: Init took 2.528543ms" durationInNs=2528543 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.772393013Z  time="2018-05-16 13:16:54.76882" level=info msg="plugin ETCDDataSync: Init took 986ns" durationInNs=986 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.772395525Z  
+2018-05-16T13:16:54.781175094Z  2018-05-16 13:16:54,779 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.781188104Z  time="2018-05-16 13:16:54.77730" level=info msg="Group ID is set to node_1" loc="kafka/plugin_impl_kafka.go(95)" logger=kafka
+2018-05-16T13:16:54.781197755Z  time="2018-05-16 13:16:54.77738" level=info msg="Invalid partition -1 - defaulting to 0" loc="client/config.go(254)" logger=kafka
+2018-05-16T13:16:54.781200761Z  time="2018-05-16 13:16:54.77743" level=info msg="Connecting to kafka took 61.669µs" durationInNs=61669 loc="mux/config.go(150)" logger=kafka
+2018-05-16T13:16:54.781203615Z  time="2018-05-16 13:16:54.77746" level=info msg="plugin Kafka: Init took 8.606184ms" durationInNs=8606184 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781206140Z  time="2018-05-16 13:16:54.77755" level=info msg="redis config not found  - skip loading this plugin" loc="redis/plugin_impl_redis.go(107)" logger=redis
+2018-05-16T13:16:54.781208642Z  time="2018-05-16 13:16:54.77757" level=info msg="plugin Redis: Init took 84.056µs" durationInNs=84056 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781211175Z  time="2018-05-16 13:16:54.77759" level=info msg="plugin RedisDataSync: Init took 1.318µs" durationInNs=1318 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781213563Z  time="2018-05-16 13:16:54.77764" level=info msg="cassandra client config not found  - skip loading this plugin" loc="cassandra/plugin_impl_cassa.go(72)" logger=cassandra
+2018-05-16T13:16:54.781216053Z  time="2018-05-16 13:16:54.77766" level=info msg="plugin Cassandra: Init took 50.466µs" durationInNs=50466 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781218572Z  time="2018-05-16 13:16:54.77769" level=info msg="plugin ResyncOrch: Init took 593ns" durationInNs=593 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781221019Z  time="2018-05-16 13:16:54.77774" level=info msg="plugin HTTP: Init took 29.764µs" durationInNs=29764 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781223452Z  time="2018-05-16 13:16:54.77778" level=info msg=init loc="rest/plugin_impl_fork.go(65)" logger=http-probe probePort=9191
+2018-05-16T13:16:54.781225831Z  time="2018-05-16 13:16:54.77781" level=info msg="plugin HTTPProbe: Init took 49.246µs" durationInNs=49246 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781228840Z  time="2018-05-16 13:16:54.77783" level=info msg="plugin Prometheus: Init took 957ns" durationInNs=957 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781231361Z  time="2018-05-16 13:16:54.77785" level=info msg="plugin HealthRPC: Init took 261ns" durationInNs=261 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781233781Z  time="2018-05-16 13:16:54.77790" level=info msg="GaugeFunc('service_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-05-16T13:16:54.781236165Z  time="2018-05-16 13:16:54.77793" level=info msg="GaugeFunc('service_info') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-05-16T13:16:54.781238562Z  time="2018-05-16 13:16:54.77796" level=info msg="plugin PrometheusRPC: Init took 81.376µs" durationInNs=81376 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781241003Z  time="2018-05-16 13:16:54.77801" level=info msg="plugin GRPC: Init took 38.105µs" durationInNs=38105 loc="core/agent_core.go(295)" logger=defaultLogger
+2018-05-16T13:16:54.781245263Z  
+2018-05-16T13:16:54.781248071Z  2018-05-16 13:16:54,780 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.781250306Z  time="2018-05-16 13:16:54.78055" level=info msg="plugin Logs: AfterInit took 2.484044ms" durationInNs=2484044 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.781252721Z  
+2018-05-16T13:16:54.781254785Z  2018-05-16 13:16:54,780 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.781256888Z  time="2018-05-16 13:16:54.78072" level=info msg="plugin ServiceLabel: not implement AfterInit" loc="core/agent_core.go(348)" logger=defaultLogger
+2018-05-16T13:16:54.781259354Z  
+2018-05-16T13:16:54.781261362Z  2018-05-16 13:16:54,780 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.781263478Z  time="2018-05-16 13:16:54.78089" level=info msg="plugin StatusCheck: AfterInit took 5.88µs" durationInNs=5880 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.781265932Z  
+2018-05-16T13:16:54.783115945Z  2018-05-16 13:16:54,782 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.783128570Z  time="2018-05-16 13:16:54.78107" level=info msg="plugin ETCD: AfterInit took 253ns" durationInNs=253 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.783151332Z  
+2018-05-16T13:16:54.783153762Z  2018-05-16 13:16:54,782 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.783156135Z  time="2018-05-16 13:16:54.78230" level=info msg="plugin ETCDDataSync: AfterInit took 3.658µs" durationInNs=3658 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.783159078Z  
+2018-05-16T13:16:54.792027749Z  2018-05-16 13:16:54,790 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.792041250Z  time="2018-05-16 13:16:54.78881" level=info msg="Plugin kafka: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-05-16T13:16:54.792044815Z  
+2018-05-16T13:16:54.792047179Z  2018-05-16 13:16:54,791 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.792049385Z  time="2018-05-16 13:16:54.79131" level=info msg="plugin Kafka: AfterInit took 8.847851ms" durationInNs=8847851 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.792051980Z  
+2018-05-16T13:16:54.792054145Z  2018-05-16 13:16:54,791 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.792056377Z  time="2018-05-16 13:16:54.79150" level=info msg="plugin Redis: AfterInit took 397ns" durationInNs=397 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.792058858Z  
+2018-05-16T13:16:54.792060897Z  2018-05-16 13:16:54,791 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.792063044Z  time="2018-05-16 13:16:54.79170" level=info msg="plugin RedisDataSync: AfterInit took 644ns" durationInNs=644 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.792065494Z  
+2018-05-16T13:16:54.793984358Z  2018-05-16 13:16:54,793 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.794001884Z  time="2018-05-16 13:16:54.79295" level=info msg="plugin Cassandra: AfterInit took 363ns" durationInNs=363 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.794005521Z  
+2018-05-16T13:16:54.794009336Z  2018-05-16 13:16:54,793 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.794011611Z  time="2018-05-16 13:16:54.79359" level=info msg="Resync order[]" loc="resync/plugin_impl_resync.go(98)" logger=resync-orch
+2018-05-16T13:16:54.794014201Z  
+2018-05-16T13:16:54.795926577Z  2018-05-16 13:16:54,794 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.795934912Z  time="2018-05-16 13:16:54.79377" level=info msg="Resync took 124ns" durationInNs=124 loc="resync/plugin_impl_resync.go(115)" logger=resync-orch
+2018-05-16T13:16:54.795937998Z  
+2018-05-16T13:16:54.795940208Z  2018-05-16 13:16:54,795 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.795942426Z  time="2018-05-16 13:16:54.79504" level=info msg="plugin ResyncOrch: AfterInit took 1.441871ms" durationInNs=1441871 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.795944964Z  
+2018-05-16T13:16:54.796913640Z  2018-05-16 13:16:54,795 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.796921217Z  time="2018-05-16 13:16:54.79524" level=info msg="Listening on http://0.0.0.0:9191" loc="rest/plugin_impl_rest.go(100)" logger=http
+2018-05-16T13:16:54.796924127Z  
+2018-05-16T13:16:54.898164130Z  2018-05-16 13:16:54,897 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.898179095Z  time="2018-05-16 13:16:54.89660" level=info msg="plugin HTTP: AfterInit took 101.330865ms" durationInNs=101330865 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.898182910Z  time="2018-05-16 13:16:54.89664" level=info msg="plugin HTTPProbe: AfterInit took 260ns" durationInNs=260 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.898185769Z  time="2018-05-16 13:16:54.89669" level=info msg="Serving /health on port 9191" loc="prometheus/plugin_impl_prometheus.go(84)" logger=prometheus
+2018-05-16T13:16:54.898188497Z  time="2018-05-16 13:16:54.89675" level=info msg="Serving /metrics on port 9191" loc="prometheus/plugin_impl_prometheus.go(84)" logger=prometheus
+2018-05-16T13:16:54.898191072Z  time="2018-05-16 13:16:54.89677" level=info msg="plugin Prometheus: AfterInit took 104.904µs" durationInNs=104904 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.898194164Z  time="2018-05-16 13:16:54.89680" level=info msg="Starting health http-probe on port 9191" loc="probe/plugin_impl_probes.go(44)" logger=health-rpc
+2018-05-16T13:16:54.898196778Z  
+2018-05-16T13:16:54.898486406Z  2018-05-16 13:16:54,897 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.898507807Z  time="2018-05-16 13:16:54.89734" level=info msg="plugin HealthRPC: AfterInit took 51.498µs" durationInNs=51498 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.898510883Z  time="2018-05-16 13:16:54.89742" level=info msg="k=etcdv3, v=last_change:1526476614 last_update:1526476614 , state=INIT" loc="probe/plugin_impl_prometheus.go(114)" logger=health-prometheus-rpc
+2018-05-16T13:16:54.898519658Z  time="2018-05-16 13:16:54.89746" level=info msg="DependencyHealth for plugin etcdv3: 0" loc="probe/plugin_impl_prometheus.go(152)" logger=health-prometheus-rpc
+2018-05-16T13:16:54.898522450Z  time="2018-05-16 13:16:54.89750" level=info msg="GaugeFunc('service_dependency_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-05-16T13:16:54.898893960Z  time="2018-05-16 13:16:54.89753" level=info msg="k=kafka, v=last_change:1526476614 last_update:1526476614 , state=INIT" loc="probe/plugin_impl_prometheus.go(114)" logger=health-prometheus-rpc
+2018-05-16T13:16:54.898902042Z  time="2018-05-16 13:16:54.89756" level=info msg="DependencyHealth for plugin kafka: 0" loc="probe/plugin_impl_prometheus.go(152)" logger=health-prometheus-rpc
+2018-05-16T13:16:54.898904904Z  time="2018-05-16 13:16:54.89759" level=info msg="GaugeFunc('service_dependency_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-05-16T13:16:54.898907508Z  time="2018-05-16 13:16:54.89762" level=info msg="plugin PrometheusRPC: AfterInit took 246.394µs" durationInNs=246394 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.898910271Z  time="2018-05-16 13:16:54.89765" level=info msg="Listening GRPC on tcp://" loc="grpc/plugin_impl_grpc.go(119)" logger=grpc
+2018-05-16T13:16:54.898912917Z  
+2018-05-16T13:16:54.999175215Z  2018-05-16 13:16:54,998 DEBG 'agent' stdout output:
+2018-05-16T13:16:54.999189384Z  time="2018-05-16 13:16:54.99865" level=info msg="plugin GRPC: AfterInit took 100.982266ms" durationInNs=100982266 loc="core/agent_core.go(345)" logger=defaultLogger
+2018-05-16T13:16:54.999193029Z  
+2018-05-16T13:16:55.000160962Z  2018-05-16 13:16:54,999 DEBG 'agent' stdout output:
+2018-05-16T13:16:55.000169579Z  time="2018-05-16 13:16:54.99905" level=info msg="All plugins initialized successfully, took 234.489533ms" durationInNs=234489533 loc="core/agent_core.go(365)" logger=defaultLogger
+2018-05-16T13:16:55.000172908Z  
+2018-05-16T13:16:55.000175094Z  2018-05-16 13:16:54,999 DEBG 'agent' stdout output:
+2018-05-16T13:16:55.000177420Z  time="2018-05-16 13:16:54.99938" level=info msg="Agent Init took 13.509252ms" durationInNs=13509252 loc="core/agent_core.go(366)" logger=defaultLogger
+2018-05-16T13:16:55.000180088Z  
+2018-05-16T13:16:55.000182178Z  2018-05-16 13:16:54,999 DEBG 'agent' stdout output:
+2018-05-16T13:16:55.000184362Z  time="2018-05-16 13:16:54.99954" level=info msg="Agent AfterInit took 220.980281ms" durationInNs=220980281 loc="core/agent_core.go(367)" logger=defaultLogger
+2018-05-16T13:16:55.000186883Z  
+2018-05-16T13:16:56.001460542Z  2018-05-16 13:16:56,000 INFO success: agent entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2018-05-16T13:16:59.786953253Z  2018-05-16 13:16:59,786 DEBG 'agent' stdout output:
+2018-05-16T13:16:59.786970986Z  time="2018-05-16 13:16:59.78612" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=etcdv3 state=ok
+2018-05-16T13:16:59.786985225Z  
+2018-05-16T13:16:59.790381282Z  2018-05-16 13:16:59,789 DEBG 'agent' stdout output:
+2018-05-16T13:16:59.790395892Z  time="2018-05-16 13:16:59.78895" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=kafka state=ok
+2018-05-16T13:16:59.790399729Z  

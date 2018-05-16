@@ -1,0 +1,95 @@
+*** Time:2018-05-16 15:17:00.561 Command: sudo docker create -e MICROSERVICE_LABEL=node_2 --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p 9196:9191 --name node_2 ligato/dev-cn-infra:latest
+0f26023937cfa11cb8816afdf2b76898f7d4babd3c189f2e2e6023336ff3e088
+*** Time:2018-05-16 15:17:01.014 Command: sudo docker start node_2
+node_2
+msestak@msestak-VirtualBox:~$ 
+*** Time:2018-05-16 15:18:20.184 Command: ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+4: node2_veth@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:00:00:00:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet 10.0.0.11/24 brd 10.0.0.255 scope global node2_veth
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b47c:7ff:fe9a:c1b2/64 scope link 
+       valid_lft forever preferred_lft forever
+293: eth0@if294: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:07 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.7/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:7/64 scope link 
+       valid_lft forever preferred_lft forever
+****** Time:2018-05-16 15:18:20.771 Command: ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.1  0.2  47284 17436 pts/0    Ss+  13:17   0:00 /usr/bin/python /usr/bin/supervisord -c /etc/supervisord.conf
+root         7  0.3  0.2 271784 15796 pts/0    Sl   13:17   0:00 /root/go/bin/simple-agent --etcdv3-config=/opt/agent/dev/etcd.conf --kafka-config=/opt/agent/dev/kafka.conf
+root        22  0.0  0.0  34424  2828 ?        Rs   13:18   0:00 ps aux
+****** Time:2018-05-16 15:18:50.707 Command: ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+4: node2_veth@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:00:00:00:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet 10.0.0.11/24 brd 10.0.0.255 scope global node2_veth
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b47c:7ff:fe9a:c1b2/64 scope link 
+       valid_lft forever preferred_lft forever
+293: eth0@if294: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:07 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.7/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:7/64 scope link 
+       valid_lft forever preferred_lft forever
+****** Time:2018-05-16 15:20:25.704 Command: ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+4: node2_veth@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:00:00:00:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet 10.0.0.11/24 brd 10.0.0.255 scope global node2_veth
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b47c:7ff:fe9a:c1b2/64 scope link 
+       valid_lft forever preferred_lft forever
+293: eth0@if294: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:07 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.7/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:7/64 scope link 
+       valid_lft forever preferred_lft forever
+****** Time:2018-05-16 15:20:26.716 Command: ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2  47284 17436 pts/0    Ss+  13:17   0:00 /usr/bin/python /usr/bin/supervisord -c /etc/supervisord.conf
+root         7  0.2  0.2 273256 16544 pts/0    Sl   13:17   0:00 /root/go/bin/simple-agent --etcdv3-config=/opt/agent/dev/etcd.conf --kafka-config=/opt/agent/dev/kafka.conf
+root        34  0.0  0.0  34424  2872 ?        Rs   13:20   0:00 ps aux
+****** Time:2018-05-16 15:20:29.869 Command: nc -klp 3000
+
+*** Time:2018-05-16 15:20:30.333 Command: nc -uklp 3001
+
+*** Time:2018-05-16 15:20:31.281 Command: ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2  47284 17436 pts/0    Ss+  13:17   0:00 /usr/bin/python /usr/bin/supervisord -c /etc/supervisord.conf
+root         7  0.2  0.2 273256 16544 pts/0    Sl   13:17   0:00 /root/go/bin/simple-agent --etcdv3-config=/opt/agent/dev/etcd.conf --kafka-config=/opt/agent/dev/kafka.conf
+root        38  0.5  0.0   6492  1632 ?        Ss   13:20   0:00 nc -klp 3000
+root        42  1.0  0.0   6492  1796 ?        Ss   13:20   0:00 nc -uklp 3001
+root        46  0.0  0.0  34424  2828 ?        Rs   13:20   0:00 ps aux
+****** Time:2018-05-16 15:20:48.783 Command: ping -c 5 10.0.0.10
+PING 10.0.0.10 (10.0.0.10) 56(84) bytes of data.
+64 bytes from 10.0.0.10: icmp_seq=1 ttl=64 time=0.251 ms
+64 bytes from 10.0.0.10: icmp_seq=2 ttl=64 time=0.166 ms
+64 bytes from 10.0.0.10: icmp_seq=3 ttl=64 time=0.375 ms
+64 bytes from 10.0.0.10: icmp_seq=4 ttl=64 time=0.195 ms
+64 bytes from 10.0.0.10: icmp_seq=5 ttl=64 time=0.174 ms
+
+--- 10.0.0.10 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4031ms
+rtt min/avg/max/mdev = 0.166/0.232/0.375/0.077 ms
+***
