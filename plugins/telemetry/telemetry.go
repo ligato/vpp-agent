@@ -31,7 +31,7 @@ const (
 	runtimeVectorsMetric        = "vectors"
 	runtimeSuspendsMetric       = "suspends"
 	runtimeClocksMetric         = "clocks"
-	runtimeVectorsPerCallMetric = "vectorsPerCall"
+	runtimeVectorsPerCallMetric = "vectors_per_call"
 
 	// Memory
 	memoryThreadLabel   = "thread"
@@ -53,8 +53,8 @@ const (
 	buffersSizeMetric     = "size"
 	buffersAllocMetric    = "alloc"
 	buffersFreeMetric     = "free"
-	buffersNumAllocMetric = "numAlloc"
-	buffersNumFreeMetric  = "numFree"
+	buffersNumAllocMetric = "num_alloc"
+	buffersNumFreeMetric  = "num_free"
 )
 
 // Plugin registers Telemetry Plugin
