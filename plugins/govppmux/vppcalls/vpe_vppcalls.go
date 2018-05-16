@@ -146,12 +146,8 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 				continue
 			}
 			if counters != nil {
-				count, err := strconv.ParseUint(fields[0], 10, 64)
-				if err != nil {
-					return nil, err
-				}
 				counters = append(counters, NodeCounter{
-					Count:  count,
+					Count:  strToUint64(fields[0]),
 					Node:   fields[1],
 					Reason: fields[2],
 				})
@@ -203,34 +199,14 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 				continue
 			}
 			if items != nil {
-				calls, err := strconv.ParseUint(fields[2], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				vectors, err := strconv.ParseUint(fields[3], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				suspends, err := strconv.ParseUint(fields[4], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				clocks, err := strconv.ParseFloat(fields[5], 10)
-				if err != nil {
-					return nil, err
-				}
-				vectorsCall, err := strconv.ParseFloat(fields[6], 10)
-				if err != nil {
-					return nil, err
-				}
 				items = append(items, RuntimeItem{
 					Name:        fields[0],
 					State:       fields[1],
-					Calls:       calls,
-					Vectors:     vectors,
-					Suspends:    suspends,
-					Clocks:      clocks,
-					VectorsCall: vectorsCall,
+					Calls:       strToUint64(fields[2]),
+					Vectors:     strToUint64(fields[3]),
+					Suspends:    strToUint64(fields[4]),
+					Clocks:      strToFloat64(fields[5]),
+					VectorsCall: strToFloat64(fields[6]),
 				})
 			}
 		}
@@ -293,43 +269,15 @@ func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
 		}
 		fields := matches[1:]
 
-		threadID, err := strconv.ParseUint(fields[0], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		index, err := strconv.ParseUint(fields[2], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		size, err := strconv.ParseUint(fields[3], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		alloc, err := strconv.ParseUint(fields[4], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		free, err := strconv.ParseUint(fields[5], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		numAlloc, err := strconv.ParseUint(fields[6], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		numFree, err := strconv.ParseUint(fields[7], 10, 64)
-		if err != nil {
-			return nil, err
-		}
 		items = append(items, BuffersItem{
-			ThreadID: uint(threadID),
+			ThreadID: uint(strToUint64(fields[0])),
 			Name:     fields[1],
-			Index:    uint(index),
-			Size:     size,
-			Alloc:    alloc,
-			Free:     free,
-			NumAlloc: numAlloc,
-			NumFree:  numFree,
+			Index:    uint(strToUint64(fields[2])),
+			Size:     strToUint64(fields[3]),
+			Alloc:    strToUint64(fields[4]),
+			Free:     strToUint64(fields[5]),
+			NumAlloc: strToUint64(fields[6]),
+			NumFree:  strToUint64(fields[7]),
 		})
 	}
 
@@ -338,6 +286,14 @@ func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
 	}
 
 	return info, nil
+}
+
+func strToFloat64(s string) float64 {
+	num, err := strconv.ParseFloat(s, 10)
+	if err != nil {
+		return 0
+	}
+	return num
 }
 
 func strToUint64(s string) uint64 {
