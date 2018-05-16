@@ -36,10 +36,7 @@ ${E_INTF1}=         IF_AFPIF_VSWITCH_node_2_node2_veth
 ${I_INTF1}=         IF_AFPIF_VSWITCH_node_1_node1_veth
 ${E_INTF2}=         IF_AFPIF_VSWITCH_node_1_node1_veth
 ${I_INTF2}=         IF_AFPIF_VSWITCH_node_2_node2_veth
-${RULE_NM1_1}=         acl1_rule1
-${RULE_NM2_1}=         acl2_rule1
-${RULE_NM3_1}=         acl3_rule1
-${RULE_NM4_1}=         acl3_rule1
+
 
 ${ACTION_DENY}=     1
 ${ACTION_PERMIT}=   2
@@ -136,14 +133,14 @@ Show Tracing
     #Sleep   500s
 
 #Add ACL1_TCP Disable TCP Port
-#    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${TCP_PORT}   ${TCP_PORT}    ${TCP_PORT}   ${TCP_PORT}
+#    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}      ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${TCP_PORT}   ${TCP_PORT}    ${TCP_PORT}   ${TCP_PORT}
 #    Sleep    ${SYNC_SLEEP}
 #
 #Check ACL1_TCP is created
 #    vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl1_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl1_tcp_term.txt
 #
 #ADD ACL1_UDP Disable UDP Port
-#    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM3_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${UDP_PORT}   ${UDP_PORT}    ${UDP_PORT}   ${UDP_PORT}
+#    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}       ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${UDP_PORT}   ${UDP_PORT}    ${UDP_PORT}   ${UDP_PORT}
 #    Sleep    ${SYNC_SLEEP}
 #
 #Check ACL1_UDP Is Created

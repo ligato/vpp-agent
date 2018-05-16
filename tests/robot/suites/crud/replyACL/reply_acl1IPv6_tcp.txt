@@ -10,7 +10,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl1_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
