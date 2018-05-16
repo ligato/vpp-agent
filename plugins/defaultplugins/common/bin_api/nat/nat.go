@@ -916,16 +916,21 @@ func NewNat44UserSessionDump() api.Message {
 // Nat44UserSessionDetails represents the VPP binary API message 'nat44_user_session_details'.
 //
 type Nat44UserSessionDetails struct {
-	OutsideIPAddress []byte `struc:"[4]byte"`
-	OutsidePort      uint16
-	InsideIPAddress  []byte `struc:"[4]byte"`
-	InsidePort       uint16
-	Protocol         uint16
-	IsStatic         uint8
-	LastHeard        uint64
-	TotalBytes       uint64
-	TotalPkts        uint32
-	IsClosed         uint8
+	OutsideIPAddress  []byte `struc:"[4]byte"`
+	OutsidePort       uint16
+	InsideIPAddress   []byte `struc:"[4]byte"`
+	InsidePort        uint16
+	Protocol          uint16
+	IsStatic          uint8
+	LastHeard         uint64
+	TotalBytes        uint64
+	TotalPkts         uint32
+	IsTwicenat        uint8
+	ExtHostValid      uint8
+	ExtHostAddress    []byte `struc:"[4]byte"`
+	ExtHostPort       uint16
+	ExtHostNatAddress []byte `struc:"[4]byte"`
+	ExtHostNatPort    uint16
 }
 
 func (*Nat44UserSessionDetails) GetMessageName() string {
@@ -935,7 +940,7 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Nat44UserSessionDetails) GetCrcString() string {
-	return "6f831394"
+	return "b32984b8"
 }
 func NewNat44UserSessionDetails() api.Message {
 	return &Nat44UserSessionDetails{}
@@ -1038,11 +1043,14 @@ func NewNat44LbStaticMappingDetails() api.Message {
 // Nat44DelSession represents the VPP binary API message 'nat44_del_session'.
 //
 type Nat44DelSession struct {
-	IsIn     uint8
-	Address  []byte `struc:"[4]byte"`
-	Protocol uint8
-	Port     uint16
-	VrfID    uint32
+	IsIn           uint8
+	Address        []byte `struc:"[4]byte"`
+	Protocol       uint8
+	Port           uint16
+	VrfID          uint32
+	ExtHostValid   uint8
+	ExtHostAddress []byte `struc:"[4]byte"`
+	ExtHostPort    uint16
 }
 
 func (*Nat44DelSession) GetMessageName() string {
@@ -1052,7 +1060,7 @@ func (*Nat44DelSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Nat44DelSession) GetCrcString() string {
-	return "63e3de7c"
+	return "b625beac"
 }
 func NewNat44DelSession() api.Message {
 	return &Nat44DelSession{}
