@@ -737,12 +737,12 @@ func (ctl *VppAgentCtl) createBridgeDomain() {
 					{
 						Name: "tap1",
 						BridgedVirtualInterface: false,
-						SplitHorizonGroup:       0,
+						SplitHorizonGroup:       1,
 					},
 					{
 						Name: "memif1",
 						BridgedVirtualInterface: false,
-						SplitHorizonGroup:       0,
+						SplitHorizonGroup:       2,
 					},
 				},
 				ArpTerminationTable: []*l2.BridgeDomains_BridgeDomain_ArpTerminationEntry{
