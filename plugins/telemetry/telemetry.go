@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/flavors/local"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -12,11 +13,18 @@ import (
 )
 
 const (
+	// Period between metric updates
+	updatePeriod = time.Second * 5
+
+	// Registry path for telemetry metrics
 	registryPath = prom.DefaultRegistry
 
+	// Metrics label used for agent label
 	agentLabel = "agent"
+)
 
-	// Runtime metrics
+const (
+	// Runtime
 	runtimeItemLabel = "item"
 
 	runtimeCallsMetric          = "calls"
@@ -25,9 +33,9 @@ const (
 	runtimeClocksMetric         = "clocks"
 	runtimeVectorsPerCallMetric = "vectorsPerCall"
 
-	// Memory metrics
+	// Memory
 	memoryThreadLabel   = "thread"
-	memoryThreadIDLabel = "threadid"
+	memoryThreadIDLabel = "threadID"
 
 	memoryObjectsMetric   = "objects"
 	memoryUsedMetric      = "used"
@@ -36,17 +44,33 @@ const (
 	memoryReclaimedMetric = "reclaimed"
 	memoryOverheadMetric  = "overhead"
 	memoryCapacityMetric  = "capacity"
+
+	// Buffers
+	buffersThreadIDLabel = "threadID"
+	buffersItemLabel     = "item"
+	buffersIndexLabel    = "index"
+
+	buffersSizeMetric     = "size"
+	buffersAllocMetric    = "alloc"
+	buffersFreeMetric     = "free"
+	buffersNumAllocMetric = "numAlloc"
+	buffersNumFreeMetric  = "numFree"
 )
 
 // Plugin registers Telemetry Plugin
 type Plugin struct {
 	Deps
 
+	vppCh *api.Channel
+
 	runtimeGaugeVecs map[string]*prometheus.GaugeVec
 	runtimeStats     map[string]*runtimeStats
 
 	memoryGaugeVecs map[string]*prometheus.GaugeVec
 	memoryStats     map[string]*memoryStats
+
+	buffersGaugeVecs map[string]*prometheus.GaugeVec
+	buffersStats     map[string]*buffersStats
 }
 
 // Deps represents dependencies of Telemetry Plugin
@@ -66,6 +90,13 @@ type memoryStats struct {
 	threadName string
 	threadID   uint
 	metrics    map[string]prometheus.Gauge
+}
+
+type buffersStats struct {
+	threadID  uint
+	itemName  string
+	itemIndex uint
+	metrics   map[string]prometheus.Gauge
 }
 
 // Init initializes Telemetry Plugin
@@ -136,18 +167,56 @@ func (p *Plugin) Init() error {
 		}
 	}
 
-	// Update data
-	ch, err := p.GoVppmux.NewAPIChannel()
+	// Buffers metrics
+	p.buffersGaugeVecs = make(map[string]*prometheus.GaugeVec)
+	p.buffersStats = make(map[string]*buffersStats)
+
+	for _, metric := range [][2]string{
+		{buffersSizeMetric, "Size of buffer"},
+		{buffersAllocMetric, "Allocated"},
+		{buffersFreeMetric, "Free"},
+		{buffersNumAllocMetric, "Number of allocated"},
+		{buffersNumFreeMetric, "Number of free"},
+	} {
+		name := metric[0]
+		p.buffersGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "vpp",
+			Subsystem: "buffers",
+			Name:      name,
+			Help:      metric[1],
+			ConstLabels: prometheus.Labels{
+				agentLabel: p.ServiceLabel.GetAgentLabel(),
+			},
+		}, []string{buffersThreadIDLabel, buffersItemLabel, buffersIndexLabel})
+
+	}
+
+	// register created vectors to prometheus
+	for name, metric := range p.buffersGaugeVecs {
+		if err := p.Prometheus.Register(registryPath, metric); err != nil {
+			p.Log.Errorf("failed to register %v metric: %v", name, err)
+			return err
+		}
+	}
+
+	// Create GoVPP channel
+	var err error
+	p.vppCh, err = p.GoVppmux.NewAPIChannel()
 	if err != nil {
 		p.Log.Errorf("Error creating channel: %v", err)
 		return err
 	}
 
+	return nil
+}
+
+// AfterInit executes after initializion of Telemetry Plugin
+func (p *Plugin) AfterInit() error {
+	// Periodically update data
 	go func() {
-		defer ch.Close()
 		for {
 			// Update runtime
-			runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
+			runtimeInfo, err := vppcalls.GetRuntimeInfo(p.vppCh)
 			if err != nil {
 				p.Log.Errorf("Sending command failed: %v", err)
 				return
@@ -180,7 +249,7 @@ func (p *Plugin) Init() error {
 			}
 
 			// Update memory
-			memoryInfo, err := vppcalls.GetMemory(ch)
+			memoryInfo, err := vppcalls.GetMemory(p.vppCh)
 			if err != nil {
 				p.Log.Errorf("Sending command failed: %v", err)
 				return
@@ -215,19 +284,53 @@ func (p *Plugin) Init() error {
 				stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
 				stats.metrics[memoryCapacityMetric].Set(float64(thread.Capacity))
 			}
-			time.Sleep(time.Second * 5)
+
+			// Update buffers
+			buffersInfo, err := vppcalls.GetBuffersInfo(p.vppCh)
+			if err != nil {
+				p.Log.Errorf("Sending command failed: %v", err)
+				return
+			}
+
+			for _, item := range buffersInfo.Items {
+				stats, ok := p.buffersStats[item.Name]
+				if !ok {
+					stats = &buffersStats{
+						threadID:  item.ThreadID,
+						itemName:  item.Name,
+						itemIndex: item.Index,
+						metrics:   map[string]prometheus.Gauge{},
+					}
+
+					// add gauges with corresponding labels into vectors
+					for k, vec := range p.buffersGaugeVecs {
+						stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+							buffersThreadIDLabel: strconv.Itoa(int(item.ThreadID)),
+							buffersItemLabel:     item.Name,
+							buffersIndexLabel:    strconv.Itoa(int(item.Index)),
+						})
+						if err != nil {
+							p.Log.Error(err)
+						}
+					}
+				}
+
+				stats.metrics[buffersSizeMetric].Set(float64(item.Size))
+				stats.metrics[buffersAllocMetric].Set(float64(item.Alloc))
+				stats.metrics[buffersFreeMetric].Set(float64(item.Free))
+				stats.metrics[buffersNumAllocMetric].Set(float64(item.NumAlloc))
+				stats.metrics[buffersNumFreeMetric].Set(float64(item.NumFree))
+			}
+
+			// Delay period between updates
+			time.Sleep(updatePeriod)
 		}
 	}()
 	return nil
 }
 
-// AfterInit executes after initializion of Telemetry Plugin
-func (p *Plugin) AfterInit() error {
-
-	return nil
-}
-
 // Close is used to clean up resources used by Telemetry Plugin
 func (p *Plugin) Close() error {
+	p.vppCh.Close()
 	return nil
 }

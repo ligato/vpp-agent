@@ -3,6 +3,7 @@ package vppcalls
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -190,7 +191,7 @@ type RuntimeInfo struct {
 	Items []RuntimeItem `json:"items"`
 }
 
-// NodeCounter represents single runtime item
+// RuntimeItem represents single runtime item
 type RuntimeItem struct {
 	Name        string  `json:"name"`
 	State       string  `json:"state"`
@@ -221,8 +222,10 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 	var items []RuntimeItem
 
 	for _, line := range strings.Split(string(data), "\n") {
+		// TODO; use regexp instead of replacing
 		line = strings.Replace(line, "event wait", "event-wait", -1)
 		line = strings.Replace(line, "any wait", "any-wait", -1)
+
 		fields := strings.Fields(line)
 		if len(fields) == 7 {
 			if fields[0] == "Name" {
@@ -264,6 +267,113 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 	}
 
 	info := &RuntimeInfo{
+		Items: items,
+	}
+
+	return info, nil
+}
+
+// BuffersInfo contains values returned from 'show buffers'
+type BuffersInfo struct {
+	Items []BuffersItem `json:"items"`
+}
+
+// BuffersItem represents single buffers item
+type BuffersItem struct {
+	ThreadID uint   `json:"thread_id"`
+	Name     string `json:"name"`
+	Index    uint   `json:"index"`
+	Size     uint64 `json:"size"`
+	Alloc    uint64 `json:"alloc"`
+	Free     uint64 `json:"free"`
+	NumAlloc uint64 `json:"num_alloc"`
+	NumFree  uint64 `json:"num_free"`
+}
+
+var buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*$`)
+
+// GetBuffersInfo retrieves buffers info
+func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
+	const cmd = "show buffers"
+	req := &vpe.CliInband{
+		Cmd:    []byte(cmd),
+		Length: uint32(len(cmd)),
+	}
+	reply := &vpe.CliInbandReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	} else if reply.Retval != 0 {
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	data := reply.Reply[:reply.Length]
+
+	var items []BuffersItem
+
+	for i, line := range strings.Split(string(data), "\n") {
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		// Check first line
+		if i == 0 {
+			fields := strings.Fields(line)
+			// Verify header
+			if len(fields) != 8 || fields[0] != "Thread" {
+				return nil, fmt.Errorf("invalid header for `show buffers` received: %q", line)
+			}
+			continue
+		}
+
+		// Parse lines using regexp
+		matches := buffersRe.FindStringSubmatch(line)
+		if len(matches)-1 != 8 {
+			return nil, fmt.Errorf("parsing failed for `show buffers` line: %q", line)
+		}
+		fields := matches[1:]
+
+		threadID, err := strconv.ParseUint(fields[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		index, err := strconv.ParseUint(fields[2], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		size, err := strconv.ParseUint(fields[3], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		alloc, err := strconv.ParseUint(fields[4], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		free, err := strconv.ParseUint(fields[5], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		numAlloc, err := strconv.ParseUint(fields[6], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		numFree, err := strconv.ParseUint(fields[7], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, BuffersItem{
+			ThreadID: uint(threadID),
+			Name:     fields[1],
+			Index:    uint(index),
+			Size:     size,
+			Alloc:    alloc,
+			Free:     free,
+			NumAlloc: numAlloc,
+			NumFree:  numFree,
+		})
+	}
+
+	info := &BuffersInfo{
 		Items: items,
 	}
 
