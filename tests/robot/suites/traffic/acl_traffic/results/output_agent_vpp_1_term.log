@@ -1,0 +1,646 @@
+*** Time:2018-05-16 15:16:35.860 Command: telnet 0 5001
+Trying 0.0.0.0...
+Connected to 0.
+Escape character is '^]'.
+    _______    _        _   _____  ___ 
+ __/ __/ _ \  (_)__    | | / / _ \/ _ \
+ _/ _// // / / / _ \   | |/ / ___/ ___/
+ /_/ /____(_)_/\___/   |___/_/  /_/    
+
+vpp# 
+*** Time:2018-05-16 15:17:39.895 Command: sh int 
+              Name               Idx       State          Counter          Count     
+host-node_1_noeth_1               2         up       rx packets                    15
+                                                     rx bytes                    1202
+                                                     tx packets                    16
+                                                     tx bytes                    1312
+host-node_2_noeth_2               3         up       rx packets                    16
+                                                     rx bytes                    1312
+                                                     tx packets                    15
+                                                     tx bytes                    1202
+local0                            0        down      
+loop0                             1         up       
+vpp# 
+*** Time:2018-05-16 15:17:42.936 Command: show int addr
+host-node_1_noeth_1 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+host-node_2_noeth_2 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+local0 (dn):
+loop0 (up):
+  L3 6.0.0.100/32
+vpp# 
+*** Time:2018-05-16 15:17:45.959 Command: show h
+              Name                Idx   Link  Hardware
+host-node_1_noeth_1                2     up   host-node_1_noeth_1
+  Ethernet address 02:fe:3e:fd:61:28
+  Linux PACKET socket interface
+host-node_2_noeth_2                3     up   host-node_2_noeth_2
+  Ethernet address 02:fe:42:98:22:08
+  Linux PACKET socket interface
+local0                             0    down  local0
+  local
+loop0                              1     up   loop0
+  Ethernet address 02:00:00:aa:bb:00
+vpp# 
+*** Time:2018-05-16 15:17:51.995 Command: show br
+  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd  UU-Flood  Flooding  ARP-Term  BVI-Intf
+    1       1      0     off        on        on        on        on       off       N/A   
+    2       2      0     off       off        on       off       off       off       N/A   
+vpp# 
+*** Time:2018-05-16 15:17:55.036 Command: show br 1 detail
+  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd  UU-Flood  Flooding  ARP-Term  BVI-Intf
+    1       1      0     off        on        on        on        on       off       N/A   
+
+           Interface           If-idx ISN  SHG  BVI  TxFlood        VLAN-Tag-Rewrite       
+      host-node_1_noeth_1        2     1    0    -      *                 none             
+      host-node_2_noeth_2        3     1    0    -      *                 none             
+
+  BD-Tag: BD_INTERNAL_EW_agent_vpp_1
+vpp# 
+*** Time:2018-05-16 15:17:58.075 Command: show vxlan tunnel
+No vxlan tunnels configured...
+vpp# 
+*** Time:2018-05-16 15:18:01.108 Command: show err
+   Count                    Node                  Reason
+        34                l2-output               L2 output packets
+        34                l2-learn                L2 learn packets
+         4                l2-learn                L2 learn misses
+        34                l2-input                L2 input packets
+        34                l2-flood                L2 flood packets
+vpp# 
+*** Time:2018-05-16 15:18:04.137 Command: show l2fib verbose
+    Mac-Address     BD-Idx If-Idx BSN-ISN Age(min) static filter bvi         Interface-Name        
+ b2:f1:cb:3e:97:0b    1      2      0/1      -       -      -     -        host-node_1_noeth_1     
+ 22:c4:57:2e:db:6b    1      3      0/1      -       -      -     -        host-node_2_noeth_2     
+ 02:00:00:00:00:01    1      2      0/1      -       -      -     -        host-node_1_noeth_1     
+ 02:00:00:00:00:02    1      3      0/1      -       -      -     -        host-node_2_noeth_2     
+L2FIB total/learned entries: 4/4  Last scan time: 0.0000e0sec  Learn limit: 4194304 
+vpp# 
+*** Time:2018-05-16 15:18:07.177 Command: show ip fib table 0
+ipv4-VRF:0, fib_index:0, flow hash:[src dst sport dport proto ] locks:[src:plugin-hi:2, src:default-route:1, ]
+0.0.0.0/0
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:1 buckets:1 uRPF:0 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+0.0.0.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:2 buckets:1 uRPF:1 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+6.0.0.100/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:9 buckets:1 uRPF:8 to:[0:0]]
+    [0] [@2]: dpo-receive: 6.0.0.100 on loop0
+224.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:4 buckets:1 uRPF:3 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+240.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:3 buckets:1 uRPF:2 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+255.255.255.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:5 buckets:1 uRPF:4 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+vpp# 
+*** Time:2018-05-16 15:18:10.260 Command: show ip fib 
+ipv4-VRF:0, fib_index:0, flow hash:[src dst sport dport proto ] locks:[src:plugin-hi:2, src:default-route:1, ]
+0.0.0.0/0
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:1 buckets:1 uRPF:0 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+0.0.0.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:2 buckets:1 uRPF:1 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+6.0.0.100/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:9 buckets:1 uRPF:8 to:[0:0]]
+    [0] [@2]: dpo-receive: 6.0.0.100 on loop0
+224.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:4 buckets:1 uRPF:3 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+240.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:3 buckets:1 uRPF:2 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+255.255.255.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:5 buckets:1 uRPF:4 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+vpp# 
+*** Time:2018-05-16 15:18:28.815 Command: sh int addr host-node_1_noeth_1
+host-node_1_noeth_1 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+vpp# 
+*** Time:2018-05-16 15:18:38.602 Command: sh int addr host-node_2_noeth_2
+host-node_2_noeth_2 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+vpp# 
+*** Time:2018-05-16 15:18:56.433 Command: sh h 
+              Name                Idx   Link  Hardware
+host-node_1_noeth_1                2     up   host-node_1_noeth_1
+  Ethernet address 02:fe:3e:fd:61:28
+  Linux PACKET socket interface
+host-node_2_noeth_2                3     up   host-node_2_noeth_2
+  Ethernet address 02:fe:42:98:22:08
+  Linux PACKET socket interface
+local0                             0    down  local0
+  local
+loop0                              1     up   loop0
+  Ethernet address 02:00:00:aa:bb:00
+loop1                              4     up   loop1
+  Ethernet address 8a:f1:be:90:00:00
+loop2                              5     up   loop2
+  Ethernet address 8a:f1:be:90:20:00
+vpp# 
+*** Time:2018-05-16 15:19:06.005 Command: sh int addr None
+show interface: unknown input `None'
+vpp# 
+*** Time:2018-05-16 15:19:09.033 Command: sh int addr None
+show interface: unknown input `None'
+vpp# 
+*** Time:2018-05-16 15:19:12.760 Command: sh h 
+              Name                Idx   Link  Hardware
+host-node_1_noeth_1                2     up   host-node_1_noeth_1
+  Ethernet address 02:fe:3e:fd:61:28
+  Linux PACKET socket interface
+host-node_2_noeth_2                3     up   host-node_2_noeth_2
+  Ethernet address 02:fe:42:98:22:08
+  Linux PACKET socket interface
+local0                             0    down  local0
+  local
+loop0                              1     up   loop0
+  Ethernet address 02:00:00:aa:bb:00
+loop1                              4     up   loop1
+  Ethernet address 8a:f1:be:90:00:00
+loop2                              5     up   loop2
+  Ethernet address 8a:f1:be:90:20:00
+vpp# 
+*** Time:2018-05-16 15:19:22.243 Command: sh int addr None
+show interface: unknown input `None'
+vpp# 
+*** Time:2018-05-16 15:19:25.272 Command: sh int addr None
+show interface: unknown input `None'
+vpp# 
+*** Time:2018-05-16 15:19:32.675 Command: trace add af-packet-input 10
+vpp# 
+*** Time:2018-05-16 15:19:36.409 Command: sh int 
+              Name               Idx       State          Counter          Count     
+host-node_1_noeth_1               2         up       rx packets                    20
+                                                     rx bytes                    1552
+                                                     tx packets                    22
+                                                     tx bytes                    1732
+host-node_2_noeth_2               3         up       rx packets                    22
+                                                     rx bytes                    1732
+                                                     tx packets                    20
+                                                     tx bytes                    1552
+local0                            0        down      
+loop0                             1         up       
+loop1                             4         up       
+loop2                             5         up       
+vpp# 
+*** Time:2018-05-16 15:19:39.450 Command: show int addr
+host-node_1_noeth_1 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+host-node_2_noeth_2 (up):
+  L2 bridge bd-id 1 idx 1 shg 0  
+local0 (dn):
+loop0 (up):
+  L3 6.0.0.100/32
+loop1 (up):
+  L2 bridge bd-id 3 idx 3 shg 0  
+  L3 20.1.1.1/24
+loop2 (up):
+  L2 bridge bd-id 3 idx 3 shg 0  
+  L3 30.1.1.1/24
+vpp# 
+*** Time:2018-05-16 15:19:45.478 Command: show h
+              Name                Idx   Link  Hardware
+host-node_1_noeth_1                2     up   host-node_1_noeth_1
+  Ethernet address 02:fe:3e:fd:61:28
+  Linux PACKET socket interface
+host-node_2_noeth_2                3     up   host-node_2_noeth_2
+  Ethernet address 02:fe:42:98:22:08
+  Linux PACKET socket interface
+local0                             0    down  local0
+  local
+loop0                              1     up   loop0
+  Ethernet address 02:00:00:aa:bb:00
+loop1                              4     up   loop1
+  Ethernet address 8a:f1:be:90:00:00
+loop2                              5     up   loop2
+  Ethernet address 8a:f1:be:90:20:00
+vpp# 
+*** Time:2018-05-16 15:19:51.507 Command: show br
+  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd  UU-Flood  Flooding  ARP-Term  BVI-Intf
+    1       1      0     off        on        on        on        on       off       N/A   
+    2       2      0     off       off        on       off       off       off       N/A   
+    3       3      0     off        on        on        on        on        on       N/A   
+vpp# 
+*** Time:2018-05-16 15:19:54.531 Command: show br 1 detail
+  BD-ID   Index   BSN  Age(min)  Learning  U-Forwrd  UU-Flood  Flooding  ARP-Term  BVI-Intf
+    1       1      0     off        on        on        on        on       off       N/A   
+
+           Interface           If-idx ISN  SHG  BVI  TxFlood        VLAN-Tag-Rewrite       
+      host-node_1_noeth_1        2     1    0    -      *                 none             
+      host-node_2_noeth_2        3     1    0    -      *                 none             
+
+  BD-Tag: BD_INTERNAL_EW_agent_vpp_1
+vpp# 
+*** Time:2018-05-16 15:20:00.559 Command: show vxlan tunnel
+No vxlan tunnels configured...
+vpp# 
+*** Time:2018-05-16 15:20:03.582 Command: show err
+   Count                    Node                  Reason
+        42                l2-output               L2 output packets
+        42                l2-learn                L2 learn packets
+         4                l2-learn                L2 learn misses
+        42                l2-input                L2 input packets
+        42                l2-flood                L2 flood packets
+vpp# 
+*** Time:2018-05-16 15:20:06.615 Command: show l2fib verbose
+    Mac-Address     BD-Idx If-Idx BSN-ISN Age(min) static filter bvi         Interface-Name        
+ b2:f1:cb:3e:97:0b    1      2      0/1      -       -      -     -        host-node_1_noeth_1     
+ 22:c4:57:2e:db:6b    1      3      0/1      -       -      -     -        host-node_2_noeth_2     
+ 02:00:00:00:00:01    1      2      0/1      -       -      -     -        host-node_1_noeth_1     
+ 02:00:00:00:00:02    1      3      0/1      -       -      -     -        host-node_2_noeth_2     
+L2FIB total/learned entries: 4/4  Last scan time: 0.0000e0sec  Learn limit: 4194304 
+vpp# 
+*** Time:2018-05-16 15:20:09.662 Command: show ip fib table 0
+ipv4-VRF:0, fib_index:0, flow hash:[src dst sport dport proto ] locks:[src:plugin-hi:2, src:default-route:1, ]
+0.0.0.0/0
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:1 buckets:1 uRPF:0 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+0.0.0.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:2 buckets:1 uRPF:1 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+6.0.0.100/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:9 buckets:1 uRPF:8 to:[0:0]]
+    [0] [@2]: dpo-receive: 6.0.0.100 on loop0
+20.1.1.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:11 buckets:1 uRPF:10 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+20.1.1.0/24
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:10 buckets:1 uRPF:9 to:[0:0]]
+    [0] [@4]: ipv4-glean: loop1: mtu:9000 ffffffffffff8af1be9000000806
+20.1.1.1/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:13 buckets:1 uRPF:14 to:[0:0]]
+    [0] [@2]: dpo-receive: 20.1.1.1 on loop1
+20.1.1.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:12 buckets:1 uRPF:12 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+30.1.1.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:15 buckets:1 uRPF:16 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+30.1.1.0/24
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:14 buckets:1 uRPF:15 to:[0:0]]
+    [0] [@4]: ipv4-glean: loop2: mtu:9000 ffffffffffff8af1be9020000806
+30.1.1.1/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:17 buckets:1 uRPF:20 to:[0:0]]
+    [0] [@2]: dpo-receive: 30.1.1.1 on loop2
+30.1.1.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:16 buckets:1 uRPF:18 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+224.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:4 buckets:1 uRPF:3 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+240.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:3 buckets:1 uRPF:2 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+255.255.255.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:5 buckets:1 uRPF:4 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+vpp# 
+*** Time:2018-05-16 15:20:12.735 Command: show ip fib 
+ipv4-VRF:0, fib_index:0, flow hash:[src dst sport dport proto ] locks:[src:plugin-hi:2, src:default-route:1, ]
+0.0.0.0/0
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:1 buckets:1 uRPF:0 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+0.0.0.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:2 buckets:1 uRPF:1 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+6.0.0.100/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:9 buckets:1 uRPF:8 to:[0:0]]
+    [0] [@2]: dpo-receive: 6.0.0.100 on loop0
+20.1.1.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:11 buckets:1 uRPF:10 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+20.1.1.0/24
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:10 buckets:1 uRPF:9 to:[0:0]]
+    [0] [@4]: ipv4-glean: loop1: mtu:9000 ffffffffffff8af1be9000000806
+20.1.1.1/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:13 buckets:1 uRPF:14 to:[0:0]]
+    [0] [@2]: dpo-receive: 20.1.1.1 on loop1
+20.1.1.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:12 buckets:1 uRPF:12 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+30.1.1.0/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:15 buckets:1 uRPF:16 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+30.1.1.0/24
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:14 buckets:1 uRPF:15 to:[0:0]]
+    [0] [@4]: ipv4-glean: loop2: mtu:9000 ffffffffffff8af1be9020000806
+30.1.1.1/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:17 buckets:1 uRPF:20 to:[0:0]]
+    [0] [@2]: dpo-receive: 30.1.1.1 on loop2
+30.1.1.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:16 buckets:1 uRPF:18 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+224.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:4 buckets:1 uRPF:3 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+240.0.0.0/4
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:3 buckets:1 uRPF:2 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+255.255.255.255/32
+  unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:5 buckets:1 uRPF:4 to:[0:0]]
+    [0] [@0]: dpo-drop ip4
+vpp# 
+*** Time:2018-05-16 15:20:54.443 Command: ping 30.1.1.1 source loop0 repeat 15
+
+Statistics: 15 sent, 0 received, 100% packet loss
+vpp# 
+*** Time:2018-05-16 15:21:20.673 Command: ping 20.1.1.1 source loop1 repeat 15
+
+Statistics: 15 sent, 0 received, 100% packet loss
+vpp# 
+*** Time:2018-05-16 15:21:46.782 Command: show trace
+------------------- Start of thread 0 vpp_main -------------------
+Packet 1
+
+00:04:14:614462: af-packet-input
+  af_packet: hw_if_index 2 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 42 snaplen 42 mac 66 net 80
+      sec 0x5afc302b nsec 0x15b6e59c vlan 0 vlan_tpid 0
+00:04:14:614472: ethernet-input
+  ARP: 02:00:00:00:00:01 -> ff:ff:ff:ff:ff:ff
+00:04:14:614475: l2-input
+  l2-input: sw_if_index 2 dst ff:ff:ff:ff:ff:ff src 02:00:00:00:00:01
+00:04:14:614478: l2-learn
+  l2-learn: sw_if_index 2 dst ff:ff:ff:ff:ff:ff src 02:00:00:00:00:01 bd_index 1
+00:04:14:614488: l2-flood
+  l2-flood: sw_if_index 2 dst ff:ff:ff:ff:ff:ff src 02:00:00:00:00:01 bd_index 1
+00:04:14:614489: l2-output
+  l2-output: sw_if_index 3 dst ff:ff:ff:ff:ff:ff src 02:00:00:00:00:01 data 08 06 00 01 08 00 06 04 00 01 02 00
+00:04:14:614491: host-node_2_noeth_2-output
+  host-node_2_noeth_2
+  ARP: 02:00:00:00:00:01 -> ff:ff:ff:ff:ff:ff
+  request, type ethernet/IP4, address size 6/4
+  02:00:00:00:00:01/10.0.0.10 -> 00:00:00:00:00:00/10.0.0.11
+
+Packet 2
+
+00:04:14:614515: af-packet-input
+  af_packet: hw_if_index 3 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 42 snaplen 42 mac 66 net 80
+      sec 0x5afc302b nsec 0x15b90dc0 vlan 0 vlan_tpid 0
+00:04:14:614517: ethernet-input
+  ARP: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+00:04:14:614517: l2-input
+  l2-input: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02
+00:04:14:614518: l2-learn
+  l2-learn: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:14:614519: l2-fwd
+  l2-fwd:   sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:14:614520: l2-output
+  l2-output: sw_if_index 2 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 data 08 06 00 01 08 00 06 04 00 02 02 00
+00:04:14:614521: host-node_1_noeth_1-output
+  host-node_1_noeth_1
+  ARP: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+  reply, type ethernet/IP4, address size 6/4
+  02:00:00:00:00:02/10.0.0.11 -> 02:00:00:00:00:01/10.0.0.10
+
+Packet 3
+
+00:04:14:614531: af-packet-input
+  af_packet: hw_if_index 2 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302b nsec 0x15b95122 vlan 0 vlan_tpid 0
+00:04:14:614532: ethernet-input
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+00:04:14:614532: l2-input
+  l2-input: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01
+00:04:14:614533: l2-learn
+  l2-learn: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:14:614533: l2-fwd
+  l2-fwd:   sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:14:614533: l2-output
+  l2-output: sw_if_index 3 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 data 08 00 45 00 00 54 83 42 40 00 40 01
+00:04:14:614534: host-node_2_noeth_2-output
+  host-node_2_noeth_2
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+  ICMP: 10.0.0.10 -> 10.0.0.11
+    tos 0x00, ttl 64, length 84, checksum 0xa352
+    fragment id 0x8342, flags DONT_FRAGMENT
+  ICMP echo_request checksum 0xddf
+
+Packet 4
+
+00:04:14:614821: af-packet-input
+  af_packet: hw_if_index 3 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302b nsec 0x15ba77f9 vlan 0 vlan_tpid 0
+00:04:14:614825: ethernet-input
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+00:04:14:614826: l2-input
+  l2-input: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02
+00:04:14:614841: l2-learn
+  l2-learn: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:14:614842: l2-fwd
+  l2-fwd:   sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:14:614842: l2-output
+  l2-output: sw_if_index 2 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 data 08 00 45 00 00 54 43 a2 00 00 40 01
+00:04:14:614843: host-node_1_noeth_1-output
+  host-node_1_noeth_1
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+  ICMP: 10.0.0.11 -> 10.0.0.10
+    tos 0x00, ttl 64, length 84, checksum 0x22f3
+    fragment id 0x43a2
+  ICMP echo_reply checksum 0x15df
+
+Packet 5
+
+00:04:15:644862: af-packet-input
+  af_packet: hw_if_index 2 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302c nsec 0x1783b6a5 vlan 0 vlan_tpid 0
+00:04:15:644901: ethernet-input
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+00:04:15:644908: l2-input
+  l2-input: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01
+00:04:15:644911: l2-learn
+  l2-learn: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:15:644916: l2-fwd
+  l2-fwd:   sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:15:644919: l2-output
+  l2-output: sw_if_index 3 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 data 08 00 45 00 00 54 83 70 40 00 40 01
+00:04:15:644922: host-node_2_noeth_2-output
+  host-node_2_noeth_2
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+  ICMP: 10.0.0.10 -> 10.0.0.11
+    tos 0x00, ttl 64, length 84, checksum 0xa324
+    fragment id 0x8370, flags DONT_FRAGMENT
+  ICMP echo_request checksum 0x2d68
+
+Packet 6
+
+00:04:15:644973: af-packet-input
+  af_packet: hw_if_index 3 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302c nsec 0x1785fb75 vlan 0 vlan_tpid 0
+00:04:15:644978: ethernet-input
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+00:04:15:644979: l2-input
+  l2-input: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02
+00:04:15:644980: l2-learn
+  l2-learn: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:15:644982: l2-fwd
+  l2-fwd:   sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:15:644983: l2-output
+  l2-output: sw_if_index 2 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 data 08 00 45 00 00 54 43 b6 00 00 40 01
+00:04:15:644984: host-node_1_noeth_1-output
+  host-node_1_noeth_1
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+  ICMP: 10.0.0.11 -> 10.0.0.10
+    tos 0x00, ttl 64, length 84, checksum 0x22df
+    fragment id 0x43b6
+  ICMP echo_reply checksum 0x3568
+
+Packet 7
+
+00:04:16:668732: af-packet-input
+  af_packet: hw_if_index 2 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302d nsec 0x18ec8bd0 vlan 0 vlan_tpid 0
+00:04:16:668738: ethernet-input
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+00:04:16:668741: l2-input
+  l2-input: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01
+00:04:16:668744: l2-learn
+  l2-learn: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:16:668746: l2-fwd
+  l2-fwd:   sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:16:668747: l2-output
+  l2-output: sw_if_index 3 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 data 08 00 45 00 00 54 84 59 40 00 40 01
+00:04:16:668749: host-node_2_noeth_2-output
+  host-node_2_noeth_2
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+  ICMP: 10.0.0.10 -> 10.0.0.11
+    tos 0x00, ttl 64, length 84, checksum 0xa23b
+    fragment id 0x8459, flags DONT_FRAGMENT
+  ICMP echo_request checksum 0xb40a
+
+Packet 8
+
+00:04:16:668776: af-packet-input
+  af_packet: hw_if_index 3 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302d nsec 0x18ed8b43 vlan 0 vlan_tpid 0
+00:04:16:668777: ethernet-input
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+00:04:16:668778: l2-input
+  l2-input: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02
+00:04:16:668778: l2-learn
+  l2-learn: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:16:668779: l2-fwd
+  l2-fwd:   sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:16:668779: l2-output
+  l2-output: sw_if_index 2 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 data 08 00 45 00 00 54 44 59 00 00 40 01
+00:04:16:668780: host-node_1_noeth_1-output
+  host-node_1_noeth_1
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+  ICMP: 10.0.0.11 -> 10.0.0.10
+    tos 0x00, ttl 64, length 84, checksum 0x223c
+    fragment id 0x4459
+  ICMP echo_reply checksum 0xbc0a
+
+Packet 9
+
+00:04:17:692645: af-packet-input
+  af_packet: hw_if_index 2 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302e nsec 0x1a55d24e vlan 0 vlan_tpid 0
+00:04:17:692650: ethernet-input
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+00:04:17:692654: l2-input
+  l2-input: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01
+00:04:17:692658: l2-learn
+  l2-learn: sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:17:692660: l2-fwd
+  l2-fwd:   sw_if_index 2 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 bd_index 1
+00:04:17:692662: l2-output
+  l2-output: sw_if_index 3 dst 02:00:00:00:00:02 src 02:00:00:00:00:01 data 08 00 45 00 00 54 85 3f 40 00 40 01
+00:04:17:692664: host-node_2_noeth_2-output
+  host-node_2_noeth_2
+  IP4: 02:00:00:00:00:01 -> 02:00:00:00:00:02
+  ICMP: 10.0.0.10 -> 10.0.0.11
+    tos 0x00, ttl 64, length 84, checksum 0xa155
+    fragment id 0x853f, flags DONT_FRAGMENT
+  ICMP echo_request checksum 0x31ad
+
+Packet 10
+
+00:04:17:692688: af-packet-input
+  af_packet: hw_if_index 3 next-index 4
+    tpacket2_hdr:
+      status 0x20000001 len 98 snaplen 98 mac 66 net 80
+      sec 0x5afc302e nsec 0x1a56b2c4 vlan 0 vlan_tpid 0
+00:04:17:692690: ethernet-input
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+00:04:17:692691: l2-input
+  l2-input: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02
+00:04:17:692691: l2-learn
+  l2-learn: sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:17:692692: l2-fwd
+  l2-fwd:   sw_if_index 3 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 bd_index 1
+00:04:17:692692: l2-output
+  l2-output: sw_if_index 2 dst 02:00:00:00:00:01 src 02:00:00:00:00:02 data 08 00 45 00 00 54 45 36 00 00 40 01
+00:04:17:692693: host-node_1_noeth_1-output
+  host-node_1_noeth_1
+  IP4: 02:00:00:00:00:02 -> 02:00:00:00:00:01
+  ICMP: 10.0.0.11 -> 10.0.0.10
+    tos 0x00, ttl 64, length 84, checksum 0x215f
+    fragment id 0x4536
+  ICMP echo_reply checksum 0x39ad
+
+vpp# 

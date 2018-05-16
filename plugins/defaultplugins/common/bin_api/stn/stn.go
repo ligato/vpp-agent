@@ -6,7 +6,7 @@ package stn
 import "git.fd.io/govpp.git/api"
 
 // StnAddDelRule represents the VPP binary API message 'stn_add_del_rule'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 11:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 15:
 //
 //            "stn_add_del_rule",
 //            [
@@ -63,7 +63,7 @@ func NewStnAddDelRule() api.Message {
 }
 
 // StnAddDelRuleReply represents the VPP binary API message 'stn_add_del_rule_reply'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 46:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 50:
 //
 //            "stn_add_del_rule_reply",
 //            [
@@ -100,7 +100,7 @@ func NewStnAddDelRuleReply() api.Message {
 }
 
 // StnRulesDump represents the VPP binary API message 'stn_rules_dump'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 64:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 68:
 //
 //            "stn_rules_dump",
 //            [
@@ -135,10 +135,10 @@ func NewStnRulesDump() api.Message {
 	return &StnRulesDump{}
 }
 
-// StnRuleDetails represents the VPP binary API message 'stn_rule_details'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 82:
+// StnRulesDetails represents the VPP binary API message 'stn_rules_details'.
+// Generated from '/usr/share/vpp/api/stn.api.json', line 86:
 //
-//            "stn_rule_details",
+//            "stn_rules_details",
 //            [
 //                "u16",
 //                "_vl_msg_id"
@@ -164,21 +164,21 @@ func NewStnRulesDump() api.Message {
 //                "crc": "0x5eafa31e"
 //            }
 //
-type StnRuleDetails struct {
+type StnRulesDetails struct {
 	IsIP4     uint8
 	IPAddress []byte `struc:"[16]byte"`
 	SwIfIndex uint32
 }
 
-func (*StnRuleDetails) GetMessageName() string {
-	return "stn_rule_details"
+func (*StnRulesDetails) GetMessageName() string {
+	return "stn_rules_details"
 }
-func (*StnRuleDetails) GetMessageType() api.MessageType {
+func (*StnRulesDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
-func (*StnRuleDetails) GetCrcString() string {
+func (*StnRulesDetails) GetCrcString() string {
 	return "5eafa31e"
 }
-func NewStnRuleDetails() api.Message {
-	return &StnRuleDetails{}
+func NewStnRulesDetails() api.Message {
+	return &StnRulesDetails{}
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -66,7 +67,7 @@ type PutDSL interface {
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomains_BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-	BDFIB(fib *l2.FibTableEntries_FibTableEntry) PutDSL
+	BDFIB(fib *l2.FibTable_FibEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPairs_XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
@@ -74,17 +75,25 @@ type PutDSL interface {
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *acl.AccessLists_Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
-	Arp(arp *l3.ArpTable_ArpTableEntry) PutDSL
+	Arp(arp *l3.ArpTable_ArpEntry) PutDSL
+	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(pArpIfs *l3.ProxyArpInterfaces_InterfaceList) PutDSL
+	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+	ProxyArpRanges(pArpRng *l3.ProxyArpRanges_RangeList) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
 	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update Stn rule.
-	StnRule(stn *stn.StnRule) PutDSL
+	StnRule(stn *stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration
 	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	// IPSecSA adds request to create a new Security Association
+	IPSecSA(sa *ipsec.SecurityAssociations_SA) PutDSL
+	// IPSecSPD adds request to create a new Security Policy Database
+	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -126,12 +135,20 @@ type DeleteDSL interface {
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
+	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(label string) DeleteDSL
+	// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+	ProxyArpRanges(label string) DeleteDSL
 	// StnRule adds a request to delete an existing Stn rule.
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
 	NAT44Global() DeleteDSL
 	// NAT44DNat adds a request to delete a new DNAT configuration
 	NAT44DNat(label string) DeleteDSL
+	// IPSecSA adds request to delete a Security Association
+	IPSecSA(saName string) DeleteDSL
+	// IPSecSPD adds request to delete a Security Policy Database
+	IPSecSPD(spdName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

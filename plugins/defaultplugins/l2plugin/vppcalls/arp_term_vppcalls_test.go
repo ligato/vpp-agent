@@ -24,59 +24,119 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	dummyBridgeDomain uint32 = 4
-	dummyMACAddress          = "FF:FF:FF:FF:FF:FF"
-	dummyIPAddress           = "192.168.4.4"
-	dummyLoggerName          = "dummyLogger"
-)
+var dummyLogger = logrus.NewLogger("dummy")
 
-var createTestDataOutArp = &l2ba.BdIPMacAddDel{
-	BdID:       dummyBridgeDomain,
-	IsAdd:      1,
-	IsIpv6:     0,
-	IPAddress:  []byte{192, 168, 4, 4},
-	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-}
-
-var deleteTestDataOutArp = &l2ba.BdIPMacAddDel{
-	BdID:       dummyBridgeDomain,
-	IsAdd:      0,
-	IsIpv6:     0,
-	IPAddress:  []byte{192, 168, 4, 4},
-	MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-}
-
-//TestVppAddArpTerminationTableEntry tests VppAddArpTerminationTableEntry
 func TestVppAddArpTerminationTableEntry(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
-	err := vppcalls.VppAddArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress,
-		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
+
+	err := vppcalls.VppAddArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := ctx.MockChannel.Msg.(*l2ba.BdIPMacAddDel)
-	Expect(ok).To(BeTrue())
-
-	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(createTestDataOutArp))
+	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
+		BdID:       4,
+		IsAdd:      1,
+		IsIpv6:     0,
+		IPAddress:  []byte{192, 168, 4, 4},
+		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+	}))
 }
 
-// TestVppRemoveArpTerminationTableEntry tests VppRemoveArpTerminationTableEntry method
+func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+
+	err := vppcalls.VppAddArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "2001:db9::54",
+		dummyLogger, ctx.MockChannel, nil)
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
+		BdID:       4,
+		IsAdd:      1,
+		IsIpv6:     1,
+		IPAddress:  []byte{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
+		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+	}))
+}
+
 func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
-	err := vppcalls.VppRemoveArpTerminationTableEntry(dummyBridgeDomain, dummyMACAddress, dummyIPAddress,
-		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
+
+	err := vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	vppMsg, ok := ctx.MockChannel.Msg.(*l2ba.BdIPMacAddDel)
-	Expect(ok).To(BeTrue())
+	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
+		BdID:       4,
+		IsAdd:      0,
+		IsIpv6:     0,
+		IPAddress:  []byte{192, 168, 4, 4},
+		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+	}))
+}
 
-	Expect(vppMsg).NotTo(BeNil())
-	Expect(vppMsg).To(Equal(deleteTestDataOutArp))
+func TestVppArpTerminationTableEntryMacError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+
+	err := vppcalls.VppAddArpTerminationTableEntry(
+		4, "in:va:li:d:ma:c", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "in:va:li:d:ma:c", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+}
+
+func TestVppArpTerminationTableEntryIpError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
+
+	err := vppcalls.VppAddArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+}
+
+func TestVppArpTerminationTableEntryError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{
+		Retval: 1,
+	})
+
+	err := vppcalls.VppAddArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+
+	err = vppcalls.VppRemoveArpTerminationTableEntry(
+		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4",
+		dummyLogger, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 }

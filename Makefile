@@ -3,7 +3,11 @@ COMMIT	:= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
-LDFLAGS	= -ldflags '-X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)'
+LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
+
+ifeq ($(STRIP), y)
+LDFLAGS += -w -s
+endif
 
 COVER_DIR ?= /tmp/
 
@@ -15,58 +19,68 @@ clean: clean-cmd clean-examples
 
 # Install commands
 install:
-	@echo "# installing commands"
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
-	go install -v ${LDFLAGS} -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
+	@echo " => installing commands"
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
+	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
 # Build commands
 cmd:
-	@echo "# building commands"
-	cd cmd/vpp-agent 		&& go build -v -i ${LDFLAGS} -tags="$(GO_BUILD_TAGS)"
-	cd cmd/vpp-agent-ctl	&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl 		&& go build -v -i ${LDFLAGS} -tags="${GO_BUILD_TAGS}"
+	@echo " => building commands"
+	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 
 # Clean commands
 clean-cmd:
-	@echo "# cleaning binaries"
+	@echo " => cleaning binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
 
 # Build examples
 examples:
-	@echo "# building examples"
-	cd examples/govpp_call 			&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_bd_cache 		&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_iface_cache 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_lookup 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_watcher && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	@echo " => building examples"
+	cd examples/govpp_call 		    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_bd_cache 	    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_iface_cache     	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_lookup  	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/idx_mapping_watcher     && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux/veth 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/grpc_vpp/remote_client  && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/grpc_vpp/notifications  && go build -v -i -tags="${GO_BUILD_TAGS}"
 
 # Clean examples
 clean-examples:
-	@echo "# cleaning examples"
+	@echo " => cleaning examples"
 	rm -f examples/govpp_call/govpp_call
 	rm -f examples/idx_bd_cache/idx_bd_cache
 	rm -f examples/idx_iface_cache/idx_iface_cache
 	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
 	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/localclient_linux/localclient_linux
+	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/localclient_linux/tap/tap
 	rm -r examples/localclient_vpp/localclient_vpp
 
 # Run tests
 test:
-	@echo "# running scenario tests"
+	@echo " => running scenario tests"
 	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	@echo "# running unit tests"
+	@echo " => running unit tests"
 	go test ./cmd/agentctl/utils
 	go test ./idxvpp/nametoidx
-	go test ./plugins/defaultplugins/l2plugin/bdidx
+	go test ./plugins/defaultplugins/aclplugin/vppdump
+	go test ./plugins/defaultplugins/ifplugin
+	go test ./plugins/defaultplugins/ifplugin/vppcalls
+	go test ./plugins/defaultplugins/ifplugin/vppdump
+	go test ./plugins/defaultplugins/l2plugin
+	go test ./plugins/defaultplugins/l2plugin/l2idx
 	go test ./plugins/defaultplugins/l2plugin/vppcalls
 	go test ./plugins/defaultplugins/l2plugin/vppdump
-	go test ./plugins/defaultplugins/ifplugin/vppcalls
+	go test ./plugins/defaultplugins/rpc
 
 # Get coverage report tools
 get-covtools:
@@ -74,48 +88,61 @@ get-covtools:
 
 # Run coverage report
 test-cover: get-covtools
-	@echo "# running unit tests with coverage analysis"
+	@echo " => running unit tests with coverage analysis"
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/defaultplugins/aclplugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	@echo "# merging coverage results"
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
+	@echo " => merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
 			${COVER_DIR}coverage_unit1.out \
 			${COVER_DIR}coverage_unit2.out \
-			${COVER_DIR}coverage_l2plugin_bdidx.out \
+			${COVER_DIR}coverage_aclplugin_vppdump.out  \
+			${COVER_DIR}coverage_ifplugin.out \
+			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+			${COVER_DIR}coverage_ifplugin_vppdump.out \
+			${COVER_DIR}coverage_l2plugin.out \
+			${COVER_DIR}coverage_l2plugin_l2idx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \
-			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+			${COVER_DIR}coverage_rpc.out  \
 		> ${COVER_DIR}coverage.out
-	@echo "# coverage data generated into ${COVER_DIR}coverage.out"
+	@echo " => coverage data generated into ${COVER_DIR}coverage.out"
 
 test-cover-html: test-cover
 	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-	@echo "# coverage report generated into ${COVER_DIR}coverage.html"
+	@echo " => coverage report generated into ${COVER_DIR}coverage.html"
 
 test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-	@echo "# coverage report generated into ${COVER_DIR}coverage.xml"
+	@echo " => coverage report generated into ${COVER_DIR}coverage.xml"
 
 # Get generator tools
 get-generators:
+	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 	go install -v ./vendor/github.com/ungerik/pkgreflect
 
 # Generate sources
 generate: get-generators
-	@echo "# generating sources"
+	@echo " => generating sources"
 	cd plugins/linuxplugin && go generate
 	cd plugins/defaultplugins/aclplugin && go generate
 	cd plugins/defaultplugins/ifplugin && go generate
+	cd plugins/defaultplugins/ipsecplugin && go generate
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/defaultplugins/rpc && go generate
 	cd plugins/linuxplugin/ifplugin && go generate
 	cd plugins/linuxplugin/l3plugin && go generate
 	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
@@ -124,6 +151,7 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
@@ -141,28 +169,28 @@ get-dep:
 
 # Install the project's dependencies
 dep-install: get-dep
-	@echo "# installing project's dependencies"
+	@echo " => installing project's dependencies"
 	dep ensure
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
-	@echo "# updating all dependencies"
+	@echo " => updating all dependencies"
 	dep ensure -update
 
 # Get linter tools
 get-linters:
-	@echo "# installing linters"
+	@echo " => installing linters"
 	go get -v github.com/alecthomas/gometalinter
 	gometalinter --install
 
 # Run linters
 lint: get-linters
-	@echo "# running code analysis"
+	@echo " => running code analysis"
 	./scripts/static_analysis.sh golint vet
 
 # Format code
 format:
-	@echo "# formatting the code"
+	@echo " => formatting the code"
 	./scripts/gofmt.sh
 
 # Get link check tool

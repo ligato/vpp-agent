@@ -32,13 +32,13 @@ const (
 	// ArpEntryPrefix is the relative key prefix for ARP table entries.
 	ArpKey = ArpPrefix + "{if}/{ip}"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
-	ProxyARPPrefix = "vpp/config/v1/proxyarp/"
+	ProxyARPRangePrefix = "vpp/config/v1/proxyarp/range/"
+	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
+	ProxyARPInterfacePrefix = "vpp/config/v1/proxyarp/interface/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
-	ProxyARPRangePrefix = ProxyARPPrefix + "range/{lo_ip}/{hi_ip}"
+	ProxyARPRangeKey = ProxyARPRangePrefix + "{label}"
 	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
-	ProxyARPInterfacePrefix = ProxyARPPrefix + "interface/{if}"
-	// STNPrefix is the relative key prefix for STN entries.
-	STNPrefix = "vpp/config/v1/stn/{ip}"
+	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
 )
 
 // VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance.
@@ -54,6 +54,16 @@ func RouteKeyPrefix() string {
 // ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance.
 func ArpKeyPrefix() string {
 	return ArpPrefix
+}
+
+// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR ranges for vpp instance.
+func ProxyArpRangePrefix() string {
+	return ProxyARPRangePrefix
+}
+
+// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR interfaces for vpp instance.
+func ProxyArpInterfacePrefix() string {
+	return ProxyARPInterfacePrefix
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
@@ -102,4 +112,18 @@ func ParseArpKey(key string) (iface string, ipAddr string, err error) {
 		}
 	}
 	return "", "", fmt.Errorf("invalid ARP key")
+}
+
+// ProxyArpRangeKey returns the key to store Proxy ARP range config
+func ProxyArpRangeKey(label string) string {
+	key := ProxyARPRangeKey
+	key = strings.Replace(key, "{label}", label, 1)
+	return key
+}
+
+// ProxyArpInterfaceKey returns the key to store Proxy ARP interface config
+func ProxyArpInterfaceKey(label string) string {
+	key := ProxyARPInterfaceKey
+	key = strings.Replace(key, "{label}", label, 1)
+	return key
 }

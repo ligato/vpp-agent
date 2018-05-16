@@ -16,10 +16,8 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 )
 
@@ -34,7 +32,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	}()
 
 	// Retrieve existing ACL config
-	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, measure.GetTimeLog(&acl_api.ACLDump{}, plugin.Stopwatch))
+	vppACLs, err := vppdump.DumpACLs(plugin.Log, plugin.SwIfIndexes, plugin.vppChannel, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
@@ -47,7 +45,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := checkIPRules(vppACL.ACLDetails.Rules)
+		ipRulesExist := len(vppACL.ACLDetails.Rules) > 0 && vppACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.Log, plugin.vppChannel, plugin.Stopwatch); err != nil {
@@ -72,14 +70,4 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	}
 
 	return wasErr
-}
-
-// Method checks first rule whether it is IP rule type and returns true in such a case
-func checkIPRules(rules []*acl.AccessLists_Acl_Rule) bool {
-	if len(rules) > 0 {
-		if rules[0].Matches != nil && rules[0].Matches.IpRule != nil {
-			return true
-		}
-	}
-	return false
 }

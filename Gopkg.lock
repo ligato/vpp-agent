@@ -13,7 +13,7 @@
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "2406041faa197799c7715f815cbd391a5c0e9ad3"
+  revision = "3da2b73ec5ce77abf796ebeae6dfc149c8d3c698"
 
 [[projects]]
   branch = "master"
@@ -199,7 +199,33 @@
 
 [[projects]]
   name = "github.com/gogo/protobuf"
-  packages = ["proto"]
+  packages = [
+    "gogoproto",
+    "plugin/compare",
+    "plugin/defaultcheck",
+    "plugin/description",
+    "plugin/embedcheck",
+    "plugin/enumstringer",
+    "plugin/equal",
+    "plugin/face",
+    "plugin/gostring",
+    "plugin/marshalto",
+    "plugin/oneofcheck",
+    "plugin/populate",
+    "plugin/size",
+    "plugin/stringer",
+    "plugin/testgen",
+    "plugin/union",
+    "plugin/unmarshal",
+    "proto",
+    "protoc-gen-gogo",
+    "protoc-gen-gogo/descriptor",
+    "protoc-gen-gogo/generator",
+    "protoc-gen-gogo/grpc",
+    "protoc-gen-gogo/plugin",
+    "vanity",
+    "vanity/command"
+  ]
   revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
   version = "v0.5"
 
@@ -234,10 +260,28 @@
   revision = "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
 
 [[projects]]
+  name = "github.com/hashicorp/consul"
+  packages = ["api"]
+  revision = "fb848fc48818f58690db09d14640513aa6bf3c02"
+  version = "v1.0.7"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
   revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-rootcerts"
+  packages = ["."]
+  revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  name = "github.com/hashicorp/serf"
+  packages = ["coordinate"]
+  revision = "d6574a5bb1226678d7010325fb6c985db20ee458"
+  version = "v0.8.1"
 
 [[projects]]
   branch = "master"
@@ -275,9 +319,9 @@
     "datasync/resync",
     "datasync/syncbase",
     "db/keyval",
+    "db/keyval/consul",
     "db/keyval/etcdv3",
     "db/keyval/kvproto",
-    "db/keyval/plugin",
     "db/keyval/redis",
     "db/sql",
     "db/sql/cassandra",
@@ -306,7 +350,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "a205b3b93a30c4527c828338c1e01bac2ce12b13"
+  revision = "cc8a67f81d21d526e69ec4007677afeb55be6c8c"
 
 [[projects]]
   branch = "master"
@@ -331,6 +375,12 @@
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   name = "github.com/namsral/flag"
@@ -598,6 +648,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c902c165dea86399885b1efd389d00969012b05a74d49405e9fa13519d9c1cd7"
+  inputs-digest = "8ddca43493f877bc9857392ef1df6a5763823b82c2982201d5939fa1a7cf36da"
   solver-name = "gps-cdcl"
   solver-version = 1

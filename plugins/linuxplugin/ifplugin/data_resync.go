@@ -111,8 +111,10 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 			if found {
 				plugin.Log.Debugf("RESYNC Linux interface %v: found peer %v", linkName, linuxIf.Veth.PeerIfName)
 			} else {
-				err := fmt.Errorf("RESYNC Linux interface %v: failed to obtain peer for veth", linkName)
-				errs = append(errs, err)
+				// No info about the peer, use the same as in the NB config
+				linuxIf.Veth = &interfaces.LinuxInterfaces_Interface_Veth{
+					PeerIfName: linkDataPair.nbIfData.Veth.PeerIfName,
+				}
 			}
 		}
 		// Check if interface needs to be modified
@@ -132,13 +134,18 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 		plugin.Log.Errorf("Failed to read linux interfaces: %v", err)
 		errs = append(errs, err)
 	}
-	for _, linuxIf := range linkList {
-		if linuxIf.Attrs() == nil {
+	for _, link := range linkList {
+		if link.Attrs() == nil {
 			continue
 		}
-		attrs := linuxIf.Attrs()
+		attrs := link.Attrs()
 		_, _, found := plugin.IfIndexes.LookupIdx(attrs.Name)
 		if !found {
+			// If interface is veth, do not register it. Agent does not know where the other
+			// end is or if it even exists.
+			if link.Type() == veth {
+				continue
+			}
 			// Register interface with name (other parameters can be read if needed)
 			plugin.IfIndexes.RegisterName(attrs.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
 				Index: uint32(attrs.Index),
@@ -271,7 +278,7 @@ func (plugin *LinuxInterfaceConfigurator) isLinuxIfModified(nbIf, linuxIf *inter
 		}
 	}
 	// Physical address
-	if nbIf.PhysAddress != linuxIf.PhysAddress {
+	if nbIf.PhysAddress != "" && nbIf.PhysAddress != linuxIf.PhysAddress {
 		plugin.Log.Debugf("Interface RESYNC comparison: MAC address changed (NB: %s, Linux: %s)",
 			nbIf.PhysAddress, linuxIf.PhysAddress)
 		return true

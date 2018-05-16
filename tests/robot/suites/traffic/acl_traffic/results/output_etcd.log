@@ -1,0 +1,113 @@
+*** Time:2018-05-16 15:15:56.328 Command: sudo docker create -p 2379:2379 --name etcd -e ETCDCTL_API=3 quay.io/coreos/etcd:v3.0.16 /usr/local/bin/etcd -advertise-client-urls http://0.0.0.0:2379 -listen-client-urls http://0.0.0.0:2379
+5fd9956e4db0bd3e22e70789fa34a6dc23ab3c7853dc9211d1df5f06a8942d37
+*** Time:2018-05-16 15:15:56.487 Command: sudo docker start -i etcd
+2018-05-16 13:15:56.946077 W | flags: unrecognized environment variable ETCDCTL_API=3
+2018-05-16 13:15:56.946476 I | etcdmain: etcd Version: 3.0.16
+2018-05-16 13:15:56.946809 I | etcdmain: Git SHA: a23109a
+2018-05-16 13:15:56.947117 I | etcdmain: Go Version: go1.6.4
+2018-05-16 13:15:56.947417 I | etcdmain: Go OS/Arch: linux/amd64
+2018-05-16 13:15:56.947806 I | etcdmain: setting maximum number of CPUs to 1, total number of available CPUs is 1
+2018-05-16 13:15:56.948308 W | etcdmain: no data-dir provided, using default data-dir ./default.etcd
+2018-05-16 13:15:56.948913 I | etcdmain: listening for peers on http://localhost:2380
+2018-05-16 13:15:56.949296 I | etcdmain: listening for client requests on 0.0.0.0:2379
+2018-05-16 13:15:56.964784 I | etcdserver: name = default
+2018-05-16 13:15:56.965167 I | etcdserver: data dir = default.etcd
+2018-05-16 13:15:56.965546 I | etcdserver: member dir = default.etcd/member
+2018-05-16 13:15:56.966041 I | etcdserver: heartbeat = 100ms
+2018-05-16 13:15:56.966256 I | etcdserver: election = 1000ms
+2018-05-16 13:15:56.966603 I | etcdserver: snapshot count = 10000
+2018-05-16 13:15:56.966839 I | etcdserver: advertise client URLs = http://0.0.0.0:2379
+2018-05-16 13:15:56.966867 I | etcdserver: initial advertise peer URLs = http://localhost:2380
+2018-05-16 13:15:56.967238 I | etcdserver: initial cluster = default=http://localhost:2380
+2018-05-16 13:15:56.971502 I | etcdserver: starting member 8e9e05c52164694d in cluster cdf818194e3a8c32
+2018-05-16 13:15:56.972017 I | raft: 8e9e05c52164694d became follower at term 0
+2018-05-16 13:15:56.972308 I | raft: newRaft 8e9e05c52164694d [peers: [], term: 0, commit: 0, applied: 0, lastindex: 0, lastterm: 0]
+2018-05-16 13:15:56.972546 I | raft: 8e9e05c52164694d became follower at term 1
+2018-05-16 13:15:56.996292 I | etcdserver: starting server... [version: 3.0.16, cluster version: to_be_decided]
+2018-05-16 13:15:56.998353 I | membership: added member 8e9e05c52164694d [http://localhost:2380] to cluster cdf818194e3a8c32
+2018-05-16 13:15:57.173373 I | raft: 8e9e05c52164694d is starting a new election at term 1
+2018-05-16 13:15:57.174491 I | raft: 8e9e05c52164694d became candidate at term 2
+2018-05-16 13:15:57.175419 I | raft: 8e9e05c52164694d received vote from 8e9e05c52164694d at term 2
+2018-05-16 13:15:57.176947 I | raft: 8e9e05c52164694d became leader at term 2
+2018-05-16 13:15:57.177920 I | raft: raft.node: 8e9e05c52164694d elected leader 8e9e05c52164694d at term 2
+2018-05-16 13:15:57.179950 I | etcdserver: setting up the initial cluster version to 3.0
+2018-05-16 13:15:57.180888 I | etcdserver: published {Name:default ClientURLs:[http://0.0.0.0:2379]} to cluster cdf818194e3a8c32
+2018-05-16 13:15:57.181179 I | etcdmain: ready to serve client requests
+2018-05-16 13:15:57.181936 N | etcdmain: serving insecure client requests on 0.0.0.0:2379, this is strongly discouraged!
+2018-05-16 13:15:57.182863 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.183372 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.183860 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.184331 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.184920 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.185365 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:57.209368 N | membership: set the initial cluster version to 3.0
+2018-05-16 13:15:57.216970 I | api: enabled capabilities for version 3.0
+2018-05-16 13:15:58.183426 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:58.185236 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:58.186794 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:58.188336 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:58.190330 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:58.191203 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:59.546480 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:59.684862 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:59.912609 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:15:59.970277 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:00.004372 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:00.068455 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:01.966006 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:02.170084 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:02.361940 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:02.504219 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:02.605143 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:03.059422 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:05.697641 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:05.852748 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:05.915213 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:05.985046 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:06.423057 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:06.442864 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+
+2018-05-16 13:16:11.699145 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:11.710348 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:11.793257 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:12.506454 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:12.692975 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:13.050269 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:20.363985 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:22.446787 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:22.473447 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:22.770698 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:23.149160 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:23.240878 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:37.245301 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:38.325742 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:38.449422 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:41.787525 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:42.136349 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:16:42.698634 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:01.949135 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:07.639314 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:08.449824 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:10.048363 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:10.394224 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:10.982325 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:42.149388 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:44.608653 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:47.587548 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:52.476350 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:53.303161 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:17:56.787630 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:18:49.483828 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:18:52.709732 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:18:55.473527 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:18:57.833723 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:19:07.510059 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:19:09.111198 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:20:26.518109 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:20:27.214235 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:20:51.726765 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:20:54.029069 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:21:06.562021 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:21:15.058127 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+2018-05-16 13:22:09.040894 I | v3rpc/grpc: grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp [::]:2379: connect: cannot assign requested address"; Reconnecting to {"[::]:2379" <nil>}
+msestak@msestak-VirtualBox:~$ 

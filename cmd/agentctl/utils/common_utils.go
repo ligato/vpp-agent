@@ -171,7 +171,7 @@ func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	}
 
 	cfg := &etcdv3.Config{}
-	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
+	etcdConfig, err := etcdv3.ConfigToClient(cfg)
 
 	// Log warnings and errors only.
 	log := logrus.DefaultLogger()
@@ -194,7 +194,7 @@ func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker
 	}
 
 	cfg := &etcdv3.Config{}
-	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
+	etcdConfig, err := etcdv3.ConfigToClient(cfg)
 
 	// Log warnings and errors only.
 	log := logrus.DefaultLogger()

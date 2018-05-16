@@ -25,7 +25,7 @@ import (
 	l2_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -33,7 +33,7 @@ import (
 type BridgeDomainStateUpdater struct {
 	Log         logging.Logger
 	GoVppmux    govppmux.API
-	bdIndex     bdidx.BDIndex
+	bdIndex     l2idx.BDIndex
 	swIfIndexes ifaceidx.SwIfIndex
 
 	publishBdState func(notification *BridgeDomainStateNotification)
@@ -45,7 +45,7 @@ type BridgeDomainStateUpdater struct {
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
 	notificationChan        chan BridgeDomainStateMessage
-	bdIdxChan               chan bdidx.ChangeDto
+	bdIdxChan               chan l2idx.BdChangeDto
 
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -57,7 +57,7 @@ type BridgeDomainStateNotification struct {
 }
 
 // Init bridge domain state updater.
-func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdidx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
+func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 
 	plugin.Log.Info("Initializing BridgeDomainStateUpdater")
@@ -72,7 +72,7 @@ func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, bdIndexes bdid
 		return err
 	}
 
-	plugin.bdIdxChan = make(chan bdidx.ChangeDto, 100)
+	plugin.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
 	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
 	plugin.notificationChan = notificationChan
 
@@ -158,7 +158,7 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 }
 
 func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {
-	bdStateInterfaces := []*l2.BridgeDomainState_BridgeDomain_Interfaces{}
+	var bdStateInterfaces []*l2.BridgeDomainState_BridgeDomain_Interfaces
 	for _, swIfaceDetails := range msg.SwIfDetails {
 		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
 		name, _, found := plugin.swIfIndexes.LookupName(swIfaceDetails.SwIfIndex)

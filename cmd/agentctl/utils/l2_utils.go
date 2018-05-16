@@ -57,14 +57,14 @@ func GetBridgeDomainKeyAndValue(endpoints []string, label string, bdName string)
 }
 
 // GetFibEntry returns the FIB entry if exists.
-func GetFibEntry(endpoints []string, label string, bdLabel string, fibMac string) (bool, string, *l2.FibTableEntries_FibTableEntry) {
+func GetFibEntry(endpoints []string, label string, bdLabel string, fibMac string) (bool, string, *l2.FibTable_FibEntry) {
 	db, err := GetDbForOneAgent(endpoints, label)
 	if err != nil {
 		ExitWithError(ExitBadConnection, err)
 	}
 
 	key := l2.FibKey(bdLabel, fibMac)
-	fibEntry := &l2.FibTableEntries_FibTableEntry{}
+	fibEntry := &l2.FibTable_FibEntry{}
 
 	found, _, err := db.GetValue(key, fibEntry)
 	if err != nil {
@@ -81,7 +81,7 @@ func WriteBridgeDomainToDb(db keyval.ProtoBroker, key string, bd *l2.BridgeDomai
 }
 
 // WriteFibDataToDb writes FIB entry to the etcd.
-func WriteFibDataToDb(db keyval.ProtoBroker, key string, fib *l2.FibTableEntries_FibTableEntry) {
+func WriteFibDataToDb(db keyval.ProtoBroker, key string, fib *l2.FibTable_FibEntry) {
 	db.Put(key, fib)
 }
 

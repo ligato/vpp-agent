@@ -89,7 +89,7 @@ ifplugin <-- GOVPP : success/err
 An example of interface configuration for MEMIF in JSON format can
 be found [here](../../../cmd/vpp-agent-ctl/json/memif.json).
 
-To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl)
 can be used. For example, to configure interface `memif1` in vpp
 labeled `vpp1`, use the configuration in the `memif.json` file and
 run the following `vpp-agent-ctl` command:
@@ -105,23 +105,17 @@ purposes.
 
 To create a `master` memif with IP address `192.168.42.1`, run:
 ```
-vpp-agent-ctl -cmm
+vpp-agent-ctl -memif
 ```
 
-To turn the memif from `master` to `slave` and change the IP address
-from `192.168.42.1` to `192.168.42.2`, invoke:
-```
-vpp-agent-ctl -cms
-```
-
-Note: As it is not possible to change the operating mode of memif
+It is not possible to change the operating mode of memif
 interface once it was created, the agent must first remove the
 existing interface and then create a new instance of memif in
 `slave` mode.
 
 To remove the interface, run:
 ```
-vpp-agent-ctl -dmm
+vpp-agent-ctl -memifd
 ```
 
 Similarly, `vpp-agent-ctl` offers commands to create, change and delete
@@ -129,7 +123,7 @@ VXLANs, tap and loopback interfaces with predefined configurations.
 Run `vpp-agent-ctl` with no arguments to get the list of all available
 commands. The documentation for `vpp-agent-ctl` is incomplete right now,
 and the only way to find out what a given command does is to
-[study the source code itself](../../../cmd/vpp-agent-ctl/main.go).
+[study the source code itself](../../../cmd/vpp-agent-ctl).
 
 ### Bidirectional Forwarding Detection
 
@@ -213,14 +207,14 @@ NAT DNAT case has the following key:
 
 **JSON configuration example with vpp-agent-ctl**
 
-To inset NAT global config into ETCD in JSON format, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
+To inset NAT global config into ETCD in JSON format, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl)
 with [nat-global.json](../../../cmd/vpp-agent-ctl/json/nat-global.json) file. 
 Use the following command:
 ```
 vpp-agent-ctl -put "/vnf-agent/vpp1/vpp/config/v1/nat/global/" json/nat-global.json
 ```
 
-To put DNAT configuration, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) with 
+To put DNAT configuration, use [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) with 
 [nat-dnat.json](../../../cmd/vpp-agent-ctl/json/nat-dnat.json) file.
 Use the following command:
 ```
@@ -235,7 +229,7 @@ purposes.
 
 To create a global NAT config, run:
 ```
-vpp-agent-ctl -natg
+vpp-agent-ctl -gnat
 ```
 
 To create a DNAT config, run:
@@ -258,7 +252,7 @@ is stored in ETCD under unique. Every STN rule is store under following key:
 An example of interface configuration for STN rule in JSON format can
 be found [here](../../../cmd/vpp-agent-ctl/json/stn-rule.json).
 
-To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go)
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl)
 can be used. For example, to configure stn rule `rule1` in vpp
 labeled `vpp1`, use the configuration in the `stn-rule.json` file and
 run the following `vpp-agent-ctl` command:
@@ -274,7 +268,7 @@ purposes.
 
 To create a `rule1` stn rule with IP address `10.1.1.3/32`, run:
 ```
-vpp-agent-ctl -stna
+vpp-agent-ctl -stn
 ```
 
 To remove the stn rule, run:

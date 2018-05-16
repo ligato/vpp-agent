@@ -30,6 +30,11 @@ import (
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 )
 
+var (
+	msgControlPing      api.Message = &vpe.ControlPing{}
+	msgControlPingReply api.Message = &vpe.ControlPingReply{}
+)
+
 const (
 	requestChannelBufSize      = 100 // default size of the request channel buffers
 	replyChannelBufSize        = 100 // default size of the reply channel buffers
@@ -68,14 +73,14 @@ type Connection struct {
 	connected uint32             // non-zero if the adapter is connected to VPP
 	codec     *MsgCodec          // message codec
 
-	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 	msgIDsLock sync.RWMutex      // lock for the message IDs map
+	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 
-	channels     map[uint32]*api.Channel // map of all API channels indexed by the channel ID
 	channelsLock sync.RWMutex            // lock for the channels map
+	channels     map[uint32]*api.Channel // map of all API channels indexed by the channel ID
 
-	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 	notifSubscriptionsLock sync.RWMutex                        // lock for the subscriptions map
+	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 
 	maxChannelID uint32 // maximum used client ID
 	pingReqID    uint16 // ID if the ControlPing message
@@ -126,6 +131,12 @@ func SetHealthCheckReplyTimeout(timeout time.Duration) {
 // before connecting to vpp.
 func SetHealthCheckThreshold(threshold int) {
 	healthCheckThreshold = threshold
+}
+
+// SetControlPingMessages sets the messages for ControlPing and ControlPingReply
+func SetControlPingMessages(controPing, controlPingReply api.Message) {
+	msgControlPing = controPing
+	msgControlPingReply = controlPingReply
 }
 
 // Connect connects to VPP using specified VPP adapter and returns the connection handle.
@@ -210,12 +221,18 @@ func (c *Connection) connectVPP() error {
 		return err
 	}
 
+	// store control ping IDs
+	if c.pingReqID, err = c.GetMessageID(msgControlPing); err != nil {
+		c.vpp.Disconnect()
+		return err
+	}
+	if c.pingReplyID, err = c.GetMessageID(msgControlPingReply); err != nil {
+		c.vpp.Disconnect()
+		return err
+	}
+
 	// store connected state
 	atomic.StoreUint32(&c.connected, 1)
-
-	// store control ping IDs
-	c.pingReqID, _ = c.GetMessageID(&vpe.ControlPing{})
-	c.pingReplyID, _ = c.GetMessageID(&vpe.ControlPingReply{})
 
 	log.Info("Connected to VPP.")
 	return nil
@@ -233,11 +250,16 @@ func (c *Connection) disconnectVPP() {
 func (c *Connection) connectLoop(connChan chan ConnectionEvent) {
 	// loop until connected
 	for {
-		c.vpp.WaitReady()
+		if err := c.vpp.WaitReady(); err != nil {
+			log.Warnf("wait ready failed: %v", err)
+		}
 		if err := c.connectVPP(); err == nil {
 			// signal connected event
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Connected}
 			break
+		} else {
+			log.Errorf("connecting to VPP failed: %v", err)
+			time.Sleep(time.Second)
 		}
 	}
 
@@ -268,7 +290,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 		}
 
 		// send the control ping
-		ch.ReqChan <- &api.VppRequest{Message: &vpe.ControlPing{}}
+		ch.ReqChan <- &api.VppRequest{Message: msgControlPing}
 
 		// expect response within timeout period
 		select {
@@ -280,13 +302,14 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 		if err != nil {
 			failedChecks++
+			log.Warnf("VPP health check failed (%d. time): %v", failedChecks, err)
 		} else {
 			failedChecks = 0
 		}
 
-		if failedChecks >= healthCheckThreshold {
+		if failedChecks > healthCheckThreshold {
 			// in case of error, break & disconnect
-			log.Errorf("VPP health check failed: %v", err)
+			log.Errorf("Number of VPP health check fails exceeded treshold (%d)", healthCheckThreshold, err)
 			// signal disconnected event via channel
 			connChan <- ConnectionEvent{Timestamp: time.Now(), State: Disconnected}
 			break

@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -49,25 +50,35 @@ type DataResyncReq struct {
 	// BridgeDomains is a list af all BDs that are expected to be in VPP after RESYNC.
 	BridgeDomains []*l2.BridgeDomains_BridgeDomain
 	// FibTableEntries is a list af all FIBs that are expected to be in VPP after RESYNC.
-	FibTableEntries []*l2.FibTableEntries_FibTableEntry
+	FibTableEntries []*l2.FibTable_FibEntry
 	// XConnects is a list af all XCons that are expected to be in VPP after RESYNC.
 	XConnects []*l2.XConnectPairs_XConnectPair
 	// StaticRoutes is a list af all Static Routes that are expected to be in VPP after RESYNC.
 	StaticRoutes []*l3.StaticRoutes_Route
 	// ArpEntries is a list af all ARP entries that are expected to be in VPP after RESYNC.
-	ArpEntries []*l3.ArpTable_ArpTableEntry
+	ArpEntries []*l3.ArpTable_ArpEntry
+	// ProxyArpInterfaces is a list af all proxy ARP interface entries that are expected to be in VPP after RESYNC.
+	ProxyArpInterfaces []*l3.ProxyArpInterfaces_InterfaceList
+	// ProxyArpRanges is a list af all proxy ARP ranges that are expected to be in VPP after RESYNC.
+	ProxyArpRanges []*l3.ProxyArpRanges_RangeList
 	// L4Features is a bool flag that is expected to be set in VPP after RESYNC.
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC.
 	AppNamespaces []*l4.AppNamespaces_AppNamespace
 	// StnRules is a list of all STN Rules that are expected to be in VPP after RESYNC
-	StnRules []*stn.StnRule
+	StnRules []*stn.STN_Rule
 	// NatGlobal is a definition of global NAT config
 	Nat44Global *nat.Nat44Global
 	// Nat44SNat is a list of all SNAT configurations expected to be in VPP after RESYNC
 	Nat44SNat []*nat.Nat44SNat_SNatConfig
 	// Nat44DNat is a list of all DNAT configurations expected to be in VPP after RESYNC
 	Nat44DNat []*nat.Nat44DNat_DNatConfig
+	// IPSecSPDs is a list of all IPSec Security Policy Databases expected to be in VPP after RESYNC
+	IPSecSPDs []*ipsec.SecurityPolicyDatabases_SPD
+	// IPSecSAs is a list of all IPSec Security Associations expected to be in VPP after RESYNC
+	IPSecSAs []*ipsec.SecurityAssociations_SA
+	// IPSecTunnels is a list of all IPSec Tunnel interfaces expected to be in VPP after RESYNC
+	IPSecTunnels []*ipsec.TunnelInterfaces_Tunnel
 }
 
 // NewDataResyncReq is a constructor.
@@ -79,16 +90,21 @@ func NewDataResyncReq() *DataResyncReq {
 		SingleHopBFDKey:     []*bfd.SingleHopBFD_Key{},
 		SingleHopBFDEcho:    []*bfd.SingleHopBFD_EchoFunction{},
 		BridgeDomains:       []*l2.BridgeDomains_BridgeDomain{},
-		FibTableEntries:     []*l2.FibTableEntries_FibTableEntry{},
+		FibTableEntries:     []*l2.FibTable_FibEntry{},
 		XConnects:           []*l2.XConnectPairs_XConnectPair{},
 		StaticRoutes:        []*l3.StaticRoutes_Route{},
-		ArpEntries:          []*l3.ArpTable_ArpTableEntry{},
+		ArpEntries:          []*l3.ArpTable_ArpEntry{},
+		ProxyArpInterfaces:  []*l3.ProxyArpInterfaces_InterfaceList{},
+		ProxyArpRanges:      []*l3.ProxyArpRanges_RangeList{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
-		StnRules:            []*stn.StnRule{},
+		StnRules:            []*stn.STN_Rule{},
 		Nat44Global:         &nat.Nat44Global{},
 		Nat44SNat:           []*nat.Nat44SNat_SNatConfig{},
 		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
+		IPSecSPDs:           []*ipsec.SecurityPolicyDatabases_SPD{},
+		IPSecSAs:            []*ipsec.SecurityAssociations_SA{},
+		IPSecTunnels:        []*ipsec.TunnelInterfaces_Tunnel{},
 	}
 }
 
@@ -129,53 +145,100 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
-		resyncErrs = append(resyncErrs, errs...)
+	if !plugin.droppedFromResync(interfaces.InterfaceKeyPrefix()) {
+		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
+			resyncErrs = append(resyncErrs, errs...)
+		}
 	}
-	if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(acl.KeyPrefix()) {
+		if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.AuthKeysKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.SessionKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(bfd.EchoFunctionKeyPrefix()) {
+		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.BridgeDomainKeyPrefix()) {
+		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.FibKeyPrefix()) {
+		if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l2.XConnectKeyPrefix()) {
+		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.RouteKeyPrefix()) {
+		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ArpKeyPrefix()) {
+		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ProxyArpInterfacePrefix()) {
+		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l3.ProxyArpRangePrefix()) {
+		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l4.FeatureKeyPrefix()) {
+		if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(l4.AppNamespacesKeyPrefix()) {
+		if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(stn.KeyPrefix()) {
+		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
-	if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
-		resyncErrs = append(resyncErrs, err)
+	if !plugin.droppedFromResync(nat.GlobalConfigPrefix()) {
+		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
+	}
+	if !plugin.droppedFromResync(nat.SNatPrefix()) {
+		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
+	}
+	if !plugin.droppedFromResync(nat.DNatPrefix()) {
+		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
+	}
+	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
+		if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
 	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
@@ -225,6 +288,12 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
 			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
+		} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
+		} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
+			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
 		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
 			resyncFeatures(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNs feature flag")
@@ -243,6 +312,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, nat.DNatPrefix()) {
 			numDNats := appendResyncDNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
+		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
+			numIPSecs := appendResyncIPSec(resyncData, req)
+			plugin.Log.Debug("Received RESYNC IPSec configs ", numIPSecs)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -264,9 +336,41 @@ func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			entry := &l3.ArpTable_ArpTableEntry{}
+			entry := &l3.ArpTable_ArpEntry{}
 			if err := arpData.GetValue(entry); err == nil {
 				req.ArpEntries = append(req.ArpEntries, entry)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			entry := &l3.ProxyArpInterfaces_InterfaceList{}
+			if err := arpData.GetValue(entry); err == nil {
+				req.ProxyArpInterfaces = append(req.ProxyArpInterfaces, entry)
+				num++
+			}
+		}
+	}
+	return num
+}
+
+func resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+	num := 0
+	for {
+		if arpData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			entry := &l3.ProxyArpRanges_RangeList{}
+			if err := arpData.GetValue(entry); err == nil {
+				req.ProxyArpRanges = append(req.ProxyArpRanges, entry)
 				num++
 			}
 		}
@@ -334,7 +438,7 @@ func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) i
 	return num
 }
 func resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) error {
-	value := &l2.FibTableEntries_FibTableEntry{}
+	value := &l2.FibTable_FibEntry{}
 	err := fibData.GetValue(value)
 	if err == nil {
 		req.FibTableEntries = append(req.FibTableEntries, value)
@@ -491,7 +595,7 @@ func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq
 		if stnData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &stn.StnRule{}
+			value := &stn.STN_Rule{}
 			err := stnData.GetValue(value)
 			if err == nil {
 				req.StnRules = append(req.StnRules, value)
@@ -547,6 +651,35 @@ func appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) in
 	return num
 }
 
+func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
+	for {
+		if data, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSPD) {
+				value := &ipsec.SecurityPolicyDatabases_SPD{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecSPDs = append(req.IPSecSPDs, value)
+					num++
+				}
+			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSA) {
+				value := &ipsec.SecurityAssociations_SA{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecSAs = append(req.IPSecSAs, value)
+					num++
+				}
+			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixTunnel) {
+				value := &ipsec.TunnelInterfaces_Tunnel{}
+				if err := data.GetValue(value); err == nil {
+					req.IPSecTunnels = append(req.IPSecTunnels, value)
+					num++
+				}
+			}
+		}
+	}
+	return
+}
+
 // All registration for above channel select (it ensures proper order during initialization) are put here.
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
@@ -570,12 +703,15 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l2.XConnectKeyPrefix(),
 			l3.VrfKeyPrefix(),
 			l3.ArpKeyPrefix(),
+			l3.ProxyArpInterfacePrefix(),
+			l3.ProxyArpRangePrefix(),
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),
 			stn.KeyPrefix(),
 			nat.GlobalConfigPrefix(),
 			nat.SNatPrefix(),
 			nat.DNatPrefix(),
+			ipsec.KeyPrefix,
 		)
 	if err != nil {
 		return err

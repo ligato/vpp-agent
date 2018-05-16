@@ -64,7 +64,7 @@ func SelectExpToString(fromWhere sql.Expression) (sqlStr string, bindings []inte
 
 	whereStr := fromWhereStr.String()
 	if strings.Contains(whereStr, "AND") {
-		whereStr = whereStr +  " ALLOW FILTERING"
+		whereStr = whereStr + " ALLOW FILTERING"
 	}
 	return "SELECT " + fieldsStr + whereStr, fromWhereBindings, nil
 }

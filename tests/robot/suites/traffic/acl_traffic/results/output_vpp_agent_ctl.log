@@ -1,0 +1,238 @@
+*** Time:2018-05-16 15:16:18.808 Command: sudo docker create -it --name vpp_agent_ctl ligato/vpp-agent:pantheon-dev bash
+2f7d62033432e9ea17db0045c43ee775fb65d88729928e2d7ee8603c457988ce
+*** Time:2018-05-16 15:16:18.960 Command: sudo docker start -i vpp_agent_ctl
+]0;root@2f7d62033432: ~root@2f7d62033432:~# 
+*** Time:2018-05-16 15:18:16.395 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -ps
+[36mINFO[0m[0000] Connecting to etcd took 6.917344ms            [36mdurationInNs[0m=6917344 [36mloc[0m="etcdv3/bytes_broker_impl.go(84)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000]  
+
+	Crud operations with .json:
+		-put	<etc_key>    <json-file>
+		-get	<etc_key>
+		-del	<etc_key>
+		-dump
+		-list
+
+	Prearranged flags (create, delete):
+		-acl,	-acld	- Access List
+		-bfds,	-bfdsd	- BFD session
+		-bfdk,	-bfdkd	- BFD authentication key
+		-bfde,	-bfded	- BFD echo function
+		-eth,	-ethd	- Physical interface
+		-tap,	-tapd	- TAP type interface
+		-loop,	-loopd	- Loop type interface
+		-memif,	-memifd	- Memif type interface
+		-vxlan,	-vxland	- VxLAN type interface
+		-afpkt,	-afpktd	- af_packet type interface
+		-veth,	-vethd	- Linux VETH interface pair
+		-ltap,	-ltapd	- Linux TAP interface
+		-stn,	-stnd	- STN rule
+		-gnat,	-gnatd	- Global NAT configuration
+		-snat,	-snatd	- SNAT configuration
+		-dnat,	-dnatd	- DNAT configuration
+		-bd,	-bdd	- Bridge doamin
+		-fib,	-fibd	- L2 FIB
+		-xconn,	-xconnd	- L2 X-Connect
+		-route,	-routed	- L3 route
+		-arp,	-arpd	- ARP entry
+		-prxi,	-prxid	- Proxy ARP interfaces
+		-prxr,	-prxrd	- Proxy ARP ranges
+		-lrte,	-lrted	- Linux route
+		-larp,	-larpd	- Linux ARP entry
+		-el4,	-dl4	- L4 features
+		-appns,	-appnsd	- Application namespace
+
+	Other:
+		-txn,	-txnd	- Transaction
+		-errIf		- Interface error state report
+		-errBd		- Bridge domain error state report
+	 
+]0;root@2f7d62033432: ~root@2f7d62033432:~# [K
+*** Time:2018-05-16 15:18:22.279 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_1_node1_veth
+{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","internal_name":"host-node_1_noeth_1","if_index":2,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:3e:fd:61:28","mtu":1500,"statistics":{"in_packets":18,"in_bytes":1412}}
+****** Error: time="2018-05-16 13:18:22.57082" level=info msg="Connecting to etcd took 3.207804ms" durationInNs=3207804 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:31.844 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/config/v1/interface/IF_AFPIF_VSWITCH_node_1_node1_veth
+{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","type":4,"enabled":true,"mtu":1500,"afpacket":{"host_if_name":"node_1_noeth_1"}}
+****** Error: time="2018-05-16 13:18:32.07862" level=info msg="Connecting to etcd took 4.086404ms" durationInNs=4086404 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:32.207 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_2_node2_veth
+{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","internal_name":"host-node_2_noeth_2","if_index":3,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:42:98:22:08","mtu":1500,"statistics":{"in_packets":20,"in_bytes":1592}}
+****** Error: time="2018-05-16 13:18:32.34727" level=info msg="Connecting to etcd took 506.638µs" durationInNs=506638 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:41.629 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/config/v1/interface/IF_AFPIF_VSWITCH_node_2_node2_veth
+{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","type":4,"enabled":true,"mtu":1500,"afpacket":{"host_if_name":"node_2_noeth_2"}}
+****** Error: time="2018-05-16 13:18:41.84790" level=info msg="Connecting to etcd took 555.641µs" durationInNs=555641 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:42.713 Command: echo '{
+  "name": "loop0",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:00:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "20.1.1.1/24"
+  ]
+}
+' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop0 -
+>   "name": "loop0",
+>   "type": 0,
+>   "enabled": true,
+>   "phys_address": "8a:f1:be:90:00:00",
+>   "mtu": 1500,
+>   "vrf": 0,
+>   "ip_addresses": [
+>     "20.1.1.1/24"
+>   ]
+> }
+> ' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp /config/v1/interface/loop0 -
+[36mINFO[0m[0000] Connecting to etcd took 2.258818ms            [36mdurationInNs[0m=2258818 [36mloc[0m="etcdv3/bytes_broker_impl.go(84)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB putting  /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop0   {
+  "name": "loop0",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:00:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "20.1.1.1/24"
+  ]
+}
+
+  [36mloc[0m="vpp-agent-ctl/etcd.go(106)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB put successful  /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop0   -  [36mloc[0m="vpp-agent-ctl/etcd.go(112)" [36mlogger[0m=defaultLogger
+]0;root@2f7d62033432: ~root@2f7d62033432:~# [K
+*** Time:2018-05-16 15:18:45.764 Command: echo '{
+  "name": "loop1",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:20:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "30.1.1.1/24"
+  ]
+}
+' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop1 -
+>   "name": "loop1",
+>   "type": 0,
+>   "enabled": true,
+>   "phys_address": "8a:f1:be:90:20:00",
+>   "mtu": 1500,
+>   "vrf": 0,
+>   "ip_addresses": [
+>     "30.1.1.1/24"
+>   ]
+> }
+> ' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp /config/v1/interface/loop1 -
+[36mINFO[0m[0000] Connecting to etcd took 1.079844ms            [36mdurationInNs[0m=1079844 [36mloc[0m="etcdv3/bytes_broker_impl.go(84)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB putting  /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop1   {
+  "name": "loop1",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:20:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "30.1.1.1/24"
+  ]
+}
+
+  [36mloc[0m="vpp-agent-ctl/etcd.go(106)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB put successful  /vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop1   -  [36mloc[0m="vpp-agent-ctl/etcd.go(112)" [36mlogger[0m=defaultLogger
+]0;root@2f7d62033432: ~root@2f7d62033432:~# [K
+*** Time:2018-05-16 15:18:51.846 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_1_node1_veth
+{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","internal_name":"host-node_1_noeth_1","if_index":2,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:3e:fd:61:28","mtu":1500,"statistics":{"in_packets":18,"in_bytes":1412}}
+****** Error: time="2018-05-16 13:18:52.13616" level=info msg="Connecting to etcd took 1.05084ms" durationInNs=1050840 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:52.245 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_2_node2_veth
+{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","internal_name":"host-node_2_noeth_2","if_index":3,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:42:98:22:08","mtu":1500,"statistics":{"in_packets":20,"in_bytes":1592}}
+****** Error: time="2018-05-16 13:18:52.48358" level=info msg="Connecting to etcd took 7.482773ms" durationInNs=7482773 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:18:59.472 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/loop0
+
+****** Error: time="2018-05-16 13:18:59.71101" level=info msg="Connecting to etcd took 6.8471ms" durationInNs=6847100 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:19:15.808 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -get /vnf-agent/agent_vpp_1/vpp/status/v1/interface/loop0
+
+****** Error: time="2018-05-16 13:19:15.96221" level=info msg="Connecting to etcd took 3.279966ms" durationInNs=3279966 loc="etcdv3/bytes_broker_impl.go(84)" logger=defaultLogger
+*** Time:2018-05-16 15:19:28.961 Command: echo '{
+  "name": "bd2",
+  "flood": true,
+  "unknown_unicast_flood": true,
+  "forward": true,
+  "learn": true,
+  "arp_termination": true,
+  "interfaces": [
+    { "name": "loop0" },{ "name": "loop1" }
+  ]
+}
+' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp/config/v1/bd/bd2 -
+>   "name": "bd2",
+>   "flood": true,
+>   "unknown_unicast_flood": true,
+>   "forward": true,
+>   "learn": true,
+>   "arp_termination": true,
+>   "interfaces": [
+>     { "name": "loop0" },{ "name": "loop1" }
+>   ]
+> }
+> ' | vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -put /vnf-agent/agent_vpp_1/vpp /config/v1/bd/bd2 -
+[36mINFO[0m[0000] Connecting to etcd took 1.2798ms              [36mdurationInNs[0m=1279800 [36mloc[0m="etcdv3/bytes_broker_impl.go(84)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB putting  /vnf-agent/agent_vpp_1/vpp/config/v1/bd/bd2   {
+  "name": "bd2",
+  "flood": true,
+  "unknown_unicast_flood": true,
+  "forward": true,
+  "learn": true,
+  "arp_termination": true,
+  "interfaces": [
+    { "name": "loop0" },{ "name": "loop1" }
+  ]
+}
+
+  [36mloc[0m="vpp-agent-ctl/etcd.go(106)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] DB put successful  /vnf-agent/agent_vpp_1/vpp/config/v1/bd/bd2   -  [36mloc[0m="vpp-agent-ctl/etcd.go(112)" [36mlogger[0m=defaultLogger
+]0;root@2f7d62033432: ~root@2f7d62033432:~# [K
+*** Time:2018-05-16 15:20:18.819 Command: vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -ps
+[36mINFO[0m[0000] Connecting to etcd took 4.048698ms            [36mdurationInNs[0m=4048698 [36mloc[0m="etcdv3/bytes_broker_impl.go(84)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000]  
+
+	Crud operations with .json:
+		-put	<etc_key>    <json-file>
+		-get	<etc_key>
+		-del	<etc_key>
+		-dump
+		-list
+
+	Prearranged flags (create, delete):
+		-acl,	-acld	- Access List
+		-bfds,	-bfdsd	- BFD session
+		-bfdk,	-bfdkd	- BFD authentication key
+		-bfde,	-bfded	- BFD echo function
+		-eth,	-ethd	- Physical interface
+		-tap,	-tapd	- TAP type interface
+		-loop,	-loopd	- Loop type interface
+		-memif,	-memifd	- Memif type interface
+		-vxlan,	-vxland	- VxLAN type interface
+		-afpkt,	-afpktd	- af_packet type interface
+		-veth,	-vethd	- Linux VETH interface pair
+		-ltap,	-ltapd	- Linux TAP interface
+		-stn,	-stnd	- STN rule
+		-gnat,	-gnatd	- Global NAT configuration
+		-snat,	-snatd	- SNAT configuration
+		-dnat,	-dnatd	- DNAT configuration
+		-bd,	-bdd	- Bridge doamin
+		-fib,	-fibd	- L2 FIB
+		-xconn,	-xconnd	- L2 X-Connect
+		-route,	-routed	- L3 route
+		-arp,	-arpd	- ARP entry
+		-prxi,	-prxid	- Proxy ARP interfaces
+		-prxr,	-prxrd	- Proxy ARP ranges
+		-lrte,	-lrted	- Linux route
+		-larp,	-larpd	- Linux ARP entry
+		-el4,	-dl4	- L4 features
+		-appns,	-appnsd	- Application namespace
+
+	Other:
+		-txn,	-txnd	- Transaction
+		-errIf		- Interface error state report
+		-errBd		- Bridge domain error state report
+	 
+]0;root@2f7d62033432: ~root@2f7d62033432:~# [K
+msestak@msestak-VirtualBox:~$ 

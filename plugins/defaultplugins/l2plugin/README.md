@@ -24,7 +24,7 @@ A bit more advanced example which includes ARP termination entries can be found
 [here](../../../cmd/vpp-agent-ctl/json/bridge-domain-arp.json). Example of FIB tables 
 is available [here](../../../cmd/vpp-agent-ctl/json/l2_fib.json)
 
-To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl/main.go) can be used.
+To insert config into etcd in JSON format [vpp-agent-ctl](../../../cmd/vpp-agent-ctl) can be used.
 Let's assume that we want to configure vpp with the label `vpp1` and config for bridge domain `bd1` is stored
 in the `bridge-domain.json` file. Furthermore, we assume that the bridge domain `bd1` contains tap interface `tap1`
 with configuration stored in `tap.json`. To convey this configuration to the agent through northbound API,
@@ -49,26 +49,21 @@ It is meant to be used solely for testing purposes.
 
 First create a new tap interface `tap1`:
 ```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -ct
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 ```
 
 To configure a new bridge domain `bd1` containing the previously created tap interface `tap1`, use:
 ```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -cbd
-```
-
-Alternatively, the bridge domain `bd1` can be created to include few ARP termination entries with:
-```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -aat
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -bd
 ```
 
 To create a new tap interface `tap2` and to L2-xConnect it with `tap1`, use:
 ```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -cxc
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -xconn
 ```
 
 To create L2 FIB table, run:
 ```
-vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -aft
+vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -fib
 ```
 

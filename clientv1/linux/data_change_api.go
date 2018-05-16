@@ -76,7 +76,7 @@ type PutDSL interface {
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *vpp_l2.BridgeDomains_BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-	BDFIB(fib *vpp_l2.FibTableEntries_FibTableEntry) PutDSL
+	BDFIB(fib *vpp_l2.FibTable_FibEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *vpp_l2.XConnectPairs_XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
@@ -84,13 +84,17 @@ type PutDSL interface {
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
-	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) PutDSL
+	Arp(arp *vpp_l3.ArpTable_ArpEntry) PutDSL
+	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) PutDSL
+	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
+	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *vpp_l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update VPP Stn rule.
-	StnRule(stn *vpp_stn.StnRule) PutDSL
+	StnRule(stn *vpp_stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration
@@ -144,6 +148,10 @@ type DeleteDSL interface {
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
+	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+	ProxyArpInterfaces(label string) DeleteDSL
+	// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
+	ProxyArpRanges(label string) DeleteDSL
 	// StnRule adds a request to delete an existing VPP Stn rule.
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44

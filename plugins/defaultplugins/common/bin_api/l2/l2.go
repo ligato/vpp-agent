@@ -20,28 +20,28 @@ import "git.fd.io/govpp.git/api"
 //            ],
 //            [
 //                "u8",
-//                "is_del"
+//                "action"
 //            ],
 //            [
 //                "u8",
-//                "spare"
+//                "flags"
 //            ],
 //            {
-//                "crc": "0x4ffc6b5e"
+//                "crc": "0x971135b8"
 //            }
 //
 type MacEntry struct {
 	SwIfIndex uint32
 	MacAddr   []byte `struc:"[6]byte"`
-	IsDel     uint8
-	Spare     uint8
+	Action    uint8
+	Flags     uint8
 }
 
 func (*MacEntry) GetTypeName() string {
 	return "mac_entry"
 }
 func (*MacEntry) GetCrcString() string {
-	return "4ffc6b5e"
+	return "971135b8"
 }
 
 // BridgeDomainSwIf represents the VPP binary API data type 'bridge_domain_sw_if'.

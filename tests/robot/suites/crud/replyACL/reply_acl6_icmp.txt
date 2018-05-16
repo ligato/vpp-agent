@@ -30,9 +30,6 @@
                         },
                         "tcp_flags_mask": 20,
                         "tcp_flags_value": 10
-                    },
-                    "other": {
-                        "protocol": 1
                     }
                 }
             }

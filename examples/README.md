@@ -16,18 +16,30 @@ Current examples:
   un-registration)
 * **[idx_mapping_watcher](idx_mapping_watcher/main.go)** shows how to 
   watch on changes in a name-to-index mapping
-* **[localclient_vpp](localclient_vpp/main.go)** demonstrates how to use
-  the localclient package to push example configuration into VPP plugins 
-  that run in the same agent instance (i.e. in the same OS process). 
+* **[localclient_vpp_plugins](localclient_vpp/plugins/main.go)** demonstrates 
+  how to use the localclient package to push example configuration into 
+  VPP plugins that run in the same agent instance (i.e. in the same OS process). 
   Behind the scenes, configuration data is transported via go channels.
-* **[localclient_linux](localclient_linux/main.go)** demonstrates how to
-  use the localclient package to push example configuration into linux and
-  VPP plugins running within the same agent instance (i.e. within the same 
-  OS process). Behind the scenes the configuration data is transported via
-  go channels.
-* **[remoteclient_grpc_vpp](remoteclient_grpc_vpp/main.go)** demonstrates how to
+* **[localclient_vpp_nat](localclient_vpp/nat/main.go)** demonstrates
+  how to set up NAT global configuration and Destination NAT. The example
+  uses localclient to put example data to the respective VPP plugins.
+* **[localclient_linux_tap](localclient_linux/tap/main.go)** configures 
+  simple topology consisting of VPP Tap interfaces with linux host 
+  counterparts. Example demonstrates how to use the localclient package 
+  to push example configuration for those interface types into linux 
+  and VPP plugins running within the same agent instance (i.e. within 
+  the same OS process). Behind the scenes the configuration data 
+  is transported via go channels. 
+* **[localclient_linux_veth](localclient_linux/veth/main.go)** configures 
+  simple topology consisting of VPP af-packet interfaces attached to 
+  linux Veth pairs. As before, this example also uses localclient to push 
+  the configuration to vpp-agent plugins.  
+* **[grpc_vpp_remote_client](grpc_vpp/remote_client/main.go)** demonstrates how to
   use the remoteclient package to push example configuration into
   VPP default plugins running within different vpp-agent OS process.
+* **[grpc_vpp_notifications](grpc_vpp/notifications/main.go)** demonstrates how to
+  use the notifications package to  receive VPP notifications streamed by different 
+  vpp-agent process.
 
 * **[CN-Infra  examples][1]** demonstrate how to use the CN-Infra platform
   plugins.

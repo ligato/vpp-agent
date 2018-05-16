@@ -5,6 +5,7 @@ package ip
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"FibMplsLabel":                                  reflect.TypeOf((*FibMplsLabel)(nil)).Elem(),
 	"FibPath":                                       reflect.TypeOf((*FibPath)(nil)).Elem(),
 	"IP4ArpEvent":                                   reflect.TypeOf((*IP4ArpEvent)(nil)).Elem(),
 	"IP6FibDetails":                                 reflect.TypeOf((*IP6FibDetails)(nil)).Elem(),
@@ -12,10 +13,14 @@ var Types = map[string]reflect.Type{
 	"IP6MfibDetails":                                reflect.TypeOf((*IP6MfibDetails)(nil)).Elem(),
 	"IP6MfibDump":                                   reflect.TypeOf((*IP6MfibDump)(nil)).Elem(),
 	"IP6NdEvent":                                    reflect.TypeOf((*IP6NdEvent)(nil)).Elem(),
+	"IP6RaEvent":                                    reflect.TypeOf((*IP6RaEvent)(nil)).Elem(),
+	"IP6RaPrefixInfo":                               reflect.TypeOf((*IP6RaPrefixInfo)(nil)).Elem(),
 	"IP6ndProxyAddDel":                              reflect.TypeOf((*IP6ndProxyAddDel)(nil)).Elem(),
 	"IP6ndProxyAddDelReply":                         reflect.TypeOf((*IP6ndProxyAddDelReply)(nil)).Elem(),
 	"IP6ndProxyDetails":                             reflect.TypeOf((*IP6ndProxyDetails)(nil)).Elem(),
 	"IP6ndProxyDump":                                reflect.TypeOf((*IP6ndProxyDump)(nil)).Elem(),
+	"IP6ndSendRouterSolicitation":                   reflect.TypeOf((*IP6ndSendRouterSolicitation)(nil)).Elem(),
+	"IP6ndSendRouterSolicitationReply":              reflect.TypeOf((*IP6ndSendRouterSolicitationReply)(nil)).Elem(),
 	"IPAddDelRoute":                                 reflect.TypeOf((*IPAddDelRoute)(nil)).Elem(),
 	"IPAddDelRouteReply":                            reflect.TypeOf((*IPAddDelRouteReply)(nil)).Elem(),
 	"IPAddressDetails":                              reflect.TypeOf((*IPAddressDetails)(nil)).Elem(),
@@ -38,6 +43,8 @@ var Types = map[string]reflect.Type{
 	"IPPuntPoliceReply":                             reflect.TypeOf((*IPPuntPoliceReply)(nil)).Elem(),
 	"IPPuntRedirect":                                reflect.TypeOf((*IPPuntRedirect)(nil)).Elem(),
 	"IPPuntRedirectReply":                           reflect.TypeOf((*IPPuntRedirectReply)(nil)).Elem(),
+	"IPReassemblyEnableDisable":                     reflect.TypeOf((*IPReassemblyEnableDisable)(nil)).Elem(),
+	"IPReassemblyEnableDisableReply":                reflect.TypeOf((*IPReassemblyEnableDisableReply)(nil)).Elem(),
 	"IPReassemblyGet":                               reflect.TypeOf((*IPReassemblyGet)(nil)).Elem(),
 	"IPReassemblyGetReply":                          reflect.TypeOf((*IPReassemblyGetReply)(nil)).Elem(),
 	"IPReassemblySet":                               reflect.TypeOf((*IPReassemblySet)(nil)).Elem(),
@@ -76,6 +83,8 @@ var Types = map[string]reflect.Type{
 	"WantIP4ArpEventsReply":                         reflect.TypeOf((*WantIP4ArpEventsReply)(nil)).Elem(),
 	"WantIP6NdEvents":                               reflect.TypeOf((*WantIP6NdEvents)(nil)).Elem(),
 	"WantIP6NdEventsReply":                          reflect.TypeOf((*WantIP6NdEventsReply)(nil)).Elem(),
+	"WantIP6RaEvents":                               reflect.TypeOf((*WantIP6RaEvents)(nil)).Elem(),
+	"WantIP6RaEventsReply":                          reflect.TypeOf((*WantIP6RaEventsReply)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
@@ -85,10 +94,13 @@ var Functions = map[string]reflect.Value{
 	"NewIP6MfibDetails":                                reflect.ValueOf(NewIP6MfibDetails),
 	"NewIP6MfibDump":                                   reflect.ValueOf(NewIP6MfibDump),
 	"NewIP6NdEvent":                                    reflect.ValueOf(NewIP6NdEvent),
+	"NewIP6RaEvent":                                    reflect.ValueOf(NewIP6RaEvent),
 	"NewIP6ndProxyAddDel":                              reflect.ValueOf(NewIP6ndProxyAddDel),
 	"NewIP6ndProxyAddDelReply":                         reflect.ValueOf(NewIP6ndProxyAddDelReply),
 	"NewIP6ndProxyDetails":                             reflect.ValueOf(NewIP6ndProxyDetails),
 	"NewIP6ndProxyDump":                                reflect.ValueOf(NewIP6ndProxyDump),
+	"NewIP6ndSendRouterSolicitation":                   reflect.ValueOf(NewIP6ndSendRouterSolicitation),
+	"NewIP6ndSendRouterSolicitationReply":              reflect.ValueOf(NewIP6ndSendRouterSolicitationReply),
 	"NewIPAddDelRoute":                                 reflect.ValueOf(NewIPAddDelRoute),
 	"NewIPAddDelRouteReply":                            reflect.ValueOf(NewIPAddDelRouteReply),
 	"NewIPAddressDetails":                              reflect.ValueOf(NewIPAddressDetails),
@@ -111,6 +123,8 @@ var Functions = map[string]reflect.Value{
 	"NewIPPuntPoliceReply":                             reflect.ValueOf(NewIPPuntPoliceReply),
 	"NewIPPuntRedirect":                                reflect.ValueOf(NewIPPuntRedirect),
 	"NewIPPuntRedirectReply":                           reflect.ValueOf(NewIPPuntRedirectReply),
+	"NewIPReassemblyEnableDisable":                     reflect.ValueOf(NewIPReassemblyEnableDisable),
+	"NewIPReassemblyEnableDisableReply":                reflect.ValueOf(NewIPReassemblyEnableDisableReply),
 	"NewIPReassemblyGet":                               reflect.ValueOf(NewIPReassemblyGet),
 	"NewIPReassemblyGetReply":                          reflect.ValueOf(NewIPReassemblyGetReply),
 	"NewIPReassemblySet":                               reflect.ValueOf(NewIPReassemblySet),
@@ -149,6 +163,8 @@ var Functions = map[string]reflect.Value{
 	"NewWantIP4ArpEventsReply":                         reflect.ValueOf(NewWantIP4ArpEventsReply),
 	"NewWantIP6NdEvents":                               reflect.ValueOf(NewWantIP6NdEvents),
 	"NewWantIP6NdEventsReply":                          reflect.ValueOf(NewWantIP6NdEventsReply),
+	"NewWantIP6RaEvents":                               reflect.ValueOf(NewWantIP6RaEvents),
+	"NewWantIP6RaEventsReply":                          reflect.ValueOf(NewWantIP6RaEventsReply),
 }
 
 var Variables = map[string]reflect.Value{}

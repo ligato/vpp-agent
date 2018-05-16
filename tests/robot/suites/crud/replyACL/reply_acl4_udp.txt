@@ -12,7 +12,7 @@
     },
     "rules": [
         {
-            "acl_action": 1,
+            "Facl_action": 1,
             "match": {
                 "ip_rule": {
                     "ip": {
@@ -30,9 +30,6 @@
                         },
                         "tcp_flags_mask": 20,
                         "tcp_flags_value": 10
-                    },
-                    "other": {
-                        "protocol": 1
                     }
                 }
             }

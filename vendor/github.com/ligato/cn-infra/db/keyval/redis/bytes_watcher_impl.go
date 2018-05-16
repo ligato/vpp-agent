@@ -15,9 +15,8 @@
 package redis
 
 import (
-	"strings"
-
 	"fmt"
+	"strings"
 
 	goredis "github.com/go-redis/redis"
 	"github.com/ligato/cn-infra/datasync"

@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core/bin_api/vpe"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
 )
 
 // VersionInfo contains values returned from ShowVersion
@@ -18,23 +17,22 @@ type VersionInfo struct {
 }
 
 // GetVersionInfo retrieves version information
-func GetVersionInfo(log logging.Logger, vppChan *govppapi.Channel) (*VersionInfo, error) {
-	req := new(vpe.ShowVersion)
-	reply := new(vpe.ShowVersionReply)
+func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
+	req := &vpe.ShowVersion{}
+	reply := &vpe.ShowVersionReply{}
 
-	// Send message
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 	if reply.Retval != 0 {
-		return nil, fmt.Errorf("ShowVersionReply returned %d", reply.Retval)
+		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	info := &VersionInfo{
-		Program:        string(bytes.Trim(reply.Program, "\x00")),
-		Version:        string(bytes.Trim(reply.Version, "\x00")),
-		BuildDate:      string(bytes.Trim(reply.BuildDate, "\x00")),
-		BuildDirectory: string(bytes.Trim(reply.BuildDirectory, "\x00")),
+		Program:        string(bytes.SplitN(reply.Program, []byte{0x00}, 2)[0]),
+		Version:        string(bytes.SplitN(reply.Version, []byte{0x00}, 2)[0]),
+		BuildDate:      string(bytes.SplitN(reply.BuildDate, []byte{0x00}, 2)[0]),
+		BuildDirectory: string(bytes.SplitN(reply.BuildDirectory, []byte{0x00}, 2)[0]),
 	}
 	return info, nil
 }

@@ -31,7 +31,7 @@ import (
 	"github.com/unrolled/render"
 )
 
-//interfacesGetHandler - used to get list of all interfaces
+// interfacesGetHandler - used to get list of all interfaces
 func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -57,7 +57,7 @@ func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http
 	}
 }
 
-//bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
+// bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
 func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -71,7 +71,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			res, err := l2plugin.DumpBridgeDomainIDs(plugin.Deps.Log, ch, nil)
+			res, err := l2plugin.DumpBridgeDomainIDs(ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -83,7 +83,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render)
 	}
 }
 
-//bridgeDomainsGetHandler - used to get list of all bridge domains
+// bridgeDomainsGetHandler - used to get list of all bridge domains
 func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -97,7 +97,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) h
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			res, err := l2plugin.DumpBridgeDomains(plugin.Deps.Log, ch, nil)
+			res, err := l2plugin.DumpBridgeDomains(ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -109,7 +109,7 @@ func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) h
 	}
 }
 
-//fibTableEntriesGetHandler - used to get list of all fib entries
+// fibTableEntriesGetHandler - used to get list of all fib entries
 func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -123,7 +123,7 @@ func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render)
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			res, err := l2plugin.DumpFIBTableEntries(plugin.Deps.Log, ch, nil)
+			res, err := l2plugin.DumpFIBTableEntries(ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -135,7 +135,7 @@ func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render)
 	}
 }
 
-//xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
+// xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
 func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -149,7 +149,7 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
 		} else {
-			res, err := l2plugin.DumpXConnectPairs(plugin.Deps.Log, ch, nil)
+			res, err := l2plugin.DumpXConnectPairs(ch, nil)
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
 				formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -161,7 +161,7 @@ func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) h
 	}
 }
 
-//staticRoutesGetHandler - used to get list of all static routes
+// staticRoutesGetHandler - used to get list of all static routes
 func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -187,7 +187,7 @@ func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) ht
 	}
 }
 
-//interfaceACLGetHandler - used to get acl configuration for a particular interface
+// interfaceACLGetHandler - used to get acl configuration for a particular interface
 func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -231,7 +231,7 @@ func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) ht
 	}
 }
 
-//ipACLGetHandler - used to get configuration of IP ACLs
+// ipACLGetHandler - used to get configuration of IP ACLs
 func (plugin *RESTAPIPlugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -264,16 +264,17 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 
 		plugin.Deps.Log.Info("Getting example acl")
 
-		ipRule := acl.AccessLists_Acl_Rule_Matches_IpRule{
-			Ip: &acl.AccessLists_Acl_Rule_Matches_IpRule_Ip{
+		ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
+			Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
 				DestinationNetwork: "1.2.3.4/24",
-				SourceNetwork:      "5.6.7.8/24"},
-			Tcp: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp{
-				DestinationPortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_DestinationPortRange{
+				SourceNetwork:      "5.6.7.8/24",
+			},
+			Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
+				DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 					LowerPort: 80,
 					UpperPort: 8080,
 				},
-				SourcePortRange: &acl.AccessLists_Acl_Rule_Matches_IpRule_Tcp_SourcePortRange{
+				SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
 					LowerPort: 10,
 					UpperPort: 1010,
 				},
@@ -281,23 +282,17 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 				TcpFlagsValue: 9,
 			},
 		}
-		matches := acl.AccessLists_Acl_Rule_Matches{
-			IpRule: &ipRule,
-		}
 
-		actions := acl.AccessLists_Acl_Rule_Actions{
+		rule := &acl.AccessLists_Acl_Rule{
+			Match: &acl.AccessLists_Acl_Rule_Match{
+				IpRule: ipRule,
+			},
 			AclAction: acl.AclAction_PERMIT,
 		}
 
-		rule := acl.AccessLists_Acl_Rule{
-			Matches: &matches,
-			Actions: &actions,
-		}
-		rules := []*acl.AccessLists_Acl_Rule{&rule}
-
 		aclRes := acl.AccessLists_Acl{
 			AclName: "example",
-			Rules:   rules,
+			Rules:   []*acl.AccessLists_Acl_Rule{rule},
 		}
 
 		plugin.Deps.Log.Debug(aclRes)
@@ -305,7 +300,7 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 	}
 }
 
-//ipACLPostHandler - used to get acl configuration for a particular interface
+// ipACLPostHandler - used to get acl configuration for a particular interface
 func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -349,7 +344,7 @@ func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.Han
 	}
 }
 
-//showCommandHandler - used to execute VPP CLI commands
+// showCommandHandler - used to execute VPP CLI commands
 func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 

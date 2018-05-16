@@ -17,11 +17,9 @@ package etcdv3
 import (
 	"crypto/tls"
 	"crypto/x509"
-
-	"time"
-
 	"os"
 	"strings"
+	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/pkg/tlsutil"
@@ -29,7 +27,7 @@ import (
 
 // Config represents a part of the etcd configuration that can be
 // loaded from a file. Usually, the Config is next transformed into
-// ClientConfig using ConfigToClientv3() function for use with the coreos/etcd
+// ClientConfig using ConfigToClient() function for use with the coreos/etcd
 // package.
 type Config struct {
 	Endpoints             []string      `json:"endpoints"`
@@ -40,6 +38,8 @@ type Config struct {
 	Certfile              string        `json:"cert-file"`
 	Keyfile               string        `json:"key-file"`
 	CAfile                string        `json:"ca-file"`
+	AutoCompact           time.Duration `json:"auto-compact"`
+	ReconnectResync       bool          `json:"resync-after-reconnect"`
 }
 
 // ClientConfig extends clientv3.Config with configuration options introduced
@@ -52,14 +52,15 @@ type ClientConfig struct {
 	OpTimeout time.Duration
 }
 
-// defaultDialTimeout defines the default timeout for connecting to etcd.
-const defaultDialTimeout = 1 * time.Second
+const (
+	// defaultDialTimeout defines the default timeout for connecting to etcd.
+	defaultDialTimeout = 1 * time.Second
 
-// defaultOpTimeout defines the default timeout for any request-reply etcd
-// operation.
-const defaultOpTimeout = 3 * time.Second
+	// defaultOpTimeout defines the default timeout for any request-reply etcd operation.
+	defaultOpTimeout = 3 * time.Second
+)
 
-// ConfigToClientv3 transforms yaml configuration <yc> modelled by Config
+// ConfigToClient transforms yaml configuration <yc> modelled by Config
 // into ClientConfig, which is ready for use with the underlying coreos/etcd
 // package.
 // If the etcd endpoint addresses are not specified in the configuration,
@@ -68,16 +69,13 @@ const defaultOpTimeout = 3 * time.Second
 // endpoint location, a default address "127.0.0.1:2379" is assumed.
 // The function may return error only if TLS connection is selected and the
 // CA or client certificate is not accessible/valid.
-func ConfigToClientv3(yc *Config) (*ClientConfig, error) {
-
+func ConfigToClient(yc *Config) (*ClientConfig, error) {
 	dialTimeout := defaultDialTimeout
-
 	if yc.DialTimeout != 0 {
 		dialTimeout = yc.DialTimeout
 	}
 
 	opTimeout := defaultOpTimeout
-
 	if yc.OpTimeout != 0 {
 		opTimeout = yc.OpTimeout
 	}

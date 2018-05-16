@@ -119,8 +119,8 @@ func putProtoInternal(broker keyval.BytesBroker, serializer keyval.Serializer, k
 	if err != nil {
 		return err
 	}
-	broker.Put(key, binData, opts...)
-	return nil
+
+	return broker.Put(key, binData, opts...)
 }
 
 // Delete removes key-value items stored under <key> from datastore.

@@ -1,0 +1,57 @@
+*** Time:2018-05-16 15:16:26.862 Command: sudo docker create -e MICROSERVICE_LABEL=agent_vpp_1 -e DP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "/run/vpp:/run/vpp" -v "/tmp/vpp_socket:/tmp" -p 5001:5002 -p 9191:9191 --name agent_vpp_1 --pid=host -v "/var/run/docker.sock:/var/run/docker.sock" ligato/vpp-agent:pantheon-dev
+229bc936e9b554278970cb1b91c8f6618d28efbb634b756bff29acd84006462f
+*** Time:2018-05-16 15:16:27.074 Command: sudo docker start agent_vpp_1
+agent_vpp_1
+msestak@msestak-VirtualBox:~$ 
+*** Time:2018-05-16 15:17:07.288 Command: echo $MICROSERVICE_LABEL
+
+****** Time:2018-05-16 15:17:07.589 Command: ls -al
+total 20
+drwx------  2 root root 4096 May 16 13:16 .
+drwxr-xr-x 54 root root 4096 May 16 13:16 ..
+-rw-r--r--  1 root root 3106 Oct 22  2015 .bashrc
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+-rw-r--r--  1 root root    5 May 16 13:16 supervisord.pid
+****** Time:2018-05-16 15:18:19.438 Command: ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+3: node_1_noeth_1@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether b2:f1:cb:3e:97:0b brd ff:ff:ff:ff:ff:ff link-netnsid 2
+    inet6 fe80::b0f1:cbff:fe3e:970b/64 scope link 
+       valid_lft forever preferred_lft forever
+5: node_2_noeth_2@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 22:c4:57:2e:db:6b brd ff:ff:ff:ff:ff:ff link-netnsid 3
+    inet6 fe80::20c4:57ff:fe2e:db6b/64 scope link 
+       valid_lft forever preferred_lft forever
+289: eth0@if290: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:05 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.5/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:5/64 scope link 
+       valid_lft forever preferred_lft forever
+****** Time:2018-05-16 15:20:24.837 Command: ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+3: node_1_noeth_1@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether b2:f1:cb:3e:97:0b brd ff:ff:ff:ff:ff:ff link-netnsid 2
+    inet6 fe80::b0f1:cbff:fe3e:970b/64 scope link 
+       valid_lft forever preferred_lft forever
+5: node_2_noeth_2@if4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 22:c4:57:2e:db:6b brd ff:ff:ff:ff:ff:ff link-netnsid 3
+    inet6 fe80::20c4:57ff:fe2e:db6b/64 scope link 
+       valid_lft forever preferred_lft forever
+289: eth0@if290: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:05 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.5/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:5/64 scope link 
+       valid_lft forever preferred_lft forever
+***

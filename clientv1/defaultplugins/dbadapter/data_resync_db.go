@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
@@ -93,7 +94,7 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) defaultplugins.
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(val *l2.FibTableEntries_FibTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) defaultplugins.DataResyncDSL {
 	key := l2.FibKey(val.BridgeDomain, val.PhysAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -146,8 +147,26 @@ func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) defau
 	return dsl
 }
 
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) defaultplugins.DataResyncDSL {
+	key := l3.ProxyArpInterfaceKey(val.Label)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) defaultplugins.DataResyncDSL {
+	key := l3.ProxyArpRangeKey(val.Label)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // Arp adds L3 ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) defaultplugins.DataResyncDSL {
 	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -156,7 +175,7 @@ func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpTableEntry) defaultplugins.Dat
 }
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(val *stn.StnRule) defaultplugins.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) defaultplugins.DataResyncDSL {
 	key := stn.Key(val.RuleName)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -177,6 +196,24 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) defaultplugins.Dat
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) defaultplugins.DataResyncDSL {
 	key := nat.DNatKey(nat44.Label)
 	dsl.txn.Put(key, nat44)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IPSecSA adds request to create a new Security Association
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) defaultplugins.DataResyncDSL {
+	key := ipsec.SAKey(sa.Name)
+	dsl.txn.Put(key, sa)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) defaultplugins.DataResyncDSL {
+	key := ipsec.SPDKey(spd.Name)
+	dsl.txn.Put(key, spd)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl

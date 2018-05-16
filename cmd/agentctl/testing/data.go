@@ -125,8 +125,8 @@ func JSONData() utils.EtcdDump {
 	}
 
 	// L2 Fib data
-	fibTableEntries := []*l2.FibTableEntries_FibTableEntry{}
-	fibTableEntry := &l2.FibTableEntries_FibTableEntry{
+	fibTableEntries := []*l2.FibTable_FibEntry{}
+	fibTableEntry := &l2.FibTable_FibEntry{
 		PhysAddress: "ff:ff:ff:ff:ff:ff",
 	}
 	fibTableEntries = append(fibTableEntries, fibTableEntry)

@@ -1,0 +1,98 @@
+/sfc-controller/v1/HE/agent_vpp_1
+{"name":"agent_vpp_1","loopback_mac_addr":"02:00:00:AA:BB:00","loopback_ipv4":"6.0.0.100"}
+/sfc-controller/v1/SFC/two-sample-vnf-containers
+{"name":"two-sample-vnf-containers","description":"Wire 2 VNF containers to the vpp switch","type":2,"elements":[{"container":"node_1","port_label":"node1_veth","etcd_vpp_switch_key":"agent_vpp_1","ipv4_addr":"10.0.0.10","type":3},{"container":"node_2","port_label":"node2_veth","etcd_vpp_switch_key":"agent_vpp_1","ipv4_addr":"10.0.0.11","type":3}]}
+/sfc-controller/v1/SP
+{"mtu":1500,"starting_vlan_id":5000,"default_static_route_weight":5,"dynamic_bridge_parms":{"flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true},"static_bridge_parms":{"forward":true}}
+/sfc-controller/v1/id/HE/agent_vpp_1
+{"name":"agent_vpp_1"}
+/sfc-controller/v1/id/SFC/two-sample-vnf-containers/node_1_node1_veth
+{"sfc_name":"two-sample-vnf-containers","container":"node_1","port":"node1_veth","mac_addr_id":1,"veth_id":1}
+/sfc-controller/v1/id/SFC/two-sample-vnf-containers/node_2_node2_veth
+{"sfc_name":"two-sample-vnf-containers","container":"node_2","port":"node2_veth","mac_addr_id":2,"veth_id":2}
+/vnf-agent/agent_vpp_1/linux/config/v1/interface/IF_VETH_VNF_node_1_node1_veth
+{"name":"IF_VETH_VNF_node_1_node1_veth","enabled":true,"phys_address":"02:00:00:00:00:01","mtu":1500,"host_if_name":"node1_veth","ip_addresses":["10.0.0.10/24"],"namespace":{"type":1,"microservice":"node_1"},"veth":{"peer_if_name":"IF_VETH_VSWITCH_node_1_node1_veth"}}
+/vnf-agent/agent_vpp_1/linux/config/v1/interface/IF_VETH_VNF_node_2_node2_veth
+{"name":"IF_VETH_VNF_node_2_node2_veth","enabled":true,"phys_address":"02:00:00:00:00:02","mtu":1500,"host_if_name":"node2_veth","ip_addresses":["10.0.0.11/24"],"namespace":{"type":1,"microservice":"node_2"},"veth":{"peer_if_name":"IF_VETH_VSWITCH_node_2_node2_veth"}}
+/vnf-agent/agent_vpp_1/linux/config/v1/interface/IF_VETH_VSWITCH_node_1_node1_veth
+{"name":"IF_VETH_VSWITCH_node_1_node1_veth","enabled":true,"mtu":1500,"host_if_name":"node_1_noeth_1","namespace":{"type":1,"microservice":"agent_vpp_1"},"veth":{"peer_if_name":"IF_VETH_VNF_node_1_node1_veth"}}
+/vnf-agent/agent_vpp_1/linux/config/v1/interface/IF_VETH_VSWITCH_node_2_node2_veth
+{"name":"IF_VETH_VSWITCH_node_2_node2_veth","enabled":true,"mtu":1500,"host_if_name":"node_2_noeth_2","namespace":{"type":1,"microservice":"agent_vpp_1"},"veth":{"peer_if_name":"IF_VETH_VNF_node_2_node2_veth"}}
+/vnf-agent/agent_vpp_1/vpp/config/v1/bd/BD_INTERNAL_EW_L2FIB_agent_vpp_1
+{"name":"BD_INTERNAL_EW_L2FIB_agent_vpp_1","forward":true}
+/vnf-agent/agent_vpp_1/vpp/config/v1/bd/BD_INTERNAL_EW_agent_vpp_1
+{"name":"BD_INTERNAL_EW_agent_vpp_1","flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"interfaces":[{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth"},{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth"}]}
+/vnf-agent/agent_vpp_1/vpp/config/v1/bd/bd2
+{
+  "name": "bd2",
+  "flood": true,
+  "unknown_unicast_flood": true,
+  "forward": true,
+  "learn": true,
+  "arp_termination": true,
+  "interfaces": [
+    { "name": "loop0" },{ "name": "loop1" }
+  ]
+}
+
+
+/vnf-agent/agent_vpp_1/vpp/config/v1/interface/IF_AFPIF_VSWITCH_node_1_node1_veth
+{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","type":4,"enabled":true,"mtu":1500,"afpacket":{"host_if_name":"node_1_noeth_1"}}
+/vnf-agent/agent_vpp_1/vpp/config/v1/interface/IF_AFPIF_VSWITCH_node_2_node2_veth
+{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","type":4,"enabled":true,"mtu":1500,"afpacket":{"host_if_name":"node_2_noeth_2"}}
+/vnf-agent/agent_vpp_1/vpp/config/v1/interface/IF_LOOPBACK_H_agent_vpp_1
+{"name":"IF_LOOPBACK_H_agent_vpp_1","enabled":true,"phys_address":"02:00:00:AA:BB:00","mtu":1500,"ip_addresses":["6.0.0.100"]}
+/vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop0
+{
+  "name": "loop0",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:00:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "20.1.1.1/24"
+  ]
+}
+
+
+/vnf-agent/agent_vpp_1/vpp/config/v1/interface/loop1
+{
+  "name": "loop1",
+  "type": 0,
+  "enabled": true,
+  "phys_address": "8a:f1:be:90:20:00",
+  "mtu": 1500,
+  "vrf": 0,
+  "ip_addresses": [
+    "30.1.1.1/24"
+  ]
+}
+
+
+/vnf-agent/agent_vpp_1/vpp/status/v1/bd/BD_INTERNAL_EW_L2FIB_agent_vpp_1
+{"index":2,"internal_name":"BD_INTERNAL_EW_L2FIB_agent_vpp_1","bvi_interface":"not_set","last_change":1526476631,"l2_params":{"forward":true}}
+/vnf-agent/agent_vpp_1/vpp/status/v1/bd/BD_INTERNAL_EW_agent_vpp_1
+{"index":1,"internal_name":"BD_INTERNAL_EW_agent_vpp_1","bvi_interface":"not_set","interface_count":2,"last_change":1526476631,"l2_params":{"flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true},"interfaces":[{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","sw_if_index":2},{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","sw_if_index":3}]}
+/vnf-agent/agent_vpp_1/vpp/status/v1/bd/bd2
+{"index":3,"internal_name":"bd2","bvi_interface":"not_set","interface_count":2,"last_change":1526476768,"l2_params":{"flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"arp_termination":true},"interfaces":[{"name":"loop0","sw_if_index":4},{"name":"loop1","sw_if_index":5}]}
+/vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_1_node1_veth
+{"name":"IF_AFPIF_VSWITCH_node_1_node1_veth","internal_name":"host-node_1_noeth_1","if_index":2,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:3e:fd:61:28","mtu":1500,"statistics":{"in_packets":20,"in_bytes":1552}}
+/vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_AFPIF_VSWITCH_node_2_node2_veth
+{"name":"IF_AFPIF_VSWITCH_node_2_node2_veth","internal_name":"host-node_2_noeth_2","if_index":3,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:fe:42:98:22:08","mtu":1500,"statistics":{"in_packets":22,"in_bytes":1732}}
+/vnf-agent/agent_vpp_1/vpp/status/v1/interface/IF_LOOPBACK_H_agent_vpp_1
+{"name":"IF_LOOPBACK_H_agent_vpp_1","internal_name":"loop0","if_index":1,"admin_status":1,"oper_status":1,"last_change":1526476631,"phys_address":"02:00:00:aa:bb:00","mtu":1500,"statistics":{}}
+/vnf-agent/agent_vpp_1/vpp/status/v1/interface/local0
+{"name":"local0","internal_name":"local0","admin_status":2,"oper_status":2,"statistics":{}}
+/vnf-agent/node_1/check/status/v1/agent
+{"build_version":"v1.1-5-g55e9977","build_date":"2018-03-06T11:05+00:00","state":1,"start_time":1526476614,"last_change":1526476619,"last_update":1526476925,"commit_hash":"55e99770087087fa8e41a980a8b6257c80c93f4c"}
+/vnf-agent/node_1/check/status/v1/plugin/etcdv3
+{"state":1,"last_change":1526476619,"last_update":1526476925}
+/vnf-agent/node_1/check/status/v1/plugin/kafka
+{"state":1,"last_change":1526476619,"last_update":1526476925}
+/vnf-agent/node_2/check/status/v1/agent
+{"build_version":"v1.1-5-g55e9977","build_date":"2018-03-06T11:05+00:00","state":1,"start_time":1526476623,"last_change":1526476628,"last_update":1526476923,"commit_hash":"55e99770087087fa8e41a980a8b6257c80c93f4c"}
+/vnf-agent/node_2/check/status/v1/plugin/etcdv3
+{"state":1,"last_change":1526476628,"last_update":1526476923}
+/vnf-agent/node_2/check/status/v1/plugin/kafka
+{"state":1,"last_change":1526476628,"last_update":1526476923}

@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
@@ -25,7 +24,7 @@ import (
 )
 
 // GetInterfaceVRF assigns VRF table to interface
-func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan *govppapi.Channel) (vrfID uint32, err error) {
+func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan VPPChannel) (vrfID uint32, err error) {
 	log.Debugf("Getting VRF for interface %v", ifIdx)
 
 	req := &interfaces.SwInterfaceGetTable{
@@ -50,7 +49,7 @@ func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan *govppapi.Channel
 }
 
 // SetInterfaceVRF retrieves VRF table from interface
-func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger, vppChan *govppapi.Channel) error {
+func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger, vppChan VPPChannel) error {
 	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfIndex)
 
 	req := &interfaces.SwInterfaceSetTable{
@@ -78,7 +77,7 @@ func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger, vppChan *g
 // TODO: manage VRF tables globally in separate configurator
 
 // CreateVrfIfNeeded checks if VRF exists and creates it if not
-func CreateVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
+func CreateVrfIfNeeded(vrf uint32, vppChan VPPChannel) error {
 	if vrf == 0 {
 		return nil
 	}
@@ -89,13 +88,13 @@ func CreateVrfIfNeeded(vrf uint32, vppChan *govppapi.Channel) error {
 	}
 	if _, ok := tables[vrf]; !ok {
 		logrus.DefaultLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
-		return vppAddDelIPTable(vrf, vppChan, false)
+		return vppAddIPTable(vrf, vppChan)
 	}
 
 	return nil
 }
 
-func dumpVrfTables(vppChan *govppapi.Channel) (map[uint32][]*ip.IPFibDetails, error) {
+func dumpVrfTables(vppChan VPPChannel) (map[uint32][]*ip.IPFibDetails, error) {
 	fibs := map[uint32][]*ip.IPFibDetails{}
 
 	reqCtx := vppChan.SendMultiRequest(&ip.IPFibDump{})
@@ -116,14 +115,10 @@ func dumpVrfTables(vppChan *govppapi.Channel) (map[uint32][]*ip.IPFibDetails, er
 	return fibs, nil
 }
 
-func vppAddDelIPTable(tableID uint32, vppChan *govppapi.Channel, delete bool) error {
+func vppAddIPTable(tableID uint32, vppChan VPPChannel) error {
 	req := &ip.IPTableAddDel{
 		TableID: tableID,
-	}
-	if delete {
-		req.IsAdd = 0
-	} else {
-		req.IsAdd = 1
+		IsAdd:   1,
 	}
 
 	// Send message

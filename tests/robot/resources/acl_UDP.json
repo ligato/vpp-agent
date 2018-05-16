@@ -12,6 +12,10 @@
     },
     "rules": [
         {
+<<<<<<< HEAD
+=======
+            "rule_name": "${rule_nm}",
+>>>>>>> d0bb6d88a2425f0aafc8f3bfaf12470c2409c08f
             "acl_action": ${acl_action},
             "match": {
                 "ip_rule": {
@@ -30,9 +34,6 @@
                         },
                         "tcp_flags_mask": 20,
                         "tcp_flags_value": 10
-                    },
-                    "other": {
-                        "protocol": 1
                     }
                 }
             }

@@ -10,6 +10,10 @@
     },
     "rules": [
         {
+<<<<<<< HEAD
+=======
+            "rule_name": "acl1_rule1",
+>>>>>>> d0bb6d88a2425f0aafc8f3bfaf12470c2409c08f
             "acl_action": 1,
             "match": {
                 "ip_rule": {

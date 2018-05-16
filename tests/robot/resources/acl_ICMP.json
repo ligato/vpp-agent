@@ -12,8 +12,13 @@
     },
     "rules": [
         {
+<<<<<<< HEAD
            "acl_action": ${acl_action},
             },
+=======
+            "rule_name": "${rule_nm}",
+            "acl_action": ${acl_action},
+>>>>>>> d0bb6d88a2425f0aafc8f3bfaf12470c2409c08f
             "match": {
                 "ip_rule": {
                     "ip": {
@@ -21,7 +26,7 @@
                         "source_network": "${src_ntw}"
                     },
                     "icmp": {
-                        "Icmpv6": ${icmpv6},
+                        "icmpv6": ${icmpv6},
                         "icmp_code_range": {
                             "first": ${code_range_low},
                             "last": ${code_range_up}
