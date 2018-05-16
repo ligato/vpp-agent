@@ -75,6 +75,8 @@ type MemoryThread struct {
 	Capacity  uint64 `json:"capacity"`
 }
 
+var memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, (\d+k?) of (\d+k?) used, (\d+k?) free, (\d+k?) reclaimed, (\d+k?) overhead, (\d+k?) capacity`)
+
 // GetNodeCounters retrieves node counters info
 func GetMemory(vppChan *govppapi.Channel) (*MemoryInfo, error) {
 	data, err := RunCliCommand(vppChan, "show memory")
@@ -83,48 +85,29 @@ func GetMemory(vppChan *govppapi.Channel) (*MemoryInfo, error) {
 	}
 
 	var threads []MemoryThread
-	var thread *MemoryThread
 
-	for _, line := range strings.Split(string(data), "\n") {
-		if thread != nil {
-			for _, part := range strings.Split(line, ",") {
-				fields := strings.Fields(strings.TrimSpace(part))
-				if len(fields) > 1 {
-					switch fields[1] {
-					case "objects":
-						thread.Objects = strToUint64(fields[0])
-					case "of":
-						thread.Used = strToUint64(fields[0])
-						thread.Total = strToUint64(fields[2])
-					case "free":
-						thread.Free = strToUint64(fields[0])
-					case "reclaimed":
-						thread.Reclaimed = strToUint64(fields[0])
-					case "overhead":
-						thread.Overhead = strToUint64(fields[0])
-					case "capacity":
-						thread.Capacity = strToUint64(fields[0])
-					}
-				}
-			}
-			threads = append(threads, *thread)
-			thread = nil
-			continue
+	threadMatches := memoryRe.FindAllStringSubmatch(string(data), -1)
+	for _, matches := range threadMatches {
+		fields := matches[1:]
+		if len(fields) != 9 {
+			return nil, fmt.Errorf("invalid memory data for thread: %q", matches[0])
 		}
-		fields := strings.Fields(line)
-		if len(fields) == 3 {
-			if fields[0] == "Thread" {
-				id, err := strconv.ParseUint(fields[1], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				thread = &MemoryThread{
-					ID:   uint(id),
-					Name: strings.SplitN(fields[2], string(0x00), 2)[0],
-				}
-				continue
-			}
+		id, err := strconv.ParseUint(fields[0], 10, 64)
+		if err != nil {
+			return nil, err
 		}
+		thread := &MemoryThread{
+			ID:        uint(id),
+			Name:      fields[1],
+			Objects:   strToUint64(fields[2]),
+			Used:      strToUint64(fields[3]),
+			Total:     strToUint64(fields[4]),
+			Free:      strToUint64(fields[5]),
+			Reclaimed: strToUint64(fields[6]),
+			Overhead:  strToUint64(fields[7]),
+			Capacity:  strToUint64(fields[8]),
+		}
+		threads = append(threads, *thread)
 	}
 
 	info := &MemoryInfo{
