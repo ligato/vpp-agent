@@ -23,7 +23,7 @@ message LocalSID {          /* SID(IPv6 Address) is part of key and NOT part of 
     /* End function behavior of endpoint with Layer-3 cross-connect*/
     message EndX {
         bool psp = 1;                   /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
-        string outgoingInterface = 2;   /* name of cross-connected outhgoing interface */
+        string outgoingInterface = 2;   /* name of cross-connected outgoing interface */
         string nextHop = 3;             /* next hop address for cross-connected link */
     }
 
@@ -32,22 +32,22 @@ message LocalSID {          /* SID(IPv6 Address) is part of key and NOT part of 
         bool psp = 1;                   /* use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH) */
     }
 
-    /* End function nehavior of endpoint with decapulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
+    /* End function nehavior of endpoint with decapsulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)*/
     message EndDX2 {
         uint32 vlanTag = 1;             /* Outgoing VLAN tag */
-        string outgoingInterface = 2;   /* name of cross-connected outhgoing interface */
+        string outgoingInterface = 2;   /* name of cross-connected outgoing interface */
         string nextHop = 3;             /* next hop address for cross-connected link */
     }
 
     /* End function behavior of endpoint with decapsulation and IPv4 cross-connect*/
     message EndDX4 {
-        string outgoingInterface = 1;   /* name of cross-connected outhgoing interface */
+        string outgoingInterface = 1;   /* name of cross-connected outgoing interface */
         string nextHop = 2;             /* next hop address for cross-connected link */
     }
 
     /* End function behavior of endpoint with decapsulation and IPv6 cross-connect*/
     message EndDX6 {
-        string outgoingInterface = 1;   /* name of cross-connected outhgoing interface */
+        string outgoingInterface = 1;   /* name of cross-connected outgoing interface */
         string nextHop = 2;             /* next hop address for cross-connected link */
     }
 
