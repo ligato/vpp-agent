@@ -19,18 +19,18 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
-	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
-	vpp_dbadapter "github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 
-	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/ligato/vpp-agent/clientv1/vpp"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -38,7 +38,7 @@ import (
 // from vppplugin).
 // Transaction <txn> is used to propagate changes to plugins.
 func NewDataChangeDSL(txn keyval.ProtoTxn) *DataChangeDSL {
-	vppDbAdapter := vpp_dbadapter.NewDataChangeDSL(txn)
+	vppDbAdapter := dbadapter.NewDataChangeDSL(txn)
 	return &DataChangeDSL{txn: txn, vppDataChange: vppDbAdapter}
 }
 
@@ -46,19 +46,19 @@ func NewDataChangeDSL(txn keyval.ProtoTxn) *DataChangeDSL {
 // for changes of both Linux and VPP configuration.
 type DataChangeDSL struct {
 	txn           keyval.ProtoTxn
-	vppDataChange vpp_clientv1.DataChangeDSL
+	vppDataChange vppclient.DataChangeDSL
 }
 
 // PutDSL implements put operations of data change DSL.
 type PutDSL struct {
 	parent *DataChangeDSL
-	vppPut vpp_clientv1.PutDSL
+	vppPut vppclient.PutDSL
 }
 
 // DeleteDSL implements delete operations of data change DSL.
 type DeleteDSL struct {
 	parent    *DataChangeDSL
-	vppDelete vpp_clientv1.DeleteDSL
+	vppDelete vppclient.DeleteDSL
 }
 
 // Put initiates a chained sequence of data change DSL statements and declares
@@ -74,117 +74,117 @@ func (dsl *DataChangeDSL) Delete() linuxclient.DeleteDSL {
 }
 
 // Send propagates requested changes to the plugins.
-func (dsl *DataChangeDSL) Send() vpp_clientv1.Reply {
+func (dsl *DataChangeDSL) Send() vppclient.Reply {
 	return dsl.vppDataChange.Send()
 }
 
 // LinuxInterface adds a request to create or update Linux network interface.
-func (dsl *PutDSL) LinuxInterface(val *interfaces.LinuxInterfaces_Interface) linuxclient.PutDSL {
+func (dsl *PutDSL) LinuxInterface(val *linuxIf.LinuxInterfaces_Interface) linuxclient.PutDSL {
 	dsl.parent.txn.Put(interfaces.InterfaceKey(val.Name), val)
 	return dsl
 }
 
 // LinuxArpEntry adds a request to create or update Linux ARP entry.
-func (dsl *PutDSL) LinuxArpEntry(val *l3.LinuxStaticArpEntries_ArpEntry) linuxclient.PutDSL {
-	dsl.parent.txn.Put(l3.StaticArpKey(val.Name), val)
+func (dsl *PutDSL) LinuxArpEntry(val *linuxL3.LinuxStaticArpEntries_ArpEntry) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linuxL3.StaticArpKey(val.Name), val)
 	return dsl
 }
 
 // LinuxRoute adds a request to create or update Linux route.
-func (dsl *PutDSL) LinuxRoute(val *l3.LinuxStaticRoutes_Route) linuxclient.PutDSL {
-	dsl.parent.txn.Put(l3.StaticRouteKey(val.Name), val)
+func (dsl *PutDSL) LinuxRoute(val *linuxL3.LinuxStaticRoutes_Route) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linuxL3.StaticRouteKey(val.Name), val)
 	return dsl
 }
 
 // VppInterface adds a request to create or update VPP network interface.
-func (dsl *PutDSL) VppInterface(val *vpp_intf.Interfaces_Interface) linuxclient.PutDSL {
+func (dsl *PutDSL) VppInterface(val *interfaces.Interfaces_Interface) linuxclient.PutDSL {
 	dsl.vppPut.Interface(val)
 	return dsl
 }
 
 // BfdSession adds a request to create or update VPP bidirectional forwarding
 // detection session.
-func (dsl *PutDSL) BfdSession(val *vpp_bfd.SingleHopBFD_Session) linuxclient.PutDSL {
+func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.PutDSL {
 	dsl.vppPut.BfdSession(val)
 	return dsl
 }
 
 // BfdAuthKeys adds a request to create or update VPP bidirectional forwarding
 // detection key.
-func (dsl *PutDSL) BfdAuthKeys(val *vpp_bfd.SingleHopBFD_Key) linuxclient.PutDSL {
+func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) linuxclient.PutDSL {
 	dsl.vppPut.BfdAuthKeys(val)
 	return dsl
 }
 
 // BfdEchoFunction adds a request to create or update VPP bidirectional forwarding
 // detection echo function.
-func (dsl *PutDSL) BfdEchoFunction(val *vpp_bfd.SingleHopBFD_EchoFunction) linuxclient.PutDSL {
+func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) linuxclient.PutDSL {
 	dsl.vppPut.BfdEchoFunction(val)
 	return dsl
 }
 
 // BD adds a request to create or update VPP Bridge Domain.
-func (dsl *PutDSL) BD(val *vpp_l2.BridgeDomains_BridgeDomain) linuxclient.PutDSL {
+func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) linuxclient.PutDSL {
 	dsl.vppPut.BD(val)
 	return dsl
 }
 
 // BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(fib *vpp_l2.FibTable_FibEntry) linuxclient.PutDSL {
+func (dsl *PutDSL) BDFIB(fib *l2.FibTable_FibEntry) linuxclient.PutDSL {
 	dsl.vppPut.BDFIB(fib)
 	return dsl
 }
 
 // XConnect adds a request to create or update VPP Cross Connect.
-func (dsl *PutDSL) XConnect(val *vpp_l2.XConnectPairs_XConnectPair) linuxclient.PutDSL {
+func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) linuxclient.PutDSL {
 	dsl.vppPut.XConnect(val)
 	return dsl
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
-func (dsl *PutDSL) StaticRoute(val *vpp_l3.StaticRoutes_Route) linuxclient.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) linuxclient.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
 
 // ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(acl *vpp_acl.AccessLists_Acl) linuxclient.PutDSL {
+func (dsl *PutDSL) ACL(acl *acl.AccessLists_Acl) linuxclient.PutDSL {
 	dsl.vppPut.ACL(acl)
 	return dsl
 }
 
 // Arp adds a request to create or update VPP L3 ARP.
-func (dsl *PutDSL) Arp(arp *vpp_l3.ArpTable_ArpEntry) linuxclient.PutDSL {
+func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpEntry) linuxclient.PutDSL {
 	dsl.vppPut.Arp(arp)
 	return dsl
 }
 
 // ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
-func (dsl *PutDSL) ProxyArpInterfaces(arp *vpp_l3.ProxyArpInterfaces_InterfaceList) linuxclient.PutDSL {
+func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) linuxclient.PutDSL {
 	dsl.vppPut.ProxyArpInterfaces(arp)
 	return dsl
 }
 
 // ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-func (dsl *PutDSL) ProxyArpRanges(arp *vpp_l3.ProxyArpRanges_RangeList) linuxclient.PutDSL {
+func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) linuxclient.PutDSL {
 	dsl.vppPut.ProxyArpRanges(arp)
 	return dsl
 }
 
 // L4Features adds a request to enable or disable L4 features
-func (dsl *PutDSL) L4Features(val *vpp_l4.L4Features) linuxclient.PutDSL {
+func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 	dsl.vppPut.L4Features(val)
 	return dsl
 }
 
 // AppNamespace adds a request to create or update VPP Application namespace
-func (dsl *PutDSL) AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) linuxclient.PutDSL {
+func (dsl *PutDSL) AppNamespace(appNs *l4.AppNamespaces_AppNamespace) linuxclient.PutDSL {
 	dsl.vppPut.AppNamespace(appNs)
 	return dsl
 }
 
 // StnRule adds a request to create or update VPP Stn rule.
-func (dsl *PutDSL) StnRule(stn *vpp_stn.STN_Rule) linuxclient.PutDSL {
+func (dsl *PutDSL) StnRule(stn *stn.STN_Rule) linuxclient.PutDSL {
 	dsl.vppPut.StnRule(stn)
 	return dsl
 }
@@ -207,7 +207,7 @@ func (dsl *PutDSL) Delete() linuxclient.DeleteDSL {
 }
 
 // Send propagates requested changes to the plugins.
-func (dsl *PutDSL) Send() vpp_clientv1.Reply {
+func (dsl *PutDSL) Send() vppclient.Reply {
 	return dsl.parent.Send()
 }
 
@@ -220,13 +220,13 @@ func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linuxclient.DeleteDSL
 
 // LinuxArpEntry adds a request to delete Linux ARP entry.
 func (dsl *DeleteDSL) LinuxArpEntry(entryName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticArpKey(entryName))
+	dsl.parent.txn.Delete(linuxL3.StaticArpKey(entryName))
 	return dsl
 }
 
 // LinuxRoute adds a request to delete Linux route.
 func (dsl *DeleteDSL) LinuxRoute(routeName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.StaticRouteKey(routeName))
+	dsl.parent.txn.Delete(linuxL3.StaticRouteKey(routeName))
 	return dsl
 }
 
@@ -342,6 +342,6 @@ func (dsl *DeleteDSL) Put() linuxclient.PutDSL {
 }
 
 // Send propagates requested changes to the plugins.
-func (dsl *DeleteDSL) Send() vpp_clientv1.Reply {
+func (dsl *DeleteDSL) Send() vppclient.Reply {
 	return dsl.parent.Send()
 }
