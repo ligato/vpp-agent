@@ -11,7 +11,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl1_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
@@ -50,7 +49,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl2_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
@@ -91,7 +89,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl3_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
@@ -132,7 +129,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl4_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
@@ -173,7 +169,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl5_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
@@ -214,7 +209,6 @@
     },
     "rules": [
         {
-            "rule_name": "acl6_rule1",
             "acl_action": 1,
             "match": {
                 "ip_rule": {
