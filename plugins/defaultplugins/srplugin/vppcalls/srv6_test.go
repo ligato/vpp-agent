@@ -329,25 +329,23 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply
-				if td.FailInVPP {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
-				} else {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
-				}
-				// make the call
-				err := vppcalls.NewSRv6Calls().AddLocalSid(sidA, td.Input, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				// verify result
-				if td.ExpectFailure {
-					Expect(err).Should(HaveOccurred())
-				} else {
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(ctx.MockChannel.Msg).To(Equal(td.Expected))
-				}
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// prepare reply
+			if td.FailInVPP {
+				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
+			} else {
+				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
+			}
+			// make the call
+			err := vppcalls.NewSRv6Calls().AddLocalSid(sidA, td.Input, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			// verify result
+			if td.ExpectFailure {
+				Expect(err).Should(HaveOccurred())
+			} else {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(ctx.MockChannel.Msg).To(Equal(td.Expected))
+			}
 		})
 	}
 }
@@ -387,23 +385,21 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// data and prepare case
-				calls := vppcalls.NewSRv6Calls()
-				localsid := &srv6.LocalSID{
-					FibTableID: 10,
-					BaseEndFunction: &srv6.LocalSID_End{
-						Psp: true,
-					},
-				}
-				calls.AddLocalSid(td.Sid, localsid, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				ctx.MockVpp.MockReply(td.MockReply)
-				// make the call and verify
-				err := calls.DeleteLocalSid(td.Sid, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// data and prepare case
+			calls := vppcalls.NewSRv6Calls()
+			localsid := &srv6.LocalSID{
+				FibTableID: 10,
+				BaseEndFunction: &srv6.LocalSID_End{
+					Psp: true,
+				},
+			}
+			calls.AddLocalSid(td.Sid, localsid, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			ctx.MockVpp.MockReply(td.MockReply)
+			// make the call and verify
+			err := calls.DeleteLocalSid(td.Sid, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -450,14 +446,12 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
 
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().SetEncapsSourceAddress(td.Address, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppcalls.NewSRv6Calls().SetEncapsSourceAddress(td.Address, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -521,14 +515,12 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().AddPolicy(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppcalls.NewSRv6Calls().AddPolicy(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -566,19 +558,17 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// data and prepare case
-				calls := vppcalls.NewSRv6Calls()
-				policy := policy(0, true, true)
-				segment := policySegment(1, sidA, sidB, sidC)
-				calls.AddPolicy(td.BSID, policy, segment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				ctx.MockVpp.MockReply(td.MockReply)
-				// make the call and verify
-				err := calls.DeletePolicy(td.BSID, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// data and prepare case
+			calls := vppcalls.NewSRv6Calls()
+			policy := policy(0, true, true)
+			segment := policySegment(1, sidA, sidB, sidC)
+			calls.AddPolicy(td.BSID, policy, segment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			ctx.MockVpp.MockReply(td.MockReply)
+			// make the call and verify
+			err := calls.DeletePolicy(td.BSID, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -640,14 +630,12 @@ func TestAddPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppcalls.NewSRv6Calls().AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -714,14 +702,12 @@ func TestDeletePolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppcalls.NewSRv6Calls().DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -871,19 +857,17 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				var err error
-				if removal {
-					err = vppcalls.NewSRv6Calls().RemoveSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				} else {
-					err = vppcalls.NewSRv6Calls().AddSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				}
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx := vppcallmock.SetupTestCtx(t)
+			defer ctx.TeardownTestCtx()
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			var err error
+			if removal {
+				err = vppcalls.NewSRv6Calls().RemoveSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			} else {
+				err = vppcalls.NewSRv6Calls().AddSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			}
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }

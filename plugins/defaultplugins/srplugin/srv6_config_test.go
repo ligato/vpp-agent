@@ -82,17 +82,15 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				sid := sidA
-				data := localSID()
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				err := configurator.AddLocalSID(sid, data)
-				td.Verify(sid, data, err, fakeVPPCalls)
-			}()
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			sid := sidA
+			data := localSID()
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			err := configurator.AddLocalSID(sid, data)
+			td.Verify(sid, data, err, fakeVPPCalls)
 		})
 	}
 }
@@ -127,20 +125,18 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				sid := sidA
-				data := localSID()
-				configurator.AddLocalSID(sid, data)
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested method and verify
-				err := configurator.DeleteLocalSID(sid, data)
-				td.Verify(err, fakeVPPCalls)
-			}()
+			// setup
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			sid := sidA
+			data := localSID()
+			configurator.AddLocalSID(sid, data)
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested method and verify
+			err := configurator.DeleteLocalSID(sid, data)
+			td.Verify(err, fakeVPPCalls)
 		})
 	}
 }
@@ -186,33 +182,31 @@ func TestModifyLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// data
-				sid := sidA
-				prevData := &srv6.LocalSID{
-					FibTableID: 0,
-					BaseEndFunction: &srv6.LocalSID_End{
-						Psp: true,
-					},
-				}
-				data := &srv6.LocalSID{
-					FibTableID: 1,
-					BaseEndFunction: &srv6.LocalSID_End{
-						Psp: false,
-					},
-				}
-				// state and failure setup
-				configurator.AddLocalSID(sid, prevData)
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested method and verify
-				err := configurator.ModifyLocalSID(sid, data, prevData)
-				td.Verify(sid, data, prevData, err, fakeVPPCalls)
-			}()
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// data
+			sid := sidA
+			prevData := &srv6.LocalSID{
+				FibTableID: 0,
+				BaseEndFunction: &srv6.LocalSID_End{
+					Psp: true,
+				},
+			}
+			data := &srv6.LocalSID{
+				FibTableID: 1,
+				BaseEndFunction: &srv6.LocalSID_End{
+					Psp: false,
+				},
+			}
+			// state and failure setup
+			configurator.AddLocalSID(sid, prevData)
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested method and verify
+			err := configurator.ModifyLocalSID(sid, data, prevData)
+			td.Verify(sid, data, prevData, err, fakeVPPCalls)
 		})
 	}
 }
@@ -284,47 +278,45 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// Data
-				policy := policy()
-				segment := policySegment(1, sidB, sidC, sidD)
-				segment2 := policySegment(1, sidA, sidB, sidC)
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// Data
+			policy := policy()
+			segment := policySegment(1, sidB, sidC, sidD)
+			segment2 := policySegment(1, sidA, sidB, sidC)
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested methods and verification after each of them
+			if td.SetPolicySegmentsFirst {
+				err := configurator.AddPolicySegment(sidA, segmentName1, segment)
+				if td.VerifyAfterFirstAddPolicySegment != nil {
+					td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
 				}
-				// run tested methods and verification after each of them
-				if td.SetPolicySegmentsFirst {
-					err := configurator.AddPolicySegment(sidA, segmentName1, segment)
-					if td.VerifyAfterFirstAddPolicySegment != nil {
-						td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-					err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
-					if td.VerifyAfterSecondAddPolicySegment != nil {
-						td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-					err = configurator.AddPolicy(sidA, policy)
-					if td.VerifyAfterAddPolicy != nil {
-						td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-				} else {
-					err := configurator.AddPolicy(sidA, policy)
-					if td.VerifyAfterAddPolicy != nil {
-						td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-					err = configurator.AddPolicySegment(sidA, segmentName1, segment)
-					if td.VerifyAfterFirstAddPolicySegment != nil {
-						td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-					err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
-					if td.VerifyAfterSecondAddPolicySegment != nil {
-						td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
+				err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
+				if td.VerifyAfterSecondAddPolicySegment != nil {
+					td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
 				}
-			}()
+				err = configurator.AddPolicy(sidA, policy)
+				if td.VerifyAfterAddPolicy != nil {
+					td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+				}
+			} else {
+				err := configurator.AddPolicy(sidA, policy)
+				if td.VerifyAfterAddPolicy != nil {
+					td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+				}
+				err = configurator.AddPolicySegment(sidA, segmentName1, segment)
+				if td.VerifyAfterFirstAddPolicySegment != nil {
+					td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+				}
+				err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
+				if td.VerifyAfterSecondAddPolicySegment != nil {
+					td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+				}
+			}
 		})
 	}
 }
@@ -388,37 +380,35 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// Data
-				policy := policy()
-				segment := policySegment(1, sidB, sidC, sidD)
-				segment2 := policySegment(1, sidA, sidB, sidC)
-				configurator.AddPolicy(sidA, policy)
-				configurator.AddPolicySegment(sidA, segmentName1, segment)
-				configurator.AddPolicySegment(sidA, segmentName2, segment2) // handling of first segment is special -> adding 2 segments
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// Data
+			policy := policy()
+			segment := policySegment(1, sidB, sidC, sidD)
+			segment2 := policySegment(1, sidA, sidB, sidC)
+			configurator.AddPolicy(sidA, policy)
+			configurator.AddPolicySegment(sidA, segmentName1, segment)
+			configurator.AddPolicySegment(sidA, segmentName2, segment2) // handling of first segment is special -> adding 2 segments
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested methods and verification after each of them
+			if td.RemovePoliceSegment {
+				err := configurator.RemovePolicySegment(sidA, segmentName1, segment)
+				if td.VerifyAfterFirstRemovePolicySegment != nil {
+					td.VerifyAfterFirstRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
 				}
-				// run tested methods and verification after each of them
-				if td.RemovePoliceSegment {
-					err := configurator.RemovePolicySegment(sidA, segmentName1, segment)
-					if td.VerifyAfterFirstRemovePolicySegment != nil {
-						td.VerifyAfterFirstRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
-					err = configurator.RemovePolicySegment(sidA, segmentName2, segment2)
-					if td.VerifyAfterSecondRemovePolicySegment != nil {
-						td.VerifyAfterSecondRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
-					}
+				err = configurator.RemovePolicySegment(sidA, segmentName2, segment2)
+				if td.VerifyAfterSecondRemovePolicySegment != nil {
+					td.VerifyAfterSecondRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err := configurator.RemovePolicy(sidA, policy)
-				if td.VerifyAfterRemovePolicy != nil {
-					td.VerifyAfterRemovePolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
-				}
-			}()
+			}
+			err := configurator.RemovePolicy(sidA, policy)
+			if td.VerifyAfterRemovePolicy != nil {
+				td.VerifyAfterRemovePolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+			}
 		})
 	}
 }
@@ -462,34 +452,32 @@ func TestModifyPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// Data
-				prevPolicy := &srv6.Policy{
-					FibTableID:       0,
-					SprayBehaviour:   true,
-					SrhEncapsulation: true,
-				}
-				policy := &srv6.Policy{
-					FibTableID:       1,
-					SprayBehaviour:   false,
-					SrhEncapsulation: false,
-				}
-				segment := policySegment(1, sidB, sidC, sidD)
-				configurator.AddPolicy(sidA, prevPolicy)
-				configurator.AddPolicySegment(sidA, segmentName1, segment)
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested methods and verification after each of them
-				err := configurator.ModifyPolicy(sidA, policy, prevPolicy)
-				if td.Verify != nil {
-					td.Verify(sidA, policy, prevPolicy, segment, err, fakeVPPCalls)
-				}
-			}()
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// Data
+			prevPolicy := &srv6.Policy{
+				FibTableID:       0,
+				SprayBehaviour:   true,
+				SrhEncapsulation: true,
+			}
+			policy := &srv6.Policy{
+				FibTableID:       1,
+				SprayBehaviour:   false,
+				SrhEncapsulation: false,
+			}
+			segment := policySegment(1, sidB, sidC, sidD)
+			configurator.AddPolicy(sidA, prevPolicy)
+			configurator.AddPolicySegment(sidA, segmentName1, segment)
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested methods and verification after each of them
+			err := configurator.ModifyPolicy(sidA, policy, prevPolicy)
+			if td.Verify != nil {
+				td.Verify(sidA, policy, prevPolicy, segment, err, fakeVPPCalls)
+			}
 		})
 	}
 }
@@ -562,30 +550,28 @@ func TestModifyPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// Data
-				policy := policy()
-				prevSegment := policySegment(0, sidA, sidB, sidC)
-				segment := policySegment(1, sidB, sidC, sidD)
-				segment2 := policySegment(2, sidC, sidD, sidA)
-				configurator.AddPolicy(sidA, policy)
-				configurator.AddPolicySegment(sidA, segmentName1, prevSegment)
-				if !td.OnlyOneSegment {
-					configurator.AddPolicySegment(sidA, segmentName2, segment2)
-				}
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested methods and verification after each of them
-				err := configurator.ModifyPolicySegment(sidA, segmentName1, segment, prevSegment)
-				if td.Verify != nil {
-					td.Verify(sidA, policy, segment, prevSegment, segment2, err, fakeVPPCalls)
-				}
-			}()
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// Data
+			policy := policy()
+			prevSegment := policySegment(0, sidA, sidB, sidC)
+			segment := policySegment(1, sidB, sidC, sidD)
+			segment2 := policySegment(2, sidC, sidD, sidA)
+			configurator.AddPolicy(sidA, policy)
+			configurator.AddPolicySegment(sidA, segmentName1, prevSegment)
+			if !td.OnlyOneSegment {
+				configurator.AddPolicySegment(sidA, segmentName2, segment2)
+			}
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested methods and verification after each of them
+			err := configurator.ModifyPolicySegment(sidA, segmentName1, segment, prevSegment)
+			if td.Verify != nil {
+				td.Verify(sidA, policy, segment, prevSegment, segment2, err, fakeVPPCalls)
+			}
 		})
 	}
 }
@@ -620,26 +606,24 @@ func TestFillingAlreadyCreatedSegmentEmptyPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// Data
-				policy := policy()
-				segment := policySegment(0, sidA, sidB, sidC)
-				segment2 := policySegment(1, sidB, sidC, sidD)
-				// case building
-				Expect(configurator.AddPolicy(sidA, policy)).To(BeNil())
-				Expect(configurator.AddPolicySegment(sidA, segmentName1, segment)).To(BeNil())
-				Expect(configurator.RemovePolicySegment(sidA, segmentName1, segment)).To(BeNil())
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested methods and verification after each of them
-				err := configurator.AddPolicySegment(sidA, segmentName2, segment2)
-				td.Verify(sidA, policy, segment2, err, fakeVPPCalls)
-			}()
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// Data
+			policy := policy()
+			segment := policySegment(0, sidA, sidB, sidC)
+			segment2 := policySegment(1, sidB, sidC, sidD)
+			// case building
+			Expect(configurator.AddPolicy(sidA, policy)).To(BeNil())
+			Expect(configurator.AddPolicySegment(sidA, segmentName1, segment)).To(BeNil())
+			Expect(configurator.RemovePolicySegment(sidA, segmentName1, segment)).To(BeNil())
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested methods and verification after each of them
+			err := configurator.AddPolicySegment(sidA, segmentName2, segment2)
+			td.Verify(sidA, policy, segment2, err, fakeVPPCalls)
 		})
 	}
 }
@@ -730,46 +714,44 @@ func TestAddSteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// data
-				policy := policy()
-				segment := policySegment(1, sidB, sidC, sidD)
-				steering := steeringWithPolicyBsidRef(sidA.String())
-				if td.ReferencePolicyByIndex {
-					steering = steeringWithPolicyIndexRef(0)
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// data
+			policy := policy()
+			segment := policySegment(1, sidB, sidC, sidD)
+			steering := steeringWithPolicyBsidRef(sidA.String())
+			if td.ReferencePolicyByIndex {
+				steering = steeringWithPolicyIndexRef(0)
+			}
+			if td.CustomSteeringData != nil {
+				steering = td.CustomSteeringData
+			}
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// case building
+			if td.CreatePolicyAfter {
+				err := configurator.AddSteering(steeringName, steering)
+				if td.VerifyAfterAddSteering != nil {
+					td.VerifyAfterAddSteering(steering, err, fakeVPPCalls)
 				}
-				if td.CustomSteeringData != nil {
-					steering = td.CustomSteeringData
+				configurator.AddPolicy(sidA, policy)
+				configurator.AddPolicySegment(sidA, segmentName1, segment)
+				if td.VerifyAfterAddPolicy != nil {
+					td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
 				}
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			} else {
+				configurator.AddPolicy(sidA, policy)
+				configurator.AddPolicySegment(sidA, segmentName1, segment)
+				if td.VerifyAfterAddPolicy != nil {
+					td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
 				}
-				// case building
-				if td.CreatePolicyAfter {
-					err := configurator.AddSteering(steeringName, steering)
-					if td.VerifyAfterAddSteering != nil {
-						td.VerifyAfterAddSteering(steering, err, fakeVPPCalls)
-					}
-					configurator.AddPolicy(sidA, policy)
-					configurator.AddPolicySegment(sidA, segmentName1, segment)
-					if td.VerifyAfterAddPolicy != nil {
-						td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
-					}
-				} else {
-					configurator.AddPolicy(sidA, policy)
-					configurator.AddPolicySegment(sidA, segmentName1, segment)
-					if td.VerifyAfterAddPolicy != nil {
-						td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
-					}
-					err := configurator.AddSteering(steeringName, steering)
-					if td.VerifyAfterAddSteering != nil {
-						td.VerifyAfterAddSteering(steering, err, fakeVPPCalls)
-					}
+				err := configurator.AddSteering(steeringName, steering)
+				if td.VerifyAfterAddSteering != nil {
+					td.VerifyAfterAddSteering(steering, err, fakeVPPCalls)
 				}
-			}()
+			}
 		})
 	}
 }
@@ -804,26 +786,24 @@ func TestRemoveSteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// data
-				policy := policy()
-				segment := policySegment(1, sidB, sidC, sidD)
-				steering := steeringWithPolicyBsidRef(sidA.String())
-				// case building
-				configurator.AddPolicy(sidA, policy)
-				configurator.AddPolicySegment(sidA, segmentName1, segment)
-				configurator.AddSteering(steeringName, steering)
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested method and verify
-				err := configurator.RemoveSteering(steeringName, steering)
-				td.Verify(err, fakeVPPCalls)
-			}()
+			// setup
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// data
+			policy := policy()
+			segment := policySegment(1, sidB, sidC, sidD)
+			steering := steeringWithPolicyBsidRef(sidA.String())
+			// case building
+			configurator.AddPolicy(sidA, policy)
+			configurator.AddPolicySegment(sidA, segmentName1, segment)
+			configurator.AddSteering(steeringName, steering)
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested method and verify
+			err := configurator.RemoveSteering(steeringName, steering)
+			td.Verify(err, fakeVPPCalls)
 		})
 	}
 }
@@ -869,40 +849,38 @@ func TestModifySteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				// setup and teardown
-				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-				defer srv6TestTeardown(connection, configurator)
-				// data
-				bsid := sidA
-				policy := policy()
-				segment := policySegment(1, sidB, sidC, sidD)
-				prevData := &srv6.Steering{
-					PolicyBSID: bsid.String(),
-					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableID:    0,
-						PrefixAddress: "A::",
-					},
-				}
-				data := &srv6.Steering{
-					PolicyBSID: bsid.String(),
-					L3Traffic: &srv6.Steering_L3Traffic{
-						FibTableID:    1,
-						PrefixAddress: "B::",
-					},
-				}
-				// case building
-				configurator.AddPolicy(bsid, policy)
-				configurator.AddPolicySegment(bsid, segmentName1, segment)
-				configurator.AddSteering(steeringName, prevData)
-				// failure setup
-				if td.FailIn != nil {
-					fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
-				}
-				// run tested method and verify
-				err := configurator.ModifySteering(steeringName, data, prevData)
-				td.Verify(data, err, fakeVPPCalls)
-			}()
+			// setup and teardown
+			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
+			defer srv6TestTeardown(connection, configurator)
+			// data
+			bsid := sidA
+			policy := policy()
+			segment := policySegment(1, sidB, sidC, sidD)
+			prevData := &srv6.Steering{
+				PolicyBSID: bsid.String(),
+				L3Traffic: &srv6.Steering_L3Traffic{
+					FibTableID:    0,
+					PrefixAddress: "A::",
+				},
+			}
+			data := &srv6.Steering{
+				PolicyBSID: bsid.String(),
+				L3Traffic: &srv6.Steering_L3Traffic{
+					FibTableID:    1,
+					PrefixAddress: "B::",
+				},
+			}
+			// case building
+			configurator.AddPolicy(bsid, policy)
+			configurator.AddPolicySegment(bsid, segmentName1, segment)
+			configurator.AddSteering(steeringName, prevData)
+			// failure setup
+			if td.FailIn != nil {
+				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
+			}
+			// run tested method and verify
+			err := configurator.ModifySteering(steeringName, data, prevData)
+			td.Verify(data, err, fakeVPPCalls)
 		})
 	}
 }
