@@ -35,7 +35,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
-//TODO check all SID usages for comparisons that can fail due to upper/lower case mismatch (i.e. strings "A::E" and "a::e" are not equal but for our purposes it is the same SID and should be considered equal)
+// TODO check all SID usages for comparisons that can fail due to upper/lower case mismatch (i.e. strings "A::E" and "a::e" are not equal but for our purposes it is the same SID and should be considered equal)
 
 // SRv6Configurator runs in the background where it watches for any changes in the configuration of interfaces as
 // modelled by the proto file "../model/srv6/srv6.proto" and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/srv6".
@@ -45,7 +45,7 @@ type SRv6Configurator struct {
 	GoVppmux    govppmux.API
 	SwIfIndexes ifaceidx.SwIfIndex // SwIfIndexes from default plugins
 	VppCalls    vppcalls.SRv6Calls
-	Stopwatch   *measure.Stopwatch // timer used to measure and store time //TODO support this in vpp calls
+	Stopwatch   *measure.Stopwatch // timer used to measure and store time // TODO support this in vpp calls
 
 	// channels
 	vppChannel vppcalls.VPPChannel // channel to communicate with VPP
@@ -183,7 +183,7 @@ func (plugin *SRv6Configurator) RemovePolicy(bsid srv6.SID, policy *srv6.Policy)
 			plugin.policySegmentIndexSeq.delete(index)
 		}
 	}
-	return plugin.VppCalls.DeletePolicy(bsid, plugin.Log, plugin.vppChannel, plugin.Stopwatch) //expecting that policy delete will also delete policy segments in vpp
+	return plugin.VppCalls.DeletePolicy(bsid, plugin.Log, plugin.vppChannel, plugin.Stopwatch) // expecting that policy delete will also delete policy segments in vpp
 }
 
 // ModifyPolicy modifies policy in VPP using VPP's binary api
@@ -219,17 +219,17 @@ func (plugin *SRv6Configurator) AddPolicySegment(bsid srv6.SID, segmentName stri
 	segments, _ := plugin.policySegmentsCache.LookupByPolicy(bsid)
 	if len(segments) <= 1 {
 		if _, alreadyCreated := plugin.createdPolicies[bsid.String()]; alreadyCreated {
-			//last segment got deleted in etcd, but policy with last segment stays in VPP, and we want add another segment
+			// last segment got deleted in etcd, but policy with last segment stays in VPP, and we want add another segment
 			// -> we must remove old policy with last segment from VPP to add it again with new segment
 			err := plugin.RemovePolicy(bsid, policy)
 			if err != nil {
 				return fmt.Errorf("can't delete Policy (with previously deleted last policy segment) to recreated it with new policy segment: %v", err)
 			}
-			plugin.policySegmentsCache.Put(bsid, segmentName, policySegment) //got deleted in policy removal
+			plugin.policySegmentsCache.Put(bsid, segmentName, policySegment) // got deleted in policy removal
 		}
 		return plugin.AddPolicy(bsid, policy)
 	}
-	//FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
+	// FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.addSegmentToIndexes(bsid, segmentName)
 	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 }
@@ -242,13 +242,13 @@ func (plugin *SRv6Configurator) RemovePolicySegment(bsid srv6.SID, segmentName s
 	plugin.policySegmentsCache.Delete(bsid, segmentName)
 	index, _, exists := plugin.policySegmentIndexes.UnregisterName(plugin.uniquePolicySegmentName(bsid, segmentName))
 
-	siblings, _ := plugin.policySegmentsCache.LookupByPolicy(bsid) //sibling segments in the same policy
-	if len(siblings) == 0 {                                        //last segment for policy
+	siblings, _ := plugin.policySegmentsCache.LookupByPolicy(bsid) // sibling segments in the same policy
+	if len(siblings) == 0 {                                        // last segment for policy
 		plugin.Log.Debugf("removal of policy segment (%v) postponed until policy with %v bsid is deleted", policySegment.GetSegments(), bsid.String())
 		return nil
 	}
 
-	//removing not-last segment
+	// removing not-last segment
 	if !exists {
 		return fmt.Errorf("can't find index of policy segment %v in policy with bsid %v", policySegment.Segments, bsid)
 	}
@@ -256,7 +256,7 @@ func (plugin *SRv6Configurator) RemovePolicySegment(bsid srv6.SID, segmentName s
 	if !exists {
 		return fmt.Errorf("can't find policy with bsid %v", bsid)
 	}
-	//FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
+	// FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.policySegmentIndexSeq.delete(index)
 	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
 }
@@ -363,7 +363,7 @@ func ParseIPv6(str string) (net.IP, error) {
 	return ipv6, nil
 }
 
-// gaplessSequence emulates sequence indexes grabbing for Policy segments inside VPP //FIXME this is poor VPP API, correct way is tha API should tell as choosen index at Policy segment creation
+// gaplessSequence emulates sequence indexes grabbing for Policy segments inside VPP // FIXME this is poor VPP API, correct way is tha API should tell as choosen index at Policy segment creation
 type gaplessSequence struct {
 	nextfree []uint32
 }
@@ -388,7 +388,7 @@ func (seq *gaplessSequence) nextID() uint32 {
 
 func (seq *gaplessSequence) delete(id uint32) {
 	if id >= seq.nextfree[len(seq.nextfree)-1] {
-		return //nothing to do because it is not sequenced yet
+		return // nothing to do because it is not sequenced yet
 	}
 	// add gap and move it to proper place (gaps with lower id should be used first by finding next ID)
 	seq.nextfree = append(seq.nextfree, id)

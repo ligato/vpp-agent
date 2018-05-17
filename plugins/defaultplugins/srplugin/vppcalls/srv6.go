@@ -30,16 +30,16 @@ import (
 // Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)
 // Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
 const (
-	BehaviorEnd    uint8 = iota + 1 //Behavior of simple endpoint
-	BehaviorX                       //Behavior of endpoint with Layer-3 cross-connect
-	BehaviorT                       //Behavior of endpoint with specific IPv6 table lookup
-	BehaviorDfirst                  //Unused. Separator in between regular and D
-	BehaviorDX2                     //Behavior of endpoint with decapulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)
-	BehaviorDX6                     //Behavior of endpoint with decapsulation and IPv6 cross-connect
-	BehaviorDX4                     //Behavior of endpoint with decapsulation and IPv4 cross-connect
-	BehaviorDT6                     //Behavior of endpoint with decapsulation and specific IPv6 table lookup
-	BehaviorDT4                     //Behavior of endpoint with decapsulation and specific IPv4 table lookup
-	BehaviorLast                    //seems unused, note in VPP: "Must always be the last one"
+	BehaviorEnd    uint8 = iota + 1 // Behavior of simple endpoint
+	BehaviorX                       // Behavior of endpoint with Layer-3 cross-connect
+	BehaviorT                       // Behavior of endpoint with specific IPv6 table lookup
+	BehaviorDfirst                  // Unused. Separator in between regular and D
+	BehaviorDX2                     // Behavior of endpoint with decapulation and Layer-2 cross-connect (or DX2 with egress VLAN rewrite when VLAN notzero - not supported this variant yet)
+	BehaviorDX6                     // Behavior of endpoint with decapsulation and IPv6 cross-connect
+	BehaviorDX4                     // Behavior of endpoint with decapsulation and IPv4 cross-connect
+	BehaviorDT6                     // Behavior of endpoint with decapsulation and specific IPv6 table lookup
+	BehaviorDT4                     // Behavior of endpoint with decapsulation and specific IPv4 table lookup
+	BehaviorLast                    // seems unused, note in VPP: "Must always be the last one"
 )
 
 // Constants for steering type
@@ -52,9 +52,9 @@ const (
 
 // Constants for operation of SR policy modify binary API method
 const (
-	AddSRList            uint8 = iota + 1 //Add SR List to an existing SR policy
-	DeleteSRList                          //Delete SR List from an existing SR policy
-	ModifyWeightOfSRList                  //Modify the weight of an existing SR List
+	AddSRList            uint8 = iota + 1 // Add SR List to an existing SR policy
+	DeleteSRList                          // Delete SR List from an existing SR policy
+	ModifyWeightOfSRList                  // Modify the weight of an existing SR List
 )
 
 // SRv6Calls is API boundary for vppcall package access, introduced to properly test code dependent on vppcalls package
@@ -63,19 +63,19 @@ type SRv6Calls interface {
 	AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
 	// DeleteLocalSid delets local sid given by <sidAddr> in VPP
 	DeleteLocalSid(sidAddr net.IP, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
+	// SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
 	SetEncapsSourceAddress(address string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
+	// AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
 	AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
+	// DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
 	DeletePolicy(bindingSid net.IP, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
+	// AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
 	AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
+	// DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
 	DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, segmentIndex uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//AddSteering sets in VPP steering into SRv6 policy.
+	// AddSteering sets in VPP steering into SRv6 policy.
 	AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
-	//RemoveSteering removes in VPP steering into SRv6 policy.
+	// RemoveSteering removes in VPP steering into SRv6 policy.
 	RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error
 }
 
@@ -110,7 +110,7 @@ func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *
 		LocalsidAddr: []byte(sidAddr),
 	}
 	if !deletion {
-		req.FibTable = localSID.FibTableID //where to install localsid entry
+		req.FibTable = localSID.FibTableID // where to install localsid entry
 		if err := calls.writeEndFunction(req, sidAddr, localSID, swIfIndex); err != nil {
 			return err
 		}
@@ -200,7 +200,7 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionDX4.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunctionDX4.NextHop) //parses also IPv4
+		nhAddr, err := parseIPv6(localSID.EndFunctionDX4.NextHop) // parses also IPv4
 		if err != nil {
 			return err
 		}
@@ -230,7 +230,7 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 	return nil
 }
 
-//SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
+// SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
 func (calls *srv6Calls) SetEncapsSourceAddress(address string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debugf("Configuring encapsulation source address to address %v", address)
 	defer func(t time.Time) {
@@ -259,7 +259,7 @@ func (calls *srv6Calls) SetEncapsSourceAddress(address string, log logging.Logge
 	return nil
 }
 
-//AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
+// AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
 func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
 	log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debugf("Adding SR policy with binding SID %v and list of next SIDs %v", bindingSid, policySegment.Segments)
@@ -295,7 +295,7 @@ func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policy
 	return nil
 }
 
-//DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
+// DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
 func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
 	defer func(t time.Time) {
@@ -303,7 +303,7 @@ func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, log logging.Logger, vppC
 	}(time.Now())
 
 	req := &sr.SrPolicyDel{
-		BsidAddr: []byte(bindingSid), //TODO add ability to define policy also by index (SrPolicyIndex)
+		BsidAddr: []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
 	}
 	reply := &sr.SrPolicyDelReply{}
 
@@ -320,7 +320,7 @@ func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, log logging.Logger, vppC
 	return nil
 }
 
-//AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
+// AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
 func (calls *srv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
 	log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debugf("Adding segment %v to SR policy with binding SID %v", policySegment.Segments, bindingSid)
@@ -332,7 +332,7 @@ func (calls *srv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy,
 	return err
 }
 
-//DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
+// DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
 func (calls *srv6Calls) DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
 	segmentIndex uint32, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	log.Debugf("Removing segment %v (index %v) from SR policy with binding SID %v", policySegment.Segments, segmentIndex, bindingSid)
@@ -355,7 +355,7 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 		return err
 	}
 	req := &sr.SrPolicyMod{
-		BsidAddr:  []byte(bindingSid), //TODO add ability to define policy also by index (SrPolicyIndex)
+		BsidAddr:  []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
 		Operation: operation,
 		Weight:    policySegment.Weight,
 		NSegments: segmentsCount,
@@ -388,19 +388,19 @@ func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.IP
 
 		// add sid to segment list
 		ipv6Segment := sr.IPv6type{}
-		copy(ipv6Segment.Value[:], parserSid) //sr.IPv6type.Value = [16]byte
+		copy(ipv6Segment.Value[:], parserSid) // sr.IPv6type.Value = [16]byte
 		segments = append(segments, ipv6Segment)
 	}
 	return uint8(len(nextSidList)), segments, nil
 }
 
-//AddSteering sets in VPP steering into SRv6 policy.
+// AddSteering sets in VPP steering into SRv6 policy.
 func (calls *srv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger,
 	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return calls.addDelSteering(false, steering, swIfIndex, log, vppChan, stopwatch)
 }
 
-//RemoveSteering removes in VPP steering into SRv6 policy.
+// RemoveSteering removes in VPP steering into SRv6 policy.
 func (calls *srv6Calls) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger,
 	vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return calls.addDelSteering(true, steering, swIfIndex, log, vppChan, stopwatch)
@@ -448,7 +448,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 		if err != nil {
 			return fmt.Errorf("can't parse ip prefix %q: %v", steering.L3Traffic.PrefixAddress, err)
 		}
-		if ip.To4() != nil { //IPv4 address
+		if ip.To4() != nil { // IPv4 address
 			steerType = SteerTypeIPv4
 		}
 		tableID = steering.L3Traffic.FibTableID
@@ -466,8 +466,8 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	req := &sr.SrSteeringAddDel{
 		IsDel:         boolToInt(delete),
 		TableID:       tableID,
-		BsidAddr:      bsidAddr,             //policy (to which we want to steer routing into) identified by binding sid (alternativelly it can be used SRPolicyIndex)
-		SrPolicyIndex: steering.PolicyIndex, //policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used BsidAddr)
+		BsidAddr:      bsidAddr,             // policy (to which we want to steer routing into) identified by binding sid (alternativelly it can be used SRPolicyIndex)
+		SrPolicyIndex: steering.PolicyIndex, // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used BsidAddr)
 		TrafficType:   steerType,            // type of traffic to steer
 		PrefixAddr:    prefixAddr,           // destination prefix address (L3 traffic type only)
 		MaskWidth:     maskWidth,            // destination ip prefix mask (L3 traffic type only)

@@ -53,12 +53,12 @@ message LocalSID {          /* SID(IPv6 Address) is part of key and NOT part of 
 
     /* End function behavior of endpoint with decapsulation and specific IPv4 table lookup*/
     message EndDT4 {
-        //TODO model this end function
+        // TODO model this end function
     }
 
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
-        //TODO model this end function
+        // TODO model this end function
     }
 }
 

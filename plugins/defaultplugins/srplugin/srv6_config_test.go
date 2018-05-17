@@ -32,8 +32,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-//TODO add more tests: cover remove/modify for localsids/policies/policy segments/steering
-//TODO add more tests: cover delayed configuration
+// TODO add more tests: cover remove/modify for localsids/policies/policy segments/steering
+// TODO add more tests: cover delayed configuration
 
 var (
 	sidA = sid("A::")
@@ -82,7 +82,7 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
 				sid := sidA
@@ -127,7 +127,7 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -186,7 +186,7 @@ func TestModifyLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -284,7 +284,7 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -388,7 +388,7 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -462,7 +462,7 @@ func TestModifyPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -562,7 +562,7 @@ func TestModifyPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -620,7 +620,7 @@ func TestFillingAlreadyCreatedSegmentEmptyPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -730,7 +730,7 @@ func TestAddSteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
 				// data
@@ -804,7 +804,7 @@ func TestRemoveSteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)
@@ -869,7 +869,7 @@ func TestModifySteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				// setup and teardown
 				configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 				defer srv6TestTeardown(connection, configurator)

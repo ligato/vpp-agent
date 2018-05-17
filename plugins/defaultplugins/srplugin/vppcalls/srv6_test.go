@@ -174,7 +174,7 @@ func TestAddLocalSID(t *testing.T) {
 				NhAddr:       nextHop,
 			},
 		},
-		//endDT4 and endDT6 are not fully modelled yet -> testing only current implementation
+		// endDT4 and endDT6 are not fully modelled yet -> testing only current implementation
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
@@ -329,7 +329,7 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// prepare reply
@@ -387,7 +387,7 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// data and prepare case
@@ -450,7 +450,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 
@@ -521,7 +521,7 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// prepare reply, make call and verify
@@ -566,7 +566,7 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// data and prepare case
@@ -640,7 +640,7 @@ func TestAddPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// prepare reply, make call and verify
@@ -714,7 +714,7 @@ func TestDeletePolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// prepare reply, make call and verify
@@ -871,7 +871,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
+			func() { // wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
 				ctx := vppcallmock.SetupTestCtx(t)
 				defer ctx.TeardownTestCtx()
 				// prepare reply, make call and verify
