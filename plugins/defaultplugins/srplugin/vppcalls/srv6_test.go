@@ -891,7 +891,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 func sid(str string) srv6.SID {
 	bsid, err := srplugin.ParseIPv6(str)
 	if err != nil {
-		panic(fmt.Sprintf("can't parse \"%v\" into SRv6 BSID (IPv6 address)", str))
+		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
 	return bsid
 }

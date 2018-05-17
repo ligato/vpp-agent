@@ -354,11 +354,11 @@ func (plugin *SRv6Configurator) ModifySteering(name string, value *srv6.Steering
 func ParseIPv6(str string) (net.IP, error) {
 	ip := net.ParseIP(str)
 	if ip == nil {
-		return nil, fmt.Errorf("\"%v\" is not ip address", str)
+		return nil, fmt.Errorf(" %q is not ip address", str)
 	}
 	ipv6 := ip.To16()
 	if ipv6 == nil {
-		return nil, fmt.Errorf("\"%v\" is not ipv6 address", str)
+		return nil, fmt.Errorf(" %q is not ipv6 address", str)
 	}
 	return ipv6, nil
 }

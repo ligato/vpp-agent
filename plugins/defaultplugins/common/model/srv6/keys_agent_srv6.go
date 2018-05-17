@@ -90,23 +90,23 @@ func ParsePolicySegmentKey(key string) (net.IP, string, error) {
 	suffix := strings.TrimPrefix(key, policyPrefix)
 	keyComponents := strings.Split(suffix, EtcdKeyPathDelimiter)
 	if len(keyComponents) != 3 {
-		return nil, "", fmt.Errorf("key \"%v\" should have policy BSID and policy segment name", key)
+		return nil, "", fmt.Errorf("key %q should have policy BSID and policy segment name", key)
 	}
 	bsid, err := parseIPv6(keyComponents[0])
 	if err != nil {
-		return nil, "", fmt.Errorf("can't parse \"%v\" into SRv6 BSID (IPv6 address)", keyComponents[0])
+		return nil, "", fmt.Errorf("can't parse %q into SRv6 BSID (IPv6 address)", keyComponents[0])
 	}
 	return bsid, keyComponents[2], nil
 }
 
 func parseOneValuedKey(key string, prefix string, valueName string) (value string, err error) {
 	if !strings.HasPrefix(key, prefix) {
-		return "", fmt.Errorf("key \"%v\" should have prefix \"%v\"", key, prefix)
+		return "", fmt.Errorf("key %q should have prefix %q", key, prefix)
 	}
 	suffix := strings.TrimPrefix(key, prefix)
 	keyComponents := strings.Split(suffix, EtcdKeyPathDelimiter)
 	if len(keyComponents) != 1 {
-		return "", fmt.Errorf("key \"%v\" should have %v (and only %v) after \"%v\"", key, valueName, valueName, prefix)
+		return "", fmt.Errorf("key %q should have %v (and only %v) after %q", key, valueName, valueName, prefix)
 	}
 	return keyComponents[0], nil
 }
@@ -115,11 +115,11 @@ func parseOneValuedKey(key string, prefix string, valueName string) (value strin
 func parseIPv6(str string) (net.IP, error) {
 	ip := net.ParseIP(str)
 	if ip == nil {
-		return nil, fmt.Errorf("\"%v\" is not ip address", str)
+		return nil, fmt.Errorf(" %q is not ip address", str)
 	}
 	ipv6 := ip.To16()
 	if ipv6 == nil {
-		return nil, fmt.Errorf("\"%v\" is not ipv6 address", str)
+		return nil, fmt.Errorf(" %q is not ipv6 address", str)
 	}
 	return ipv6, nil
 }

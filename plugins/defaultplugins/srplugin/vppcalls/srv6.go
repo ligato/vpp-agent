@@ -432,7 +432,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	if len(strings.Trim(steering.PolicyBSID, " ")) > 0 {
 		bsid, err := parseIPv6(steering.PolicyBSID)
 		if err != nil {
-			return fmt.Errorf("can't parse binding SID \"%v\"to IP address: %v ", steering.PolicyBSID, err)
+			return fmt.Errorf("can't parse binding SID %q to IP address: %v ", steering.PolicyBSID, err)
 		}
 		bsidAddr = []byte(bsid)
 	}
@@ -446,7 +446,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	if steering.L3Traffic != nil {
 		ip, ipnet, err := net.ParseCIDR(steering.L3Traffic.PrefixAddress)
 		if err != nil {
-			return fmt.Errorf("can't parse ip prefix \"%v\": %v", steering.L3Traffic.PrefixAddress, err)
+			return fmt.Errorf("can't parse ip prefix %q: %v", steering.L3Traffic.PrefixAddress, err)
 		}
 		if ip.To4() != nil { //IPv4 address
 			steerType = SteerTypeIPv4
@@ -500,11 +500,11 @@ func boolToInt(input bool) uint8 {
 func parseIPv6(str string) (net.IP, error) {
 	ip := net.ParseIP(str)
 	if ip == nil {
-		return nil, fmt.Errorf("\"%v\" is not ip address", str)
+		return nil, fmt.Errorf(" %q is not ip address", str)
 	}
 	ipv6 := ip.To16()
 	if ipv6 == nil {
-		return nil, fmt.Errorf("\"%v\" is not ipv6 address", str)
+		return nil, fmt.Errorf(" %q is not ipv6 address", str)
 	}
 	return ipv6, nil
 }
