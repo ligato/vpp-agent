@@ -16,9 +16,11 @@ ${ETCD_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/etcd-k8.yaml
 ${KAFKA_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/kafka-k8.yaml
 ${SFC_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/sfc-k8.yaml
 ${VSWITCH_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/vswitch-k8.yaml
-${CN_INFRA_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/dev-vn-infra-k8.yaml
+${CN_INFRA_YAML_FILE_PATH}    ${CURDIR}/../resources/k8-yaml/dev-cn-infra-k8.yaml
 ${PULL_IMAGES_PATH}    ${CURDIR}/../resources/k8-scripts/pull-images.sh
 
+${POD_DEPLOY_APPEARS_TIMEOUT}    30s
+${POD_REMOVE_DEFAULT_TIMEOUT}    60s
 
 *** Keywords ***
 # TODO: Passing ${ssh_session} around is annoying. Make keywords assume the correct SSH session is already active.
@@ -81,7 +83,7 @@ Get_Pod_Name_List_By_Prefix
     [Documentation]    Get pods from all namespaces, parse with specified \${pod_prefix}, log and return the parsed result.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_prefix}
     BuiltIn.Comment    TODO: Unify with Get_Pods or Get_Pods_All_Namespaces in KubeCtl.
-    ${stdout} =    SshCommons.Switch_And_Execute_Command    ${ssh_session}    kubectl get pods --all-namespaces
+    ${stdout} =    SshCommons.Switch_And_Execute_Command    ${ssh_session}    kubectl get pods
     ${output} =    kube_parser.parse_kubectl_get_pods_and_get_pod_name    ${stdout}    ${pod_prefix}
     Builtin.Log    ${output}
     [Return]    ${output}
@@ -90,22 +92,23 @@ Deploy_Etcd_Kafka_And_Verify_Running
     [Arguments]    ${ssh_session}    ${etcd_file}=${ETCD_YAML_FILE_PATH}    ${kafka_file}=${KAFKA_YAML_FILE_PATH}
     [Documentation]     Deploy and verify ETCD and KAFKA pods and store its name.
     BuiltIn.Log_Many    ${ssh_session}    ${etcd_file}    ${kafka_file}
-    ${etcd_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${etcd_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
-    ${kafka_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${kafka_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
-    BuiltIn.Set_Suite_Variable    ${client_pod_name}
+    ${etcd_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${etcd_file}    ubuntu-client-etcd    timeout=${POD_DEPLOY_TIMEOUT}
+    ${kafka_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${kafka_file}    kafka-    timeout=${POD_DEPLOY_TIMEOUT}
+    BuiltIn.Set_Suite_Variable    ${etcd_pod_name}
+    BuiltIn.Set_Suite_Variable    ${kafka_pod_name}
 
 Deploy_Vswitch_Pod_And_Verify_Running
     [Arguments]    ${ssh_session}    ${vswitch_file}=${VSWITCH_YAML_FILE_PATH}
     [Documentation]     Deploy and verify switch pod and store its name.
     BuiltIn.Log_Many    ${ssh_session}    ${vswitch_file}
-    ${vswitch_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${vswitch_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    ${vswitch_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${vswitch_file}    vswitch-    timeout=${POD_DEPLOY_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${vswitch_pod_name}
 
 Deploy_SFC_Pod_And_Verify_Running
     [Arguments]    ${ssh_session}    ${sfc_file}=${SFC_YAML_FILE_PATH}
     [Documentation]     Deploy and verify switch pod and store its name.
     BuiltIn.Log_Many    ${ssh_session}    ${sfc_file}
-    ${sfc_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${sfc_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    ${sfc_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${sfc_file}    sfc-    timeout=${POD_DEPLOY_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${sfc_pod_name}
 
 
@@ -113,8 +116,8 @@ Deploy_Cn-Infra_Pod_And_Verify_Running
     [Arguments]    ${ssh_session}    ${cn-infra_file}=${CN_INFRA_YAML_FILE_PATH}
     [Documentation]     Deploy and verify cn-infra pod and store its name.
     BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    ${cn-infra_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
-    BuiltIn.Set_Suite_Variable    ${cn-infra_pod_name}
+    ${cn_infra_pod_name} =    Deploy_Pod_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    ubuntu-client-    timeout=${POD_DEPLOY_TIMEOUT}
+    BuiltIn.Set_Suite_Variable    ${cn_infra_pod_name}
 
 
 Remove_VSwitch_Pod_And_Verify_Removed
@@ -125,21 +128,21 @@ Remove_VSwitch_Pod_And_Verify_Removed
     Wait_Until_Pod_Removed    ${ssh_session}    ${vswitch_pod_name}
 
 Remove_SFC_Pod_And_Verify_Removed
-    [Arguments]    ${ssh_session}    ${sfc_file}=${CN_INFRA_YAML_FILE_PATH}
+    [Arguments]    ${ssh_session}    ${sfc_file}=${SFC_YAML_FILE_PATH}
     [Documentation]    Execute delete commands, wait until  pod is removed.
     BuiltIn.Log_Many    ${ssh_session}    ${sfc_file}
     KubeCtl.Delete_F    ${ssh_session}    ${sfc_file}
     Wait_Until_Pod_Removed    ${ssh_session}    ${sfc_pod_name}
 
 Remove_Cn-Infra_Pod_And_Verify_Removed
-    [Arguments]    ${ssh_session}    ${cn-infra_file}=${SFC_YAML_FILE_PATH}
+    [Arguments]    ${ssh_session}    ${cn_infra_file}=${CN_INFRA_YAML_FILE_PATH}
     [Documentation]    Execute delete commands, wait until  pod is removed.
-    BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    KubeCtl.Delete_F    ${ssh_session}    ${cn-infra_file}
-    Wait_Until_Pod_Removed    ${ssh_session}    ${cn-infra_pod_name}
+    BuiltIn.Log_Many    ${ssh_session}    ${cn_infra_file}
+    KubeCtl.Delete_F    ${ssh_session}    ${cn_infra_file}
+    Wait_Until_Pod_Removed    ${ssh_session}    ${cn_infra_pod_name}
 
 Remove_ETCD And_KAFKA_Pod_And_Verify_Removed
-    [Arguments]    ${ssh_session}    ${etcd_file}=${CN_INFRA_YAML_FILE_PATH}    ${kafka_file}=${KAFKA_YAML_FILE_PATH}
+    [Arguments]    ${ssh_session}    ${etcd_file}=${ETCD_YAML_FILE_PATH}    ${kafka_file}=${KAFKA_YAML_FILE_PATH}
     [Documentation]    Execute delete commands, wait until  pod is removed.
     BuiltIn.Log_Many    ${ssh_session}    ${etcd_file}    ${kafka_file}
     KubeCtl.Delete_F    ${ssh_session}    ${etcd_file}
@@ -295,11 +298,11 @@ Get_Into_Container_Prompt_In_Pod
     [Documentation]    Configure if prompt, execute interactive bash in ${pod_name}, read until prompt, log and return output.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${prompt}
     # TODO: PodBash.robot?
-    ${docker} =    BuiltIn.Set_Variable    ${KUBE_CLUSTER_${CLUSTER_ID}_DOCKER_COMMAND}
+    ${docker} =    BuiltIn.Set_Variable    ${K8_CLUSTER_${CLUSTER_ID}_DOCKER_COMMAND}
     ${container_id} =    KubeCtl.Get_Container_Id    ${ssh_session}    ${pod_name}
     # That already switched the ssh session.
     BuiltIn.Run_Keyword_If    """${prompt}""" != """${EMPTY}"""    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
-    ${command} =    BuiltIn.Set_Variable    ${docker} exec -i -t --privileged=true ${container_id} /bin/bash
+    ${command} =    BuiltIn.Set_Variable    ${docker} exec -i -t --privileged=true ${container_id} /bin/sh
     SSHLibrary.Write    ${command}
     ${output} =     SSHLibrary.Read_Until_Prompt
     SshCommons.Append_Command_Log    ${command}    ${output}
@@ -354,7 +357,7 @@ Log_Etcd
     ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    etcd
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    1
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system
+    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default
 
 Log_Vswitch
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
@@ -365,8 +368,8 @@ Log_Vswitch
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=cn-infra
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=kube-system    container=vswitch
+    # \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default    container=cn-infra
+    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default    container=vswitch
 
 Log_Kube_Dns
     [Arguments]    ${ssh_session}
@@ -376,7 +379,7 @@ Log_Kube_Dns
     ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    kube-dns-
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    1
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=kube-system    container=kubedns
+    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default    container=kubedns
 
 Log_Pods_For_Debug
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
@@ -390,5 +393,5 @@ Log_Pods_For_Debug
 Open_Connection_To_Node
     [Arguments]    ${name}    ${cluster_id}    ${node_index}
     BuiltIn.Log_Many    ${name}    ${node_index}
-    ${connection}=    SshCommons.Open_Ssh_Connection    ${name}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PSWD}
+    ${connection}=    SshCommons.Open_Ssh_Connection_Kube    ${name}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${node_index}_PSWD}
     [Return]    ${connection}

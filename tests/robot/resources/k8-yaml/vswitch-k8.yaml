@@ -22,6 +22,7 @@ data:
     unix {
       nodaemon
       cli-listen 0.0.0.0:5002
+      cli-listen /run/vpp/cli.sock
       cli-no-pager
       log /tmp/vpp.log
       full-coredump
@@ -96,7 +97,7 @@ spec:
   hostNetwork: true
   containers:
     - name: "vswitch"
-      image: ligato/vpp-agent
+      image: ligato/dev-vpp-agent:pantheon-dev
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true

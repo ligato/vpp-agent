@@ -33,7 +33,7 @@ spec:
       securityContext:
         privileged: true
       ports:
-        - containerPort: 9191
+        - containerPort: 9195
       env:
         - name: MICROSERVICE_LABEL
           value: node_1

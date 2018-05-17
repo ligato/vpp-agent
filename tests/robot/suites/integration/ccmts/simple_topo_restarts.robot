@@ -16,7 +16,7 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=       common
 ${ENV}=             common
-${CLUSTRER_ID}=     CCMTS1
+${CLUSTER_ID}=     CCMTS1
 
 *** Test Cases ***
 Pod_To_Pod_Ping
@@ -31,8 +31,8 @@ Pod_To_Pod_Ping
 Pod_To_Pod_Udp
     [Documentation]    Start UDP server and client, send message, stop both and check the message has been reseived.
     [Setup]    Setup_Hosts_Connections
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -ul -p 7000    ssh_session=${vswitch_connection}
-    KubernetesEnv.Init_Infinite_Command_in_Pod    nc -u ${vswitch_ip} 7000    ssh_session=${cn_infra_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -ul -p 7000    ssh_session=${vswitch_connection}
+    KubeEnv.Init_Infinite_Command_in_Pod    nc -u ${vswitch_ip} 7000    ssh_session=${cn_infra_connection}
     ${text} =    BuiltIn.Set_Variable    Text to be received
     SSHLibrary.Write    ${text}
     ${cn_infra_stdout} =    KubeEnv.Stop_Infinite_Command_In_Pod    ssh_session=${cn_infra_connection}
@@ -102,16 +102,15 @@ Cleanup_Basic_Ccmts_Deployment_On_Cluster
 	SshCommons.Execute_Command_And_Log    kubectl delete --all pvc --namespace=default
 	SshCommons.Execute_Command_And_Log    kubectl delete --all ConfigMaps --namespace=default
 	SshCommons.Execute_Command_And_Log    rm -rf /tmp/'+self.tName+'/default/*
-	SshCommons.Execute_Command_And_Log    kubectl delete daemonSets snap --namespace=kube-system
-	SshCommons.Execute_Command_And_Log    kubectl delete deployments heapster --namespace=kube-system
-	SshCommons.Execute_Command_And_Log    kubectl delete serviceaccounts heapster --namespace=kube-system
-
+#	SshCommons.Execute_Command_And_Log    kubectl delete daemonSets snap --namespace=kube-system
+#	SshCommons.Execute_Command_And_Log    kubectl delete deployments heapster --namespace=kube-system
+#	SshCommons.Execute_Command_And_Log    kubectl delete serviceaccounts heapster --namespace=kube-system
 
 BasicCcmtsSetup
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
-    setup-teardown.Testsuite_K8Setup    ${CLUSTRER_ID}
+    setup-teardown.Testsuite_K8Setup    ${CLUSTER_ID}
     #KubeEnv.Reinit_1_Node_Cluster
-    #Cleanup_Basic_Ccmts_Deployment_On_Cluster
+    Cleanup_Basic_Ccmts_Deployment_On_Cluster
     KubeEnv.Deploy_Etcd_Kafka_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
@@ -129,11 +128,11 @@ BasicCcmtsTeardown
 Setup_Hosts_Connections
     [Documentation]    Open and store two more SSH connections to master host, in them open
     ...    pod shells to client and server pod, parse their IP addresses and store them.
-    KubeEnvConnections.Open_CCMTS1_Connection
+    KubeEnvConnections.Open_CCMTS1_Connections
 
 Teardown_Hosts_Connections
     [Documentation]    Exit pod shells, close corresponding SSH connections.
-    KubeEnvConnections.Close_CCMTS1_Connection
+    KubeEnvConnections.Close_CCMTS1_Connections
 
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup

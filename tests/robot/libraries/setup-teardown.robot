@@ -81,7 +81,7 @@ Discard old results
 Log_All_K8_Ssh_Outputs
     [Documentation]    Call Log_\${machine}_Output for every cluster node.
     [Timeout]    ${SSH_LOG_OUTPUTS_TIMEOUT}
-    : FOR    ${index}    IN RANGE    1    ${KUBE_CLUSTER_${CLUSTER_ID}_NODES}+1
+    : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${CLUSTER_ID}_NODES}+1
     \    Log_K8_${VM_SSH_ALIAS_PREFIX}${index}_Output    
     
 Log All SSH Outputs
@@ -122,7 +122,7 @@ Get_K8_Machine_Status
     SshCommons.Execute_Command_And_Log    pwd
     SshCommons.Execute_Command_And_Log    df
     SshCommons.Execute_Command_And_Log    free
-    SshCommons.Execute_Command_And_Log    ifconfig -a
+    SshCommons.Execute_Command_And_Log    ip address
     SshCommons.Execute_Command_And_Log    ps aux
     SshCommons.Execute_Command_And_Log    export
     SshCommons.Execute_Command_And_Log    docker images
@@ -137,7 +137,7 @@ Create_Connections_To_Kube_Cluster
     : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${cluster_id}_NODES}+1
     \    SshCommons.Open_Ssh_Connection_Kube    ${VM_SSH_ALIAS_PREFIX}${index}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PSWD}
     \    SSHLibrary.Set_Client_Configuration    prompt=${K8_CLUSTER_${cluster_id}_VM_${index}_PROMPT}
-    \    Get_Machine_Status    ${VM_SSH_ALIAS_PREFIX}${index}
+    \    Get_K8_Machine_Status    ${VM_SSH_ALIAS_PREFIX}${index}
     
 Get Machine Status
     [Arguments]              ${machine}
