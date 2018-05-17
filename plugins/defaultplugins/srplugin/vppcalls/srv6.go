@@ -106,7 +106,7 @@ func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *
 	}(time.Now())
 
 	req := &sr.SrLocalsidAddDel{
-		IsDel:        boolToInt(deletion),
+		IsDel:        boolToUint(deletion),
 		LocalsidAddr: []byte(sidAddr),
 	}
 	if !deletion {
@@ -163,10 +163,10 @@ func (calls *srv6Calls) endFunction(localSID *srv6.LocalSID) string {
 func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
 	if localSID.BaseEndFunction != nil {
 		req.Behavior = BehaviorEnd
-		req.EndPsp = boolToInt(localSID.BaseEndFunction.Psp)
+		req.EndPsp = boolToUint(localSID.BaseEndFunction.Psp)
 	} else if localSID.EndFunctionX != nil {
 		req.Behavior = BehaviorX
-		req.EndPsp = boolToInt(localSID.EndFunctionX.Psp)
+		req.EndPsp = boolToUint(localSID.EndFunctionX.Psp)
 		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunctionX.OutgoingInterface)
 		if !exists {
 			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionX.OutgoingInterface)
@@ -179,7 +179,7 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 		req.NhAddr = []byte(nhAddr)
 	} else if localSID.EndFunctionT != nil {
 		req.Behavior = BehaviorT
-		req.EndPsp = boolToInt(localSID.EndFunctionT.Psp)
+		req.EndPsp = boolToUint(localSID.EndFunctionT.Psp)
 	} else if localSID.EndFunctionDX2 != nil {
 		req.Behavior = BehaviorDX2
 		req.VlanIndex = localSID.EndFunctionDX2.VlanTag
@@ -276,8 +276,8 @@ func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policy
 		Weight:    policySegment.Weight,
 		NSegments: segmentsCount,
 		Segments:  segments,
-		IsEncap:   boolToInt(policy.SrhEncapsulation),
-		Type:      boolToInt(policy.SprayBehaviour),
+		IsEncap:   boolToUint(policy.SrhEncapsulation),
+		Type:      boolToUint(policy.SprayBehaviour),
 		FibTable:  policy.FibTableID,
 	}
 	reply := &sr.SrPolicyAddReply{}
@@ -464,7 +464,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 		intIndex = interfaceSwIndex
 	}
 	req := &sr.SrSteeringAddDel{
-		IsDel:         boolToInt(delete),
+		IsDel:         boolToUint(delete),
 		TableID:       tableID,
 		BsidAddr:      bsidAddr,             // policy (to which we want to steer routing into) identified by binding sid (alternativelly it can be used SRPolicyIndex)
 		SrPolicyIndex: steering.PolicyIndex, // policy (to which we want to steer routing into) identified by policy index (alternativelly it can be used BsidAddr)
@@ -489,7 +489,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	return nil
 }
 
-func boolToInt(input bool) uint8 {
+func boolToUint(input bool) uint8 {
 	if input {
 		return uint8(1)
 	}

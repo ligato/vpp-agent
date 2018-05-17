@@ -485,8 +485,8 @@ func TestAddPolicy(t *testing.T) {
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr:  sidA,
 					FibTable:  10,
-					Type:      boolToInt(false),
-					IsEncap:   boolToInt(true),
+					Type:      boolToUint(false),
+					IsEncap:   boolToUint(true),
 					Weight:    1,
 					NSegments: 3,
 					Segments:  []sr.IPv6type{{Value: to16BytesArray(sidA)}, {Value: to16BytesArray(sidB)}, {Value: to16BytesArray(sidC)}},
@@ -761,7 +761,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TableID:     10,
 					TrafficType: vppcalls.SteerTypeIPv6,
@@ -783,7 +783,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TableID:     10,
 					TrafficType: vppcalls.SteerTypeIPv4,
@@ -804,7 +804,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TrafficType: vppcalls.SteerTypeL2,
 					SwIfIndex:   swIndexA,
@@ -916,7 +916,7 @@ func policySegment(weight uint32, sids ...srv6.SID) *srv6.PolicySegment {
 	}
 }
 
-func boolToInt(input bool) uint8 {
+func boolToUint(input bool) uint8 {
 	if input {
 		return uint8(1)
 	}
