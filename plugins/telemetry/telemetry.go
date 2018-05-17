@@ -39,7 +39,9 @@ const (
 
 const (
 	// Runtime
-	runtimeItemLabel = "item"
+	runtimeThreadLabel   = "thread"
+	runtimeThreadIDLabel = "threadID"
+	runtimeItemLabel     = "item"
 
 	runtimeCallsMetric          = "calls"
 	runtimeVectorsMetric        = "vectors"
@@ -96,8 +98,10 @@ type Deps struct {
 }
 
 type runtimeStats struct {
-	itemName string
-	metrics  map[string]prometheus.Gauge
+	threadName string
+	threadID   uint
+	itemName   string
+	metrics    map[string]prometheus.Gauge
 }
 
 type memoryStats struct {
@@ -135,7 +139,7 @@ func (p *Plugin) Init() error {
 			ConstLabels: prometheus.Labels{
 				agentLabel: p.ServiceLabel.GetAgentLabel(),
 			},
-		}, []string{runtimeItemLabel})
+		}, []string{runtimeItemLabel, runtimeThreadLabel, runtimeThreadIDLabel})
 
 	}
 
@@ -236,30 +240,36 @@ func (p *Plugin) AfterInit() error {
 				return
 			}
 
-			for _, item := range runtimeInfo.Items {
-				stats, ok := p.runtimeStats[item.Name]
-				if !ok {
-					stats = &runtimeStats{
-						itemName: item.Name,
-						metrics:  map[string]prometheus.Gauge{},
-					}
+			for _, thread := range runtimeInfo.Threads {
+				for _, item := range thread.Items {
+					stats, ok := p.runtimeStats[item.Name]
+					if !ok {
+						stats = &runtimeStats{
+							threadID:   thread.ID,
+							threadName: thread.Name,
+							itemName:   item.Name,
+							metrics:    map[string]prometheus.Gauge{},
+						}
 
-					// add gauges with corresponding labels into vectors
-					for k, vec := range p.runtimeGaugeVecs {
-						stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-							runtimeItemLabel: item.Name,
-						})
-						if err != nil {
-							p.Log.Error(err)
+						// add gauges with corresponding labels into vectors
+						for k, vec := range p.runtimeGaugeVecs {
+							stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+								runtimeItemLabel:     item.Name,
+								runtimeThreadLabel:   thread.Name,
+								runtimeThreadIDLabel: strconv.Itoa(int(thread.ID)),
+							})
+							if err != nil {
+								p.Log.Error(err)
+							}
 						}
 					}
-				}
 
-				stats.metrics[runtimeCallsMetric].Set(float64(item.Calls))
-				stats.metrics[runtimeVectorsMetric].Set(float64(item.Vectors))
-				stats.metrics[runtimeSuspendsMetric].Set(float64(item.Suspends))
-				stats.metrics[runtimeClocksMetric].Set(item.Clocks)
-				stats.metrics[runtimeVectorsPerCallMetric].Set(item.VectorsCall)
+					stats.metrics[runtimeCallsMetric].Set(float64(item.Calls))
+					stats.metrics[runtimeVectorsMetric].Set(float64(item.Vectors))
+					stats.metrics[runtimeSuspendsMetric].Set(float64(item.Suspends))
+					stats.metrics[runtimeClocksMetric].Set(item.Clocks)
+					stats.metrics[runtimeVectorsPerCallMetric].Set(item.VectorsPerCall)
+				}
 			}
 
 			// Update memory

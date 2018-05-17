@@ -164,19 +164,44 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 
 // RuntimeInfo contains values returned from 'show runtime'
 type RuntimeInfo struct {
-	Items []RuntimeItem `json:"items"`
+	Threads []RuntimeThread `json:"threads"`
+}
+
+// RuntimeThread represents single runtime thread
+type RuntimeThread struct {
+	ID                uint          `json:"id"`
+	Name              string        `json:"name"`
+	Time              float64       `json:"time"`
+	AvgVectorsPerNode float64       `json:"avg_vectors_per_node"`
+	LastMainLoops     uint64        `json:"last_main_loops"`
+	PerNode           float64       `json:"per_node"`
+	VectorRates       float64       `json:"vector_rates"`
+	In                float64       `json:"in"`
+	Out               float64       `json:"out"`
+	Drop              float64       `json:"drop"`
+	Punt              float64       `json:"punt"`
+	Items             []RuntimeItem `json:"items"`
 }
 
 // RuntimeItem represents single runtime item
 type RuntimeItem struct {
-	Name        string  `json:"name"`
-	State       string  `json:"state"`
-	Calls       uint64  `json:"calls"`
-	Vectors     uint64  `json:"vectors"`
-	Suspends    uint64  `json:"suspends"`
-	Clocks      float64 `json:"clocks"`
-	VectorsCall float64 `json:"vectors_call"`
+	Name           string  `json:"name"`
+	State          string  `json:"state"`
+	Calls          uint64  `json:"calls"`
+	Vectors        uint64  `json:"vectors"`
+	Suspends       uint64  `json:"suspends"`
+	Clocks         float64 `json:"clocks"`
+	VectorsPerCall float64 `json:"vectors_per_call"`
 }
+
+var (
+	runtimeRe = regexp.MustCompile(`(?:-+\n)?(?:Thread (\d+) (\w+)(?: \(lcore \d+\))?\n)?` +
+		`Time ([0-9\.e]+), average vectors/node ([0-9\.e]+), last (\d+) main loops ([0-9\.e]+) per node ([0-9\.e]+)\s+` +
+		`vector rates in ([0-9\.e]+), out ([0-9\.e]+), drop ([0-9\.e]+), punt ([0-9\.e]+)\n` +
+		`\s+Name\s+State\s+Calls\s+Vectors\s+Suspends\s+Clocks\s+Vectors/Call\s+` +
+		`((?:[\w-:\.]+\s+\w+(?:[ -]\w+)*\s+\d+\s+\d+\s+\d+\s+[0-9\.e]+\s+[0-9\.e]+\s+)+)`)
+	runtimeItemsRe = regexp.MustCompile(`([\w-:\.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9\.e]+)\s+([0-9\.e]+)\s+`)
+)
 
 // GetNodeCounters retrieves node counters info
 func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
@@ -185,35 +210,50 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 		return nil, err
 	}
 
-	var items []RuntimeItem
+	var threads []RuntimeThread
 
-	for _, line := range strings.Split(string(data), "\n") {
-		// TODO; use regexp instead of replacing
-		line = strings.Replace(line, "event wait", "event-wait", -1)
-		line = strings.Replace(line, "any wait", "any-wait", -1)
-
-		fields := strings.Fields(line)
-		if len(fields) == 7 {
-			if fields[0] == "Name" {
-				items = []RuntimeItem{}
-				continue
-			}
-			if items != nil {
-				items = append(items, RuntimeItem{
-					Name:        fields[0],
-					State:       fields[1],
-					Calls:       strToUint64(fields[2]),
-					Vectors:     strToUint64(fields[3]),
-					Suspends:    strToUint64(fields[4]),
-					Clocks:      strToFloat64(fields[5]),
-					VectorsCall: strToFloat64(fields[6]),
-				})
-			}
+	threadMatches := runtimeRe.FindAllStringSubmatch(string(data), -1)
+	for _, matches := range threadMatches {
+		fields := matches[1:]
+		if len(fields) != 12 {
+			return nil, fmt.Errorf("invalid runtime data for thread: %q", matches[0])
 		}
+		thread := RuntimeThread{
+			ID:                uint(strToUint64(fields[0])),
+			Name:              fields[1],
+			Time:              strToFloat64(fields[2]),
+			AvgVectorsPerNode: strToFloat64(fields[3]),
+			LastMainLoops:     strToUint64(fields[4]),
+			PerNode:           strToFloat64(fields[5]),
+			VectorRates:       strToFloat64(fields[6]),
+			In:                strToFloat64(fields[7]),
+			Out:               strToFloat64(fields[8]),
+			Drop:              strToFloat64(fields[9]),
+			Punt:              strToFloat64(fields[10]),
+		}
+
+		itemMatches := runtimeItemsRe.FindAllStringSubmatch(string(fields[11]), -1)
+		for _, matches := range itemMatches {
+			fields := matches[1:]
+			if len(fields) != 7 {
+				return nil, fmt.Errorf("invalid runtime data for thread item: %q", matches[0])
+			}
+			thread.Items = append(thread.Items, RuntimeItem{
+				Name:           fields[0],
+				State:          fields[1],
+				Calls:          strToUint64(fields[2]),
+				Vectors:        strToUint64(fields[3]),
+				Suspends:       strToUint64(fields[4]),
+				Clocks:         strToFloat64(fields[5]),
+				VectorsPerCall: strToFloat64(fields[6]),
+			})
+		}
+
+		threads = append(threads, thread)
 	}
 
 	info := &RuntimeInfo{
-		Items: items,
+		Threads: threads,
 	}
 
 	return info, nil
