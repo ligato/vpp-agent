@@ -112,13 +112,13 @@ func (s *suiteMemif) TC04() {
 	s.setupTestingFlavor(s.SetupDefault())
 	defer s.Teardown()
 
-	s.When.Put(func(put vppplugin.PutDSL) vppplugin.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSA(&IPsecSA20)
 	})
-	s.When.Put(func(put vppplugin.PutDSL) vppplugin.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSA(&IPsecSA10)
 	})
-	s.When.Put(func(put vppplugin.PutDSL) vppplugin.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSPD(&IPsecSPD1)
 	})
 	s.Then.ContainsIPSecSA(IPsecSA10.Name)
