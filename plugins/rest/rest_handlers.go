@@ -31,10 +31,10 @@ import (
 
 	aclvpp "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 // interfacesGetHandler - used to get list of all interfaces

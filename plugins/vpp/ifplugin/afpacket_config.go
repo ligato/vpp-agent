@@ -19,9 +19,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AFPacketConfigurator is used by InterfaceConfigurator to execute afpacket-specific management operations.

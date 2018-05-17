@@ -26,10 +26,10 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 )
 
 // L4Configurator runs in the background in its own goroutine where it watches for any changes

@@ -24,8 +24,8 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 )
 
 // AddBfdUDPSession adds new BFD session with authentication if available.

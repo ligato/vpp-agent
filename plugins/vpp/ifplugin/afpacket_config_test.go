@@ -25,9 +25,9 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	ap_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	if_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

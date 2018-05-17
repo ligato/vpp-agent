@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

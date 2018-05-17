@@ -19,8 +19,8 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 

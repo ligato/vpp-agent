@@ -48,10 +48,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes

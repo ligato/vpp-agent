@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

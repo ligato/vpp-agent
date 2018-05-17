@@ -11,15 +11,13 @@ import (
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
-	"github.com/ligato/vpp-agent/plugins/vppplugin"
-	rpcsvc "github.com/ligato/vpp-agent/plugins/vppplugin/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linux"
 	"github.com/ligato/vpp-agent/plugins/rest"
+	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	rpcsvc "github.com/ligato/vpp-agent/plugins/vpp/rpc"
-	"github.com/ligato/vpp-agent/plugins/telemetry"
-	)
+)
 
 // kafkaIfStateTopic is the topic where interface state changes are published.
 const kafkaIfStateTopic = "if_state"
@@ -57,8 +55,8 @@ type Flavor struct {
 	Linux linux.Plugin
 	VPP   vpp.Plugin
 
-	GRPCSvcPlugin rpcsvc.GRPCSvcPlugin
-	RESTAPIPlugin rest.Plugin
+	GRPCSvcPlugin   rpcsvc.GRPCSvcPlugin
+	RESTAPIPlugin   rest.Plugin
 	TelemetryPlugin telemetry.Plugin
 
 	injected bool

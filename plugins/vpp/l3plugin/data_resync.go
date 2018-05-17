@@ -17,8 +17,8 @@ package l3plugin
 import (
 	"github.com/ligato/cn-infra/logging/measure"
 	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // Resync configures the VPP static routes.

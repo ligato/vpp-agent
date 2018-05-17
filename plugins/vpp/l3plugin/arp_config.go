@@ -24,10 +24,10 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 var msgCompatibilityARP = []govppapi.Message{

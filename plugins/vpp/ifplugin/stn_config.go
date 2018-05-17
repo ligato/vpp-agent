@@ -30,10 +30,10 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	modelStn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
+	modelStn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
 // StnConfigurator runs in the background in its own goroutine where it watches for any changes

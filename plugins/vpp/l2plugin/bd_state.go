@@ -24,9 +24,9 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state.

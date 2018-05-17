@@ -22,9 +22,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // SortedRoutes type is used to implement sort interface for slice of Route.

@@ -27,9 +27,9 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )

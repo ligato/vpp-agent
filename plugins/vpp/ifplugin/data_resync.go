@@ -21,12 +21,12 @@ import (
 	"strings"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 )
 
 const ifTempName = "temp-if-name"

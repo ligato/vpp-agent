@@ -30,9 +30,9 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
