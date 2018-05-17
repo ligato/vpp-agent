@@ -45,9 +45,9 @@ const (
 // Constants for steering type
 // Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
 const (
-	SteerTypeL2 uint8 = iota*2 + 2
-	SteerTypeIPv4
-	SteerTypeIPv6
+	SteerTypeL2   uint8 = 2
+	SteerTypeIPv4 uint8 = 4
+	SteerTypeIPv6 uint8 = 6
 )
 
 // Constants for operation of SR policy modify binary API method
