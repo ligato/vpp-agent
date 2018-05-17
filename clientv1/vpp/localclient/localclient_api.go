@@ -26,7 +26,7 @@ const PluginID core.PluginName = "DefaultVppPlugins_LOCAL_CLIENT"
 
 // DataResyncRequest allows creating a RESYNC request using convenient RESYNC
 // DSL and sending it locally through go channels (i.e. without using Data Store).
-func DataResyncRequest(caller core.PluginName) vppplugin.DataResyncDSL {
+func DataResyncRequest(caller core.PluginName) vppclient.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync),
 		nil /*no need to list anything*/)
 }
@@ -34,6 +34,6 @@ func DataResyncRequest(caller core.PluginName) vppplugin.DataResyncDSL {
 // DataChangeRequest allows creating Data Change request(s) using convenient
 // Data Change DSL and sending it locally through go channels (i.e. without using
 // Data Store).
-func DataChangeRequest(caller core.PluginName) vppplugin.DataChangeDSL {
+func DataChangeRequest(caller core.PluginName) vppclient.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(local.NewProtoTxn(local.Get().PropagateChanges))
 }

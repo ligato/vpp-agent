@@ -1,3 +1,3 @@
-// Package vppplugin contains clients for local and remote management
+// Package vppclient contains clients for local and remote management
 // of VPP configuration via default plugins.
-package vppplugin
+package vppclient

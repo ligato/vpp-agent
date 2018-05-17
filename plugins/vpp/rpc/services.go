@@ -129,7 +129,7 @@ func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rp
 // Common method which puts or deletes data of every configuration type separately
 func processRequest(ctx context.Context, data *rpc.DataRequest, request interface{}) error {
 	switch r := request.(type) {
-	case linux.PutDSL:
+	case linuxclient.PutDSL:
 		for _, aclItem := range data.AccessLists {
 			r.ACL(aclItem)
 		}
@@ -190,7 +190,7 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, rtItem := range data.LinuxRoutes {
 			r.LinuxRoute(rtItem)
 		}
-	case linux.DeleteDSL:
+	case linuxclient.DeleteDSL:
 		for _, aclItem := range data.AccessLists {
 			r.ACL(aclItem.AclName)
 		}
@@ -251,7 +251,7 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, rtItem := range data.LinuxRoutes {
 			r.LinuxRoute(rtItem.Name)
 		}
-	case linux.DataResyncDSL:
+	case linuxclient.DataResyncDSL:
 		for _, aclItem := range data.AccessLists {
 			r.ACL(aclItem)
 		}

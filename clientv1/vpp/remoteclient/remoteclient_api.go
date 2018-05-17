@@ -27,26 +27,26 @@ import (
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys
 // prior to RESYNC - it is handled by DataResyncDSL.
-func DataResyncRequestDB(broker keyval.ProtoBroker) vppplugin.DataResyncDSL {
+func DataResyncRequestDB(broker keyval.ProtoBroker) vppclient.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(broker.NewTxn(), broker.ListKeys)
 }
 
 // DataChangeRequestDB allows createing Data Change requests using convenient
 // Data Change DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
-func DataChangeRequestDB(broker keyval.ProtoBroker) vppplugin.DataChangeDSL {
+func DataChangeRequestDB(broker keyval.ProtoBroker) vppclient.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(broker.NewTxn())
 }
 
 // DataResyncRequestGRPC allows sending RESYNC requests conveniently.
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys during RESYNC.
-func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) vppplugin.DataResyncDSL {
+func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) vppclient.DataResyncDSL {
 	return grpcadapter.NewDataResyncDSL(client)
 }
 
 // DataChangeRequestGRPC allows sending Data Change requests conveniently (even without directly using Broker).
 // User of the API does not need to be aware of keys.
-func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppplugin.DataChangeDSL {
+func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppclient.DataChangeDSL {
 	return grpcadapter.NewDataChangeDSL(client)
 }

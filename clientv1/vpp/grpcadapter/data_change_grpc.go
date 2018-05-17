@@ -57,141 +57,141 @@ type DeleteDSL struct {
 }
 
 // Interface creates or updates the network interface.
-func (dsl *PutDSL) Interface(val *interfaces.Interfaces_Interface) vppplugin.PutDSL {
+func (dsl *PutDSL) Interface(val *interfaces.Interfaces_Interface) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // BfdSession creates or updates the bidirectional forwarding detection session.
-func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) vppplugin.PutDSL {
+func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // BfdAuthKeys creates or updates the bidirectional forwarding detection key.
-func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) vppplugin.PutDSL {
+func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // BfdEchoFunction creates or updates the bidirectional forwarding detection echo function.
-func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppplugin.PutDSL {
+func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // BD creates or updates the Bridge Domain.
-func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppplugin.PutDSL {
+func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // BDFIB deletes request for the L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(val *l2.FibTable_FibEntry) vppplugin.PutDSL {
+func (dsl *PutDSL) BDFIB(val *l2.FibTable_FibEntry) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // XConnect creates or updates the Cross Connect.
-func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppplugin.PutDSL {
+func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // StaticRoute creates or updates the L3 Static Route.
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) vppplugin.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // ACL creates or updates request for the Access Control List.
-func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) vppplugin.PutDSL {
+func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // L4Features creates or updates the request for the L4Features.
-func (dsl *PutDSL) L4Features(val *l4.L4Features) vppplugin.PutDSL {
+func (dsl *PutDSL) L4Features(val *l4.L4Features) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // AppNamespace creates or updates the request for the Application Namespaces List.
-func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppplugin.PutDSL {
+func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // Arp adds a request to create or update VPP L3 ARP entry.
-func (dsl *PutDSL) Arp(val *l3.ArpTable_ArpEntry) vppplugin.PutDSL {
+func (dsl *PutDSL) Arp(val *l3.ArpTable_ArpEntry) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
-func (dsl *PutDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) vppplugin.PutDSL {
+func (dsl *PutDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-func (dsl *PutDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) vppplugin.PutDSL {
+func (dsl *PutDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // StnRule adds a request to create or update STN rule.
-func (dsl *PutDSL) StnRule(val *stn.STN_Rule) vppplugin.PutDSL {
+func (dsl *PutDSL) StnRule(val *stn.STN_Rule) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // NAT44Global adds a request to set global configuration for NAT44
-func (dsl *PutDSL) NAT44Global(val *nat.Nat44Global) vppplugin.PutDSL {
+func (dsl *PutDSL) NAT44Global(val *nat.Nat44Global) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // NAT44DNat adds a request to create a new DNAT configuration
-func (dsl *PutDSL) NAT44DNat(val *nat.Nat44DNat_DNatConfig) vppplugin.PutDSL {
+func (dsl *PutDSL) NAT44DNat(val *nat.Nat44DNat_DNatConfig) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // IPSecSA adds request to create a new Security Association
-func (dsl *PutDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppplugin.PutDSL {
+func (dsl *PutDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
-func (dsl *PutDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppplugin.PutDSL {
+func (dsl *PutDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
 
 // Put enables creating Interface/BD...
-func (dsl *DataChangeDSL) Put() vppplugin.PutDSL {
+func (dsl *DataChangeDSL) Put() vppclient.PutDSL {
 	return &PutDSL{dsl}
 }
 
 // Delete enables deleting Interface/BD...
-func (dsl *DataChangeDSL) Delete() vppplugin.DeleteDSL {
+func (dsl *DataChangeDSL) Delete() vppclient.DeleteDSL {
 	return &DeleteDSL{dsl}
 }
 
 // Delete enables deleting Interface/BD...
-func (dsl *PutDSL) Delete() vppplugin.DeleteDSL {
+func (dsl *PutDSL) Delete() vppclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
 }
 
 // Send propagates changes to the channels.
-func (dsl *PutDSL) Send() vppplugin.Reply {
+func (dsl *PutDSL) Send() vppclient.Reply {
 	return dsl.parent.Send()
 }
 
 // Interface deletes request for the network interface.
-func (dsl *DeleteDSL) Interface(interfaceName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &interfaces.Interfaces_Interface{
 		Name: interfaceName,
 	})
@@ -200,7 +200,7 @@ func (dsl *DeleteDSL) Interface(interfaceName string) vppplugin.DeleteDSL {
 
 // BfdSession adds a request to delete an existing bidirectional forwarding
 // detection session.
-func (dsl *DeleteDSL) BfdSession(ifName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) BfdSession(ifName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &bfd.SingleHopBFD_Session{
 		Interface: ifName,
 	})
@@ -209,7 +209,7 @@ func (dsl *DeleteDSL) BfdSession(ifName string) vppplugin.DeleteDSL {
 
 // BfdAuthKeys adds a request to delete an existing bidirectional forwarding
 // detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &bfd.SingleHopBFD_Key{
 		Name: bfdKeyID,
 	})
@@ -218,7 +218,7 @@ func (dsl *DeleteDSL) BfdAuthKeys(bfdKeyID string) vppplugin.DeleteDSL {
 
 // BfdEchoFunction adds a request to delete an existing bidirectional forwarding
 // detection echo function.
-func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &bfd.SingleHopBFD_EchoFunction{
 		Name: bfdEchoName,
 	})
@@ -226,7 +226,7 @@ func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) vppplugin.DeleteDSL {
 }
 
 // BD deletes request for the Bridge Domain.
-func (dsl *DeleteDSL) BD(bdName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) BD(bdName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l2.BridgeDomains_BridgeDomain{
 		Name: bdName,
 	})
@@ -234,7 +234,7 @@ func (dsl *DeleteDSL) BD(bdName string) vppplugin.DeleteDSL {
 }
 
 // BDFIB deletes request for the L2 Forwarding Information Base.
-func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l2.FibTable_FibEntry{
 		PhysAddress:  mac,
 		BridgeDomain: bdName,
@@ -243,7 +243,7 @@ func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppplugin.DeleteDSL {
 }
 
 // XConnect deletes the Cross Connect.
-func (dsl *DeleteDSL) XConnect(rxIfName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) XConnect(rxIfName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l2.XConnectPairs_XConnectPair{
 		ReceiveInterface: rxIfName,
 	})
@@ -251,7 +251,7 @@ func (dsl *DeleteDSL) XConnect(rxIfName string) vppplugin.DeleteDSL {
 }
 
 // StaticRoute deletes the L3 Static Route.
-func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l3.StaticRoutes_Route{
 		VrfId:       vrf,
 		DstIpAddr:   dstAddr,
@@ -261,7 +261,7 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string
 }
 
 // ACL deletes request for Access Control List.
-func (dsl *DeleteDSL) ACL(aclName string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &acl.AccessLists_Acl{
 		AclName: aclName,
 	})
@@ -269,13 +269,13 @@ func (dsl *DeleteDSL) ACL(aclName string) vppplugin.DeleteDSL {
 }
 
 // L4Features deletes request for the L4Features.
-func (dsl *DeleteDSL) L4Features() vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) L4Features() vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l4.L4Features{})
 	return dsl
 }
 
 // AppNamespace delets request for the Application Namespaces List.
-func (dsl *DeleteDSL) AppNamespace(id string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) AppNamespace(id string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l4.AppNamespaces_AppNamespace{
 		NamespaceId: id,
 	})
@@ -283,7 +283,7 @@ func (dsl *DeleteDSL) AppNamespace(id string) vppplugin.DeleteDSL {
 }
 
 // Arp adds a request to delete an existing VPP L3 ARP entry.
-func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l3.ArpTable_ArpEntry{
 		Interface: ifaceName,
 		IpAddress: ipAddr,
@@ -292,7 +292,7 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppplugin.DeleteDSL {
 }
 
 // ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
-func (dsl *DeleteDSL) ProxyArpInterfaces(label string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) ProxyArpInterfaces(label string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l3.ProxyArpInterfaces_InterfaceList{
 		Label: label,
 	})
@@ -300,7 +300,7 @@ func (dsl *DeleteDSL) ProxyArpInterfaces(label string) vppplugin.DeleteDSL {
 }
 
 // ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
-func (dsl *DeleteDSL) ProxyArpRanges(label string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) ProxyArpRanges(label string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &l3.ProxyArpRanges_RangeList{
 		Label: label,
 	})
@@ -308,7 +308,7 @@ func (dsl *DeleteDSL) ProxyArpRanges(label string) vppplugin.DeleteDSL {
 }
 
 // StnRule adds request to delete Stn rule.
-func (dsl *DeleteDSL) StnRule(name string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) StnRule(name string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &stn.STN_Rule{
 		RuleName: name,
 	})
@@ -316,13 +316,13 @@ func (dsl *DeleteDSL) StnRule(name string) vppplugin.DeleteDSL {
 }
 
 // NAT44Global adds a request to remove global configuration for NAT44
-func (dsl *DeleteDSL) NAT44Global() vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &nat.Nat44Global{})
 	return dsl
 }
 
 // NAT44DNat adds a request to delete a DNAT configuration
-func (dsl *DeleteDSL) NAT44DNat(label string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) NAT44DNat(label string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &nat.Nat44DNat_DNatConfig{
 		Label: label,
 	})
@@ -330,7 +330,7 @@ func (dsl *DeleteDSL) NAT44DNat(label string) vppplugin.DeleteDSL {
 }
 
 // IPSecSA adds request to delete a Security Association
-func (dsl *DeleteDSL) IPSecSA(name string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) IPSecSA(name string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &ipsec.SecurityAssociations_SA{
 		Name: name,
 	})
@@ -338,7 +338,7 @@ func (dsl *DeleteDSL) IPSecSA(name string) vppplugin.DeleteDSL {
 }
 
 // IPSecSPD adds request to delete a Security Policy Database
-func (dsl *DeleteDSL) IPSecSPD(name string) vppplugin.DeleteDSL {
+func (dsl *DeleteDSL) IPSecSPD(name string) vppclient.DeleteDSL {
 	dsl.parent.del = append(dsl.parent.del, &ipsec.SecurityPolicyDatabases_SPD{
 		Name: name,
 	})
@@ -346,17 +346,17 @@ func (dsl *DeleteDSL) IPSecSPD(name string) vppplugin.DeleteDSL {
 }
 
 // Put enables creating Interface/BD...
-func (dsl *DeleteDSL) Put() vppplugin.PutDSL {
+func (dsl *DeleteDSL) Put() vppclient.PutDSL {
 	return &PutDSL{dsl.parent}
 }
 
 // Send propagates changes to the channels.
-func (dsl *DeleteDSL) Send() vppplugin.Reply {
+func (dsl *DeleteDSL) Send() vppclient.Reply {
 	return dsl.parent.Send()
 }
 
 // Send propagates changes to the channels.
-func (dsl *DataChangeDSL) Send() vppplugin.Reply {
+func (dsl *DataChangeDSL) Send() vppclient.Reply {
 	var wasErr error
 
 	// Prepare requests with data todo can be scalable

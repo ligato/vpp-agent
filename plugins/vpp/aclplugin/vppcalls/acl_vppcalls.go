@@ -60,7 +60,7 @@ var AclMessages = []govppapi.Message{
 }
 
 // GetAclPluginVersion returns version of the VPP ACL plugin
-func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) (error, uint32, uint32) {
+func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -69,10 +69,10 @@ func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) 
 	reply := &acl_api.ACLPluginGetVersionReply{}
 	// Does not return retval
 	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return fmt.Errorf("failed to get VPP ACL plugin version: %v", err), 0, 0
+		return 0, 0, fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
 	}
 
-	return nil, reply.Minor, reply.Major
+	return reply.Minor, reply.Major, nil
 }
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.

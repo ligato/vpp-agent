@@ -68,7 +68,7 @@ cn-infra v1.1
   * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
-  * [vpp-agent-grpc](cmd/vpp-agent) (removed in 1.4 release) now compiles properly
+  * [vpp-agent-grpc](cmd/vpp-agent) (removed in 1.4 release, since then it is a part of the vpp-agent) now compiles properly
     together with other commands.
 
 ### Dependencies

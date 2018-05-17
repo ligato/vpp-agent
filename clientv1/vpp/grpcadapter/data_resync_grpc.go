@@ -43,122 +43,122 @@ type DataResyncDSL struct {
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) Interface(val *interfaces.Interfaces_Interface) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // BfdSession adds BFD session to the RESYNC request.
-func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // BfdAuthKeys adds BFD key to the RESYNC request.
-func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // BfdEchoFunction adds BFD echo function to the RESYNC request.
-func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // BD adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // XConnect adds Cross Connect to the RESYNC request.
-func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
-func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // ACL adds Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) ACL(val *acl.AccessLists_Acl) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // L4Features adds L4Features to the RESYNC request.
-func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // AppNamespace adds Application Namespace to the RESYNC request.
-func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // Arp adds VPP L3 ARP to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
-func (dsl *DataResyncDSL) NAT44Global(val *nat.Nat44Global) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) NAT44Global(val *nat.Nat44Global) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(val *nat.Nat44DNat_DNatConfig) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) NAT44DNat(val *nat.Nat44DNat_DNatConfig) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // IPSecSA adds request to create a new Security Association
-func (dsl *DataResyncDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
-func (dsl *DataResyncDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppplugin.DataResyncDSL {
+func (dsl *DataResyncDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }
 
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
-func (dsl *DataResyncDSL) Send() vppplugin.Reply {
+func (dsl *DataResyncDSL) Send() vppclient.Reply {
 	var wasErr error
 
 	// Prepare requests with data todo can be scalable
