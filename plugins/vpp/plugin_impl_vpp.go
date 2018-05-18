@@ -307,7 +307,7 @@ func (plugin *Plugin) Init() error {
 		plugin.Deps.PublishStatistics = publishers
 		if config.Mtu != 0 {
 			plugin.ifMtu = config.Mtu
-			plugin.Log.Info("Default MTU set to %v", plugin.ifMtu)
+			plugin.Log.Infof("Default MTU set to %v", plugin.ifMtu)
 		}
 		plugin.enableStopwatch = config.Stopwatch
 		if plugin.enableStopwatch {

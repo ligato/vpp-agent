@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"strconv"
 )
 
 // Protocol types that can occur in ACLs
@@ -60,7 +61,7 @@ var AclMessages = []govppapi.Message{
 }
 
 // GetAclPluginVersion returns version of the VPP ACL plugin
-func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) (uint32, uint32, error) {
+func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) (string, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -69,10 +70,10 @@ func GetAclPluginVersion(vppChannel *api.Channel, stopwatch *measure.Stopwatch) 
 	reply := &acl_api.ACLPluginGetVersionReply{}
 	// Does not return retval
 	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return 0, 0, fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
+		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
 	}
 
-	return reply.Minor, reply.Major, nil
+	return strconv.Itoa(int(reply.Major)) + "." + strconv.Itoa(int(reply.Minor)), nil
 }
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
