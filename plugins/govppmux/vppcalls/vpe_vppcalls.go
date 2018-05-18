@@ -186,18 +186,18 @@ type RuntimeInfo struct {
 
 // RuntimeThread represents single runtime thread
 type RuntimeThread struct {
-	ID                uint          `json:"id"`
-	Name              string        `json:"name"`
-	Time              float64       `json:"time"`
-	AvgVectorsPerNode float64       `json:"avg_vectors_per_node"`
-	LastMainLoops     uint64        `json:"last_main_loops"`
-	PerNode           float64       `json:"per_node"`
-	VectorRates       float64       `json:"vector_rates"`
-	In                float64       `json:"in"`
-	Out               float64       `json:"out"`
-	Drop              float64       `json:"drop"`
-	Punt              float64       `json:"punt"`
-	Items             []RuntimeItem `json:"items"`
+	ID                  uint          `json:"id"`
+	Name                string        `json:"name"`
+	Time                float64       `json:"time"`
+	AvgVectorsPerNode   float64       `json:"avg_vectors_per_node"`
+	LastMainLoops       uint64        `json:"last_main_loops"`
+	VectorsPerMainLoop  float64       `json:"vectors_per_main_loop"`
+	VectorLengthPerNode float64       `json:"vector_length_per_node"`
+	VectorRatesIn       float64       `json:"vector_rates_in"`
+	VectorRatesOut      float64       `json:"vector_rates_out"`
+	VectorRatesDrop     float64       `json:"vector_rates_drop"`
+	VectorRatesPunt     float64       `json:"vector_rates_punt"`
+	Items               []RuntimeItem `json:"items"`
 }
 
 // RuntimeItem represents single runtime item
@@ -237,17 +237,17 @@ func GetRuntimeInfo(vppChan VPPChannel) (*RuntimeInfo, error) {
 			return nil, fmt.Errorf("invalid runtime data for thread: %q", matches[0])
 		}
 		thread := RuntimeThread{
-			ID:                uint(strToUint64(fields[0])),
-			Name:              fields[1],
-			Time:              strToFloat64(fields[2]),
-			AvgVectorsPerNode: strToFloat64(fields[3]),
-			LastMainLoops:     strToUint64(fields[4]),
-			PerNode:           strToFloat64(fields[5]),
-			VectorRates:       strToFloat64(fields[6]),
-			In:                strToFloat64(fields[7]),
-			Out:               strToFloat64(fields[8]),
-			Drop:              strToFloat64(fields[9]),
-			Punt:              strToFloat64(fields[10]),
+			ID:                  uint(strToUint64(fields[0])),
+			Name:                fields[1],
+			Time:                strToFloat64(fields[2]),
+			AvgVectorsPerNode:   strToFloat64(fields[3]),
+			LastMainLoops:       strToUint64(fields[4]),
+			VectorsPerMainLoop:  strToFloat64(fields[5]),
+			VectorLengthPerNode: strToFloat64(fields[6]),
+			VectorRatesIn:       strToFloat64(fields[7]),
+			VectorRatesOut:      strToFloat64(fields[8]),
+			VectorRatesDrop:     strToFloat64(fields[9]),
+			VectorRatesPunt:     strToFloat64(fields[10]),
 		}
 
 		itemMatches := runtimeItemsRe.FindAllStringSubmatch(string(fields[11]), -1)
