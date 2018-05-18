@@ -70,7 +70,7 @@ func (f *FlavorVppLocal) Inject() bool {
 	}
 	f.FlavorLocal.Inject()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp-plugin")
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linux-plugin", local.WithConf())
 	f.Linux.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}
 	f.VPP.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{local_sync.Get()}}

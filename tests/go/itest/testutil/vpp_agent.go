@@ -138,7 +138,7 @@ func (f *VppOnlyTestingFlavor) Inject() bool {
 	f.FlavorLocal.Inject()
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("vpp-plugin")
 	//nil: f.VPP.Deps.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 	f.VPP.Deps.Watch = localsync.Get()

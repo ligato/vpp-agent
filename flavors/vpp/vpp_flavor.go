@@ -71,7 +71,7 @@ func (f *Flavor) Inject() bool {
 
 	f.injectEmbedded()
 
-	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp-plugin", local.WithConf())
+	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
 	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("vpp-plugin", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
@@ -122,11 +122,11 @@ func (f *Flavor) Inject() bool {
 	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
 	f.GRPCSvcPlugin.Deps.GRPCServer = &f.FlavorRPC.GRPC
 
-	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("rest-plugin")
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("rest")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
 
-	f.TelemetryPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("telemetry-plugin")
+	f.TelemetryPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("telemetry")
 	f.TelemetryPlugin.Deps.Prometheus = &f.FlavorRPC.Prometheus
 	f.TelemetryPlugin.Deps.GoVppmux = &f.GoVPP
 
