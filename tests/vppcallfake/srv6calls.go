@@ -20,8 +20,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
@@ -113,8 +111,7 @@ type AddSteeringFuncCall struct{}
 type RemoveSteeringFuncCall struct{}
 
 // AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-func (fake *SRv6Calls) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(AddLocalSidFuncCall); ok {
 		return fake.failError
 	}
@@ -123,7 +120,7 @@ func (fake *SRv6Calls) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIf
 }
 
 // DeleteLocalSid delets local sid given by <sidAddr> in VPP
-func (fake *SRv6Calls) DeleteLocalSid(sidAddr net.IP, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) DeleteLocalSid(sidAddr net.IP, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(DeleteLocalSidFuncCall); ok {
 		return fake.failError
 	}
@@ -132,7 +129,7 @@ func (fake *SRv6Calls) DeleteLocalSid(sidAddr net.IP, log logging.Logger, vppCha
 }
 
 // SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
-func (fake *SRv6Calls) SetEncapsSourceAddress(address string, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) SetEncapsSourceAddress(address string, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(SetEncapsSourceAddressFuncCall); ok {
 		return fake.failError
 	}
@@ -140,8 +137,7 @@ func (fake *SRv6Calls) SetEncapsSourceAddress(address string, log logging.Logger
 }
 
 // AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
-func (fake *SRv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
-	log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(AddPolicyFuncCall); ok {
 		return fake.failError
 	}
@@ -155,7 +151,7 @@ func (fake *SRv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policyS
 }
 
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
-func (fake *SRv6Calls) DeletePolicy(bindingSid net.IP, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) DeletePolicy(bindingSid net.IP, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(DeletePolicyFuncCall); ok {
 		return fake.failError
 	}
@@ -169,8 +165,7 @@ func (fake *SRv6Calls) DeletePolicy(bindingSid net.IP, log logging.Logger, vppCh
 }
 
 // AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
-func (fake *SRv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
-	log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(AddPolicySegmentFuncCall); ok {
 		return fake.failError
 	}
@@ -185,7 +180,7 @@ func (fake *SRv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, 
 
 // DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
 func (fake *SRv6Calls) DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
-	segmentIndex uint32, log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+	segmentIndex uint32, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(DeletePolicySegmentFuncCall); ok {
 		return fake.failError
 	}
@@ -209,8 +204,7 @@ func removeSegment(segments []*srv6.PolicySegment, segment *srv6.PolicySegment) 
 }
 
 // AddSteering sets in VPP steering into SRv6 policy.
-func (fake *SRv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(AddSteeringFuncCall); ok {
 		return fake.failError
 	}
@@ -230,8 +224,7 @@ func (fake *SRv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.S
 }
 
 // RemoveSteering removes in VPP steering into SRv6 policy.
-func (fake *SRv6Calls) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) error {
+func (fake *SRv6Calls) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan vppcalls.VPPChannel) error {
 	if _, ok := fake.failCall.(RemoveSteeringFuncCall); ok {
 		return fake.failError
 	}

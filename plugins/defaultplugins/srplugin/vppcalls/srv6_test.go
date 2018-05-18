@@ -329,8 +329,8 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// prepare reply
 			if td.FailInVPP {
 				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
@@ -338,7 +338,7 @@ func TestAddLocalSID(t *testing.T) {
 				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
 			}
 			// make the call
-			err := vppcalls.NewSRv6Calls().AddLocalSid(sidA, td.Input, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.AddLocalSid(sidA, td.Input, swIfIndex, ctx.MockChannel)
 			// verify result
 			if td.ExpectFailure {
 				Expect(err).Should(HaveOccurred())
@@ -385,20 +385,19 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// data and prepare case
-			calls := vppcalls.NewSRv6Calls()
 			localsid := &srv6.LocalSID{
 				FibTableID: 10,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
 			}
-			calls.AddLocalSid(td.Sid, localsid, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			vppCalls.AddLocalSid(td.Sid, localsid, swIfIndex, ctx.MockChannel)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
-			err := calls.DeleteLocalSid(td.Sid, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.DeleteLocalSid(td.Sid, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -446,11 +445,11 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppcalls.NewSRv6Calls().SetEncapsSourceAddress(td.Address, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.SetEncapsSourceAddress(td.Address, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -515,11 +514,11 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppcalls.NewSRv6Calls().AddPolicy(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.AddPolicy(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -558,16 +557,15 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// data and prepare case
-			calls := vppcalls.NewSRv6Calls()
 			policy := policy(0, true, true)
 			segment := policySegment(1, sidA, sidB, sidC)
-			calls.AddPolicy(td.BSID, policy, segment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			vppCalls.AddPolicy(td.BSID, policy, segment, ctx.MockChannel)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
-			err := calls.DeletePolicy(td.BSID, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.DeletePolicy(td.BSID, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -630,11 +628,11 @@ func TestAddPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppcalls.NewSRv6Calls().AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -702,11 +700,11 @@ func TestDeletePolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppcalls.NewSRv6Calls().DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+			err := vppCalls.DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, ctx.MockChannel)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -857,19 +855,29 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			ctx := vppcallmock.SetupTestCtx(t)
-			defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
 			var err error
 			if removal {
-				err = vppcalls.NewSRv6Calls().RemoveSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+				err = vppCalls.RemoveSteering(td.Steering, swIfIndex, ctx.MockChannel)
 			} else {
-				err = vppcalls.NewSRv6Calls().AddSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
+				err = vppCalls.AddSteering(td.Steering, swIfIndex, ctx.MockChannel)
 			}
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
+}
+
+func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6Calls) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	vppCalls := vppcalls.NewSRv6Calls(logrus.DefaultLogger(), nil)
+	return ctx, vppCalls
+}
+
+func teardown(ctx *vppcallmock.TestCtx) {
+	ctx.TeardownTestCtx()
 }
 
 func sid(str string) srv6.SID {

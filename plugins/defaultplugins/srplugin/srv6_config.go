@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -45,7 +44,6 @@ type SRv6Configurator struct {
 	GoVppmux    govppmux.API
 	SwIfIndexes ifaceidx.SwIfIndex // SwIfIndexes from default plugins
 	VppCalls    vppcalls.SRv6Calls
-	Stopwatch   *measure.Stopwatch // timer used to measure and store time // TODO support this in vpp calls
 
 	// channels
 	vppChannel vppcalls.VPPChannel // channel to communicate with VPP
@@ -95,12 +93,12 @@ func (plugin *SRv6Configurator) Close() error {
 
 // AddLocalSID adds new Local SID into VPP using VPP's binary api
 func (plugin *SRv6Configurator) AddLocalSID(sid srv6.SID, value *srv6.LocalSID) error {
-	return plugin.VppCalls.AddLocalSid(sid, value, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.AddLocalSid(sid, value, plugin.SwIfIndexes, plugin.vppChannel)
 }
 
 // DeleteLocalSID removes Local SID from VPP using VPP's binary api
 func (plugin *SRv6Configurator) DeleteLocalSID(sid srv6.SID, value *srv6.LocalSID) error {
-	return plugin.VppCalls.DeleteLocalSid(sid, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.DeleteLocalSid(sid, plugin.vppChannel)
 }
 
 // ModifyLocalSID modifies Local SID from <prevValue> to <value> in VPP using VPP's binary api
@@ -127,7 +125,7 @@ func (plugin *SRv6Configurator) AddPolicy(bsid srv6.SID, policy *srv6.Policy) er
 
 	plugin.addPolicyToIndexes(bsid)
 	plugin.addSegmentToIndexes(bsid, segmentNames[0])
-	err := plugin.VppCalls.AddPolicy(bsid, policy, segments[0], plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	err := plugin.VppCalls.AddPolicy(bsid, policy, segments[0], plugin.vppChannel)
 	if err != nil {
 		return fmt.Errorf("can't write policy (%v) with first segment (%v): %v", bsid, segments[0].Segments, err)
 	}
@@ -183,7 +181,7 @@ func (plugin *SRv6Configurator) RemovePolicy(bsid srv6.SID, policy *srv6.Policy)
 			plugin.policySegmentIndexSeq.delete(index)
 		}
 	}
-	return plugin.VppCalls.DeletePolicy(bsid, plugin.Log, plugin.vppChannel, plugin.Stopwatch) // expecting that policy delete will also delete policy segments in vpp
+	return plugin.VppCalls.DeletePolicy(bsid, plugin.vppChannel) // expecting that policy delete will also delete policy segments in vpp
 }
 
 // ModifyPolicy modifies policy in VPP using VPP's binary api
@@ -231,7 +229,7 @@ func (plugin *SRv6Configurator) AddPolicySegment(bsid srv6.SID, segmentName stri
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.addSegmentToIndexes(bsid, segmentName)
-	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.vppChannel)
 }
 
 // RemovePolicySegment removes policy segment <policySegment> with name <segmentName> from policy with binding sid <bsid>
@@ -258,7 +256,7 @@ func (plugin *SRv6Configurator) RemovePolicySegment(bsid srv6.SID, segmentName s
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.policySegmentIndexSeq.delete(index)
-	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.vppChannel)
 }
 
 // ModifyPolicySegment modifies existing policy segment with name <segmentName> from <prevValue> to <value> in policy with binding sid <bsid>.
@@ -328,13 +326,13 @@ func (plugin *SRv6Configurator) AddSteering(name string, steering *srv6.Steering
 		return nil
 	}
 
-	return plugin.VppCalls.AddSteering(steering, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.AddSteering(steering, plugin.SwIfIndexes, plugin.vppChannel)
 }
 
 // RemoveSteering removes steering from VPP using VPP's binary api
 func (plugin *SRv6Configurator) RemoveSteering(name string, steering *srv6.Steering) error {
 	plugin.steeringCache.Delete(name)
-	return plugin.VppCalls.RemoveSteering(steering, plugin.SwIfIndexes, plugin.Log, plugin.vppChannel, plugin.Stopwatch)
+	return plugin.VppCalls.RemoveSteering(steering, plugin.SwIfIndexes, plugin.vppChannel)
 }
 
 // ModifySteering modifies existing steering in VPP using VPP's binary api

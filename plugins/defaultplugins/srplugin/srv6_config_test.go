@@ -22,7 +22,6 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
@@ -903,13 +902,11 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *vppcallfake.SRv6C
 		"sw_if_indexes", ifaceidx.IndexMetadata))
 	// Configurator
 	fakeVPPCalls := vppcallfake.NewSRv6Calls()
-	stopwatch := measure.NewStopwatch("SRConfigurator-Test", log)
 	configurator := &srplugin.SRv6Configurator{
 		Log:         log,
 		GoVppmux:    connection,
 		SwIfIndexes: swIndex,
 		VppCalls:    fakeVPPCalls,
-		Stopwatch:   stopwatch,
 	}
 	err = configurator.Init()
 	Expect(err).To(BeNil())
