@@ -1,8 +1,10 @@
 # Telemetry Plugin
 
 The `telemetry` plugin is a core Agent Plugin for exporting telemetry
-statistics for Prometheus. Statistics are published via registry path
-`/metrics` and updates every 5 seconds.
+statistics from VPP for Prometheus.
+
+Statistics are published via registry path `/vpp` on port `9191` and
+updated every 5 seconds.
 
 ### Exported data
 
