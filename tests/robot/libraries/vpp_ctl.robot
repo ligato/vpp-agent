@@ -662,62 +662,62 @@ vpp_ctl: Delete STN Rule
     [Return]    ${out}
 
 vpp_ctl: Put Local SID
-    [Arguments]    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
     [Documentation]    Add Local SID config json to etcd.
-    Log Many    ${node}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    Log Many    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${sidAddress}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${localsidName}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Delete Local SID
-    [Arguments]    ${node}    ${sidAddress}
+    [Arguments]    ${node}    ${localsidName}
     [Documentation]    Delete Local SID config json from etcd.
-    Log         ${node}
-    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${sidAddress}
+    Log Many    ${node}    ${localsidName}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${localsidName}
     ${out}=     vpp_ctl: Delete key    ${uri}
     Log Many    ${out}
     [Return]    ${out}
 
 vpp_ctl: Put SRv6 Policy
-    [Arguments]    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
     [Documentation]    Add SRv6 Policy config json to etcd.
-    Log Many    ${node}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    Log Many    ${node}    ${name}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${bsid}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${name}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Delete SRv6 Policy
-    [Arguments]    ${node}    ${bsid}
+    [Arguments]    ${node}    ${name}
     [Documentation]    Delete SRv6 policy config json from etcd.
-    Log Many    ${node}    ${bsid}
-    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${bsid}
+    Log Many    ${node}    ${name}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${name}
     ${out}=     vpp_ctl: Delete key    ${uri}
     Log Many    ${out}
     [Return]    ${out}
 
 vpp_ctl: Put SRv6 Policy Segment
-    [Arguments]    ${node}    ${name}    ${policyBSID}    ${weight}    ${segmentlist}
+    [Arguments]    ${node}    ${name}    ${policyName}    ${policyBSID}    ${weight}    ${segmentlist}
     [Documentation]    Add SRv6 Policy Segment config json to etcd.
-    Log Many    ${node}    ${name}    ${policyBSID}    ${weight}    ${segmentlist}
+    Log Many    ${node}    ${name}    ${policyName}    ${policyBSID}    ${weight}    ${segmentlist}
     length should be      ${segmentlist}                3
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segment.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyBSID}/segment/${name}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyName}/segment/${name}
     Log Many              ${data}                       ${uri}
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Delete SRv6 Policy Segment
-    [Arguments]    ${node}    ${name}    ${policyBSID}
+    [Arguments]    ${node}    ${name}    ${policyName}
     [Documentation]    Delete SRv6 policy segment config json from etcd.
-    Log Many    ${node}    ${name}    ${policyBSID}
-    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyBSID}/segment/${name}
+    Log Many    ${node}    ${name}    ${policyName}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyName}/segment/${name}
     ${out}=     vpp_ctl: Delete key    ${uri}
     Log Many    ${out}
     [Return]    ${out}
