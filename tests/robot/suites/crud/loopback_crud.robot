@@ -26,6 +26,7 @@ ${IP_LOOP1_2}=      21.20.1.1
 ${IP_LOOP2}=        20.20.1.2
 ${PREFIX}=          24
 ${MTU}=             4800
+${SYNC_SLEEP}=      12s
 
 *** Test Cases ***
 Configure Environment
@@ -38,6 +39,7 @@ Show Interfaces Before Setup
 Add Loopback1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_LOOP1}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=${NAME_LOOP1}    mac=${MAC_LOOP1}    ip=${IP_LOOP1}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
+    Sleep    ${SYNC_SLEEP}
 
 Check Loopback1 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_LOOP1}
@@ -46,6 +48,7 @@ Check Loopback1 Is Created
 Add Loopback2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_LOOP2}
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1     name=${NAME_LOOP2}    mac=${MAC_LOOP2}    ip=${IP_LOOP2}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
+    Sleep    ${SYNC_SLEEP}
 
 Check Loopback2 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_LOOP2}
@@ -56,6 +59,7 @@ Check Loopback1 Is Still Configured
 
 Update Loopback1
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1     name=${NAME_LOOP1}    mac=${MAC_LOOP1_2}    ip=${IP_LOOP1_2}    prefix=${PREFIX}    mtu=${MTU}    enabled=true
+    Sleep    ${SYNC_SLEEP}
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MAC_LOOP1}
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_LOOP1_2}
     vat_term: Check Loopback Interface State    agent_vpp_1    ${NAME_LOOP1}    enabled=1     mac=${MAC_LOOP1_2}    mtu=${MTU}    ipv4=${IP_LOOP1_2}/${PREFIX}
