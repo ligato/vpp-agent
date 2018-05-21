@@ -43,6 +43,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"github.com/namsral/flag"
@@ -140,6 +142,9 @@ type Plugin struct {
 	l4Configurator      *l4plugin.L4Configurator
 	namespaceIndexes    nsidx.AppNsIndexRW
 	notConfAppNsIndexes nsidx.AppNsIndexRW
+
+	// SR plugin fields
+	srv6Configurator *srplugin.SRv6Configurator
 
 	// Error handler
 	errorIndexes idxvpp.NameToIdxRW
@@ -365,6 +370,9 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if err = plugin.initL4(ctx); err != nil {
+		return err
+	}
+	if err = plugin.initSR(ctx); err != nil {
 		return err
 	}
 
@@ -731,6 +739,32 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	return nil
 }
 
+func (plugin *Plugin) initSR(ctx context.Context) (err error) {
+	plugin.Log.Infof("Init SR plugin")
+
+	// logger
+	srLogger := plugin.Log.NewLogger("-sr-plugin")
+
+	var stopwatch *measure.Stopwatch
+	if plugin.enableStopwatch {
+		stopwatch = measure.NewStopwatch("SRConfigurator", srLogger)
+	}
+	// configuring configurators
+	plugin.srv6Configurator = &srplugin.SRv6Configurator{
+		Log:         srLogger,
+		GoVppmux:    plugin.GoVppmux,
+		SwIfIndexes: plugin.swIfIndexes,
+		VppCalls:    vppcalls.NewSRv6Calls(srLogger, stopwatch),
+	}
+	// Init SR plugin
+	if err := plugin.srv6Configurator.Init(); err != nil {
+		return err
+	}
+
+	plugin.Log.Debug("SRConfigurator Initialized")
+	return nil
+}
+
 func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 	config := &DPConfig{}
 
@@ -793,7 +827,7 @@ func (plugin *Plugin) Close() error {
 		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
 		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
 		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.proxyArpConfigurator,
-		plugin.natConfigurator, plugin.ipsecConfigurator)
+		plugin.natConfigurator, plugin.ipsecConfigurator, plugin.srv6Configurator)
 
 	return err
 }

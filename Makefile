@@ -81,6 +81,8 @@ test:
 	go test ./plugins/defaultplugins/l2plugin/vppcalls
 	go test ./plugins/defaultplugins/l2plugin/vppdump
 	go test ./plugins/defaultplugins/rpc
+	go test ./plugins/defaultplugins/srplugin
+	go test ./plugins/defaultplugins/srplugin/vppcalls
 
 # Get coverage report tools
 get-covtools:
@@ -101,6 +103,8 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin/vppcalls
 	@echo "=> merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
@@ -115,6 +119,8 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \
 			${COVER_DIR}coverage_rpc.out  \
+			${COVER_DIR}coverage_srplugin.out  \
+			${COVER_DIR}coverage_srplugin_vppcalls.out  \
 		> ${COVER_DIR}coverage.out
 	@echo "=> coverage data generated into ${COVER_DIR}coverage.out"
 
@@ -142,6 +148,7 @@ generate: get-generators
 	cd plugins/defaultplugins/l2plugin && go generate
 	cd plugins/defaultplugins/l3plugin && go generate
 	cd plugins/defaultplugins/l4plugin && go generate
+	cd plugins/defaultplugins/srplugin && go generate
 	cd plugins/defaultplugins/rpc && go generate
 	cd plugins/linuxplugin/ifplugin && go generate
 	cd plugins/linuxplugin/l3plugin && go generate
@@ -162,6 +169,7 @@ generate: get-generators
 	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
 	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
+	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
