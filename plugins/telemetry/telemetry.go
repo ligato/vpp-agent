@@ -24,6 +24,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 	updatePeriod = time.Second * 5
 
 	// Registry path for telemetry metrics
-	registryPath = prom.DefaultRegistry
+	registryPath = "/vpp"
 
 	// Metrics label used for agent label
 	agentLabel = "agent"
@@ -119,6 +120,12 @@ type buffersStats struct {
 
 // Init initializes Telemetry Plugin
 func (p *Plugin) Init() error {
+	// Register '/vpp' registry path
+	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
+	if err != nil {
+		return err
+	}
+
 	// Runtime metrics
 	p.runtimeGaugeVecs = make(map[string]*prometheus.GaugeVec)
 	p.runtimeStats = make(map[string]*runtimeStats)
@@ -218,7 +225,6 @@ func (p *Plugin) Init() error {
 	}
 
 	// Create GoVPP channel
-	var err error
 	p.vppCh, err = p.GoVppmux.NewAPIChannel()
 	if err != nil {
 		p.Log.Errorf("Error creating channel: %v", err)

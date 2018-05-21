@@ -12,7 +12,7 @@ RUN apt-get update \
      iproute2 iputils-ping inetutils-traceroute \
      # vpp requirements
      openssl python libapr1 libnuma1 \
-     libmbedcrypto0 libmbedtls10 libmbedx509-0 \
+     libmbedcrypto0 libmbedtls10 libmbedx509-0 ca-certificates \
      # other
      supervisor ipsec-tools \
  && rm -rf /var/lib/apt/lists/*
