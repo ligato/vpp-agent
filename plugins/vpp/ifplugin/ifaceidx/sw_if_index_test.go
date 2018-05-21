@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -29,7 +29,7 @@ func testInitialization(t *testing.T, toInterfaces map[string][]string) (idxvpp.
 	RegisterTestingT(t)
 
 	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "sw_if_index_test", ifaceidx.IndexMetadata)
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
 	index := ifaceidx.NewSwIfIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 

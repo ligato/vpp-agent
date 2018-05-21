@@ -1,7 +1,7 @@
 # SR plugin
 
 The `srplugin` is a Core Agent Plugin designed to configure Segment routing for IPv6 (SRv6) in the VPP.
-Configuration managed by this plugin is modelled by [srv6 proto file](../common/model/srv6/srv6.proto).
+Configuration managed by this plugin is modelled by [srv6 proto file](../model/srv6/srv6.proto).
 
 All configuration must be stored in ETCD using the srv6 key prefix:
 

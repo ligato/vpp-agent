@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
 // Names of secondary indexes of SteeringCache
@@ -38,10 +37,10 @@ type SteeringCache struct {
 }
 
 // NewSteeringCache creates instance of SteeringCache
-func NewSteeringCache(logger logging.Logger, owner core.PluginName) *SteeringCache {
+func NewSteeringCache(logger logging.Logger) *SteeringCache {
 	return &SteeringCache{
 		log: logger,
-		internal: mem.NewNamedMapping(logger, owner, "steering-cache", func(item interface{}) map[string][]string {
+		internal: mem.NewNamedMapping(logger, "steering-cache", func(item interface{}) map[string][]string {
 			res := map[string][]string{}
 			if steering, ok := item.(*srv6.Steering); ok {
 				if len(strings.Trim(steering.PolicyBsid, " ")) > 0 {

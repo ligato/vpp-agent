@@ -17,11 +17,10 @@ package cache
 import (
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
 // Names of secondary indexes of PolicySegmentCache
@@ -43,10 +42,10 @@ type segmentCacheItem struct {
 }
 
 // NewPolicySegmentCache creates instance of PolicySegmentCache
-func NewPolicySegmentCache(logger logging.Logger, owner core.PluginName) *PolicySegmentCache {
+func NewPolicySegmentCache(logger logging.Logger) *PolicySegmentCache {
 	return &PolicySegmentCache{
 		log: logger,
-		internal: mem.NewNamedMapping(logger, owner, "policy-segment-cache", func(item interface{}) map[string][]string {
+		internal: mem.NewNamedMapping(logger, "policy-segment-cache", func(item interface{}) map[string][]string {
 			res := map[string][]string{}
 			if sci, ok := item.(segmentCacheItem); ok {
 				res[policyIndex] = []string{sci.policyBSID.String()}

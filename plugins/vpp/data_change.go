@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 

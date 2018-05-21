@@ -44,11 +44,8 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	ifaceLinux "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/namsral/flag"
 )
 

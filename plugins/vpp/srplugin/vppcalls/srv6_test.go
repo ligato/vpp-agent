@@ -22,11 +22,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/sr"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -46,8 +46,7 @@ var (
 	nextHopIPv4 = net.ParseIP("1.2.3.4")
 )
 
-var swIfIndex = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-dummy-plugin",
-	"sw_if_indexes", ifaceidx.IndexMetadata))
+var swIfIndex = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_indexes", ifaceidx.IndexMetadata))
 
 func init() {
 	swIfIndex.RegisterName(ifaceA, swIndexA, nil)

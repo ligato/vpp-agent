@@ -12,31 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump_test
+package vppdump
 
 import (
 	"testing"
+
+	"net"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/ip"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tap"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/tapv2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vxlan"
-	interfaces2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	interfaces2 "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"net"
 )
 
 type vppReplyMock struct {
-	Id uint16
-	Ping bool
+	Id      uint16
+	Ping    bool
 	Message govppapi.Message
 }
 
@@ -84,7 +84,7 @@ func TestDumpInterfacesFullySilent(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -96,13 +96,13 @@ func TestDumpInterfacesSilentSwInterfaceGetTableReply(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -114,18 +114,18 @@ func TestDumpInterfacesSilentIpAddressDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -137,23 +137,23 @@ func TestDumpInterfacesSilentMemifSocketFilenameDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -165,28 +165,28 @@ func TestDumpInterfacesSilentMemifDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -198,33 +198,33 @@ func TestDumpInterfacesSilentSwInterfaceTapDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -236,38 +236,38 @@ func TestDumpInterfacesSilentSwInterfaceTapV2Details(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -279,43 +279,43 @@ func TestDumpInterfacesSilentVxlanTunnelDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
@@ -328,49 +328,49 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
 	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("vxlan1"),
+				InterfaceName: []byte("vxlan1"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
+			Id:   1013,
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
-				IsIpv6: 1,
+				IsIpv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,
@@ -378,7 +378,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -393,52 +393,52 @@ func TestDumpInterfacesHost(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("host-localhost"),
+				InterfaceName: []byte("host-localhost"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
-			Ping: true,
+			Id:      1013,
+			Ping:    true,
 			Message: &vxlan.VxlanTunnelDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -452,26 +452,26 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("memif1"),
+				InterfaceName: []byte("memif1"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
+			Id:   1005,
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
 				SocketID:       1,
@@ -479,7 +479,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Id: 1007,
+			Id:   1007,
 			Ping: true,
 			Message: &memif.MemifDetails{
 				ID:         2,
@@ -492,23 +492,23 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
-			Ping: true,
+			Id:      1013,
+			Ping:    true,
 			Message: &vxlan.VxlanTunnelDetails{},
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -529,9 +529,9 @@ func TestDumpInterfacesFull(t *testing.T) {
 	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
 	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
 				InterfaceName:   []byte("memif1"),
@@ -543,7 +543,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1001,
+			Id:   1001,
 			Ping: false,
 			Message: &interfaces.SwInterfaceGetTableReply{
 				Retval: 0,
@@ -551,12 +551,12 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
+			Id:   1005,
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
 				SocketID:       1,
@@ -564,7 +564,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1007,
+			Id:   1007,
 			Ping: true,
 			Message: &memif.MemifDetails{
 				ID:         2,
@@ -577,7 +577,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1009,
+			Id:   1009,
 			Ping: true,
 			Message: &tap.SwInterfaceTapDetails{
 				SwIfIndex: 0,
@@ -585,7 +585,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1011,
+			Id:   1011,
 			Ping: true,
 			Message: &tapv2.SwInterfaceTapV2Details{
 				SwIfIndex:  0,
@@ -593,7 +593,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1013,
+			Id:   1013,
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
 				SwIfIndex:  0,
@@ -603,7 +603,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 		},
 	}))
 
-	intfs, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
@@ -644,7 +644,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	result, err := vppdump.DumpMemifSocketDetails(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	result, err := DumpMemifSocketDetails(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 

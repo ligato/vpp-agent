@@ -103,8 +103,8 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/vpp/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/vpp/l2plugin/vppdump
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/vpp/rpc
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin/vppcalls
 	@echo "=> merging coverage results"
 	gocovmerge \
 			${COVER_DIR}coverage_scenario.out \
@@ -148,7 +148,7 @@ generate: get-generators
 	cd plugins/vpp/l2plugin && go generate
 	cd plugins/vpp/l3plugin && go generate
 	cd plugins/vpp/l4plugin && go generate
-	cd plugins/defaultplugins/srplugin && go generate
+	cd plugins/vpp/srplugin && go generate
 	cd plugins/vpp/rpc && go generate
 	cd plugins/linux/ifplugin && go generate
 	cd plugins/linux/l3plugin && go generate
@@ -169,7 +169,7 @@ generate: get-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
+	cd plugins/vpp/common/bin_api/sr && pkgreflect
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...

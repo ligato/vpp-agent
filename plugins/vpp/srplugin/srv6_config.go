@@ -27,11 +27,11 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/cache"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/cache"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 )
 
 // TODO check all SID usages for comparisons that can fail due to upper/lower case mismatch (i.e. strings "A::E" and "a::e" are not equal but for our purposes it is the same SID and should be considered equal)
@@ -71,16 +71,16 @@ func (plugin *SRv6Configurator) Init() (err error) {
 	}
 
 	// Create caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.Log, "srv6-configurator")
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log, "srv6-configurator")
-	plugin.steeringCache = cache.NewSteeringCache(plugin.Log, "srv6-configurator")
+	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
 	plugin.createdPolicies = make(map[string]struct{})
 
 	// Create indexes
 	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "srv6-configurator", "policy-segment-indexes", nil)
+	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-segment-indexes", nil)
 	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "srv6-configurator", "policy-indexes", nil)
+	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-indexes", nil)
 
 	return
 }
