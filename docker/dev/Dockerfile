@@ -19,6 +19,17 @@ RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test \
  && ln -s g++-7 g++ \
  && rm -rf /var/lib/apt/lists/*
 
+# build & install Protobuf
+RUN git clone --depth=1 https://github.com/google/protobuf.git \
+ && cd protobuf \
+ && ./autogen.sh \
+ && ./configure \
+ && make -j4 \
+ && make install \
+ && ldconfig \
+ && cd .. \
+ && rm -rf protobuf
+
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
@@ -56,17 +67,6 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
  && chmod -R 777 "$GOPATH"
-
-# build & install Protobuf & gogo protobuf compiler
-RUN git clone --depth=1 https://github.com/google/protobuf.git \
- && cd protobuf \
- && ./autogen.sh \
- && ./configure \
- && make -j4 \
- && make install \
- && ldconfig \
- && cd .. \
- && rm -rf protobuf
 
 ARG VERSION
 ARG COMMIT
