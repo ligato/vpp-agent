@@ -1,4 +1,6 @@
-.git
 *.md
 LICENSE
 examples/
+cmd/agentctl/agentctl
+cmd/vpp-agent/vpp-agent
+cmd/vpp-agent-ctl/vpp-agent-ctl

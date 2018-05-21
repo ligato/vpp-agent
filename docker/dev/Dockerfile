@@ -52,10 +52,12 @@ RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
-ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # build & install Protobuf & gogo protobuf compiler
-RUN git clone https://github.com/google/protobuf.git \
+RUN git clone --depth=1 https://github.com/google/protobuf.git \
  && cd protobuf \
  && ./autogen.sh \
  && ./configure \
@@ -66,14 +68,20 @@ RUN git clone https://github.com/google/protobuf.git \
  && rm -rf protobuf
 
 # copy & build agent
-COPY . /root/go/src/github.com/ligato/vpp-agent
-RUN cd /root/go/src/github.com/ligato/vpp-agent \
+COPY . $GOPATH/src/github.com/ligato/vpp-agent
+
+RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
  && make install
 
-#$WORKDIR /opt/vpp-agent/dev
-
 # copy configs
-COPY docker/dev/etcd.conf docker/dev/kafka.conf docker/dev/govpp.conf docker/dev/vppplugin.conf docker/dev/linuxplugin.conf docker/dev/logs.conf ./
+COPY \
+    docker/dev/etcd.conf \
+    docker/dev/kafka.conf \
+    docker/dev/govpp.conf \
+    docker/dev/vppplugin.conf \
+    docker/dev/linuxplugin.conf \
+    docker/dev/logs.conf \
+ ./
 COPY docker/dev/vpp.conf /etc/vpp/vpp.conf
 COPY docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
 
