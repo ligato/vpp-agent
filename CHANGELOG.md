@@ -93,7 +93,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 
 ## Docker Images
   * VPP can be build and run in release or debug mode.
-  Read more information in the [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/docker/dev_vpp_agent/README.md).
+  Read more information in the [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/docker/dev/README.md).
   * Production image is now smaller by roughly 40% (229MB).
 
 ## Bugfix
@@ -135,7 +135,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
   * VPP compilation now skips building of Java/C++ APIs,
     this saves build time and final image size.
   * Development image now runs VPP in debug mode with
-    various debug options added in [VPP config file](docker/dev_vpp_agent/vpp.conf).
+    various debug options added in [VPP config file](docker/dev/vpp.conf).
 
 ## Bugfix
 - Fixed interface assignment in ACLs

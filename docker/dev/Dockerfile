@@ -52,7 +52,7 @@ RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
-ENV PATH /usr/local/go/bin:$PATH
+ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
 
 # build & install Protobuf & gogo protobuf compiler
 RUN git clone https://github.com/google/protobuf.git \
@@ -65,21 +65,22 @@ RUN git clone https://github.com/google/protobuf.git \
  && cd .. \
  && rm -rf protobuf
 
-ARG AGENT_COMMIT
+# copy & build agent
+COPY . /root/go/src/github.com/ligato/vpp-agent
+RUN cd /root/go/src/github.com/ligato/vpp-agent \
+ && make install
 
-# copy and execute agent build script
-COPY build-agent.sh .
-RUN ./build-agent.sh ${AGENT_COMMIT}
+#$WORKDIR /opt/vpp-agent/dev
 
 # copy configs
-COPY etcd.conf kafka.conf govpp.conf vppplugin.conf linuxplugin.conf logs.conf ./
-COPY vpp.conf /etc/vpp/vpp.conf
-COPY supervisord.conf /etc/supervisord/supervisord.conf
+COPY docker/dev/etcd.conf docker/dev/kafka.conf docker/dev/govpp.conf docker/dev/vppplugin.conf docker/dev/linuxplugin.conf docker/dev/logs.conf ./
+COPY docker/dev/vpp.conf /etc/vpp/vpp.conf
+COPY docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
 
 # copy scripts
-COPY runvpp.sh /usr/bin/runvpp
-COPY agent_start.py /usr/bin/agent_start.py
-COPY supervisord_kill.py /usr/bin/supervisord_kill.py
+COPY docker/dev/runvpp.sh /usr/bin/runvpp
+COPY docker/dev/agent_start.py /usr/bin/agent_start.py
+COPY docker/dev/supervisord_kill.py /usr/bin/supervisord_kill.py
 
 WORKDIR /root/
 
