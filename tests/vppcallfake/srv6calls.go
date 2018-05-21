@@ -208,8 +208,8 @@ func (fake *SRv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.S
 	if _, ok := fake.failCall.(AddSteeringFuncCall); ok {
 		return fake.failError
 	}
-	bsidStr := steering.PolicyBSID
-	if len(strings.Trim(steering.PolicyBSID, " ")) == 0 { // policy defined by index
+	bsidStr := steering.PolicyBsid
+	if len(strings.Trim(steering.PolicyBsid, " ")) == 0 { // policy defined by index
 		var exists bool
 		bsidStr, exists = fake.policiesIdxs[steering.PolicyIndex]
 		if !exists {

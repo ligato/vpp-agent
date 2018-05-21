@@ -114,7 +114,7 @@ func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *
 		LocalsidAddr: []byte(sidAddr),
 	}
 	if !deletion {
-		req.FibTable = localSID.FibTableID // where to install localsid entry
+		req.FibTable = localSID.FibTableId // where to install localsid entry
 		if err := calls.writeEndFunction(req, sidAddr, localSID, swIfIndex); err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *
 
 func (calls *srv6Calls) fibTableID(localSID *srv6.LocalSID) string {
 	if localSID != nil {
-		return string(localSID.FibTableID)
+		return string(localSID.FibTableId)
 	}
 	return "<nil>"
 }
@@ -146,19 +146,19 @@ func (calls *srv6Calls) endFunction(localSID *srv6.LocalSID) string {
 		return "<nil>"
 	} else if localSID.BaseEndFunction != nil {
 		return fmt.Sprintf("End{psp: %v}", localSID.BaseEndFunction.Psp)
-	} else if localSID.EndFunctionX != nil {
-		return fmt.Sprintf("X{psp: %v, OutgoingInterface: %v, NextHop: %v}", localSID.EndFunctionX.Psp, localSID.EndFunctionX.OutgoingInterface, localSID.EndFunctionX.NextHop)
-	} else if localSID.EndFunctionT != nil {
-		return fmt.Sprintf("T{psp: %v}", localSID.EndFunctionT.Psp)
-	} else if localSID.EndFunctionDX2 != nil {
-		return fmt.Sprintf("DX2{VlanTag: %v, OutgoingInterface: %v, NextHop: %v}", localSID.EndFunctionDX2.VlanTag, localSID.EndFunctionDX2.OutgoingInterface, localSID.EndFunctionDX2.NextHop)
-	} else if localSID.EndFunctionDX4 != nil {
-		return fmt.Sprintf("DX4{OutgoingInterface: %v, NextHop: %v}", localSID.EndFunctionDX4.OutgoingInterface, localSID.EndFunctionDX4.NextHop)
-	} else if localSID.EndFunctionDX6 != nil {
-		return fmt.Sprintf("DX6{OutgoingInterface: %v, NextHop: %v}", localSID.EndFunctionDX6.OutgoingInterface, localSID.EndFunctionDX6.NextHop)
-	} else if localSID.EndFunctionDT4 != nil {
+	} else if localSID.EndFunction_X != nil {
+		return fmt.Sprintf("X{psp: %v, OutgoingInterface: %v, NextHop: %v}", localSID.EndFunction_X.Psp, localSID.EndFunction_X.OutgoingInterface, localSID.EndFunction_X.NextHop)
+	} else if localSID.EndFunction_T != nil {
+		return fmt.Sprintf("T{psp: %v}", localSID.EndFunction_T.Psp)
+	} else if localSID.EndFunction_DX2 != nil {
+		return fmt.Sprintf("DX2{VlanTag: %v, OutgoingInterface: %v, NextHop: %v}", localSID.EndFunction_DX2.VlanTag, localSID.EndFunction_DX2.OutgoingInterface, localSID.EndFunction_DX2.NextHop)
+	} else if localSID.EndFunction_DX4 != nil {
+		return fmt.Sprintf("DX4{OutgoingInterface: %v, NextHop: %v}", localSID.EndFunction_DX4.OutgoingInterface, localSID.EndFunction_DX4.NextHop)
+	} else if localSID.EndFunction_DX6 != nil {
+		return fmt.Sprintf("DX6{OutgoingInterface: %v, NextHop: %v}", localSID.EndFunction_DX6.OutgoingInterface, localSID.EndFunction_DX6.NextHop)
+	} else if localSID.EndFunction_DT4 != nil {
 		return fmt.Sprint("DT4")
-	} else if localSID.EndFunctionDT6 != nil {
+	} else if localSID.EndFunction_DT6 != nil {
 		return fmt.Sprint("DT6")
 	}
 	return "unknown end function"
@@ -168,65 +168,65 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 	if localSID.BaseEndFunction != nil {
 		req.Behavior = BehaviorEnd
 		req.EndPsp = boolToUint(localSID.BaseEndFunction.Psp)
-	} else if localSID.EndFunctionX != nil {
+	} else if localSID.EndFunction_X != nil {
 		req.Behavior = BehaviorX
-		req.EndPsp = boolToUint(localSID.EndFunctionX.Psp)
-		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunctionX.OutgoingInterface)
+		req.EndPsp = boolToUint(localSID.EndFunction_X.Psp)
+		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_X.OutgoingInterface)
 		if !exists {
-			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionX.OutgoingInterface)
+			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_X.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunctionX.NextHop)
+		nhAddr, err := parseIPv6(localSID.EndFunction_X.NextHop)
 		if err != nil {
 			return err
 		}
 		req.NhAddr = []byte(nhAddr)
-	} else if localSID.EndFunctionT != nil {
+	} else if localSID.EndFunction_T != nil {
 		req.Behavior = BehaviorT
-		req.EndPsp = boolToUint(localSID.EndFunctionT.Psp)
-	} else if localSID.EndFunctionDX2 != nil {
+		req.EndPsp = boolToUint(localSID.EndFunction_T.Psp)
+	} else if localSID.EndFunction_DX2 != nil {
 		req.Behavior = BehaviorDX2
-		req.VlanIndex = localSID.EndFunctionDX2.VlanTag
-		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunctionDX2.OutgoingInterface)
+		req.VlanIndex = localSID.EndFunction_DX2.VlanTag
+		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX2.OutgoingInterface)
 		if !exists {
-			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionDX2.OutgoingInterface)
+			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_DX2.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunctionDX2.NextHop)
+		nhAddr, err := parseIPv6(localSID.EndFunction_DX2.NextHop)
 		if err != nil {
 			return err
 		}
 		req.NhAddr = []byte(nhAddr)
-	} else if localSID.EndFunctionDX4 != nil {
+	} else if localSID.EndFunction_DX4 != nil {
 		req.Behavior = BehaviorDX4
-		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunctionDX4.OutgoingInterface)
+		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX4.OutgoingInterface)
 		if !exists {
-			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionDX4.OutgoingInterface)
+			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_DX4.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunctionDX4.NextHop) // parses also IPv4
+		nhAddr, err := parseIPv6(localSID.EndFunction_DX4.NextHop) // parses also IPv4
 		if err != nil {
 			return err
 		}
 		if nhAddr.To4() == nil {
-			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", localSID.EndFunctionDX4.NextHop)
+			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", localSID.EndFunction_DX4.NextHop)
 		}
 		req.NhAddr = []byte(nhAddr)
-	} else if localSID.EndFunctionDX6 != nil {
+	} else if localSID.EndFunction_DX6 != nil {
 		req.Behavior = BehaviorDX6
-		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunctionDX6.OutgoingInterface)
+		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX6.OutgoingInterface)
 		if !exists {
-			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunctionDX6.OutgoingInterface)
+			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_DX6.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunctionDX6.NextHop)
+		nhAddr, err := parseIPv6(localSID.EndFunction_DX6.NextHop)
 		if err != nil {
 			return err
 		}
 		req.NhAddr = []byte(nhAddr)
-	} else if localSID.EndFunctionDT4 != nil {
+	} else if localSID.EndFunction_DT4 != nil {
 		req.Behavior = BehaviorDT4
-	} else if localSID.EndFunctionDT6 != nil {
+	} else if localSID.EndFunction_DT6 != nil {
 		req.Behavior = BehaviorDT6
 	} else {
 		return fmt.Errorf("End function not set. Please configure end function for local SID %v ", sidAddr)
@@ -281,7 +281,7 @@ func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policy
 		Segments:  segments,
 		IsEncap:   boolToUint(policy.SrhEncapsulation),
 		Type:      boolToUint(policy.SprayBehaviour),
-		FibTable:  policy.FibTableID,
+		FibTable:  policy.FibTableId,
 	}
 	reply := &sr.SrPolicyAddReply{}
 
@@ -362,7 +362,7 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 		Weight:    policySegment.Weight,
 		NSegments: segmentsCount,
 		Segments:  segments,
-		FibTable:  policy.FibTableID,
+		FibTable:  policy.FibTableId,
 	}
 	if operation == DeleteSRList || operation == ModifyWeightOfSRList {
 		req.SlIndex = segmentIndex
@@ -422,18 +422,18 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	// logging info about operation with steering
 	if steering.L3Traffic != nil {
 		calls.log.Debugf("%v steering for l3 traffic with destination %v to SR policy (binding SID %v, policy index %v)",
-			operationProgressing, steering.L3Traffic.PrefixAddress, steering.PolicyBSID, steering.PolicyIndex)
+			operationProgressing, steering.L3Traffic.PrefixAddress, steering.PolicyBsid, steering.PolicyIndex)
 	} else {
 		calls.log.Debugf("%v steering for l2 traffic from interface %v to SR policy (binding SID %v, policy index %v)",
-			operationProgressing, steering.L2Traffic.InterfaceName, steering.PolicyBSID, steering.PolicyIndex)
+			operationProgressing, steering.L2Traffic.InterfaceName, steering.PolicyBsid, steering.PolicyIndex)
 	}
 
 	// converting policy reference
 	bsidAddr := make([]byte, 0)
-	if len(strings.Trim(steering.PolicyBSID, " ")) > 0 {
-		bsid, err := parseIPv6(steering.PolicyBSID)
+	if len(strings.Trim(steering.PolicyBsid, " ")) > 0 {
+		bsid, err := parseIPv6(steering.PolicyBsid)
 		if err != nil {
-			return fmt.Errorf("can't parse binding SID %q to IP address: %v ", steering.PolicyBSID, err)
+			return fmt.Errorf("can't parse binding SID %q to IP address: %v ", steering.PolicyBsid, err)
 		}
 		bsidAddr = []byte(bsid)
 	}
@@ -452,7 +452,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 		if ip.To4() != nil { // IPv4 address
 			steerType = SteerTypeIPv4
 		}
-		tableID = steering.L3Traffic.FibTableID
+		tableID = steering.L3Traffic.FibTableId
 		prefixAddr = []byte(ip.To16())
 		ms, _ := ipnet.Mask.Size()
 		maskWidth = uint32(ms)

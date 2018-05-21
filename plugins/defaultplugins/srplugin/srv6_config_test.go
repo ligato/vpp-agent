@@ -84,11 +84,11 @@ func TestAddLocalSID(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			sid := sidA
-			data := localSID()
+			data := localSID(sid)
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
-			err := configurator.AddLocalSID(sid, data)
+			err := configurator.AddLocalSID(data)
 			td.Verify(sid, data, err, fakeVPPCalls)
 		})
 	}
@@ -128,13 +128,13 @@ func TestDeleteLocalSID(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			sid := sidA
-			data := localSID()
-			configurator.AddLocalSID(sid, data)
+			data := localSID(sid)
+			configurator.AddLocalSID(data)
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested method and verify
-			err := configurator.DeleteLocalSID(sid, data)
+			err := configurator.DeleteLocalSID(data)
 			td.Verify(err, fakeVPPCalls)
 		})
 	}
@@ -187,24 +187,26 @@ func TestModifyLocalSID(t *testing.T) {
 			// data
 			sid := sidA
 			prevData := &srv6.LocalSID{
-				FibTableID: 0,
+				Sid:        sid.String(),
+				FibTableId: 0,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
 			}
 			data := &srv6.LocalSID{
-				FibTableID: 1,
+				Sid:        sid.String(),
+				FibTableId: 1,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: false,
 				},
 			}
 			// state and failure setup
-			configurator.AddLocalSID(sid, prevData)
+			configurator.AddLocalSID(prevData)
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested method and verify
-			err := configurator.ModifyLocalSID(sid, data, prevData)
+			err := configurator.ModifyLocalSID(data, prevData)
 			td.Verify(sid, data, prevData, err, fakeVPPCalls)
 		})
 	}
@@ -215,49 +217,49 @@ func TestAddPolicy(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name                              string
-		VerifyAfterAddPolicy              func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
-		VerifyAfterFirstAddPolicySegment  func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
-		VerifyAfterSecondAddPolicySegment func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterAddPolicy              func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterFirstAddPolicySegment  func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterSecondAddPolicySegment func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
 		FailIn                            interface{}
 		FailWith                          error
 		SetPolicySegmentsFirst            bool
 	}{
 		{
 			Name: "add policy and add 2 segment", // handling of first segment is special -> adding 2 segments
-			VerifyAfterAddPolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterAddPolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).To(BeEmpty())
 			},
-			VerifyAfterFirstAddPolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterFirstAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment)
 			},
-			VerifyAfterSecondAddPolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterSecondAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment, segment2)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment, segment2)
 			},
 		},
 		{
 			Name: "add 2 segments to nonexisting policy and add policy", // handling of first segment is special -> adding 2 segments
 			SetPolicySegmentsFirst: true,
-			VerifyAfterFirstAddPolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterFirstAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).To(HaveLen(0))
 			},
-			VerifyAfterSecondAddPolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterSecondAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).To(HaveLen(0))
 			},
-			VerifyAfterAddPolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterAddPolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment, segment2)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment, segment2)
 			},
 		},
 		{
 			Name:     "failure propagation from VPPCall's AddPolicy",
 			FailIn:   vppcallfake.AddPolicyFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			VerifyAfterFirstAddPolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterFirstAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -267,7 +269,7 @@ func TestAddPolicy(t *testing.T) {
 			FailIn:                 vppcallfake.AddPolicySegmentFuncCall{},
 			FailWith:               fmt.Errorf(errorMessage),
 			SetPolicySegmentsFirst: true,
-			VerifyAfterAddPolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterAddPolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -281,39 +283,40 @@ func TestAddPolicy(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// Data
-			policy := policy()
-			segment := policySegment(1, sidB, sidC, sidD)
-			segment2 := policySegment(1, sidA, sidB, sidC)
+			bsid := sidA
+			policy := policy(bsid)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			segment2 := policySegment(bsid, 1, sidA, sidB, sidC)
 			// failure setup
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested methods and verification after each of them
 			if td.SetPolicySegmentsFirst {
-				err := configurator.AddPolicySegment(sidA, segmentName1, segment)
+				err := configurator.AddPolicySegment(segmentName1, segment)
 				if td.VerifyAfterFirstAddPolicySegment != nil {
-					td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterFirstAddPolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
+				err = configurator.AddPolicySegment(segmentName2, segment2)
 				if td.VerifyAfterSecondAddPolicySegment != nil {
-					td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterSecondAddPolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err = configurator.AddPolicy(sidA, policy)
+				err = configurator.AddPolicy(policy)
 				if td.VerifyAfterAddPolicy != nil {
-					td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterAddPolicy(policy, segment, segment2, err, fakeVPPCalls)
 				}
 			} else {
-				err := configurator.AddPolicy(sidA, policy)
+				err := configurator.AddPolicy(policy)
 				if td.VerifyAfterAddPolicy != nil {
-					td.VerifyAfterAddPolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterAddPolicy(policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err = configurator.AddPolicySegment(sidA, segmentName1, segment)
+				err = configurator.AddPolicySegment(segmentName1, segment)
 				if td.VerifyAfterFirstAddPolicySegment != nil {
-					td.VerifyAfterFirstAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterFirstAddPolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err = configurator.AddPolicySegment(sidA, segmentName2, segment2)
+				err = configurator.AddPolicySegment(segmentName2, segment2)
 				if td.VerifyAfterSecondAddPolicySegment != nil {
-					td.VerifyAfterSecondAddPolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterSecondAddPolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
 			}
 		})
@@ -325,16 +328,16 @@ func TestDeletePolicy(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name                                 string
-		VerifyAfterRemovePolicy              func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
-		VerifyAfterFirstRemovePolicySegment  func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
-		VerifyAfterSecondRemovePolicySegment func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterRemovePolicy              func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterFirstRemovePolicySegment  func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		VerifyAfterSecondRemovePolicySegment func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
 		FailIn                               interface{}
 		FailWith                             error
 		RemovePoliceSegment                  bool
 	}{
 		{
 			Name: "remove policy (without removing segments)",
-			VerifyAfterRemovePolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterRemovePolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).To(BeEmpty())
 			},
@@ -342,15 +345,15 @@ func TestDeletePolicy(t *testing.T) {
 		{
 			Name:                "remove segments and remove policy",
 			RemovePoliceSegment: true,
-			VerifyAfterFirstRemovePolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterFirstRemovePolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).ToNot(BeEmpty())
 			},
-			VerifyAfterSecondRemovePolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterSecondRemovePolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).ToNot(BeEmpty())
 			},
-			VerifyAfterRemovePolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterRemovePolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
 				Expect(fakeVPPCalls.PoliciesState()).To(BeEmpty())
 			},
@@ -359,7 +362,7 @@ func TestDeletePolicy(t *testing.T) {
 			Name:     "failure propagation from VPPCall's DeletePolicy",
 			FailIn:   vppcallfake.DeletePolicyFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			VerifyAfterRemovePolicy: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterRemovePolicy: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -369,7 +372,7 @@ func TestDeletePolicy(t *testing.T) {
 			FailIn:              vppcallfake.DeletePolicySegmentFuncCall{},
 			FailWith:            fmt.Errorf(errorMessage),
 			RemovePoliceSegment: true,
-			VerifyAfterFirstRemovePolicySegment: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			VerifyAfterFirstRemovePolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -383,30 +386,31 @@ func TestDeletePolicy(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// Data
-			policy := policy()
-			segment := policySegment(1, sidB, sidC, sidD)
-			segment2 := policySegment(1, sidA, sidB, sidC)
-			configurator.AddPolicy(sidA, policy)
-			configurator.AddPolicySegment(sidA, segmentName1, segment)
-			configurator.AddPolicySegment(sidA, segmentName2, segment2) // handling of first segment is special -> adding 2 segments
+			bsid := sidA
+			policy := policy(bsid)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			segment2 := policySegment(bsid, 1, sidA, sidB, sidC)
+			configurator.AddPolicy(policy)
+			configurator.AddPolicySegment(segmentName1, segment)
+			configurator.AddPolicySegment(segmentName2, segment2) // handling of first segment is special -> adding 2 segments
 			// failure setup
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested methods and verification after each of them
 			if td.RemovePoliceSegment {
-				err := configurator.RemovePolicySegment(sidA, segmentName1, segment)
+				err := configurator.RemovePolicySegment(segmentName1, segment)
 				if td.VerifyAfterFirstRemovePolicySegment != nil {
-					td.VerifyAfterFirstRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterFirstRemovePolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
-				err = configurator.RemovePolicySegment(sidA, segmentName2, segment2)
+				err = configurator.RemovePolicySegment(segmentName2, segment2)
 				if td.VerifyAfterSecondRemovePolicySegment != nil {
-					td.VerifyAfterSecondRemovePolicySegment(sidA, policy, segment, segment2, err, fakeVPPCalls)
+					td.VerifyAfterSecondRemovePolicySegment(policy, segment, segment2, err, fakeVPPCalls)
 				}
 			}
-			err := configurator.RemovePolicy(sidA, policy)
+			err := configurator.RemovePolicy(policy)
 			if td.VerifyAfterRemovePolicy != nil {
-				td.VerifyAfterRemovePolicy(sidA, policy, segment, segment2, err, fakeVPPCalls)
+				td.VerifyAfterRemovePolicy(policy, segment, segment2, err, fakeVPPCalls)
 			}
 		})
 	}
@@ -417,22 +421,22 @@ func TestModifyPolicy(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name     string
-		Verify   func(srv6.SID, *srv6.Policy, *srv6.Policy, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		Verify   func(*srv6.Policy, *srv6.Policy, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
 		FailIn   interface{}
 		FailWith error
 	}{
 		{
 			Name: "policy attributes modification",
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment)
 			},
 		},
 		{
 			Name:     "failure propagation from VPPCall's AddPolicy",
 			FailIn:   vppcallfake.AddPolicyFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -441,7 +445,7 @@ func TestModifyPolicy(t *testing.T) {
 			Name:     "failure propagation from VPPCall's DeletePolicy",
 			FailIn:   vppcallfake.DeletePolicyFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, prevPolicy *srv6.Policy, segment *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -455,27 +459,30 @@ func TestModifyPolicy(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// Data
+			bsid := sidA
 			prevPolicy := &srv6.Policy{
-				FibTableID:       0,
+				Bsid:             bsid.String(),
+				FibTableId:       0,
 				SprayBehaviour:   true,
 				SrhEncapsulation: true,
 			}
 			policy := &srv6.Policy{
-				FibTableID:       1,
+				Bsid:             bsid.String(),
+				FibTableId:       1,
 				SprayBehaviour:   false,
 				SrhEncapsulation: false,
 			}
-			segment := policySegment(1, sidB, sidC, sidD)
-			configurator.AddPolicy(sidA, prevPolicy)
-			configurator.AddPolicySegment(sidA, segmentName1, segment)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			configurator.AddPolicy(prevPolicy)
+			configurator.AddPolicySegment(segmentName1, segment)
 			// failure setup
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested methods and verification after each of them
-			err := configurator.ModifyPolicy(sidA, policy, prevPolicy)
+			err := configurator.ModifyPolicy(policy, prevPolicy)
 			if td.Verify != nil {
-				td.Verify(sidA, policy, prevPolicy, segment, err, fakeVPPCalls)
+				td.Verify(policy, prevPolicy, segment, err, fakeVPPCalls)
 			}
 		})
 	}
@@ -486,24 +493,24 @@ func TestModifyPolicySegment(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name           string
-		Verify         func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		Verify         func(*srv6.Policy, *srv6.PolicySegment, *srv6.PolicySegment, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
 		FailIn         interface{}
 		FailWith       error
 		OnlyOneSegment bool
 	}{
 		{
 			Name: "policy segment modification (non-last segment)", // last segment is handled differently
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment2, segment)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment2, segment)
 			},
 		},
 		{
 			Name:           "policy segment modification (last segment)", // last segment is handled differently
 			OnlyOneSegment: true,
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment)
 			},
 		},
 		{
@@ -511,7 +518,7 @@ func TestModifyPolicySegment(t *testing.T) {
 			OnlyOneSegment: true,
 			FailIn:         vppcallfake.AddPolicyFuncCall{},
 			FailWith:       fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -521,7 +528,7 @@ func TestModifyPolicySegment(t *testing.T) {
 			OnlyOneSegment: true,
 			FailIn:         vppcallfake.DeletePolicyFuncCall{},
 			FailWith:       fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -530,7 +537,7 @@ func TestModifyPolicySegment(t *testing.T) {
 			Name:     "failure propagation from VPPCall's DeletePolicySegment",
 			FailIn:   vppcallfake.DeletePolicySegmentFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -539,7 +546,7 @@ func TestModifyPolicySegment(t *testing.T) {
 			Name:     "failure propagation from VPPCall's AddPolicySegment",
 			FailIn:   vppcallfake.AddPolicySegmentFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment *srv6.PolicySegment, prevSegment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -553,23 +560,24 @@ func TestModifyPolicySegment(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// Data
-			policy := policy()
-			prevSegment := policySegment(0, sidA, sidB, sidC)
-			segment := policySegment(1, sidB, sidC, sidD)
-			segment2 := policySegment(2, sidC, sidD, sidA)
-			configurator.AddPolicy(sidA, policy)
-			configurator.AddPolicySegment(sidA, segmentName1, prevSegment)
+			bsid := sidA
+			policy := policy(bsid)
+			prevSegment := policySegment(bsid, 0, sidA, sidB, sidC)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			segment2 := policySegment(bsid, 2, sidC, sidD, sidA)
+			configurator.AddPolicy(policy)
+			configurator.AddPolicySegment(segmentName1, prevSegment)
 			if !td.OnlyOneSegment {
-				configurator.AddPolicySegment(sidA, segmentName2, segment2)
+				configurator.AddPolicySegment(segmentName2, segment2)
 			}
 			// failure setup
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested methods and verification after each of them
-			err := configurator.ModifyPolicySegment(sidA, segmentName1, segment, prevSegment)
+			err := configurator.ModifyPolicySegment(segmentName1, segment, prevSegment)
 			if td.Verify != nil {
-				td.Verify(sidA, policy, segment, prevSegment, segment2, err, fakeVPPCalls)
+				td.Verify(policy, segment, prevSegment, segment2, err, fakeVPPCalls)
 			}
 		})
 	}
@@ -581,22 +589,22 @@ func TestFillingAlreadyCreatedSegmentEmptyPolicy(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
 		Name     string
-		Verify   func(srv6.SID, *srv6.Policy, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
+		Verify   func(*srv6.Policy, *srv6.PolicySegment, error, *vppcallfake.SRv6Calls)
 		FailIn   interface{}
 		FailWith error
 	}{
 		{
 			Name: "all segments removal and adding new onw", // last segment is handled differently
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).To(BeNil())
-				verifyOnePolicyWithSegments(fakeVPPCalls, bsid, policy, segment2)
+				verifyOnePolicyWithSegments(fakeVPPCalls, policy, segment2)
 			},
 		},
 		{
 			Name:     "failure propagation from VPPCall's DeletePolicy",
 			FailIn:   vppcallfake.DeletePolicyFuncCall{},
 			FailWith: fmt.Errorf(errorMessage),
-			Verify: func(bsid srv6.SID, policy *srv6.Policy, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
+			Verify: func(policy *srv6.Policy, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *vppcallfake.SRv6Calls) {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring(errorMessage))
 			},
@@ -609,20 +617,21 @@ func TestFillingAlreadyCreatedSegmentEmptyPolicy(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// Data
-			policy := policy()
-			segment := policySegment(0, sidA, sidB, sidC)
-			segment2 := policySegment(1, sidB, sidC, sidD)
+			bsid := sidA
+			policy := policy(bsid)
+			segment := policySegment(bsid, 0, sidA, sidB, sidC)
+			segment2 := policySegment(bsid, 1, sidB, sidC, sidD)
 			// case building
-			Expect(configurator.AddPolicy(sidA, policy)).To(BeNil())
-			Expect(configurator.AddPolicySegment(sidA, segmentName1, segment)).To(BeNil())
-			Expect(configurator.RemovePolicySegment(sidA, segmentName1, segment)).To(BeNil())
+			Expect(configurator.AddPolicy(policy)).To(BeNil())
+			Expect(configurator.AddPolicySegment(segmentName1, segment)).To(BeNil())
+			Expect(configurator.RemovePolicySegment(segmentName1, segment)).To(BeNil())
 			// failure setup
 			if td.FailIn != nil {
 				fakeVPPCalls.FailIn(td.FailIn, td.FailWith)
 			}
 			// run tested methods and verification after each of them
-			err := configurator.AddPolicySegment(sidA, segmentName2, segment2)
-			td.Verify(sidA, policy, segment2, err, fakeVPPCalls)
+			err := configurator.AddPolicySegment(segmentName2, segment2)
+			td.Verify(policy, segment2, err, fakeVPPCalls)
 		})
 	}
 }
@@ -716,9 +725,10 @@ func TestAddSteering(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// data
-			policy := policy()
-			segment := policySegment(1, sidB, sidC, sidD)
-			steering := steeringWithPolicyBsidRef(sidA.String())
+			bsid := sidA
+			policy := policy(bsid)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			steering := steeringWithPolicyBsidRef(policy.Bsid)
 			if td.ReferencePolicyByIndex {
 				steering = steeringWithPolicyIndexRef(0)
 			}
@@ -735,14 +745,14 @@ func TestAddSteering(t *testing.T) {
 				if td.VerifyAfterAddSteering != nil {
 					td.VerifyAfterAddSteering(steering, err, fakeVPPCalls)
 				}
-				configurator.AddPolicy(sidA, policy)
-				configurator.AddPolicySegment(sidA, segmentName1, segment)
+				configurator.AddPolicy(policy)
+				configurator.AddPolicySegment(segmentName1, segment)
 				if td.VerifyAfterAddPolicy != nil {
 					td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
 				}
 			} else {
-				configurator.AddPolicy(sidA, policy)
-				configurator.AddPolicySegment(sidA, segmentName1, segment)
+				configurator.AddPolicy(policy)
+				configurator.AddPolicySegment(segmentName1, segment)
 				if td.VerifyAfterAddPolicy != nil {
 					td.VerifyAfterAddPolicy(steering, fakeVPPCalls)
 				}
@@ -789,12 +799,13 @@ func TestRemoveSteering(t *testing.T) {
 			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
 			defer srv6TestTeardown(connection, configurator)
 			// data
-			policy := policy()
-			segment := policySegment(1, sidB, sidC, sidD)
-			steering := steeringWithPolicyBsidRef(sidA.String())
+			bsid := sidA
+			policy := policy(bsid)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
+			steering := steeringWithPolicyBsidRef(policy.Bsid)
 			// case building
-			configurator.AddPolicy(sidA, policy)
-			configurator.AddPolicySegment(sidA, segmentName1, segment)
+			configurator.AddPolicy(policy)
+			configurator.AddPolicySegment(segmentName1, segment)
 			configurator.AddSteering(steeringName, steering)
 			// failure setup
 			if td.FailIn != nil {
@@ -853,25 +864,25 @@ func TestModifySteering(t *testing.T) {
 			defer srv6TestTeardown(connection, configurator)
 			// data
 			bsid := sidA
-			policy := policy()
-			segment := policySegment(1, sidB, sidC, sidD)
+			policy := policy(bsid)
+			segment := policySegment(bsid, 1, sidB, sidC, sidD)
 			prevData := &srv6.Steering{
-				PolicyBSID: bsid.String(),
+				PolicyBsid: bsid.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    0,
+					FibTableId:    0,
 					PrefixAddress: "A::",
 				},
 			}
 			data := &srv6.Steering{
-				PolicyBSID: bsid.String(),
+				PolicyBsid: bsid.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    1,
+					FibTableId:    1,
 					PrefixAddress: "B::",
 				},
 			}
 			// case building
-			configurator.AddPolicy(bsid, policy)
-			configurator.AddPolicySegment(bsid, segmentName1, segment)
+			configurator.AddPolicy(policy)
+			configurator.AddPolicySegment(segmentName1, segment)
 			configurator.AddSteering(steeringName, prevData)
 			// failure setup
 			if td.FailIn != nil {
@@ -922,10 +933,10 @@ func srv6TestTeardown(connection *core.Connection, plugin *srplugin.SRv6Configur
 	Expect(err).To(BeNil())
 }
 
-func verifyOnePolicyWithSegments(fakeVPPCalls *vppcallfake.SRv6Calls, bsid srv6.SID, policy *srv6.Policy, segments ...*srv6.PolicySegment) {
+func verifyOnePolicyWithSegments(fakeVPPCalls *vppcallfake.SRv6Calls, policy *srv6.Policy, segments ...*srv6.PolicySegment) {
 	policiesState := fakeVPPCalls.PoliciesState()
 	Expect(policiesState).To(HaveLen(1))
-	policyState, exists := policiesState[bsid.String()]
+	policyState, exists := policiesState[policy.Bsid]
 	Expect(exists).To(BeTrue())
 	Expect(policyState.Policy()).To(Equal(policy))
 	Expect(policyState.Segments()).To(HaveLen(len(segments)))
@@ -948,32 +959,35 @@ func sid(str string) srv6.SID {
 	return bsid
 }
 
-func localSID() *srv6.LocalSID {
+func localSID(sid srv6.SID) *srv6.LocalSID {
 	return &srv6.LocalSID{
-		FibTableID: 0,
+		Sid:        sid.String(),
+		FibTableId: 0,
 		BaseEndFunction: &srv6.LocalSID_End{
 			Psp: true,
 		},
 	}
 }
 
-func policy() *srv6.Policy {
+func policy(bsid srv6.SID) *srv6.Policy {
 	return &srv6.Policy{
-		FibTableID:       0,
+		Bsid:             bsid.String(),
+		FibTableId:       0,
 		SprayBehaviour:   true,
 		SrhEncapsulation: true,
 	}
 }
 
-func policySegment(weight uint32, sids ...srv6.SID) *srv6.PolicySegment {
+func policySegment(policyBsid srv6.SID, weight uint32, sids ...srv6.SID) *srv6.PolicySegment {
 	segments := make([]string, len(sids))
 	for i, sid := range sids {
 		segments[i] = sid.String()
 	}
 
 	return &srv6.PolicySegment{
-		Weight:   weight,
-		Segments: segments,
+		PolicyBsid: policyBsid.String(),
+		Weight:     weight,
+		Segments:   segments,
 	}
 }
 
@@ -987,10 +1001,10 @@ func steeringWithPolicyIndexRef(index uint32) *srv6.Steering {
 
 func steeringRef(bsid string, index uint32) *srv6.Steering {
 	return &srv6.Steering{
-		PolicyBSID:  bsid,
+		PolicyBsid:  bsid,
 		PolicyIndex: index,
 		L3Traffic: &srv6.Steering_L3Traffic{
-			FibTableID:    0,
+			FibTableId:    0,
 			PrefixAddress: "A::",
 		},
 	}

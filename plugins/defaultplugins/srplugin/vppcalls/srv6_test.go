@@ -66,7 +66,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with end behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
+				FibTableId: 10,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
@@ -82,8 +82,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endX behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
@@ -102,8 +102,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endT behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionT: &srv6.LocalSID_EndT{
+				FibTableId: 10,
+				EndFunction_T: &srv6.LocalSID_EndT{
 					Psp: true,
 				},
 			},
@@ -118,8 +118,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX2 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
@@ -139,8 +139,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX4 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHopIPv4.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -158,8 +158,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX6 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -178,8 +178,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID:     10,
-				EndFunctionDT4: &srv6.LocalSID_EndDT4{},
+				FibTableId:      10,
+				EndFunction_DT4: &srv6.LocalSID_EndDT4{},
 			},
 			Expected: &sr.SrLocalsidAddDel{
 				IsDel:        0,
@@ -192,8 +192,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT6 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID:     10,
-				EndFunctionDT6: &srv6.LocalSID_EndDT6{},
+				FibTableId:      10,
+				EndFunction_DT6: &srv6.LocalSID_EndDT6{},
 			},
 			Expected: &sr.SrLocalsidAddDel{
 				IsDel:        0,
@@ -207,7 +207,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "fail due to missing end function",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 0,
+				FibTableId: 0,
 			},
 		},
 		{
@@ -215,7 +215,7 @@ func TestAddLocalSID(t *testing.T) {
 			FailInVPP:     true,
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 0,
+				FibTableId: 0,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
@@ -225,8 +225,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
@@ -237,8 +237,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
@@ -249,8 +249,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
@@ -261,8 +261,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
@@ -273,8 +273,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHopIPv4.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
 				},
@@ -284,8 +284,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
 				},
@@ -295,8 +295,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "rejection of IPv6 addresses (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -306,8 +306,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
 				},
@@ -317,8 +317,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
 				},
@@ -389,7 +389,7 @@ func TestDeleteLocalSID(t *testing.T) {
 			defer teardown(ctx)
 			// data and prepare case
 			localsid := &srv6.LocalSID{
-				FibTableID: 10,
+				FibTableId: 10,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
@@ -735,9 +735,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv6 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -757,9 +757,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv4 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1.2.3.4/24",
 				},
 			},
@@ -779,7 +779,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of L2 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceA,
 				},
@@ -798,9 +798,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "invalid prefix (" + action + " of IPv4 L3 steering)",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: invalidIPAddress,
 				},
 			},
@@ -812,7 +812,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "interface without index (" + action + " of L2 steering)",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceBOutOfidxs,
 				},
@@ -825,9 +825,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "invalid BSID (not IP address) as policy reference",
 			Steering: &srv6.Steering{
-				PolicyBSID: invalidIPAddress,
+				PolicyBsid: invalidIPAddress,
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -839,9 +839,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "failure propagation from VPP",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -890,7 +890,7 @@ func sid(str string) srv6.SID {
 
 func policy(fibtableID uint32, sprayBehaviour bool, srhEncapsulation bool) *srv6.Policy {
 	return &srv6.Policy{
-		FibTableID:       fibtableID,
+		FibTableId:       fibtableID,
 		SprayBehaviour:   sprayBehaviour,
 		SrhEncapsulation: srhEncapsulation,
 	}
