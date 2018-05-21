@@ -54,7 +54,8 @@ RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
+ && chmod -R 777 "$GOPATH"
 
 # build & install Protobuf & gogo protobuf compiler
 RUN git clone --depth=1 https://github.com/google/protobuf.git \
@@ -67,11 +68,14 @@ RUN git clone --depth=1 https://github.com/google/protobuf.git \
  && cd .. \
  && rm -rf protobuf
 
+ARG VERSION
+ARG COMMIT
+
 # copy & build agent
 COPY . $GOPATH/src/github.com/ligato/vpp-agent
 
 RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
- && make install
+ && VERSION=$VERSION COMMIT=$COMMIT make install
 
 # copy configs
 COPY \
@@ -90,7 +94,7 @@ COPY docker/dev/runvpp.sh /usr/bin/runvpp
 COPY docker/dev/agent_start.py /usr/bin/agent_start.py
 COPY docker/dev/supervisord_kill.py /usr/bin/supervisord_kill.py
 
-WORKDIR /root/
+WORKDIR /
 
 # start agent
 ENV START_AGENT "True"

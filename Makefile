@@ -1,5 +1,5 @@
-VERSION	:= $(shell git describe --always --tags --dirty)
-COMMIT	:= $(shell git rev-parse HEAD)
+VERSION	?= $(shell git describe --always --tags --dirty)
+COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
