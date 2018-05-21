@@ -44,8 +44,8 @@ func NewSteeringCache(logger logging.Logger, owner core.PluginName) *SteeringCac
 		internal: mem.NewNamedMapping(logger, owner, "steering-cache", func(item interface{}) map[string][]string {
 			res := map[string][]string{}
 			if steering, ok := item.(*srv6.Steering); ok {
-				if len(strings.Trim(steering.PolicyBSID, " ")) > 0 {
-					res[policyBSIDIndex] = []string{strings.ToLower(steering.PolicyBSID)}
+				if len(strings.Trim(steering.PolicyBsid, " ")) > 0 {
+					res[policyBSIDIndex] = []string{strings.ToLower(steering.PolicyBsid)}
 					res[policyIndexIndex] = []string{""}
 				} else {
 					res[policyBSIDIndex] = []string{""}

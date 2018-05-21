@@ -316,11 +316,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	} else if strings.HasPrefix(key, srv6.LocalSIDPrefix()) {
 		var value, prevValue srv6.LocalSID
 		if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
-			if sid, err := srv6.ParseLocalSIDKey(key); err == nil {
-				if err := plugin.dataChangeLocalSID(sid, diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-					return false, err
-				}
-			} else {
+			if err := plugin.dataChangeLocalSID(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
 		} else {
@@ -330,8 +326,8 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		if srv6.IsPolicySegmentPrefix(key) { //Policy segment
 			var value, prevValue srv6.PolicySegment
 			if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
-				if policyBSID, name, err := srv6.ParsePolicySegmentKey(key); err == nil {
-					if err := plugin.dataChangePolicySegment(policyBSID, name, diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				if name, err := srv6.ParsePolicySegmentKey(key); err == nil {
+					if err := plugin.dataChangePolicySegment(name, diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 						return false, err
 					}
 				} else {
@@ -343,11 +339,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else { // Policy
 			var value, prevValue srv6.Policy
 			if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
-				if policyBSID, err := srv6.ParsePolicyKey(key); err == nil {
-					if err := plugin.dataChangePolicy(policyBSID, diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
-						return false, err
-					}
-				} else {
+				if err := plugin.dataChangePolicy(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 					return false, err
 				}
 			} else {
@@ -645,36 +637,36 @@ func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.T
 }
 
 // DataChangeLocalSID handles change events from ETCD related to local SIDs
-func (plugin *Plugin) dataChangeLocalSID(sid srv6.SID, diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangeLocalSIDs ", sid.String(), " ", diff, " ", changeType, " ", value, " ", prevValue)
+func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeLocalSIDs ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.DeleteLocalSID(sid, prevValue)
+		return plugin.srv6Configurator.DeleteLocalSID(prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyLocalSID(sid, value, prevValue)
+		return plugin.srv6Configurator.ModifyLocalSID(value, prevValue)
 	}
-	return plugin.srv6Configurator.AddLocalSID(sid, value)
+	return plugin.srv6Configurator.AddLocalSID(value)
 }
 
 // dataChangePolicy handles change events from ETCD related to policies
-func (plugin *Plugin) dataChangePolicy(bsid srv6.SID, diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangePolicy ", bsid.String(), " ", diff, " ", changeType, " ", value, " ", prevValue)
+func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangePolicy ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.RemovePolicy(bsid, prevValue)
+		return plugin.srv6Configurator.RemovePolicy(prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyPolicy(bsid, value, prevValue)
+		return plugin.srv6Configurator.ModifyPolicy(value, prevValue)
 	}
-	return plugin.srv6Configurator.AddPolicy(bsid, value)
+	return plugin.srv6Configurator.AddPolicy(value)
 }
 
 // dataChangePolicySegment handles change events from ETCD related to policies segments
-func (plugin *Plugin) dataChangePolicySegment(bsid srv6.SID, segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangePolicySegment ", bsid.String(), " ", segmentName, " ", diff, " ", changeType, " ", value, " ", prevValue)
+func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangePolicySegment ", segmentName, " ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.RemovePolicySegment(bsid, segmentName, prevValue)
+		return plugin.srv6Configurator.RemovePolicySegment(segmentName, prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyPolicySegment(bsid, segmentName, value, prevValue)
+		return plugin.srv6Configurator.ModifyPolicySegment(segmentName, value, prevValue)
 	}
-	return plugin.srv6Configurator.AddPolicySegment(bsid, segmentName, value)
+	return plugin.srv6Configurator.AddPolicySegment(segmentName, value)
 }
 
 // dataChangeSteering handles change events from ETCD related to steering

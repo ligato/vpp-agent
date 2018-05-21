@@ -176,8 +176,8 @@ type SrPolicyAdd struct {
 	IsEncap   uint8
 	Type      uint8
 	FibTable  uint32
-	NSegments uint8      `struc:"sizeof=Segments"` //MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
-	Segments  []IPv6type //MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	NSegments uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	Segments  []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
 }
 
 func (*SrPolicyAdd) GetMessageName() string {
@@ -291,8 +291,8 @@ type SrPolicyMod struct {
 	Operation     uint8
 	SlIndex       uint32
 	Weight        uint32
-	NSegments     uint8      `struc:"sizeof=Segments"` //MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
-	Segments      []IPv6type //MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	NSegments     uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	Segments      []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
 }
 
 func (*SrPolicyMod) GetMessageName() string {
@@ -723,4 +723,4 @@ func NewSrLocalsidsDetails() api.Message {
 	return &SrLocalsidsDetails{}
 }
 
-type IPv6type struct{ Value [16]byte } //MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+type IPv6type struct{ Value [16]byte } // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)

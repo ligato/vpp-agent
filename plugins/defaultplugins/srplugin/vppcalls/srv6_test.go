@@ -66,7 +66,7 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with end behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
+				FibTableId: 10,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
@@ -82,8 +82,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endX behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
@@ -102,8 +102,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endT behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionT: &srv6.LocalSID_EndT{
+				FibTableId: 10,
+				EndFunction_T: &srv6.LocalSID_EndT{
 					Psp: true,
 				},
 			},
@@ -118,8 +118,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX2 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
@@ -139,8 +139,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX4 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHopIPv4.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -158,8 +158,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDX6 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -174,12 +174,12 @@ func TestAddLocalSID(t *testing.T) {
 				NhAddr:       nextHop,
 			},
 		},
-		//endDT4 and endDT6 are not fully modelled yet -> testing only current implementation
+		// endDT4 and endDT6 are not fully modelled yet -> testing only current implementation
 		{
 			Name: "addition with endDT4 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID:     10,
-				EndFunctionDT4: &srv6.LocalSID_EndDT4{},
+				FibTableId:      10,
+				EndFunction_DT4: &srv6.LocalSID_EndDT4{},
 			},
 			Expected: &sr.SrLocalsidAddDel{
 				IsDel:        0,
@@ -192,8 +192,8 @@ func TestAddLocalSID(t *testing.T) {
 		{
 			Name: "addition with endDT6 behaviour",
 			Input: &srv6.LocalSID{
-				FibTableID:     10,
-				EndFunctionDT6: &srv6.LocalSID_EndDT6{},
+				FibTableId:      10,
+				EndFunction_DT6: &srv6.LocalSID_EndDT6{},
 			},
 			Expected: &sr.SrLocalsidAddDel{
 				IsDel:        0,
@@ -207,7 +207,7 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "fail due to missing end function",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 0,
+				FibTableId: 0,
 			},
 		},
 		{
@@ -215,7 +215,7 @@ func TestAddLocalSID(t *testing.T) {
 			FailInVPP:     true,
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 0,
+				FibTableId: 0,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
 				},
@@ -225,8 +225,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
@@ -237,8 +237,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endX behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionX: &srv6.LocalSID_EndX{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
 					Psp:               true,
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
@@ -249,8 +249,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
@@ -261,8 +261,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX2 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX2: &srv6.LocalSID_EndDX2{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
 					VlanTag:           1,
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
@@ -273,8 +273,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHopIPv4.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
 				},
@@ -284,8 +284,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
 				},
@@ -295,8 +295,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "rejection of IPv6 addresses (addition with endDX4 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX4: &srv6.LocalSID_EndDX4{
+				FibTableId: 10,
+				EndFunction_DX4: &srv6.LocalSID_EndDX4{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceA,
 				},
@@ -306,8 +306,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "missing interface in swIndexes (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           nextHop.String(),
 					OutgoingInterface: ifaceBOutOfidxs,
 				},
@@ -317,8 +317,8 @@ func TestAddLocalSID(t *testing.T) {
 			Name:          "invalid IP address (addition with endDX6 behaviour)",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
-				FibTableID: 10,
-				EndFunctionDX6: &srv6.LocalSID_EndDX6{
+				FibTableId: 10,
+				EndFunction_DX6: &srv6.LocalSID_EndDX6{
 					NextHop:           invalidIPAddress,
 					OutgoingInterface: ifaceA,
 				},
@@ -329,25 +329,23 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply
-				if td.FailInVPP {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
-				} else {
-					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
-				}
-				// make the call
-				err := vppcalls.NewSRv6Calls().AddLocalSid(sidA, td.Input, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				// verify result
-				if td.ExpectFailure {
-					Expect(err).Should(HaveOccurred())
-				} else {
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(ctx.MockChannel.Msg).To(Equal(td.Expected))
-				}
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// prepare reply
+			if td.FailInVPP {
+				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
+			} else {
+				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
+			}
+			// make the call
+			err := vppCalls.AddLocalSid(sidA, td.Input, swIfIndex, ctx.MockChannel)
+			// verify result
+			if td.ExpectFailure {
+				Expect(err).Should(HaveOccurred())
+			} else {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(ctx.MockChannel.Msg).To(Equal(td.Expected))
+			}
 		})
 	}
 }
@@ -387,23 +385,20 @@ func TestDeleteLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// data and prepare case
-				calls := vppcalls.NewSRv6Calls()
-				localsid := &srv6.LocalSID{
-					FibTableID: 10,
-					BaseEndFunction: &srv6.LocalSID_End{
-						Psp: true,
-					},
-				}
-				calls.AddLocalSid(td.Sid, localsid, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				ctx.MockVpp.MockReply(td.MockReply)
-				// make the call and verify
-				err := calls.DeleteLocalSid(td.Sid, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// data and prepare case
+			localsid := &srv6.LocalSID{
+				FibTableId: 10,
+				BaseEndFunction: &srv6.LocalSID_End{
+					Psp: true,
+				},
+			}
+			vppCalls.AddLocalSid(td.Sid, localsid, swIfIndex, ctx.MockChannel)
+			ctx.MockVpp.MockReply(td.MockReply)
+			// make the call and verify
+			err := vppCalls.DeleteLocalSid(td.Sid, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -450,14 +445,12 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
 
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().SetEncapsSourceAddress(td.Address, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppCalls.SetEncapsSourceAddress(td.Address, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -485,8 +478,8 @@ func TestAddPolicy(t *testing.T) {
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr:  sidA,
 					FibTable:  10,
-					Type:      boolToInt(false),
-					IsEncap:   boolToInt(true),
+					Type:      boolToUint(false),
+					IsEncap:   boolToUint(true),
 					Weight:    1,
 					NSegments: 3,
 					Segments:  []sr.IPv6type{{Value: to16BytesArray(sidA)}, {Value: to16BytesArray(sidB)}, {Value: to16BytesArray(sidC)}},
@@ -521,14 +514,12 @@ func TestAddPolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().AddPolicy(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppCalls.AddPolicy(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -566,19 +557,16 @@ func TestDeletePolicy(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// data and prepare case
-				calls := vppcalls.NewSRv6Calls()
-				policy := policy(0, true, true)
-				segment := policySegment(1, sidA, sidB, sidC)
-				calls.AddPolicy(td.BSID, policy, segment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				ctx.MockVpp.MockReply(td.MockReply)
-				// make the call and verify
-				err := calls.DeletePolicy(td.BSID, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// data and prepare case
+			policy := policy(0, true, true)
+			segment := policySegment(1, sidA, sidB, sidC)
+			vppCalls.AddPolicy(td.BSID, policy, segment, ctx.MockChannel)
+			ctx.MockVpp.MockReply(td.MockReply)
+			// make the call and verify
+			err := vppCalls.DeletePolicy(td.BSID, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -640,14 +628,12 @@ func TestAddPolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppCalls.AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -714,14 +700,12 @@ func TestDeletePolicySegment(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				err := vppcalls.NewSRv6Calls().DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			err := vppCalls.DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, ctx.MockChannel)
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
@@ -751,9 +735,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv6 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -761,7 +745,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TableID:     10,
 					TrafficType: vppcalls.SteerTypeIPv6,
@@ -773,9 +757,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv4 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1.2.3.4/24",
 				},
 			},
@@ -783,7 +767,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TableID:     10,
 					TrafficType: vppcalls.SteerTypeIPv4,
@@ -795,7 +779,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of L2 steering",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceA,
 				},
@@ -804,7 +788,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
-					IsDel:       boolToInt(removal),
+					IsDel:       boolToUint(removal),
 					BsidAddr:    sidA,
 					TrafficType: vppcalls.SteerTypeL2,
 					SwIfIndex:   swIndexA,
@@ -814,9 +798,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "invalid prefix (" + action + " of IPv4 L3 steering)",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: invalidIPAddress,
 				},
 			},
@@ -828,7 +812,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "interface without index (" + action + " of L2 steering)",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceBOutOfidxs,
 				},
@@ -841,9 +825,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "invalid BSID (not IP address) as policy reference",
 			Steering: &srv6.Steering{
-				PolicyBSID: invalidIPAddress,
+				PolicyBsid: invalidIPAddress,
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -855,9 +839,9 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "failure propagation from VPP",
 			Steering: &srv6.Steering{
-				PolicyBSID: sidA.String(),
+				PolicyBsid: sidA.String(),
 				L3Traffic: &srv6.Steering_L3Traffic{
-					FibTableID:    10,
+					FibTableId:    10,
 					PrefixAddress: "1::/64",
 				},
 			},
@@ -871,34 +855,42 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			func() { //wrapping in another function to properly teardown things inside deferred function in case of assertion failure (i.e. connection)
-				ctx := vppcallmock.SetupTestCtx(t)
-				defer ctx.TeardownTestCtx()
-				// prepare reply, make call and verify
-				ctx.MockVpp.MockReply(td.MockReply)
-				var err error
-				if removal {
-					err = vppcalls.NewSRv6Calls().RemoveSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				} else {
-					err = vppcalls.NewSRv6Calls().AddSteering(td.Steering, swIfIndex, logrus.DefaultLogger(), ctx.MockChannel, nil)
-				}
-				td.Verify(err, ctx.MockChannel.Msg)
-			}()
+			ctx, vppCalls := setup(t)
+			defer teardown(ctx)
+			// prepare reply, make call and verify
+			ctx.MockVpp.MockReply(td.MockReply)
+			var err error
+			if removal {
+				err = vppCalls.RemoveSteering(td.Steering, swIfIndex, ctx.MockChannel)
+			} else {
+				err = vppCalls.AddSteering(td.Steering, swIfIndex, ctx.MockChannel)
+			}
+			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
+}
+
+func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6Calls) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	vppCalls := vppcalls.NewSRv6Calls(logrus.DefaultLogger(), nil)
+	return ctx, vppCalls
+}
+
+func teardown(ctx *vppcallmock.TestCtx) {
+	ctx.TeardownTestCtx()
 }
 
 func sid(str string) srv6.SID {
 	bsid, err := srplugin.ParseIPv6(str)
 	if err != nil {
-		panic(fmt.Sprintf("can't parse \"%v\" into SRv6 BSID (IPv6 address)", str))
+		panic(fmt.Sprintf("can't parse %q into SRv6 BSID (IPv6 address)", str))
 	}
 	return bsid
 }
 
 func policy(fibtableID uint32, sprayBehaviour bool, srhEncapsulation bool) *srv6.Policy {
 	return &srv6.Policy{
-		FibTableID:       fibtableID,
+		FibTableId:       fibtableID,
 		SprayBehaviour:   sprayBehaviour,
 		SrhEncapsulation: srhEncapsulation,
 	}
@@ -916,7 +908,7 @@ func policySegment(weight uint32, sids ...srv6.SID) *srv6.PolicySegment {
 	}
 }
 
-func boolToInt(input bool) uint8 {
+func boolToUint(input bool) uint8 {
 	if input {
 		return uint8(1)
 	}

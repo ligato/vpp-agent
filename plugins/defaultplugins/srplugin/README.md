@@ -9,7 +9,7 @@ All configuration must be stored in ETCD using the srv6 key prefix:
 /vnf-agent/<agent-label>/vpp/config/v1/srv6
 ```
 
-**Configuring Local SIDs**\
+## Configuring Local SIDs
 The local SID can be configured using this key:
 ```
 /vnf-agent/<agent-label>/vpp/config/v1/srv6/localsid/<SID>
@@ -17,7 +17,7 @@ The local SID can be configured using this key:
 where ```<SID>``` (Segment ID) is a unique ID of local sid and it must be an valid IPv6 address. The SID is excluded from 
 the json configuration for this key because it is already present as part of the key. 
 
-**Configuring Policy**\
+## Configuring Policy
 The segment routing policy can be configured using this key:
 ```
 /vnf-agent/<agent-label>/vpp/config/v1/srv6/policy/<bsid>
@@ -38,7 +38,7 @@ When the last policy segment is removed, nothing happens. Only after the removal
 It is also possible to remove only the policy and the VPP will be configured to remove the policy with all its segments. 
 
 
-**Configuring Steering**\
+## Configuring Steering
 The steering (the VPP's policy for steering traffic into SR policy) can be configured using this key:
 ```
 /vnf-agent/<agent-label>/vpp/config/v1/srv6/steering/<name>

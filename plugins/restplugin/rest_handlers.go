@@ -12,257 +12,268 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate go-bindata-assetfs -pkg restplugin -o bindata.go ./templates/...
+
 package restplugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/unrolled/render"
+
 	aclvpp "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/defaultplugins/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	ifplugin "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/defaultplugins/l3plugin/vppdump"
-	"github.com/unrolled/render"
 )
 
 // interfacesGetHandler - used to get list of all interfaces
-func (plugin *RESTAPIPlugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all interfaces")
+		plugin.Log.Debug("Getting list of all interfaces")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := ifplugin.DumpInterfaces(plugin.Log, ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := ifplugin.DumpInterfaces(plugin.Deps.Log, ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
+			plugin.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
-func (plugin *RESTAPIPlugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all bridge domain ids")
+		plugin.Log.Debug("Getting list of all bridge domain ids")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := l2plugin.DumpBridgeDomainIDs(ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := l2plugin.DumpBridgeDomainIDs(ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
+			plugin.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // bridgeDomainsGetHandler - used to get list of all bridge domains
-func (plugin *RESTAPIPlugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all bridge domains")
+		plugin.Log.Debug("Getting list of all bridge domains")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := l2plugin.DumpBridgeDomains(ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := l2plugin.DumpBridgeDomains(ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
+			return
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // fibTableEntriesGetHandler - used to get list of all fib entries
-func (plugin *RESTAPIPlugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all fibs")
+		plugin.Log.Debug("Getting list of all fibs")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := l2plugin.DumpFIBTableEntries(ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := l2plugin.DumpFIBTableEntries(ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
+			return
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
-func (plugin *RESTAPIPlugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all xconnect pairs")
+		plugin.Log.Debug("Getting list of all xconnect pairs")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := l2plugin.DumpXConnectPairs(ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := l2plugin.DumpXConnectPairs(ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // staticRoutesGetHandler - used to get list of all static routes
-func (plugin *RESTAPIPlugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting list of all static routes")
+		plugin.Log.Debug("Getting list of all static routes")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
 
+		res, err := l3plugin.DumpStaticRoutes(plugin.Log, ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
-		} else {
-			res, err := l3plugin.DumpStaticRoutes(plugin.Deps.Log, ch, nil)
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, nil)
-			} else {
-				plugin.Deps.Log.Debug(res)
-				formatter.JSON(w, http.StatusOK, res)
-			}
+			return
 		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // interfaceACLGetHandler - used to get acl configuration for a particular interface
-func (plugin *RESTAPIPlugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting acl configuration of interface")
+		plugin.Log.Debug("Getting acl configuration of interface")
 
 		vars := mux.Vars(req)
 		if vars == nil {
-			plugin.Deps.Log.Error("Interface software index not specified.")
-			formatter.JSON(w, http.StatusNotFound, struct{}{})
+			plugin.Log.Error("Interface software index not specified.")
+			formatter.JSON(w, http.StatusNotFound, "Interface software index not specified.")
 			return
 		}
 
-		plugin.Deps.Log.Infof("Received request for swIndex :: %v ", vars[swIndexVarName])
+		plugin.Log.Infof("Received request for swIndex: %v", vars[swIndexVarName])
 
 		swIndexuInt64, err := strconv.ParseUint(vars[swIndexVarName], 10, 32)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to unmarshal request body.")
+			plugin.Log.Error("Failed to unmarshal request body.")
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		// create an API channel
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
 
 		swIndex := uint32(swIndexuInt64)
-		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-		defer ch.Close()
+		res, _, err := acldump.DumpInterfaceAcls(plugin.Log, swIndex, ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		res, _, err := acldump.DumpInterfaceAcls(plugin.Deps.Log, swIndex, ch, nil)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Deps.Log.Debug(res)
+		plugin.Log.Debug(res)
 		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // ipACLGetHandler - used to get configuration of IP ACLs
-func (plugin *RESTAPIPlugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting acls")
+		plugin.Log.Debug("Getting acls")
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
 		defer ch.Close()
+
+		res, err := acldump.DumpACLs(plugin.Log, nil, ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		res, err := acldump.DumpACLs(plugin.Deps.Log, nil, ch, nil)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Deps.Log.Debug(res)
+		plugin.Log.Debug(res)
 		formatter.JSON(w, http.StatusOK, res)
 	}
 }
 
 // exampleACLGetHandler - used to get an example ACL configuration
-func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) exampleACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		plugin.Deps.Log.Info("Getting example acl")
+		plugin.Log.Debug("Getting example acl")
 
 		ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
 			Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
@@ -295,114 +306,249 @@ func (plugin *RESTAPIPlugin) exampleACLGetHandler(formatter *render.Render) http
 			Rules:   []*acl.AccessLists_Acl_Rule{rule},
 		}
 
-		plugin.Deps.Log.Debug(aclRes)
+		plugin.Log.Debug(aclRes)
 		formatter.JSON(w, http.StatusOK, aclRes)
 	}
 }
 
 // ipACLPostHandler - used to get acl configuration for a particular interface
-func (plugin *RESTAPIPlugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		type ACLIndex struct {
-			Idx uint32 `json:"acl_index"`
-		}
 
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to parse request body.")
+			plugin.Log.Error("Failed to parse request body.")
 			formatter.JSON(w, http.StatusBadRequest, err)
 			return
 		}
 		aclParam := acl.AccessLists_Acl{}
 		err = json.Unmarshal(body, &aclParam)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to unmarshal request body.")
+			plugin.Log.Error("Failed to unmarshal request body.")
 			formatter.JSON(w, http.StatusBadRequest, err)
 			return
 		}
 
 		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-		defer ch.Close()
+		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error creating channel: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
+		defer ch.Close()
 
-		aclIndex := ACLIndex{}
-		aclIndex.Idx, err = aclvpp.AddIPAcl(aclParam.Rules, aclParam.AclName, plugin.Deps.Log, ch, nil)
+		var aclIndex struct {
+			Idx uint32 `json:"acl_index"`
+		}
+		aclIndex.Idx, err = aclvpp.AddIPAcl(aclParam.Rules, aclParam.AclName, plugin.Log, ch, nil)
 		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
+			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, aclIndex)
 			return
 		}
 
-		plugin.Deps.Log.Debug(aclIndex)
+		plugin.Log.Debug(aclIndex)
 		formatter.JSON(w, http.StatusOK, aclIndex)
 	}
 }
 
-// showCommandHandler - used to execute VPP CLI commands
-func (plugin *RESTAPIPlugin) showCommandHandler(formatter *render.Render) http.HandlerFunc {
+// commandHandler - used to execute VPP CLI commands
+func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		var reqParam map[string]string
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to parse request body.")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			plugin.Log.Error("Failed to parse request body.")
+			formatter.JSON(w, http.StatusBadRequest, err)
 			return
 		}
 
+		var reqParam map[string]string
 		err = json.Unmarshal(body, &reqParam)
 		if err != nil {
-			plugin.Deps.Log.Error("Failed to unmarshal request body.")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			plugin.Log.Error("Failed to unmarshal request body.")
+			formatter.JSON(w, http.StatusBadRequest, err)
 			return
 		}
 
 		command, ok := reqParam["vppclicommand"]
+		if !ok || command == "" {
+			plugin.Log.Error("vppclicommand parameter missing or empty")
+			formatter.JSON(w, http.StatusBadRequest, "vppclicommand parameter missing or empty")
+			return
+		}
 
-		if !ok {
-			plugin.Deps.Log.Error("command parameter not included.")
+		plugin.Log.Debugf("VPPCLI command: %v", command)
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		r := &vpe.CliInband{
+			Length: uint32(len(command)),
+			Cmd:    []byte(command),
+		}
+		reply := &vpe.CliInbandReply{}
+		err = ch.SendRequest(r).ReceiveReply(reply)
+		if err != nil {
+			err = fmt.Errorf("Sending request failed: %v", err)
+			plugin.Log.Error(err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		} else if reply.Retval > 0 {
+			err = fmt.Errorf("Request returned error code: %v", reply.Retval)
+			plugin.Log.Error(err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if command != "" {
+		plugin.Log.Debugf("VPPCLI response: %s", reply.Reply)
+		formatter.Text(w, http.StatusOK, string(reply.Reply))
+	}
+}
 
-			plugin.Deps.Log.WithField("VPPCLI command", command).Info("VPPCLI command")
+func (plugin *Plugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+	r := &vpe.CliInband{
+		Length: uint32(len(command)),
+		Cmd:    []byte(command),
+	}
 
-			ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-			defer ch.Close()
+	reply := &vpe.CliInbandReply{}
+	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
+		return nil, fmt.Errorf("Sending request failed: %v", err)
+	} else if reply.Retval > 0 {
+		return nil, fmt.Errorf("Request returned error code: %v", reply.Retval)
+	}
 
-			if err != nil {
-				plugin.Deps.Log.Errorf("Error creating channel: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, err)
-			} else {
-				req := &vpe.CliInband{}
-				req.Length = uint32(len(command))
-				req.Cmd = []byte(command)
+	return reply.Reply[:reply.Length], nil
+}
 
-				reply := &vpe.CliInbandReply{}
-				err = ch.SendRequest(req).ReceiveReply(reply)
-				if err != nil {
-					plugin.Deps.Log.Errorf("Error processing request: %v", err)
-					formatter.JSON(w, http.StatusInternalServerError, err)
-				}
+// telemetryHandler - returns various telemetry data
+func (plugin *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 
-				if reply.Retval > 0 {
-					plugin.Deps.Log.Errorf("Command returned code: %v", reply.Retval)
-				}
-
-				plugin.Deps.Log.WithField("VPPCLI response", string(reply.Reply)).Info("VPPCLI response")
-
-				formatter.Text(w, http.StatusOK, string(reply.Reply))
-			}
-		} else {
-			formatter.JSON(w, http.StatusBadRequest, "showCommand parameter is empty")
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
 		}
+		defer ch.Close()
+
+		type cmdOut struct {
+			Command string
+			Output  interface{}
+		}
+		var cmdOuts []cmdOut
+
+		var runCmd = func(command string) {
+			out, err := plugin.sendCommand(ch, command)
+			if err != nil {
+				plugin.Log.Errorf("Sending command failed: %v", err)
+				formatter.JSON(w, http.StatusInternalServerError, err)
+				return
+			}
+			cmdOuts = append(cmdOuts, cmdOut{
+				Command: command,
+				Output:  string(out),
+			})
+		}
+
+		runCmd("show node counters")
+		runCmd("show runtime")
+		runCmd("show buffers")
+		runCmd("show memory")
+		runCmd("show ip fib")
+		runCmd("show ip6 fib")
+
+		formatter.JSON(w, http.StatusOK, cmdOuts)
+	}
+}
+
+// telemetryMemoryHandler - returns various telemetry data
+func (plugin *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		info, err := vppcalls.GetMemory(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, info)
+	}
+}
+
+// telemetryHandler - returns various telemetry data
+func (plugin *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, runtimeInfo)
+	}
+}
+
+// telemetryHandler - returns various telemetry data
+func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		nodeCounters, err := vppcalls.GetNodeCounters(ch)
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, nodeCounters)
+	}
+}
+
+// indexHandler - used to get index page
+func (plugin *Plugin) indexHandler(formatter *render.Render) http.HandlerFunc {
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+	return func(w http.ResponseWriter, req *http.Request) {
+		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
+
+		r.HTML(w, http.StatusOK, "index", plugin.indexItems)
 	}
 }

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Index</title>
+</head>
+<body>
+<h2>Index:</h2>
+<ul>
+{{range .}}
+    <li>
+        <a href="{{.Path}}">{{.Name}}</a>
+    </li>
+{{end}}
+</ul>
+</body>
+</html>

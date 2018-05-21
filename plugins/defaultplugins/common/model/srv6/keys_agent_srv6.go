@@ -25,12 +25,12 @@ import (
 // Keys and prefixes(to keys) used for SRv6 in ETCD key-value store
 const (
 	basePrefix     = "vpp/config/v1/srv6/"
-	localSIDPrefix = basePrefix + "localsid/" // full key is in form .../localsid/{sid}
-	policyPrefix   = basePrefix + "policy/"   // full key is in form .../policy/{bsid}
+	localSIDPrefix = basePrefix + "localsid/" // full key is in form .../localsid/{name}
+	policyPrefix   = basePrefix + "policy/"   // full key is in form .../policy/{name}
 	steeringPrefix = basePrefix + "steering/" // full key is in form .../steering/{name}
 )
 
-var policySegmentPrefixRegExp = regexp.MustCompile(policyPrefix + "([^/]+)/segment/") // full key is in form .../policy/{bsid}/segment/{name}
+var policySegmentPrefixRegExp = regexp.MustCompile(policyPrefix + "([^/]+)/segment/") // full key is in form .../policy/{policyName}/segment/{name}
 
 // EtcdKeyPathDelimiter is delimiter used in ETCD keys and can be used to combine multiple etcd key parts together
 // (without worry that key part has accidentally this delimiter because otherwise it would not be one key part)
@@ -64,62 +64,15 @@ func SteeringPrefix() string {
 	return steeringPrefix
 }
 
-// ParseLocalSIDKey parses SID from a key.
-func ParseLocalSIDKey(key string) (SID, error) {
-	sidStr, err := parseOneValuedKey(key, LocalSIDPrefix(), "sid")
-	if err != nil {
-		return nil, err
-	}
-	return parseIPv6(sidStr)
-}
-
-// ParsePolicyKey parses BSID from a key.
-func ParsePolicyKey(key string) (net.IP, error) {
-	sidStr, err := parseOneValuedKey(key, PolicyPrefix(), "bsid")
-	if err != nil {
-		return nil, err
-	}
-	return parseIPv6(sidStr)
-}
-
-// ParsePolicySegmentKey parses BSID of policy where policy segment belongs to and name of policy segment.
-func ParsePolicySegmentKey(key string) (net.IP, string, error) {
+// ParsePolicySegmentKey parses policy segment name.
+func ParsePolicySegmentKey(key string) (string, error) {
 	if !policySegmentPrefixRegExp.MatchString(key) {
-		return nil, "", fmt.Errorf("key %v is not policy segment key", key)
+		return "", fmt.Errorf("key %v is not policy segment key", key)
 	}
 	suffix := strings.TrimPrefix(key, policyPrefix)
 	keyComponents := strings.Split(suffix, EtcdKeyPathDelimiter)
 	if len(keyComponents) != 3 {
-		return nil, "", fmt.Errorf("key \"%v\" should have policy BSID and policy segment name", key)
+		return "", fmt.Errorf("key %q should have policy name and policy segment name", key)
 	}
-	bsid, err := parseIPv6(keyComponents[0])
-	if err != nil {
-		return nil, "", fmt.Errorf("can't parse \"%v\" into SRv6 BSID (IPv6 address)", keyComponents[0])
-	}
-	return bsid, keyComponents[2], nil
-}
-
-func parseOneValuedKey(key string, prefix string, valueName string) (value string, err error) {
-	if !strings.HasPrefix(key, prefix) {
-		return "", fmt.Errorf("key \"%v\" should have prefix \"%v\"", key, prefix)
-	}
-	suffix := strings.TrimPrefix(key, prefix)
-	keyComponents := strings.Split(suffix, EtcdKeyPathDelimiter)
-	if len(keyComponents) != 1 {
-		return "", fmt.Errorf("key \"%v\" should have %v (and only %v) after \"%v\"", key, valueName, valueName, prefix)
-	}
-	return keyComponents[0], nil
-}
-
-// parseIPv6 parses string <str> to IPv6 address (including IPv4 address converted to IPv6 address)
-func parseIPv6(str string) (net.IP, error) {
-	ip := net.ParseIP(str)
-	if ip == nil {
-		return nil, fmt.Errorf("\"%v\" is not ip address", str)
-	}
-	ipv6 := ip.To16()
-	if ipv6 == nil {
-		return nil, fmt.Errorf("\"%v\" is not ipv6 address", str)
-	}
-	return ipv6, nil
+	return keyComponents[2], nil
 }

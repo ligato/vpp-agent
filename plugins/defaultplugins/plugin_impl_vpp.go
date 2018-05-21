@@ -754,8 +754,7 @@ func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 		Log:         srLogger,
 		GoVppmux:    plugin.GoVppmux,
 		SwIfIndexes: plugin.swIfIndexes,
-		VppCalls:    vppcalls.NewSRv6Calls(),
-		Stopwatch:   stopwatch,
+		VppCalls:    vppcalls.NewSRv6Calls(srLogger, stopwatch),
 	}
 	// Init SR plugin
 	if err := plugin.srv6Configurator.Init(); err != nil {
