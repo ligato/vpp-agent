@@ -5,7 +5,7 @@ DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
 LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
 
-ifeq ($(STRIP), y)
+ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
