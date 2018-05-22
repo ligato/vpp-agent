@@ -1,8 +1,34 @@
+# Release v1.4 (2018-05-XX)
+
+## Compatibility
+- VPP v18.04 (ac2b736)
+- cn-infra v1.3
+
+## New Features
+- [Consul](https://www.consul.io/) support
+  * Consul is now supported as an key-value store alternative to ETCD.
+    More information in the [readme](https://github.com/ligato/cn-infra/blob/master/db/keyval/consul/README.md).
+- [telemetry](plugins/telemetry)
+  * New plugin for collecting telemetry data about VPP metrics
+    and serving them via HTTP server for Prometheus.
+    More information in the [readme](plugins/telemetry/README.md).
+- [ipsecplugin](plugins/defaultplugins/ipsecplugin)
+  * Now supports tunnel interface for encrypting all the data
+    passing through that interface.
+
+## Improvements
+- __vpp-agent-grpc__ executable merged with [vpp-agent](cmd/vpp-agent) command.
+- [govppmux](plugins/govppmux) can now [configure reply timeout](plugins/govppmux/README.md).
+- Corrected some namings and cleaned up redundancy in the proto models.
+
+## Bugfix
+  * Fixed issue with GoVPP channels returning errors after timeout.
+
 # Release v1.3 (2018-03-22)
 
 ## Compatibility
-VPP v18.01-rc0~605-g954d437
-cn-infra v1.2
+- VPP v18.01-rc0~605-g954d437
+- cn-infra v1.2
 
 The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github.com/vpp-dev/vpp/tree/stable-1801-contiv).
 
@@ -54,8 +80,8 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 # Release v1.2 (2018-02-07)
 
 ## Compatibility
-VPP v18.04-rc0~90-gd95c39e
-cn-infra v1.1
+- VPP v18.04-rc0~90-gd95c39e
+- cn-infra v1.1
 
 ### Improvements
 - [aclplugin](plugins/defaultplugins/aclplugin) 
@@ -91,8 +117,8 @@ cn-infra v1.1
 # Release v1.1 (2018-01-22)
 
 ## Compatibility
-VPP version v18.04-rc0~33-gb59bd65
-cn-infra v1.0.8
+- VPP version v18.04-rc0~33-gb59bd65
+- cn-infra v1.0.8
 
 ### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
@@ -138,8 +164,8 @@ cn-infra v1.0.8
 # Release v1.0.8 (2017-11-21)
 
 ## Compatibility
-VPP v18.01-rc0-309-g70bfcaf
-cn-infra v1.0.7
+- VPP v18.01-rc0-309-g70bfcaf
+- cn-infra v1.0.7
 
 ### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
@@ -182,8 +208,8 @@ cn-infra v1.0.7
 # Release v1.0.7 (2017-10-30)
 
 ## Compatibility
-VPP version v18.01-rc0~154-gfc1c612
-cn-infra v1.0.6
+- VPP version v18.01-rc0~154-gfc1c612
+- cn-infra v1.0.6
 
 ### Major Themes
 
@@ -203,7 +229,7 @@ cn-infra v1.0.6
 # Release v1.0.6 (2017-10-17)
 
 ## Compatibility
-cn-infra v1.0.5
+- cn-infra v1.0.5
 
 ### Major Themes
 
@@ -216,8 +242,8 @@ cn-infra v1.0.5
 # Release v1.0.5 (2017-09-26)
 
 ## Compatibility
-VPP version v17.10-rc0~334-gce41a5c
-cn-infra v1.0.4
+- VPP version v17.10-rc0~334-gce41a5c
+- cn-infra v1.0.4
 
 ### Major Themes
 
@@ -256,13 +282,12 @@ Enabled support for wathing data store `OfDifferentAgent()` - see:
 Preview of new Kafka client API methods that allows to fill also partition and offset argument. New methods implementation ignores these new parameters for now (fallbacking to existing implementation based on `github.com/bsm/sarama-cluster` and `github.com/Shopify/sarama`).
 
 ## Compatibility
-VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
-
+- VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 
 # Release v1.0.2 (2017-08-28)
 
 ## Compatibility
-VPP version v17.10-rc0~203
+- VPP version v17.10-rc0~203
 
 ### Major Themes
 
