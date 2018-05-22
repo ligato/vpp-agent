@@ -243,38 +243,37 @@ func (p *Plugin) AfterInit() error {
 			runtimeInfo, err := vppcalls.GetRuntimeInfo(p.vppCh)
 			if err != nil {
 				p.Log.Errorf("Sending command failed: %v", err)
-				return
-			}
+			} else {
+				for _, thread := range runtimeInfo.Threads {
+					for _, item := range thread.Items {
+						stats, ok := p.runtimeStats[item.Name]
+						if !ok {
+							stats = &runtimeStats{
+								threadID:   thread.ID,
+								threadName: thread.Name,
+								itemName:   item.Name,
+								metrics:    map[string]prometheus.Gauge{},
+							}
 
-			for _, thread := range runtimeInfo.Threads {
-				for _, item := range thread.Items {
-					stats, ok := p.runtimeStats[item.Name]
-					if !ok {
-						stats = &runtimeStats{
-							threadID:   thread.ID,
-							threadName: thread.Name,
-							itemName:   item.Name,
-							metrics:    map[string]prometheus.Gauge{},
-						}
-
-						// add gauges with corresponding labels into vectors
-						for k, vec := range p.runtimeGaugeVecs {
-							stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-								runtimeItemLabel:     item.Name,
-								runtimeThreadLabel:   thread.Name,
-								runtimeThreadIDLabel: strconv.Itoa(int(thread.ID)),
-							})
-							if err != nil {
-								p.Log.Error(err)
+							// add gauges with corresponding labels into vectors
+							for k, vec := range p.runtimeGaugeVecs {
+								stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+									runtimeItemLabel:     item.Name,
+									runtimeThreadLabel:   thread.Name,
+									runtimeThreadIDLabel: strconv.Itoa(int(thread.ID)),
+								})
+								if err != nil {
+									p.Log.Error(err)
+								}
 							}
 						}
-					}
 
-					stats.metrics[runtimeCallsMetric].Set(float64(item.Calls))
-					stats.metrics[runtimeVectorsMetric].Set(float64(item.Vectors))
-					stats.metrics[runtimeSuspendsMetric].Set(float64(item.Suspends))
-					stats.metrics[runtimeClocksMetric].Set(item.Clocks)
-					stats.metrics[runtimeVectorsPerCallMetric].Set(item.VectorsPerCall)
+						stats.metrics[runtimeCallsMetric].Set(float64(item.Calls))
+						stats.metrics[runtimeVectorsMetric].Set(float64(item.Vectors))
+						stats.metrics[runtimeSuspendsMetric].Set(float64(item.Suspends))
+						stats.metrics[runtimeClocksMetric].Set(item.Clocks)
+						stats.metrics[runtimeVectorsPerCallMetric].Set(item.VectorsPerCall)
+					}
 				}
 			}
 
@@ -282,74 +281,72 @@ func (p *Plugin) AfterInit() error {
 			memoryInfo, err := vppcalls.GetMemory(p.vppCh)
 			if err != nil {
 				p.Log.Errorf("Sending command failed: %v", err)
-				return
-			}
+			} else {
+				for _, thread := range memoryInfo.Threads {
+					stats, ok := p.memoryStats[thread.Name]
+					if !ok {
+						stats = &memoryStats{
+							threadName: thread.Name,
+							threadID:   thread.ID,
+							metrics:    map[string]prometheus.Gauge{},
+						}
 
-			for _, thread := range memoryInfo.Threads {
-				stats, ok := p.memoryStats[thread.Name]
-				if !ok {
-					stats = &memoryStats{
-						threadName: thread.Name,
-						threadID:   thread.ID,
-						metrics:    map[string]prometheus.Gauge{},
-					}
-
-					// add gauges with corresponding labels into vectors
-					for k, vec := range p.memoryGaugeVecs {
-						stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-							memoryThreadLabel:   thread.Name,
-							memoryThreadIDLabel: strconv.Itoa(int(thread.ID)),
-						})
-						if err != nil {
-							p.Log.Error(err)
+						// add gauges with corresponding labels into vectors
+						for k, vec := range p.memoryGaugeVecs {
+							stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+								memoryThreadLabel:   thread.Name,
+								memoryThreadIDLabel: strconv.Itoa(int(thread.ID)),
+							})
+							if err != nil {
+								p.Log.Error(err)
+							}
 						}
 					}
-				}
 
-				stats.metrics[memoryObjectsMetric].Set(float64(thread.Objects))
-				stats.metrics[memoryUsedMetric].Set(float64(thread.Used))
-				stats.metrics[memoryTotalMetric].Set(float64(thread.Total))
-				stats.metrics[memoryFreeMetric].Set(float64(thread.Free))
-				stats.metrics[memoryReclaimedMetric].Set(float64(thread.Reclaimed))
-				stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
-				stats.metrics[memoryCapacityMetric].Set(float64(thread.Capacity))
+					stats.metrics[memoryObjectsMetric].Set(float64(thread.Objects))
+					stats.metrics[memoryUsedMetric].Set(float64(thread.Used))
+					stats.metrics[memoryTotalMetric].Set(float64(thread.Total))
+					stats.metrics[memoryFreeMetric].Set(float64(thread.Free))
+					stats.metrics[memoryReclaimedMetric].Set(float64(thread.Reclaimed))
+					stats.metrics[memoryOverheadMetric].Set(float64(thread.Overhead))
+					stats.metrics[memoryCapacityMetric].Set(float64(thread.Capacity))
+				}
 			}
 
 			// Update buffers
 			buffersInfo, err := vppcalls.GetBuffersInfo(p.vppCh)
 			if err != nil {
 				p.Log.Errorf("Sending command failed: %v", err)
-				return
-			}
+			} else {
+				for _, item := range buffersInfo.Items {
+					stats, ok := p.buffersStats[item.Name]
+					if !ok {
+						stats = &buffersStats{
+							threadID:  item.ThreadID,
+							itemName:  item.Name,
+							itemIndex: item.Index,
+							metrics:   map[string]prometheus.Gauge{},
+						}
 
-			for _, item := range buffersInfo.Items {
-				stats, ok := p.buffersStats[item.Name]
-				if !ok {
-					stats = &buffersStats{
-						threadID:  item.ThreadID,
-						itemName:  item.Name,
-						itemIndex: item.Index,
-						metrics:   map[string]prometheus.Gauge{},
-					}
-
-					// add gauges with corresponding labels into vectors
-					for k, vec := range p.buffersGaugeVecs {
-						stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
-							buffersThreadIDLabel: strconv.Itoa(int(item.ThreadID)),
-							buffersItemLabel:     item.Name,
-							buffersIndexLabel:    strconv.Itoa(int(item.Index)),
-						})
-						if err != nil {
-							p.Log.Error(err)
+						// add gauges with corresponding labels into vectors
+						for k, vec := range p.buffersGaugeVecs {
+							stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+								buffersThreadIDLabel: strconv.Itoa(int(item.ThreadID)),
+								buffersItemLabel:     item.Name,
+								buffersIndexLabel:    strconv.Itoa(int(item.Index)),
+							})
+							if err != nil {
+								p.Log.Error(err)
+							}
 						}
 					}
-				}
 
-				stats.metrics[buffersSizeMetric].Set(float64(item.Size))
-				stats.metrics[buffersAllocMetric].Set(float64(item.Alloc))
-				stats.metrics[buffersFreeMetric].Set(float64(item.Free))
-				stats.metrics[buffersNumAllocMetric].Set(float64(item.NumAlloc))
-				stats.metrics[buffersNumFreeMetric].Set(float64(item.NumFree))
+					stats.metrics[buffersSizeMetric].Set(float64(item.Size))
+					stats.metrics[buffersAllocMetric].Set(float64(item.Alloc))
+					stats.metrics[buffersFreeMetric].Set(float64(item.Free))
+					stats.metrics[buffersNumAllocMetric].Set(float64(item.NumAlloc))
+					stats.metrics[buffersNumFreeMetric].Set(float64(item.NumFree))
+				}
 			}
 
 			// Delay period between updates

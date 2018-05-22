@@ -28,7 +28,7 @@ func TestGetBuffers(t *testing.T) {
 
 	const reply = `Thread             Name                 Index       Size        Alloc       Free       #Alloc       #Free  
      0                       default           0        2048    576k       42.75k        256         19    
-     0                 lacp-ethernet           1         256      0           0           0           0    
+     0                 lacp-ethernet           1         256    1.13m        27k         512         12    
      0               marker-ethernet           2         256      0           0           0           0    
      0                       ip4 arp           3         256      0           0           0           0    
      0        ip6 neighbor discovery           4         256      0           0           0           0    
@@ -54,6 +54,16 @@ func TestGetBuffers(t *testing.T) {
 		Free:     42750,
 		NumAlloc: 256,
 		NumFree:  19,
+	}))
+	Expect(info.Items[1]).To(Equal(BuffersItem{
+		ThreadID: 0,
+		Name:     "lacp-ethernet",
+		Index:    1,
+		Size:     256,
+		Alloc:    1130000,
+		Free:     27000,
+		NumAlloc: 512,
+		NumFree:  12,
 	}))
 }
 

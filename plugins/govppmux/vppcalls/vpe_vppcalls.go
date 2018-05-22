@@ -91,7 +91,7 @@ type MemoryThread struct {
 
 var (
 	// Regular expression to parse output from `show memory`
-	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, (\d+k?) of (\d+k?) used, (\d+k?) free, (\d+k?) reclaimed, (\d+k?) overhead, (\d+k?) capacity`)
+	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkm\.]+) of ([\dkm\.]+) used, ([\dkm\.]+) free, ([\dkm\.]+) reclaimed, ([\dkm\.]+) overhead, ([\dkm\.]+) capacity`)
 )
 
 // GetNodeCounters retrieves node counters info
@@ -296,7 +296,7 @@ type BuffersItem struct {
 
 var (
 	// Regular expression to parse output from `show buffers`
-	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dk\.]+)\s+([\dk\.]+)\s+(\d+)\s+(\d+).*$`)
+	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dkm\.]+)\s+([\dkm\.]+)\s+(\d+)\s+(\d+).*$`)
 )
 
 // GetBuffersInfo retrieves buffers info
@@ -352,6 +352,7 @@ func GetBuffersInfo(vppChan VPPChannel) (*BuffersInfo, error) {
 func strToFloat64(s string) float64 {
 	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
 	s = strings.Replace(s, "k", "e3", 1)
+	s = strings.Replace(s, "m", "e6", 1)
 
 	num, err := strconv.ParseFloat(s, 10)
 	if err != nil {
