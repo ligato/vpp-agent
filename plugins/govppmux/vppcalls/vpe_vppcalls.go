@@ -91,7 +91,7 @@ type MemoryThread struct {
 
 var (
 	// Regular expression to parse output from `show memory`
-	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, (\d+k?) of (\d+k?) used, (\d+k?) free, (\d+k?) reclaimed, (\d+k?) overhead, (\d+k?) capacity`)
+	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkm\.]+) of ([\dkm\.]+) used, ([\dkm\.]+) free, ([\dkm\.]+) reclaimed, ([\dkm\.]+) overhead, ([\dkm\.]+) capacity`)
 )
 
 // GetNodeCounters retrieves node counters info
@@ -146,6 +146,12 @@ type NodeCounter struct {
 	Reason string `json:"reason"`
 }
 
+var (
+	// Regular expression to parse output from `show node counters`
+	nodeCountersRe = regexp.MustCompile(
+		`^\s+(\d+)\s+([\w-]+)\s+([\w ]+)$`)
+)
+
 // GetNodeCounters retrieves node counters info
 func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
@@ -155,21 +161,33 @@ func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
 
 	var counters []NodeCounter
 
-	for _, line := range strings.Split(string(data), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 3 {
-			if fields[0] == "Count" {
-				counters = []NodeCounter{}
-				continue
-			}
-			if counters != nil {
-				counters = append(counters, NodeCounter{
-					Count:  strToUint64(fields[0]),
-					Node:   fields[1],
-					Reason: fields[2],
-				})
-			}
+	for i, line := range strings.Split(string(data), "\n") {
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
+		// Check first line
+		if i == 0 {
+			fields := strings.Fields(line)
+			// Verify header
+			if len(fields) != 3 || fields[0] != "Count" {
+				return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
+			}
+			continue
+		}
+
+		// Parse lines using regexp
+		matches := nodeCountersRe.FindStringSubmatch(line)
+		if len(matches)-1 != 3 {
+			return nil, fmt.Errorf("parsing failed for `show node counters` line: %q", line)
+		}
+		fields := matches[1:]
+
+		counters = append(counters, NodeCounter{
+			Count:  strToUint64(fields[0]),
+			Node:   fields[1],
+			Reason: fields[2],
+		})
 	}
 
 	info := &NodeCounterInfo{
@@ -296,7 +314,7 @@ type BuffersItem struct {
 
 var (
 	// Regular expression to parse output from `show buffers`
-	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dk\.]+)\s+([\dk\.]+)\s+(\d+)\s+(\d+).*$`)
+	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dkm\.]+)\s+([\dkm\.]+)\s+(\d+)\s+(\d+).*$`)
 )
 
 // GetBuffersInfo retrieves buffers info
@@ -352,6 +370,7 @@ func GetBuffersInfo(vppChan VPPChannel) (*BuffersInfo, error) {
 func strToFloat64(s string) float64 {
 	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
 	s = strings.Replace(s, "k", "e3", 1)
+	s = strings.Replace(s, "m", "e6", 1)
 
 	num, err := strconv.ParseFloat(s, 10)
 	if err != nil {
