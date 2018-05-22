@@ -21,6 +21,7 @@ import (
 	if_dump "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 )
 
 // Resync writes missing BDs to the VPP and removes obsolete ones.
@@ -131,7 +132,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			}
 
 			// Register bridge domain
-			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, nbBD)
+			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, l2idx.NewBDMetadata(nbBD, nil))
 			plugin.BridgeDomainIDSeq++
 
 			plugin.Log.Debugf("RESYNC Bridge domain: config %v (ID %v) modified", tag, vppBDIdx)

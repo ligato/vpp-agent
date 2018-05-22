@@ -136,7 +136,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 	}
 
 	// Register created bridge domain.
-	plugin.BdIndices.RegisterName(bdConfig.Name, bdIdx, bdConfig)
+	plugin.BdIndices.RegisterName(bdConfig.Name, bdIdx, l2idx.NewBDMetadata(bdConfig, nil))
 	plugin.Log.WithFields(logging.Fields{"Name": bdConfig.Name, "Index": bdIdx}).Debug("Bridge domain registered")
 
 	// Push to bridge domain state.
@@ -157,7 +157,7 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 	plugin.Log.Infof("Modifying VPP bridge domain %v", newBdConfig.Name)
 
 	// Update bridge domain's registered metadata
-	if success := plugin.BdIndices.UpdateMetadata(newBdConfig.Name, newBdConfig); !success {
+	if success := plugin.BdIndices.UpdateMetadata(newBdConfig.Name, l2idx.NewBDMetadata(newBdConfig, nil)); !success {
 		plugin.Log.Errorf("Failed to update metadata for bridge domain %s", newBdConfig.Name)
 	}
 
