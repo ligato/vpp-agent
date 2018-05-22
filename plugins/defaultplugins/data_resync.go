@@ -34,6 +34,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin"
 )
 
 // DataResyncReq is used to transfer expected configuration of the VPP to the plugins.
@@ -80,6 +81,14 @@ type DataResyncReq struct {
 	IPSecSAs []*ipsec.SecurityAssociations_SA
 	// IPSecTunnels is a list of all IPSec Tunnel interfaces expected to be in VPP after RESYNC
 	IPSecTunnels []*ipsec.TunnelInterfaces_Tunnel
+	// LocalSids is a list of all segment routing local SIDs expected to be in VPP after RESYNC
+	LocalSids []*srv6.LocalSID
+	// SrPolicies is a list of all segment routing policies expected to be in VPP after RESYNC
+	SrPolicies []*srv6.Policy
+	// SrPolicySegments is a list of all segment routing policy segments (with identifiable name) expected to be in VPP after RESYNC
+	SrPolicySegments []*srplugin.NamedPolicySegment
+	// SrSteerings is a list of all segment routing steerings (with identifiable name) expected to be in VPP after RESYNC
+	SrSteerings []*srplugin.NamedSteering
 }
 
 // NewDataResyncReq is a constructor.
@@ -106,6 +115,10 @@ func NewDataResyncReq() *DataResyncReq {
 		IPSecSPDs:           []*ipsec.SecurityPolicyDatabases_SPD{},
 		IPSecSAs:            []*ipsec.SecurityAssociations_SA{},
 		IPSecTunnels:        []*ipsec.TunnelInterfaces_Tunnel{},
+		LocalSids:           []*srv6.LocalSID{},
+		SrPolicies:          []*srv6.Policy{},
+		SrPolicySegments:    []*srplugin.NamedPolicySegment{},
+		SrSteerings:         []*srplugin.NamedSteering{},
 	}
 }
 
@@ -241,6 +254,11 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
+	if !plugin.droppedFromResync(srv6.BasePrefix()) {
+		if err := plugin.srv6Configurator.Resync(req.LocalSids, req.SrPolicies, req.SrPolicySegments, req.SrSteerings); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
+	}
 	// log errors if any
 	if len(resyncErrs) == 0 {
 		return nil
@@ -316,6 +334,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
 			numIPSecs := appendResyncIPSec(resyncData, req)
 			plugin.Log.Debug("Received RESYNC IPSec configs ", numIPSecs)
+		} else if strings.HasPrefix(key, srv6.BasePrefix()) {
+			numSRs := appendResyncSR(resyncData, req)
+			plugin.Log.Debug("Received RESYNC SR configs ", numSRs)
 		} else {
 			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
 		}
@@ -673,6 +694,46 @@ func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (
 				value := &ipsec.TunnelInterfaces_Tunnel{}
 				if err := data.GetValue(value); err == nil {
 					req.IPSecTunnels = append(req.IPSecTunnels, value)
+					num++
+				}
+			}
+		}
+	}
+	return
+}
+
+func appendResyncSR(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
+	for {
+		if data, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			if strings.HasPrefix(data.GetKey(), srv6.LocalSIDPrefix()) {
+				value := &srv6.LocalSID{}
+				if err := data.GetValue(value); err == nil {
+					req.LocalSids = append(req.LocalSids, value)
+					num++
+				}
+			} else if strings.HasPrefix(data.GetKey(), srv6.PolicyPrefix()) {
+				if srv6.IsPolicySegmentPrefix(data.GetKey()) { //Policy segment
+					value := &srv6.PolicySegment{}
+					if err := data.GetValue(value); err == nil {
+						// TODO add proper error handling, everywhere around is missing handling of error case
+						if name, err := srv6.ParsePolicySegmentKey(data.GetKey()); err == nil {
+							req.SrPolicySegments = append(req.SrPolicySegments, &srplugin.NamedPolicySegment{Name: name, Segment: value})
+							num++
+						}
+					}
+				} else { // Policy
+					value := &srv6.Policy{}
+					if err := data.GetValue(value); err == nil {
+						req.SrPolicies = append(req.SrPolicies, value)
+						num++
+					}
+				}
+			} else if strings.HasPrefix(data.GetKey(), srv6.SteeringPrefix()) {
+				value := &srv6.Steering{}
+				if err := data.GetValue(value); err == nil {
+					req.SrSteerings = append(req.SrSteerings, &srplugin.NamedSteering{Name: strings.TrimPrefix(data.GetKey(), srv6.SteeringPrefix()), Steering: value})
 					num++
 				}
 			}
