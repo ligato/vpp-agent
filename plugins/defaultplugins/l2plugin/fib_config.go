@@ -359,6 +359,12 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(bdName string, bdID ui
 	return wasErr
 }
 
+// ResolveUpdatedBridgeDomain //todo
+func (plugin *FIBConfigurator) ResolveUpdatedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
+	// TBD
+	return nil
+}
+
 // ResolveDeletedInterface handles removed bridge domain. In that case, FIB entry remains on the VPP but it is not possible
 // to delete it.
 func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
