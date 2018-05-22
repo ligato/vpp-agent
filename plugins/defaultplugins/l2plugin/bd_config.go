@@ -190,18 +190,18 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 
 	// Update interfaces.
 	toSet, toUnset := plugin.calculateIfaceDiff(newBdConfig.Interfaces, oldBdConfig.Interfaces)
-	newConfIfs, err := vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig.Name, bdIdx, toUnset, plugin.SwIfIndices, plugin.Log,
+	unConfIfs, err := vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig.Name, bdIdx, toUnset, plugin.SwIfIndices, plugin.Log,
 		plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
-	unconfIfs, err := vppcalls.SetInterfacesToBridgeDomain(newBdConfig.Name, bdIdx, toSet, plugin.SwIfIndices, plugin.Log,
+	newConfIfs, err := vppcalls.SetInterfacesToBridgeDomain(newBdConfig.Name, bdIdx, toSet, plugin.SwIfIndices, plugin.Log,
 		plugin.vppChan, plugin.Stopwatch)
 	if err != nil {
 		return err
 	}
 	// Refresh configured interfaces
-	configuredIfs := plugin.reckonInterfaces(bdMeta.ConfiguredInterfaces, newConfIfs, unconfIfs)
+	configuredIfs := plugin.reckonInterfaces(bdMeta.ConfiguredInterfaces, newConfIfs, unConfIfs)
 
 	// Update ARP termination table.
 	toAdd, toRemove := plugin.calculateARPDiff(newBdConfig.ArpTerminationTable, oldBdConfig.ArpTerminationTable)
