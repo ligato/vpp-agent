@@ -45,7 +45,6 @@ type memNamedMapping struct {
 	indexes map[string] /* index name */ map[string] /* index value */ *nameSet
 	// subscribers to whom notifications are delivered
 	subscribers sync.Map //map[core.PluginName]func(idxmap.NamedMappingGenericEvent)
-	owner       core.PluginName
 	title       string
 }
 
@@ -53,14 +52,13 @@ type memNamedMapping struct {
 // of idxmap.NamedMappingRW
 // An index function that builds secondary indexes for an item can be defined
 // and passed as <indexFunction>.
-func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
+func NewNamedMapping(logger logging.Logger, title string,
 	indexFunction func(interface{}) map[string][]string) idxmap.NamedMappingRW {
 	mem := memNamedMapping{}
 	mem.Logger = logger
 	mem.nameToIdx = map[string]*mappingItem{}
 	mem.indexes = map[string]map[string]*nameSet{}
 	mem.createIndexes = indexFunction
-	mem.owner = owner
 	mem.title = title
 	return &mem
 }
@@ -69,7 +67,7 @@ func NewNamedMapping(logger logging.Logger, owner core.PluginName, title string,
 // If there is an already stored item with that name, it gets overwritten.
 func (mem *memNamedMapping) Put(name string, value interface{}) {
 	mem.putNameToIdxSync(name, value)
-	mem.publishToChannel(name, value)
+	mem.publishAddToChannel(name, value)
 }
 
 // Update replaces metadata in existing item with <name>. If item is missing,
@@ -78,6 +76,7 @@ func (mem *memNamedMapping) Update(name string, value interface{}) (success bool
 	_, found := mem.nameToIdx[name]
 	if found {
 		mem.putNameToIdxSync(name, value)
+		mem.publishUpdateToChannel(name, value)
 		return true
 	}
 	return false
@@ -229,20 +228,45 @@ func (mem *memNamedMapping) putNameToIdxSync(name string, metadata interface{}) 
 	mem.putNameToIdx(name, metadata)
 }
 
-func (mem *memNamedMapping) publishToChannel(name string, value interface{}) {
+func (mem *memNamedMapping) publishAddToChannel(name string, value interface{}) {
 	mem.subscribers.Range(func(key, val interface{}) bool {
 		subscriber := key.(core.PluginName)
 		clb := val.(func(idxmap.NamedMappingGenericEvent))
 
 		if clb != nil {
-			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
-				Owner:         mem.owner,
-				RegistryTitle: mem.title,
-				Name:          name,
-				Del:           false},
+			dto := idxmap.NamedMappingGenericEvent{
+				NamedMappingEvent: idxmap.NamedMappingEvent{
+					RegistryTitle: mem.title,
+					Name:          name,
+					Del:           false,
+					Update:        false,
+				},
 				Value: value,
 			}
-			mem.Debug("publish write to ", subscriber, dto)
+			mem.Debug("publish add to ", subscriber, dto)
+			clb(dto)
+		}
+
+		return true
+	})
+}
+
+func (mem *memNamedMapping) publishUpdateToChannel(name string, value interface{}) {
+	mem.subscribers.Range(func(key, val interface{}) bool {
+		subscriber := key.(core.PluginName)
+		clb := val.(func(idxmap.NamedMappingGenericEvent))
+
+		if clb != nil {
+			dto := idxmap.NamedMappingGenericEvent{
+				NamedMappingEvent: idxmap.NamedMappingEvent{
+					RegistryTitle: mem.title,
+					Name:          name,
+					Del:           false,
+					Update:        true,
+				},
+				Value: value,
+			}
+			mem.Debug("publish update to ", subscriber, dto)
 			clb(dto)
 		}
 
@@ -256,11 +280,13 @@ func (mem *memNamedMapping) publishDelToChannel(name string, value interface{}) 
 		clb := val.(func(idxmap.NamedMappingGenericEvent))
 
 		if clb != nil {
-			dto := idxmap.NamedMappingGenericEvent{NamedMappingEvent: idxmap.NamedMappingEvent{
-				Owner:         mem.owner,
-				RegistryTitle: mem.title,
-				Name:          name,
-				Del:           true},
+			dto := idxmap.NamedMappingGenericEvent{
+				NamedMappingEvent: idxmap.NamedMappingEvent{
+					RegistryTitle: mem.title,
+					Name:          name,
+					Del:           true,
+					Update:        false,
+				},
 				Value: value,
 			}
 			mem.Debug("publish del to ", subscriber, dto)

@@ -71,14 +71,16 @@ type NamedMappingRW interface {
 // part that does not contain metadata of type interface{} thus it can be reused
 // in mapping with typed metadata.
 type NamedMappingEvent struct {
-	// The owner plugin of the registry (use also as namespace)
-	Owner core.PluginName
 	// Logical name of the object
 	Name string
 	// Del denotes a type of change
 	// - it is true if an item was removed
 	// - it false if an item was added or updated
 	Del bool
+	// Update denotes a type of change
+	// - it is true if and item metadata was updated
+	// - it is false if an item was added or removed
+	Update bool
 	// RegistryTitle identifies the registry (NameToIndexMapping)
 	RegistryTitle string
 }
