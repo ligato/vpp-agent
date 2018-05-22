@@ -188,3 +188,37 @@ Thread 2 vpp_wk_1
 		Capacity:  1048572000,
 	}))
 }
+
+func TestGetNodeCounters(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	const reply = `   Count                    Node                  Reason
+        32            ipsec-output-ip4            IPSec policy protect
+        32               esp-encrypt              ESP pkts received
+        64             ipsec-input-ip4            IPSEC pkts received
+        32             ip4-icmp-input             unknown type
+        32             ip4-icmp-input             echo replies sent
+        14             ethernet-input             l3 mac mismatch
+         1                arp-input               ARP replies sent
+`
+	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
+		Reply:  []byte(reply),
+		Length: uint32(len(reply)),
+	})
+
+	info, err := GetNodeCounters(ctx.MockChannel)
+
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(info.Counters).To(HaveLen(7))
+	Expect(info.Counters[0]).To(Equal(NodeCounter{
+		Count:  32,
+		Node:   "ipsec-output-ip4",
+		Reason: "IPSec policy protect",
+	}))
+	Expect(info.Counters[6]).To(Equal(NodeCounter{
+		Count:  1,
+		Node:   "arp-input",
+		Reason: "ARP replies sent",
+	}))
+}

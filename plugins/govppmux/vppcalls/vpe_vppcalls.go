@@ -146,6 +146,12 @@ type NodeCounter struct {
 	Reason string `json:"reason"`
 }
 
+var (
+	// Regular expression to parse output from `show node counters`
+	nodeCountersRe = regexp.MustCompile(
+		`^\s+(\d+)\s+([\w-]+)\s+([\w ]+)$`)
+)
+
 // GetNodeCounters retrieves node counters info
 func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
@@ -155,21 +161,33 @@ func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
 
 	var counters []NodeCounter
 
-	for _, line := range strings.Split(string(data), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 3 {
-			if fields[0] == "Count" {
-				counters = []NodeCounter{}
-				continue
-			}
-			if counters != nil {
-				counters = append(counters, NodeCounter{
-					Count:  strToUint64(fields[0]),
-					Node:   fields[1],
-					Reason: fields[2],
-				})
-			}
+	for i, line := range strings.Split(string(data), "\n") {
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
+		// Check first line
+		if i == 0 {
+			fields := strings.Fields(line)
+			// Verify header
+			if len(fields) != 3 || fields[0] != "Count" {
+				return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
+			}
+			continue
+		}
+
+		// Parse lines using regexp
+		matches := nodeCountersRe.FindStringSubmatch(line)
+		if len(matches)-1 != 3 {
+			return nil, fmt.Errorf("parsing failed for `show node counters` line: %q", line)
+		}
+		fields := matches[1:]
+
+		counters = append(counters, NodeCounter{
+			Count:  strToUint64(fields[0]),
+			Node:   fields[1],
+			Reason: fields[2],
+		})
 	}
 
 	info := &NodeCounterInfo{
