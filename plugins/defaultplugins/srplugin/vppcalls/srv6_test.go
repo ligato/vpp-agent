@@ -46,7 +46,7 @@ var (
 	nextHopIPv4 = net.ParseIP("1.2.3.4")
 )
 
-var swIfIndex = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-dummy-plugin",
+var swIfIndex = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(),
 	"sw_if_indexes", ifaceidx.IndexMetadata))
 
 func init() {

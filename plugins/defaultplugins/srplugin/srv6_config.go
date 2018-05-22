@@ -71,16 +71,16 @@ func (plugin *SRv6Configurator) Init() (err error) {
 	}
 
 	// Create caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.Log, "srv6-configurator")
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log, "srv6-configurator")
-	plugin.steeringCache = cache.NewSteeringCache(plugin.Log, "srv6-configurator")
+	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
 	plugin.createdPolicies = make(map[string]struct{})
 
 	// Create indexes
 	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "srv6-configurator", "policy-segment-indexes", nil)
+	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-segment-indexes", nil)
 	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "srv6-configurator", "policy-indexes", nil)
+	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-indexes", nil)
 
 	return
 }

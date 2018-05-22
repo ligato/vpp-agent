@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -85,7 +84,7 @@ type NatConfigurator struct {
 }
 
 // Init NAT configurator
-func (plugin *NatConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
+func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-nat-conf")
@@ -95,11 +94,11 @@ func (plugin *NatConfigurator) Init(pluginName core.PluginName, logger logging.P
 	plugin.ifIndexes = ifIndexes
 	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "snat-indices", nil)
-	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "snat-mapping-indices", nil)
-	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "dnat-indices", nil)
-	plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "dnat-id-mapping-indices", nil)
+	plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-indices", nil)
+	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-mapping-indices", nil)
+	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-indices", nil)
+	plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-st-mapping-indices", nil)
+	plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
 	plugin.natIndexSeq, plugin.natMappingTagSeq = 1, 1
 
 	// Init VPP API channel

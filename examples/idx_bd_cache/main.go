@@ -75,9 +75,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name.
 	// /vnf-agent/agent1/vpp/config/v1/bd/
-	plugin.bdIdxAgent1 = l2idx.Cache(plugin.Agent1, plugin.PluginName)
+	plugin.bdIdxAgent1 = l2idx.Cache(plugin.Agent1)
 	// /vnf-agent/agent2/vpp/config/v1/bd/
-	plugin.bdIdxAgent2 = l2idx.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.bdIdxAgent2 = l2idx.Cache(plugin.Agent2)
 
 	return nil
 }

@@ -909,8 +909,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *vppcallfake.SRv6C
 	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
 	log.SetLevel(logging.DebugLevel)
 	// Interface index from default plugins
-	swIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "test-srv6",
-		"sw_if_indexes", ifaceidx.IndexMetadata))
+	swIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "sw_if_indexes", ifaceidx.IndexMetadata))
 	// Configurator
 	fakeVPPCalls := vppcallfake.NewSRv6Calls()
 	configurator := &srplugin.SRv6Configurator{

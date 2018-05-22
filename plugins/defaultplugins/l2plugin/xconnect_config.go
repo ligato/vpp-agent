@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -46,7 +45,7 @@ type XConnectConfigurator struct {
 }
 
 // Init essential configurator fields.
-func (plugin *XConnectConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API,
+func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-xc-conf")
@@ -54,9 +53,9 @@ func (plugin *XConnectConfigurator) Init(pluginName core.PluginName, logger logg
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, pluginName, "xc-indexes", nil))
-	plugin.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, pluginName, "xc-add-cache-indexes", nil))
-	plugin.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, pluginName, "xc-del-cache-indexes", nil))
+	plugin.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-indexes", nil))
+	plugin.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-add-cache-indexes", nil))
+	plugin.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-del-cache-indexes", nil))
 	plugin.xcIndexSeq = 1
 
 	// VPP channel
