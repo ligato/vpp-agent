@@ -15,7 +15,6 @@
 package cache
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
@@ -29,10 +28,10 @@ type PolicyCache struct {
 }
 
 // NewPolicyCache creates instance of PolicyCache
-func NewPolicyCache(logger logging.Logger, owner core.PluginName) *PolicyCache {
+func NewPolicyCache(logger logging.Logger) *PolicyCache {
 	return &PolicyCache{
 		log:      logger,
-		internal: mem.NewNamedMapping(logger, owner, "policy-cache", nil),
+		internal: mem.NewNamedMapping(logger, "policy-cache", nil),
 	}
 }
 

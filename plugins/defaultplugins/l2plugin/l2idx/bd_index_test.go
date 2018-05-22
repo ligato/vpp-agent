@@ -46,7 +46,7 @@ func testInitialization(t *testing.T, bdToIfaces map[string][]string) (idxvpp.Na
 	RegisterTestingT(t)
 
 	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "bd_indexes_test", l2idx.IndexMetadata)
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd_indexes_test", l2idx.IndexMetadata)
 	bdIndex := l2idx.NewBDIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 	Expect(names).To(BeEmpty())

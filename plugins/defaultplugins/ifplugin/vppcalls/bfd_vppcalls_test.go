@@ -33,7 +33,7 @@ func TestAddBfdUDPSession(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -65,7 +65,7 @@ func TestAddBfdUDPSessionIPv6(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -97,7 +97,7 @@ func TestAddBfdUDPSessionAuthKeyNotFound(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -152,7 +152,7 @@ func TestAddBfdUDPSessionIncorrectSrcIPError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -176,7 +176,7 @@ func TestAddBfdUDPSessionIncorrectDstIPError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -200,7 +200,7 @@ func TestAddBfdUDPSessionIPVerError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -258,7 +258,7 @@ func TestAddBfdUDPSessionFromDetails(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 	bfdKeyIndexes.RegisterName(string(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -290,7 +290,7 @@ func TestAddBfdUDPSessionFromDetailsAuthKeyNotFound(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -316,7 +316,7 @@ func TestAddBfdUDPSessionFromDetailsNoAuth(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -342,7 +342,7 @@ func TestAddBfdUDPSessionFromDetailsError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
 
@@ -360,7 +360,7 @@ func TestAddBfdUDPSessionFromDetailsRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "bfd", nil)
+	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{
 		Retval: 1,
@@ -380,7 +380,7 @@ func TestModifyBfdUDPSession(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -408,7 +408,7 @@ func TestModifyBfdUDPSessionIPv6(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -429,7 +429,7 @@ func TestModifyBfdUDPSessionDifferentIPVer(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -447,7 +447,7 @@ func TestModifyBfdUDPSessionNoInterface(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
 
@@ -464,7 +464,7 @@ func TestModifyBfdUDPSessionInvalidSrcIP(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -482,7 +482,7 @@ func TestModifyBfdUDPSessionInvalidDstIP(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -500,7 +500,7 @@ func TestModifyBfdUDPSessionError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -518,7 +518,7 @@ func TestModifyBfdUDPSessionRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{
@@ -814,7 +814,7 @@ func TestAddBfdEchoFunction(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{})
@@ -833,7 +833,7 @@ func TestAddBfdEchoFunctionInterfaceNotFound(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{})
 
@@ -848,7 +848,7 @@ func TestAddBfdEchoFunctionError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelEchoSourceReply{})
@@ -864,7 +864,7 @@ func TestAddBfdEchoFunctionRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-plugin", "if", nil))
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
 	ifIndexes.RegisterName("if1", 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{

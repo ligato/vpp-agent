@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -54,7 +53,7 @@ type BFDConfigurator struct {
 }
 
 // Init members and channels
-func (plugin *BFDConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API,
+func (plugin *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-bfd-conf")
@@ -62,9 +61,9 @@ func (plugin *BFDConfigurator) Init(pluginName core.PluginName, logger logging.P
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.sessionsIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "bfd_session_indexes", nil)
-	plugin.keysIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "bfd_auth_keys_indexes", nil)
-	plugin.echoFunctionIndex = nametoidx.NewNameToIdx(plugin.log, pluginName, "bfd_echo_function_index", nil)
+	plugin.sessionsIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_session_indexes", nil)
+	plugin.keysIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_auth_keys_indexes", nil)
+	plugin.echoFunctionIndex = nametoidx.NewNameToIdx(plugin.log, "bfd_echo_function_index", nil)
 	plugin.bfdIDSeq = 1
 
 	// VPP channel

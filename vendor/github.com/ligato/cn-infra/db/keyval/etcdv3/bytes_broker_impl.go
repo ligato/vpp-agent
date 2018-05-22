@@ -243,12 +243,40 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 	recvChan := watcher.Watch(context.Background(), prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
 	go func(registeredKey string) {
+		var compactRev int64
 		for {
 			select {
 			case wresp, ok := <-recvChan:
 				if !ok {
-					log.WithField("prefix", prefix).Debug("Watch recv chan was closed")
+					log.WithField("prefix", prefix).Warn("Watch recv channel was closed")
+					if compactRev != 0 {
+						recvChan = watcher.Watch(context.Background(), prefix,
+							clientv3.WithPrefix(), clientv3.WithPrevKV(), clientv3.WithRev(compactRev))
+						log.WithFields(logging.Fields{
+							"prefix": prefix,
+							"rev":    compactRev,
+						}).Warn("Watch recv channel was re-created")
+						compactRev = 0
+						continue
+					}
 					return
+				}
+				if wresp.Canceled {
+					log.WithField("prefix", prefix).Warn("Watch was canceled")
+				}
+				err := wresp.Err()
+				if err != nil {
+					log.WithFields(logging.Fields{
+						"prefix": prefix,
+						"err":    err,
+					}).Warn("Watch returned error")
+				}
+				compactRev = wresp.CompactRevision
+				if compactRev != 0 {
+					log.WithFields(logging.Fields{
+						"prefix": prefix,
+						"rev":    compactRev,
+					}).Warn("Watched data were compacted ")
 				}
 				for _, ev := range wresp.Events {
 					handleWatchEvent(log, resp, ev)
