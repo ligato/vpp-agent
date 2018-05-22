@@ -72,6 +72,12 @@ const (
 	buffersFreeMetric     = "free"
 	buffersNumAllocMetric = "num_alloc"
 	buffersNumFreeMetric  = "num_free"
+
+	// Node counters
+	nodeCounterItemLabel   = "item"
+	nodeCounterReasonLabel = "reason"
+
+	nodeCounterCountMetric = "count"
 )
 
 // Plugin registers Telemetry Plugin
@@ -88,6 +94,9 @@ type Plugin struct {
 
 	buffersGaugeVecs map[string]*prometheus.GaugeVec
 	buffersStats     map[string]*buffersStats
+
+	nodeCounterGaugeVecs map[string]*prometheus.GaugeVec
+	nodeCounterStats     map[string]*nodeCounterStats
 }
 
 // Deps represents dependencies of Telemetry Plugin
@@ -116,6 +125,11 @@ type buffersStats struct {
 	itemName  string
 	itemIndex uint
 	metrics   map[string]prometheus.Gauge
+}
+
+type nodeCounterStats struct {
+	itemName string
+	metrics  map[string]prometheus.Gauge
 }
 
 // Init initializes Telemetry Plugin
@@ -224,6 +238,34 @@ func (p *Plugin) Init() error {
 		}
 	}
 
+	// Node counters metrics
+	p.nodeCounterGaugeVecs = make(map[string]*prometheus.GaugeVec)
+	p.nodeCounterStats = make(map[string]*nodeCounterStats)
+
+	for _, metric := range [][2]string{
+		{nodeCounterCountMetric, "Count"},
+	} {
+		name := metric[0]
+		p.nodeCounterGaugeVecs[name] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "vpp",
+			Subsystem: "node_counter",
+			Name:      name,
+			Help:      metric[1],
+			ConstLabels: prometheus.Labels{
+				agentLabel: p.ServiceLabel.GetAgentLabel(),
+			},
+		}, []string{nodeCounterItemLabel, nodeCounterReasonLabel})
+
+	}
+
+	// register created vectors to prometheus
+	for name, metric := range p.nodeCounterGaugeVecs {
+		if err := p.Prometheus.Register(registryPath, metric); err != nil {
+			p.Log.Errorf("failed to register %v metric: %v", name, err)
+			return err
+		}
+	}
+
 	// Create GoVPP channel
 	p.vppCh, err = p.GoVppmux.NewAPIChannel()
 	if err != nil {
@@ -242,7 +284,7 @@ func (p *Plugin) AfterInit() error {
 			// Update runtime
 			runtimeInfo, err := vppcalls.GetRuntimeInfo(p.vppCh)
 			if err != nil {
-				p.Log.Errorf("Sending command failed: %v", err)
+				p.Log.Errorf("Command failed: %v", err)
 			} else {
 				for _, thread := range runtimeInfo.Threads {
 					for _, item := range thread.Items {
@@ -280,7 +322,7 @@ func (p *Plugin) AfterInit() error {
 			// Update memory
 			memoryInfo, err := vppcalls.GetMemory(p.vppCh)
 			if err != nil {
-				p.Log.Errorf("Sending command failed: %v", err)
+				p.Log.Errorf("Command failed: %v", err)
 			} else {
 				for _, thread := range memoryInfo.Threads {
 					stats, ok := p.memoryStats[thread.Name]
@@ -316,7 +358,7 @@ func (p *Plugin) AfterInit() error {
 			// Update buffers
 			buffersInfo, err := vppcalls.GetBuffersInfo(p.vppCh)
 			if err != nil {
-				p.Log.Errorf("Sending command failed: %v", err)
+				p.Log.Errorf("Command failed: %v", err)
 			} else {
 				for _, item := range buffersInfo.Items {
 					stats, ok := p.buffersStats[item.Name]
@@ -346,6 +388,35 @@ func (p *Plugin) AfterInit() error {
 					stats.metrics[buffersFreeMetric].Set(float64(item.Free))
 					stats.metrics[buffersNumAllocMetric].Set(float64(item.NumAlloc))
 					stats.metrics[buffersNumFreeMetric].Set(float64(item.NumFree))
+				}
+			}
+
+			// Update node counters
+			nodeCountersInfo, err := vppcalls.GetNodeCounters(p.vppCh)
+			if err != nil {
+				p.Log.Errorf("Command failed: %v", err)
+			} else {
+				for _, item := range nodeCountersInfo.Counters {
+					stats, ok := p.nodeCounterStats[item.Node]
+					if !ok {
+						stats = &nodeCounterStats{
+							itemName: item.Node,
+							metrics:  map[string]prometheus.Gauge{},
+						}
+
+						// add gauges with corresponding labels into vectors
+						for k, vec := range p.nodeCounterGaugeVecs {
+							stats.metrics[k], err = vec.GetMetricWith(prometheus.Labels{
+								nodeCounterItemLabel:   item.Node,
+								nodeCounterReasonLabel: item.Reason,
+							})
+							if err != nil {
+								p.Log.Error(err)
+							}
+						}
+					}
+
+					stats.metrics[nodeCounterCountMetric].Set(float64(item.Count))
 				}
 			}
 

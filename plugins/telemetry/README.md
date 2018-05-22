@@ -159,3 +159,30 @@ updated every 5 seconds.
     # TYPE vpp_memory_used gauge
     vpp_memory_used{agent="agent1",thread="vpp_main",threadID="0"} 1.4227e+07
     ```
+
+- VPP node counters (`show node counters`)
+
+    ```
+       Count                    Node                  Reason
+        120406            ipsec-output-ip4            IPSec policy protect
+        120406               esp-encrypt              ESP pkts received
+        123692             ipsec-input-ip4            IPSEC pkts received
+          3286             ip4-icmp-input             unknown type
+        120406             ip4-icmp-input             echo replies sent
+            14             ethernet-input             l3 mac mismatch
+           102                arp-input               ARP replies sent
+    ```
+
+    Example:
+
+    ```sh
+    # HELP vpp_node_counter_count Count
+    # TYPE vpp_node_counter_count gauge
+    vpp_node_counter_count{agent="agent1",item="arp-input",reason="ARP replies sent"} 103
+    vpp_node_counter_count{agent="agent1",item="esp-encrypt",reason="ESP pkts received"} 124669
+    vpp_node_counter_count{agent="agent1",item="ethernet-input",reason="l3 mac mismatch"} 14
+    vpp_node_counter_count{agent="agent1",item="ip4-icmp-input",reason="echo replies sent"} 124669
+    vpp_node_counter_count{agent="agent1",item="ip4-icmp-input",reason="unknown type"} 3358
+    vpp_node_counter_count{agent="agent1",item="ipsec-input-ip4",reason="IPSEC pkts received"} 128027
+    vpp_node_counter_count{agent="agent1",item="ipsec-output-ip4",reason="IPSec policy protect"} 124669
+    ```
