@@ -55,7 +55,7 @@ func TestXConnectConfiguratorInit(t *testing.T) {
 
 /* XConnect configurator test cases */
 
-// Configure new TAPv1 interface with IP address
+// Basic configuration of cross connect pair
 func TestConfigureXConnectPair(t *testing.T) {
 	var err error
 	// Setup
@@ -80,7 +80,7 @@ func TestConfigureXConnectPair(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Configure cross connect pair while receive interface is missing, check correct caching
 func TestConfigureXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
@@ -104,7 +104,7 @@ func TestConfigureXConnectPairMissingRcIf(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Configure cross connect pair while transmit interface is missing, check correct caching
 func TestConfigureXConnectPairMissingTxIf(t *testing.T) {
 	var err error
 	// Setup
@@ -128,7 +128,7 @@ func TestConfigureXConnectPairMissingTxIf(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test return value error while configuring cross connect
 func TestConfigureXConnectPairAddErr(t *testing.T) {
 	var err error
 	// Setup
@@ -150,7 +150,7 @@ func TestConfigureXConnectPairAddErr(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test error case where receive interface is invalid (not set)
 func TestConfigureXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
@@ -163,7 +163,7 @@ func TestConfigureXConnectPairInvalidRxConfig(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test error case where transmit interface is invalid (not set)
 func TestConfigureXConnectPairInvalidTxConfig(t *testing.T) {
 	var err error
 	// Setup
@@ -176,7 +176,7 @@ func TestConfigureXConnectPairInvalidTxConfig(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test error case where receive and transmit interfaces are the same
 func TestConfigureXConnectPairInvalidIfConfig(t *testing.T) {
 	var err error
 	// Setup
@@ -189,7 +189,7 @@ func TestConfigureXConnectPairInvalidIfConfig(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test cross connect modification of transmit interface
 func TestModifyXConnectPair(t *testing.T) {
 	var err error
 	// Setup
@@ -220,7 +220,7 @@ func TestModifyXConnectPair(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test cross connect modification while receive interface disappear
 func TestModifyXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
@@ -251,7 +251,7 @@ func TestModifyXConnectPairMissingRcIf(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test modify cross connect while new transmit interface does not exist yet
 func TestModifyXConnectPairMissingTxIfRemoveOld(t *testing.T) {
 	var err error
 	// Setup
@@ -280,7 +280,7 @@ func TestModifyXConnectPairMissingTxIfRemoveOld(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test cross connect modify where old transmit interface does not exist and cannot be removed yet
 func TestModifyXConnectPairMissingTxIfKeepOld(t *testing.T) {
 	var err error
 	// Setup
@@ -310,7 +310,7 @@ func TestModifyXConnectPairMissingTxIfKeepOld(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test modify with incorrect receive interface
 func TestModifyXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
@@ -324,7 +324,7 @@ func TestModifyXConnectPairInvalidRxConfig(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test removal of cross connect pair
 func TestDeleteXConnectPair(t *testing.T) {
 	var err error
 	// Setup
@@ -352,7 +352,7 @@ func TestDeleteXConnectPair(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test removal of cross connect pair where receive interface was already removed
 func TestDeleteXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
@@ -381,7 +381,7 @@ func TestDeleteXConnectPairMissingRcIf(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test removal of cross connect where transmit interface was already removed
 func TestDeleteXConnectPairMissingTxIf(t *testing.T) {
 	var err error
 	// Setup
@@ -410,7 +410,7 @@ func TestDeleteXConnectPairMissingTxIf(t *testing.T) {
 	Expect(found).To(BeTrue())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test cross connect pair modify error during replacing of the old value
 func TestDeleteXConnectPairError(t *testing.T) {
 	var err error
 	// Setup
@@ -434,7 +434,7 @@ func TestDeleteXConnectPairError(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Test cross connect removal with invalid receive interface config
 func TestDeleteXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
@@ -447,7 +447,7 @@ func TestDeleteXConnectPairInvalidRxConfig(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Configure cross connect and create (register) interfaces later
 func TestConfigureXConnectPairResolveCreatedInterfaceAdd(t *testing.T) {
 	var err error
 	// Setup
@@ -474,7 +474,7 @@ func TestConfigureXConnectPairResolveCreatedInterfaceAdd(t *testing.T) {
 	_, _, found = plugin.GetXcAddCache().LookupIdx("rcIf")
 	Expect(found).To(BeTrue())
 	// Register second
-	ifIndexes.RegisterName("txIf", 1, getTestInterface("txIf", []string{"10.0.0.2/24"}))
+	ifIndexes.RegisterName("txIf", 2, getTestInterface("txIf", []string{"10.0.0.2/24"}))
 	err = plugin.ResolveCreatedInterface("txIf")
 	Expect(err).To(BeNil())
 	_, meta, found = plugin.GetXcIndexes().LookupIdx("rcIf")
@@ -484,7 +484,7 @@ func TestConfigureXConnectPairResolveCreatedInterfaceAdd(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Configure cross connect and create (register) interfaces later, simulate creation error
 func TestConfigureXConnectPairResolveCreatedInterfaceAddError(t *testing.T) {
 	var err error
 	// Setup
@@ -513,12 +513,13 @@ func TestConfigureXConnectPairResolveCreatedInterfaceAddError(t *testing.T) {
 	_, _, found = plugin.GetXcAddCache().LookupIdx("rcIf")
 	Expect(found).To(BeTrue())
 	// Register second
-	ifIndexes.RegisterName("txIf", 1, getTestInterface("txIf", []string{"10.0.0.2/24"}))
+	ifIndexes.RegisterName("txIf", 2, getTestInterface("txIf", []string{"10.0.0.2/24"}))
 	err = plugin.ResolveCreatedInterface("txIf")
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Add cross connect, then unregister (remove) transmit interface. Delete cross connect and re-register
+// transmit interface. Verify correct internal memory state after each step.
 func TestConfigureXConnectPairResolveCreatedInterfaceDel(t *testing.T) {
 	var err error
 	// Setup
@@ -552,7 +553,7 @@ func TestConfigureXConnectPairResolveCreatedInterfaceDel(t *testing.T) {
 	Expect(found).To(BeFalse())
 }
 
-// Configure new TAPv1 interface with IP address
+// Same as before but add error while deleting.
 func TestConfigureXConnectPairResolveCreatedInterfaceDelError(t *testing.T) {
 	var err error
 	// Setup
@@ -584,7 +585,7 @@ func TestConfigureXConnectPairResolveCreatedInterfaceDelError(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// Configure new TAPv1 interface with IP address
+// Verify behavior of cross connect while receive interface is removed
 func TestConfigureXConnectPairResolveDeletedRcInterface(t *testing.T) {
 	var err error
 	// Setup
@@ -622,7 +623,7 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugi
 	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat", nil))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if", nil))
 	// Configurator
 	plugin := &l2plugin.XConnectConfigurator{}
 	err = plugin.Init(log, connection, swIfIndexes, false)
