@@ -123,14 +123,14 @@ func TestUpdateMetadata(t *testing.T) {
 	bdUpdt2 := prepareBridgeDomainData(bdName0, []string{ifaceDName})
 
 	// Update before registration (no entry created)
-	success := bdIndex.UpdateMetadata(bd.Name, l2idx.NewBDMetadata(bd, nil))
+	success := bdIndex.UpdateMetadata(bd.Name, l2idx.NewBDMetadata(bd, []string{ifaceAName, ifaceBName}))
 	Expect(success).To(BeFalse())
 	_, metadata, found := nameToIdx.LookupIdx(bd.Name)
 	Expect(found).To(BeFalse())
 	Expect(metadata).To(BeNil())
 
 	// Register bridge domain
-	bdIndex.RegisterName(bd.Name, idx0, l2idx.NewBDMetadata(bd, nil))
+	bdIndex.RegisterName(bd.Name, idx0, l2idx.NewBDMetadata(bd, []string{ifaceAName, ifaceBName}))
 	var names []string
 	names = nameToIdx.ListNames()
 	Expect(names).To(HaveLen(1))
@@ -146,6 +146,7 @@ func TestUpdateMetadata(t *testing.T) {
 	Expect(bdData).ToNot(BeNil())
 	Expect(bdData.BridgeDomain).ToNot(BeNil())
 	Expect(bdData.BridgeDomain.Interfaces).To(HaveLen(2))
+	Expect(bdData.ConfiguredInterfaces).To(HaveLen(2))
 
 	var ifNames []string
 	for _, ifData := range bdData.BridgeDomain.Interfaces {
@@ -154,8 +155,15 @@ func TestUpdateMetadata(t *testing.T) {
 	Expect(ifNames).To(ContainElement(ifaceAName))
 	Expect(ifNames).To(ContainElement(ifaceBName))
 
+	var configured []string
+	for _, confIf := range bdData.ConfiguredInterfaces {
+		configured = append(configured, confIf)
+	}
+	Expect(configured).To(ContainElement(ifaceAName))
+	Expect(configured).To(ContainElement(ifaceBName))
+
 	// Update metadata (same name, different data)
-	success = bdIndex.UpdateMetadata(bdUpdt1.Name, l2idx.NewBDMetadata(bdUpdt1, nil))
+	success = bdIndex.UpdateMetadata(bdUpdt1.Name, l2idx.NewBDMetadata(bdUpdt1, []string{ifaceCName}))
 	Expect(success).To(BeTrue())
 
 	// Evaluate updated metadata
@@ -168,6 +176,7 @@ func TestUpdateMetadata(t *testing.T) {
 	Expect(bdData).ToNot(BeNil())
 	Expect(bdData.BridgeDomain).ToNot(BeNil())
 	Expect(bdData.BridgeDomain.Interfaces).To(HaveLen(1))
+	Expect(bdData.ConfiguredInterfaces).To(HaveLen(1))
 
 	ifNames = []string{}
 	for _, ifData := range bdData.BridgeDomain.Interfaces {
@@ -175,15 +184,20 @@ func TestUpdateMetadata(t *testing.T) {
 	}
 	Expect(ifNames).To(ContainElement(ifaceCName))
 
+	configured = []string{}
+	for _, confIf := range bdData.ConfiguredInterfaces {
+		configured = append(configured, confIf)
+	}
+	Expect(configured).To(ContainElement(ifaceCName))
+
 	// Update metadata again
-	success = bdIndex.UpdateMetadata(bdUpdt2.Name, l2idx.NewBDMetadata(bdUpdt2, nil))
+	success = bdIndex.UpdateMetadata(bdUpdt2.Name, l2idx.NewBDMetadata(bdUpdt2, []string{ifaceDName}))
 	Expect(success).To(BeTrue())
 
 	// Evaluate updated metadata
 	_, metadata, found = nameToIdx.LookupIdx(bd.Name)
 	Expect(found).To(BeTrue())
 	Expect(metadata).ToNot(BeNil())
-	// todo add interface meta check
 
 	bdData, ok = metadata.(*l2idx.BdMetadata)
 	Expect(ok).To(BeTrue())
@@ -196,6 +210,12 @@ func TestUpdateMetadata(t *testing.T) {
 		ifNames = append(ifNames, ifData.Name)
 	}
 	Expect(ifNames).To(ContainElement(ifaceDName))
+
+	configured = []string{}
+	for _, confIf := range bdData.ConfiguredInterfaces {
+		configured = append(configured, confIf)
+	}
+	Expect(configured).To(ContainElement(ifaceDName))
 
 	// Unregister
 	bdIndex.UnregisterName(bd.Name)
@@ -216,14 +236,14 @@ func TestLookupIndex(t *testing.T) {
 		bdName0: {ifaceAName, ifaceBName},
 	})
 
-	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], nil))
+	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], []string{ifaceAName, ifaceBName}))
 
 	foundIdx, metadata, exist := bdIndex.LookupIdx(bdName0)
 	Expect(exist).To(BeTrue())
 	Expect(foundIdx).To(Equal(idx0))
 	Expect(metadata).ToNot(BeNil())
 	Expect(metadata.BridgeDomain).To(Equal(bridgeDomains[0]))
-	// todo add interface meta check
+	Expect(metadata.ConfiguredInterfaces).To(HaveLen(2))
 }
 
 /**
@@ -237,14 +257,14 @@ func TestLookupName(t *testing.T) {
 		bdName0: {ifaceAName, ifaceBName},
 	})
 
-	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], nil))
+	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], []string{ifaceAName, ifaceBName}))
 
 	foundName, metadata, exist := bdIndex.LookupName(idx0)
 	Expect(exist).To(BeTrue())
 	Expect(foundName).To(Equal(bridgeDomains[0].Name))
 	Expect(metadata).ToNot(BeNil())
 	Expect(metadata.BridgeDomain).To(Equal(bridgeDomains[0]))
-	// todo add interface meta check
+	Expect(metadata.ConfiguredInterfaces).To(HaveLen(2))
 }
 
 /**
@@ -254,7 +274,7 @@ TestLookupNameByIfaceName tests method:
 func TestLookupByIfaceName(t *testing.T) {
 	RegisterTestingT(t)
 
-	// defines 3 bridge domains
+	// Define 3 bridge domains
 	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
 		bdName0: {ifaceAName, ifaceBName},
 		bdName1: {ifaceCName},
@@ -264,15 +284,15 @@ func TestLookupByIfaceName(t *testing.T) {
 	// Assign correct index to every bridge domain
 	for _, bridgeDomain := range bridgeDomains {
 		if bridgeDomain.Name == bdName0 {
-			bdIndex.RegisterName(bridgeDomain.Name, idx0, l2idx.NewBDMetadata(bridgeDomain, nil))
+			bdIndex.RegisterName(bridgeDomain.Name, idx0, l2idx.NewBDMetadata(bridgeDomain, []string{ifaceAName, ifaceBName}))
 		} else if bridgeDomain.Name == bdName1 {
-			bdIndex.RegisterName(bridgeDomain.Name, idx1, l2idx.NewBDMetadata(bridgeDomain, nil))
+			bdIndex.RegisterName(bridgeDomain.Name, idx1, l2idx.NewBDMetadata(bridgeDomain, []string{ifaceCName}))
 		} else {
-			bdIndex.RegisterName(bridgeDomain.Name, idx2, l2idx.NewBDMetadata(bridgeDomain, nil))
+			bdIndex.RegisterName(bridgeDomain.Name, idx2, l2idx.NewBDMetadata(bridgeDomain, []string{ifaceDName}))
 		}
 	}
 
-	// return all bridge domains to which ifaceAName belongs
+	// Return all bridge domains to which ifaceAName belongs
 	bdIdx, _, _, exists := bdIndex.LookupBdForInterface(ifaceAName)
 	Expect(exists).To(BeTrue())
 	Expect(bdIdx).To(BeEquivalentTo(0))
@@ -293,6 +313,52 @@ func TestLookupByIfaceName(t *testing.T) {
 	Expect(exists).To(BeFalse())
 }
 
+/**
+LookupConfiguredIfsForBd tests method:
+* LookupConfiguredIfsForBd
+*/
+func TestLookupConfiguredIfsForBd(t *testing.T) {
+	RegisterTestingT(t)
+
+	// Define 3 bridge domains
+	_, bdIndex, bridgeDomains := testInitialization(t, map[string][]string{
+		bdName0: {ifaceAName, ifaceBName},
+		bdName1: {ifaceCName},
+		bdName2: {ifaceDName},
+	})
+
+	// Assign correct index to every bridge domain
+	for _, bridgeDomain := range bridgeDomains {
+		if bridgeDomain.Name == bdName0 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx0, l2idx.NewBDMetadata(bridgeDomain, []string{ifaceAName, ifaceBName}))
+		} else if bridgeDomain.Name == bdName1 {
+			bdIndex.RegisterName(bridgeDomain.Name, idx1, l2idx.NewBDMetadata(bridgeDomain, []string{ifaceCName}))
+		} else {
+			bdIndex.RegisterName(bridgeDomain.Name, idx2, nil)
+		}
+	}
+
+	// Return correct list of configured interfaces for every bridge domain
+	configured, exists := bdIndex.LookupConfiguredIfsForBd(bdName0)
+	Expect(exists).To(BeTrue())
+	Expect(configured).To(HaveLen(2))
+	Expect(configured).To(ContainElement(ifaceAName))
+	Expect(configured).To(ContainElement(ifaceBName))
+
+	configured, exists = bdIndex.LookupConfiguredIfsForBd(bdName1)
+	Expect(exists).To(BeTrue())
+	Expect(configured).To(HaveLen(1))
+	Expect(configured).To(ContainElement(ifaceCName))
+
+	configured, exists = bdIndex.LookupConfiguredIfsForBd(bdName2)
+	Expect(exists).To(BeFalse())
+	Expect(configured).To(BeNil())
+
+	configured, exists = bdIndex.LookupConfiguredIfsForBd("")
+	Expect(exists).To(BeFalse())
+	Expect(configured).To(BeNil())
+}
+
 func TestWatchNameToIdx(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -303,7 +369,7 @@ func TestWatchNameToIdx(t *testing.T) {
 	c := make(chan l2idx.BdChangeDto)
 	bdIndex.WatchNameToIdx("testName", c)
 
-	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], nil))
+	bdIndex.RegisterName(bridgeDomains[0].Name, idx0, l2idx.NewBDMetadata(bridgeDomains[0], []string{ifaceAName, ifaceBName}))
 
 	var dto l2idx.BdChangeDto
 	Eventually(c).Should(Receive(&dto))
@@ -311,5 +377,5 @@ func TestWatchNameToIdx(t *testing.T) {
 	Expect(dto.Name).To(Equal(bridgeDomains[0].Name))
 	Expect(dto.Metadata).ToNot(BeNil())
 	Expect(dto.Metadata.BridgeDomain).To(Equal(bridgeDomains[0]))
-	// todo add interface meta check
+	Expect(dto.Metadata.ConfiguredInterfaces).To(HaveLen(2))
 }

@@ -33,7 +33,10 @@ type BDIndex interface {
 	LookupName(idx uint32) (name string, metadata *BdMetadata, exists bool)
 
 	// LookupBdForInterface looks up for bridge domain the interface belongs to
-	LookupBdForInterface(ifName string) (bdIdx uint32, bdName string, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool)
+	LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool)
+
+	// LookupConfiguredIfsForBd return a list of configured interfaces for bridge domain
+	LookupConfiguredIfsForBd(bdName string) ([]string, bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
 	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto)
@@ -69,7 +72,7 @@ type BdChangeDto struct {
 // Bridge domain metadata consists from base bridge domain data and a list of interfaces which were
 // (according to L2 bridge domain configurator) already configured as a part of bridge domain
 type BdMetadata struct {
-	BridgeDomain *l2.BridgeDomains_BridgeDomain
+	BridgeDomain         *l2.BridgeDomains_BridgeDomain
 	ConfiguredInterfaces []string
 }
 
@@ -147,23 +150,36 @@ func (bdi *bdIndex) LookupName(idx uint32) (name string, metadata *BdMetadata, e
 }
 
 // LookupBdForInterface returns a bridge domain which contains provided interface with bvi/shg details about it
-func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bdName string, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool) {
+func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool) {
 	bdNames := bdi.mapping.ListNames()
 	for _, bdName := range bdNames {
 		bdIdx, meta, exists := bdi.mapping.LookupIdx(bdName)
 		if exists && meta != nil {
 			bdMeta := castBdMetadata(meta)
-			if bdMeta != nil  && bdMeta.BridgeDomain != nil {
+			if bdMeta != nil && bdMeta.BridgeDomain != nil {
 				for _, iface := range bdMeta.BridgeDomain.Interfaces {
 					if iface.Name == ifName {
-						return bdIdx, bdMeta.BridgeDomain.Name, iface, true
+						return bdIdx, bdMeta.BridgeDomain, iface, true
 					}
 				}
 			}
 		}
 	}
 
-	return bdIdx, bdName, nil, false
+	return bdIdx, bd, nil, false
+}
+
+// LookupConfiguredIfsForBd returns a list of configured interfaces stored in metadata
+func (bdi *bdIndex) LookupConfiguredIfsForBd(bdName string) ([]string, bool) {
+	_, meta, exists := bdi.mapping.LookupIdx(bdName)
+	if !exists || meta == nil {
+		return nil, false
+	}
+	bdMeta := castBdMetadata(meta)
+	if bdMeta == nil {
+		return nil, false
+	}
+	return bdMeta.ConfiguredInterfaces, true
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
