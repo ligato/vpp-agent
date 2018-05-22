@@ -93,6 +93,16 @@ func (plugin *FIBConfigurator) Close() error {
 	return err
 }
 
+// GetFibAddCacheIndexes returns FIB memory 'add' cache indexes, for testing purpose
+func (plugin *FIBConfigurator) GetFibAddCacheIndexes() l2idx.FIBIndexRW {
+	return plugin.addCacheIndexes
+}
+
+// GetFibDelCacheIndexes returns FIB memory 'del' cache indexes, for testing purpose
+func (plugin *FIBConfigurator) GetFibDelCacheIndexes() l2idx.FIBIndexRW {
+	return plugin.delCacheIndexes
+}
+
 // Add configures provided FIB input. Every entry has to contain info about MAC address, interface, and bridge domain.
 // If interface or bridge domain is missing or interface is not a part of the bridge domain, FIB data is cached
 // and recalled if particular entity is registered/updated.
@@ -154,12 +164,12 @@ func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTable_FibEntry,
 		} else {
 			if err := plugin.vppcalls.Delete(oldFib.PhysAddress, oldBdIdx, oldIfIdx, func(err error) {
 				plugin.FibIndexes.UnregisterName(oldFib.PhysAddress)
-				plugin.addCacheIndexes.UnregisterName(oldFib.PhysAddress)
 				callback(err)
 			}); err != nil {
 				// Log error but continue
 				plugin.Log.Errorf("FIB modify: failed to remove entry %s", oldFib.PhysAddress)
 			}
+			plugin.addCacheIndexes.UnregisterName(oldFib.PhysAddress)
 		}
 	}
 
@@ -244,7 +254,9 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(bdName string, bdID ui
 	return nil
 }
 
-// ResolveUpdatedBridgeDomain //todo
+// ResolveUpdatedBridgeDomain handles case where metadata of bridge domain are updated. If interface-bridge domain pair
+// required for a FIB entry was not bound together, but it was changed in the bridge domain later, FIB is resolved and
+// eventually configred here.
 func (plugin *FIBConfigurator) ResolveUpdatedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
 	plugin.Log.Infof("FIB configurator: resolving updated bridge domain %s", bdName)
 
@@ -289,14 +301,14 @@ func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error
 		if err := plugin.vppcalls.Delete(cachedFibId, bdIdx, ifIdx, func(err error) {
 			plugin.Log.Debugf("Deleting cached obsolete FIB %s", cachedFibId)
 			// Handle registration
-			plugin.delCacheIndexes.UnregisterName(cachedFibId)
-			plugin.Log.Debugf("FIB %s removed from 'del' cache", cachedFibId)
 			plugin.FibIndexes.UnregisterName(cachedFibId)
 			callback(err)
 		}); err != nil {
 			plugin.Log.Error(err)
 			wasErr = err
 		}
+		plugin.delCacheIndexes.UnregisterName(cachedFibId)
+		plugin.Log.Debugf("FIB %s removed from 'del' cache", cachedFibId)
 	}
 
 	// Configure un-configurable FIBs
@@ -314,8 +326,6 @@ func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error
 		if err := plugin.vppcalls.Add(cachedFibId, bdIdx, ifIdx, fibData.BridgedVirtualInterface, fibData.StaticConfig, func(err error) {
 			plugin.Log.Infof("Configuring cached FIB %s", cachedFibId)
 			// Handle registration
-			plugin.addCacheIndexes.UnregisterName(cachedFibId)
-			plugin.Log.Debugf("FIB %s removed from 'add' cache", cachedFibId)
 			plugin.FibIndexes.RegisterName(cachedFibId, plugin.fibIndexSeq, fibData)
 			plugin.fibIndexSeq++
 			callback(err)
@@ -323,6 +333,8 @@ func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error
 			plugin.Log.Error(err)
 			wasErr = err
 		}
+		plugin.addCacheIndexes.UnregisterName(cachedFibId)
+		plugin.Log.Debugf("FIB %s removed from 'add' cache", cachedFibId)
 	}
 
 	return wasErr
