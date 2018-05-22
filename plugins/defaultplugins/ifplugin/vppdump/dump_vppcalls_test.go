@@ -35,8 +35,8 @@ import (
 )
 
 type vppReplyMock struct {
-	Id uint16
-	Ping bool
+	Id      uint16
+	Ping    bool
 	Message govppapi.Message
 }
 
@@ -96,8 +96,8 @@ func TestDumpInterfacesSilentSwInterfaceGetTableReply(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 	}))
@@ -114,13 +114,13 @@ func TestDumpInterfacesSilentIpAddressDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 	}))
@@ -137,18 +137,18 @@ func TestDumpInterfacesSilentMemifSocketFilenameDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 	}))
@@ -165,23 +165,23 @@ func TestDumpInterfacesSilentMemifDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 	}))
@@ -198,28 +198,28 @@ func TestDumpInterfacesSilentSwInterfaceTapDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 	}))
@@ -236,33 +236,33 @@ func TestDumpInterfacesSilentSwInterfaceTapV2Details(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 	}))
@@ -279,38 +279,38 @@ func TestDumpInterfacesSilentVxlanTunnelDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   200,
-			Ping: true,
+			Id:      200,
+			Ping:    true,
 			Message: &interfaces.SwInterfaceDetails{},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 	}))
@@ -328,49 +328,49 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
 	ipv62Parse := net.ParseIP("d3ad:beef:feed:face:cafe:babe:baad:c0de").To16()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("vxlan1"),
+				InterfaceName: []byte("vxlan1"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
+			Id:   1013,
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
-				IsIpv6: 1,
+				IsIpv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,
@@ -393,47 +393,47 @@ func TestDumpInterfacesHost(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("host-localhost"),
+				InterfaceName: []byte("host-localhost"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
-			Ping: true,
+			Id:      1005,
+			Ping:    true,
 			Message: &memif.MemifSocketFilenameDetails{},
 		},
 		{
-			Id: 1007,
-			Ping: true,
+			Id:      1007,
+			Ping:    true,
 			Message: &memif.MemifDetails{},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
-			Ping: true,
+			Id:      1013,
+			Ping:    true,
 			Message: &vxlan.VxlanTunnelDetails{},
 		},
 	}))
@@ -452,26 +452,26 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
-				InterfaceName:   []byte("memif1"),
+				InterfaceName: []byte("memif1"),
 			},
 		},
 		{
-			Id: 1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &interfaces.SwInterfaceGetTableReply{},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
+			Id:   1005,
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
 				SocketID:       1,
@@ -479,7 +479,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Id: 1007,
+			Id:   1007,
 			Ping: true,
 			Message: &memif.MemifDetails{
 				ID:         2,
@@ -492,18 +492,18 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Id: 1009,
-			Ping: true,
+			Id:      1009,
+			Ping:    true,
 			Message: &tap.SwInterfaceTapDetails{},
 		},
 		{
-			Id: 1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &tapv2.SwInterfaceTapV2Details{},
 		},
 		{
-			Id: 1013,
-			Ping: true,
+			Id:      1013,
+			Ping:    true,
 			Message: &vxlan.VxlanTunnelDetails{},
 		},
 	}))
@@ -529,9 +529,9 @@ func TestDumpInterfacesFull(t *testing.T) {
 	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
 	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock {
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id: 200,
+			Id:   200,
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
 				InterfaceName:   []byte("memif1"),
@@ -543,7 +543,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1001,
+			Id:   1001,
 			Ping: false,
 			Message: &interfaces.SwInterfaceGetTableReply{
 				Retval: 0,
@@ -551,12 +551,12 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1004,
-			Ping: true,
+			Id:      1004,
+			Ping:    true,
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Id: 1005,
+			Id:   1005,
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
 				SocketID:       1,
@@ -564,7 +564,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1007,
+			Id:   1007,
 			Ping: true,
 			Message: &memif.MemifDetails{
 				ID:         2,
@@ -577,7 +577,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1009,
+			Id:   1009,
 			Ping: true,
 			Message: &tap.SwInterfaceTapDetails{
 				SwIfIndex: 0,
@@ -585,7 +585,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1011,
+			Id:   1011,
 			Ping: true,
 			Message: &tapv2.SwInterfaceTapV2Details{
 				SwIfIndex:  0,
@@ -593,7 +593,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			},
 		},
 		{
-			Id: 1013,
+			Id:   1013,
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
 				SwIfIndex:  0,

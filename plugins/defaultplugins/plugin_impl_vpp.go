@@ -436,7 +436,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
@@ -459,21 +459,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
-	if err := plugin.bfdConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
-	if err := plugin.stnConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT indices
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
-	if err := plugin.natConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("Configurator Initialized")
@@ -491,11 +491,11 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("IPSecConfigurator", ipsecLogger)
 	}
-	saIndexes := nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+	saIndexes := nametoidx.NewNameToIdx(ipsecLogger,
 		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
-	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger,
 		"ipsec_spd_indexes", nil))
-	cachedSpdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger, plugin.PluginName,
+	cachedSpdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger,
 		"ipsec_cached_spd_indexes", nil))
 	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
 		Log:              ipsecLogger,
@@ -523,8 +523,8 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	// logger
 	aclLogger := plugin.Log.NewLogger("-acl-plugin")
 	var err error
-	plugin.aclL3L4Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l3_l4_indexes", nil))
-	plugin.aclL2Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, plugin.PluginName, "acl_l2_indexes", nil))
+	plugin.aclL3L4Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, "acl_l3_l4_indexes", nil))
+	plugin.aclL2Indexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(aclLogger, "acl_l2_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
@@ -556,8 +556,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
 	fibLogger := plugin.Log.NewLogger("-l2-fib-conf")
 	// Bridge domain indices
-	plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, plugin.PluginName,
-		"bd_indexes", l2idx.IndexMetadata))
+	plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, "bd_indexes", l2idx.IndexMetadata))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
@@ -586,7 +585,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	})
 
 	// FIB indexes
-	plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, plugin.PluginName, "fib_indexes", nil))
+	plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, "fib_indexes", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
@@ -618,7 +617,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 cross connect
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{}
-	if err := plugin.xcConfigurator.Init(plugin.PluginName, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.xcConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("xcConfigurator Initialized")
@@ -630,9 +629,9 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.Log.Infof("Init L3 plugin")
 	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
 	plugin.routeIndexes = l3idx.NewRouteIndex(
-		nametoidx.NewNameToIdx(routeLogger, plugin.PluginName, "route_indexes", nil))
+		nametoidx.NewNameToIdx(routeLogger, "route_indexes", nil))
 	routeCachedIndexes := l3idx.NewRouteIndex(
-		nametoidx.NewNameToIdx(plugin.Log, plugin.PluginName, "route_cached_indexes", nil))
+		nametoidx.NewNameToIdx(plugin.Log, "route_cached_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
@@ -650,11 +649,11 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 
 	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
 	// ARP configuration indices
-	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_indexes", nil))
+	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_indexes", nil))
 	// ARP cache indices
-	arpCache := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_cache", nil))
+	arpCache := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_cache", nil))
 	// ARP deleted indices
-	arpDeleted := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, plugin.PluginName, "arp_unnasigned", nil))
+	arpDeleted := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_unnasigned", nil))
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
@@ -672,9 +671,9 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 
 	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
 	// Proxy ARP interface configuration indices
-	plugin.proxyArpIfIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_if_indices", nil)
+	plugin.proxyArpIfIndices = nametoidx.NewNameToIdx(proxyArpLogger, "proxyarp_if_indices", nil)
 	// Proxy ARP range configuration indices
-	plugin.proxyArpRngIndices = nametoidx.NewNameToIdx(proxyArpLogger, plugin.PluginName, "proxyarp_rng_indices", nil)
+	plugin.proxyArpRngIndices = nametoidx.NewNameToIdx(proxyArpLogger, "proxyarp_rng_indices", nil)
 
 	if plugin.enableStopwatch {
 		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
@@ -711,9 +710,9 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 func (plugin *Plugin) initL4(ctx context.Context) error {
 	plugin.Log.Infof("Init L4 plugin")
 	l4Logger := plugin.Log.NewLogger("-l4-plugin")
-	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
 		"namespace_indexes", nil))
-	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, plugin.PluginName,
+	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
 		"not_configured_namespace_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
@@ -787,7 +786,7 @@ func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
 
 func (plugin *Plugin) initErrorHandler() error {
 	ehLogger := plugin.Log.NewLogger("-error-handler")
-	plugin.errorIndexes = nametoidx.NewNameToIdx(ehLogger, plugin.PluginName, "error_indexes", nil)
+	plugin.errorIndexes = nametoidx.NewNameToIdx(ehLogger, "error_indexes", nil)
 
 	// Init mapping index
 	plugin.errorIdxSeq = 1

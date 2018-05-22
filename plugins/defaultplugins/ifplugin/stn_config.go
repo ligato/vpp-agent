@@ -23,7 +23,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -67,7 +66,7 @@ func (plugin *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
 }
 
 // Init initializes STN configurator
-func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
+func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Init logger
 	plugin.log = logger.NewLogger("-stn-conf")
@@ -81,8 +80,8 @@ func (plugin *StnConfigurator) Init(pluginName core.PluginName, logger logging.P
 
 	// Init indexes
 	plugin.ifIndexes = ifIndexes
-	plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-all-indexes", nil)
-	plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, pluginName, "stn-unstored-indexes", nil)
+	plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-all-indexes", nil)
+	plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-unstored-indexes", nil)
 	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
 
 	// Stopwatch

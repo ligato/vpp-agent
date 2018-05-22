@@ -60,7 +60,7 @@ type ExamplePlugin struct {
 // The Go native plugin mechanism that was introduced in Go 1.8
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Init new name-to-index mapping.
-	plugin.exampleIdx = nametoidx.NewNameToIdx(logrus.DefaultLogger(), plugin.PluginName, "example_index", nil)
+	plugin.exampleIdx = nametoidx.NewNameToIdx(logrus.DefaultLogger(), "example_index", nil)
 
 	// Set the initial ID. After every registration, this ID has to be incremented
 	// so new mapping is registered under a unique number.

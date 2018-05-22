@@ -75,9 +75,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// Cache other agent's interface index mapping using injected plugin and local plugin name.
 	// /vnf-agent/agent1/vpp/config/v1/interface/
-	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
+	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1)
 	// /vnf-agent/agent2/vpp/config/v1/interface/
-	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2)
 
 	return nil
 }

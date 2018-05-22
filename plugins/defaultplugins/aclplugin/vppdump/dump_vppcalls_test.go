@@ -41,7 +41,7 @@ func TestDumpACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", "test-sw_if_indexes", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	indexes := []uint32{11, 22}
