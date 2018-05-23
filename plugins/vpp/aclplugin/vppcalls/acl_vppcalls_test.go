@@ -1,17 +1,17 @@
 package vppcalls
 
 import (
-	"testing"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
-	acl_api "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
 	"github.com/ligato/cn-infra/logging/logrus"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
-var acl_NOrules = []*acl.AccessLists_Acl_Rule {}
+var aclNoRules = []*acl.AccessLists_Acl_Rule{}
 
-var acl_ERR1rules = []*acl.AccessLists_Acl_Rule {
+var aclErr1Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
@@ -25,7 +25,7 @@ var acl_ERR1rules = []*acl.AccessLists_Acl_Rule {
 	},
 }
 
-var acl_ERR2rules = []*acl.AccessLists_Acl_Rule {
+var aclErr2Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
@@ -39,7 +39,7 @@ var acl_ERR2rules = []*acl.AccessLists_Acl_Rule {
 	},
 }
 
-var acl_ERR3rules = []*acl.AccessLists_Acl_Rule {
+var aclErr3Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
@@ -53,51 +53,51 @@ var acl_ERR3rules = []*acl.AccessLists_Acl_Rule {
 	},
 }
 
-var acl_ERR5rules = []*acl.AccessLists_Acl_Rule {
+var aclErr4Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-				SourceAddress: "192.168.0.1",
-				SourceAddressPrefix: uint32(16),
-				SourceMacAddress: "",
+				SourceAddress:        "192.168.0.1",
+				SourceAddressPrefix:  uint32(16),
+				SourceMacAddress:     "",
 				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 			},
 		},
 	},
 }
 
-var acl_ERR6rules = []*acl.AccessLists_Acl_Rule {
+var aclErr5Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-				SourceAddress: "192.168.0.1",
-				SourceAddressPrefix: uint32(16),
-				SourceMacAddress: "11:44:0A:B8:4A:36",
+				SourceAddress:        "192.168.0.1",
+				SourceAddressPrefix:  uint32(16),
+				SourceMacAddress:     "11:44:0A:B8:4A:36",
 				SourceMacAddressMask: "",
 			},
 		},
 	},
 }
 
-var acl_ERR7rules = []*acl.AccessLists_Acl_Rule {
+var aclErr6Rules = []*acl.AccessLists_Acl_Rule{
 	{
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-				SourceAddress: "",
-				SourceAddressPrefix: uint32(16),
-				SourceMacAddress: "11:44:0A:B8:4A:36",
+				SourceAddress:        "",
+				SourceAddressPrefix:  uint32(16),
+				SourceMacAddress:     "11:44:0A:B8:4A:36",
 				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 			},
 		},
 	},
 }
 
-var acl_IPrules = []*acl.AccessLists_Acl_Rule {
+var acl_IPrules = []*acl.AccessLists_Acl_Rule{
 	{
-		RuleName: "permitIPv4",
+		RuleName:  "permitIPv4",
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -109,7 +109,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "permitIPv6",
+		RuleName:  "permitIPv6",
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -121,7 +121,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "permitIP",
+		RuleName:  "permitIP",
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -133,7 +133,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "denyICMP",
+		RuleName:  "denyICMP",
 		AclAction: acl.AclAction_DENY,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -152,7 +152,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "denyICMPv6",
+		RuleName:  "denyICMPv6",
 		AclAction: acl.AclAction_DENY,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -171,7 +171,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "permitTCP",
+		RuleName:  "permitTCP",
 		AclAction: acl.AclAction_PERMIT,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -191,7 +191,7 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 		},
 	},
 	{
-		RuleName: "denyUDP",
+		RuleName:  "denyUDP",
 		AclAction: acl.AclAction_DENY,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -210,107 +210,103 @@ var acl_IPrules = []*acl.AccessLists_Acl_Rule {
 	},
 }
 
-var acl_MACIPrules = []*acl.AccessLists_Acl_Rule {
+var acl_MACIPrules = []*acl.AccessLists_Acl_Rule{
 	{
-		RuleName: "denyIPv4",
+		RuleName:  "denyIPv4",
 		AclAction: acl.AclAction_DENY,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-				SourceAddress: "192.168.0.1",
-				SourceAddressPrefix: uint32(16),
-				SourceMacAddress: "11:44:0A:B8:4A:35",
+				SourceAddress:        "192.168.0.1",
+				SourceAddressPrefix:  uint32(16),
+				SourceMacAddress:     "11:44:0A:B8:4A:35",
 				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 			},
 		},
 	},
 	{
-		RuleName: "denyIPv6",
+		RuleName:  "denyIPv6",
 		AclAction: acl.AclAction_DENY,
 		Match: &acl.AccessLists_Acl_Rule_Match{
 			MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-				SourceAddress: "dead::1",
-				SourceAddressPrefix: uint32(64),
-				SourceMacAddress: "11:44:0A:B8:4A:35",
+				SourceAddress:        "dead::1",
+				SourceAddressPrefix:  uint32(64),
+				SourceMacAddress:     "11:44:0A:B8:4A:35",
 				SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 			},
 		},
 	},
 }
 
+// Test add IP acl rules
 func TestAddIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl( acl_IPrules, "test0", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddIPAcl(acl_IPrules, "test0", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = AddIPAcl( acl_NOrules, "test1", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddIPAcl(aclNoRules, "test1", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("no rules found for ACL test1"))
 
-	_, err = AddIPAcl( acl_ERR1rules, "test2", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddIPAcl(aclErr1Rules, "test2", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("invalid CIDR address: .0."))
 
-	_, err = AddIPAcl( acl_ERR2rules, "test3", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddIPAcl(aclErr2Rules, "test3", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("invalid CIDR address: .0."))
 
-	_, err = AddIPAcl( acl_ERR3rules, "test4", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddIPAcl(aclErr3Rules, "test4", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("source address 192.168.1.1/32 and destionation address dead::1/64 have different IP versions"))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	_, err = AddIPAcl( acl_IPrules, "test5", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddIPAcl(acl_IPrules, "test5", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval:-1})
-	_, err = AddIPAcl( acl_IPrules, "test6", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
+	_, err = AddIPAcl(acl_IPrules, "test6", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 }
 
+// Test add MACIP acl rules
 func TestAddMacIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl( acl_MACIPrules, "test6", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test6", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = AddMacIPAcl( acl_NOrules, "test7", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddMacIPAcl(aclNoRules, "test7", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("no rules found for ACL test7"))
 
-	_, err = AddMacIPAcl( acl_ERR5rules, "test8", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddMacIPAcl(aclErr4Rules, "test8", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("invalid MAC address"))
 
-	_, err = AddMacIPAcl( acl_ERR6rules, "test9", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddMacIPAcl(aclErr5Rules, "test9", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo("invalid MAC address"))
 
-	_, err = AddMacIPAcl( acl_ERR7rules, "test10", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddMacIPAcl(aclErr6Rules, "test10", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	_, err = AddMacIPAcl( acl_MACIPrules, "test11", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	_, err = AddMacIPAcl(acl_MACIPrules, "test11", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{Retval:-1})
-	_, err = AddMacIPAcl( acl_MACIPrules, "test12", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{Retval: -1})
+	_, err = AddMacIPAcl(acl_MACIPrules, "test12", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 }
 
+// Test deletion of IP acl rules
 func TestDeleteIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl( acl_IPrules, "test_del0", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddIPAcl(acl_IPrules, "test_del0", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -329,82 +325,80 @@ func TestDeleteIPAcl(t *testing.T) {
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{ACLIndex:1})
-	aclIndex, err = AddIPAcl( rule2del, "test_del1", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{ACLIndex: 1})
+	aclIndex, err = AddIPAcl(rule2del, "test_del1", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = DeleteIPAcl(5, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = DeleteIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(ContainSubstring(("failed to remove L3/L4 ACL ")))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval:-1})
-	err = DeleteIPAcl(5, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval: -1})
+	err = DeleteIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo(("acl_del_reply returned -1 while removing L3/L4 ACL 5")))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	err = DeleteIPAcl(1, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = DeleteIPAcl(1, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 }
 
+// Test deletion of MACIP acl rules
 func TestDeleteMACIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl( acl_MACIPrules, "test_del2", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test_del2", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
 	rule2del := []*acl.AccessLists_Acl_Rule{
 		{
-			RuleName: "permit",
+			RuleName:  "permit",
 			AclAction: acl.AclAction_PERMIT,
 			Match: &acl.AccessLists_Acl_Rule_Match{
 				MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-					SourceAddress: "192.168.0.1",
-					SourceAddressPrefix: uint32(16),
-					SourceMacAddress: "11:44:0A:B8:4A:35",
+					SourceAddress:        "192.168.0.1",
+					SourceAddressPrefix:  uint32(16),
+					SourceMacAddress:     "11:44:0A:B8:4A:35",
 					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 				},
 			},
 		},
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{ACLIndex:1})
-	aclIndex, err = AddMacIPAcl( rule2del, "test_del3", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{ACLIndex: 1})
+	aclIndex, err = AddMacIPAcl(rule2del, "test_del3", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	err = DeleteMacIPAcl(5, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = DeleteMacIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(ContainSubstring(("failed to remove L2 ACL ")))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{Retval:-1})
-	err = DeleteMacIPAcl(5, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{Retval: -1})
+	err = DeleteMacIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
-	Expect(err.Error()).To(BeEquivalentTo(("macip_acl_del_reply returned -1 while removing L2 ACL 5")))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-	err = DeleteMacIPAcl(1, logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = DeleteMacIPAcl(1, logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 }
 
+// Test modification of IP acl rule
 func TestModifyIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl( acl_IPrules, "test_modify", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddIPAcl(acl_IPrules, "test_modify", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
 	rule2modify := []*acl.AccessLists_Acl_Rule{
 		{
-			RuleName: "permitIP",
+			RuleName:  "permitIP",
 			AclAction: acl.AclAction_PERMIT,
 			Match: &acl.AccessLists_Acl_Rule_Match{
 				IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -416,7 +410,7 @@ func TestModifyIPAcl(t *testing.T) {
 			},
 		},
 		{
-			RuleName: "permitIP",
+			RuleName:  "permitIP",
 			AclAction: acl.AclAction_PERMIT,
 			Match: &acl.AccessLists_Acl_Rule_Match{
 				IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
@@ -430,54 +424,55 @@ func TestModifyIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = ModifyIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 
-	err = ModifyIPAcl(0, acl_ERR1rules, "test_modify1", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyIPAcl(0, aclErr1Rules, "test_modify1", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
-	err = ModifyIPAcl(0, acl_NOrules, "test_modify2", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyIPAcl(0, aclNoRules, "test_modify2", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyIPAcl( 0, acl_IPrules, "test_modify3", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyIPAcl(0, acl_IPrules, "test_modify3", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval:-1})
-	err = ModifyIPAcl( 0, acl_IPrules, "test_modify4", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
+	err = ModifyIPAcl(0, acl_IPrules, "test_modify4", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 }
 
+// Test modification of MACIP acl rule
 func TestModifyMACIPAcl(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl( acl_MACIPrules, "test_modify", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test_modify", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
 	rule2modify := []*acl.AccessLists_Acl_Rule{
 		{
-			RuleName: "permitMACIP",
+			RuleName:  "permitMACIP",
 			AclAction: acl.AclAction_DENY,
 			Match: &acl.AccessLists_Acl_Rule_Match{
 				MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-					SourceAddress: "192.168.10.1",
-					SourceAddressPrefix: uint32(24),
-					SourceMacAddress: "11:44:0A:B8:4A:37",
+					SourceAddress:        "192.168.10.1",
+					SourceAddressPrefix:  uint32(24),
+					SourceMacAddress:     "11:44:0A:B8:4A:37",
 					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 				},
 			},
 		},
 		{
-			RuleName: "permitMACIPv6",
+			RuleName:  "permitMACIPv6",
 			AclAction: acl.AclAction_DENY,
 			Match: &acl.AccessLists_Acl_Rule_Match{
 				MacipRule: &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-					SourceAddress: "dead::2",
-					SourceAddressPrefix: uint32(64),
-					SourceMacAddress: "11:44:0A:B8:4A:38",
+					SourceAddress:        "dead::2",
+					SourceAddressPrefix:  uint32(64),
+					SourceMacAddress:     "11:44:0A:B8:4A:38",
 					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 				},
 			},
@@ -485,17 +480,17 @@ func TestModifyMACIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyMACIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyMACIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 
-	err = ModifyMACIPAcl(0, acl_ERR1rules, "test_modify1", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyMACIPAcl(0, aclErr1Rules, "test_modify1", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyMACIPAcl( 0, acl_IPrules, "test_modify3", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	err = ModifyMACIPAcl(0, acl_IPrules, "test_modify3", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{Retval:-1})
-	err = ModifyMACIPAcl( 0, acl_IPrules, "test_modify4", logrus.DefaultLogger(),  ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{Retval: -1})
+	err = ModifyMACIPAcl(0, acl_IPrules, "test_modify4", logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Not(BeNil()))
 }

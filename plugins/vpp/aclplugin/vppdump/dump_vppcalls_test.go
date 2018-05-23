@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// Test translation of IP rule into ACL Plugin's format
 func TestGetIPRuleMatch(t *testing.T) {
 	icmpV4Rule := getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
@@ -59,6 +60,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 	}
 }
 
+// Test translation of MACIP rule into ACL Plugin's format
 func TestGetMACIPRuleMatches(t *testing.T) {
 	macipV4Rule := getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:		1,
@@ -83,6 +85,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	}
 }
 
+// Test dumping of IP rules
 func TestDumpIPACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -114,7 +117,7 @@ func TestDumpIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	ifaces, err := DumpIPACL(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
@@ -126,6 +129,7 @@ func TestDumpIPACL(t *testing.T) {
 	//Expect(ifaces[2].Identifier.ACLIndex).To(Equal(uint32(2)))
 }
 
+// Test dumping of MACIP rules
 func TestDumpMACIPACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -156,7 +160,7 @@ func TestDumpMACIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	ifaces, err := DumpMACIPACL(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
@@ -168,6 +172,7 @@ func TestDumpMACIPACL(t *testing.T) {
 	//Expect(ifaces[2].Identifier.ACLIndex).To(Equal(uint32(2)))
 }
 
+// Test dumping of interfaces with assigned IP rules
 func TestDumpACLInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -180,7 +185,7 @@ func TestDumpACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", ifaceidx.IndexMetadata))
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	indexes := []uint32{0, 2}
@@ -191,6 +196,7 @@ func TestDumpACLInterfaces(t *testing.T) {
 	Expect(ifaces[2].Egress).To(Equal([]string{"if0"}))
 }
 
+// Test dumping of interfaces with assigned MACIP rules
 func TestDumpMACIPACLInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -215,6 +221,7 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 	Expect(ifaces[1].Egress).To(BeNil())
 }
 
+// Test dumping of all configured ACLs with IP-type ruleData
 func TestDumpIPAcls(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
@@ -231,6 +238,7 @@ func TestDumpIPAcls(t *testing.T) {
 	Expect(IPRuleACLs).To(HaveLen(1))
 }
 
+// Test dumping of all configured ACLs with MACIP-type ruleData
 func TestDumpMacIPAcls(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()

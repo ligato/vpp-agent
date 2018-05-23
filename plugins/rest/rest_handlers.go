@@ -248,10 +248,6 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 	}
 }
 
-func (plugin *Plugin) interfaceMACIPACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-	}
-}
 // ipACLGetHandler - used to get configuration of IP ACLs
 func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -376,10 +372,6 @@ func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.H
 func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		type ACLIndex struct {
-			Idx int32 `json:"acl_index"`
-		}
-
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			plugin.Deps.Log.Error("Failed to parse request body.")
@@ -403,7 +395,9 @@ func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFun
 			return
 		}
 
-		aclIndex := ACLIndex{}
+		var aclIndex struct {
+			Idx uint32 `json:"acl_index"`
+		}
 		aclIndex.Idx, err = aclcalls.AddIPAcl(aclParam.Rules, aclParam.AclName, plugin.Deps.Log, ch, nil)
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
@@ -443,7 +437,7 @@ func (plugin *Plugin) macipACLPostHandler(formatter *render.Render) http.Handler
 		defer ch.Close()
 
 		var aclIndex struct {
-			Idx int32 `json:"acl_index"`
+			Idx uint32 `json:"acl_index"`
 		}
 		aclIndex.Idx, err = aclcalls.AddMacIPAcl(aclParam.Rules, aclParam.AclName, plugin.Deps.Log, ch, nil)
 		if err != nil {

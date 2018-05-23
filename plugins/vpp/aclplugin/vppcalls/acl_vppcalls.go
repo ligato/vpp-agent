@@ -77,10 +77,10 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	if len(aclIPRules) == 0 {
-		return -1, fmt.Errorf("no rules found for ACL %v", aclName)
+		return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 	}
 
 	req := &acl_api.ACLAddReplace{
@@ -92,10 +92,10 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 
 	reply := &acl_api.ACLAddReplaceReply{}
 	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return -1, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
+		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
-		return -1, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
+		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
@@ -113,11 +113,11 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := transformACLMacIPRules(rules)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	if len(aclMacIPRules) == 0 {
 		log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
-		return -1, fmt.Errorf("no rules found for ACL %v", aclName)
+		return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 	}
 
 	req := &acl_api.MacipACLAdd{
@@ -128,10 +128,10 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 
 	reply := &acl_api.MacipACLAddReply{}
 	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return -1, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
+		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
-		return -1, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
+		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
