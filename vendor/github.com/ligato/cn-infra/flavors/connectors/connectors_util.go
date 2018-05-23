@@ -34,9 +34,5 @@ func InjectKVDBSync(dbsync *kvdbsync.Plugin,
 		//Note, not injecting local.ETCDDataSync.ResyncOrch here
 
 		dbsync.ServiceLabel = &local.ServiceLabel
-
-		if local.StatusCheck.Transport == nil {
-			local.StatusCheck.Transport = dbsync
-		}
 	}
 }
