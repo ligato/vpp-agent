@@ -201,6 +201,7 @@ func TestGetNodeCounters(t *testing.T) {
         32             ip4-icmp-input             echo replies sent
         14             ethernet-input             l3 mac mismatch
          1                arp-input               ARP replies sent
+         4                ip4-input               ip4 spoofed local-address packet drops
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
 		Reply:  []byte(reply),
@@ -210,7 +211,7 @@ func TestGetNodeCounters(t *testing.T) {
 	info, err := GetNodeCounters(ctx.MockChannel)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(info.Counters).To(HaveLen(7))
+	Expect(info.Counters).To(HaveLen(8))
 	Expect(info.Counters[0]).To(Equal(NodeCounter{
 		Count:  32,
 		Node:   "ipsec-output-ip4",
@@ -220,5 +221,10 @@ func TestGetNodeCounters(t *testing.T) {
 		Count:  1,
 		Node:   "arp-input",
 		Reason: "ARP replies sent",
+	}))
+	Expect(info.Counters[7]).To(Equal(NodeCounter{
+		Count:  4,
+		Node:   "ip4-input",
+		Reason: "ip4 spoofed local-address packet drops",
 	}))
 }
