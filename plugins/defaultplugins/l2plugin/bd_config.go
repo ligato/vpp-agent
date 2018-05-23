@@ -350,6 +350,7 @@ func (plugin *BDConfigurator) ResolveDeletedInterface(ifName string) error {
 	for i, configuredIf := range configuredIfs {
 		if configuredIf == ifName {
 			configuredIfs = append(configuredIfs[:i], configuredIfs[i+1:]...)
+			break
 		}
 	}
 	plugin.BdIndices.UpdateMetadata(bd.Name, l2idx.NewBDMetadata(bd, configuredIfs))
@@ -514,6 +515,7 @@ func (plugin *BDConfigurator) reckonInterfaces(current []string, added []string,
 		for i, currItem := range current {
 			if currItem == delItem {
 				current = append(current[:i], current[i+1:]...)
+				break
 			}
 		}
 	}
