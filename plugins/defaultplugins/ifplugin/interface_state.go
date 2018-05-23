@@ -363,7 +363,12 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
-	save := false
+	if counter.VnetCounterType > Tx {
+		// TODO: process other types of combined counters (RX/TX for unicast/multicast/broadcast)
+		return
+	}
+
+	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
@@ -378,11 +383,9 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		if combinedCounterType(counter.VnetCounterType) == Rx {
 			stats.InPackets = counter.Data[i].Packets
 			stats.InBytes = counter.Data[i].Bytes
-		} else {
+		} else if combinedCounterType(counter.VnetCounterType) == Tx {
 			stats.OutPackets = counter.Data[i].Packets
 			stats.OutBytes = counter.Data[i].Bytes
-
-			// this was the last counter, we can now write the stats to ETCD
 			save = true
 		}
 	}
