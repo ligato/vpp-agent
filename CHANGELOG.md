@@ -5,24 +5,49 @@
 - cn-infra v1.3
 
 ## New Features
-- [Consul](https://www.consul.io/) support
+- [Consul](https://www.consul.io/)
   * Consul is now supported as an key-value store alternative to ETCD.
     More information in the [readme](https://github.com/ligato/cn-infra/blob/master/db/keyval/consul/README.md).
-- [telemetry](plugins/telemetry)
+- [Telemetry](plugins/telemetry)
   * New plugin for collecting telemetry data about VPP metrics
     and serving them via HTTP server for Prometheus.
     More information in the [readme](plugins/telemetry/README.md).
-- [ipsecplugin](plugins/defaultplugins/ipsecplugin)
+- [Ipsecplugin](plugins/defaultplugins/ipsecplugin)
   * Now supports tunnel interface for encrypting all the data
     passing through that interface.
+- [GRPC](plugins/defaultplugins/rpc) 
+  * Vpp-agent itself can act as a GRPC server (no need for external executable)
+  * All configuration types are supported (incl. linux interfaces, routes and ARP)
+  * Client can read VPP notifications via vpp-agent.      
 
 ## Improvements
+- [ifplugin](plugins/defaultplugins/ifplugin) 
+  * Added support for self-twice-NAT
 - __vpp-agent-grpc__ executable merged with [vpp-agent](cmd/vpp-agent) command.
-- [govppmux](plugins/govppmux) can now [configure reply timeout](plugins/govppmux/README.md).
-- Corrected some namings and cleaned up redundancy in the proto models.
+- [govppmux](plugins/govppmux) 
+  * [configure reply timeout](plugins/govppmux/README.md) can be configured.
+  * Support for VPP started with custom shared memory prefix. SHM may be configured via govpp
+    plugin config file. More info in the [readme](plugins/govppmux/README.md)
+
+## Examples
+- [localclient_linux](examples/localclient_vpp) now contains two examples, the old one demonstrating
+  basic plugin functionality was moved to [plugin](examples/localclient_vpp/plugins) package, and 
+  specialised example for [NAT](examples/localclient_vpp/nat) was added.
+- [localclient_linux](examples/localclient_linux) now contains two examples, the old one demonstrating 
+  [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
+  [tap](examples/localclient_linux/tap) was added.
+
 
 ## Bugfix
+  * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
+    now appropriately cached and created when possible. 
   * Fixed issue with GoVPP channels returning errors after timeout.
+  * Fixed various issues related to caching and resync in L2 cross-connect
+  * Split horizon group is now correctly assigned if interface is created after bridge domain
+
+## Other
+  * Overall redundancy cleanup and corrected naming for all proto models.
+  * Added more unit tests for increased coverage and code stability. 
 
 # Release v1.3 (2018-03-22)
 
