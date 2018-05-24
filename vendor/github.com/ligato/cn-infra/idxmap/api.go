@@ -79,6 +79,10 @@ type NamedMappingEvent struct {
 	// - it is true if an item was removed
 	// - it false if an item was added or updated
 	Del bool
+	// Update denotes a type of change
+	// - it is true if and item metadata was updated
+	// - it is false if an item was added or removed
+	Update bool
 	// RegistryTitle identifies the registry (NameToIndexMapping)
 	RegistryTitle string
 }
