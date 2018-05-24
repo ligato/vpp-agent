@@ -125,7 +125,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
   * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
-  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+  * __vpp-agent-grpc__ now compiles properly
     together with other commands.
 
 ### Dependencies
@@ -357,7 +357,7 @@ Miscellaneous:
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
-[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
+[Bridge domains](plugins/defaultplugins/l2plugin/l2idx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
