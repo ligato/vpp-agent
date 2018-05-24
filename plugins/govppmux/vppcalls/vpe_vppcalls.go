@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // VersionInfo contains values returned from ShowVersion

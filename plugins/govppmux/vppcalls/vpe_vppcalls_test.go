@@ -12,12 +12,12 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppcalls
+package vppcalls_test
 
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

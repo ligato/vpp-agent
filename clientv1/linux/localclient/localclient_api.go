@@ -26,7 +26,7 @@ const PluginID core.PluginName = "LinuxPlugin_LOCAL_CLIENT"
 
 // DataResyncRequest allows creating a RESYNC request using convenient RESYNC
 // DSL and sending it locally through go channels (i.e. without using Data Store).
-func DataResyncRequest(caller core.PluginName) linux.DataResyncDSL {
+func DataResyncRequest(caller core.PluginName) linuxclient.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(local.NewProtoTxn(local.Get().PropagateResync),
 		nil /*no need to list anything*/)
 }
@@ -34,6 +34,6 @@ func DataResyncRequest(caller core.PluginName) linux.DataResyncDSL {
 // DataChangeRequest allows creating Data Change request(s) using convenient
 // Data Change DSL and sending it locally through go channels (i.e. without using
 // Data Store).
-func DataChangeRequest(caller core.PluginName) linux.DataChangeDSL {
+func DataChangeRequest(caller core.PluginName) linuxclient.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(local.NewProtoTxn(local.Get().PropagateChanges))
 }

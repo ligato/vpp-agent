@@ -70,7 +70,7 @@ COPY build-agent.sh .
 RUN ./build-agent.sh ${AGENT_COMMIT}
 
 # copy configs
-COPY etcd.conf kafka.conf govpp.conf defaultplugins.conf linuxplugin.conf logs.conf ./
+COPY etcd.conf kafka.conf govpp.conf vppplugin.conf linuxplugin.conf logs.conf ./
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 

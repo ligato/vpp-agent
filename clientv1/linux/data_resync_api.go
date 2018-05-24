@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package linux
+package linuxclient
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
-	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	vpp_bfd "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-	vpp_l4 "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
-	vpp_stn "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
+	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC

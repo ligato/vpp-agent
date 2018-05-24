@@ -17,10 +17,10 @@ package main
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
+	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 
@@ -30,12 +30,12 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with VPP Flavor and ExampleFlavor.
-	vppFlavor := vpp.Flavor{}
+	flavor := vppFlavor.Flavor{}
 	exampleFlavor := ExampleFlavor{
 		IdxBdCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:            &vppFlavor, // inject VPP flavor
+		Flavor:            &flavor, // inject VPP flavor
 	}
-	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
 
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -45,7 +45,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	VPP defaultplugins.API
+	VPP vpp.API
 
 	bdIdxLocal  l2idx.BDIndex
 	bdIdxAgent1 l2idx.BDIndex

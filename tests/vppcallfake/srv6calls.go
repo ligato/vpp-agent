@@ -20,9 +20,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/srplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 )
 
 // SRv6Calls is fake implementation of vppcalls.SRv6Calls used for testing purposes
