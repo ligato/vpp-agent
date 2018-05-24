@@ -236,7 +236,6 @@ func (mem *memNamedMapping) publishAddToChannel(name string, value interface{}) 
 		if clb != nil {
 			dto := idxmap.NamedMappingGenericEvent{
 				NamedMappingEvent: idxmap.NamedMappingEvent{
-
 					RegistryTitle: mem.title,
 					Name:          name,
 					Del:           false,
