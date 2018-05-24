@@ -19,6 +19,7 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	if_dump "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/vppdump"
 )
@@ -110,13 +111,15 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			}
 			// Remove interfaces from bridge domain. Attempt to unset interface which does not belong to the bridge domain
 			// does not cause an error
-			if err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
+			if _, err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
 				plugin.vppChan, nil); err != nil {
 				return err
 			}
 			// Set all new interfaces to the bridge domain
-			if err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
-				plugin.vppChan, nil); err != nil {
+			// todo there is no need to calculate diff from configured interfaces, because currently all available interfaces are set here
+			configuredIfs, err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
+				plugin.vppChan, nil)
+			if err != nil {
 				return err
 			}
 
@@ -131,7 +134,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			}
 
 			// Register bridge domain
-			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, nbBD)
+			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, bdidx.NewBDMetadata(nbBD, configuredIfs))
 			plugin.BridgeDomainIDSeq++
 
 			plugin.Log.Debugf("RESYNC Bridge domain: config %v (ID %v) modified", tag, vppBDIdx)

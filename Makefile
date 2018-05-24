@@ -91,6 +91,7 @@ test-cover: get-covtools
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
+	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out ./plugins/defaultplugins/l2plugin
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_bdidx.out ./plugins/defaultplugins/l2plugin/bdidx
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
 	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
@@ -101,6 +102,7 @@ test-cover: get-covtools
 			${COVER_DIR}coverage_unit2.out \
 			${COVER_DIR}coverage_ifplugin.out \
 			${COVER_DIR}coverage_ifplugin_vppcalls.out \
+			${COVER_DIR}coverage_l2plugin.out \
 			${COVER_DIR}coverage_l2plugin_bdidx.out \
 			${COVER_DIR}coverage_l2plugin_vppcalls.out \
 			${COVER_DIR}coverage_l2plugin_vppdump.out  \

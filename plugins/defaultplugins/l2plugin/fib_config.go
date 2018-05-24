@@ -93,8 +93,19 @@ func (plugin *FIBConfigurator) Close() error {
 	return err
 }
 
+// GetFibAddCacheIndexes returns FIB memory 'add' cache indexes, for testing purpose
+func (plugin *FIBConfigurator) GetFibAddCacheIndexes() bdidx.FIBIndexRW {
+	return plugin.addCacheIndexes
+}
+
+// GetFibDelCacheIndexes returns FIB memory 'del' cache indexes, for testing purpose
+func (plugin *FIBConfigurator) GetFibDelCacheIndexes() bdidx.FIBIndexRW {
+	return plugin.delCacheIndexes
+}
+
 // Add configures provided FIB input. Every entry has to contain info about MAC address, interface, and bridge domain.
-// If interface or bridge domain is missing, FIB data is cached and recalled if particular entity is registered.
+// If interface or bridge domain is missing or interface is not a part of the bridge domain, FIB data is cached
+// and recalled if particular entity is registered/updated.
 func (plugin *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) error {
 	plugin.Log.Infof("Configuring new FIB table entry with MAC %v", fib.PhysAddress)
 
@@ -153,12 +164,12 @@ func (plugin *FIBConfigurator) Modify(oldFib *l2.FibTable_FibEntry,
 		} else {
 			if err := plugin.vppcalls.Delete(oldFib.PhysAddress, oldBdIdx, oldIfIdx, func(err error) {
 				plugin.FibIndexes.UnregisterName(oldFib.PhysAddress)
-				plugin.addCacheIndexes.UnregisterName(oldFib.PhysAddress)
 				callback(err)
 			}); err != nil {
 				// Log error but continue
 				plugin.Log.Errorf("FIB modify: failed to remove entry %s", oldFib.PhysAddress)
 			}
+			plugin.addCacheIndexes.UnregisterName(oldFib.PhysAddress)
 		}
 	}
 
@@ -208,64 +219,12 @@ func (plugin *FIBConfigurator) Delete(fib *l2.FibTable_FibEntry, callback func(e
 func (plugin *FIBConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32, callback func(error)) error {
 	plugin.Log.Infof("FIB configurator: resolving registered interface %s", ifName)
 
-	var wasErr error
-	// First, remove FIBs which cannot be removed due to missing interface
-	for _, cachedFibId := range plugin.delCacheIndexes.GetMapping().ListNames() {
-		_, meta, found := plugin.delCacheIndexes.LookupIdx(cachedFibId)
-		if !found || meta == nil {
-			// Should not happen
-			continue
-		}
-		// Check interface
-		if ifName != meta.OutgoingInterface {
-			// New interface is not suitable for this FIB entry
-			continue
-		}
-		if err := plugin.Delete(meta, func(err error) {
-			plugin.Log.Debugf("Deleting obsolete FIB %s", cachedFibId)
-			callback(err)
-		}); err != nil {
-			plugin.Log.Error(err)
-			wasErr = err
-		}
+	if err := plugin.resolveRegisteredItem(callback); err != nil {
+		return err
 	}
 
-	// Configure un-configurable FIBs
-	for _, cachedFibId := range plugin.addCacheIndexes.GetMapping().ListNames() {
-		_, meta, found := plugin.addCacheIndexes.LookupIdx(cachedFibId)
-		if !found || meta == nil {
-			// Should not happen
-			continue
-		}
-		// Check interface
-		if ifName != meta.OutgoingInterface {
-			// New interface is not suitable for this FIB entry
-			continue
-		}
-
-		// Check bridge domain presence
-		bdIdx, _, bdFound := plugin.BdIndexes.LookupIdx(meta.BridgeDomain)
-		if !bdFound {
-			plugin.Log.Debugf("FIB %s still cannot be configured due to missing bridge domain %s",
-				cachedFibId, meta.BridgeDomain)
-			continue
-		}
-
-		if err := plugin.vppcalls.Add(cachedFibId, bdIdx, ifIdx, meta.BridgedVirtualInterface, meta.StaticConfig, func(err error) {
-			plugin.Log.Infof("Configuring cached bridge domain %s", cachedFibId)
-			// Handle registration
-			plugin.addCacheIndexes.UnregisterName(cachedFibId)
-			plugin.Log.Debugf("FIB %s removed from cache", cachedFibId)
-			plugin.FibIndexes.RegisterName(cachedFibId, plugin.fibIndexSeq, meta)
-			plugin.fibIndexSeq++
-			callback(err)
-		}); err != nil {
-			plugin.Log.Error(err)
-			wasErr = err
-		}
-	}
 	plugin.Log.Infof("FIB: resolution of created interface %s is done", ifName)
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface handles removed interface. In that case, FIB entry remains on the VPP but it is not possible
@@ -273,22 +232,10 @@ func (plugin *FIBConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 func (plugin *FIBConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32, callback func(error)) error {
 	plugin.Log.Infof("FIB configurator: resolving unregistered interface %s", ifName)
 
-	var counter int
-	for _, fib := range plugin.FibIndexes.GetMapping().ListNames() {
-		_, meta, found := plugin.FibIndexes.LookupIdx(fib)
-		if !found || meta == nil {
-			// Should not happen
-			continue
-		}
-		// Check interface
-		if ifName != meta.OutgoingInterface {
-			continue
-		}
-		counter++
-	}
+	count := plugin.resolveUnRegisteredItem(ifName, "")
 
 	plugin.Log.Infof("%d FIB entries belongs to removed interface %s. These FIBs cannot be deleted or changed while interface is missing",
-		counter, ifName)
+		count, ifName)
 
 	return nil
 }
@@ -299,64 +246,27 @@ func (plugin *FIBConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
 	plugin.Log.Infof("FIB configurator: resolving registered bridge domain %s", bdName)
 
-	var wasErr error
-	// First, remove FIBs which cannot be removed due to missing interface
-	for _, cachedFibId := range plugin.delCacheIndexes.GetMapping().ListNames() {
-		_, meta, found := plugin.delCacheIndexes.LookupIdx(cachedFibId)
-		if !found || meta == nil {
-			// Should not happen
-			continue
-		}
-		// Check interface
-		if bdName != meta.BridgeDomain {
-			// New bridge domain is not suitable for this FIB entry
-			continue
-		}
-		if err := plugin.Delete(meta, func(err error) {
-			plugin.Log.Debugf("Deleting obsolete FIB %s", cachedFibId)
-			callback(err)
-		}); err != nil {
-			plugin.Log.Error(err)
-			wasErr = err
-		}
+	if err := plugin.resolveRegisteredItem(callback); err != nil {
+		return err
 	}
 
-	// Configure un-configurable FIBs
-	for _, cachedFibId := range plugin.addCacheIndexes.GetMapping().ListNames() {
-		_, meta, found := plugin.addCacheIndexes.LookupIdx(cachedFibId)
-		if !found || meta == nil {
-			// Should not happen
-			continue
-		}
-		// Check bridge domain
-		if bdName != meta.BridgeDomain {
-			// New bridge domain is not suitable for this FIB entry
-			continue
-		}
-
-		// Check interface presence
-		ifIdx, _, ifFound := plugin.SwIfIndexes.LookupIdx(meta.OutgoingInterface)
-		if !ifFound {
-			plugin.Log.Debugf("FIB %s still cannot be configured due to missing interface %s",
-				cachedFibId, meta.BridgeDomain)
-			continue
-		}
-
-		if err := plugin.vppcalls.Add(cachedFibId, bdID, ifIdx, meta.BridgedVirtualInterface, meta.StaticConfig, func(err error) {
-			plugin.Log.Infof("Configuring cached bridge domain %s", cachedFibId)
-			// Handle registration
-			plugin.addCacheIndexes.UnregisterName(cachedFibId)
-			plugin.Log.Debugf("FIB %s removed from cache", cachedFibId)
-			plugin.FibIndexes.RegisterName(cachedFibId, plugin.fibIndexSeq, meta)
-			plugin.fibIndexSeq++
-			callback(err)
-		}); err != nil {
-			plugin.Log.Error(err)
-			wasErr = err
-		}
-	}
 	plugin.Log.Infof("FIB: resolution of created bridge domain %s is done", bdName)
-	return wasErr
+	return nil
+}
+
+// ResolveUpdatedBridgeDomain handles case where metadata of bridge domain are updated. If interface-bridge domain pair
+// required for a FIB entry was not bound together, but it was changed in the bridge domain later, FIB is resolved and
+// eventually configred here.
+func (plugin *FIBConfigurator) ResolveUpdatedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
+	plugin.Log.Infof("FIB configurator: resolving updated bridge domain %s", bdName)
+
+	// Updated bridge domain is resolved the same as new (metadata were changed)
+	if err := plugin.resolveRegisteredItem(callback); err != nil {
+		return err
+	}
+
+	plugin.Log.Infof("FIB: resolution of updated bridge domain %s is done", bdName)
+	return nil
 }
 
 // ResolveDeletedInterface handles removed bridge domain. In that case, FIB entry remains on the VPP but it is not possible
@@ -364,6 +274,74 @@ func (plugin *FIBConfigurator) ResolveCreatedBridgeDomain(bdName string, bdID ui
 func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
 	plugin.Log.Infof("FIB configurator: resolving unregistered bridge domain %s", bdName)
 
+	count := plugin.resolveUnRegisteredItem("", bdName)
+
+	plugin.Log.Infof("%d FIB entries belongs to removed bridge domain %s. These FIBs cannot be deleted or changed while bridge domain is missing",
+		count, bdName)
+
+	return nil
+}
+
+// Common method called in either interface was created or bridge domain was created or updated. It tries to
+// validate every 'add' or 'del' cached entry and configure/un-configure entries which are now possible
+func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error {
+	var wasErr error
+	// First, remove FIBs which cannot be removed due to missing interface
+	for _, cachedFibId := range plugin.delCacheIndexes.GetMapping().ListNames() {
+		_, fibData, found := plugin.delCacheIndexes.LookupIdx(cachedFibId)
+		if !found || fibData == nil {
+			// Should not happen
+			continue
+		}
+		// Re-validate FIB, configure or keep cached
+		cached, ifIdx, bdIdx := plugin.validateFibRequirements(fibData, false)
+		if cached {
+			continue
+		}
+		if err := plugin.vppcalls.Delete(cachedFibId, bdIdx, ifIdx, func(err error) {
+			plugin.Log.Debugf("Deleting cached obsolete FIB %s", cachedFibId)
+			// Handle registration
+			plugin.FibIndexes.UnregisterName(cachedFibId)
+			callback(err)
+		}); err != nil {
+			plugin.Log.Error(err)
+			wasErr = err
+		}
+		plugin.delCacheIndexes.UnregisterName(cachedFibId)
+		plugin.Log.Debugf("FIB %s removed from 'del' cache", cachedFibId)
+	}
+
+	// Configure un-configurable FIBs
+	for _, cachedFibId := range plugin.addCacheIndexes.GetMapping().ListNames() {
+		_, fibData, found := plugin.addCacheIndexes.LookupIdx(cachedFibId)
+		if !found || fibData == nil {
+			// Should not happen
+			continue
+		}
+		// Re-validate FIB, configure or keep cached
+		cached, ifIdx, bdIdx := plugin.validateFibRequirements(fibData, true)
+		if cached {
+			continue
+		}
+		if err := plugin.vppcalls.Add(cachedFibId, bdIdx, ifIdx, fibData.BridgedVirtualInterface, fibData.StaticConfig, func(err error) {
+			plugin.Log.Infof("Configuring cached FIB %s", cachedFibId)
+			// Handle registration
+			plugin.FibIndexes.RegisterName(cachedFibId, plugin.fibIndexSeq, fibData)
+			plugin.fibIndexSeq++
+			callback(err)
+		}); err != nil {
+			plugin.Log.Error(err)
+			wasErr = err
+		}
+		plugin.addCacheIndexes.UnregisterName(cachedFibId)
+		plugin.Log.Debugf("FIB %s removed from 'add' cache", cachedFibId)
+	}
+
+	return wasErr
+}
+
+// Just informative method which returns a count of entries affected by change
+func (plugin *FIBConfigurator) resolveUnRegisteredItem(ifName, bdName string) int {
 	var counter int
 	for _, fib := range plugin.FibIndexes.GetMapping().ListNames() {
 		_, meta, found := plugin.FibIndexes.LookupIdx(fib)
@@ -371,29 +349,23 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID ui
 			// Should not happen
 			continue
 		}
-		// Check bridge domain
-		if bdName != meta.BridgeDomain {
+		// Check interface if set
+		if ifName != "" && ifName != meta.OutgoingInterface {
+			continue
+		}
+		// Check bridge domain if set
+		if bdName != "" && bdName != meta.BridgeDomain {
 			continue
 		}
 
 		counter++
 	}
 
-	plugin.Log.Infof("%d FIB entries belongs to removed bridge domain %s. These FIBs cannot be deleted or changed while bridge domain is missing",
-		counter, bdName)
-
-	return nil
+	return counter
 }
 
 func (plugin *FIBConfigurator) validateFibRequirements(fib *l2.FibTable_FibEntry, add bool) (cached bool, ifIdx, bdIdx uint32) {
-	// Check bridge domain presence
-	var ifFound, bdFound bool
-	bdIdx, _, bdFound = plugin.BdIndexes.LookupIdx(fib.BridgeDomain)
-	if !bdFound {
-		plugin.Log.Infof("FIB entry %s is configured for bridge domain %s which does not exists",
-			fib.PhysAddress, fib.BridgeDomain)
-	}
-
+	var ifFound, bdFound, tied bool
 	// Check interface presence
 	ifIdx, _, ifFound = plugin.SwIfIndexes.LookupIdx(fib.OutgoingInterface)
 	if !ifFound {
@@ -401,8 +373,26 @@ func (plugin *FIBConfigurator) validateFibRequirements(fib *l2.FibTable_FibEntry
 			fib.PhysAddress, fib.OutgoingInterface)
 	}
 
+	// Check bridge domain presence
+	bdIdx, _, bdFound = plugin.BdIndexes.LookupIdx(fib.BridgeDomain)
+	if !bdFound {
+		plugin.Log.Infof("FIB entry %s is configured for bridge domain %s which does not exists",
+			fib.PhysAddress, fib.BridgeDomain)
+	}
+
+	// Check that interface is tied with bridge domain. If interfaces are not found, metadata do not exists.
+	// They can be updated later, configurator will handle it, but they should not be missing
+	if bdInterfaces, found := plugin.BdIndexes.LookupConfiguredIfsForBd(fib.BridgeDomain); found {
+		for _, configured := range bdInterfaces {
+			if configured == fib.OutgoingInterface {
+				tied = true
+				break
+			}
+		}
+	}
+
 	// If either interface or bridge domain is missing, cache FIB entry
-	if !bdFound || !ifFound {
+	if !bdFound || !ifFound || !tied {
 		if add {
 			// FIB table entry is cached and will be configured again when all required items are available
 			_, _, found := plugin.addCacheIndexes.LookupIdx(fib.PhysAddress)

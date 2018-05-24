@@ -50,6 +50,11 @@ func (dto *NameToIdxDtoWithoutMeta) IsDelete() bool { // similarity to other API
 	return dto.Del
 }
 
+// IsUpdate returns true if mapping metadata was updated
+func (dto *NameToIdxDtoWithoutMeta) IsUpdate() bool {
+	return false //dto.Update
+}
+
 // NameToIdxRW is the "owner API" to the NameToIdx registry. Using this
 // API the owner adds (registers) new mappings to the registry or deletes
 // (unregisters) existing mappings from the registry.

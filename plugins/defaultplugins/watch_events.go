@@ -200,15 +200,22 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 }
 
 func (plugin *Plugin) onVppBdEvent(e bdidx.BdChangeDto) {
-	if !e.IsDelete() {
-		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
+	if e.IsDelete() {
+		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
+			if err != nil {
+				plugin.Log.Error(err)
+			}
+		})
+		// TODO propagate error
+	} else if e.IsUpdate() {
+		plugin.fibConfigurator.ResolveUpdatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
 				plugin.Log.Error(err)
 			}
 		})
 		// TODO propagate error
 	} else {
-		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
+		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
 				plugin.Log.Error(err)
 			}

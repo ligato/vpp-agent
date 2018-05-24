@@ -25,66 +25,74 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
 )
 
-// SetInterfacesToBridgeDomain sets all provided interfaces to bridge domain.
-func SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+// SetInterfacesToBridgeDomain attempts to set all provided interfaces to bridge domain. It returns a list of interfaces
+// which were successfully set.
+func SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	if len(bdIfaces) == 0 {
+	if len(bdIfs) == 0 {
 		log.Debugf("Bridge domain %v has no new interface to set", bdName)
-		return nil
+		return nil, nil
 	}
 
-	var wasErr error
-	for _, bdIface := range bdIfaces {
-		if err := addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIface, swIfIndices, log, vppChan, true); err != nil {
+	for _, bdIf := range bdIfs {
+		// Verify that interface exists, otherwise skip it.
+		ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
+		if !found {
+			log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+			continue
+		}
+		if err := addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, log, vppChan, true); err != nil {
 			wasErr = err
 			log.Error(wasErr)
 		} else {
-			log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bdName}).Debug("Interface set to bridge domain")
+			log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface set to bridge domain")
+			ifs = append(ifs, bdIf.Name)
 		}
 	}
 
-	return wasErr
+	return ifs, wasErr
 }
 
-// UnsetInterfacesFromBridgeDomain removes all interfaces from bridge domain.
-func UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfaces []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+// UnsetInterfacesFromBridgeDomain removes all interfaces from bridge domain. It returns a list of interfaces
+// which were successfully unset.
+func UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	if len(bdIfaces) == 0 {
+	if len(bdIfs) == 0 {
 		log.Debugf("Bridge domain %v has no obsolete interface to unset", bdName)
-		return nil
+		return nil, nil
 	}
 
-	var wasErr error
-	for _, bdIface := range bdIfaces {
-		if err := addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIface, swIfIndices, log, vppChan, false); err != nil {
+	for _, bdIf := range bdIfs {
+		// Verify that interface exists, otherwise skip it.
+		ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
+		if !found {
+			log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+			continue
+		}
+		if err := addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, log, vppChan, false); err != nil {
 			wasErr = err
 			log.Error(wasErr)
 		} else {
-			log.WithFields(logging.Fields{"Interface": bdIface.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
+			log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
+			ifs = append(ifs, bdIf.Name)
 		}
 	}
 
-	return wasErr
+	return ifs, wasErr
 }
 
 func addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, add bool) error {
-	// Verify that interface exists, otherwise skip it.
-	ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
-	if !found {
-		log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
-		return nil
-	}
+	ifIdx uint32, log logging.Logger, vppChan VPPChannel, add bool) error {
 	req := &l2ba.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
 		RxSwIfIndex: ifIdx,

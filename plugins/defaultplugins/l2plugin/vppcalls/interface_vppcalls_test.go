@@ -41,7 +41,7 @@ func TestSetInterfacesToBridgeDomain(t *testing.T) {
 	swIfIndexes.RegisterName("if2", 2, nil)
 	swIfIndexes.RegisterName("if3", 3, nil)
 
-	err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 			BridgedVirtualInterface: true,
@@ -74,6 +74,7 @@ func TestSetInterfacesToBridgeDomain(t *testing.T) {
 			Enable:      1,
 		}))
 	}
+	Expect(configured).To(HaveLen(3))
 }
 
 func TestSetInterfacesToBridgeDomainNoInterfaceToSet(t *testing.T) {
@@ -82,11 +83,12 @@ func TestSetInterfacesToBridgeDomainNoInterfaceToSet(t *testing.T) {
 
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 
-	err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{},
+	configured, err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{},
 		swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(0))
+	Expect(configured).To(BeNil())
 }
 
 func TestSetInterfacesToBridgeDomainMissingInterface(t *testing.T) {
@@ -100,7 +102,7 @@ func TestSetInterfacesToBridgeDomainMissingInterface(t *testing.T) {
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 	// Interface "if2" is not registered
 
-	err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
@@ -111,6 +113,7 @@ func TestSetInterfacesToBridgeDomainMissingInterface(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(1))
+	Expect(configured).To(HaveLen(1))
 }
 
 func TestSetInterfacesToBridgeDomainError(t *testing.T) {
@@ -122,13 +125,14 @@ func TestSetInterfacesToBridgeDomainError(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 
-	err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
 	}, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
+	Expect(configured).To(BeNil())
 }
 
 func TestSetInterfacesToBridgeDomainRetval(t *testing.T) {
@@ -142,13 +146,14 @@ func TestSetInterfacesToBridgeDomainRetval(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 
-	err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.SetInterfacesToBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
 	}, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
+	Expect(configured).To(BeNil())
 }
 
 func TestUnsetInterfacesFromBridgeDomain(t *testing.T) {
@@ -164,7 +169,7 @@ func TestUnsetInterfacesFromBridgeDomain(t *testing.T) {
 	swIfIndexes.RegisterName("if2", 2, nil)
 	swIfIndexes.RegisterName("if3", 3, nil)
 
-	err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name:              "if1",
 			SplitHorizonGroup: 0,
@@ -189,6 +194,7 @@ func TestUnsetInterfacesFromBridgeDomain(t *testing.T) {
 			Enable:      0,
 		}))
 	}
+	Expect(configured).To(HaveLen(3))
 }
 
 func TestUnsetInterfacesFromBridgeDomainNoInterfaceToUnset(t *testing.T) {
@@ -197,11 +203,12 @@ func TestUnsetInterfacesFromBridgeDomainNoInterfaceToUnset(t *testing.T) {
 
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 
-	err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{},
+	configured, err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{},
 		swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(0))
+	Expect(configured).To(BeNil())
 }
 
 func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
@@ -215,7 +222,7 @@ func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 	// Interface "if2" is not registered
 
-	err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
@@ -226,6 +233,7 @@ func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(1))
+	Expect(configured).To(HaveLen(1))
 }
 
 func TestUnsetInterfacesFromBridgeDomainError(t *testing.T) {
@@ -237,13 +245,14 @@ func TestUnsetInterfacesFromBridgeDomainError(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 
-	err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
 	}, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
+	Expect(configured).To(BeNil())
 }
 
 func TestUnsetInterfacesFromBridgeDomainRetval(t *testing.T) {
@@ -257,11 +266,12 @@ func TestUnsetInterfacesFromBridgeDomainRetval(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd-interface-test", "bd", nil))
 	swIfIndexes.RegisterName("if1", 1, nil) // Metadata are not required for test purpose
 
-	err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
+	configured, err := vppcalls.UnsetInterfacesFromBridgeDomain("bd1", 1, []*l2.BridgeDomains_BridgeDomain_Interfaces{
 		{
 			Name: "if1",
 		},
 	}, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
+	Expect(configured).To(BeNil())
 }
