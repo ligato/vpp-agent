@@ -28,7 +28,7 @@ import (
 // - to load flag <plugin-name>-port and then FixConfig() just in case
 // - alternatively <plugin-name>-config and then FixConfig() just in case
 // - alternatively DefaultConfig()
-func PluginConfig(pluginCfg config.PluginConfig, cfg *Config, pluginName core.PluginName) (error) {
+func PluginConfig(pluginCfg config.PluginConfig, cfg *Config, pluginName core.PluginName) error {
 	portFlag := flag.Lookup(httpPortFlag(pluginName))
 	if portFlag != nil && portFlag.Value != nil && portFlag.Value.String() != "" && cfg != nil {
 		cfg.Endpoint = DefaultIP + ":" + portFlag.Value.String()

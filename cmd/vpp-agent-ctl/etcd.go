@@ -48,7 +48,7 @@ func (ctl *VppAgentCtl) createEtcdClient(configFile string) (*etcdv3.BytesConnec
 			return nil, nil, err
 		}
 	}
-	etcdConfig, err := etcdv3.ConfigToClientv3(cfg)
+	etcdConfig, err := etcdv3.ConfigToClient(cfg)
 	if err != nil {
 		ctl.Log.Fatal(err)
 	}

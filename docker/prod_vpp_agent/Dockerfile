@@ -12,6 +12,8 @@ RUN apt-get update \
      iproute2 iputils-ping inetutils-traceroute \
      # vpp requirements
      openssl python libapr1 libnuma1 \
+     libmbedcrypto0 libmbedtls10 libmbedx509-0 ca-certificates \
+     # other
      supervisor ipsec-tools \
  && rm -rf /var/lib/apt/lists/*
 
@@ -28,7 +30,6 @@ RUN cd /opt/vpp/ && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb
 COPY --from=devimg \
     /root/go/bin/vpp-agent \
     /root/go/bin/vpp-agent-ctl \
-    /root/go/bin/vpp-agent-grpc \
     /root/go/bin/agentctl \
  /bin/
 

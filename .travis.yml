@@ -2,6 +2,10 @@ dist: trusty
 sudo: required
 language: go
 
+addons:
+  apt:
+    update: true
+
 go_import_path: github.com/ligato/vpp-agent
 
 git:
@@ -9,7 +13,7 @@ git:
   submodules: false
 
 go:
-  - 1.9.x
+  - 1.10.x
 
 cache:
   directories:

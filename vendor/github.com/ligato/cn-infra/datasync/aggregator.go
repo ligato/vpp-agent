@@ -74,8 +74,18 @@ func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...Pu
 	return wasError
 }
 
+// Register new key for all available aggregator objects. Call Register(keyPrefix) on specific registration
+// to add the key from that registration only
+func (wa *AggregatedRegistration) Register(resyncName, keyPrefix string) error {
+	for _, registration := range wa.Registrations {
+		registration.Register(resyncName, keyPrefix)
+	}
+
+	return nil
+}
+
 // Unregister closed registration of specific key under all available aggregator objects.
-// Call Unregister(keyPrefix) on specific registration to remove key from that registration only
+// Call Unregister(keyPrefix) on specific registration to remove the key from that registration only
 func (wa *AggregatedRegistration) Unregister(keyPrefix string) error {
 	for _, registration := range wa.Registrations {
 		registration.Unregister(keyPrefix)

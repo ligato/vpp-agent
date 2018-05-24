@@ -20,55 +20,22 @@ import (
 
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/namsral/flag"
 )
-
-// PluginConfig tries :
-// - to load flag <plugin-name>-port and then FixConfig() just in case
-// - alternatively <plugin-name>-config and then FixConfig() just in case
-// - alternatively DefaultConfig()
-func PluginConfig(pluginCfg config.PluginConfig, cfg *Config, pluginName core.PluginName) error {
-	portFlag := flag.Lookup(grpcPortFlag(pluginName))
-	if portFlag != nil && portFlag.Value != nil && portFlag.Value.String() != "" && cfg != nil {
-		cfg.Endpoint = rest.DefaultIP + ":" + portFlag.Value.String()
-	}
-
-	if pluginCfg != nil {
-		_, err := pluginCfg.GetValue(cfg)
-		if err != nil {
-			return err
-		}
-	}
-
-	FixConfig(cfg)
-
-	return nil
-}
-
-// DefaultConfig returns new instance of config with default endpoint
-func DefaultConfig() *Config {
-	return &Config{} //endpoint is not set intentionally
-}
-
-// FixConfig fill default values for empty fields (does nothing yet)
-func FixConfig(cfg *Config) {
-
-}
 
 // Config is a configuration for GRPC netListener
 // It is meant to be extended with security (TLS...)
 type Config struct {
 	// Endpoint is an address of GRPC netListener
-	Endpoint string
+	Endpoint string `json:"endpoint"`
 
 	// MaxMsgSize returns a ServerOption to set the max message size in bytes for inbound mesages.
 	// If this is not set, gRPC uses the default 4MB.
-	MaxMsgSize int
+	MaxMsgSize int `json:"max-msg-size"`
 
 	// MaxConcurrentStreams returns a ServerOption that will apply a limit on the number
 	// of concurrent streams to each ServerTransport.
-	MaxConcurrentStreams uint32
+	MaxConcurrentStreams uint32 `json:"mac-conncurrent-streams"`
 
 	// Compression for inbound/outbound messages.
 	// Supported only gzip.

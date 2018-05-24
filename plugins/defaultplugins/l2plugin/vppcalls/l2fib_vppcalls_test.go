@@ -15,23 +15,18 @@
 package vppcalls
 
 import (
+	"log"
+	"os"
 	"testing"
+	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppcore "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/logrus"
 	l2ba "github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/l2"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
+	logrus2 "github.com/sirupsen/logrus"
 )
-
-var vppReqChan = make(chan *govppapi.VppRequest)
-var vppRepChan = make(chan *govppapi.VppReply)
-
-type mockedMessageDecoder struct {
-}
-
-func (mockedMsgDecoder *mockedMessageDecoder) DecodeMsg(data []byte, msg govppapi.Message) error {
-	return nil
-}
 
 var testDataInFib = []struct {
 	mac    string
@@ -57,53 +52,141 @@ var deleteTestDataOutFib = &l2ba.L2fibAddDel{
 	BdID: 5, IsAdd: 0, SwIfIndex: 55, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 }
 
-func TestAdd(t *testing.T) {
-	RegisterTestingT(t)
-	l2FibVppCalls := NewL2FibVppCalls(&govppapi.Channel{ReqChan: vppReqChan, ReplyChan: vppRepChan,
-		MsgDecoder: &mockedMessageDecoder{}}, nil)
+func TestL2FibAdd(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
 
-	for idx := 0; idx < len(testDataInFib); idx++ {
-		go l2FibVppCalls.Add(testDataInFib[idx].mac, testDataInFib[idx].bdID, testDataInFib[idx].ifIdx,
-			testDataInFib[idx].bvi, testDataInFib[idx].static, nil, logrus.DefaultLogger())
-		vppRequest := <-vppReqChan
-		l2fibAddDel := vppRequest.Message.(*l2ba.L2fibAddDel)
-		Expect(l2fibAddDel).To(Equal(createTestDatasOutFib[idx]))
+	l2FibVppCalls := NewL2FibVppCalls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	go l2FibVppCalls.WatchFIBReplies()
+
+	errc := make(chan error, len(testDataInFib))
+	cb := func(err error) {
+		errc <- err
 	}
-	Expect(l2FibVppCalls.waitingForReply.Len()).To(Equal(4))
+	for i := 0; i < len(testDataInFib); i++ {
+		ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
+		l2FibVppCalls.Add(testDataInFib[i].mac, testDataInFib[i].bdID, testDataInFib[i].ifIdx,
+			testDataInFib[i].bvi, testDataInFib[i].static, cb)
+		err := <-errc
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(ctx.MockChannel.Msg).To(Equal(createTestDatasOutFib[i]))
+	}
 }
 
-func TestDelete(t *testing.T) {
-	RegisterTestingT(t)
-	l2FibVppCalls := NewL2FibVppCalls(&govppapi.Channel{ReqChan: vppReqChan, ReplyChan: vppRepChan,
-		MsgDecoder: &mockedMessageDecoder{}}, nil)
+func TestL2FibAddError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
 
-	for idx := 0; idx < len(testDataInFib); idx++ {
-		go l2FibVppCalls.Delete(testDataInFib[idx].mac, testDataInFib[idx].bdID, testDataInFib[idx].ifIdx,
-			nil, logrus.DefaultLogger())
-		vppRequest := <-vppReqChan
-		l2fibAddDel := vppRequest.Message.(*l2ba.L2fibAddDel)
-		Expect(l2fibAddDel).To(Equal(deleteTestDataOutFib))
+	l2FibVppCalls := NewL2FibVppCalls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	go l2FibVppCalls.WatchFIBReplies()
+
+	errc := make(chan error, len(testDataInFib))
+	cb := func(err error) {
+		errc <- err
 	}
-	Expect(l2FibVppCalls.waitingForReply.Len()).To(Equal(4))
+
+	l2FibVppCalls.Add("not:mac:addr", 4, 10, false, false, cb)
+	err := <-errc
+	Expect(err).Should(HaveOccurred())
+
+	ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{Retval: 1})
+	l2FibVppCalls.Add("FF:FF:FF:FF:FF:FF", 4, 10, false, false, cb)
+	err = <-errc
+	Expect(err).Should(HaveOccurred())
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	l2FibVppCalls.Add("FF:FF:FF:FF:FF:FF", 4, 10, false, false, cb)
+	err = <-errc
+	Expect(err).Should(HaveOccurred())
 }
 
-//var counter uint8 = 0
-//func dummyCallback(err error) {
-//	counter++
-//}
+func TestL2FibDelete(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
 
-/**
-currently commented because method WatchFIBReplies still run despite closing channel
-*/
-//TestWatchFIBReplies tests WatchFIBReplies method
-//func TestWatchFIBReplies(t *testing.T) {
-//	RegisterTestingT(t)
-//	vppReq := &FibLogicalReq{Delete: false, BDIdx: 4, BVI: false, MAC: "FF:FF:FF:FF:FF:FF", Static: false,
-//		SwIfIdx: 45, callback: dummyCallback}
-//	go func() {
-//		vppRepChan <- &govppapi.VppReply{MessageID: 4}
-//		close(vppReqChan)
-//	}()
-//	l2FibVppCalls.waitingForReply.PushFront(vppReq)
-//	l2FibVppCalls.WatchFIBReplies(logrus.DefaultLogger())
-//}
+	l2FibVppCalls := NewL2FibVppCalls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	go l2FibVppCalls.WatchFIBReplies()
+
+	errc := make(chan error, len(testDataInFib))
+	cb := func(err error) {
+		errc <- err
+	}
+	for i := 0; i < len(testDataInFib); i++ {
+		ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
+		l2FibVppCalls.Delete(testDataInFib[i].mac, testDataInFib[i].bdID, testDataInFib[i].ifIdx, cb)
+		err := <-errc
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(ctx.MockChannel.Msg).To(Equal(deleteTestDataOutFib))
+	}
+}
+
+func TestWatchFIBReplies(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	l2FibVppCalls := NewL2FibVppCalls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	go l2FibVppCalls.WatchFIBReplies()
+
+	ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
+
+	errc := make(chan error)
+	cb := func(err error) {
+		log.Println("dummyCallback:", err)
+		errc <- err
+	}
+	l2FibVppCalls.Add("FF:FF:FF:FF:FF:FF", 4, 45, false, false, cb)
+
+	select {
+	case err := <-errc:
+		Expect(err).ShouldNot(HaveOccurred())
+	case <-time.After(time.Second):
+		t.Fail()
+	}
+}
+
+func benchmarkWatchFIBReplies(reqN int, b *testing.B) {
+	ctx := vppcallmock.SetupTestCtx(nil)
+	defer ctx.TeardownTestCtx()
+
+	// debug logs slow down benchmarks
+	govpplogger := logrus2.New()
+	govpplogger.Out = os.Stdout
+	govpplogger.Level = logrus2.WarnLevel
+	govppcore.SetLogger(govpplogger)
+
+	l2FibVppCalls := NewL2FibVppCalls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	go l2FibVppCalls.WatchFIBReplies()
+
+	errc := make(chan error, reqN)
+	cb := func(err error) {
+		errc <- err
+	}
+
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < reqN; i++ {
+			ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
+			l2FibVppCalls.Add("FF:FF:FF:FF:FF:FF", 4, 45, false, false, cb)
+		}
+
+		count := 0
+		for {
+			select {
+			case err := <-errc:
+				if err != nil {
+					b.FailNow()
+				}
+				count++
+			case <-time.After(time.Second):
+				b.FailNow()
+			}
+			if count == reqN {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkWatchFIBReplies1(b *testing.B)    { benchmarkWatchFIBReplies(1, b) }
+func BenchmarkWatchFIBReplies10(b *testing.B)   { benchmarkWatchFIBReplies(10, b) }
+func BenchmarkWatchFIBReplies100(b *testing.B)  { benchmarkWatchFIBReplies(100, b) }
+func BenchmarkWatchFIBReplies1000(b *testing.B) { benchmarkWatchFIBReplies(1000, b) }

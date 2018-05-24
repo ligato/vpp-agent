@@ -18,14 +18,13 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/memif"
 	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 )
 
 // AddMemifInterface calls MemifCreate bin API.
-func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
+func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(memif.MemifCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -65,7 +64,7 @@ func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif,
 }
 
 // DeleteMemifInterface calls MemifDelete bin API.
-func DeleteMemifInterface(ifName string, idx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DeleteMemifInterface(ifName string, idx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(memif.MemifDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -86,7 +85,7 @@ func DeleteMemifInterface(ifName string, idx uint32, vppChan *govppapi.Channel, 
 }
 
 // RegisterMemifSocketFilename registers new socket file name with provided ID.
-func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(memif.MemifSocketFilenameAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

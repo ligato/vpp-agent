@@ -42,11 +42,11 @@ type nameToIdxMem struct {
 
 // NewNameToIdx creates a new instance implementing NameToIdxRW.
 // Argument indexFunction may be nil if you do not want to use secondary indexes.
-func NewNameToIdx(logger logging.Logger, owner core.PluginName, title string,
+func NewNameToIdx(logger logging.Logger, title string,
 	indexFunction func(interface{}) map[string][]string) idxvpp.NameToIdxRW {
 	m := nameToIdxMem{}
 	m.Logger = logger
-	m.internal = mem.NewNamedMapping(logger, owner, title, func(meta interface{}) map[string][]string {
+	m.internal = mem.NewNamedMapping(logger, title, func(meta interface{}) map[string][]string {
 		var idxs map[string][]string
 
 		internalMeta, ok := meta.(*nameToIdxMeta)

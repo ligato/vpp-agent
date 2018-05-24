@@ -34,7 +34,7 @@ func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
 }
 
 // ListenAndServeGRPC starts a netListener.
-func ListenAndServeGRPC(config Config, grpcServer *grpc.Server) (netListener net.Listener, err error) {
+func ListenAndServeGRPC(config *Config, grpcServer *grpc.Server) (netListener net.Listener, err error) {
 	netListener, err = net.Listen("tcp", config.Endpoint)
 	if err != nil {
 		return nil, err

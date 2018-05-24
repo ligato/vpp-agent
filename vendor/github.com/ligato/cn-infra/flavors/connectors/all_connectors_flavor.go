@@ -16,8 +16,10 @@ package connectors
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/resync"
+	"github.com/ligato/cn-infra/db/keyval/consul"
 	"github.com/ligato/cn-infra/db/keyval/etcdv3"
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
@@ -57,6 +59,9 @@ type AllConnectorsFlavor struct {
 	ETCD         etcdv3.Plugin
 	ETCDDataSync kvdbsync.Plugin
 
+	Consul         consul.Plugin
+	ConsulDataSync kvdbsync.Plugin
+
 	Kafka kafka.Plugin
 
 	Redis         redis.Plugin
@@ -81,8 +86,18 @@ func (f *AllConnectorsFlavor) Inject() bool {
 	}
 	f.FlavorLocal.Inject()
 
+	f.Consul.Deps.PluginInfraDeps = *f.InfraDeps("consul", local.WithConf())
+	f.Consul.Deps.Resync = &f.ResyncOrch
+	InjectKVDBSync(&f.ConsulDataSync, &f.Consul, f.Consul.PluginName, f.FlavorLocal, &f.ResyncOrch)
+
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3", local.WithConf())
+	f.ETCD.Deps.Resync = &f.ResyncOrch
 	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal, &f.ResyncOrch)
+
+	f.FlavorLocal.StatusCheck.Transport = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+		&f.ETCDDataSync,
+		&f.ConsulDataSync,
+	}}
 
 	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis", local.WithConf())
 	InjectKVDBSync(&f.RedisDataSync, &f.Redis, f.Redis.PluginName, f.FlavorLocal, &f.ResyncOrch)

@@ -5,8 +5,8 @@ RUN apt-get update \
     sudo wget git build-essential gdb vim nano python \
     iproute2 iputils-ping inetutils-traceroute libapr1 supervisor \
     default-jre default-jdk telnet netcat software-properties-common \
-    make autoconf automake libtool curl unzip \
-    golang-gogoprotobuf-dev ipsec-tools \
+    libmbedcrypto0 libmbedtls10 libmbedx509-0 ca-certificates \
+    make autoconf automake libtool curl unzip ipsec-tools \
  && apt-get remove -y --purge gcc \
  && rm -rf /var/lib/apt/lists/*
 

@@ -25,10 +25,11 @@ import (
 )
 
 const (
+	dummyBridgeDomain     = 4
 	dummyBridgeDomainName = "bridge_domain"
 )
 
-//Input test data for creating bridge domain
+// Input test data for creating bridge domain
 var createTestDataInBD *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
 	Name:                dummyBridgeDomainName,
 	Flood:               true,
@@ -39,7 +40,7 @@ var createTestDataInBD *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_Bridge
 	MacAge:              45,
 }
 
-//Output test data for creating bridge domain
+// Output test data for creating bridge domain
 var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	BdID:    dummyBridgeDomain,
 	Flood:   1,
@@ -52,7 +53,7 @@ var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	IsAdd:   1,
 }
 
-//Input test data for updating bridge domain
+// Input test data for updating bridge domain
 var updateTestDataInBd *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
 	Name:                dummyBridgeDomainName,
 	Flood:               false,
@@ -63,7 +64,7 @@ var updateTestDataInBd *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_Bridge
 	MacAge:              50,
 }
 
-//Output test data for updating bridge domain
+// Output test data for updating bridge domain
 var updateTestDataOutBd *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	BdID:    dummyBridgeDomain,
 	Flood:   0,
@@ -75,7 +76,7 @@ var updateTestDataOutBd *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	IsAdd:   1,
 }
 
-//Output test data for deleting bridge domain
+// Output test data for deleting bridge domain
 var deleteTestDataOutBd *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 	BdID:  dummyBridgeDomain,
 	IsAdd: 0,
@@ -89,30 +90,22 @@ func TestVppAddBridgeDomain(t *testing.T) {
 	err := vppcalls.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
-
-	msg, ok := ctx.MockChannel.Msg.(*l2ba.BridgeDomainAddDel)
-	Expect(ok).To(BeTrue())
-	Expect(msg).To(Equal(createTestDataOutBD))
+	Expect(ctx.MockChannel.Msg).To(Equal(createTestDataOutBD))
 }
 
-/*func TestVppUpdateBridgeDomain(t *testing.T) {
+func TestVppAddBridgeDomainError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	err := vppcalls.VppUpdateBridgeDomain(dummyBridgeDomain, dummyBridgeDomain, updateTestDataInBd,
-		logrus.NewLogger(dummyLoggerName), ctx.MockChannel, nil)
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{})
 
-	Expect(err).ShouldNot(HaveOccurred())
+	err := vppcalls.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 
-	Expect(ctx.MockChannel.Msgs).To(HaveLen(1))
-
-	//add msg
-	msg, ok := ctx.MockChannel.Msgs[0].(*l2ba.BridgeDomainAddDel)
-	Expect(ok).To(BeTrue())
-	Expect(msg).To(Equal(updateTestDataOutBd))
-}*/
+	err = vppcalls.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+}
 
 func TestVppDeleteBridgeDomain(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
@@ -122,8 +115,19 @@ func TestVppDeleteBridgeDomain(t *testing.T) {
 	err := vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain, ctx.MockChannel, nil)
 
 	Expect(err).ShouldNot(HaveOccurred())
+	Expect(ctx.MockChannel.Msg).To(Equal(deleteTestDataOutBd))
+}
 
-	msg, ok := ctx.MockChannel.Msg.(*l2ba.BridgeDomainAddDel)
-	Expect(ok).To(BeTrue())
-	Expect(msg).To(Equal(deleteTestDataOutBd))
+func TestVppDeleteBridgeDomainError(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{Retval: 1})
+	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{})
+
+	err := vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
+
+	err = vppcalls.VppDeleteBridgeDomain(dummyBridgeDomain, ctx.MockChannel, nil)
+	Expect(err).Should(HaveOccurred())
 }

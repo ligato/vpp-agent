@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
 	"golang.org/x/net/context"
 )
@@ -156,10 +156,11 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 				plugin.Log.Error(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.l4Configurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.ipsecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	} else {
@@ -176,6 +177,7 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.l4Configurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveDeletedInterface(e.Name)
 		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.ipsecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	}
@@ -197,16 +199,23 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	e.Done()
 }
 
-func (plugin *Plugin) onVppBdEvent(e bdidx.ChangeDto) {
-	if !e.IsDelete() {
-		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
+func (plugin *Plugin) onVppBdEvent(e l2idx.BdChangeDto) {
+	if e.IsDelete() {
+		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
+			if err != nil {
+				plugin.Log.Error(err)
+			}
+		})
+		// TODO propagate error
+	} else if e.IsUpdate() {
+		plugin.fibConfigurator.ResolveUpdatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
 				plugin.Log.Error(err)
 			}
 		})
 		// TODO propagate error
 	} else {
-		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
+		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
 				plugin.Log.Error(err)
 			}

@@ -26,12 +26,17 @@
 
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
-    "github.com/ungerik/pkgreflect"
+    "github.com/ungerik/pkgreflect",
+    "github.com/gogo/protobuf/protoc-gen-gogo"
 ]
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
-  revision = "4df448ad6cdfa2e60fa0167e5f70cc1127fbd3bf"
+  revision = "3da2b73ec5ce77abf796ebeae6dfc149c8d3c698"
+
+[[constraint]]
+  name = "github.com/ligato/cn-infra"
+  version = "1.3"
 
 [[constraint]]
   branch = "master"
@@ -56,10 +61,6 @@ required = [
 [[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.1"
-
-[[constraint]]
-  name = "github.com/ligato/cn-infra"
-  version = "1.2"
 
 [[constraint]]
   branch = "master"

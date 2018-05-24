@@ -6,6 +6,42 @@ package session
 import "git.fd.io/govpp.git/api"
 
 // ApplicationAttach represents the VPP binary API message 'application_attach'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 69:
+//
+//            "application_attach",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "initial_segment_size"
+//            ],
+//            [
+//                "u64",
+//                "options",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "namespace_id_len"
+//            ],
+//            [
+//                "u8",
+//                "namespace_id",
+//                64
+//            ],
+//            {
+//                "crc": "0x81d4f974"
+//            }
 //
 type ApplicationAttach struct {
 	InitialSegmentSize uint32
@@ -21,13 +57,48 @@ func (*ApplicationAttach) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ApplicationAttach) GetCrcString() string {
-	return "f27e0a47"
+	return "81d4f974"
 }
 func NewApplicationAttach() api.Message {
 	return &ApplicationAttach{}
 }
 
 // ApplicationAttachReply represents the VPP binary API message 'application_attach_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 105:
+//
+//            "application_attach_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "app_event_queue_address"
+//            ],
+//            [
+//                "u32",
+//                "segment_size"
+//            ],
+//            [
+//                "u8",
+//                "segment_name_length"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            {
+//                "crc": "0xb3bf3789"
+//            }
 //
 type ApplicationAttachReply struct {
 	Retval               int32
@@ -44,13 +115,211 @@ func (*ApplicationAttachReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ApplicationAttachReply) GetCrcString() string {
-	return "0df5c138"
+	return "b3bf3789"
 }
 func NewApplicationAttachReply() api.Message {
 	return &ApplicationAttachReply{}
 }
 
+// ApplicationTLSCertAdd represents the VPP binary API message 'application_tls_cert_add'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 140:
+//
+//            "application_tls_cert_add",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "app_index"
+//            ],
+//            [
+//                "u16",
+//                "cert_len"
+//            ],
+//            [
+//                "u8",
+//                "cert",
+//                0,
+//                "cert_len"
+//            ],
+//            {
+//                "crc": "0x3f5cfe45"
+//            }
+//
+type ApplicationTLSCertAdd struct {
+	AppIndex uint32
+	CertLen  uint16 `struc:"sizeof=Cert"`
+	Cert     []byte
+}
+
+func (*ApplicationTLSCertAdd) GetMessageName() string {
+	return "application_tls_cert_add"
+}
+func (*ApplicationTLSCertAdd) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*ApplicationTLSCertAdd) GetCrcString() string {
+	return "3f5cfe45"
+}
+func NewApplicationTLSCertAdd() api.Message {
+	return &ApplicationTLSCertAdd{}
+}
+
+// ApplicationTLSCertAddReply represents the VPP binary API message 'application_tls_cert_add_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 172:
+//
+//            "application_tls_cert_add_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type ApplicationTLSCertAddReply struct {
+	Retval int32
+}
+
+func (*ApplicationTLSCertAddReply) GetMessageName() string {
+	return "application_tls_cert_add_reply"
+}
+func (*ApplicationTLSCertAddReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*ApplicationTLSCertAddReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewApplicationTLSCertAddReply() api.Message {
+	return &ApplicationTLSCertAddReply{}
+}
+
+// ApplicationTLSKeyAdd represents the VPP binary API message 'application_tls_key_add'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 190:
+//
+//            "application_tls_key_add",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "app_index"
+//            ],
+//            [
+//                "u16",
+//                "key_len"
+//            ],
+//            [
+//                "u8",
+//                "key",
+//                0,
+//                "key_len"
+//            ],
+//            {
+//                "crc": "0x5eaf70cd"
+//            }
+//
+type ApplicationTLSKeyAdd struct {
+	AppIndex uint32
+	KeyLen   uint16 `struc:"sizeof=Key"`
+	Key      []byte
+}
+
+func (*ApplicationTLSKeyAdd) GetMessageName() string {
+	return "application_tls_key_add"
+}
+func (*ApplicationTLSKeyAdd) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*ApplicationTLSKeyAdd) GetCrcString() string {
+	return "5eaf70cd"
+}
+func NewApplicationTLSKeyAdd() api.Message {
+	return &ApplicationTLSKeyAdd{}
+}
+
+// ApplicationTLSKeyAddReply represents the VPP binary API message 'application_tls_key_add_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 222:
+//
+//            "application_tls_key_add_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type ApplicationTLSKeyAddReply struct {
+	Retval int32
+}
+
+func (*ApplicationTLSKeyAddReply) GetMessageName() string {
+	return "application_tls_key_add_reply"
+}
+func (*ApplicationTLSKeyAddReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*ApplicationTLSKeyAddReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewApplicationTLSKeyAddReply() api.Message {
+	return &ApplicationTLSKeyAddReply{}
+}
+
 // ApplicationDetach represents the VPP binary API message 'application_detach'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 240:
+//
+//            "application_detach",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type ApplicationDetach struct {
 }
@@ -62,13 +331,31 @@ func (*ApplicationDetach) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ApplicationDetach) GetCrcString() string {
-	return "bf7e4352"
+	return "51077d14"
 }
 func NewApplicationDetach() api.Message {
 	return &ApplicationDetach{}
 }
 
 // ApplicationDetachReply represents the VPP binary API message 'application_detach_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 258:
+//
+//            "application_detach_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type ApplicationDetachReply struct {
 	Retval int32
@@ -81,13 +368,40 @@ func (*ApplicationDetachReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ApplicationDetachReply) GetCrcString() string {
-	return "fb879289"
+	return "e8d4e804"
 }
 func NewApplicationDetachReply() api.Message {
 	return &ApplicationDetachReply{}
 }
 
 // MapAnotherSegment represents the VPP binary API message 'map_another_segment'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 276:
+//
+//            "map_another_segment",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "segment_size"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            {
+//                "crc": "0x9db38ca6"
+//            }
 //
 type MapAnotherSegment struct {
 	SegmentSize uint32
@@ -101,13 +415,31 @@ func (*MapAnotherSegment) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*MapAnotherSegment) GetCrcString() string {
-	return "28ca2003"
+	return "9db38ca6"
 }
 func NewMapAnotherSegment() api.Message {
 	return &MapAnotherSegment{}
 }
 
 // MapAnotherSegmentReply represents the VPP binary API message 'map_another_segment_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 303:
+//
+//            "map_another_segment_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type MapAnotherSegmentReply struct {
 	Retval int32
@@ -120,13 +452,119 @@ func (*MapAnotherSegmentReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*MapAnotherSegmentReply) GetCrcString() string {
-	return "76d11a9d"
+	return "e8d4e804"
 }
 func NewMapAnotherSegmentReply() api.Message {
 	return &MapAnotherSegmentReply{}
 }
 
+// UnmapSegment represents the VPP binary API message 'unmap_segment'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 321:
+//
+//            "unmap_segment",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            {
+//                "crc": "0x15ffd8c6"
+//            }
+//
+type UnmapSegment struct {
+	SegmentName []byte `struc:"[128]byte"`
+}
+
+func (*UnmapSegment) GetMessageName() string {
+	return "unmap_segment"
+}
+func (*UnmapSegment) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*UnmapSegment) GetCrcString() string {
+	return "15ffd8c6"
+}
+func NewUnmapSegment() api.Message {
+	return &UnmapSegment{}
+}
+
+// UnmapSegmentReply represents the VPP binary API message 'unmap_segment_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 344:
+//
+//            "unmap_segment_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type UnmapSegmentReply struct {
+	Retval int32
+}
+
+func (*UnmapSegmentReply) GetMessageName() string {
+	return "unmap_segment_reply"
+}
+func (*UnmapSegmentReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*UnmapSegmentReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewUnmapSegmentReply() api.Message {
+	return &UnmapSegmentReply{}
+}
+
 // BindURI represents the VPP binary API message 'bind_uri'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 362:
+//
+//            "bind_uri",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "accept_cookie"
+//            ],
+//            [
+//                "u8",
+//                "uri",
+//                128
+//            ],
+//            {
+//                "crc": "0xfae140cb"
+//            }
 //
 type BindURI struct {
 	AcceptCookie uint32
@@ -140,13 +578,31 @@ func (*BindURI) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BindURI) GetCrcString() string {
-	return "ceafed7f"
+	return "fae140cb"
 }
 func NewBindURI() api.Message {
 	return &BindURI{}
 }
 
 // BindURIReply represents the VPP binary API message 'bind_uri_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 389:
+//
+//            "bind_uri_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type BindURIReply struct {
 	Retval int32
@@ -159,13 +615,36 @@ func (*BindURIReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BindURIReply) GetCrcString() string {
-	return "75918978"
+	return "e8d4e804"
 }
 func NewBindURIReply() api.Message {
 	return &BindURIReply{}
 }
 
 // UnbindURI represents the VPP binary API message 'unbind_uri'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 407:
+//
+//            "unbind_uri",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "uri",
+//                128
+//            ],
+//            {
+//                "crc": "0x294cf07d"
+//            }
 //
 type UnbindURI struct {
 	URI []byte `struc:"[128]byte"`
@@ -178,13 +657,31 @@ func (*UnbindURI) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*UnbindURI) GetCrcString() string {
-	return "46569743"
+	return "294cf07d"
 }
 func NewUnbindURI() api.Message {
 	return &UnbindURI{}
 }
 
 // UnbindURIReply represents the VPP binary API message 'unbind_uri_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 430:
+//
+//            "unbind_uri_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type UnbindURIReply struct {
 	Retval int32
@@ -197,13 +694,45 @@ func (*UnbindURIReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*UnbindURIReply) GetCrcString() string {
-	return "310db78f"
+	return "e8d4e804"
 }
 func NewUnbindURIReply() api.Message {
 	return &UnbindURIReply{}
 }
 
 // ConnectURI represents the VPP binary API message 'connect_uri'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 448:
+//
+//            "connect_uri",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "client_queue_address"
+//            ],
+//            [
+//                "u64",
+//                "options",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "uri",
+//                128
+//            ],
+//            {
+//                "crc": "0xa36143d6"
+//            }
 //
 type ConnectURI struct {
 	ClientQueueAddress uint64
@@ -218,13 +747,31 @@ func (*ConnectURI) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ConnectURI) GetCrcString() string {
-	return "72035237"
+	return "a36143d6"
 }
 func NewConnectURI() api.Message {
 	return &ConnectURI{}
 }
 
 // ConnectURIReply represents the VPP binary API message 'connect_uri_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 480:
+//
+//            "connect_uri_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type ConnectURIReply struct {
 	Retval int32
@@ -237,23 +784,79 @@ func (*ConnectURIReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ConnectURIReply) GetCrcString() string {
-	return "54ec1256"
+	return "e8d4e804"
 }
 func NewConnectURIReply() api.Message {
 	return &ConnectURIReply{}
 }
 
 // AcceptSession represents the VPP binary API message 'accept_session'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 498:
+//
+//            "accept_session",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "listener_handle"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            [
+//                "u64",
+//                "server_rx_fifo"
+//            ],
+//            [
+//                "u64",
+//                "server_tx_fifo"
+//            ],
+//            [
+//                "u64",
+//                "vpp_event_queue_address"
+//            ],
+//            [
+//                "u64",
+//                "server_event_queue_address"
+//            ],
+//            [
+//                "u16",
+//                "port"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip",
+//                16
+//            ],
+//            {
+//                "crc": "0xbd57a498"
+//            }
 //
 type AcceptSession struct {
-	ListenerHandle       uint64
-	Handle               uint64
-	ServerRxFifo         uint64
-	ServerTxFifo         uint64
-	VppEventQueueAddress uint64
-	Port                 uint16
-	IsIP4                uint8
-	IP                   []byte `struc:"[16]byte"`
+	ListenerHandle          uint64
+	Handle                  uint64
+	ServerRxFifo            uint64
+	ServerTxFifo            uint64
+	VppEventQueueAddress    uint64
+	ServerEventQueueAddress uint64
+	Port                    uint16
+	IsIP4                   uint8
+	IP                      []byte `struc:"[16]byte"`
 }
 
 func (*AcceptSession) GetMessageName() string {
@@ -263,13 +866,35 @@ func (*AcceptSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AcceptSession) GetCrcString() string {
-	return "8e2a127e"
+	return "bd57a498"
 }
 func NewAcceptSession() api.Message {
 	return &AcceptSession{}
 }
 
 // AcceptSessionReply represents the VPP binary API message 'accept_session_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 553:
+//
+//            "accept_session_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0xd6960a03"
+//            }
 //
 type AcceptSessionReply struct {
 	Retval int32
@@ -283,13 +908,35 @@ func (*AcceptSessionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AcceptSessionReply) GetCrcString() string {
-	return "67d8c22a"
+	return "d6960a03"
 }
 func NewAcceptSessionReply() api.Message {
 	return &AcceptSessionReply{}
 }
 
 // DisconnectSession represents the VPP binary API message 'disconnect_session'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 575:
+//
+//            "disconnect_session",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0x7279205b"
+//            }
 //
 type DisconnectSession struct {
 	Handle uint64
@@ -302,13 +949,35 @@ func (*DisconnectSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*DisconnectSession) GetCrcString() string {
-	return "18addf61"
+	return "7279205b"
 }
 func NewDisconnectSession() api.Message {
 	return &DisconnectSession{}
 }
 
 // DisconnectSessionReply represents the VPP binary API message 'disconnect_session_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 597:
+//
+//            "disconnect_session_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0xd6960a03"
+//            }
 //
 type DisconnectSessionReply struct {
 	Retval int32
@@ -319,16 +988,38 @@ func (*DisconnectSessionReply) GetMessageName() string {
 	return "disconnect_session_reply"
 }
 func (*DisconnectSessionReply) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.ReplyMessage
 }
 func (*DisconnectSessionReply) GetCrcString() string {
-	return "6fb16b8f"
+	return "d6960a03"
 }
 func NewDisconnectSessionReply() api.Message {
 	return &DisconnectSessionReply{}
 }
 
 // ResetSession represents the VPP binary API message 'reset_session'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 619:
+//
+//            "reset_session",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0x7279205b"
+//            }
 //
 type ResetSession struct {
 	Handle uint64
@@ -341,13 +1032,39 @@ func (*ResetSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ResetSession) GetCrcString() string {
-	return "601fefd7"
+	return "7279205b"
 }
 func NewResetSession() api.Message {
 	return &ResetSession{}
 }
 
 // ResetSessionReply represents the VPP binary API message 'reset_session_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 641:
+//
+//            "reset_session_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0xfaf37b87"
+//            }
 //
 type ResetSessionReply struct {
 	Retval int32
@@ -361,13 +1078,57 @@ func (*ResetSessionReply) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ResetSessionReply) GetCrcString() string {
-	return "80f6c14f"
+	return "faf37b87"
 }
 func NewResetSessionReply() api.Message {
 	return &ResetSessionReply{}
 }
 
 // BindSock represents the VPP binary API message 'bind_sock'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 667:
+//
+//            "bind_sock",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "vrf"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip",
+//                16
+//            ],
+//            [
+//                "u16",
+//                "port"
+//            ],
+//            [
+//                "u8",
+//                "proto"
+//            ],
+//            [
+//                "u64",
+//                "options",
+//                16
+//            ],
+//            {
+//                "crc": "0x6a6a40d0"
+//            }
 //
 type BindSock struct {
 	Vrf     uint32
@@ -385,13 +1146,35 @@ func (*BindSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*BindSock) GetCrcString() string {
-	return "3f898291"
+	return "6a6a40d0"
 }
 func NewBindSock() api.Message {
 	return &BindSock{}
 }
 
 // UnbindSock represents the VPP binary API message 'unbind_sock'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 711:
+//
+//            "unbind_sock",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            {
+//                "crc": "0x7279205b"
+//            }
 //
 type UnbindSock struct {
 	Handle uint64
@@ -404,13 +1187,31 @@ func (*UnbindSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*UnbindSock) GetCrcString() string {
-	return "9007c8c9"
+	return "7279205b"
 }
 func NewUnbindSock() api.Message {
 	return &UnbindSock{}
 }
 
 // UnbindSockReply represents the VPP binary API message 'unbind_sock_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 733:
+//
+//            "unbind_sock_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type UnbindSockReply struct {
 	Retval int32
@@ -423,13 +1224,71 @@ func (*UnbindSockReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*UnbindSockReply) GetCrcString() string {
-	return "5d9c5da6"
+	return "e8d4e804"
 }
 func NewUnbindSockReply() api.Message {
 	return &UnbindSockReply{}
 }
 
 // ConnectSock represents the VPP binary API message 'connect_sock'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 751:
+//
+//            "connect_sock",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "client_queue_address"
+//            ],
+//            [
+//                "u64",
+//                "options",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "vrf"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip",
+//                16
+//            ],
+//            [
+//                "u16",
+//                "port"
+//            ],
+//            [
+//                "u8",
+//                "proto"
+//            ],
+//            [
+//                "u8",
+//                "hostname_len"
+//            ],
+//            [
+//                "u8",
+//                "hostname",
+//                0,
+//                "hostname_len"
+//            ],
+//            {
+//                "crc": "0x02c6e3c3"
+//            }
 //
 type ConnectSock struct {
 	ClientQueueAddress uint64
@@ -439,6 +1298,8 @@ type ConnectSock struct {
 	IP                 []byte `struc:"[16]byte"`
 	Port               uint16
 	Proto              uint8
+	HostnameLen        uint8 `struc:"sizeof=Hostname"`
+	Hostname           []byte
 }
 
 func (*ConnectSock) GetMessageName() string {
@@ -448,13 +1309,31 @@ func (*ConnectSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ConnectSock) GetCrcString() string {
-	return "0bf00e15"
+	return "02c6e3c3"
 }
 func NewConnectSock() api.Message {
 	return &ConnectSock{}
 }
 
 // ConnectSockReply represents the VPP binary API message 'connect_sock_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 809:
+//
+//            "connect_sock_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type ConnectSockReply struct {
 	Retval int32
@@ -467,13 +1346,65 @@ func (*ConnectSockReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ConnectSockReply) GetCrcString() string {
-	return "f6988664"
+	return "e8d4e804"
 }
 func NewConnectSockReply() api.Message {
 	return &ConnectSockReply{}
 }
 
 // BindSockReply represents the VPP binary API message 'bind_sock_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 827:
+//
+//            "bind_sock_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "server_event_queue_address"
+//            ],
+//            [
+//                "u8",
+//                "lcl_is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "lcl_ip",
+//                16
+//            ],
+//            [
+//                "u16",
+//                "lcl_port"
+//            ],
+//            [
+//                "u32",
+//                "segment_size"
+//            ],
+//            [
+//                "u8",
+//                "segment_name_length"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            {
+//                "crc": "0x5dccb3c7"
+//            }
 //
 type BindSockReply struct {
 	Handle                  uint64
@@ -494,13 +1425,31 @@ func (*BindSockReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*BindSockReply) GetCrcString() string {
-	return "6baf1ff2"
+	return "5dccb3c7"
 }
 func NewBindSockReply() api.Message {
 	return &BindSockReply{}
 }
 
 // ConnectSession represents the VPP binary API message 'connect_session'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 879:
+//
+//            "connect_session",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type ConnectSession struct {
 }
@@ -512,26 +1461,91 @@ func (*ConnectSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ConnectSession) GetCrcString() string {
-	return "40ae01d1"
+	return "51077d14"
 }
 func NewConnectSession() api.Message {
 	return &ConnectSession{}
 }
 
 // ConnectSessionReply represents the VPP binary API message 'connect_session_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 897:
+//
+//            "connect_session_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u64",
+//                "handle"
+//            ],
+//            [
+//                "u64",
+//                "server_rx_fifo"
+//            ],
+//            [
+//                "u64",
+//                "server_tx_fifo"
+//            ],
+//            [
+//                "u64",
+//                "vpp_event_queue_address"
+//            ],
+//            [
+//                "u64",
+//                "client_event_queue_address"
+//            ],
+//            [
+//                "u32",
+//                "segment_size"
+//            ],
+//            [
+//                "u8",
+//                "segment_name_length"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "lcl_ip",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u16",
+//                "lcl_port"
+//            ],
+//            {
+//                "crc": "0xfad9041d"
+//            }
 //
 type ConnectSessionReply struct {
-	Retval               int32
-	Handle               uint64
-	ServerRxFifo         uint64
-	ServerTxFifo         uint64
-	VppEventQueueAddress uint64
-	SegmentSize          uint32
-	SegmentNameLength    uint8
-	SegmentName          []byte `struc:"[128]byte"`
-	LclIP                []byte `struc:"[16]byte"`
-	IsIP4                uint8
-	LclPort              uint16
+	Retval                  int32
+	Handle                  uint64
+	ServerRxFifo            uint64
+	ServerTxFifo            uint64
+	VppEventQueueAddress    uint64
+	ClientEventQueueAddress uint64
+	SegmentSize             uint32
+	SegmentNameLength       uint8
+	SegmentName             []byte `struc:"[128]byte"`
+	LclIP                   []byte `struc:"[16]byte"`
+	IsIP4                   uint8
+	LclPort                 uint16
 }
 
 func (*ConnectSessionReply) GetMessageName() string {
@@ -541,13 +1555,35 @@ func (*ConnectSessionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*ConnectSessionReply) GetCrcString() string {
-	return "0bf3fdc2"
+	return "fad9041d"
 }
 func NewConnectSessionReply() api.Message {
 	return &ConnectSessionReply{}
 }
 
 // SessionEnableDisable represents the VPP binary API message 'session_enable_disable'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 961:
+//
+//            "session_enable_disable",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_enable"
+//            ],
+//            {
+//                "crc": "0x30ac9be7"
+//            }
 //
 type SessionEnableDisable struct {
 	IsEnable uint8
@@ -560,13 +1596,31 @@ func (*SessionEnableDisable) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SessionEnableDisable) GetCrcString() string {
-	return "a4cfced4"
+	return "30ac9be7"
 }
 func NewSessionEnableDisable() api.Message {
 	return &SessionEnableDisable{}
 }
 
 // SessionEnableDisableReply represents the VPP binary API message 'session_enable_disable_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 983:
+//
+//            "session_enable_disable_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type SessionEnableDisableReply struct {
 	Retval int32
@@ -579,13 +1633,56 @@ func (*SessionEnableDisableReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SessionEnableDisableReply) GetCrcString() string {
-	return "cfb0e390"
+	return "e8d4e804"
 }
 func NewSessionEnableDisableReply() api.Message {
 	return &SessionEnableDisableReply{}
 }
 
 // AppNamespaceAddDel represents the VPP binary API message 'app_namespace_add_del'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1001:
+//
+//            "app_namespace_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u64",
+//                "secret"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "ip4_fib_id"
+//            ],
+//            [
+//                "u32",
+//                "ip6_fib_id"
+//            ],
+//            [
+//                "u8",
+//                "namespace_id_len"
+//            ],
+//            [
+//                "u8",
+//                "namespace_id",
+//                64
+//            ],
+//            {
+//                "crc": "0xdd074c65"
+//            }
 //
 type AppNamespaceAddDel struct {
 	Secret         uint64
@@ -603,13 +1700,35 @@ func (*AppNamespaceAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*AppNamespaceAddDel) GetCrcString() string {
-	return "9733ef2a"
+	return "dd074c65"
 }
 func NewAppNamespaceAddDel() api.Message {
 	return &AppNamespaceAddDel{}
 }
 
 // AppNamespaceAddDelReply represents the VPP binary API message 'app_namespace_add_del_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1044:
+//
+//            "app_namespace_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "appns_index"
+//            ],
+//            {
+//                "crc": "0x85137120"
+//            }
 //
 type AppNamespaceAddDelReply struct {
 	Retval     int32
@@ -623,13 +1742,86 @@ func (*AppNamespaceAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*AppNamespaceAddDelReply) GetCrcString() string {
-	return "8a5cd4ac"
+	return "85137120"
 }
 func NewAppNamespaceAddDelReply() api.Message {
 	return &AppNamespaceAddDelReply{}
 }
 
 // SessionRuleAddDel represents the VPP binary API message 'session_rule_add_del'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1066:
+//
+//            "session_rule_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "transport_proto"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "lcl_ip",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "lcl_plen"
+//            ],
+//            [
+//                "u8",
+//                "rmt_ip",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "rmt_plen"
+//            ],
+//            [
+//                "u16",
+//                "lcl_port"
+//            ],
+//            [
+//                "u16",
+//                "rmt_port"
+//            ],
+//            [
+//                "u32",
+//                "action_index"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u32",
+//                "appns_index"
+//            ],
+//            [
+//                "u8",
+//                "scope"
+//            ],
+//            [
+//                "u8",
+//                "tag",
+//                64
+//            ],
+//            {
+//                "crc": "0x4ab2eb06"
+//            }
 //
 type SessionRuleAddDel struct {
 	TransportProto uint8
@@ -654,13 +1846,31 @@ func (*SessionRuleAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SessionRuleAddDel) GetCrcString() string {
-	return "f540e6fb"
+	return "4ab2eb06"
 }
 func NewSessionRuleAddDel() api.Message {
 	return &SessionRuleAddDel{}
 }
 
 // SessionRuleAddDelReply represents the VPP binary API message 'session_rule_add_del_reply'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1139:
+//
+//            "session_rule_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
 //
 type SessionRuleAddDelReply struct {
 	Retval int32
@@ -673,13 +1883,31 @@ func (*SessionRuleAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SessionRuleAddDelReply) GetCrcString() string {
-	return "a000e586"
+	return "e8d4e804"
 }
 func NewSessionRuleAddDelReply() api.Message {
 	return &SessionRuleAddDelReply{}
 }
 
 // SessionRulesDump represents the VPP binary API message 'session_rules_dump'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1157:
+//
+//            "session_rules_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
 //
 type SessionRulesDump struct {
 }
@@ -691,13 +1919,78 @@ func (*SessionRulesDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SessionRulesDump) GetCrcString() string {
-	return "cb37054a"
+	return "51077d14"
 }
 func NewSessionRulesDump() api.Message {
 	return &SessionRulesDump{}
 }
 
 // SessionRulesDetails represents the VPP binary API message 'session_rules_details'.
+// Generated from '/usr/share/vpp/api/session.api.json', line 1175:
+//
+//            "session_rules_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "transport_proto"
+//            ],
+//            [
+//                "u8",
+//                "is_ip4"
+//            ],
+//            [
+//                "u8",
+//                "lcl_ip",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "lcl_plen"
+//            ],
+//            [
+//                "u8",
+//                "rmt_ip",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "rmt_plen"
+//            ],
+//            [
+//                "u16",
+//                "lcl_port"
+//            ],
+//            [
+//                "u16",
+//                "rmt_port"
+//            ],
+//            [
+//                "u32",
+//                "action_index"
+//            ],
+//            [
+//                "u32",
+//                "appns_index"
+//            ],
+//            [
+//                "u8",
+//                "scope"
+//            ],
+//            [
+//                "u8",
+//                "tag",
+//                64
+//            ],
+//            {
+//                "crc": "0xa52b0e96"
+//            }
 //
 type SessionRulesDetails struct {
 	TransportProto uint8
@@ -721,7 +2014,7 @@ func (*SessionRulesDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SessionRulesDetails) GetCrcString() string {
-	return "081d0d82"
+	return "a52b0e96"
 }
 func NewSessionRulesDetails() api.Message {
 	return &SessionRulesDetails{}

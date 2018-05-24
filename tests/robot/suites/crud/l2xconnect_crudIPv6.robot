@@ -22,20 +22,18 @@ ${RESYNC_SLEEP}=     20s
 ${VETH1_MAC}=          1a:00:00:11:11:11
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
-${VETH_IP}=            fd30:0:0:1:e::1
+${VETH_IP}=            fd30::1:e:0:0:1
 ${PREFIX}=             64
-${MEMIF_IP}=           fd31:0:0:1:1::1
-${VXLAN_IP}=           fd31:0:0:1:1::2
-${LOOPB_IP}=           fd32:0:0:1:1::1
+${MEMIF_IP}=           fd31::1:1:0:0:1
+${VXLAN_IP}=           fd31::1:1:0:0:2
+${LOOPB_IP}=           fd32::1:1:0:0:1
 ${LOOPB2_IP}=          fd32:0:1:1:1::1
-${TAP_IP}=             fd33:0:0:1:1::1
+${TAP_IP}=             fd33::1:1:0:0:1
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
     Configure Environment 5
     Sleep    ${SYNC_SLEEP}
-
-
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
@@ -88,7 +86,7 @@ Add Tap Interface
 
 Check TAP Interface Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=32:21:21:11:11:11
-    vpp_term: Check TAP interface State    agent_vpp_1    vpp1_tap1    mac=32:21:21:11:11:11    ipv6=${TAP_IP}/${PREFIX}    state=up
+    vpp_term: Check TAP IP6 interface State    agent_vpp_1    vpp1_tap1    mac=32:21:21:11:11:11    ipv6=${TAP_IP}/${PREFIX}    state=up
 
 Check Stuff
     Show Interfaces And Other Objects

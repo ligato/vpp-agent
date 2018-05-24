@@ -22,6 +22,8 @@ const (
 	KeyPrefixSPD = KeyPrefix + "spd/"
 	// KeyPrefixSA is the relative key prefix for IPSec's Security Associations
 	KeyPrefixSA = KeyPrefix + "sa/"
+	// KeyPrefixTunnel is the relative key prefix for IPSec's Tunnel Interface
+	KeyPrefixTunnel = KeyPrefix + "tunnel/"
 )
 
 // SPDKey returns key for Security Policy Database
@@ -32,4 +34,9 @@ func SPDKey(name string) string {
 // SAKey returns key for Security Association
 func SAKey(name string) string {
 	return KeyPrefixSA + name
+}
+
+// TunnelKey returns key for Tunnel Interface
+func TunnelKey(name string) string {
+	return KeyPrefixTunnel + name
 }

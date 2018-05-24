@@ -186,9 +186,9 @@ type PoolConfig struct {
 	IdleCheckFrequency time.Duration `json:"idle-check-frequency"`
 }
 
-// CreateClient creates an appropriate client according to the configuration
+// ConfigToClient creates an appropriate client according to the configuration
 // parameter.
-func CreateClient(config interface{}) (Client, error) {
+func ConfigToClient(config interface{}) (Client, error) {
 	switch cfg := config.(type) {
 	case NodeConfig:
 		return CreateNodeClient(cfg)

@@ -6,14 +6,17 @@ import (
 
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
+	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/msgsync"
 	"github.com/ligato/cn-infra/flavors/connectors"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/flavors/rpc"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
+	rpcsvc "github.com/ligato/vpp-agent/plugins/defaultplugins/rpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linuxplugin"
 	"github.com/ligato/vpp-agent/plugins/restplugin"
+	"github.com/ligato/vpp-agent/plugins/telemetry"
 )
 
 // kafkaIfStateTopic is the topic where interface state changes are published.
@@ -52,7 +55,9 @@ type Flavor struct {
 	Linux linuxplugin.Plugin
 	VPP   defaultplugins.Plugin
 
-	RESTAPIPlugin restplugin.RESTAPIPlugin
+	GRPCSvcPlugin   rpcsvc.GRPCSvcPlugin
+	RESTAPIPlugin   restplugin.Plugin
+	TelemetryPlugin telemetry.Plugin
 
 	injected bool
 }
@@ -71,7 +76,10 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 
-	f.VPP.Deps.Publish = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.Publish = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
 
 	/* note: now configurable with `status-publishers` in defaultplugins
 		f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
@@ -91,19 +99,36 @@ func (f *Flavor) Inject() bool {
 	f.IfStatePub.Cfg.Topic = kafkaIfStateTopic
 
 	f.VPP.Deps.IfStatePub = &f.IfStatePub
-	f.VPP.Deps.Watch = &f.AllConnectorsFlavor.ETCDDataSync
+	f.VPP.Deps.Watch = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
+		local_sync.Get(),
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
+	f.VPP.Deps.GRPCSvc = &f.GRPCSvcPlugin
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linuxplugin", local.WithConf())
-	f.Linux.Deps.Watcher = &f.AllConnectorsFlavor.ETCDDataSync
+	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
+		local_sync.Get(),
+		&f.AllConnectorsFlavor.ETCDDataSync,
+		&f.AllConnectorsFlavor.ConsulDataSync,
+	}}
 
 	// Mutex for synchronizing watching events
 	var watchEventsMutex sync.Mutex
 	f.VPP.Deps.WatchEventsMutex = &watchEventsMutex
 	f.Linux.Deps.WatchEventsMutex = &watchEventsMutex
 
-	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapiplugin")
+	// Init GRPC service after VPP & Linux plugins
+	f.GRPCSvcPlugin.Deps.PluginLogDeps = *f.LogDeps("vpp-grpc-svc")
+	f.GRPCSvcPlugin.Deps.GRPCServer = &f.FlavorRPC.GRPC
+
+	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("restapi-plugin")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
+
+	f.TelemetryPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("telemetry-plugin")
+	f.TelemetryPlugin.Deps.Prometheus = &f.FlavorRPC.Prometheus
+	f.TelemetryPlugin.Deps.GoVppmux = &f.GoVPP
 
 	return true
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/bdidx"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
 )
 
@@ -47,9 +47,9 @@ type ExamplePlugin struct {
 	// Linux plugin dependency
 	VPP defaultplugins.API
 
-	bdIdxLocal  bdidx.BDIndex
-	bdIdxAgent1 bdidx.BDIndex
-	bdIdxAgent2 bdidx.BDIndex
+	bdIdxLocal  l2idx.BDIndex
+	bdIdxAgent1 l2idx.BDIndex
+	bdIdxAgent2 l2idx.BDIndex
 
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
@@ -75,9 +75,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// Cache other agent's bridge domain index mapping using injected plugin and local plugin name.
 	// /vnf-agent/agent1/vpp/config/v1/bd/
-	plugin.bdIdxAgent1 = bdidx.Cache(plugin.Agent1, plugin.PluginName)
+	plugin.bdIdxAgent1 = l2idx.Cache(plugin.Agent1)
 	// /vnf-agent/agent2/vpp/config/v1/bd/
-	plugin.bdIdxAgent2 = bdidx.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.bdIdxAgent2 = l2idx.Cache(plugin.Agent2)
 
 	return nil
 }
@@ -132,7 +132,7 @@ func (plugin *ExamplePlugin) publish() (err error) {
 // Use the NameToIndexMapping to watch changes.
 func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
-	bdIdxChan := make(chan bdidx.ChangeDto)
+	bdIdxChan := make(chan l2idx.BdChangeDto)
 	// Subscribe local bd-idx-mapping and both of cache mapping.
 	plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
 	plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)

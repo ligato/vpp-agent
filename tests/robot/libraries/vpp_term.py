@@ -7,6 +7,24 @@ def Find_IPV4_In_Text(text):
             ipv4.append(word)
     return ipv4
 
+
+def Find_IPV6_In_Text(text):
+    """Find and return all IPv6 addresses in the given string.
+
+    :param text: string to search.
+    :type text: str
+
+    :return: IPv6 addresses found in string.
+    :rtype: list of str
+    """
+
+    ipv6 = []
+    for word in text.split():
+        if (word.count(':') >= 2) and (word.count('/') == 1):
+            ipv6.append(word)
+    return ipv6
+
+
 # input - output from sh hardware interface_name
 # output - list of words containing mac
 def Find_MAC_In_Text(text):
@@ -16,7 +34,6 @@ def Find_MAC_In_Text(text):
             mac = word
             break
     return mac
-
 
 
 # input - output from sh ip arp command

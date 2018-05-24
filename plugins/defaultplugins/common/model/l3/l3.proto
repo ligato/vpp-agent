@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package l3;
 
-/* Static IPv4 / IPv6 routes */
+/* Static routes */
 message StaticRoutes {
     message Route {
         uint32 vrf_id = 1;                   /* VRF identifier, field required for remote client. This value should be
@@ -17,18 +17,18 @@ message StaticRoutes {
                                              /* Only paths with the best preference contribute to forwarding. */
                                              /* (a poor man's primary and backup) */
     }
-    repeated Route route = 1;                /* list of IP static routes */
+    repeated Route routes = 1;                /* list of IP static routes */
 }
 
-/* Static IP ARP entries */
+/* IP ARP entries */
 message ArpTable {
-    message ArpTableEntry {
+    message ArpEntry {
         string interface = 1;                          /* interface to which this APR entry applies */
         string ip_address = 2;                         /* IP address */
         string phys_address = 3;                       /* MAC address matching to the IP */
         bool static = 4;                               /* TRUE if this is a static ARP entry */
     }
-    repeated ArpTableEntry arp_table_entries = 100;    /* list of ARP entries */
+    repeated ArpEntry arp_entries = 1;    /* list of ARP entries */
 }
 
 /* Proxy ARP ranges */
@@ -41,7 +41,7 @@ message ProxyArpRanges {
         }
         repeated Range ranges = 2;
     }
-    repeated RangeList range_list = 100;                    /* list of proxy arp ranges */
+    repeated RangeList range_lists = 1;                    /* list of proxy arp ranges */
 }
 
 /* Proxy ARP interfaces */
@@ -53,7 +53,7 @@ message ProxyArpInterfaces {
         }
         repeated Interface interfaces = 2;
     }
-    repeated InterfaceList interface_list = 1;           /* list of proxy ARP-enabled interfaces */
+    repeated InterfaceList interface_lists = 1;           /* list of proxy ARP-enabled interfaces */
 }
 
 /* STN (Steal The NIC) feature table */
@@ -62,5 +62,5 @@ message STNTable {
         string ip_address = 1;                          /* destination IP address of a packet that will be punted to specified interface in case it hasn't bee processed by VPP */
         string interface = 2;                           /* interface where the packets will be punted */
     }
-    repeated STNTableEntry stn_table_entries = 100;     /* list of STN entries */
+    repeated STNTableEntry stn_entries = 1;     /* list of STN entries */
 }

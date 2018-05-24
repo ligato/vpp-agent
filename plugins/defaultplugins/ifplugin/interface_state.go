@@ -69,7 +69,7 @@ type InterfaceStateUpdater struct {
 	Log            logging.Logger
 	GoVppmux       govppmux.API
 	swIfIndexes    ifaceidx.SwIfIndex
-	publishIfState func(notification *intf.InterfaceStateNotification)
+	publishIfState func(notification *intf.InterfaceNotification)
 
 	ifState map[uint32]*intf.InterfacesState_Interface // swIfIndex to state data map
 	access  sync.Mutex                                 // lock for the state data map
@@ -88,7 +88,7 @@ type InterfaceStateUpdater struct {
 // Init members (channels, maps...) and start go routines
 func (plugin *InterfaceStateUpdater) Init(ctx context.Context,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
-	publishIfState func(notification *intf.InterfaceStateNotification)) (err error) {
+	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 
 	plugin.Log.Info("Initializing InterfaceStateUpdater")
 
@@ -134,13 +134,13 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	}
 
 	// subscribe for receiving VnetInterfaceSimpleCounters notifications
-	plugin.vppCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewVnetInterfaceSimpleCounters)
+	plugin.vppCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, stats.NewVnetInterfaceSimpleCounters)
 	if err != nil {
 		return err
 	}
 
 	// subscribe for receiving VnetInterfaceCombinedCounters notifications
-	plugin.vppCombinedCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, interfaces.NewVnetInterfaceCombinedCounters)
+	plugin.vppCombinedCountersSubs, err = plugin.vppCh.SubscribeNotification(plugin.notifChan, stats.NewVnetInterfaceCombinedCounters)
 	if err != nil {
 		return err
 	}
@@ -213,14 +213,15 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
 				plugin.processIfStateNotification(notif)
-			case *interfaces.VnetInterfaceSimpleCounters:
+			case *stats.VnetInterfaceSimpleCounters:
 				plugin.processIfCounterNotification(notif)
-			case *interfaces.VnetInterfaceCombinedCounters:
+			case *stats.VnetInterfaceCombinedCounters:
 				plugin.processIfCombinedCounterNotification(notif)
 			case *interfaces.SwInterfaceDetails:
 				plugin.updateIfStateDetails(notif)
 			default:
-				plugin.Log.WithFields(logging.Fields{"MessageName": msg.GetMessageName()}).Debug("Ignoring unknown VPP notification")
+				plugin.Log.Debugf("Ignoring unknown VPP notification: %s %+v",
+					msg.GetMessageName(), msg)
 			}
 
 		case swIdxDto := <-plugin.swIdxChan:
@@ -257,8 +258,8 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 		"LinkUpDown": notif.LinkUpDown, "Deleted": notif.Deleted}).Debug("Interface state change notification.")
 
 	// store data in ETCD
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.UPDOWN, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 }
 
 // getIfStateData returns interface state data structure for the specified interface index (creates it if it does not exist).
@@ -266,13 +267,16 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
 	iface *intf.InterfacesState_Interface, found bool, err error) {
 
-	ifState, ok := plugin.ifState[swIfIndex]
-	if ok {
-		return ifState, true, nil
-	}
 	ifName, _, found := plugin.swIfIndexes.LookupName(swIfIndex)
 	if !found {
 		return nil, found, nil
+	}
+
+	ifState, ok := plugin.ifState[swIfIndex]
+	// check also if the cached logical name is the same as the one associated
+	// with swIfindex, because swIfIndexes might be reused
+	if ok && ifState.Name == ifName {
+		return ifState, true, nil
 	}
 
 	ifState = &intf.InterfacesState_Interface{
@@ -317,7 +321,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInt
 }
 
 // processIfCounterNotification processes a VPP (simple) counter message.
-func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *interfaces.VnetInterfaceSimpleCounters) {
+func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
@@ -355,11 +359,16 @@ func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *inter
 }
 
 // processIfCombinedCounterNotification processes a VPP message with combined counters.
-func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *interfaces.VnetInterfaceCombinedCounters) {
+func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *stats.VnetInterfaceCombinedCounters) {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
-	save := false
+	if counter.VnetCounterType > Tx {
+		// TODO: process other types of combined counters (RX/TX for unicast/multicast/broadcast)
+		return
+	}
+
+	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found, err := plugin.getIfStateData(swIfIndex)
@@ -374,11 +383,9 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		if combinedCounterType(counter.VnetCounterType) == Rx {
 			stats.InPackets = counter.Data[i].Packets
 			stats.InBytes = counter.Data[i].Bytes
-		} else {
+		} else if combinedCounterType(counter.VnetCounterType) == Tx {
 			stats.OutPackets = counter.Data[i].Packets
 			stats.OutBytes = counter.Data[i].Bytes
-
-			// this was the last counter, we can now write the stats to ETCD
 			save = true
 		}
 	}
@@ -386,8 +393,8 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 		// store counters of all interfaces into ETCD
 		for _, counter := range plugin.ifState {
 			//plugin.deps.DB.Put(intf.InterfaceStateKey(c.Name), counter)
-			plugin.publishIfState(&intf.InterfaceStateNotification{
-				Type: intf.COUNTERS, State: counter})
+			plugin.publishIfState(&intf.InterfaceNotification{
+				Type: intf.InterfaceNotification_UPDOWN, State: counter})
 		}
 	}
 }
@@ -408,7 +415,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 		return
 	}
 
-	ifState.InternalName = string(bytes.Trim(ifDetails.InterfaceName, "\x00"))
+	ifState.InternalName = string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
 
 	if ifDetails.AdminUpDown == 1 {
 		ifState.AdminStatus = intf.InterfacesState_Interface_UP
@@ -453,8 +460,8 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 		ifState.Duplex = intf.InterfacesState_Interface_UNKNOWN_DUPLEX
 	}
 
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.UNKNOWN, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
@@ -477,6 +484,6 @@ func (plugin *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32) {
 	ifState.LastChange = time.Now().Unix()
 
 	// this can be post-processed by multiple plugins
-	plugin.publishIfState(&intf.InterfaceStateNotification{
-		Type: intf.COUNTERS, State: ifState})
+	plugin.publishIfState(&intf.InterfaceNotification{
+		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }

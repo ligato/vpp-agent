@@ -18,7 +18,7 @@ def Parse_Linux_Interfaces(data):
                 ints[if_name]["mac"] = line.split()[1]
             if "inet " in line:
                 ints[if_name]["ipv4"] = line.split()[1]
-            if "inet6" in line:
+            if "inet6" in line and "scope link" not in line:
                 ints[if_name]["ipv6"] = line.split()[1]
     return ints
 

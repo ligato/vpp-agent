@@ -23,12 +23,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	iface_vppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/ipsecidx"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
+	vppcalls "github.com/ligato/vpp-agent/plugins/defaultplugins/ipsecplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -279,6 +281,79 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 
 	plugin.SaIndexes.UnregisterName(oldSa.Name)
 	plugin.Log.Infof("Deleted SA %v", oldSa.Name)
+
+	return nil
+}
+
+// ConfigureTunnel configures Tunnel interface in VPP
+func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Configuring Tunnel %v", tunnel.Name)
+
+	ifIdx, err := vppcalls.AddTunnelInterface(tunnel, plugin.vppCh, plugin.Stopwatch)
+	if err != nil {
+		return err
+	}
+
+	plugin.SwIfIndexes.RegisterName(tunnel.Name, ifIdx, nil)
+	plugin.Log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
+
+	if err := iface_vppcalls.SetInterfaceVRF(ifIdx, tunnel.Vrf, plugin.Log, plugin.vppCh); err != nil {
+		return err
+	}
+
+	ipAddrs, err := addrs.StrAddrsToStruct(tunnel.IpAddresses)
+	if err != nil {
+		return err
+	}
+	for _, ip := range ipAddrs {
+		if err := iface_vppcalls.AddInterfaceIP(ifIdx, ip, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Errorf("adding interface IP address failed: %v", err)
+			return err
+		}
+	}
+
+	if tunnel.Enabled {
+		if err := iface_vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.Stopwatch); err != nil {
+			plugin.Log.Debugf("setting interface up failed: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ModifyTunnel modifies Tunnel interface in VPP
+func (plugin *IPSecConfigurator) ModifyTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel, newTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Modifying Tunnel %v", oldTunnel.Name)
+
+	if err := plugin.DeleteTunnel(oldTunnel); err != nil {
+		plugin.Log.Error("deleting old Tunnel failed:", err)
+		return err
+	}
+	if err := plugin.ConfigureTunnel(newTunnel); err != nil {
+		plugin.Log.Error("configuring new Tunnel failed:", err)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteTunnel deletes Tunnel interface in VPP
+func (plugin *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	plugin.Log.Debugf("Deleting Tunnel %v", oldTunnel.Name)
+
+	ifIdx, _, exists := plugin.SwIfIndexes.LookupIdx(oldTunnel.Name)
+	if !exists {
+		plugin.Log.Warnf("Tunnel %q not found", oldTunnel.Name)
+		return nil
+	}
+
+	if err := vppcalls.DelTunnelInterface(ifIdx, oldTunnel, plugin.vppCh, plugin.Stopwatch); err != nil {
+		return err
+	}
+
+	plugin.SwIfIndexes.UnregisterName(oldTunnel.Name)
+	plugin.Log.Infof("Deleted Tunnel %v", oldTunnel.Name)
 
 	return nil
 }

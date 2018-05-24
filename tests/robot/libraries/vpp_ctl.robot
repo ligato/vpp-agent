@@ -362,8 +362,8 @@ vpp_ctl: Get BFD Echo Function As Json
     [Return]              ${output}
 
 vpp_ctl: Put ACL TCP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}   ${rule_nm}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
-    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}   ${rule_nm}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}    ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${ingr_intf1}     ${acl_action}    ${dest_ntw}    ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_TCP.json
     ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
     Log Many              ${data}                       ${uri}
@@ -373,8 +373,8 @@ vpp_ctl: Put ACL TCP
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put ACL UDP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}    ${rule_nm}   ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
-    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${egr_intf2}    ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}      ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${egr_intf2}    ${ingr_intf2}     ${acl_action}    ${dest_ntw}   ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${egr_intf2}    ${ingr_intf2}    ${acl_action}   ${dest_ntw}      ${src_ntw}    ${dest_port_low}   ${dest_port_up}    ${src_port_low}    ${src_port_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_UDP.json
     ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
     Log Many              ${data}                       ${uri}
@@ -384,8 +384,8 @@ vpp_ctl: Put ACL UDP
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put ACL MACIP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${rule_nm}   ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
-    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${rule_nm}   ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}    ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}    ${ingr_intf1}     ${acl_action}    ${src_addr}    ${src_addr_prefix}    ${src_mac_addr}   ${src_mac_addr_mask}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_MACIP.json
     ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
     Log Many              ${data}                       ${uri}
@@ -395,8 +395,8 @@ vpp_ctl: Put ACL MACIP
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put ACL ICMP
-    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
-    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}   ${rule_nm}   ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
+    [Arguments]    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}    ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
+    Log Many    ${node}    ${acl_name}    ${egr_intf1}   ${egr_intf2}    ${ingr_intf1}   ${ingr_intf2}    ${acl_action}   ${dest_ntw}    ${src_ntw}    ${icmpv6}   ${code_range_low}   ${code_range_up}    ${type_range_low}   ${type_range_up}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/acl_ICMP.json
     ${uri}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl/${acl_name}
     Log Many              ${data}                       ${uri}
@@ -511,15 +511,21 @@ vpp_ctl: Get Linux Route As Json
     [Return]              ${output}
 
 vpp_ctl: Check ACL Reply
-    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}
-    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}
+    [Arguments]         ${node}    ${acl_name}   ${reply_json}    ${reply_term}    ${api_h}=$(API_HANDLER}
+    Log Many            ${node}    ${acl_name}   ${reply_json}    ${reply_term}    ${api_h}
     ${acl_d}=           vpp_ctl: Get ACL As Json    ${node}    ${acl_name}
     ${term_d}=          vat_term: Check ACL     ${node}    ${acl_name}
     ${term_d_lines}=    Split To Lines    ${term_d}
     Log                 ${term_d_lines}
     ${data}=            OperatingSystem.Get File    ${reply_json}
+    Log                 ${data}
+    ${data}=            Replace Variables      ${data}
+    Log                 ${data}
     Should Be Equal     ${data}   ${acl_d}
     ${data}=            OperatingSystem.Get File    ${reply_term}
+    Log                 ${data}
+    ${data}=            Replace Variables      ${data}
+    Log                 ${data}
     ${t_data_lines}=    Split To Lines    ${data}
     Log                 ${t_data_lines}
     List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
@@ -653,4 +659,85 @@ vpp_ctl: Delete STN Rule
     ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/v1/stn/rules/${rule_name}
     ${out}=      vpp_ctl: Delete key    ${uri}
     Log Many     ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put Local SID
+    [Arguments]    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    [Documentation]    Add Local SID config json to etcd.
+    Log Many    ${node}    ${localsidName}    ${sidAddress}    ${fibtable}    ${outinterface}    ${nexthop}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_local_sid.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${localsidName}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete Local SID
+    [Arguments]    ${node}    ${localsidName}
+    [Documentation]    Delete Local SID config json from etcd.
+    Log Many    ${node}    ${localsidName}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/localsid/${localsidName}
+    ${out}=     vpp_ctl: Delete key    ${uri}
+    Log Many    ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put SRv6 Policy
+    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    [Documentation]    Add SRv6 Policy config json to etcd.
+    Log Many    ${node}    ${name}    ${bsid}    ${fibtable}    ${srhEncapsulation}    ${sprayBehaviour}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete SRv6 Policy
+    [Arguments]    ${node}    ${name}
+    [Documentation]    Delete SRv6 policy config json from etcd.
+    Log Many    ${node}    ${name}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${name}
+    ${out}=     vpp_ctl: Delete key    ${uri}
+    Log Many    ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put SRv6 Policy Segment
+    [Arguments]    ${node}    ${name}    ${policyName}    ${policyBSID}    ${weight}    ${segmentlist}
+    [Documentation]    Add SRv6 Policy Segment config json to etcd.
+    Log Many    ${node}    ${name}    ${policyName}    ${policyBSID}    ${weight}    ${segmentlist}
+    length should be      ${segmentlist}                3
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_policy_segment.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyName}/segment/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete SRv6 Policy Segment
+    [Arguments]    ${node}    ${name}    ${policyName}
+    [Documentation]    Delete SRv6 policy segment config json from etcd.
+    Log Many    ${node}    ${name}    ${policyName}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/policy/${policyName}/segment/${name}
+    ${out}=     vpp_ctl: Delete key    ${uri}
+    Log Many    ${out}
+    [Return]    ${out}
+
+vpp_ctl: Put SRv6 Steering
+    [Arguments]    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
+    [Documentation]    Add SRv6 steering config json to etcd.
+    Log Many    ${node}    ${name}    ${bsid}    ${fibtable}    ${prefixAddress}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/srv6_steering.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/v1/srv6/steering/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Delete SRv6 Steering
+    [Arguments]    ${node}    ${name}
+    [Documentation]    Delete SRv6 steering config json from etcd.
+    Log Many    ${node}    ${name}
+    ${uri}=     Set Variable           /vnf-agent/${node}/vpp/config/v1/srv6/steering/${name}
+    ${out}=     vpp_ctl: Delete key    ${uri}
+    Log Many    ${out}
     [Return]    ${out}

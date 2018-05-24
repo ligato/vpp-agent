@@ -90,7 +90,6 @@ vpp_term: Show IP6 Fib Table
     ${out}=            vpp_term: Issue Command  ${node}    show ip6 fib table ${id}
     [Return]           ${out}
 
-
 vpp_term: Show L2fib
     [Arguments]        ${node}
     Log Many           ${node}
@@ -183,6 +182,19 @@ vpp_term: Get Interface IPs
     Log                  ${ipv4_list}
     [Return]             ${ipv4_list}
 
+vpp_term: Get Interface IP6 IPs
+    [Arguments]          ${node}     ${interface}
+    [Documentation]    Get all IPv6 addresses for the specified interface.
+    Log Many             ${node}     ${interface}
+    ${int_addr}=         vpp_term: Show Interfaces Address    ${node}    ${interface}
+    Log                  ${int_addr}
+    @{ipv6_list}=        Find IPV6 In Text    ${int_addr}
+    # Remove link-local address as it is hardware-dependent
+    :FOR    ${address}    IN    @{ipv6_list}
+    \    Run Keyword If    ${address.startswith('fd80:')}    Remove Values From List    ${ipv6_list}    ${address}
+    Log                  ${ipv6_list}
+    [Return]             ${ipv6_list}
+
 vpp_term: Get Interface MAC
     [Arguments]          ${node}     ${interface}
     Log Many             ${node}     ${interface}
@@ -229,7 +241,7 @@ vpp_term: Check TAP Interface State
     Log                  ${interface}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
-    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
     Log                  ${tap_int_state}
     ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
     ${ipv4_string}=      Get From List    ${ipv4}    0
@@ -237,6 +249,29 @@ vpp_term: Check TAP Interface State
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     Log                  ${mac}
     ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Check TAP IP6 Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    [Documentation]    Get operational state of the specified interface and compare with expected state.
+    Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
+    Log                  ${tap_int_state}
+    ${ipv6}=             vpp_term: Get Interface IP6 IPs    ${node}     ${internal_name}
+    ${ipv6_string}=      Get From List    ${ipv6}    0
+    Log                  ${ipv6}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv6=${ipv6_string}    state=${tap_int_state}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
@@ -275,7 +310,6 @@ vpp_term: Check ARP
     ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
     Log                ${status}
     Should Be Equal As Strings   ${status}   ${presence}
-
 
 vpp_term: Show Application Namespaces
     [Arguments]        ${node}
@@ -320,7 +354,7 @@ vpp_term: Check TAPv2 Interface State
     Log                  ${interface}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
-    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    ELSE    down
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
     Log                  ${tap_int_state}
     ${ipv4}=             vpp_term: Get Interface IPs    ${node}     ${internal_name}
     ${ipv4_string}=      Get From List    ${ipv4}    0
@@ -328,6 +362,28 @@ vpp_term: Check TAPv2 Interface State
     ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
     Log                  ${mac}
     ${actual_state}=     Create List    mac=${mac}    ipv4=${ipv4_string}    state=${tap_int_state}
+    Log List             ${actual_state}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
+vpp_term: Check TAPv2 IP6 Interface State
+    [Arguments]          ${node}    ${name}    @{desired_state}
+    Log Many             ${node}    ${name}    @{desired_state}
+    Sleep                 10s    Time to let etcd to get state of newly setup tapv2 interface.
+    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    Log                  ${internal_name}
+    ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
+    Log                  ${interface}
+    ${state}=            Set Variable    up
+    ${status}=           Evaluate     "${state}" in """${interface}"""
+    ${tap_int_state}=    Set Variable If    ${status}==True    ${state}    down
+    Log                  ${tap_int_state}
+    ${ipv6}=             vpp_term: Get Interface IP6 IPs    ${node}     ${internal_name}
+    ${ipv6_string}=      Get From List    ${ipv6}    0
+    Log                  ${ipv6}
+    ${mac}=              vpp_term: Get Interface MAC    ${node}    ${internal_name}
+    Log                  ${mac}
+    ${actual_state}=     Create List    mac=${mac}    ipv6=${ipv6_string}    state=${tap_int_state}
     Log List             ${actual_state}
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
@@ -356,8 +412,8 @@ vpp_term: Show STN Rules
     [Return]           ${out}
 
 vpp_term: Check STN Rule State
-    [Arguments]        ${node}  ${interface}  ${ipv4}
-    Log Many    ${node}    ${ipv4}
+    [Arguments]        ${node}  ${interface}  ${ip}
+    Log Many    ${node}    ${ip}
     [Documentation]    Check STN Rules
     Log Many           ${node}
     ${out}=            vpp_term: Show STN Rules    ${node}
@@ -366,21 +422,21 @@ vpp_term: Check STN Rule State
     Log                ${internal_name}
     ${ip_address}  ${iface}  ${next_node}  Parse STN Rule    ${out}
     Log                ${ip_address}
-    Should Be Equal As Strings   ${ipv4}  ${ip_address}
+    Should Be Equal As Strings   ${ip}  ${ip_address}
     Log                ${iface}
     Should Be Equal As Strings   ${internal_name}  ${iface}
     Log                ${next_node}
 
 vpp_term: Check STN Rule Deleted
-    [Arguments]        ${node}  ${interface}  ${ipv4}
-    Log Many    ${node}    ${ipv4}
+    [Arguments]        ${node}  ${interface}  ${ip}
+    Log Many    ${node}    ${ip}
     [Documentation]    Check STN Rules
     Log Many           ${node}
     ${out}=            vpp_term: Show STN Rules    ${node}
     Log                ${out}
     ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
     Log                ${internal_name}
-    Should Not Contain     ${out}    ${ipv4}
+    Should Not Contain     ${out}    ${ip}
     Should Not Contain     ${out}    ${internal_name}
 
 vpp_term: Add Trace Afpacket
@@ -414,3 +470,156 @@ vpp_term: Dump Trace
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}    api trace save apitrace.trc
     [Return]           ${out}
+
+
+vpp_term: Check Local SID Presence
+    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    [Documentation]    Checking if specified local sid exists or will show up
+    Log Many           ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID exists    node=${node}     sidAddress=${sidAddress}    interface=${interface}    nexthop=${nexthop}
+
+vpp_term: Local SID exists
+    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    [Documentation]    Checking if specified local sid exists
+    ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
+    Create File        /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    Log                ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_match.txt
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Log                ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show Local SIDs
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr localsids
+    [Return]           ${out}
+
+vpp_term: Check Local SID Deleted
+    [Arguments]        ${node}     ${sidAddress}
+    [Documentation]    Checking if specified local sid will be(or already is) deleted
+    Log Many           ${node}     ${sidAddress}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID doesnt exist    node=${node}     sidAddress=${sidAddress}
+
+vpp_term: Local SID doesnt exist
+    [Arguments]           ${node}     ${sidAddress}
+    [Documentation]       Checking if specified local sid doesnt exist
+    ${localsidsStr}=      vpp_term: Show Local SIDs    agent_vpp_1
+    Create File           /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
+    ${localsidsStr}=      Convert To Lowercase    ${localsidsStr}
+    Log                   ${localsidsStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_no_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Check SRv6 Policy Presence
+    [Arguments]        ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    [Documentation]    Checking if specified SRv6 policy exists or will show up
+    Log Many           ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Policy exists    node=${node}    bsid=${bsid}    fibtable=${fibtable}    behaviour=${behaviour}    type=${type}    index=${index}    segmentlists=${segmentlists}
+
+vpp_term: SRv6 Policy exists
+    [Arguments]        ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    [Documentation]    Checking if specified SRv6 policy exists
+    ${policyStr}=      vpp_term: Show SRv6 policies    ${node}
+    Create File        /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${policyStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
+    ${policyStr}=      Convert To Lowercase    ${policyStr}
+    Log                ${policyStr}
+    ${policymatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_match.txt
+    ${policymatchdata}=     Replace Variables           ${policymatchdata}
+    ${policymatchdata}=     Convert To Lowercase    ${policymatchdata}
+    ${segmentlistsmatchdata}=    Set Variable    ${EMPTY}
+    :FOR    ${segmentlist}    IN    @{segmentlists}
+    \    ${segmentlistmatchdata}=    OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policy_segments_output_match.txt
+    \    ${segmentlistmatchdata}=    Replace Variables           ${segmentlistmatchdata}
+    \    ${segmentlistmatchdata}=    Convert To Lowercase    ${segmentlistmatchdata}
+    \    ${segmentlistsmatchdata}=    Catenate    SEPARATOR=  ${segmentlistsmatchdata}   ${segmentlistmatchdata}
+    ${matchdata}=    Catenate    SEPARATOR=  ${policymatchdata}   ${segmentlistsmatchdata}
+    Log                ${matchdata}
+    Should Contain    ${policyStr}    ${matchdata}
+
+vpp_term: Show SRv6 policies
+    [Arguments]        ${node}
+    [Documentation]    Show SRv6 policies through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr policies
+    [Return]           ${out}
+
+vpp_term: Check SRv6 Policy Nonexistence
+    [Arguments]        ${node}    ${bsid}
+    [Documentation]    Checking if specified SRv6 policy doesn't exist (or will be deleted soon)
+    Log Many           ${node}    ${bsid}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Policy doesnt exist    node=${node}     bsid=${bsid}
+
+vpp_term: SRv6 Policy doesnt exist
+    [Arguments]           ${node}     ${bsid}
+    [Documentation]       Checking if specified SRv6 policy doesnt exist
+    ${policyStr}=         vpp_term: Show SRv6 policies    ${node}
+    Create File           /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${policyStr}=         OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
+    ${policyStr}=         Convert To Lowercase    ${policyStr}
+    Log                   ${policyStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_no_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${policyStr}    ${matchdata}
+
+vpp_term: Check SRv6 Steering Presence
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering exists or will show up
+    Log Many           ${node}    ${bsid}    ${prefixAddress}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Steering exists    node=${node}    bsid=${bsid}     prefixAddress=${prefixAddress}
+
+vpp_term: SRv6 Steering exists
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering exists
+    ${steeringStr}=    vpp_term: Show SRv6 steering policies    ${node}
+    Create File        /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${steeringStr}=    OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
+    ${steeringStr}=    Convert To Lowercase    ${steeringStr}
+    Log                ${steeringStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Log                ${matchdata}
+    Should Contain    ${steeringStr}    ${matchdata}
+
+vpp_term: Show SRv6 steering policies
+    [Arguments]        ${node}
+    [Documentation]    Show SRv6 steering policies through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr steering policies
+    [Return]           ${out}
+
+vpp_term: Check SRv6 Steering NonExistence
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering is deleted (or soon will be deleted)
+    Log Many           ${node}    ${bsid}    ${prefixAddress}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Steering doesnt exist    node=${node}    bsid=${bsid}     prefixAddress=${prefixAddress}
+
+vpp_term: SRv6 Steering doesnt exist
+    [Arguments]           ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]       Checking if specified steering doesnt exist
+    ${steeringStr}=       vpp_term: Show SRv6 steering policies    ${node}
+    Create File           /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${steeringStr}=       OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
+    ${steeringStr}=       Convert To Lowercase    ${steeringStr}
+    Log                   ${steeringStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${steeringStr}    ${matchdata}

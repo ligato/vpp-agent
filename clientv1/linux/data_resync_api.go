@@ -57,7 +57,7 @@ type DataResyncDSL interface {
 	// BD adds VPP Bridge Domain to the RESYNC request.
 	BD(bd *vpp_l2.BridgeDomains_BridgeDomain) DataResyncDSL
 	// BDFIB adds VPP L2 FIB to the RESYNC request.
-	BDFIB(fib *vpp_l2.FibTableEntries_FibTableEntry) DataResyncDSL
+	BDFIB(fib *vpp_l2.FibTable_FibEntry) DataResyncDSL
 	// XConnect adds VPP Cross Connect to the RESYNC request.
 	XConnect(xcon *vpp_l2.XConnectPairs_XConnectPair) DataResyncDSL
 	// StaticRoute adds VPP L3 Static Route to the RESYNC request.
@@ -65,7 +65,7 @@ type DataResyncDSL interface {
 	// ACL adds VPP Access Control List to the RESYNC request.
 	ACL(acl *vpp_acl.AccessLists_Acl) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
-	Arp(arp *vpp_l3.ArpTable_ArpTableEntry) DataResyncDSL
+	Arp(arp *vpp_l3.ArpTable_ArpEntry) DataResyncDSL
 	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
 	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) DataResyncDSL
 	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
@@ -75,7 +75,7 @@ type DataResyncDSL interface {
 	// AppNamespace adds VPP Application namespaces to the RESYNC request
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) DataResyncDSL
 	// StnRule adds Stn rule to the RESYNC request.
-	StnRule(stn *vpp_stn.StnRule) DataResyncDSL
+	StnRule(stn *vpp_stn.STN_Rule) DataResyncDSL
 	// NAT44Global adds a request to RESYNC global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// NAT44DNat adds a request to RESYNC a new DNAT configuration

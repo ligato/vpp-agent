@@ -24,6 +24,10 @@ import (
 	"git.fd.io/govpp.git/api"
 )
 
+var (
+	ErrNotConnected = errors.New("not connected to VPP, ignoring the request")
+)
+
 // watchRequests watches for requests on the request API channel and forwards them as messages to VPP.
 func (c *Connection) watchRequests(ch *api.Channel, chMeta *channelMetadata) {
 	for {
@@ -48,34 +52,34 @@ func (c *Connection) watchRequests(ch *api.Channel, chMeta *channelMetadata) {
 func (c *Connection) processRequest(ch *api.Channel, chMeta *channelMetadata, req *api.VppRequest) error {
 	// check whether we are connected to VPP
 	if atomic.LoadUint32(&c.connected) == 0 {
-		error := errors.New("not connected to VPP, ignoring the request")
-		log.Error(error)
-		sendReply(ch, &api.VppReply{Error: error})
-		return error
+		err := ErrNotConnected
+		log.Error(err)
+		sendReply(ch, &api.VppReply{Error: err})
+		return err
 	}
 
 	// retrieve message ID
 	msgID, err := c.GetMessageID(req.Message)
 	if err != nil {
-		error := fmt.Errorf("unable to retrieve message ID: %v", err)
+		err = fmt.Errorf("unable to retrieve message ID: %v", err)
 		log.WithFields(logger.Fields{
 			"msg_name": req.Message.GetMessageName(),
 			"msg_crc":  req.Message.GetCrcString(),
-		}).Error(error)
-		sendReply(ch, &api.VppReply{Error: error})
-		return error
+		}).Error(err)
+		sendReply(ch, &api.VppReply{Error: err})
+		return err
 	}
 
 	// encode the message into binary
 	data, err := c.codec.EncodeMsg(req.Message, msgID)
 	if err != nil {
-		error := fmt.Errorf("unable to encode the messge: %v", err)
+		err = fmt.Errorf("unable to encode the messge: %v", err)
 		log.WithFields(logger.Fields{
 			"context": chMeta.id,
 			"msg_id":  msgID,
-		}).Error(error)
-		sendReply(ch, &api.VppReply{Error: error})
-		return error
+		}).Error(err)
+		sendReply(ch, &api.VppReply{Error: err})
+		return err
 	}
 
 	if log.Level == logger.DebugLevel { // for performance reasons - logrus does some processing even if debugs are disabled
@@ -83,6 +87,7 @@ func (c *Connection) processRequest(ch *api.Channel, chMeta *channelMetadata, re
 			"context":  chMeta.id,
 			"msg_id":   msgID,
 			"msg_size": len(data),
+			"msg_name": req.Message.GetMessageName(),
 		}).Debug("Sending a message to VPP.")
 	}
 
@@ -188,9 +193,11 @@ func (c *Connection) GetMessageID(msg api.Message) (uint16, error) {
 
 // messageNameToID returns message ID of a message identified by its name and CRC.
 func (c *Connection) messageNameToID(msgName string, msgCrc string) (uint16, error) {
+	msgKey := msgName + "_" + msgCrc
+
 	// try to get the ID from the map
 	c.msgIDsLock.RLock()
-	id, ok := c.msgIDs[msgName+msgCrc]
+	id, ok := c.msgIDs[msgKey]
 	c.msgIDsLock.RUnlock()
 	if ok {
 		return id, nil
@@ -199,17 +206,35 @@ func (c *Connection) messageNameToID(msgName string, msgCrc string) (uint16, err
 	// get the ID using VPP API
 	id, err := c.vpp.GetMsgID(msgName, msgCrc)
 	if err != nil {
-		error := fmt.Errorf("unable to retrieve message ID: %v", err)
+		err = fmt.Errorf("unable to retrieve message ID: %v", err)
 		log.WithFields(logger.Fields{
 			"msg_name": msgName,
 			"msg_crc":  msgCrc,
-		}).Error(error)
-		return id, error
+		}).Error(err)
+		return id, err
 	}
 
 	c.msgIDsLock.Lock()
-	c.msgIDs[msgName+msgCrc] = id
+	c.msgIDs[msgKey] = id
 	c.msgIDsLock.Unlock()
 
 	return id, nil
+}
+
+// LookupByID looks up message name and crc by ID.
+func (c *Connection) LookupByID(ID uint16) (string, error) {
+	if c == nil {
+		return "", errors.New("nil connection passed in")
+	}
+
+	c.msgIDsLock.Lock()
+	defer c.msgIDsLock.Unlock()
+
+	for key, id := range c.msgIDs {
+		if id == ID {
+			return key, nil
+		}
+	}
+
+	return "", fmt.Errorf("unknown message ID: %d", ID)
 }

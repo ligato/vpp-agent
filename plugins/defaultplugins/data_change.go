@@ -17,16 +17,17 @@ package defaultplugins
 import (
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
+	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
 )
 
@@ -102,7 +103,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		fib, _, _ := l2.ParseFibKey(key)
 		if fib {
 			// L2 FIB entry
-			var value, prevValue l2.FibTableEntries_FibTableEntry
+			var value, prevValue l2.FibTable_FibEntry
 			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
@@ -164,7 +165,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		if err != nil {
 			return false, err
 		}
-		var value, prevValue l3.ArpTable_ArpTableEntry
+		var value, prevValue l3.ArpTable_ArpEntry
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -224,7 +225,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			return false, err
 		}
 	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
-		var value, prevValue stn.StnRule
+		var value, prevValue stn.STN_Rule
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
 		}
@@ -299,11 +300,73 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 			} else {
 				return false, err
 			}
+		} else if strings.HasPrefix(key, ipsec.KeyPrefixTunnel) {
+			var value, prevValue ipsec.TunnelInterfaces_Tunnel
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeIPSecTunnel(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		}
+	} else if strings.HasPrefix(key, srv6.LocalSIDPrefix()) {
+		var value, prevValue srv6.LocalSID
+		if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
+			if err := plugin.dataChangeLocalSID(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, srv6.PolicyPrefix()) {
+		if srv6.IsPolicySegmentPrefix(key) { //Policy segment
+			var value, prevValue srv6.PolicySegment
+			if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
+				if name, err := srv6.ParsePolicySegmentKey(key); err == nil {
+					if err := plugin.dataChangePolicySegment(name, diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+						return false, err
+					}
+				} else {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		} else { // Policy
+			var value, prevValue srv6.Policy
+			if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
+				if err := plugin.dataChangePolicy(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
+		}
+	} else if strings.HasPrefix(key, srv6.SteeringPrefix()) {
+		var value, prevValue srv6.Steering
+		if diff, err := plugin.extractFrom(dataChng, &value, &prevValue); err == nil {
+			if err := plugin.dataChangeSteering(strings.TrimPrefix(key, srv6.SteeringPrefix()), diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
 		}
 	} else {
-		plugin.Log.Warn("ignoring change ", dataChng, " by VPP standard plugins") //NOT ERROR!
+		plugin.Log.Warnf("ignoring change %v by VPP standard plugins: %q", dataChng, key) //NOT ERROR!
 	}
 	return false, nil
+}
+
+// extractFrom change event <dataChng> current value into <value> and previous value into <prevValue>
+func (plugin *Plugin) extractFrom(dataChng datasync.ChangeEvent, value proto.Message, prevValue proto.Message) (prevValueExist bool, err error) {
+	if err := dataChng.GetValue(value); err != nil {
+		return false, err
+	}
+	return dataChng.GetPrevValue(prevValue)
 }
 
 // dataChangeACL propagates data change to the particular aclConfigurator.
@@ -385,14 +448,14 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator.
-func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTableEntries_FibTableEntry, prevValue *l2.FibTableEntries_FibTableEntry,
+func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTable_FibEntry, prevValue *l2.FibTable_FibEntry,
 	changeType datasync.PutDel, callback func(error)) error {
 	plugin.Log.Debug("dataChangeFIB diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.fibConfigurator.Delete(prevValue, callback)
 	} else if diff {
-		return plugin.fibConfigurator.Diff(prevValue, value, callback)
+		return plugin.fibConfigurator.Modify(prevValue, value, callback)
 	}
 	return plugin.fibConfigurator.Add(value, callback)
 }
@@ -425,7 +488,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 }
 
 // dataChangeARP propagates data change to the arpConfigurator
-func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpTableEntry, prevValue *l3.ArpTable_ArpTableEntry,
+func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prevValue *l3.ArpTable_ArpEntry,
 	changeType datasync.PutDel) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
@@ -490,7 +553,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
-func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.StnRule, prevValue *stn.StnRule, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.PutDel) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -551,7 +614,7 @@ func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.Secu
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
-	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
 		return plugin.ipsecConfigurator.DeleteSA(prevValue)
@@ -559,4 +622,60 @@ func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.Secur
 		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
 	}
 	return plugin.ipsecConfigurator.ConfigureSA(value)
+}
+
+// dataChangeIPSecTunnel propagates data change to the IPSec configurator
+func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.TunnelInterfaces_Tunnel, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeIPSecTunnel diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	if datasync.Delete == changeType {
+		return plugin.ipsecConfigurator.DeleteTunnel(prevValue)
+	} else if diff {
+		return plugin.ipsecConfigurator.ModifyTunnel(prevValue, value)
+	}
+	return plugin.ipsecConfigurator.ConfigureTunnel(value)
+}
+
+// DataChangeLocalSID handles change events from ETCD related to local SIDs
+func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeLocalSIDs ", diff, " ", changeType, " ", value, " ", prevValue)
+	if datasync.Delete == changeType {
+		return plugin.srv6Configurator.DeleteLocalSID(prevValue)
+	} else if diff {
+		return plugin.srv6Configurator.ModifyLocalSID(value, prevValue)
+	}
+	return plugin.srv6Configurator.AddLocalSID(value)
+}
+
+// dataChangePolicy handles change events from ETCD related to policies
+func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangePolicy ", diff, " ", changeType, " ", value, " ", prevValue)
+	if datasync.Delete == changeType {
+		return plugin.srv6Configurator.RemovePolicy(prevValue)
+	} else if diff {
+		return plugin.srv6Configurator.ModifyPolicy(value, prevValue)
+	}
+	return plugin.srv6Configurator.AddPolicy(value)
+}
+
+// dataChangePolicySegment handles change events from ETCD related to policies segments
+func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangePolicySegment ", segmentName, " ", diff, " ", changeType, " ", value, " ", prevValue)
+	if datasync.Delete == changeType {
+		return plugin.srv6Configurator.RemovePolicySegment(segmentName, prevValue)
+	} else if diff {
+		return plugin.srv6Configurator.ModifyPolicySegment(segmentName, value, prevValue)
+	}
+	return plugin.srv6Configurator.AddPolicySegment(segmentName, value)
+}
+
+// dataChangeSteering handles change events from ETCD related to steering
+func (plugin *Plugin) dataChangeSteering(steeringName string, diff bool, value *srv6.Steering, prevValue *srv6.Steering, changeType datasync.PutDel) error {
+	plugin.Log.Debug("dataChangeSteering ", steeringName, " ", diff, " ", changeType, " ", value, " ", prevValue)
+	if datasync.Delete == changeType {
+		return plugin.srv6Configurator.RemoveSteering(steeringName, prevValue)
+	} else if diff {
+		return plugin.srv6Configurator.ModifySteering(steeringName, value, prevValue)
+	}
+	return plugin.srv6Configurator.AddSteering(steeringName, value)
 }
