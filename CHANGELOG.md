@@ -1,4 +1,4 @@
-# Release v1.4 (2018-05-XX)
+# Release v1.4 (2018-05-24)
 
 ## Compatibility
 - VPP v18.04 (ac2b736)
@@ -44,10 +44,16 @@
   * Fixed issue with GoVPP channels returning errors after timeout.
   * Fixed various issues related to caching and resync in L2 cross-connect
   * Split horizon group is now correctly assigned if interface is created after bridge domain
+  * Fixed issue where creation of FIB while interface was not a part of the bridge domain returned
+    error
 
 ## Other
   * Overall redundancy cleanup and corrected naming for all proto models.
   * Added more unit tests for increased coverage and code stability. 
+
+## Known issues
+  * VPP crash may occur if there is interface with non-default VRF (>0). There is an 
+    [VPP-1280](https://jira.fd.io/browse/VPP-1280) issue created with more details 
 
 # Release v1.3 (2018-03-22)
 
