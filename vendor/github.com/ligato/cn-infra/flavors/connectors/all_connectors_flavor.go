@@ -16,6 +16,7 @@ package connectors
 
 import (
 	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/consul"
@@ -92,6 +93,11 @@ func (f *AllConnectorsFlavor) Inject() bool {
 	f.ETCD.Deps.PluginInfraDeps = *f.InfraDeps("etcdv3", local.WithConf())
 	f.ETCD.Deps.Resync = &f.ResyncOrch
 	InjectKVDBSync(&f.ETCDDataSync, &f.ETCD, f.ETCD.PluginName, f.FlavorLocal, &f.ResyncOrch)
+
+	f.FlavorLocal.StatusCheck.Transport = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+		&f.ETCDDataSync,
+		&f.ConsulDataSync,
+	}}
 
 	f.Redis.Deps.PluginInfraDeps = *f.InfraDeps("redis", local.WithConf())
 	InjectKVDBSync(&f.RedisDataSync, &f.Redis, f.Redis.PluginName, f.FlavorLocal, &f.ResyncOrch)

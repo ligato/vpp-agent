@@ -690,8 +690,10 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 func (plugin *Plugin) initL4(ctx context.Context) error {
 	plugin.Log.Infof("Init L4 plugin")
 	l4Logger := plugin.Log.NewLogger("-l4-plugin")
-	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, "namespace_indexes", nil))
-	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger, "not_configured_namespace_indexes", nil))
+	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
+		"namespace_indexes", nil))
+	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
+		"not_configured_namespace_indexes", nil))
 
 	var stopwatch *measure.Stopwatch
 	if plugin.enableStopwatch {
