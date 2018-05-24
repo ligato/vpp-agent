@@ -1,8 +1,65 @@
+# Release v1.4 (2018-05-24)
+
+## Compatibility
+- VPP v18.04 (ac2b736)
+- cn-infra v1.3
+
+## New Features
+- [Consul](https://www.consul.io/)
+  * Consul is now supported as an key-value store alternative to ETCD.
+    More information in the [readme](https://github.com/ligato/cn-infra/blob/master/db/keyval/consul/README.md).
+- [Telemetry](plugins/telemetry)
+  * New plugin for collecting telemetry data about VPP metrics
+    and serving them via HTTP server for Prometheus.
+    More information in the [readme](plugins/telemetry/README.md).
+- [Ipsecplugin](plugins/defaultplugins/ipsecplugin)
+  * Now supports tunnel interface for encrypting all the data
+    passing through that interface.
+- [GRPC](plugins/defaultplugins/rpc) 
+  * Vpp-agent itself can act as a GRPC server (no need for external executable)
+  * All configuration types are supported (incl. linux interfaces, routes and ARP)
+  * Client can read VPP notifications via vpp-agent.      
+
+## Improvements
+- [ifplugin](plugins/defaultplugins/ifplugin) 
+  * Added support for self-twice-NAT
+- __vpp-agent-grpc__ executable merged with [vpp-agent](cmd/vpp-agent) command.
+- [govppmux](plugins/govppmux) 
+  * [configure reply timeout](plugins/govppmux/README.md) can be configured.
+  * Support for VPP started with custom shared memory prefix. SHM may be configured via govpp
+    plugin config file. More info in the [readme](plugins/govppmux/README.md)
+
+## Examples
+- [localclient_linux](examples/localclient_vpp) now contains two examples, the old one demonstrating
+  basic plugin functionality was moved to [plugin](examples/localclient_vpp/plugins) package, and 
+  specialised example for [NAT](examples/localclient_vpp/nat) was added.
+- [localclient_linux](examples/localclient_linux) now contains two examples, the old one demonstrating 
+  [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
+  [tap](examples/localclient_linux/tap) was added.
+
+
+## Bugfix
+  * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
+    now appropriately cached and created when possible. 
+  * Fixed issue with GoVPP channels returning errors after timeout.
+  * Fixed various issues related to caching and resync in L2 cross-connect
+  * Split horizon group is now correctly assigned if interface is created after bridge domain
+  * Fixed issue where creation of FIB while interface was not a part of the bridge domain returned
+    error
+
+## Other
+  * Overall redundancy cleanup and corrected naming for all proto models.
+  * Added more unit tests for increased coverage and code stability. 
+
+## Known issues
+  * VPP crash may occur if there is interface with non-default VRF (>0). There is an 
+    [VPP-1280](https://jira.fd.io/browse/VPP-1280) issue created with more details 
+
 # Release v1.3 (2018-03-22)
 
 ## Compatibility
-VPP v18.01-rc0~605-g954d437
-cn-infra v1.2
+- VPP v18.01-rc0~605-g954d437
+- cn-infra v1.2
 
 The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github.com/vpp-dev/vpp/tree/stable-1801-contiv).
 
@@ -54,8 +111,8 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 # Release v1.2 (2018-02-07)
 
 ## Compatibility
-VPP v18.04-rc0~90-gd95c39e
-cn-infra v1.1
+- VPP v18.04-rc0~90-gd95c39e
+- cn-infra v1.1
 
 ### Improvements
 - [aclplugin](plugins/defaultplugins/aclplugin) 
@@ -68,7 +125,7 @@ cn-infra v1.1
   * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
-  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+  * __vpp-agent-grpc__ now compiles properly
     together with other commands.
 
 ### Dependencies
@@ -91,8 +148,8 @@ cn-infra v1.1
 # Release v1.1 (2018-01-22)
 
 ## Compatibility
-VPP version v18.04-rc0~33-gb59bd65
-cn-infra v1.0.8
+- VPP version v18.04-rc0~33-gb59bd65
+- cn-infra v1.0.8
 
 ### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
@@ -138,8 +195,8 @@ cn-infra v1.0.8
 # Release v1.0.8 (2017-11-21)
 
 ## Compatibility
-VPP v18.01-rc0-309-g70bfcaf
-cn-infra v1.0.7
+- VPP v18.01-rc0-309-g70bfcaf
+- cn-infra v1.0.7
 
 ### New Features
 - [ifplugin](plugins/defaultplugins/ifplugin)
@@ -182,8 +239,8 @@ cn-infra v1.0.7
 # Release v1.0.7 (2017-10-30)
 
 ## Compatibility
-VPP version v18.01-rc0~154-gfc1c612
-cn-infra v1.0.6
+- VPP version v18.01-rc0~154-gfc1c612
+- cn-infra v1.0.6
 
 ### Major Themes
 
@@ -203,7 +260,7 @@ cn-infra v1.0.6
 # Release v1.0.6 (2017-10-17)
 
 ## Compatibility
-cn-infra v1.0.5
+- cn-infra v1.0.5
 
 ### Major Themes
 
@@ -216,8 +273,8 @@ cn-infra v1.0.5
 # Release v1.0.5 (2017-09-26)
 
 ## Compatibility
-VPP version v17.10-rc0~334-gce41a5c
-cn-infra v1.0.4
+- VPP version v17.10-rc0~334-gce41a5c
+- cn-infra v1.0.4
 
 ### Major Themes
 
@@ -256,13 +313,12 @@ Enabled support for wathing data store `OfDifferentAgent()` - see:
 Preview of new Kafka client API methods that allows to fill also partition and offset argument. New methods implementation ignores these new parameters for now (fallbacking to existing implementation based on `github.com/bsm/sarama-cluster` and `github.com/Shopify/sarama`).
 
 ## Compatibility
-VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
-
+- VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 
 # Release v1.0.2 (2017-08-28)
 
 ## Compatibility
-VPP version v17.10-rc0~203
+- VPP version v17.10-rc0~203
 
 ### Major Themes
 
@@ -301,7 +357,7 @@ Miscellaneous:
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
 [VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
-[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
+[Bridge domains](plugins/defaultplugins/l2plugin/l2idx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 
