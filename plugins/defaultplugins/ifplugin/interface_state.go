@@ -226,7 +226,7 @@ func (plugin *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) 
 
 		case swIdxDto := <-plugin.swIdxChan:
 			if swIdxDto.Del {
-				plugin.setIfStateDeleted(swIdxDto.Idx)
+				plugin.setIfStateDeleted(swIdxDto.Idx, swIdxDto.Name)
 			}
 			swIdxDto.Done()
 
@@ -262,30 +262,46 @@ func (plugin *InterfaceStateUpdater) processIfStateNotification(notif *interface
 		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 }
 
-// getIfStateData returns interface state data structure for the specified interface index (creates it if it does not exist).
+// getIfStateData returns interface state data structure for the specified interface index and interface name.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
-	iface *intf.InterfacesState_Interface, found bool, err error) {
-
-	ifName, _, found := plugin.swIfIndexes.LookupName(swIfIndex)
-	if !found {
-		return nil, found, nil
-	}
+func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string) (
+	*intf.InterfacesState_Interface, bool, error) {
 
 	ifState, ok := plugin.ifState[swIfIndex]
-	// check also if the cached logical name is the same as the one associated
-	// with swIfindex, because swIfIndexes might be reused
+
+	// check also if the provided logical name is the same as the one associated
+	// with swIfIndex, because swIfIndexes might be reused
 	if ok && ifState.Name == ifName {
 		return ifState, true, nil
 	}
 
-	ifState = &intf.InterfacesState_Interface{
-		IfIndex:    swIfIndex,
-		Name:       ifName,
-		Statistics: &intf.InterfacesState_Interface_Statistics{},
+	return nil, false, nil
+}
+
+// getIfStateDataWLookup returns interface state data structure for the specified interface index (creates it if it does not exist).
+// NOTE: plugin.ifStateData needs to be locked when calling this function!
+func (plugin *InterfaceStateUpdater) getIfStateDataWLookup(swIfIndex uint32) (
+	*intf.InterfacesState_Interface, bool, error) {
+	ifName, _, found := plugin.swIfIndexes.LookupName(swIfIndex)
+
+	if !found {
+		return nil, found, nil
 	}
-	plugin.ifState[swIfIndex] = ifState
-	return ifState, found, nil
+
+	ifState, found, err := plugin.getIfStateData(swIfIndex, ifName)
+
+	if !found {
+		ifState = &intf.InterfacesState_Interface{
+			IfIndex:    swIfIndex,
+			Name:       ifName,
+			Statistics: &intf.InterfacesState_Interface_Statistics{},
+		}
+
+		plugin.ifState[swIfIndex] = ifState
+		found = true
+	}
+
+	return ifState, found, err
 }
 
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
@@ -293,7 +309,7 @@ func (plugin *InterfaceStateUpdater) getIfStateData(swIfIndex uint32) (
 func (plugin *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
 	iface *intf.InterfacesState_Interface, found bool, err error) {
 
-	ifState, found, err := plugin.getIfStateData(vppMsg.SwIfIndex)
+	ifState, found, err := plugin.getIfStateDataWLookup(vppMsg.SwIfIndex)
 	if !found {
 		return nil, false, err
 	}
@@ -327,7 +343,7 @@ func (plugin *InterfaceStateUpdater) processIfCounterNotification(counter *stats
 
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found, err := plugin.getIfStateData(swIfIndex)
+		ifState, found, err := plugin.getIfStateDataWLookup(swIfIndex)
 		if !found {
 			continue
 		}
@@ -371,7 +387,7 @@ func (plugin *InterfaceStateUpdater) processIfCombinedCounterNotification(counte
 	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found, err := plugin.getIfStateData(swIfIndex)
+		ifState, found, err := plugin.getIfStateDataWLookup(swIfIndex)
 		if !found {
 			continue
 		}
@@ -404,7 +420,7 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
-	ifState, found, err := plugin.getIfStateData(ifDetails.SwIfIndex)
+	ifState, found, err := plugin.getIfStateDataWLookup(ifDetails.SwIfIndex)
 	if !found {
 		plugin.Log.WithField("swIfIndex", ifDetails.SwIfIndex).
 			Debug("updateIfStateDetails but the swIfIndex is not event registered")
@@ -465,11 +481,11 @@ func (plugin *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.
 }
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
-func (plugin *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32) {
+func (plugin *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName string) {
 	plugin.access.Lock()
 	defer plugin.access.Unlock()
 
-	ifState, found, err := plugin.getIfStateData(swIfIndex)
+	ifState, found, err := plugin.getIfStateData(swIfIndex, ifName)
 	if !found {
 		plugin.Log.WithField("swIfIndex", swIfIndex).
 			Debug("notification delete but the swIfIndex is not event registered")
