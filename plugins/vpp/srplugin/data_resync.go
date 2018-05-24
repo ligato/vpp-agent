@@ -15,7 +15,7 @@
 package srplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/srv6"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
 // TODO move unique identifiable name into srv6 models

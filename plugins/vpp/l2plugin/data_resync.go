@@ -18,8 +18,8 @@ import (
 	"strings"
 
 	if_dump "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
