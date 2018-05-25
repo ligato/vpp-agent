@@ -609,7 +609,7 @@ func (plugin *Plugin) initErrorHandler() error {
 }
 
 func (plugin *Plugin) fromConfigFile() {
-	config, err := plugin.retrieveDPConfig()
+	config, err := plugin.retrieveVPPConfig()
 	if err != nil {
 		plugin.Log.Errorf("Error reading vpp-plugin config file: %v", err)
 		return
@@ -647,7 +647,7 @@ func (plugin *Plugin) fromConfigFile() {
 	}
 }
 
-func (plugin *Plugin) retrieveDPConfig() (*PluginConfig, error) {
+func (plugin *Plugin) retrieveVPPConfig() (*PluginConfig, error) {
 	config := &PluginConfig{}
 
 	found, err := plugin.PluginConfig.GetValue(config)

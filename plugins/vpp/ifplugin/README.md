@@ -1,4 +1,4 @@
-# IF Plugin
+# VPP interface Plugin
 
 The `ifplugin` is a Core Agent Plugin for configuration of NICs, memifs,
 VXLANs, loopback interfaces and STN rules.
