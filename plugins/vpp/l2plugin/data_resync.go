@@ -26,16 +26,16 @@ import (
 
 // Resync writes missing BDs to the VPP and removes obsolete ones.
 func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC BDs begin.")
 	// Calculate and log bd resync.
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
 	// Dump current state of the VPP bridge domains
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan, plugin.Stopwatch)
+	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return err
 	}
@@ -59,10 +59,10 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			if err := plugin.deleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 				Name: tag,
 			}, vppBDIdx); err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				continue
 			}
-			plugin.Log.Debugf("RESYNC bridge domain: obsolete config %v (ID %v) removed", tag, vppBDIdx)
+			plugin.log.Debugf("RESYNC bridge domain: obsolete config %v (ID %v) removed", tag, vppBDIdx)
 		} else {
 			// Bridge domain exists, validate
 			valid, recreate := plugin.vppValidateBridgeDomainBVI(nbBD, &l2.BridgeDomains_BridgeDomain{
@@ -75,7 +75,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 				MacAge:              vppBD.MacAge,
 			})
 			if !valid {
-				plugin.Log.Errorf("RESYNC bridge domain: new config %v is invalid", nbBD.Name)
+				plugin.log.Errorf("RESYNC bridge domain: new config %v is invalid", nbBD.Name)
 				continue
 			}
 			if recreate {
@@ -83,22 +83,22 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 				if err := plugin.deleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 					Name: tag,
 				}, vppBDIdx); err != nil {
-					plugin.Log.Error(err)
+					plugin.log.Error(err)
 					continue
 				}
 				if err := plugin.ConfigureBridgeDomain(nbBD); err != nil {
-					plugin.Log.Error(err)
+					plugin.log.Error(err)
 					continue
 				}
-				plugin.Log.Debugf("RESYNC bridge domains: config %v recreated", nbBD.Name)
+				plugin.log.Debugf("RESYNC bridge domains: config %v recreated", nbBD.Name)
 				continue
 			}
 
 			// todo currently it is not possible to dump interfaces. In order to prevent BD removal, unset all available interfaces
 			// Dump all interfaces
-			interfaceMap, err := if_dump.DumpInterfaces(plugin.Log, plugin.vppChan, nil)
+			interfaceMap, err := if_dump.DumpInterfaces(plugin.log, plugin.vppChan, nil)
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 				continue
 			}
@@ -111,13 +111,13 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			}
 			// Remove interfaces from bridge domain. Attempt to unset interface which does not belong to the bridge domain
 			// does not cause an error
-			if _, err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.SwIfIndices, plugin.Log,
+			if _, err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.ifIndexes, plugin.log,
 				plugin.vppChan, nil); err != nil {
 				return err
 			}
 			// Set all new interfaces to the bridge domain
 			// todo there is no need to calculate diff from configured interfaces, because currently all available interfaces are set here
-			configuredIfs, err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.SwIfIndices, plugin.Log,
+			configuredIfs, err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.ifIndexes, plugin.log,
 				plugin.vppChan, nil)
 			if err != nil {
 				return err
@@ -127,29 +127,29 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			// Resolve new ARP entries
 			for _, arpEntry := range nbBD.ArpTerminationTable {
 				if err := vppcalls.VppAddArpTerminationTableEntry(vppBDIdx, arpEntry.PhysAddress, arpEntry.IpAddress,
-					plugin.Log, plugin.vppChan, nil); err != nil {
-					plugin.Log.Error(err)
+					plugin.log, plugin.vppChan, nil); err != nil {
+					plugin.log.Error(err)
 					wasErr = err
 				}
 			}
 
 			// Register bridge domain
-			plugin.BdIndices.RegisterName(nbBD.Name, plugin.BridgeDomainIDSeq, l2idx.NewBDMetadata(nbBD, configuredIfs))
-			plugin.BridgeDomainIDSeq++
+			plugin.bdIndexes.RegisterName(nbBD.Name, plugin.bdIDSeq, l2idx.NewBDMetadata(nbBD, configuredIfs))
+			plugin.bdIDSeq++
 
-			plugin.Log.Debugf("RESYNC Bridge domain: config %v (ID %v) modified", tag, vppBDIdx)
+			plugin.log.Debugf("RESYNC Bridge domain: config %v (ID %v) modified", tag, vppBDIdx)
 		}
 	}
 
 	// Configure new bridge domains
 	for _, newBD := range nbBDs {
-		_, _, found := plugin.BdIndices.LookupIdx(newBD.Name)
+		_, _, found := plugin.bdIndexes.LookupIdx(newBD.Name)
 		if !found {
 			if err := plugin.ConfigureBridgeDomain(newBD); err != nil {
-				plugin.Log.Error(err)
+				plugin.log.Error(err)
 				continue
 			}
-			plugin.Log.Debugf("RESYNC bridge domains: new config %v added", newBD.Name)
+			plugin.log.Debugf("RESYNC bridge domains: new config %v added", newBD.Name)
 		}
 	}
 
@@ -158,16 +158,16 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 // Resync writes missing FIBs to the VPP and removes obsolete ones.
 func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC FIBs begin.")
 	// Calculate and log fib resync.
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
 	// Get all FIB entries configured on the VPP
-	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncVppChannel, plugin.Stopwatch)
+	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncVppChannel, plugin.stopwatch)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 					continue
 				}
 				// Bridge domain
-				bdIdx, _, found := plugin.BdIndexes.LookupIdx(nbFIB.BridgeDomain)
+				bdIdx, _, found := plugin.bdIndexes.LookupIdx(nbFIB.BridgeDomain)
 				if !found || vppFIBdata.BridgeDomainIdx != bdIdx {
 					continue
 				}
@@ -191,7 +191,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 					continue
 				}
 				// Interface
-				swIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbFIB.OutgoingInterface)
+				swIdx, _, found := plugin.ifIndexes.LookupIdx(nbFIB.OutgoingInterface)
 				if !found || vppFIBdata.OutgoingInterfaceSwIfIdx != swIdx {
 					continue
 				}
@@ -207,12 +207,12 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 
 		// Register existing entries, Remove entries missing in NB config (except non-static)
 		if exists {
-			plugin.FibIndexes.RegisterName(vppFIBmac, plugin.fibIndexSeq, meta)
+			plugin.fibIndexes.RegisterName(vppFIBmac, plugin.fibIndexSeq, meta)
 			plugin.fibIndexSeq++
 		} else if vppFIBdata.StaticConfig {
 			// Get appropriate interface/bridge domain names
-			ifIdx, _, ifFound := plugin.SwIfIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
-			bdIdx, _, bdFound := plugin.BdIndexes.LookupName(vppFIBdata.BridgeDomainIdx)
+			ifIdx, _, ifFound := plugin.ifIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
+			bdIdx, _, bdFound := plugin.bdIndexes.LookupName(vppFIBdata.BridgeDomainIdx)
 			if !ifFound || !bdFound {
 				// FIB entry cannot be removed without these informations and
 				// it should be removed by the VPP
@@ -234,7 +234,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 
 	// Configure all unregistered FIB entries from NB config
 	for _, nbFIB := range nbFIBs {
-		_, _, found := plugin.FibIndexes.LookupIdx(nbFIB.PhysAddress)
+		_, _, found := plugin.fibIndexes.LookupIdx(nbFIB.PhysAddress)
 		if !found {
 			plugin.Add(nbFIB, func(callbackErr error) {
 				if callbackErr != nil {
@@ -244,7 +244,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC FIBs end.")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC FIBs end.")
 
 	return wasErr
 }

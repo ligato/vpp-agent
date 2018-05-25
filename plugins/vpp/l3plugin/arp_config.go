@@ -22,57 +22,69 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
-var msgCompatibilityARP = []govppapi.Message{
-	&ip.IPNeighborAddDel{},
-	&ip.IPNeighborAddDelReply{},
-}
-
 // ArpConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of L3 arp entries as modelled by the proto file "../model/l3/l3.proto" and stored
 // in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/arp". Updates received from the northbound API
 // are compared with the VPP run-time configuration and differences are applied through the VPP binary API.
 type ArpConfigurator struct {
-	Log logging.Logger
+	log logging.Logger
 
-	GoVppmux govppmux.API
-
+	// In-memory mappings
+	ifIndexes ifaceidx.SwIfIndex
 	// ARPIndexes is a list of ARP entries which are successfully configured on the VPP
-	ARPIndexes l3idx.ARPIndexRW
+	arpIndexes l3idx.ARPIndexRW
 	// ARPCache is a list of ARP entries with are present in the ETCD, but not on VPP
 	// due to missing interface
-	ARPCache l3idx.ARPIndexRW
+	arpCache l3idx.ARPIndexRW
 	// ARPDeleted is a list of unsuccessfully deleted ARP entries. ARP entry cannot be removed
 	// if the interface is missing (it runs into 'unnassigned' state). If the interface re-appears,
 	// such an ARP have to be removed
-	ARPDeleted l3idx.ARPIndexRW
+	arpDeleted  l3idx.ARPIndexRW
+	arpIndexSeq uint32
 
-	ARPIndexSeq uint32
-	SwIfIndexes ifaceidx.SwIfIndex
-	vppChan     *govppapi.Channel
+	// VPP channel
+	vppChan *govppapi.Channel
 
-	Stopwatch *measure.Stopwatch
+	// Timer used to measure and store time
+	stopwatch *measure.Stopwatch
 }
 
 // Init initializes ARP configurator
-func (plugin *ArpConfigurator) Init() (err error) {
-	plugin.Log.Debug("Initializing ARP configurator")
+func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+	enableStopwatch bool) (err error) {
+	// Logger
+	plugin.log = logger.NewLogger("-l3-arp-conf")
+	plugin.log.Debug("Initializing ARP configurator")
 
-	// Init VPP API channel
-	plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel()
+	// Mappings
+	plugin.ifIndexes = swIfIndexes
+	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_indexes", nil))
+	plugin.arpCache = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_cache", nil))
+	plugin.arpDeleted = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_unnasigned", nil))
+	plugin.arpIndexSeq = 1
+
+	// VPP channel
+	plugin.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
 
-	if err := plugin.vppChan.CheckMessageCompatibility(msgCompatibilityARP...); err != nil {
-		plugin.Log.Error(err)
+	// Stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ARPConfigurator", plugin.log)
+	}
+
+	// Message compatibility
+	if err := plugin.vppChan.CheckMessageCompatibility(vppcalls.ArpMessages...); err != nil {
+		plugin.log.Error(err)
 		return err
 	}
 
@@ -91,27 +103,27 @@ func arpIdentifier(iface, ip, mac string) string {
 
 // AddArp processes the NB config and propagates it to bin api call
 func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpEntry) error {
-	plugin.Log.Infof("Configuring new ARP entry %v", *entry)
+	plugin.log.Infof("Configuring new ARP entry %v", *entry)
 
-	if !isValidARP(entry, plugin.Log) {
+	if !isValidARP(entry, plugin.log) {
 		return fmt.Errorf("cannot configure ARP, provided data is not valid")
 	}
 
 	arpID := arpIdentifier(entry.Interface, entry.PhysAddress, entry.IpAddress)
 
 	// look for ARP in list of deleted ARPs
-	_, _, exists := plugin.ARPDeleted.UnregisterName(arpID)
+	_, _, exists := plugin.arpDeleted.UnregisterName(arpID)
 	if exists {
-		plugin.Log.Debugf("ARP entry %v recreated", arpID)
+		plugin.log.Debugf("ARP entry %v recreated", arpID)
 	}
 
 	// verify interface presence
-	ifIndex, _, exists := plugin.SwIfIndexes.LookupIdx(entry.Interface)
+	ifIndex, _, exists := plugin.ifIndexes.LookupIdx(entry.Interface)
 	if !exists {
 		// Store ARP entry to cache
-		plugin.Log.Debugf("Interface %v required by ARP entry not found, moving to cache", entry.Interface)
-		plugin.ARPCache.RegisterName(arpID, plugin.ARPIndexSeq, entry)
-		plugin.ARPIndexSeq++
+		plugin.log.Debugf("Interface %v required by ARP entry not found, moving to cache", entry.Interface)
+		plugin.arpCache.RegisterName(arpID, plugin.arpIndexSeq, entry)
+		plugin.arpIndexSeq++
 		return nil
 	}
 
@@ -123,25 +135,25 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpEntry) error {
 	if arp == nil {
 		return nil
 	}
-	plugin.Log.Debugf("adding ARP: %+v", *arp)
+	plugin.log.Debugf("adding ARP: %+v", *arp)
 
 	// Create and register new arp entry
-	if err = vppcalls.VppAddArp(arp, plugin.vppChan, plugin.Stopwatch); err != nil {
+	if err = vppcalls.VppAddArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
 		return err
 	}
 
 	// Register configured ARP
-	plugin.ARPIndexes.RegisterName(arpID, plugin.ARPIndexSeq, entry)
-	plugin.ARPIndexSeq++
-	plugin.Log.Debugf("ARP entry %v registered", arpID)
+	plugin.arpIndexes.RegisterName(arpID, plugin.arpIndexSeq, entry)
+	plugin.arpIndexSeq++
+	plugin.log.Debugf("ARP entry %v registered", arpID)
 
-	plugin.Log.Infof("ARP entry %v configured", arpID)
+	plugin.log.Infof("ARP entry %v configured", arpID)
 	return nil
 }
 
 // ChangeArp processes the NB config and propagates it to bin api call
 func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpEntry, prevEntry *l3.ArpTable_ArpEntry) error {
-	plugin.Log.Infof("Modifying ARP entry %v to %v", *prevEntry, *entry)
+	plugin.log.Infof("Modifying ARP entry %v to %v", *prevEntry, *entry)
 
 	if err := plugin.DeleteArp(prevEntry); err != nil {
 		return err
@@ -150,15 +162,15 @@ func (plugin *ArpConfigurator) ChangeArp(entry *l3.ArpTable_ArpEntry, prevEntry 
 		return err
 	}
 
-	plugin.Log.Infof("ARP entry %v modified to %v", *prevEntry, *entry)
+	plugin.log.Infof("ARP entry %v modified to %v", *prevEntry, *entry)
 	return nil
 }
 
 // DeleteArp processes the NB config and propagates it to bin api call
 func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
-	plugin.Log.Infof("Removing ARP entry %v", *entry)
+	plugin.log.Infof("Removing ARP entry %v", *entry)
 
-	if !isValidARP(entry, plugin.Log) {
+	if !isValidARP(entry, plugin.log) {
 		// Note: such an ARP cannot be configured either, so it should not happen
 		return fmt.Errorf("cannot remove ARP, provided data is not valid")
 	}
@@ -167,25 +179,25 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
 	arpID := arpIdentifier(entry.Interface, entry.PhysAddress, entry.IpAddress)
 
 	// Check if ARP entry is not just cached
-	_, _, found := plugin.ARPCache.LookupIdx(arpID)
+	_, _, found := plugin.arpCache.LookupIdx(arpID)
 	if found {
-		plugin.Log.Debugf("ARP entry %v found in cache, removed", arpID)
-		plugin.ARPCache.UnregisterName(arpID)
+		plugin.log.Debugf("ARP entry %v found in cache, removed", arpID)
+		plugin.arpCache.UnregisterName(arpID)
 		// Cached ARP is not configured on the VPP, return
 		return nil
 	}
 
 	// Check interface presence
-	ifIndex, _, exists := plugin.SwIfIndexes.LookupIdx(entry.Interface)
+	ifIndex, _, exists := plugin.ifIndexes.LookupIdx(entry.Interface)
 	if !exists {
 		// ARP entry cannot be removed without interface. Since the data are
 		// no longer in the ETCD, agent need to remember the state and remove
 		// entry when possible
-		plugin.Log.Infof("Cannot remove ARP entry %v due to missing interface, will be removed when possible",
+		plugin.log.Infof("Cannot remove ARP entry %v due to missing interface, will be removed when possible",
 			entry.Interface)
-		plugin.ARPIndexes.UnregisterName(arpID)
-		plugin.ARPDeleted.RegisterName(arpID, plugin.ARPIndexSeq, entry)
-		plugin.ARPIndexSeq++
+		plugin.arpIndexes.UnregisterName(arpID)
+		plugin.arpDeleted.RegisterName(arpID, plugin.arpIndexSeq, entry)
+		plugin.arpIndexSeq++
 
 		return nil
 	}
@@ -198,29 +210,29 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
 	if arp == nil {
 		return nil
 	}
-	plugin.Log.Debugf("deleting ARP: %+v", arp)
+	plugin.log.Debugf("deleting ARP: %+v", arp)
 
 	// Delete and un-register new arp
-	if err = vppcalls.VppDelArp(arp, plugin.vppChan, plugin.Stopwatch); err != nil {
+	if err = vppcalls.VppDelArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
 		return err
 	}
-	_, _, found = plugin.ARPIndexes.UnregisterName(arpID)
+	_, _, found = plugin.arpIndexes.UnregisterName(arpID)
 	if found {
-		plugin.Log.Infof("ARP entry %v unregistered", arpID)
+		plugin.log.Infof("ARP entry %v unregistered", arpID)
 	} else {
-		plugin.Log.Warnf("Un-register failed, ARP entry %v not found", arpID)
+		plugin.log.Warnf("Un-register failed, ARP entry %v not found", arpID)
 	}
 
-	plugin.Log.Infof("ARP entry %v removed", arpID)
+	plugin.log.Infof("ARP entry %v removed", arpID)
 	return nil
 }
 
 // ResolveCreatedInterface handles case when new interface appears in the config
 func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) error {
-	plugin.Log.Debugf("ARP configurator: resolving new interface %v", interfaceName)
+	plugin.log.Debugf("ARP configurator: resolving new interface %v", interfaceName)
 	// find all entries which can be resolved
-	entriesToAdd := plugin.ARPCache.LookupNamesByInterface(interfaceName)
-	entriesToRemove := plugin.ARPDeleted.LookupNamesByInterface(interfaceName)
+	entriesToAdd := plugin.arpCache.LookupNamesByInterface(interfaceName)
+	entriesToRemove := plugin.arpDeleted.LookupNamesByInterface(interfaceName)
 
 	var wasErr error
 	// Configure all cached ARP entriesToAdd which can be configured
@@ -232,8 +244,8 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 		}
 
 		// remove from cache
-		plugin.ARPCache.UnregisterName(arpID)
-		plugin.Log.Infof("Previously un-configurable ARP entry %v is now configured", arpID)
+		plugin.arpCache.UnregisterName(arpID)
+		plugin.log.Infof("Previously un-configurable ARP entry %v is now configured", arpID)
 	}
 
 	// Remove all entries which should not be configured
@@ -244,8 +256,8 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 		}
 
 		// remove from list of deleted
-		plugin.ARPDeleted.UnregisterName(arpID)
-		plugin.Log.Infof("Deprecated ARP entry %v was removed", arpID)
+		plugin.arpDeleted.UnregisterName(arpID)
+		plugin.log.Infof("Deprecated ARP entry %v was removed", arpID)
 	}
 
 	return wasErr
@@ -253,7 +265,7 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 
 // ResolveDeletedInterface handles case when interface is removed from the config
 func (plugin *ArpConfigurator) ResolveDeletedInterface(interfaceName string, interfaceIdx uint32) error {
-	plugin.Log.Debugf("ARP configurator: resolving deleted interface %v", interfaceName)
+	plugin.log.Debugf("ARP configurator: resolving deleted interface %v", interfaceName)
 
 	// Since the interface does not exist, all related ARP entries are 'un-assigned' on the VPP
 	// but they cannot be removed using binary API. Nothing to do here.

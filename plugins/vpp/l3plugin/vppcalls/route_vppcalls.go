@@ -26,6 +26,15 @@ import (
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
+var RouteMessages = []govppapi.Message{
+	&ip.IPAddDelRoute{},
+	&ip.IPAddDelRouteReply{},
+	&ip.IPFibDump{},
+	&ip.IPFibDetails{},
+	&ip.IP6FibDump{},
+	&ip.IP6FibDetails{},
+}
+
 // Route represents a forward IP route entry with the parameters of gateway
 // to which packets should be forwarded when a given routing table entry is applied.
 type Route struct {

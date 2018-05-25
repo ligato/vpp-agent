@@ -1,6 +1,6 @@
 #sudo docker create
 # -e MICROSERVICE_LABEL=agent_vpp_1
-# -e DP_STATUS_PUBLISHERS=etcd
+# -e VPP_STATUS_PUBLISHERS=etcd
 # -e INITIAL_LOGLVL=debug
 # --sysctl net.ipv6.conf.all.disable_ipv6=0
 # -it
@@ -117,7 +117,7 @@ spec:
       env:
         - name: MICROSERVICE_LABEL
           value: vswitch
-        - name: DP_STATUS_PUBLISHERS
+        - name: VPP_STATUS_PUBLISHERS
           value: etcd
       #args:
       #    - "--sysctl net.ipv6.conf.all.disable_ipv6=0"

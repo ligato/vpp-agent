@@ -24,6 +24,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
+// ProxyArpMessages is list of used VPP messages for compatibility check
+var ProxyArpMessages = []govppapi.Message{
+	&ip.ProxyArpIntfcEnableDisable{},
+	&ip.ProxyArpIntfcEnableDisableReply{},
+	&ip.ProxyArpAddDel{},
+	&ip.ProxyArpAddDelReply{},
+}
+
 // EnableProxyArpInterface enables interface for proxy ARP
 func EnableProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	return vppAddDelProxyArpInterface(swIfIdx, vppChan, true, log, stopwatch)

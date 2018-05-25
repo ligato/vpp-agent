@@ -23,14 +23,14 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"net"
 	"testing"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 )
 
 func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan govppapi.Message, chan *intf.InterfaceNotification, error) {
@@ -69,16 +69,8 @@ func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIf
 	pluginLogger := logging.ForPlugin("testname", logrus.NewLogRegistry())
 
 	// Test initialization
-	ifPlugin := &ifplugin.InterfaceStateUpdater{
-		Log:      pluginLogger,
-		GoVppmux: connection,
-	}
-
-	err = ifPlugin.Init(
-		ctx,
-		index,
-		notifChan,
-		publishIfState)
+	ifPlugin := &ifplugin.InterfaceStateUpdater{}
+	err = ifPlugin.Init(pluginLogger, connection, ctx, index, notifChan, publishIfState)
 
 	if err != nil {
 		return nil, nil, nil, nil, nil, err

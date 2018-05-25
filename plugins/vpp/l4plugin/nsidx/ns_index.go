@@ -66,10 +66,6 @@ type ChangeDto struct {
 	Metadata *l4.AppNamespaces_AppNamespace
 }
 
-const (
-	appNsNameIndexKey = "appNsKey"
-)
-
 // NewAppNsIndex creates new instance of appNsIndex.
 func NewAppNsIndex(mapping idxvpp.NameToIdxRW) AppNsIndexRW {
 	return &appNsIndex{mapping: mapping}

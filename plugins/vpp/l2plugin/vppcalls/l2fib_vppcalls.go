@@ -95,7 +95,7 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 	return nil
 }
 
-// WatchFIBReplies is meant to be used in goroutine.
+// WatchFIBReplies handles L2 FIB add/del requests
 func (fib *L2FibVppCalls) WatchFIBReplies() {
 	for {
 		select {

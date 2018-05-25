@@ -38,7 +38,7 @@ import (
 // It does not follow the standard concept of CRUD, but provides a set of methods other plugins can use to manage
 // namespaces
 type NsHandler struct {
-	Log logging.Logger
+	log logging.Logger
 
 	cfgLock sync.Mutex
 
@@ -69,8 +69,10 @@ type NsHandler struct {
 }
 
 // Init namespace handler caches and create config namespace
-func (plugin *NsHandler) Init(msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
-	plugin.Log.Infof("Initializing namespace handler plugin")
+func (plugin *NsHandler) Init(logger logging.PluginLogger, msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
+	// Logger
+	plugin.log = logger.NewLogger("-ns-handler")
+	plugin.log.Infof("Initializing namespace handler plugin")
 
 	// Init channels
 	plugin.microserviceChan = msChan
@@ -91,14 +93,14 @@ func (plugin *NsHandler) Init(msChan chan *MicroserviceCtx, ifNotif chan *Micros
 	// Docker client
 	plugin.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
-		plugin.Log.WithFields(logging.Fields{
+		plugin.log.WithFields(logging.Fields{
 			"DOCKER_HOST":       os.Getenv("DOCKER_HOST"),
 			"DOCKER_TLS_VERIFY": os.Getenv("DOCKER_TLS_VERIFY"),
 			"DOCKER_CERT_PATH":  os.Getenv("DOCKER_CERT_PATH"),
 		}).Errorf("Failed to get docker client instance from the environment variables: %v", err)
 		return err
 	}
-	plugin.Log.Debugf("Using docker client endpoint: %+v", plugin.dockerClient.Endpoint())
+	plugin.log.Debugf("Using docker client endpoint: %+v", plugin.dockerClient.Endpoint())
 
 	// Create config namespace (for VETHs)
 	err = plugin.prepareConfigNamespace()
@@ -115,7 +117,7 @@ func (plugin *NsHandler) Close() error {
 	if plugin.configNs != nil {
 		// Remove veth pre-configure namespace
 		ns := plugin.IfNsToGeneric(plugin.configNs)
-		wasErr = ns.deleteNamedNetNs(plugin.Log)
+		wasErr = ns.deleteNamedNetNs(plugin.log)
 		plugin.cancel()
 		plugin.wg.Wait()
 	}
@@ -149,7 +151,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	ifaceNs := plugin.IfNsToGeneric(namespace)
 
 	// Get network namespace file descriptor
-	ns, err := plugin.getOrCreateNs(ifaceNs, log)
+	ns, err := plugin.getOrCreateNs(ifaceNs)
 	if err != nil {
 		return err
 	}
@@ -185,7 +187,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 		Debug("Moved Linux interface across namespaces")
 
 	// re-configure interface in its new namespace
-	revertNs, err := plugin.SwitchNamespace(ifaceNs, ctx, log)
+	revertNs, err := plugin.SwitchNamespace(ifaceNs, ctx)
 	if err != nil {
 		return err
 	}
@@ -248,13 +250,13 @@ func (plugin *NsHandler) SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *intf
 	// Prepare generic namespace object
 	ifaceNs := plugin.IfNsToGeneric(ns)
 
-	return plugin.SwitchNamespace(ifaceNs, nsMgmtCtx, plugin.Log)
+	return plugin.SwitchNamespace(ifaceNs, nsMgmtCtx)
 }
 
 // SwitchNamespace switches the network namespace of the current thread.
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
-func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx, log logging.Logger) (revert func(), err error) {
+func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (revert func(), err error) {
 	var nsHandle netns.NsHandle
 	if ns != nil && ns.Type == MicroserviceRefNs {
 		ns = plugin.convertMicroserviceNsToPidNs(ns.Microservice)
@@ -270,7 +272,7 @@ func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx, l
 	}
 
 	// Get network namespace file descriptor.
-	nsHandle, err = plugin.getOrCreateNs(ns, log)
+	nsHandle, err = plugin.getOrCreateNs(ns)
 	if err != nil {
 		return func() {}, err
 	}
@@ -281,11 +283,11 @@ func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx, l
 		// Lock the OS Thread so we don't accidentally switch namespaces later.
 		runtime.LockOSThread()
 		ctx.lockedOsThread = true
-		log.Debug("Locked OS thread")
+		plugin.log.Debug("Locked OS thread")
 	}
 
 	// Switch the namespace.
-	l := log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
+	l := plugin.log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
 	if err := netns.Set(nsHandle); err != nil {
 		l.Errorf("Failed to switch Linux network namespace (%v): %v", ns.GenericNsToString(), err)
 	} else {
@@ -293,7 +295,7 @@ func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx, l
 	}
 
 	return func() {
-		l := log.WithFields(logging.Fields{"orig-ns": origns.String(), "orig-ns-fd": int(origns)})
+		l := plugin.log.WithFields(logging.Fields{"orig-ns": origns.String(), "orig-ns-fd": int(origns)})
 		if err := netns.Set(origns); err != nil {
 			l.Errorf("Failed to switch Linux network namespace: %v", err)
 		} else {
@@ -303,7 +305,7 @@ func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx, l
 		if !alreadyLocked {
 			runtime.UnlockOSThread()
 			ctx.lockedOsThread = false
-			log.Debug("Unlocked OS thread")
+			plugin.log.Debug("Unlocked OS thread")
 		}
 	}, nil
 }
@@ -350,7 +352,7 @@ func (plugin *NsHandler) RouteNsToGeneric(ns *l3.LinuxStaticRoutes_Route_Namespa
 // getOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func (plugin *NsHandler) getOrCreateNs(ns *Namespace, log logging.Logger) (netns.NsHandle, error) {
+func (plugin *NsHandler) getOrCreateNs(ns *Namespace) (netns.NsHandle, error) {
 	var nsHandle netns.NsHandle
 	var err error
 
@@ -375,7 +377,7 @@ func (plugin *NsHandler) getOrCreateNs(ns *Namespace, log logging.Logger) (netns
 		nsHandle, err = netns.GetFromName(ns.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, err = ns.createNamedNetNs(log)
+			_, err = ns.createNamedNetNs(plugin.log)
 			if err != nil {
 				return netns.None(), err
 			}
@@ -407,18 +409,18 @@ func (plugin *NsHandler) prepareConfigNamespace() error {
 		Name: configNamespace,
 	}
 	// Check if namespace exists.
-	found, err := ns.namedNetNsExists(plugin.Log)
+	found, err := ns.namedNetNsExists(plugin.log)
 	if err != nil {
 		return err
 	}
 	// Remove namespace if exists.
 	if found {
-		err := ns.deleteNamedNetNs(plugin.Log)
+		err := ns.deleteNamedNetNs(plugin.log)
 		if err != nil {
 			return err
 		}
 	}
-	_, err = ns.createNamedNetNs(plugin.Log)
+	_, err = ns.createNamedNetNs(plugin.log)
 	if err != nil {
 		return err
 	}

@@ -532,11 +532,11 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.l4Configurator.DeleteAppNamespace(prevValue)
+		return plugin.appNsConfigurator.DeleteAppNamespace(prevValue)
 	} else if diff {
-		return plugin.l4Configurator.ModifyAppNamespace(value, prevValue)
+		return plugin.appNsConfigurator.ModifyAppNamespace(value, prevValue)
 	}
-	return plugin.l4Configurator.ConfigureAppNamespace(value)
+	return plugin.appNsConfigurator.ConfigureAppNamespace(value)
 }
 
 // DataChangeL4Features propagates data change to the l4Configurator
@@ -547,9 +547,9 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 	// diff and previous value is not important, features flag can be either set or not.
 	// If removed, it is always set to false
 	if datasync.Delete == changeType {
-		return plugin.l4Configurator.DeleteL4FeatureFlag()
+		return plugin.appNsConfigurator.DeleteL4FeatureFlag()
 	}
-	return plugin.l4Configurator.ConfigureL4FeatureFlag(value)
+	return plugin.appNsConfigurator.ConfigureL4FeatureFlag(value)
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
@@ -605,11 +605,11 @@ func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.Secu
 	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.ipsecConfigurator.DeleteSPD(prevValue)
+		return plugin.ipSecConfigurator.DeleteSPD(prevValue)
 	} else if diff {
-		return plugin.ipsecConfigurator.ModifySPD(prevValue, value)
+		return plugin.ipSecConfigurator.ModifySPD(prevValue, value)
 	}
-	return plugin.ipsecConfigurator.ConfigureSPD(value)
+	return plugin.ipSecConfigurator.ConfigureSPD(value)
 }
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
@@ -617,11 +617,11 @@ func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.Secur
 	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.ipsecConfigurator.DeleteSA(prevValue)
+		return plugin.ipSecConfigurator.DeleteSA(prevValue)
 	} else if diff {
-		return plugin.ipsecConfigurator.ModifySA(prevValue, value)
+		return plugin.ipSecConfigurator.ModifySA(prevValue, value)
 	}
-	return plugin.ipsecConfigurator.ConfigureSA(value)
+	return plugin.ipSecConfigurator.ConfigureSA(value)
 }
 
 // dataChangeIPSecTunnel propagates data change to the IPSec configurator
@@ -629,11 +629,11 @@ func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.T
 	plugin.Log.Debug("dataChangeIPSecTunnel diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
-		return plugin.ipsecConfigurator.DeleteTunnel(prevValue)
+		return plugin.ipSecConfigurator.DeleteTunnel(prevValue)
 	} else if diff {
-		return plugin.ipsecConfigurator.ModifyTunnel(prevValue, value)
+		return plugin.ipSecConfigurator.ModifyTunnel(prevValue, value)
 	}
-	return plugin.ipsecConfigurator.ConfigureTunnel(value)
+	return plugin.ipSecConfigurator.ConfigureTunnel(value)
 }
 
 // DataChangeLocalSID handles change events from ETCD related to local SIDs

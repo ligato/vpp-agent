@@ -23,6 +23,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
+// AppNsMessages is list of used VPP messages for compatibility check
+var AppNsMessages = []govppapi.Message{
+	&session.AppNamespaceAddDel{},
+	&session.AppNamespaceAddDelReply{},
+	&session.SessionEnableDisable{},
+	&session.SessionEnableDisableReply{},
+}
+
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace
 func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (appNsIdx uint32, err error) {
 	defer func(t time.Time) {

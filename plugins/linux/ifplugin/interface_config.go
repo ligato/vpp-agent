@@ -24,7 +24,7 @@ import (
 
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	vppIfIdx "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	vpp "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
@@ -47,53 +47,59 @@ type LinuxInterfaceConfig struct {
 // Updates received from the northbound API are compared with the Linux network configuration and differences
 // are applied through the Netlink API.
 type LinuxInterfaceConfigurator struct {
-	Log logging.Logger
+	log logging.Logger
 
-	cfgLock sync.Mutex
+	// In-memory mappings
+	vppIfIndexes vpp.SwIfIndex
+	ifIndexes    ifaceidx.LinuxIfIndexRW
+	ifIdxSeq     uint32
+	ifByName     map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
+	ifsByMs      map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
 
-	/* logical interface name -> Linux interface index (both managed and unmanaged interfaces) */
-	IfIndexes ifaceidx.LinuxIfIndexRW
-	IfIdxSeq  uint32
-
-	/* interface caches (managed interfaces only) */
-	intfByName          map[string]*LinuxInterfaceConfig   /* interface name -> interface configuration */
-	intfsByMicroservice map[string][]*LinuxInterfaceConfig /* microservice label -> list of interfaces attached to this microservice */
-
-	///* docker client - used to convert microservice label into the PID and ID of the container */
-	//dockerClient *docker.Client
-
-	/* management of go routines */
-	ctx    context.Context    // Context within which all goroutines are running
-	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
-	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
-
-	ifMicroserviceNotif chan *nsplugin.MicroserviceEvent
-
-	/* interface state */
+	// Channels
+	ifMsNotif   chan *nsplugin.MicroserviceEvent
 	ifStateChan chan *LinuxInterfaceStateNotification
 
-	/* VPP interface indices */
-	VppIfIndices vppIfIdx.SwIfIndex
+	// Go routine management
+	cfgLock sync.Mutex
+	ctx     context.Context    // Context within which all goroutines are running
+	cancel  context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg      sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 
-	NsHandler *nsplugin.NsHandler
+	// Linux namespace handler
+	nsHandler *nsplugin.NsHandler
 
-	/* time measurement */
-	Stopwatch *measure.Stopwatch // timer used to measure and store time
+	//Timer used to measure and store time
+	stopwatch *measure.Stopwatch
 }
 
-// Init linuxplugin and start go routines.
-func (plugin *LinuxInterfaceConfigurator) Init(stateChan chan *LinuxInterfaceStateNotification, ifNotif chan *nsplugin.MicroserviceEvent) (err error) {
-	plugin.Log.Debug("Initializing Linux Interface configurator")
+// Init linux plugin and start go routines.
+func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, handler *nsplugin.NsHandler, ifIndexes ifaceidx.LinuxIfIndexRW,
+	stateChan chan *LinuxInterfaceStateNotification, ifNotif chan *nsplugin.MicroserviceEvent, enableStopwatch bool) (err error) {
+	// Logger
+	plugin.log = logging.NewLogger("-if-conf")
+	plugin.log.Debug("Initializing Linux Interface configurator")
+
+	// Mappings
+	plugin.ifIndexes = ifIndexes
+	plugin.ifByName = make(map[string]*LinuxInterfaceConfig)
+	plugin.ifsByMs = make(map[string][]*LinuxInterfaceConfig)
+	plugin.ifIdxSeq = 1
 
 	// Init channel
 	plugin.ifStateChan = stateChan
-	plugin.ifMicroserviceNotif = ifNotif
+	plugin.ifMsNotif = ifNotif
 
-	// Allocate caches.
-	plugin.intfByName = make(map[string]*LinuxInterfaceConfig)
-	plugin.intfsByMicroservice = make(map[string][]*LinuxInterfaceConfig)
+	plugin.nsHandler = handler
 
 	plugin.ctx, plugin.cancel = context.WithCancel(context.Background())
+
+	// Stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", plugin.log)
+	}
+
+	// Start watching on microservice events
 	go plugin.watchMicroservices(plugin.ctx)
 
 	// Start watching on state updater events
@@ -116,7 +122,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 	defer plugin.cfgLock.Unlock()
 
 	plugin.handleOptionalHostIfName(linuxIf)
-	plugin.Log.Infof("Configuring new Linux interface %v", linuxIf.HostIfName)
+	plugin.log.Infof("Configuring new Linux interface %v", linuxIf.HostIfName)
 
 	// Linux interface type resolution
 	switch linuxIf.Type {
@@ -145,7 +151,7 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newLinuxIf, oldLi
 	// If host names are not defined, name == host name
 	plugin.handleOptionalHostIfName(newLinuxIf)
 	plugin.handleOptionalHostIfName(oldLinuxIf)
-	plugin.Log.Infof("Modifying Linux interface %v", newLinuxIf.HostIfName)
+	plugin.log.Infof("Modifying Linux interface %v", newLinuxIf.HostIfName)
 
 	if oldLinuxIf.Type != newLinuxIf.Type {
 		return fmt.Errorf("%v: linux interface type change not allowed", newLinuxIf.Name)
@@ -165,8 +171,8 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newLinuxIf, oldLi
 	}
 
 	// Prepare namespace objects of new and old interfaces
-	newIfaceNs := plugin.NsHandler.IfNsToGeneric(newLinuxIf.Namespace)
-	oldIfaceNs := plugin.NsHandler.IfNsToGeneric(oldLinuxIf.Namespace)
+	newIfaceNs := plugin.nsHandler.IfNsToGeneric(newLinuxIf.Namespace)
+	oldIfaceNs := plugin.nsHandler.IfNsToGeneric(oldLinuxIf.Namespace)
 	if newPeer != oldPeer || newLinuxIf.HostIfName != oldLinuxIf.HostIfName || newIfaceNs.CompareNamespaces(oldIfaceNs) != 0 {
 		// Change of the peer interface (VETH) or host (TAP) or the namespace requires to create the interface from the scratch.
 		err := plugin.DeleteLinuxInterface(oldLinuxIf)
@@ -185,8 +191,8 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newLinuxIf, oldLi
 	plugin.addToCache(newLinuxIf, peer)
 
 	// Verify required namespace
-	if !plugin.NsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
-		plugin.Log.Errorf("unable to configure linux interface %v: interface namespace is not available",
+	if !plugin.nsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
+		plugin.log.Errorf("unable to configure linux interface %v: interface namespace is not available",
 			newLinuxIf.HostIfName)
 		return nil
 	}
@@ -195,28 +201,28 @@ func (plugin *LinuxInterfaceConfigurator) ModifyLinuxInterface(newLinuxIf, oldLi
 	if newLinuxIf.Type == interfaces.LinuxInterfaces_VETH {
 		if peer == nil {
 			// Interface doesn't actually exist physically.
-			plugin.Log.Infof("cannot configure linux interface %v: peer interface %v is not configured yet",
+			plugin.log.Infof("cannot configure linux interface %v: peer interface %v is not configured yet",
 				newLinuxIf.HostIfName, newPeer)
 			return nil
 		}
-		if !plugin.NsHandler.IsNamespaceAvailable(oldLinuxIf.Namespace) {
-			plugin.Log.Warnf("unable to modify linux interface %v: peer interface namespace is not available",
+		if !plugin.nsHandler.IsNamespaceAvailable(oldLinuxIf.Namespace) {
+			plugin.log.Warnf("unable to modify linux interface %v: peer interface namespace is not available",
 				oldLinuxIf.HostIfName)
 			return nil
 		}
-		if !plugin.NsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
-			plugin.Log.Warnf("unable to modify linux interface %v: interface namespace is not available",
+		if !plugin.nsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
+			plugin.log.Warnf("unable to modify linux interface %v: interface namespace is not available",
 				newLinuxIf.HostIfName)
 			return nil
 		}
 	} else if newLinuxIf.Type == interfaces.LinuxInterfaces_AUTO_TAP {
-		if !plugin.NsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
+		if !plugin.nsHandler.IsNamespaceAvailable(newLinuxIf.Namespace) {
 			// Interface doesn't actually exist physically.
-			plugin.Log.WithField("ifName", newLinuxIf.Name).Debug("Linux interface is not ready to be re-configured")
+			plugin.log.WithField("ifName", newLinuxIf.Name).Debug("Linux interface is not ready to be re-configured")
 			return nil
 		}
 	} else {
-		plugin.Log.Warnf("Unknown interface type %v", newLinuxIf.Type)
+		plugin.log.Warnf("Unknown interface type %v", newLinuxIf.Type)
 
 		return nil
 	}
@@ -233,7 +239,7 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(linuxIf *interfac
 	defer plugin.cfgLock.Unlock()
 
 	plugin.handleOptionalHostIfName(linuxIf)
-	plugin.Log.Infof("Removing Linux interface %v", linuxIf.HostIfName)
+	plugin.log.Infof("Removing Linux interface %v", linuxIf.HostIfName)
 
 	oldConfig := plugin.removeFromCache(linuxIf)
 	var peerConfig *LinuxInterfaceConfig
@@ -246,27 +252,27 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(linuxIf *interfac
 	} else if linuxIf.Type == interfaces.LinuxInterfaces_VETH {
 		return plugin.deleteVethInterface(oldConfig, peerConfig)
 	}
-	plugin.Log.Warnf("Unknown type of interface: %v", linuxIf.Type)
+	plugin.log.Warnf("Unknown type of interface: %v", linuxIf.Type)
 	return nil
 }
 
 // Validate, create and configure VETH type linux interface
 func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerConfig *LinuxInterfaceConfig) error {
-	plugin.Log.WithFields(logging.Fields{"name": ifConfig.config.Name, "hostName": ifConfig.config.HostIfName,
+	plugin.log.WithFields(logging.Fields{"name": ifConfig.config.Name, "hostName": ifConfig.config.HostIfName,
 		"peer": ifConfig.config.Veth.PeerIfName}).Debug("Configuring new Veth interface")
 	// Create VETH after both end's configs and target namespaces are available.
 	if peerConfig == nil {
-		plugin.Log.Infof("cannot configure linux interface %v: peer interface %v is not configured yet",
+		plugin.log.Infof("cannot configure linux interface %v: peer interface %v is not configured yet",
 			ifConfig.config.HostIfName, ifConfig.config.Veth.PeerIfName)
 		return nil
 	}
-	if !plugin.NsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
-		plugin.Log.Warnf("unable to configure linux interface %v: interface namespace is not available",
+	if !plugin.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
+		plugin.log.Warnf("unable to configure linux interface %v: interface namespace is not available",
 			ifConfig.config.HostIfName)
 		return nil
 	}
-	if !plugin.NsHandler.IsNamespaceAvailable(peerConfig.config.Namespace) {
-		plugin.Log.Warnf("unable to configure linux interface %v: peer namespace is not available",
+	if !plugin.nsHandler.IsNamespaceAvailable(peerConfig.config.Namespace) {
+		plugin.log.Warnf("unable to configure linux interface %v: peer namespace is not available",
 			ifConfig.config.HostIfName)
 		return nil
 	}
@@ -274,10 +280,10 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// Prepare generic veth config namespace object
-	vethNs := plugin.NsHandler.IfNsToGeneric(plugin.NsHandler.GetConfigNamespace())
+	vethNs := plugin.nsHandler.IfNsToGeneric(plugin.nsHandler.GetConfigNamespace())
 
 	// Switch to veth cfg namespace
-	revertNs, err := plugin.NsHandler.SwitchNamespace(vethNs, nsMgmtCtx, plugin.Log)
+	revertNs, err := plugin.nsHandler.SwitchNamespace(vethNs, nsMgmtCtx)
 	if err != nil {
 		return err
 	}
@@ -294,7 +300,7 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 		return err
 	}
 
-	plugin.Log.Infof("Linux interface %v with hostIfName %v configured", ifConfig.config.Name, ifConfig.config.HostIfName)
+	plugin.log.Infof("Linux interface %v with hostIfName %v configured", ifConfig.config.Name, ifConfig.config.HostIfName)
 
 	return nil
 }
@@ -302,14 +308,14 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 // Validate and apply linux TAP configuration to the interface. The interface is not created here, it is added
 // to the default namespace when it's VPP end is configured
 func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxInterfaceConfig) error {
-	plugin.Log.WithFields(logging.Fields{"name": ifConfig.config.Name,
+	plugin.log.WithFields(logging.Fields{"name": ifConfig.config.Name,
 		"hostName": ifConfig.config.HostIfName}).Debug("Applying new Linux TAP interface configuration")
 
 	// Tap interfaces can be processed directly using config and also via linux interface events. This check
 	// should prevent to process the same interface multiple times.
-	_, _, exists := plugin.IfIndexes.LookupIdx(ifConfig.config.Name)
+	_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
 	if exists {
-		plugin.Log.Debugf("TAP interface %v already processed", ifConfig.config.Name)
+		plugin.log.Debugf("TAP interface %v already processed", ifConfig.config.Name)
 		return nil
 	}
 
@@ -322,15 +328,15 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// Verify availability of namespace from configuration
-	if !plugin.NsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
-		plugin.Log.Errorf("unable to apply linux TAP configuration %v: destination namespace is not available",
+	if !plugin.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
+		plugin.log.Errorf("unable to apply linux TAP configuration %v: destination namespace is not available",
 			ifConfig.config.Name, ifConfig.config.HostIfName)
 		return nil
 	}
 
 	// Check if TAP temporary name is defined
 	if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
-		plugin.Log.Debugf("Tap interface %v temporary name not defined", ifConfig.config.HostIfName)
+		plugin.log.Debugf("Tap interface %v temporary name not defined", ifConfig.config.HostIfName)
 		// In such a case, set temp name as host (look for interface named as host name)
 		ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
 			TempIfName: ifConfig.config.HostIfName,
@@ -345,12 +351,12 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 				found = true
 				break
 			}
-			plugin.Log.Debugf("Linux TAP config %v found linux interface %v, but it is not the TAP interface type",
+			plugin.log.Debugf("Linux TAP config %v found linux interface %v, but it is not the TAP interface type",
 				ifConfig.config.Name, ifConfig.config.HostIfName)
 		}
 	}
 	if !found {
-		plugin.Log.Debugf("Linux TAP config %v did not found the linux interface with name %v", ifConfig.config.Name,
+		plugin.log.Debugf("Linux TAP config %v did not found the linux interface with name %v", ifConfig.config.Name,
 			ifConfig.config.Tap.TempIfName)
 		return nil
 	}
@@ -366,18 +372,18 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 
 	// Use temporary/host name (according to type) to set interface to different namespace
 	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
-		err = plugin.NsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace, plugin.log, plugin.stopwatch)
 		if err != nil {
 			return fmt.Errorf("failed to set TAP interface %s to namespace %s: %v", ifConfig.Tap.TempIfName, ifConfig.Namespace, err)
 		}
 	} else {
-		err = plugin.NsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace, plugin.Log, plugin.Stopwatch)
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace, plugin.log, plugin.stopwatch)
 		if err != nil {
 			return fmt.Errorf("failed to set interface %s to namespace %s: %v", ifConfig.HostIfName, ifConfig.Namespace, err)
 		}
 	}
 	// Continue configuring interface in its namespace.
-	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.Namespace)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
@@ -387,13 +393,13 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
 		if ifConfig.HostIfName != ifConfig.Tap.TempIfName {
 			if err := linuxcalls.RenameInterface(ifConfig.Tap.TempIfName, ifConfig.HostIfName,
-				measure.GetTimeLog("rename-linux-interface", plugin.Stopwatch)); err != nil {
-				plugin.Log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.Tap.TempIfName,
+				measure.GetTimeLog("rename-linux-interface", plugin.stopwatch)); err != nil {
+				plugin.log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.Tap.TempIfName,
 					ifConfig.HostIfName, err)
 				return err
 			}
 		} else {
-			plugin.Log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.HostIfName)
+			plugin.log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.HostIfName)
 		}
 	}
 
@@ -401,10 +407,10 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 
 	// Set interface up.
 	if ifConfig.Enabled {
-		err := linuxcalls.InterfaceAdminUp(ifConfig.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.Stopwatch))
+		err := linuxcalls.InterfaceAdminUp(ifConfig.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.stopwatch))
 		if nil != err {
 			wasErr = fmt.Errorf("failed to enable Linux interface: %v", err)
-			plugin.Log.Error(wasErr)
+			plugin.log.Error(wasErr)
 		}
 	}
 
@@ -413,45 +419,45 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 		err = linuxcalls.SetInterfaceMac(ifConfig.HostIfName, ifConfig.PhysAddress, nil)
 		if err != nil {
 			wasErr = fmt.Errorf("cannot assign MAC '%s': %v", ifConfig.PhysAddress, err)
-			plugin.Log.Error(wasErr)
+			plugin.log.Error(wasErr)
 		}
-		plugin.Log.Debugf("MAC '%s' set to interface %s", ifConfig.PhysAddress, ifConfig.HostIfName)
+		plugin.log.Debugf("MAC '%s' set to interface %s", ifConfig.PhysAddress, ifConfig.HostIfName)
 	}
 
 	// Set interface IP addresses
 	ipAddresses, err := addrs.StrAddrsToStruct(ifConfig.IpAddresses)
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		wasErr = err
 	}
 	for i, ipAddress := range ipAddresses {
-		err = linuxcalls.AddInterfaceIP(plugin.Log, ifConfig.HostIfName, ipAddresses[i], nil)
+		err = linuxcalls.AddInterfaceIP(plugin.log, ifConfig.HostIfName, ipAddresses[i], nil)
 		if err != nil {
 			err = fmt.Errorf("cannot assign IP address '%s': %v", ipAddress, err)
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			wasErr = err
 		} else {
-			plugin.Log.Debugf("IP address '%s' set to interface %s", ipAddress, ifConfig.HostIfName)
+			plugin.log.Debugf("IP address '%s' set to interface %s", ipAddress, ifConfig.HostIfName)
 		}
 	}
 
 	if ifConfig.Mtu != 0 {
 		linuxcalls.SetInterfaceMTU(ifConfig.HostIfName, int(ifConfig.Mtu), nil)
-		plugin.Log.Debugf("MTU %d set to interface %s", ifConfig.Mtu, ifConfig.HostIfName)
+		plugin.log.Debugf("MTU %d set to interface %s", ifConfig.Mtu, ifConfig.HostIfName)
 	}
 
-	idx := GetLinuxInterfaceIndex(ifConfig.HostIfName)
+	idx := getLinuxInterfaceIndex(ifConfig.HostIfName)
 	if idx < 0 {
 		return fmt.Errorf("failed to get index of the Linux interface %s", ifConfig.HostIfName)
 	}
 
 	// Register interface with its original name and store host name in metadata
-	plugin.IfIndexes.RegisterName(ifConfig.Name, plugin.IfIdxSeq, &ifaceidx.IndexedLinuxInterface{
+	plugin.ifIndexes.RegisterName(ifConfig.Name, plugin.ifIdxSeq, &ifaceidx.IndexedLinuxInterface{
 		Index: uint32(idx),
 		Data:  ifConfig,
 	})
-	plugin.IfIdxSeq++
-	plugin.Log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": idx}).
+	plugin.ifIdxSeq++
+	plugin.log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": idx}).
 		Info("An entry added into ifState.")
 
 	return wasErr
@@ -461,16 +467,16 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplugin.NamespaceMgmtCtx,
 	oldIfConfig, newIfConfig *interfaces.LinuxInterfaces_Interface) error {
 	// Switch to required namespace
-	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, oldIfConfig.Namespace)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, oldIfConfig.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
 	defer revertNs()
 
 	// Verify that the interface already exists in the Linux namespace.
-	idx := GetLinuxInterfaceIndex(oldIfConfig.HostIfName)
+	idx := getLinuxInterfaceIndex(oldIfConfig.HostIfName)
 	if idx < 0 {
-		plugin.Log.Debugf("Host interface %v was not found", oldIfConfig.HostIfName)
+		plugin.log.Debugf("Host interface %v was not found", oldIfConfig.HostIfName)
 		// If host does not exist, configure new setup as a new one
 		return plugin.ConfigureLinuxInterface(newIfConfig)
 	}
@@ -480,9 +486,9 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 	// Set admin status.
 	if newIfConfig.Enabled != oldIfConfig.Enabled {
 		if newIfConfig.Enabled {
-			err = linuxcalls.InterfaceAdminUp(newIfConfig.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.Stopwatch))
+			err = linuxcalls.InterfaceAdminUp(newIfConfig.HostIfName, measure.GetTimeLog("iface_admin_up", plugin.stopwatch))
 		} else {
-			err = linuxcalls.InterfaceAdminDown(newIfConfig.HostIfName, measure.GetTimeLog("iface_admin_down", plugin.Stopwatch))
+			err = linuxcalls.InterfaceAdminDown(newIfConfig.HostIfName, measure.GetTimeLog("iface_admin_down", plugin.stopwatch))
 		}
 		if nil != err {
 			wasErr = fmt.Errorf("failed to enable/disable Linux interface: %v", err)
@@ -491,44 +497,44 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 
 	// Configure new MAC address if set.
 	if newIfConfig.PhysAddress != "" && newIfConfig.PhysAddress != oldIfConfig.PhysAddress {
-		plugin.Log.WithFields(logging.Fields{"PhysAddress": newIfConfig.PhysAddress, "hostIfName": newIfConfig.HostIfName}).
+		plugin.log.WithFields(logging.Fields{"PhysAddress": newIfConfig.PhysAddress, "hostIfName": newIfConfig.HostIfName}).
 			Debug("MAC address re-configured.")
-		err := linuxcalls.SetInterfaceMac(newIfConfig.HostIfName, newIfConfig.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.Stopwatch))
+		err := linuxcalls.SetInterfaceMac(newIfConfig.HostIfName, newIfConfig.PhysAddress, measure.GetTimeLog("set_iface_mac", plugin.stopwatch))
 		if err != nil {
 			wasErr = fmt.Errorf("failed to assign physical address to a Linux interface: %v", err)
-			plugin.Log.Error(wasErr)
+			plugin.log.Error(wasErr)
 		}
 	}
 
 	// IP addresses
 	newAddrs, err := addrs.StrAddrsToStruct(newIfConfig.IpAddresses)
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		wasErr = err
 	}
 	oldAddrs, err := addrs.StrAddrsToStruct(oldIfConfig.IpAddresses)
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		wasErr = err
 	}
 	var del, add []*net.IPNet
 	del, add = addrs.DiffAddr(newAddrs, oldAddrs)
 
 	for i := range del {
-		plugin.Log.WithFields(logging.Fields{"IP address": del[i], "hostIfName": newIfConfig.HostIfName}).Debug("IP address deleted.")
-		err := linuxcalls.DelInterfaceIP(newIfConfig.HostIfName, del[i], measure.GetTimeLog("del_iface_ip", plugin.Stopwatch))
+		plugin.log.WithFields(logging.Fields{"IP address": del[i], "hostIfName": newIfConfig.HostIfName}).Debug("IP address deleted.")
+		err := linuxcalls.DelInterfaceIP(newIfConfig.HostIfName, del[i], measure.GetTimeLog("del_iface_ip", plugin.stopwatch))
 		if nil != err {
 			wasErr = fmt.Errorf("failed to unassign IPv4 address from a Linux interface: %v", err)
-			plugin.Log.Error(wasErr)
+			plugin.log.Error(wasErr)
 		}
 	}
 
 	for i := range add {
-		plugin.Log.WithFields(logging.Fields{"IP address": add[i], "hostIfName": newIfConfig.HostIfName}).Debug("IP address added.")
-		err := linuxcalls.AddInterfaceIP(plugin.Log, newIfConfig.HostIfName, add[i], measure.GetTimeLog("add_iface_ip", plugin.Stopwatch))
+		plugin.log.WithFields(logging.Fields{"IP address": add[i], "hostIfName": newIfConfig.HostIfName}).Debug("IP address added.")
+		err := linuxcalls.AddInterfaceIP(plugin.log, newIfConfig.HostIfName, add[i], measure.GetTimeLog("add_iface_ip", plugin.stopwatch))
 		if nil != err {
 			wasErr = fmt.Errorf("failed to assign IPv4 address to a Linux interface: %v", err)
-			plugin.Log.Error(wasErr)
+			plugin.log.Error(wasErr)
 		}
 	}
 
@@ -536,53 +542,53 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 	if newIfConfig.Mtu != oldIfConfig.Mtu {
 		mtu := newIfConfig.Mtu
 		if mtu > 0 {
-			plugin.Log.WithFields(logging.Fields{"MTU": mtu, "hostIfName": newIfConfig.HostIfName}).Debug("MTU re-configured.")
-			err := linuxcalls.SetInterfaceMTU(newIfConfig.HostIfName, int(mtu), measure.GetTimeLog("set_iface_mtu", plugin.Stopwatch))
+			plugin.log.WithFields(logging.Fields{"MTU": mtu, "hostIfName": newIfConfig.HostIfName}).Debug("MTU re-configured.")
+			err := linuxcalls.SetInterfaceMTU(newIfConfig.HostIfName, int(mtu), measure.GetTimeLog("set_iface_mtu", plugin.stopwatch))
 			if nil != err {
 				wasErr = fmt.Errorf("failed to set MTU of a Linux interface: %v", err)
-				plugin.Log.Error(wasErr)
+				plugin.log.Error(wasErr)
 			}
 		}
 	}
 
-	plugin.Log.Infof("Linux interface %v modified", newIfConfig.Name)
+	plugin.log.Infof("Linux interface %v modified", newIfConfig.Name)
 
 	return wasErr
 }
 
 // Remove VETH type interface
 func (plugin *LinuxInterfaceConfigurator) deleteVethInterface(ifConfig, peerConfig *LinuxInterfaceConfig) error {
-	plugin.Log.Debugf("Removing VETH interface %v ", ifConfig.config.HostIfName)
+	plugin.log.Debugf("Removing VETH interface %v ", ifConfig.config.HostIfName)
 	// Veth interface removal
-	if ifConfig == nil || ifConfig.config == nil || !plugin.NsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) ||
-		peerConfig == nil || peerConfig.config == nil || !plugin.NsHandler.IsNamespaceAvailable(peerConfig.config.Namespace) {
+	if ifConfig == nil || ifConfig.config == nil || !plugin.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) ||
+		peerConfig == nil || peerConfig.config == nil || !plugin.nsHandler.IsNamespaceAvailable(peerConfig.config.Namespace) {
 		name := "<unknown>"
 		if ifConfig != nil && ifConfig.config != nil {
 			name = ifConfig.config.Name
 		}
-		plugin.Log.WithField("ifName", name).Debug("VETH interface doesn't exist")
+		plugin.log.WithField("ifName", name).Debug("VETH interface doesn't exist")
 		return nil
 	}
 
 	// Move to the namespace with the interface.
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
-	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
 	defer revertNs()
 
 	err = linuxcalls.DelVethInterfacePair(ifConfig.config.HostIfName, peerConfig.config.HostIfName,
-		plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+		plugin.log, measure.GetTimeLog("del_veth_iface", plugin.stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to delete VETH interface: %v", err)
 	}
 
 	// Unregister both VETH ends from the in-memory map (following triggers notifications for all subscribers).
-	plugin.IfIndexes.UnregisterName(ifConfig.config.Name)
-	plugin.IfIndexes.UnregisterName(peerConfig.config.Name)
+	plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
+	plugin.ifIndexes.UnregisterName(peerConfig.config.Name)
 
-	plugin.Log.Infof("Linux Interface %v removed", ifConfig.config.Name)
+	plugin.log.Infof("Linux Interface %v removed", ifConfig.config.Name)
 
 	return nil
 }
@@ -591,18 +597,18 @@ func (plugin *LinuxInterfaceConfigurator) deleteVethInterface(ifConfig, peerConf
 // the interface will be removed together with the peer (VPP TAP))
 func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInterfaceConfig) error {
 	if ifConfig == nil || ifConfig.config == nil {
-		plugin.Log.Warn("Unable to remove linux TAP configuration: no data available")
+		plugin.log.Warn("Unable to remove linux TAP configuration: no data available")
 		return nil
 	}
-	plugin.Log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
-	if !plugin.NsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
-		plugin.Log.Warnf("Unable to remove linux TAP configuration: cannot access namespace %v", ifConfig.config.Namespace.Name)
+	plugin.log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
+	if !plugin.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
+		plugin.log.Warnf("Unable to remove linux TAP configuration: cannot access namespace %v", ifConfig.config.Namespace.Name)
 		return nil
 	}
 
 	// Move to the namespace with the interface.
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
-	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
@@ -628,7 +634,7 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	var wasErr error
 	for _, ipAddress := range ipAddresses {
 		if err := linuxcalls.DelInterfaceIP(ifConfig.config.HostIfName, ipAddress, nil); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			wasErr = err
 		}
 	}
@@ -637,84 +643,84 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	if ifConfig.config.Type == interfaces.LinuxInterfaces_AUTO_TAP {
 		// Rename to its original name (if possible)
 		if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
-			plugin.Log.Warnf("Cannot restore linux TAP %v interface state, original name (temp) is not available", ifConfig.config.HostIfName)
+			plugin.log.Warnf("Cannot restore linux TAP %v interface state, original name (temp) is not available", ifConfig.config.HostIfName)
 			ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
 				TempIfName: ifConfig.config.HostIfName,
 			}
 		}
 		if ifConfig.config.Tap.TempIfName == ifConfig.config.HostIfName {
-			plugin.Log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.config.HostIfName)
+			plugin.log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.config.HostIfName)
 		} else {
 			if err := linuxcalls.RenameInterface(ifConfig.config.HostIfName, ifConfig.config.Tap.TempIfName,
-				measure.GetTimeLog("rename-linux-interface", plugin.Stopwatch)); err != nil {
+				measure.GetTimeLog("rename-linux-interface", plugin.stopwatch)); err != nil {
 
-				plugin.Log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.config.HostIfName,
+				plugin.log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.config.HostIfName,
 					ifConfig.config.Tap.TempIfName, err)
 				wasErr = err
 			}
 		}
-		err = plugin.NsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
-			plugin.Log, plugin.Stopwatch)
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
+			plugin.log, plugin.stopwatch)
 		if err != nil {
 			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.Tap.TempIfName, "default", err)
 		}
 	} else {
-		err = plugin.NsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
-			plugin.Log, plugin.Stopwatch)
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{},
+			plugin.log, plugin.stopwatch)
 		if err != nil {
 			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.HostIfName, "default", err)
 		}
 	}
 
 	// Unregister TAP from the in-memory map
-	plugin.IfIndexes.UnregisterName(ifConfig.config.Name)
+	plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
 
 	return wasErr
 }
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
 func (plugin *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin.NamespaceMgmtCtx, vethName string, hostIfName string, ns *interfaces.LinuxInterfaces_Interface_Namespace) error {
-	plugin.Log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": plugin.NsHandler.IfaceNsToString(ns)}).
+	plugin.log.WithFields(logging.Fields{"vethName": vethName, "hostIfName": hostIfName, "ns": plugin.nsHandler.IfaceNsToString(ns)}).
 		Debug("Attempting to remove obsolete VETH")
 
-	revertNs, err := plugin.NsHandler.SwitchToNamespace(nsMgmtCtx, ns)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ns)
 	defer revertNs()
 	if err != nil {
 		// Already removed as namespace no longer exists.
-		plugin.IfIndexes.UnregisterName(vethName)
+		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	exists, err := linuxcalls.InterfaceExists(hostIfName, measure.GetTimeLog("iface_exists", plugin.Stopwatch))
+	exists, err := linuxcalls.InterfaceExists(hostIfName, measure.GetTimeLog("iface_exists", plugin.stopwatch))
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		return err
 	}
 	if !exists {
 		// already removed
-		plugin.IfIndexes.UnregisterName(vethName)
+		plugin.ifIndexes.UnregisterName(vethName)
 		return nil
 	}
-	ifType, err := linuxcalls.GetInterfaceType(hostIfName, measure.GetTimeLog("get_iface_type", plugin.Stopwatch))
+	ifType, err := linuxcalls.GetInterfaceType(hostIfName, measure.GetTimeLog("get_iface_type", plugin.stopwatch))
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		return err
 	}
 	if ifType != veth {
 		return fmt.Errorf("interface '%s' already exists and is not VETH", vethName)
 	}
-	peerName, err := linuxcalls.GetVethPeerName(hostIfName, measure.GetTimeLog("get_veth_peer", plugin.Stopwatch))
+	peerName, err := linuxcalls.GetVethPeerName(hostIfName, measure.GetTimeLog("get_veth_peer", plugin.stopwatch))
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		return err
 	}
-	plugin.Log.WithFields(logging.Fields{"ifName": vethName, "peerName": peerName}).
+	plugin.log.WithFields(logging.Fields{"ifName": vethName, "peerName": peerName}).
 		Debug("Removing obsolete VETH interface")
-	err = linuxcalls.DelVethInterfacePair(hostIfName, peerName, plugin.Log, measure.GetTimeLog("del_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.DelVethInterfacePair(hostIfName, peerName, plugin.log, measure.GetTimeLog("del_veth_iface", plugin.stopwatch))
 	if err != nil {
-		plugin.Log.Error(err)
+		plugin.log.Error(err)
 		return err
 	}
-	plugin.IfIndexes.UnregisterName(vethName)
+	plugin.ifIndexes.UnregisterName(vethName)
 	return nil
 }
 
@@ -730,15 +736,15 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *nsplug
 		return err
 	}
 	// VETH is first created in its own cfg namespace so it has to be removed there as well.
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, plugin.NsHandler.GetConfigNamespace())
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, iface.Name, iface.HostIfName, plugin.nsHandler.GetConfigNamespace())
 	if err != nil {
 		return err
 	}
-	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, plugin.NsHandler.GetConfigNamespace())
+	err = plugin.removeObsoleteVeth(nsMgmtCtx, peer.Name, peer.HostIfName, plugin.nsHandler.GetConfigNamespace())
 	if err != nil {
 		return err
 	}
-	err = linuxcalls.AddVethInterfacePair(iface.HostIfName, peer.HostIfName, plugin.Log, measure.GetTimeLog("add_veth_iface", plugin.Stopwatch))
+	err = linuxcalls.AddVethInterfacePair(iface.HostIfName, peer.HostIfName, plugin.log, measure.GetTimeLog("add_veth_iface", plugin.stopwatch))
 	if err != nil {
 		return fmt.Errorf("failed to create new VETH: %v", err)
 	}
@@ -748,7 +754,7 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *nsplug
 
 // Watcher receives events from state updater about created/removed linux interfaces and performs appropriate actions
 func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
-	plugin.Log.Debugf("Linux interface state watcher started")
+	plugin.log.Debugf("Linux interface state watcher started")
 
 	for {
 		linuxIf := <-plugin.ifStateChan
@@ -758,63 +764,63 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 		case linuxIf.interfaceType == tap:
 			if linuxIf.interfaceState == netlink.OperDown {
 				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
-				for _, indexedName := range plugin.IfIndexes.GetMapping().ListNames() {
-					_, ifConfigMeta, found := plugin.IfIndexes.LookupIdx(indexedName)
+				for _, indexedName := range plugin.ifIndexes.GetMapping().ListNames() {
+					_, ifConfigMeta, found := plugin.ifIndexes.LookupIdx(indexedName)
 					if !found {
 						// Should not happen
-						plugin.Log.Warnf("Interface %v not found in the mapping", indexedName)
+						plugin.log.Warnf("Interface %v not found in the mapping", indexedName)
 						continue
 					}
 					if ifConfigMeta == nil {
 						// Should not happen
-						plugin.Log.Warnf("Interface %v metadata does not exist", indexedName)
+						plugin.log.Warnf("Interface %v metadata does not exist", indexedName)
 						continue
 					}
 					if ifConfigMeta.Data.HostIfName == "" {
-						plugin.Log.Warnf("No info about host name for %v", indexedName)
+						plugin.log.Warnf("No info about host name for %v", indexedName)
 						continue
 					}
 					if ifConfigMeta.Data.HostIfName == linuxIfName {
 						// Registered Linux TAP interface was removed. However it should not be removed from cache
 						// because the configuration still exists in the VPP
-						plugin.IfIndexes.UnregisterName(linuxIfName)
+						plugin.ifIndexes.UnregisterName(linuxIfName)
 					}
 				}
 			} else {
 				// Event that TAP interface was created.
-				plugin.Log.Debugf("Received data about linux TAP interface %s", linuxIfName)
+				plugin.log.Debugf("Received data about linux TAP interface %s", linuxIfName)
 
 				// Look for TAP which is using this interface as the other end
-				for _, ifConfig := range plugin.intfByName {
+				for _, ifConfig := range plugin.ifByName {
 					if ifConfig == nil || ifConfig.config == nil {
-						plugin.Log.Warnf("Cached config for interface %v is empty", linuxIfName)
+						plugin.log.Warnf("Cached config for interface %v is empty", linuxIfName)
 						continue
 					}
 
 					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == linuxIfName) ||
 						ifConfig.config.HostIfName == linuxIfName {
 						// Skip processed interfaces
-						_, _, exists := plugin.IfIndexes.LookupIdx(ifConfig.config.Name)
+						_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
 						if exists {
 							continue
 						}
 						// Host interface was found, configure linux TAP
 						err := plugin.ConfigureLinuxInterface(ifConfig.config)
 						if err != nil {
-							plugin.Log.Error(err)
+							plugin.log.Error(err)
 						}
 					}
 				}
 			}
 		default:
-			plugin.Log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
+			plugin.log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
 		}
 	}
 }
 
 // getInterfaceConfig returns cached configuration of a given interface.
 func (plugin *LinuxInterfaceConfigurator) getInterfaceConfig(ifName string) *LinuxInterfaceConfig {
-	config, ok := plugin.intfByName[ifName]
+	config, ok := plugin.ifByName[ifName]
 	if ok {
 		return config
 	}
@@ -824,39 +830,39 @@ func (plugin *LinuxInterfaceConfigurator) getInterfaceConfig(ifName string) *Lin
 // addToCache adds interface configuration into the cache.
 func (plugin *LinuxInterfaceConfigurator) addToCache(iface *interfaces.LinuxInterfaces_Interface, peerIface *LinuxInterfaceConfig) *LinuxInterfaceConfig {
 	config := &LinuxInterfaceConfig{config: iface, peer: peerIface}
-	plugin.intfByName[iface.Name] = config
+	plugin.ifByName[iface.Name] = config
 	if peerIface != nil {
 		peerIface.peer = config
 	}
 	if iface.Namespace != nil && iface.Namespace.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
-		if _, ok := plugin.intfsByMicroservice[iface.Namespace.Microservice]; ok {
-			plugin.intfsByMicroservice[iface.Namespace.Microservice] = append(plugin.intfsByMicroservice[iface.Namespace.Microservice], config)
+		if _, ok := plugin.ifsByMs[iface.Namespace.Microservice]; ok {
+			plugin.ifsByMs[iface.Namespace.Microservice] = append(plugin.ifsByMs[iface.Namespace.Microservice], config)
 		} else {
-			plugin.intfsByMicroservice[iface.Namespace.Microservice] = []*LinuxInterfaceConfig{config}
+			plugin.ifsByMs[iface.Namespace.Microservice] = []*LinuxInterfaceConfig{config}
 		}
 	}
-	plugin.Log.Debugf("Linux interface with name %v added to cache (peer: %v)",
+	plugin.log.Debugf("Linux interface with name %v added to cache (peer: %v)",
 		iface.Name, peerIface)
 	return config
 }
 
 // removeFromCache removes interfaces configuration from the cache.
 func (plugin *LinuxInterfaceConfigurator) removeFromCache(iface *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
-	if config, ok := plugin.intfByName[iface.Name]; ok {
+	if config, ok := plugin.ifByName[iface.Name]; ok {
 		if config.peer != nil {
 			config.peer.peer = nil
 		}
 		if iface.Namespace != nil && iface.Namespace.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
 			var filtered []*LinuxInterfaceConfig
-			for _, intf := range plugin.intfsByMicroservice[iface.Namespace.Microservice] {
+			for _, intf := range plugin.ifsByMs[iface.Namespace.Microservice] {
 				if intf.config.Name != iface.Name {
 					filtered = append(filtered, intf)
 				}
 			}
-			plugin.intfsByMicroservice[iface.Namespace.Microservice] = filtered
+			plugin.ifsByMs[iface.Namespace.Microservice] = filtered
 		}
-		delete(plugin.intfByName, iface.Name)
-		plugin.Log.Debugf("Linux interface with name %v was removed from cache", iface.Name)
+		delete(plugin.ifByName, iface.Name)
+		plugin.log.Debugf("Linux interface with name %v was removed from cache", iface.Name)
 		return config
 	}
 	return nil
@@ -871,15 +877,15 @@ func (plugin *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context
 
 	for {
 		select {
-		case msEvent := <-plugin.ifMicroserviceNotif:
+		case msEvent := <-plugin.ifMsNotif:
 			microservice := msEvent.Microservice
 			if microservice == nil {
-				plugin.Log.Error("Empty microservice event")
+				plugin.log.Error("Empty microservice event")
 				continue
 			}
 			if msEvent.EventType == nsplugin.NewMicroservice {
 				skip := make(map[string]struct{}) /* interfaces to be skipped in subsequent iterations */
-				for _, iface := range plugin.intfsByMicroservice[microservice.Label] {
+				for _, iface := range plugin.ifsByMs[microservice.Label] {
 					if _, toSkip := skip[iface.config.Name]; toSkip {
 						continue
 					}
@@ -888,12 +894,12 @@ func (plugin *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context
 						// peer will be processed in this iteration and skipped in the subsequent ones.
 						skip[peer.config.Name] = struct{}{}
 					}
-					if peer != nil && plugin.NsHandler.IsNamespaceAvailable(peer.config.Namespace) {
+					if peer != nil && plugin.nsHandler.IsNamespaceAvailable(peer.config.Namespace) {
 						// Prepare generic vet cfg namespace object
-						ifaceNs := plugin.NsHandler.IfNsToGeneric(plugin.NsHandler.GetConfigNamespace())
+						ifaceNs := plugin.nsHandler.IfNsToGeneric(plugin.nsHandler.GetConfigNamespace())
 
 						// Switch to veth cfg namespace
-						revertNs, err := plugin.NsHandler.SwitchNamespace(ifaceNs, nsMgmtCtx, plugin.Log)
+						revertNs, err := plugin.nsHandler.SwitchNamespace(ifaceNs, nsMgmtCtx)
 						if err != nil {
 							return
 						}
@@ -901,32 +907,31 @@ func (plugin *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context
 						// VETH is ready to be created and configured
 						err = plugin.addVethInterfacePair(nsMgmtCtx, iface.config, peer.config)
 						if err != nil {
-							plugin.Log.Error(err.Error())
+							plugin.log.Error(err.Error())
 							continue
 						}
 
 						if err := plugin.configureLinuxInterface(nsMgmtCtx, iface.config); err != nil {
-							plugin.Log.Warnf("failed to configure VETH interface %s: %v", iface.config.Name, err)
+							plugin.log.Warnf("failed to configure VETH interface %s: %v", iface.config.Name, err)
 						} else if err := plugin.configureLinuxInterface(nsMgmtCtx, peer.config); err != nil {
-							plugin.Log.Warnf("failed to configure VETH interface %s: %v", peer.config.Name, err)
+							plugin.log.Warnf("failed to configure VETH interface %s: %v", peer.config.Name, err)
 						}
 						revertNs()
 					} else {
-						plugin.Log.Debugf("peer VETH %v is not ready yet, microservice: %+v", iface.config.Name, microservice)
+						plugin.log.Debugf("peer VETH %v is not ready yet, microservice: %+v", iface.config.Name, microservice)
 					}
 				}
 			} else if msEvent.EventType == nsplugin.TerminatedMicroservice {
-				for _, iface := range plugin.intfsByMicroservice[microservice.Label] {
+				for _, iface := range plugin.ifsByMs[microservice.Label] {
 					plugin.removeObsoleteVeth(nsMgmtCtx, iface.config.Name, iface.config.HostIfName, iface.config.Namespace)
 					if iface.peer != nil && iface.peer.config != nil {
 						plugin.removeObsoleteVeth(nsMgmtCtx, iface.peer.config.Name, iface.peer.config.HostIfName, iface.peer.config.Namespace)
 					} else {
-						plugin.Log.Warnf("Obsolete peer for %s not removed, no peer data", iface.config.Name)
+						plugin.log.Warnf("Obsolete peer for %s not removed, no peer data", iface.config.Name)
 					}
-
 				}
 			} else {
-				plugin.Log.Errorf("Unknown microservice event type: %s", msEvent.EventType)
+				plugin.log.Errorf("Unknown microservice event type: %s", msEvent.EventType)
 			}
 		case <-plugin.ctx.Done():
 			return
@@ -939,4 +944,15 @@ func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *inter
 	if config.HostIfName == "" {
 		config.HostIfName = config.Name
 	}
+}
+
+// GetLinuxInterfaceIndex returns the index of a Linux interface identified by its name.
+// In Linux, interface index is a positive integer that starts at one, zero is never used.
+// Function returns negative number in case of a failure, such as when the interface doesn't exist.
+func getLinuxInterfaceIndex(ifName string) int {
+	iface, err := net.InterfaceByName(ifName)
+	if err != nil {
+		return -1
+	}
+	return iface.Index
 }

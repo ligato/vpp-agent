@@ -27,6 +27,28 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
+// IPSecMessages is list of used VPP messages for compatibility check
+var IPSecMessages = []govppapi.Message{
+	&ipsec_api.IpsecSpdAddDel{},
+	&ipsec_api.IpsecSpdAddDelReply{},
+	&ipsec_api.IpsecInterfaceAddDelSpd{},
+	&ipsec_api.IpsecInterfaceAddDelSpdReply{},
+	&ipsec_api.IpsecSpdAddDelEntry{},
+	&ipsec_api.IpsecSpdAddDelEntryReply{},
+	&ipsec_api.IpsecSadAddDelEntry{},
+	&ipsec_api.IpsecSadAddDelEntryReply{},
+	&ipsec_api.IpsecSpdDump{},
+	&ipsec_api.IpsecSpdDetails{},
+	&ipsec_api.IpsecTunnelIfAddDel{},
+	&ipsec_api.IpsecTunnelIfAddDelReply{},
+	&ipsec_api.IpsecSaDump{},
+	&ipsec_api.IpsecSaDetails{},
+	&ipsec_api.IpsecTunnelIfSetKey{},
+	&ipsec_api.IpsecTunnelIfSetKeyReply{},
+	&ipsec_api.IpsecTunnelIfSetSa{},
+	&ipsec_api.IpsecTunnelIfSetSaReply{},
+}
+
 func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecTunnelIfAddDel{}).LogTimeEntry(time.Since(t))
@@ -289,31 +311,6 @@ func AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppap
 // DelSAEntry deletes SA from VPP via binary API
 func DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return sadAddDelEntry(saID, sa, false, vppChan, stopwatch)
-}
-
-// CheckMsgCompatibilityForIPSec verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForIPSec(vppChan *govppapi.Channel) error {
-	msgs := []govppapi.Message{
-		&ipsec_api.IpsecSpdAddDel{},
-		&ipsec_api.IpsecSpdAddDelReply{},
-		&ipsec_api.IpsecInterfaceAddDelSpd{},
-		&ipsec_api.IpsecInterfaceAddDelSpdReply{},
-		&ipsec_api.IpsecSpdAddDelEntry{},
-		&ipsec_api.IpsecSpdAddDelEntryReply{},
-		&ipsec_api.IpsecSadAddDelEntry{},
-		&ipsec_api.IpsecSadAddDelEntryReply{},
-		&ipsec_api.IpsecSpdDump{},
-		&ipsec_api.IpsecSpdDetails{},
-		&ipsec_api.IpsecTunnelIfAddDel{},
-		&ipsec_api.IpsecTunnelIfAddDelReply{},
-		&ipsec_api.IpsecSaDump{},
-		&ipsec_api.IpsecSaDetails{},
-		&ipsec_api.IpsecTunnelIfSetKey{},
-		&ipsec_api.IpsecTunnelIfSetKeyReply{},
-		&ipsec_api.IpsecTunnelIfSetSa{},
-		&ipsec_api.IpsecTunnelIfSetSaReply{},
-	}
-	return vppChan.CheckMessageCompatibility(msgs...)
 }
 
 func boolToUint(value bool) uint8 {

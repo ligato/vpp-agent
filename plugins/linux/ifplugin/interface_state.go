@@ -35,11 +35,11 @@ type LinuxInterfaceStateNotification struct {
 
 // LinuxInterfaceStateUpdater processes all linux interface state data
 type LinuxInterfaceStateUpdater struct {
-	Log     logging.Logger
+	log     logging.Logger
 	cfgLock sync.Mutex
 
 	// Go routine management
-	wg sync.WaitGroup // Wait group allows to wait until all goroutines of the plugin have finished.
+	wg sync.WaitGroup
 
 	// Linux interface state
 	stateWatcherRunning bool
@@ -49,18 +49,21 @@ type LinuxInterfaceStateUpdater struct {
 }
 
 // Init channels for interface state watcher, start it in separate go routine and subscribe to default namespace
-func (plugin *LinuxInterfaceStateUpdater) Init(ctx context.Context, ifIndexes ifaceidx.LinuxIfIndexRW,
-	stateChan chan *LinuxInterfaceStateNotification, notifChan chan netlink.LinkUpdate, notifDone chan struct{}) error {
-	plugin.Log.Debug("Initializing Linux Interface State Updater")
+func (plugin *LinuxInterfaceStateUpdater) Init(logger logging.PluginLogger, ctx context.Context, ifIndexes ifaceidx.LinuxIfIndexRW,
+	stateChan chan *LinuxInterfaceStateNotification) error {
+	// Logger
+	plugin.log = logger.NewLogger("-if-state")
+	plugin.log.Debug("Initializing Linux Interface State Updater")
 
 	// Channels
 	plugin.ifStateChan = stateChan
-	plugin.ifWatcherNotifCh = notifChan
-	plugin.ifWatcherDoneCh = notifDone
+	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
+	plugin.ifWatcherDoneCh = make(chan struct{})
 
 	// Start watch on linux interfaces
 	go plugin.watchLinuxInterfaces(ctx)
 
+	// Subscribe to default linux namespace
 	return plugin.subscribeInterfaceState()
 }
 
@@ -84,7 +87,7 @@ func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 
 // Watch linux interfaces and send events to processing
 func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
-	plugin.Log.Debugf("Watching on linux link notifications")
+	plugin.log.Debugf("Watching on linux link notifications")
 
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
@@ -112,7 +115,7 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 	plugin.cfgLock.Lock()
 	defer plugin.cfgLock.Unlock()
 
-	plugin.Log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v",
+	plugin.log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v",
 		linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
 
 	// Prepare linux link notification
@@ -126,6 +129,6 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 	case plugin.ifStateChan <- linkNotif:
 		// Notification sent
 	default:
-		plugin.Log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
+		plugin.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
 	}
 }
