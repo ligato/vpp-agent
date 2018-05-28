@@ -180,6 +180,8 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
+	@echo "=> applying patches"
+	git apply -v ./plugins/vpp/binapi/patches/*.diff
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
