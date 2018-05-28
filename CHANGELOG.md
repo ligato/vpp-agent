@@ -19,9 +19,9 @@
   * Vpp-agent itself can act as a GRPC server (no need for external executable)
   * All configuration types are supported (incl. linux interfaces, routes and ARP)
   * Client can read VPP notifications via vpp-agent.
-- [SR plugin](plugins/vpp/srplugin)
+- [SR plugin](plugins/defaultplugins/srplugin)
   * New plugin with support for Segment Routing.
-    More information in the [readme](plugins/vpp/srplugin/README.md).
+    More information in the [readme](plugins/defaultplugins/srplugin/README.md).
 
 ## Improvements
 - [ifplugin](plugins/defaultplugins/ifplugin) 
