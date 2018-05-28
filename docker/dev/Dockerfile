@@ -68,15 +68,6 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
  && chmod -R 777 "$GOPATH"
 
-ARG VERSION
-ARG COMMIT
-
-# copy & build agent
-COPY . $GOPATH/src/github.com/ligato/vpp-agent
-
-RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
- && VERSION=$VERSION COMMIT=$COMMIT make install
-
 # copy configs
 COPY \
     docker/dev/etcd.conf \
@@ -93,6 +84,15 @@ COPY docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
 COPY docker/dev/runvpp.sh /usr/bin/runvpp
 COPY docker/dev/agent_start.py /usr/bin/agent_start.py
 COPY docker/dev/supervisord_kill.py /usr/bin/supervisord_kill.py
+
+ARG VERSION
+ARG COMMIT
+
+# copy & build agent
+COPY . $GOPATH/src/github.com/ligato/vpp-agent
+
+RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
+ && VERSION=$VERSION COMMIT=$COMMIT make install
 
 WORKDIR /
 
