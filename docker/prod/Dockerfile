@@ -30,7 +30,7 @@ COPY --from=devimg \
  /bin/
 
 # copy configs
-COPY etcd.conf kafka.conf govpp.conf vppplugin.conf linuxplugin.conf /opt/vpp-agent/dev/
+COPY etcd.conf kafka.conf govpp.conf vpp-plugin.conf linux-plugin.conf /opt/vpp-agent/dev/
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 

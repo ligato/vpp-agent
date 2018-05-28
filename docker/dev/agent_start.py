@@ -13,7 +13,7 @@ def main():
         agent_start = os.environ['START_AGENT']
         if agent_start=='true' or agent_start == 'True':
             write_stdout('\nStarting vpp-agent...\n')
-            os.system("vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --default-plugins-config=/opt/vpp-agent/dev/vppplugin.conf --linuxplugin-config=/opt/vpp-agent/dev/linuxplugin.conf  --logs-config=/opt/vpp-agent/dev/logs.conf")
+            os.system("vpp-agent --config-dir=/opt/vpp-agent/dev")
             return
     write_stdout('\nVpp-agent omitted\n')
 
