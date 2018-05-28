@@ -73,8 +73,8 @@ COPY \
     docker/dev/etcd.conf \
     docker/dev/kafka.conf \
     docker/dev/govpp.conf \
-    docker/dev/vppplugin.conf \
-    docker/dev/linuxplugin.conf \
+    docker/dev/vpp-plugin.conf \
+    docker/dev/linux-plugin.conf \
     docker/dev/logs.conf \
  ./
 COPY docker/dev/vpp.conf /etc/vpp/vpp.conf
