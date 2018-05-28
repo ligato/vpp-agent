@@ -31,8 +31,13 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 		}
 	}()
 
-	// Retrieve existing ACL config
-	vppACLs, err := vppdump.DumpACLs(plugin.log, plugin.ifIndexes, plugin.vppChan, plugin.stopwatch)
+	// Retrieve existing IpACL config
+	vppIpACLs, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	if err != nil {
+		return err
+	}
+	// Retrieve existing MacIpACL config
+	vppMacIpACLs, err := vppdump.DumpMACIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
 	if err != nil {
 		return err
 	}
@@ -41,23 +46,29 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
 	var wasErr error
-	for _, vppACL := range vppACLs {
+	for _, vppIpACL := range vppIpACLs {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := len(vppACL.ACLDetails.Rules) > 0 && vppACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
+		ipRulesExist := len(vppIpACL.ACLDetails.Rules) > 0 && vppIpACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
 			continue
-		} else {
-			if err := vppcalls.DeleteMacIPAcl(vppACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+		}
+	}
+	for _, vppMacIpACL := range vppMacIpACLs {
+		ipRulesExist := len(vppMacIpACL.ACLDetails.Rules) > 0 && vppMacIpACL.ACLDetails.Rules[0].GetMatch().GetMacipRule() != nil
+
+		if ipRulesExist {
+			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
 			}
+			continue
 		}
 	}
 

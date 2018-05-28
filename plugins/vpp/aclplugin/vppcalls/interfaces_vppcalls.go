@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 )
 
 // ACLInterfaceLogicalReq groups multiple fields to not enumerate all of them in one function call
@@ -35,15 +35,14 @@ type ACLInterfaceLogicalReq struct {
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
 	log             logging.Logger
-	vppChan         *govppapi.Channel
+	vppChan         vppdump.VPPChannel
 	swIfIndexes     ifaceidx.SwIfIndex
 	stopwatch       *measure.Stopwatch
 	setACLStopwatch measure.StopWatchEntry
 }
 
 // NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
-func NewACLInterfacesVppCalls(log logging.Logger, vppChan *govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex,
-	stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
+func NewACLInterfacesVppCalls(log logging.Logger, vppChan vppdump.VPPChannel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
 		log:             log,
 		vppChan:         vppChan,
@@ -102,7 +101,7 @@ func (acl *ACLInterfacesVppCalls) requestSetACLToInterfaces(logicalReq *ACLInter
 		var ACLs []uint32
 
 		// All previously assigned ACLs have to be dumped and added to acl list
-		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.stopwatch)
+		aclInterfaceDetails, err := vppdump.DumpInterfaceIPACLs(aclIfIdx, acl.vppChan, acl.stopwatch)
 		if err != nil {
 			return err
 		}
@@ -166,7 +165,7 @@ func (acl *ACLInterfacesVppCalls) requestRemoveInterfacesFromACL(logicalReq *ACL
 		var ACLs []uint32
 
 		// All assigned ACLs have to be dumped
-		aclInterfaceDetails, err := DumpInterface(aclIfIdx, acl.vppChan, acl.stopwatch)
+		aclInterfaceDetails, err := vppdump.DumpInterfaceIPACLs(aclIfIdx, acl.vppChan, acl.stopwatch)
 		if err != nil {
 			return err
 		}

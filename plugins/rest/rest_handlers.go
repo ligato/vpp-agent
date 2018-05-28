@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
-	aclvpp "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+    aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
@@ -230,7 +230,13 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 		defer ch.Close()
 
 		swIndex := uint32(swIndexuInt64)
-		res, _, err := acldump.DumpInterfaceAcls(plugin.Log, swIndex, ch, nil)
+		res, err := acldump.DumpInterfaceIPAcls(plugin.Deps.Log, swIndex, ch, nil)
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err = acldump.DumpInterfaceMACIPAcls(plugin.Log, swIndex, ch, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
@@ -257,7 +263,32 @@ func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc
 		}
 		defer ch.Close()
 
-		res, err := acldump.DumpACLs(plugin.Log, nil, ch, nil)
+		res, err := acldump.DumpIPACL(nil, plugin.Deps.Log, ch, nil)
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		plugin.Deps.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
+	}
+}
+
+func (plugin *Plugin) macipACLGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		plugin.Deps.Log.Info("Getting macip acls")
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		res, err := acldump.DumpMACIPACL(nil, plugin.Deps.Log, ch, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
@@ -268,9 +299,8 @@ func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc
 		formatter.JSON(w, http.StatusOK, res)
 	}
 }
-
 // exampleACLGetHandler - used to get an example ACL configuration
-func (plugin *Plugin) exampleACLGetHandler(formatter *render.Render) http.HandlerFunc {
+func (plugin *Plugin) exampleIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		plugin.Log.Debug("Getting example acl")
@@ -311,8 +341,76 @@ func (plugin *Plugin) exampleACLGetHandler(formatter *render.Render) http.Handle
 	}
 }
 
+func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		plugin.Deps.Log.Info("Getting example macip acl")
+
+		macipRule := &acl.AccessLists_Acl_Rule_Match_MacIpRule{
+			SourceAddress: "192.168.0.1",
+			SourceAddressPrefix: uint32(16),
+			SourceMacAddress: "02:00:DE:AD:00:02",
+			SourceMacAddressMask: "ff:ff:ff:ff:00:00",
+		}
+
+		rule := &acl.AccessLists_Acl_Rule{
+			Match: &acl.AccessLists_Acl_Rule_Match{
+				MacipRule: macipRule,
+			},
+			AclAction: acl.AclAction_PERMIT,
+		}
+
+		aclRes := acl.AccessLists_Acl{
+			AclName: "example",
+			Rules:   []*acl.AccessLists_Acl_Rule{rule},
+		}
+
+		plugin.Deps.Log.Debug(aclRes)
+		formatter.JSON(w, http.StatusOK, aclRes)
+	}
+}
 // ipACLPostHandler - used to get acl configuration for a particular interface
 func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to parse request body.")
+			formatter.JSON(w, http.StatusBadRequest, err)
+			return
+		}
+		aclParam := acl.AccessLists_Acl{}
+		err = json.Unmarshal(body, &aclParam)
+		if err != nil {
+			plugin.Deps.Log.Error("Failed to unmarshal request body.")
+			formatter.JSON(w, http.StatusBadRequest, err)
+			return
+		}
+
+		// create an API channel
+		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
+		defer ch.Close()
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		var aclIndex struct {
+			Idx uint32 `json:"acl_index"`
+		}
+		aclIndex.Idx, err = aclcalls.AddIPAcl(aclParam.Rules, aclParam.AclName, plugin.Deps.Log, ch, nil)
+		if err != nil {
+			plugin.Deps.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, aclIndex)
+			return
+		}
+
+		plugin.Deps.Log.Debug(aclIndex)
+		formatter.JSON(w, http.StatusOK, aclIndex)
+	}
+}
+
+func (plugin *Plugin) macipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		body, err := ioutil.ReadAll(req.Body)
@@ -341,7 +439,7 @@ func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFun
 		var aclIndex struct {
 			Idx uint32 `json:"acl_index"`
 		}
-		aclIndex.Idx, err = aclvpp.AddIPAcl(aclParam.Rules, aclParam.AclName, plugin.Log, ch, nil)
+		aclIndex.Idx, err = aclcalls.AddMacIPAcl(aclParam.Rules, aclParam.AclName, plugin.Deps.Log, ch, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, aclIndex)
