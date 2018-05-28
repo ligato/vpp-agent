@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:generate protoc --proto_path=../common/model/srv6 --gogo_out=../common/model/srv6 ../common/model/srv6/srv6.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/sr.api.json --output-dir=../common/bin_api
 
 package srplugin
 
