@@ -2,7 +2,7 @@
 
 Auxiliary plugin used mainly by other plugins to handle namespaces and microservices.
 
-*Namespaces*
+###Namespaces
 
 Agent has full support for Linux network namespaces. It is possible to attach Linux interface into a new, existing
 or even yet-to-be-created network namespace via the `namespace` configuration section inside the `LinuxInterfaces` configuration data model.
@@ -20,7 +20,7 @@ is that it can outlive the process it was originally created by.
 into the appropriate field (`pid` vs. `name` vs `microservice`).
 Agent supports both PID-based references as well as `named` namespaces.
 
-*Microservices*
+###Microservices
 
 Additionally, we provide a non-standard namespace reference, denoted as `MICROSERVICE_REF_NS`, which is specific to ecosystems
 with microservices. It is possible to attach interface into the namespace of a container that runs microservice with a given label.

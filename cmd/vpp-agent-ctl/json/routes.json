@@ -4,15 +4,3 @@
     "outgoing_interface": "tap1",
     "weight": 6
 }
-
-routes := l3.StaticRoutes{
-Routes: []*l3.StaticRoutes_Route{
-{
-VrfId:             0,
-DstIpAddr:         "10.1.1.3/32",
-NextHopAddr:       "192.168.1.13",
-Weight:            6,
-OutgoingInterface: "tap1",
-},
-},
-}
