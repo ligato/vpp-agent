@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 set -e
 
 IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
