@@ -1,5 +1,35 @@
 ARG BASE_IMG=ubuntu:16.04
-FROM ${BASE_IMG}
+
+FROM golang as verify
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    python-pip patch \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip install ply
+
+ARG VPP_REPO_URL
+ARG VPP_COMMIT
+
+RUN /bin/bash -c "\
+    git clone ${VPP_REPO_URL} /opt/vpp \
+    && cd /opt/vpp \
+    && git checkout ${VPP_COMMIT}"
+
+COPY scripts/genjsonapi.sh /opt/genjsonapi.sh
+RUN VPPDIR=/opt/vpp /opt/genjsonapi.sh
+
+WORKDIR /go/src/github.com/ligato/vpp-agent
+
+COPY plugins/vpp/binapi plugins/vpp/binapi
+COPY vendor vendor
+COPY Makefile vpp.env ./
+
+RUN cp -r plugins/vpp/binapi /tmp/binapi \
+ && make generate-binapi \
+ && diff -r plugins/vpp/binapi /tmp/binapi
+
+FROM ${BASE_IMG} as builder
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
