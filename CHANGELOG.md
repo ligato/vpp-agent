@@ -158,15 +158,15 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
     IP address set.
     - added support for virtio-based TAPv2 interfaces.
     - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in vpp.conf. See  [readme](plugins/vpp/README.md) for more details.  
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
 - [l2plugin](plugins/vpp/l2plugin)
     - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in vpp.conf. See  [readme](plugins/vpp/README.md) for more details.  
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
 
 ### Improvements
 - [ifplugin](plugins/vpp/ifplugin)
     - default MTU value was removed in order to be able to just pass empty MTU field. MTU now can be 
-    set only in interface configuration (preffered) or defined in vpp.conf. If none of them
+    set only in interface configuration (preffered) or defined in vpp-plugin.conf. If none of them
     is set, MTU value will be empty.
     - interface state data are stored in statuscheck readiness probe
 - [l3plugin](plugins/vpp/l3plugin)
@@ -183,7 +183,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 - consolidated and improved logging in vpp and linux plugins.
 
 ### Bugfix
-- fixed skip-resync parameter if vpp.conf is not provided.
+- fixed skip-resync parameter if vpp-plugin.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
 - microservice and veth-interface related events are synchronized.
