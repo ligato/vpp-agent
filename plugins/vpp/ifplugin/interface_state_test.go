@@ -15,6 +15,9 @@
 package ifplugin_test
 
 import (
+	"net"
+	"testing"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
@@ -29,8 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
-	"net"
-	"testing"
 )
 
 func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan govppapi.Message, chan *intf.InterfaceNotification, error) {
@@ -223,15 +224,15 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 	defer conn.Disconnect()
 
 	// Register name
-	index.RegisterName("test", 0, &intf.Interfaces_Interface{
-		Name:        "test",
+	index.RegisterName("test0", 0, &intf.Interfaces_Interface{
+		Name:        "test0",
 		Enabled:     true,
 		Type:        intf.InterfaceType_MEMORY_INTERFACE,
 		IpAddresses: []string{"192.168.0.1/24"},
 	})
 
-	index.RegisterName("test2", 1, &intf.Interfaces_Interface{
-		Name:        "test",
+	index.RegisterName("test1", 1, &intf.Interfaces_Interface{
+		Name:        "test1",
 		Enabled:     true,
 		Type:        intf.InterfaceType_MEMORY_INTERFACE,
 		IpAddresses: []string{"192.168.0.2/24"},
@@ -243,28 +244,28 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 		FirstSwIfIndex:  0,
 		Count:           2,
 		Data: []stats.VlibCounter{
-			{
-				Packets: 1024,
-				Bytes:   2048,
-			},
-			{
-				Packets: 2048,
-				Bytes:   20480,
-			},
+			{Packets: 1000, Bytes: 3000},
+			{Packets: 2000, Bytes: 5000},
 		},
 	}
 
 	var notif *intf.InterfaceNotification
+	var outPackets, outBytes uint64
 
 	Eventually(publishChan).Should(Receive(&notif))
 	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
-	Expect(notif.State.Statistics.OutPackets).Should(BeEquivalentTo(1024))
-	Expect(notif.State.Statistics.OutBytes).Should(BeEquivalentTo(2048))
+	outPackets += notif.GetState().GetStatistics().GetOutPackets()
+	outBytes += notif.GetState().GetStatistics().GetOutBytes()
 
 	Eventually(publishChan).Should(Receive(&notif))
 	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
-	Expect(notif.State.Statistics.OutPackets).Should(BeEquivalentTo(2048))
-	Expect(notif.State.Statistics.OutBytes).Should(BeEquivalentTo(20480))
+	outPackets += notif.GetState().GetStatistics().GetOutPackets()
+	outBytes += notif.GetState().GetStatistics().GetOutBytes()
+
+	// NOTE: Notifications from publishChan cannot gurantee
+	// to be in same order as the ones going into notifChan.
+	Expect(outPackets).Should(BeEquivalentTo(3000))
+	Expect(outBytes).Should(BeEquivalentTo(8000))
 }
 
 // Test SwInterfaceDetails notification
