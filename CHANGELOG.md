@@ -18,7 +18,10 @@
 - [GRPC](plugins/defaultplugins/rpc) 
   * Vpp-agent itself can act as a GRPC server (no need for external executable)
   * All configuration types are supported (incl. linux interfaces, routes and ARP)
-  * Client can read VPP notifications via vpp-agent.      
+  * Client can read VPP notifications via vpp-agent.
+- [SR plugin](plugins/vpp/srplugin)
+  * New plugin with support for Segment Routing.
+    More information in the [readme](plugins/vpp/srplugin/README.md).
 
 ## Improvements
 - [ifplugin](plugins/defaultplugins/ifplugin) 
@@ -36,7 +39,6 @@
 - [localclient_linux](examples/localclient_linux) now contains two examples, the old one demonstrating 
   [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
   [tap](examples/localclient_linux/tap) was added.
-
 
 ## Bugfix
   * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
