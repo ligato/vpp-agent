@@ -1,11 +1,11 @@
-VERSION	:= $(shell git describe --always --tags --dirty)
-COMMIT	:= $(shell git rev-parse HEAD)
+VERSION	?= $(shell git describe --always --tags --dirty)
+COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
 LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
 
-ifeq ($(STRIP), y)
+ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
@@ -134,26 +134,36 @@ test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
 	@echo "=> coverage report generated into ${COVER_DIR}coverage.xml"
 
-# Get generator tools
-get-generators:
-	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
-	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install -v ./vendor/github.com/ungerik/pkgreflect
+# Code generation
+generate: generate-proto generate-binapi
 
-# Generate sources
-generate: get-generators
-	@echo "=> generating sources"
-	cd plugins/linux && go generate
+# Get generator tools
+get-proto-generators:
+	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+
+# Generate proto models
+generate-proto: get-proto-generators
+	@echo "=> generating proto"
+	cd plugins/linux/ifplugin && go generate
+	cd plugins/linux/l3plugin && go generate
 	cd plugins/vpp/aclplugin && go generate
 	cd plugins/vpp/ifplugin && go generate
 	cd plugins/vpp/ipsecplugin && go generate
 	cd plugins/vpp/l2plugin && go generate
 	cd plugins/vpp/l3plugin && go generate
 	cd plugins/vpp/l4plugin && go generate
-	cd plugins/vpp/srplugin && go generate
 	cd plugins/vpp/rpc && go generate
-	cd plugins/linux/ifplugin && go generate
-	cd plugins/linux/l3plugin && go generate
+	cd plugins/vpp/srplugin && go generate
+
+# Get generator tools
+get-binapi-generators:
+	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	go install -v ./vendor/github.com/ungerik/pkgreflect
+
+# Generate binary api
+generate-binapi: get-binapi-generators
+	@echo "=> generating binapi"
+	cd plugins/vpp/binapi && go generate
 	cd plugins/vpp/binapi/acl && pkgreflect
 	cd plugins/vpp/binapi/af_packet && pkgreflect
 	cd plugins/vpp/binapi/bfd && pkgreflect
@@ -165,13 +175,15 @@ generate: get-generators
 	cd plugins/vpp/binapi/memif && pkgreflect
 	cd plugins/vpp/binapi/nat && pkgreflect
 	cd plugins/vpp/binapi/session && pkgreflect
+	cd plugins/vpp/binapi/sr && pkgreflect
 	cd plugins/vpp/binapi/stats && pkgreflect
 	cd plugins/vpp/binapi/stn && pkgreflect
 	cd plugins/vpp/binapi/tap && pkgreflect
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	cd plugins/vpp/common/bin_api/sr && pkgreflect
+	@echo "=> applying patches"
+	git apply -v ./plugins/vpp/binapi/patches/*.diff
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...

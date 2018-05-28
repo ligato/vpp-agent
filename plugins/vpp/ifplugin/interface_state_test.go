@@ -23,14 +23,14 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"net"
 	"testing"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 )
 
 func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan govppapi.Message, chan *intf.InterfaceNotification, error) {

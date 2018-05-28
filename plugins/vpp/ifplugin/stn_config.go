@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/stn --gogo_out=../common/model/stn ../common/model/stn/stn.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/stn.api.json --output-dir=../common/bin_api
-
 package ifplugin
 
 import (

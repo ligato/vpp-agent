@@ -1,4 +1,5 @@
-FROM ubuntu:16.04
+ARG BASE_IMG=ubuntu:16.04
+FROM ${BASE_IMG}
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -10,7 +11,6 @@ RUN apt-get update \
  && apt-get remove -y --purge gcc \
  && rm -rf /var/lib/apt/lists/*
 
-
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test \
  && apt-get update \
  && apt-get install -y gcc-7 g++-7 \
@@ -19,14 +19,26 @@ RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test \
  && ln -s g++-7 g++ \
  && rm -rf /var/lib/apt/lists/*
 
+# build & install Protobuf
+RUN git clone --depth=1 https://github.com/google/protobuf.git \
+ && cd protobuf \
+ && ./autogen.sh \
+ && ./configure \
+ && make -j4 \
+ && make install \
+ && ldconfig \
+ && cd .. \
+ && rm -rf protobuf
+
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
 
 ARG VPP_COMMIT
+ARG VPP_REPO_URL
 
 RUN /bin/bash -c "\
-    git clone https://github.com/ligato/vpp.git \
+    git clone ${VPP_REPO_URL} \
     && cd vpp \
     && git checkout ${VPP_COMMIT} \
     && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"
@@ -45,41 +57,44 @@ RUN /bin/bash -c "\
     dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb;"
 
 # install Go
-ENV GOLANG_VERSION 1.10
-RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" \
+ENV GOLANG_VERSION 1.10.2
+ARG GOLANG_OS_ARCH=linux-amd64
+RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
  && rm go.tgz
 
-ENV PATH /usr/local/go/bin:$PATH
-
-# build & install Protobuf & gogo protobuf compiler
-RUN git clone https://github.com/google/protobuf.git \
- && cd protobuf \
- && ./autogen.sh \
- && ./configure \
- && make -j4 \
- && make install \
- && ldconfig \
- && cd .. \
- && rm -rf protobuf
-
-ARG AGENT_COMMIT
-
-# copy and execute agent build script
-COPY build-agent.sh .
-RUN ./build-agent.sh ${AGENT_COMMIT}
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
+ && chmod -R 777 "$GOPATH"
 
 # copy configs
-COPY etcd.conf kafka.conf govpp.conf vppplugin.conf linuxplugin.conf logs.conf ./
-COPY vpp.conf /etc/vpp/vpp.conf
-COPY supervisord.conf /etc/supervisord/supervisord.conf
+COPY \
+    docker/dev/etcd.conf \
+    docker/dev/kafka.conf \
+    docker/dev/govpp.conf \
+    docker/dev/vppplugin.conf \
+    docker/dev/linuxplugin.conf \
+    docker/dev/logs.conf \
+ ./
+COPY docker/dev/vpp.conf /etc/vpp/vpp.conf
+COPY docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
 
 # copy scripts
-COPY runvpp.sh /usr/bin/runvpp
-COPY agent_start.py /usr/bin/agent_start.py
-COPY supervisord_kill.py /usr/bin/supervisord_kill.py
+COPY docker/dev/runvpp.sh /usr/bin/runvpp
+COPY docker/dev/agent_start.py /usr/bin/agent_start.py
+COPY docker/dev/supervisord_kill.py /usr/bin/supervisord_kill.py
 
-WORKDIR /root/
+ARG VERSION
+ARG COMMIT
+
+# copy & build agent
+COPY . $GOPATH/src/github.com/ligato/vpp-agent
+
+RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
+ && VERSION=$VERSION COMMIT=$COMMIT make install
+
+WORKDIR /
 
 # start agent
 ENV START_AGENT "True"

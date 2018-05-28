@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/acl --gogo_out=../common/model/acl ../common/model/acl/acl.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=../common/bin_api
-
 // Package aclplugin implements the ACL Plugin that handles management of VPP
 // Access lists.
 package aclplugin
