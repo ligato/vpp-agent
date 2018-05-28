@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:generate protoc --proto_path=../common/model/l3 --gogo_out=../common/model/l3 ../common/model/l3/l3.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=../common/bin_api
 
 // Package l3plugin implements the L3 plugin that handles L3 FIBs.
 package l3plugin

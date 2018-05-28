@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/ipsec --gogo_out=../common/model/ipsec ../common/model/ipsec/ipsec.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/ipsec.api.json --output-dir=../common/bin_api
-
 // Package ipsecplugin implements the IPSec plugin that handles management of IPSec for VPP.
 package ipsecplugin
 

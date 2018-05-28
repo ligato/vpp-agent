@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/l2 --gogo_out=../common/model/l2 ../common/model/l2/l2.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/l2.api.json --output-dir=../common/bin_api
-
 // Package l2plugin implements the L2 plugin that handles Bridge Domains and L2 FIBs.
 package l2plugin
 

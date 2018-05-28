@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/acl --gogo_out=../common/model/acl ../common/model/acl/acl.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/acl.api.json --output-dir=../common/bin_api
-
 // Package aclplugin implements the ACL Plugin that handles management of VPP
 // Access lists.
 package aclplugin
@@ -349,7 +347,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 
 // DumpACL returns all configured ACLs in proto format
 func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := vppdump.DumpACLs(plugin.log, plugin.ifIndexes, plugin.vppDumpChan, plugin.stopwatch)
+	aclsWithIndex, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
 	if err != nil {
 		plugin.log.Error(err)
 		return nil, err

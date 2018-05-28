@@ -1,9 +1,5 @@
 FROM dev_vpp_agent as devimg
 
-RUN /bin/bash -c "\
-    cd /root/go/src/github.com/ligato/vpp-agent \
-    && make STRIP=y install"
-
 FROM ubuntu:16.04
 
 RUN apt-get update \
@@ -28,9 +24,9 @@ RUN cd /opt/vpp/ && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb
 
 # install agent
 COPY --from=devimg \
-    /root/go/bin/vpp-agent \
-    /root/go/bin/vpp-agent-ctl \
-    /root/go/bin/agentctl \
+    /go/bin/vpp-agent \
+    /go/bin/vpp-agent-ctl \
+    /go/bin/agentctl \
  /bin/
 
 # copy configs

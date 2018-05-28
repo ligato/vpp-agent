@@ -1,0 +1,32 @@
+diff --git b/plugins/vpp/binapi/sr/sr.go a/plugins/vpp/binapi/sr/sr.go
+index 8c53ba71..ab073f8c 100644
+--- b/plugins/vpp/binapi/sr/sr.go
++++ a/plugins/vpp/binapi/sr/sr.go
+@@ -176,8 +176,8 @@ type SrPolicyAdd struct {
+ 	IsEncap   uint8
+ 	Type      uint8
+ 	FibTable  uint32
+-	NSegments uint8
+-	Segments  []byte
++	NSegments uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
++	Segments  []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+ }
+ 
+ func (*SrPolicyAdd) GetMessageName() string {
+@@ -291,8 +291,8 @@ type SrPolicyMod struct {
+ 	Operation     uint8
+ 	SlIndex       uint32
+ 	Weight        uint32
+-	NSegments     uint8
+-	Segments      []byte
++	NSegments     uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
++	Segments      []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+ }
+ 
+ func (*SrPolicyMod) GetMessageName() string {
+@@ -722,3 +722,5 @@ func (*SrLocalsidsDetails) GetCrcString() string {
+ func NewSrLocalsidsDetails() api.Message {
+ 	return &SrLocalsidsDetails{}
+ }
++
++type IPv6type struct{ Value [16]byte } // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)

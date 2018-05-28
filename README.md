@@ -107,7 +107,7 @@ docker exec -it vpp vppctl -s localhost:5002
 GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 
 ## Next Steps
-Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
+Read the README for the [Development Docker Image](docker/dev/README.md) for more details.
 
 #### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
@@ -132,5 +132,5 @@ If you are interested in contributing, please see the [contribution guidelines](
 [12]: https://github.com/ligato/cn-infra/tree/master/datasync
 [13]: https://github.com/ligato/cn-infra/tree/master/core
 [14]: https://hub.docker.com/r/ligato/vpp-agent/
-[15]: docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host
+[15]: docker/dev/README.md#running-etcd-server-on-local-host
 [16]: https://github.com/ligato/cn-infra

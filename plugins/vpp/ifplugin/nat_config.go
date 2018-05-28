@@ -14,8 +14,6 @@
 
 //go:generate protoc --proto_path=../common/model/nat --gogo_out=../common/model/nat ../common/model/nat/nat.proto
 
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/nat.api.json --output-dir=../common/bin_api
-
 package ifplugin
 
 import (

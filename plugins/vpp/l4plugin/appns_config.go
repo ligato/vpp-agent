@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:generate protoc --proto_path=../common/model/l4 --gogo_out=../common/model/l4 ../common/model/l4/l4.proto
-//go:generate binapi-generator --input-file=/usr/share/vpp/api/session.api.json --output-dir=../common/bin_api
 
 package l4plugin
 
