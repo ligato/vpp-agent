@@ -17,7 +17,7 @@ go run main.go
 
 Several flags can be set:
 * `-address=<address>` - for grpc server address/socket-file (otherwise localhost will be used)
-* `-socket-type=<type>` - required socket type (tcp, tcp4, tcp6, unix, unixpacket)
+* `-socket-type=<type>` - options are tcp, tcp4, tcp6, unix or unixpacket. Defaults to tcp if not set
 * `request-period=<time_in_sec>` - time between grpc requests
 
 The example prints all received VPP notifications.
