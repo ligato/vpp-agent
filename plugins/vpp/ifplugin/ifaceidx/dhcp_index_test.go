@@ -38,7 +38,7 @@ func dhcpTestInitialization(t *testing.T) (idxvpp.NameToIdxRW, ifaceidx.DhcpInde
 	}
 
 	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "testName", "dhcp_index_test", ifaceidx.IndexDHCPMetadata)
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "dhcp_index_test", ifaceidx.IndexDHCPMetadata)
 	index := ifaceidx.NewDHCPIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 
@@ -98,7 +98,7 @@ func TestDHCPLookupByIndex(t *testing.T) {
 
 	foundIdx, metadata, exist := index.LookupIdx("dhcp0")
 	Expect(exist).To(BeTrue())
-	Expect(foundIdx).To(Equal(0))
+	Expect(foundIdx).To(Equal(uint32(0)))
 	Expect(metadata).To(Equal(dhcp.Settings))
 }
 

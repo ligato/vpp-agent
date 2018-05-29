@@ -11,7 +11,7 @@ ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
-COVER_DIR ?= /tmp/
+COVER_DIR ?= /tmp
 
 # Build all
 build: cmd examples
@@ -69,22 +69,24 @@ clean-examples:
 
 # Run tests
 test:
-	@echo "=> running scenario tests"
-	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	@echo "=> running unit tests"
-	go test ./cmd/agentctl/utils
-	go test ./idxvpp/nametoidx
-	go test ./plugins/vpp/aclplugin/vppdump
-	go test ./plugins/vpp/ifplugin
-	go test ./plugins/vpp/ifplugin/vppcalls
-	go test ./plugins/vpp/ifplugin/vppdump
-	go test ./plugins/vpp/l2plugin
-	go test ./plugins/vpp/l2plugin/l2idx
-	go test ./plugins/vpp/l2plugin/vppcalls
-	go test ./plugins/vpp/l2plugin/vppdump
-	go test ./plugins/vpp/rpc
-	go test ./plugins/vpp/srplugin
-	go test ./plugins/vpp/srplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
+	go test -tags="${GO_BUILD_TAGS}" ./cmd/agentctl/utils
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/govppmux/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./idxvpp/nametoidx
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/ifaceidx
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/l2idx
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/rpc
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin
+	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin/vppcalls
 
 # Get coverage report tools
 get-covtools:
@@ -92,49 +94,53 @@ get-covtools:
 
 # Run coverage report
 test-cover: get-covtools
-	@echo "=> running unit tests with coverage analysis"
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppcalls.out ./plugins/vpp/aclplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/vpp/aclplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/vpp/ifplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/vpp/ifplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/vpp/ifplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/vpp/l2plugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/vpp/l2plugin/l2idx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/vpp/l2plugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/vpp/l2plugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/vpp/rpc
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin/vppcalls
+	@echo "=> running unit tests with coverage"
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/scenario.cov 				./tests/go/itest
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/agentctl_utils.cov 		./cmd/agentctl/utils
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/govpp_vppcalls.cov			./plugins/govppmux/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/idxvpp_nametoidx.cov 		./idxvpp/nametoidx
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppcalls.cov	./plugins/vpp/aclplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppdump.cov	./plugins/vpp/aclplugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin.cov 			./plugins/vpp/ifplugin
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_ifaceidx.cov 	./plugins/vpp/ifplugin/ifaceidx
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_vppcalls.cov 	./plugins/vpp/ifplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_vppdump.cov 	./plugins/vpp/ifplugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin.cov 			./plugins/vpp/l2plugin
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_l2idx.cov 	./plugins/vpp/l2plugin/l2idx
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_vppcalls.cov 	./plugins/vpp/l2plugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_vppdump.cov 	./plugins/vpp/l2plugin/vppdump
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_rpc.cov 				./plugins/vpp/rpc
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_srplugin.cov 			./plugins/vpp/srplugin
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_srplugin_vppcalls.cov	./plugins/vpp/srplugin/vppcalls
 	@echo "=> merging coverage results"
 	gocovmerge \
-			${COVER_DIR}coverage_scenario.out \
-			${COVER_DIR}coverage_unit1.out \
-			${COVER_DIR}coverage_unit2.out \
-			${COVER_DIR}coverage_aclplugin_vppcalls.out  \
-			${COVER_DIR}coverage_aclplugin_vppdump.out  \
-			${COVER_DIR}coverage_ifplugin.out \
-			${COVER_DIR}coverage_ifplugin_vppcalls.out \
-			${COVER_DIR}coverage_ifplugin_vppdump.out \
-			${COVER_DIR}coverage_l2plugin.out \
-			${COVER_DIR}coverage_l2plugin_l2idx.out \
-			${COVER_DIR}coverage_l2plugin_vppcalls.out \
-			${COVER_DIR}coverage_l2plugin_vppdump.out  \
-			${COVER_DIR}coverage_rpc.out  \
-			${COVER_DIR}coverage_srplugin.out  \
-			${COVER_DIR}coverage_srplugin_vppcalls.out  \
-		> ${COVER_DIR}coverage.out
-	@echo "=> coverage data generated into ${COVER_DIR}coverage.out"
+			${COVER_DIR}/scenario.cov \
+			${COVER_DIR}/agentctl_utils.cov \
+			${COVER_DIR}/idxvpp_nametoidx.cov \
+			${COVER_DIR}/govpp_vppcalls.cov \
+			${COVER_DIR}/vpp_aclplugin_vppcalls.cov \
+			${COVER_DIR}/vpp_aclplugin_vppdump.cov \
+			${COVER_DIR}/vpp_ifplugin.cov \
+			${COVER_DIR}/vpp_ifplugin_ifaceidx.cov \
+			${COVER_DIR}/vpp_ifplugin_vppcalls.cov \
+			${COVER_DIR}/vpp_ifplugin_vppdump.cov \
+			${COVER_DIR}/vpp_l2plugin.cov \
+			${COVER_DIR}/vpp_l2plugin_l2idx.cov \
+			${COVER_DIR}/vpp_l2plugin_vppcalls.cov \
+			${COVER_DIR}/vpp_l2plugin_vppdump.cov \
+			${COVER_DIR}/vpp_rpc.cov \
+			${COVER_DIR}/vpp_srplugin.cov \
+			${COVER_DIR}/vpp_srplugin_vppcalls.cov \
+		> ${COVER_DIR}/coverage.out
+	@echo "=> coverage data generated into ${COVER_DIR}/coverage.out"
 
 test-cover-html: test-cover
-	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.html"
+	go tool cover -html=${COVER_DIR}/coverage.out -o ${COVER_DIR}/coverage.html
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.html"
 
 test-cover-xml: test-cover
-	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.xml"
+	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
 # Code generation
 generate: generate-proto generate-binapi
