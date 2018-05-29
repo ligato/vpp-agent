@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // VersionInfo contains values returned from ShowVersion
@@ -148,8 +148,7 @@ type NodeCounter struct {
 
 var (
 	// Regular expression to parse output from `show node counters`
-	nodeCountersRe = regexp.MustCompile(
-		`^\s+(\d+)\s+([\w-]+)\s+([\w- ]+)$`)
+	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+([\w- ]+)$`)
 )
 
 // GetNodeCounters retrieves node counters info

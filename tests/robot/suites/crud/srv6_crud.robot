@@ -18,6 +18,7 @@ ${VARIABLES}=          common
 ${ENV}=                common
 ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
+${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
 @{segmentList1}    B::    C::    D::
@@ -86,6 +87,19 @@ Check delayed configuration
     vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=A::E            fibtable=0           behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1}
     vpp_ctl: Delete SRv6 Steering               node=agent_vpp_1    name=toE             #cleanup
     vpp_ctl: Delete SRv6 Policy                 node=agent_vpp_1    name=AtoE            #cleanup
+
+Check Resynchronization for clean VPP start
+    vpp_ctl: Put Local SID                      node=agent_vpp_1    localsidName=A       sidAddress=A::               fibtable=0                 outinterface=vpp1_afpacket1    nexthop=A::1
+    vpp_ctl: Put SRv6 Policy                    node=agent_vpp_1    name=AtoE            bsid=A::E                    fibtable=0                 srhEncapsulation=true    sprayBehaviour=true
+    vpp_ctl: Put SRv6 Policy Segment            node=agent_vpp_1    name=firstSegment    policyName=AtoE              policyBSID=A::E            weight=1                 segmentlist=${segmentList1}
+    vpp_ctl: Put SRv6 Steering                  node=agent_vpp_1    name=toE             bsid=A::E                    fibtable=0                 prefixAddress=E::/64
+    Remove All VPP Nodes
+    Sleep                                       ${SYNC_SLEEP}
+    Add Agent VPP Node                          agent_vpp_1
+    Sleep                                       ${RESYNC_WAIT}
+    vpp_term: Check Local SID Presence          node=agent_vpp_1    sidAddress=A::       interface=host-vpp1_veth2    nexthop=A::1
+    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=A::E            fibtable=0                   behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1}
+    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=A::E            prefixAddress=E::/64
 
 *** Keywords ***
 TestSetup

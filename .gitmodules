@@ -1,3 +1,0 @@
-[submodule "vpp"]
-	path = vpp
-	url = https://github.com/ligato/vpp.git
