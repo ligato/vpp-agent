@@ -70,68 +70,12 @@ clean-examples:
 # Run tests
 test:
 	@echo "=> running unit tests"
-	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	go test -tags="${GO_BUILD_TAGS}" ./cmd/agentctl/utils
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/govppmux/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./idxvpp/nametoidx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/ifaceidx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/l2idx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/rpc
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin/vppcalls
-
-# Get coverage report tools
-get-covtools:
-	go get -v github.com/wadey/gocovmerge
+	go test -tags="${GO_BUILD_TAGS}" ./...
 
 # Run coverage report
-test-cover: get-covtools
+test-cover:
 	@echo "=> running unit tests with coverage"
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/scenario.cov 				./tests/go/itest
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/agentctl_utils.cov 		./cmd/agentctl/utils
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/govpp_vppcalls.cov			./plugins/govppmux/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/idxvpp_nametoidx.cov 		./idxvpp/nametoidx
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppcalls.cov	./plugins/vpp/aclplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppdump.cov	./plugins/vpp/aclplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin.cov 			./plugins/vpp/ifplugin
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_ifaceidx.cov 	./plugins/vpp/ifplugin/ifaceidx
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_vppcalls.cov 	./plugins/vpp/ifplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin_vppdump.cov 	./plugins/vpp/ifplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin.cov 			./plugins/vpp/l2plugin
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_l2idx.cov 	./plugins/vpp/l2plugin/l2idx
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_vppcalls.cov 	./plugins/vpp/l2plugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_l2plugin_vppdump.cov 	./plugins/vpp/l2plugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_rpc.cov 				./plugins/vpp/rpc
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_srplugin.cov 			./plugins/vpp/srplugin
-	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_srplugin_vppcalls.cov	./plugins/vpp/srplugin/vppcalls
-	@echo "=> merging coverage results"
-	gocovmerge \
-			${COVER_DIR}/scenario.cov \
-			${COVER_DIR}/agentctl_utils.cov \
-			${COVER_DIR}/idxvpp_nametoidx.cov \
-			${COVER_DIR}/govpp_vppcalls.cov \
-			${COVER_DIR}/vpp_aclplugin_vppcalls.cov \
-			${COVER_DIR}/vpp_aclplugin_vppdump.cov \
-			${COVER_DIR}/vpp_ifplugin.cov \
-			${COVER_DIR}/vpp_ifplugin_ifaceidx.cov \
-			${COVER_DIR}/vpp_ifplugin_vppcalls.cov \
-			${COVER_DIR}/vpp_ifplugin_vppdump.cov \
-			${COVER_DIR}/vpp_l2plugin.cov \
-			${COVER_DIR}/vpp_l2plugin_l2idx.cov \
-			${COVER_DIR}/vpp_l2plugin_vppcalls.cov \
-			${COVER_DIR}/vpp_l2plugin_vppdump.cov \
-			${COVER_DIR}/vpp_rpc.cov \
-			${COVER_DIR}/vpp_srplugin.cov \
-			${COVER_DIR}/vpp_srplugin_vppcalls.cov \
-		> ${COVER_DIR}/coverage.out
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/coverage.out ./...
 	@echo "=> coverage data generated into ${COVER_DIR}/coverage.out"
 
 test-cover-html: test-cover
@@ -214,12 +158,16 @@ get-dep:
 # Install the project's dependencies
 dep-install: get-dep
 	@echo "=> installing project's dependencies"
-	dep ensure
+	dep ensure -v
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
 	@echo "=> updating all dependencies"
 	dep ensure -update
+
+# Check state of dependencies
+dep-check: get-dep
+	dep ensure -dry-run -no-vendor
 
 # Get linter tools
 get-linters:
@@ -248,8 +196,8 @@ check-links: get-linkcheck
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
-	get-covtools test-cover test-cover-html test-cover-xml \
+	test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
-	get-dep dep-install dep-update \
+	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links
