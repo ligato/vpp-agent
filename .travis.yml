@@ -25,12 +25,14 @@ env:
 before_install:
   - make get-linkcheck
   - make get-linters
+  - make get-dep
   - go get github.com/mattn/goveralls
 
 script:
   - make check-links
   - make lint
   - make verify-binapi
+  - make dep-check
   - make
   - make test-cover
 

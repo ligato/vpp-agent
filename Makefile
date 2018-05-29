@@ -158,12 +158,16 @@ get-dep:
 # Install the project's dependencies
 dep-install: get-dep
 	@echo "=> installing project's dependencies"
-	dep ensure
+	dep ensure -v
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
 	@echo "=> updating all dependencies"
 	dep ensure -update
+
+# Check state of dependencies
+dep-check: get-dep
+	dep ensure -dry-run -no-vendor
 
 # Get linter tools
 get-linters:
@@ -192,8 +196,8 @@ check-links: get-linkcheck
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
-	get-covtools test-cover test-cover-html test-cover-xml \
+	test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
-	get-dep dep-install dep-update \
+	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links
