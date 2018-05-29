@@ -1,3 +1,5 @@
+include vpp.env
+
 VERSION	?= $(shell git describe --always --tags --dirty)
 COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
@@ -182,8 +184,15 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	@echo "=> applying patches"
-	git apply -v ./plugins/vpp/binapi/patches/*.diff
+	@echo "=> applying fix patch"
+	patch -p1 -i plugins/vpp/binapi/fixapi.patch
+
+verify-binapi:
+	@echo "=> verifying binary api"
+	cd docker/dev && docker build --file Dockerfile --target verify \
+			--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
+			--build-arg VPP_COMMIT=${VPP_COMMIT} \
+	 	../..
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
@@ -234,7 +243,7 @@ check-links: get-linkcheck
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	get-covtools test-cover test-cover-html test-cover-xml \
-	get-generators generate \
+	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
 	get-dep dep-install dep-update \
 	get-linters lint format \
 	get-linkcheck check-links
