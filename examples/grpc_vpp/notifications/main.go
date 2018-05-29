@@ -19,6 +19,9 @@ import (
 	"os"
 	"time"
 
+	"fmt"
+	"net"
+
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
@@ -31,12 +34,14 @@ import (
 
 const (
 	defaultAddress = "localhost:9111"
+	defaultSocket  = "tcp"
 	requestPeriod  = 3
 )
 
 var (
-	address = defaultAddress
-	reqPer  = requestPeriod
+	address    = defaultAddress
+	socketType string
+	reqPer     = requestPeriod
 )
 
 // init sets the default logging level
@@ -51,6 +56,7 @@ func main() {
 	closeChannel := make(chan struct{}, 1)
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
+	flag.StringVar(&socketType, "socket-type", defaultSocket, "[tcp, tcp4, tcp6, unix, unixpacket]")
 	flag.IntVar(&reqPer, "request-period", requestPeriod, "notification request period in seconds")
 
 	// Example plugin
@@ -71,7 +77,14 @@ type ExamplePlugin struct {
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Set up connection to the server.
-	plugin.conn, err = grpc.Dial(address, grpc.WithInsecure())
+	switch socketType {
+	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
+		plugin.conn, err = grpc.Dial("unix", grpc.WithInsecure(),
+			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
+	default:
+		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -131,5 +144,15 @@ func (plugin *ExamplePlugin) watchNotifications() {
 
 		// Wait till next request
 		time.Sleep(time.Duration(reqPer) * time.Second)
+	}
+}
+
+// Dialer for unix domain socket
+func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
+	return func(addr string, timeout time.Duration) (net.Conn, error) {
+		// Pass values
+		addr, timeout = address, timeoutVal
+		// Dial with timeout
+		return net.DialTimeout(socket, addr, timeoutVal)
 	}
 }
