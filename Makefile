@@ -70,23 +70,7 @@ clean-examples:
 # Run tests
 test:
 	@echo "=> running unit tests"
-	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	go test -tags="${GO_BUILD_TAGS}" ./cmd/agentctl/utils
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/govppmux/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./idxvpp/nametoidx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/aclplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/ifaceidx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/ifplugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/l2idx
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppcalls
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/l2plugin/vppdump
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/rpc
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin
-	go test -tags="${GO_BUILD_TAGS}" ./plugins/vpp/srplugin/vppcalls
+	go test -tags="${GO_BUILD_TAGS}" ./...
 
 # Get coverage report tools
 get-covtools:
@@ -99,6 +83,7 @@ test-cover: get-covtools
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/agentctl_utils.cov 		./cmd/agentctl/utils
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/govpp_vppcalls.cov			./plugins/govppmux/vppcalls
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/idxvpp_nametoidx.cov 		./idxvpp/nametoidx
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin.cov			./plugins/vpp/aclplugin
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppcalls.cov	./plugins/vpp/aclplugin/vppcalls
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_aclplugin_vppdump.cov	./plugins/vpp/aclplugin/vppdump
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/vpp_ifplugin.cov 			./plugins/vpp/ifplugin
@@ -118,6 +103,7 @@ test-cover: get-covtools
 			${COVER_DIR}/agentctl_utils.cov \
 			${COVER_DIR}/idxvpp_nametoidx.cov \
 			${COVER_DIR}/govpp_vppcalls.cov \
+			${COVER_DIR}/vpp_aclplugin.cov \
 			${COVER_DIR}/vpp_aclplugin_vppcalls.cov \
 			${COVER_DIR}/vpp_aclplugin_vppdump.cov \
 			${COVER_DIR}/vpp_ifplugin.cov \

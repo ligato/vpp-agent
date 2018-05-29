@@ -52,7 +52,7 @@ func TestDiffInterfaces(t *testing.T) {
 	} {
 		added, removed := diffInterfaces(test.oldIfaces, test.newIfaces)
 
-		Expect(added).To(Equal(test.expectAdded))
-		Expect(removed).To(Equal(test.expectRemoved))
+		Expect(added).To(ConsistOf(test.expectAdded))
+		Expect(removed).To(ConsistOf(test.expectRemoved))
 	}
 }
