@@ -61,8 +61,8 @@ type ACLConfigurator struct {
 	l2AclIndexes   aclidx.AclIndexRW
 	l3l4AclIndexes aclidx.AclIndexRW
 
-	// Interface cache
-	ifCache []*ACLIfCacheEntry // cache for ACL un-configured interfaces
+	// Cache for ACL un-configured interfaces
+	ifCache []*ACLIfCacheEntry
 
 	// VPP binary api call helper
 	vppCalls *vppcalls.ACLInterfacesVppCalls
@@ -71,7 +71,8 @@ type ACLConfigurator struct {
 	vppChan     *api.Channel
 	vppDumpChan *api.Channel
 
-	stopwatch *measure.Stopwatch // timer used to measure and store time
+	// Timer used to measure and store time
+	stopwatch *measure.Stopwatch
 }
 
 // Init goroutines, channels and mappings.

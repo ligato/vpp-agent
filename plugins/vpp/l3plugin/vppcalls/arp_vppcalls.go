@@ -25,6 +25,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
+// ArpMessages is list of used VPP messages for compatibility check
+var ArpMessages = []govppapi.Message{
+	&ip.IPNeighborAddDel{},
+	&ip.IPNeighborAddDelReply{},
+}
+
 // ArpEntry represents ARP entry for interface
 type ArpEntry struct {
 	Interface  uint32

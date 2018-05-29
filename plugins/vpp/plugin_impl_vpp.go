@@ -37,7 +37,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -49,10 +48,10 @@ import (
 	"github.com/namsral/flag"
 )
 
-// defaultpluigns specific flags
+// vpp-plugin specific flags
 var (
 	// skip resync flag
-	skipResyncFlag = flag.Bool("skip-vpp-resync", false, "Skip vppplugin resync with VPP")
+	skipResyncFlag = flag.Bool("skip-vpp-resync", false, "Skip vpp-plugin resync")
 )
 
 var (
@@ -65,7 +64,7 @@ var (
 	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
 )
 
-// VPP resync strategy. Can be set in vppplugin.conf. If no strategy is set, the default behavior is defined by 'fullResync'
+// VPP resync strategy. Can be set in vpp-plugin.conf. If no strategy is set, the default behavior is defined by 'fullResync'
 const (
 	// fullResync calls the full resync for every default plugin
 	fullResync = "full"
@@ -81,72 +80,45 @@ const (
 type Plugin struct {
 	Deps
 
-	// ACL plugin fields
-	aclConfigurator *aclplugin.ACLConfigurator
-
-	// Interface plugin fields
+	// Configurators
+	aclConfigurator      *aclplugin.ACLConfigurator
 	ifConfigurator       *ifplugin.InterfaceConfigurator
-	swIfIndexes          ifaceidx.SwIfIndexRW
-	linuxIfIndexes       ifaceLinux.LinuxIfIndex
-	ifStateUpdater       *ifplugin.InterfaceStateUpdater
-	ifVppNotifChan       chan govppapi.Message
-	ifStateChan          chan *intf.InterfaceNotification
-	ifStateNotifications messaging.ProtoPublisher
-	ifIdxWatchCh         chan ifaceidx.SwIfIdxDto
-	linuxIfIdxWatchCh    chan ifaceLinux.LinuxIfIndexDto
+	bfdConfigurator      *ifplugin.BFDConfigurator
+	natConfigurator      *ifplugin.NatConfigurator
 	stnConfigurator      *ifplugin.StnConfigurator
+	ipSecConfigurator    *ipsecplugin.IPSecConfigurator
+	bdConfigurator       *l2plugin.BDConfigurator
+	fibConfigurator      *l2plugin.FIBConfigurator
+	xcConfigurator       *l2plugin.XConnectConfigurator
+	arpConfigurator      *l3plugin.ArpConfigurator
+	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
+	routeConfigurator    *l3plugin.RouteConfigurator
+	appNsConfigurator    *l4plugin.AppNsConfigurator
+	srv6Configurator     *srplugin.SRv6Configurator
 
-	// IPSec plugin fields
-	ipsecConfigurator *ipsecplugin.IPSecConfigurator
+	// State updaters
+	ifStateUpdater *ifplugin.InterfaceStateUpdater
+	bdStateUpdater *l2plugin.BridgeDomainStateUpdater
 
-	// Bridge domain fields
-	bdConfigurator    *l2plugin.BDConfigurator
-	bdIndexes         l2idx.BDIndexRW
-	ifToBdDesIndexes  idxvpp.NameToIdxRW
-	ifToBdRealIndexes idxvpp.NameToIdxRW
-	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
-	bdStateUpdater    *l2plugin.BridgeDomainStateUpdater
+	// Shared indexes
+	swIfIndexes    ifaceidx.SwIfIndexRW
+	linuxIfIndexes ifaceLinux.LinuxIfIndex
+	bdIndexes      l2idx.BDIndexRW
+	errorIndexes   idxvpp.NameToIdxRW
+	errorIdxSeq    uint32
+
+	// Channels (watch, notification, ...) which should be closed
+	ifStateChan       chan *intf.InterfaceNotification
+	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
+	ifVppNotifChan    chan govppapi.Message
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
 	bdIdxWatchCh      chan l2idx.BdChangeDto
+	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
+	linuxIfIdxWatchCh chan ifaceLinux.LinuxIfIndexDto
+	errorChannel      chan ErrCtx
 
-	// Bidirectional forwarding detection fields
-	bfdConfigurator *ifplugin.BFDConfigurator
-
-	// Forwarding information base fields
-	fibConfigurator *l2plugin.FIBConfigurator
-	fibIndexes      l2idx.FIBIndexRW
-
-	// xConnect fields
-	xcConfigurator *l2plugin.XConnectConfigurator
-
-	// NAT fields
-	natConfigurator *ifplugin.NatConfigurator
-
-	// L3 route fields
-	routeConfigurator *l3plugin.RouteConfigurator
-	routeIndexes      l3idx.RouteIndexRW
-
-	// L3 arp fields
-	arpConfigurator *l3plugin.ArpConfigurator
-	arpIndexes      l3idx.ARPIndexRW
-
-	// L3 proxy arp fields
-	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
-	proxyArpIfIndices    idxvpp.NameToIdxRW
-	proxyArpRngIndices   idxvpp.NameToIdxRW
-
-	// L4 fields
-	l4Configurator      *l4plugin.L4Configurator
-	namespaceIndexes    nsidx.AppNsIndexRW
-	notConfAppNsIndexes nsidx.AppNsIndexRW
-
-	// SR plugin fields
-	srv6Configurator *srplugin.SRv6Configurator
-
-	// Error handler
-	errorIndexes idxvpp.NameToIdxRW
-	errorChannel chan ErrCtx
-	errorIdxSeq  uint32
+	// Publishers
+	ifStateNotifications messaging.ProtoPublisher
 
 	// Resync
 	resyncConfigChan chan datasync.ResyncEvent
@@ -157,14 +129,14 @@ type Plugin struct {
 	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
-	ifMtu          uint32
-	resyncStrategy string
+	ifMtu           uint32
+	resyncStrategy  string
+	enableStopwatch bool
 
 	// Common
-	enableStopwatch bool
-	statusCheckReg  bool
-	cancel          context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg              sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	statusCheckReg bool
+	cancel         context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
+	wg             sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
 // Deps groups injected dependencies of plugin so that they do not mix with
@@ -185,19 +157,19 @@ type Deps struct {
 	WatchEventsMutex *sync.Mutex
 }
 
+// PluginConfig holds the vpp-plugin configuration.
+type PluginConfig struct {
+	Mtu              uint32   `json:"mtu"`
+	Stopwatch        bool     `json:"stopwatch"`
+	Strategy         string   `json:"strategy"`
+	StatusPublishers []string `json:"status-publishers"`
+}
+
 type linuxpluginAPI interface {
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
 	GetLinuxIfIndexes() ifaceLinux.LinuxIfIndex
-}
-
-// DPConfig holds the defaultpluigns configuration.
-type DPConfig struct {
-	Mtu              uint32   `json:"mtu"`
-	Stopwatch        bool     `json:"stopwatch"`
-	Strategy         string   `json:"strategy"`
-	StatusPublishers []string `json:"status-publishers"`
 }
 
 // DisableResync can be used to disable resync for one or more key prefixes
@@ -240,7 +212,7 @@ func (plugin *Plugin) GetBDIndexes() l2idx.BDIndex {
 
 // GetFIBIndexes gives access to mapping of logical names (used in ETCD configuration) as fib_indexes.
 func (plugin *Plugin) GetFIBIndexes() l2idx.FIBIndexRW {
-	return plugin.fibIndexes
+	return plugin.fibConfigurator.GetFibIndexes()
 }
 
 // GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
@@ -251,7 +223,7 @@ func (plugin *Plugin) GetXConnectIndexes() l2idx.XcIndexRW {
 // GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 // to their respective indices as assigned by VPP.
 func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
-	return plugin.namespaceIndexes
+	return plugin.appNsConfigurator.GetAppNsIndexes()
 }
 
 // DumpACL returns a list of all configured ACL entires
@@ -271,59 +243,24 @@ func (plugin *Plugin) DumpNat44DNat() (*nat.Nat44DNat, error) {
 
 // GetIPSecSAIndexes
 func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
-	return plugin.ipsecConfigurator.SaIndexes
+	return plugin.ipSecConfigurator.GetSaIndexes()
 }
 
 // GetIPSecSPDIndexes
-func (plugin *Plugin) GetIPSecSPDIndexes() idxvpp.NameToIdx {
-	return plugin.ipsecConfigurator.SpdIndexes.GetMapping()
+func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
+	return plugin.ipSecConfigurator.GetSpdIndexes()
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
-	// handle flag
 	flag.Parse()
 
-	// read config file and set all related fields
-	config, err := plugin.retrieveDPConfig()
-	if err != nil {
-		return err
-	}
-	if config != nil {
-		publishers := &datasync.CompositeKVProtoWriter{}
-		for _, pub := range config.StatusPublishers {
-			db, found := plugin.Deps.DataSyncs[pub]
-			if !found {
-				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
-				continue
-			}
-			publishers.Adapters = append(publishers.Adapters, db)
-			plugin.Log.Infof("Added status publisher %q from config", pub)
-		}
-		plugin.Deps.PublishStatistics = publishers
-		if config.Mtu != 0 {
-			plugin.ifMtu = config.Mtu
-			plugin.Log.Infof("Default MTU set to %v", plugin.ifMtu)
-		}
-		plugin.enableStopwatch = config.Stopwatch
-		if plugin.enableStopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
-		}
-		// return skip (if set) or value from config
-		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
-		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
-	} else {
-		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
-		// return skip (if set) or full
-		plugin.resyncStrategy = plugin.resolveResyncStrategy(fullResync)
-		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
-	}
-
+	// Read config file and set all related fields
+	plugin.fromConfigFile()
+	// Fills nil dependencies with default values
 	plugin.fixNilPointers()
-
+	// Set interface state publisher
 	plugin.ifStateNotifications = plugin.Deps.IfStatePub
 
 	// All channels that are used inside of publishIfStateEvents or watchEvents must be created in advance!
@@ -351,6 +288,7 @@ func (plugin *Plugin) Init() error {
 	// Run error handler.
 	go plugin.changePropagateError()
 
+	var err error
 	if err = plugin.initIF(ctx); err != nil {
 		return err
 	}
@@ -382,6 +320,51 @@ func (plugin *Plugin) Init() error {
 	}
 
 	return nil
+}
+
+// AfterInit delegates the call to ifStateUpdater.
+func (plugin *Plugin) AfterInit() error {
+	plugin.Log.Debug("vpp plugins AfterInit begin")
+
+	err := plugin.ifStateUpdater.AfterInit()
+	if err != nil {
+		return err
+	}
+
+	if plugin.StatusCheck != nil {
+		// Register the plugin to status check. Periodical probe is not needed,
+		// data change will be reported when changed
+		plugin.StatusCheck.Register(plugin.PluginName, nil)
+		// Notify that status check for default plugins was registered. It will
+		// prevent status report errors in case resync is executed before AfterInit
+		plugin.statusCheckReg = true
+	}
+
+	plugin.Log.Debug("vpp plugins AfterInit finished successfully")
+
+	return nil
+}
+
+// Close cleans up the resources.
+func (plugin *Plugin) Close() error {
+	plugin.cancel()
+	plugin.wg.Wait()
+
+	_, err := safeclose.CloseAll(
+		// Configurators
+		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
+		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
+		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.appNsConfigurator,
+		// State updaters
+		plugin.ifStateUpdater, plugin.bdStateUpdater,
+		// Channels
+		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan, plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
+		plugin.changeChan, plugin.errorChannel,
+		// Registrations
+		plugin.watchStatusReg, plugin.watchConfigReg,
+	)
+
+	return err
 }
 
 // Resolves resync strategy. Skip resync flag is also evaluated here and it has priority regardless
@@ -420,8 +403,6 @@ func (plugin *Plugin) fixNilPointers() {
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init interface plugin")
-	// configurator loggers
-	ifStateLogger := plugin.Log.NewLogger("-if-state")
 
 	// Get pointer to the map with Linux interface indices.
 	if plugin.Linux != nil {
@@ -442,8 +423,8 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
 
 	// Interface state updater
-	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{Log: ifStateLogger, GoVppmux: plugin.GoVppmux}
-	plugin.ifStateUpdater.Init(ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
+	plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
@@ -468,12 +449,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
-	// NAT indices
+	// NAT configurator
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
 	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-	plugin.Log.Debug("Configurator Initialized")
+	plugin.Log.Debug("natConfigurator Initialized")
 
 	return nil
 }
@@ -481,44 +462,20 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	plugin.Log.Infof("Init IPSec plugin")
 
-	// logger
-	ipsecLogger := plugin.Log.NewLogger("-ipsec-plugin")
-
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("IPSecConfigurator", ipsecLogger)
-	}
-	saIndexes := nametoidx.NewNameToIdx(ipsecLogger,
-		"ipsec_sa_indexes", ifaceidx.IndexMetadata)
-	spdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger,
-		"ipsec_spd_indexes", nil))
-	cachedSpdIndexes := ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(ipsecLogger,
-		"ipsec_cached_spd_indexes", nil))
-	plugin.ipsecConfigurator = &ipsecplugin.IPSecConfigurator{
-		Log:              ipsecLogger,
-		GoVppmux:         plugin.GoVppmux,
-		SwIfIndexes:      plugin.swIfIndexes,
-		Stopwatch:        stopwatch,
-		SaIndexSeq:       1,
-		SaIndexes:        saIndexes,
-		SpdIndexSeq:      1,
-		SpdIndexes:       spdIndexes,
-		CachedSpdIndexes: cachedSpdIndexes,
-	}
-
-	// Init IPSec plugin
-	if err = plugin.ipsecConfigurator.Init(); err != nil {
+	// IPSec configurator
+	plugin.ipSecConfigurator = &ipsecplugin.IPSecConfigurator{}
+	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 
-	plugin.Log.Debug("ipsecConfigurator Initialized")
+	plugin.Log.Debug("ipSecConfigurator Initialized")
 	return nil
 }
 
 func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.Log.Infof("Init ACL plugin")
 
-	// Init ACL plugin
+	// ACL configurator
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
 	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch)
 	if err != nil {
@@ -531,68 +488,39 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 
 func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.Log.Infof("Init L2 plugin")
-	// loggers
-	bdLogger := plugin.Log.NewLogger("-l2-bd-conf")
-	bdStateLogger := plugin.Log.NewLogger("-l2-bd-state")
-	fibLogger := plugin.Log.NewLogger("-l2-fib-conf")
-	// Bridge domain indices
-	plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(bdLogger, "bd_indexes", l2idx.IndexMetadata))
 
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("BDConfigurator", bdLogger)
-	}
-	plugin.bdConfigurator = &l2plugin.BDConfigurator{
-		Log:               bdLogger,
-		GoVppmux:          plugin.GoVppmux,
-		ServiceLabel:      plugin.ServiceLabel,
-		SwIfIndices:       plugin.swIfIndexes,
-		BdIndices:         plugin.bdIndexes,
-		BridgeDomainIDSeq: 1,
-		Stopwatch:         stopwatch,
-	}
-
-	// Bridge domain state and state updater
+	// Bridge domain configurator
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
-	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{Log: bdStateLogger, GoVppmux: plugin.GoVppmux}
-	plugin.bdStateUpdater.Init(ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan, func(state *l2plugin.BridgeDomainStateNotification) {
-		select {
-		case plugin.bdStateChan <- state:
-			// OK
-		default:
-			plugin.Log.Debug("Unable to send to the bdState channel: buffer is full.")
-		}
-	})
-
-	// FIB indexes
-	plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(fibLogger, "fib_indexes", nil))
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("FIBConfigurator", fibLogger)
-	}
-	plugin.fibConfigurator = &l2plugin.FIBConfigurator{
-		Log:           fibLogger,
-		GoVppmux:      plugin.GoVppmux,
-		SwIfIndexes:   plugin.swIfIndexes,
-		BdIndexes:     plugin.bdIndexes,
-		IfToBdIndexes: plugin.ifToBdDesIndexes,
-		FibIndexes:    plugin.fibIndexes,
-		Stopwatch:     stopwatch,
-	}
-
-	// Init
-	err := plugin.bdConfigurator.Init(plugin.bdVppNotifChan)
+	plugin.bdConfigurator = &l2plugin.BDConfigurator{}
+	err := plugin.bdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdVppNotifChan, plugin.enableStopwatch)
 	if err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("bdConfigurator Initialized")
 
-	err = plugin.fibConfigurator.Init()
-	if err != nil {
+	// Get bridge domain indexes
+	plugin.bdIndexes = plugin.bdConfigurator.GetBdIndexes()
+
+	// Bridge domain state updater
+	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
+	if err := plugin.bdStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan,
+		func(state *l2plugin.BridgeDomainStateNotification) {
+			select {
+			case plugin.bdStateChan <- state:
+				// OK
+			default:
+				plugin.Log.Debug("Unable to send to the bdState channel: buffer is full.")
+			}
+		}); err != nil {
 		return err
 	}
 
+	// L2 FIB configurator
+	plugin.fibConfigurator = &l2plugin.FIBConfigurator{}
+	err = plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes, plugin.enableStopwatch)
+	if err != nil {
+		return err
+	}
 	plugin.Log.Debug("fibConfigurator Initialized")
 
 	// L2 cross connect
@@ -607,112 +535,39 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 func (plugin *Plugin) initL3(ctx context.Context) error {
 	plugin.Log.Infof("Init L3 plugin")
-	routeLogger := plugin.Log.NewLogger("-l3-route-conf")
-	plugin.routeIndexes = l3idx.NewRouteIndex(
-		nametoidx.NewNameToIdx(routeLogger, "route_indexes", nil))
-	routeCachedIndexes := l3idx.NewRouteIndex(
-		nametoidx.NewNameToIdx(plugin.Log, "route_cached_indexes", nil))
 
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("RouteConfigurator", routeLogger)
-	}
-	plugin.routeConfigurator = &l3plugin.RouteConfigurator{
-		Log:              routeLogger,
-		GoVppmux:         plugin.GoVppmux,
-		RouteIndexes:     plugin.routeIndexes,
-		RouteIndexSeq:    1,
-		SwIfIndexes:      plugin.swIfIndexes,
-		RouteCachedIndex: routeCachedIndexes,
-		Stopwatch:        stopwatch,
-	}
-
-	arpLogger := plugin.Log.NewLogger("-l3-arp-conf")
-	// ARP configuration indices
-	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_indexes", nil))
-	// ARP cache indices
-	arpCache := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_cache", nil))
-	// ARP deleted indices
-	arpDeleted := l3idx.NewARPIndex(nametoidx.NewNameToIdx(arpLogger, "arp_unnasigned", nil))
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("ArpConfigurator", arpLogger)
-	}
-	plugin.arpConfigurator = &l3plugin.ArpConfigurator{
-		Log:         arpLogger,
-		GoVppmux:    plugin.GoVppmux,
-		ARPIndexes:  plugin.arpIndexes,
-		ARPCache:    arpCache,
-		ARPDeleted:  arpDeleted,
-		ARPIndexSeq: 1,
-		SwIfIndexes: plugin.swIfIndexes,
-		Stopwatch:   stopwatch,
-	}
-
-	proxyArpLogger := plugin.Log.NewLogger("-l3-proxyarp-conf")
-	// Proxy ARP interface configuration indices
-	plugin.proxyArpIfIndices = nametoidx.NewNameToIdx(proxyArpLogger, "proxyarp_if_indices", nil)
-	// Proxy ARP range configuration indices
-	plugin.proxyArpRngIndices = nametoidx.NewNameToIdx(proxyArpLogger, "proxyarp_rng_indices", nil)
-
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("ProxyArpConfigurator", arpLogger)
-	}
-	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{
-		Log:                proxyArpLogger,
-		GoVppmux:           plugin.GoVppmux,
-		ProxyArpIfIndices:  plugin.proxyArpIfIndices,
-		ProxyArpRngIndices: plugin.proxyArpRngIndices,
-		ProxyARPIndexSeq:   1,
-		SwIfIndexes:        plugin.swIfIndexes,
-		Stopwatch:          stopwatch,
-	}
-
-	if err := plugin.routeConfigurator.Init(); err != nil {
-		return err
-	}
-
-	plugin.Log.Debug("routeConfigurator Initialized")
-
-	if err := plugin.arpConfigurator.Init(); err != nil {
+	// ARP configurator
+	plugin.arpConfigurator = &l3plugin.ArpConfigurator{}
+	if err := plugin.arpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
 
-	if err := plugin.proxyArpConfigurator.Init(); err != nil {
+	// Proxy ARP configurator
+	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{}
+	if err := plugin.proxyArpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("proxyArpConfigurator Initialized")
+
+	// Route configurator
+	plugin.routeConfigurator = &l3plugin.RouteConfigurator{}
+	if err := plugin.routeConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
+		return err
+	}
+	plugin.Log.Debug("routeConfigurator Initialized")
 
 	return nil
 }
 
 func (plugin *Plugin) initL4(ctx context.Context) error {
 	plugin.Log.Infof("Init L4 plugin")
-	l4Logger := plugin.Log.NewLogger("-l4-plugin")
-	plugin.namespaceIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
-		"namespace_indexes", nil))
-	plugin.notConfAppNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(l4Logger,
-		"not_configured_namespace_indexes", nil))
 
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("L4Configurator", l4Logger)
-	}
-	plugin.l4Configurator = &l4plugin.L4Configurator{
-		Log:          l4Logger,
-		GoVppmux:     plugin.GoVppmux,
-		AppNsIndexes: plugin.namespaceIndexes,
-		AppNsCached:  plugin.notConfAppNsIndexes,
-		AppNsIdxSeq:  1,
-		SwIfIndexes:  plugin.swIfIndexes,
-		Stopwatch:    stopwatch,
-	}
-	err := plugin.l4Configurator.Init()
-	if err != nil {
+	// Application namespace conifgurator
+	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
+	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
-
 	plugin.Log.Debug("l4Configurator Initialized")
 
 	return nil
@@ -744,26 +599,6 @@ func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 	return nil
 }
 
-func (plugin *Plugin) retrieveDPConfig() (*DPConfig, error) {
-	config := &DPConfig{}
-
-	found, err := plugin.PluginConfig.GetValue(config)
-	if err != nil {
-		return nil, err
-	} else if !found {
-		plugin.Log.Debug("vppplugin config not found")
-		return nil, nil
-	}
-	plugin.Log.Debugf("vppplugin config found: %+v", config)
-
-	if pubs := os.Getenv("DP_STATUS_PUBLISHERS"); pubs != "" {
-		plugin.Log.Debugf("status publishers from env: %v", pubs)
-		config.StatusPublishers = append(config.StatusPublishers, pubs)
-	}
-
-	return config, err
-}
-
 func (plugin *Plugin) initErrorHandler() error {
 	ehLogger := plugin.Log.NewLogger("-error-handler")
 	plugin.errorIndexes = nametoidx.NewNameToIdx(ehLogger, "error_indexes", nil)
@@ -773,40 +608,61 @@ func (plugin *Plugin) initErrorHandler() error {
 	return nil
 }
 
-// AfterInit delegates the call to ifStateUpdater.
-func (plugin *Plugin) AfterInit() error {
-	plugin.Log.Debug("vpp plugins AfterInit begin")
-
-	err := plugin.ifStateUpdater.AfterInit()
+func (plugin *Plugin) fromConfigFile() {
+	config, err := plugin.retrieveVPPConfig()
 	if err != nil {
-		return err
+		plugin.Log.Errorf("Error reading vpp-plugin config file: %v", err)
+		return
 	}
-
-	if plugin.StatusCheck != nil {
-		// Register the plugin to status check. Periodical probe is not needed,
-		// data change will be reported when changed
-		plugin.StatusCheck.Register(plugin.PluginName, nil)
-		// Notify that status check for default plugins was registered. It will
-		// prevent status report errors in case resync is executed before AfterInit
-		plugin.statusCheckReg = true
+	if config != nil {
+		publishers := &datasync.CompositeKVProtoWriter{}
+		for _, pub := range config.StatusPublishers {
+			db, found := plugin.Deps.DataSyncs[pub]
+			if !found {
+				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
+				continue
+			}
+			publishers.Adapters = append(publishers.Adapters, db)
+			plugin.Log.Infof("Added status publisher %q from config", pub)
+		}
+		plugin.Deps.PublishStatistics = publishers
+		if config.Mtu != 0 {
+			plugin.ifMtu = config.Mtu
+			plugin.Log.Infof("Default MTU set to %v", plugin.ifMtu)
+		}
+		plugin.enableStopwatch = config.Stopwatch
+		if plugin.enableStopwatch {
+			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
+		} else {
+			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		}
+		// return skip (if set) or value from config
+		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
+		plugin.Log.Infof("VPP resync strategy is set to %v", plugin.resyncStrategy)
+	} else {
+		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		// return skip (if set) or full
+		plugin.resyncStrategy = plugin.resolveResyncStrategy(fullResync)
+		plugin.Log.Infof("VPP resync strategy config not found, set to %v", plugin.resyncStrategy)
 	}
-
-	plugin.Log.Debug("vpp plugins AfterInit finished successfully")
-
-	return nil
 }
 
-// Close cleans up the resources.
-func (plugin *Plugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
+func (plugin *Plugin) retrieveVPPConfig() (*PluginConfig, error) {
+	config := &PluginConfig{}
 
-	_, err := safeclose.CloseAll(plugin.watchStatusReg, plugin.watchConfigReg, plugin.changeChan,
-		plugin.resyncStatusChan, plugin.resyncConfigChan,
-		plugin.ifConfigurator, plugin.ifStateUpdater, plugin.ifVppNotifChan, plugin.errorChannel,
-		plugin.bdVppNotifChan, plugin.bdConfigurator, plugin.fibConfigurator, plugin.bfdConfigurator,
-		plugin.xcConfigurator, plugin.routeConfigurator, plugin.arpConfigurator, plugin.proxyArpConfigurator,
-		plugin.natConfigurator, plugin.ipsecConfigurator, plugin.srv6Configurator)
+	found, err := plugin.PluginConfig.GetValue(config)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		plugin.Log.Debug("vpp-plugin config not found")
+		return nil, nil
+	}
+	plugin.Log.Debugf("vpp-plugin config found: %+v", config)
 
-	return err
+	if pubs := os.Getenv("VPP_STATUS_PUBLISHERS"); pubs != "" {
+		plugin.Log.Debugf("status publishers from env: %v", pubs)
+		config.StatusPublishers = append(config.StatusPublishers, pubs)
+	}
+
+	return config, err
 }

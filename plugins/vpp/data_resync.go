@@ -220,12 +220,12 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 		}
 	}
 	if !plugin.droppedFromResync(l4.FeatureKeyPrefix()) {
-		if err := plugin.l4Configurator.ResyncFeatures(req.L4Features); err != nil {
+		if err := plugin.appNsConfigurator.ResyncFeatures(req.L4Features); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
 	if !plugin.droppedFromResync(l4.AppNamespacesKeyPrefix()) {
-		if err := plugin.l4Configurator.ResyncAppNs(req.AppNamespaces); err != nil {
+		if err := plugin.appNsConfigurator.ResyncAppNs(req.AppNamespaces); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
@@ -250,7 +250,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 		}
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
-		if err := plugin.ipsecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
+		if err := plugin.ipSecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}

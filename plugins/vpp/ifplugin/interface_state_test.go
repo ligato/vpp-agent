@@ -70,16 +70,8 @@ func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIf
 	pluginLogger := logging.ForPlugin("testname", logrus.NewLogRegistry())
 
 	// Test initialization
-	ifPlugin := &ifplugin.InterfaceStateUpdater{
-		Log:      pluginLogger,
-		GoVppmux: connection,
-	}
-
-	err = ifPlugin.Init(
-		ctx,
-		index,
-		notifChan,
-		publishIfState)
+	ifPlugin := &ifplugin.InterfaceStateUpdater{}
+	err = ifPlugin.Init(pluginLogger, connection, ctx, index, notifChan, publishIfState)
 
 	if err != nil {
 		return nil, nil, nil, nil, nil, err

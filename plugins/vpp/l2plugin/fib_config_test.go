@@ -56,17 +56,12 @@ func TestFIBConnectConfiguratorInit(t *testing.T) {
 	}
 	connection, _ := core.Connect(ctx.MockVpp)
 	defer connection.Disconnect()
-	plugin := &l2plugin.FIBConfigurator{
-		Log:           logging.ForPlugin("test-log", logrus.NewLogRegistry()),
-		GoVppmux:      connection,
-		SwIfIndexes:   ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata)),
-		BdIndexes:     l2idx.NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata)),
-		IfToBdIndexes: nametoidx.NewNameToIdx(logrus.DefaultLogger(), "ifToBd", ifaceidx.IndexMetadata),
-		FibIndexes:    l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "fib_indexes", nil)),
-		Stopwatch:     nil,
-	}
+	plugin := &l2plugin.FIBConfigurator{}
 	// Test init
-	err = plugin.Init()
+	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata))
+	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata))
+	err = plugin.Init(log, connection, ifIndexes, bdIndexes, false)
 	Expect(err).To(BeNil())
 	// Test close
 	err = plugin.Close()
@@ -92,7 +87,7 @@ func TestFIBConfiguratorAdd(t *testing.T) {
 	err, callbackErr := blockingAdd(plugin, data)
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
-	_, meta, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, meta, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 }
@@ -142,7 +137,7 @@ func TestFIBConfiguratorAddUntiedIfBd(t *testing.T) {
 	callback := &mockCallback{}
 	err = plugin.Add(data, callback.Done)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetFibAddCacheIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
@@ -185,7 +180,7 @@ func TestFIBConfiguratorMissingInterface(t *testing.T) {
 	callback := &mockCallback{}
 	err = plugin.Add(data, callback.Done)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetFibDelCacheIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
@@ -207,7 +202,7 @@ func TestFIBConfiguratorMissingBridgeDomain(t *testing.T) {
 	callback := &mockCallback{}
 	err = plugin.Add(data, callback.Done)
 	Expect(err).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetFibDelCacheIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
@@ -242,7 +237,7 @@ func TestFIBConfiguratorModify(t *testing.T) {
 	Expect(errs[0]).To(BeNil())
 	Expect(errs[1]).To(BeNil())
 	Expect(errs[2]).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 }
 
@@ -273,7 +268,7 @@ func TestFIBConfiguratorModifyWithMissingOldInterface(t *testing.T) {
 	errs := blockingModify(plugin, oldData, newData, true)
 	Expect(errs[0]).To(BeNil())
 	Expect(errs[1]).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 }
 
@@ -304,7 +299,7 @@ func TestFIBConfiguratorModifyWithMissingOldBd(t *testing.T) {
 	errs := blockingModify(plugin, oldData, newData, true)
 	Expect(errs[0]).To(BeNil())
 	Expect(errs[1]).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 }
 
@@ -337,7 +332,7 @@ func TestFIBConfiguratorModifyOldError(t *testing.T) {
 	Expect(errs[0]).To(BeNil())
 	Expect(errs[1]).ToNot(BeNil()) // expect error
 	Expect(errs[2]).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 }
 
@@ -444,13 +439,13 @@ func TestFIBConfiguratorDelete(t *testing.T) {
 	err, callbackErr := blockingAdd(plugin, data)
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 	// Test delete FIB
 	err, callbackErr = blockingDel(plugin, data)
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
-	_, _, found = plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found = plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
 }
 
@@ -756,7 +751,7 @@ func TestFIBConfiguratorResolveDeletedInterface(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
 	// Manually remove metadata from FIB 1
-	plugin.FibIndexes.UpdateMetadata("00:00:00:00:00:01", nil)
+	plugin.GetFibIndexes().UpdateMetadata("00:00:00:00:00:01", nil)
 	// Register different interface 1
 	ifIndexes.RegisterName("if3", 3, nil)
 	err = plugin.ResolveDeletedInterface("if3", 3, callback.Done)
@@ -991,7 +986,7 @@ func TestFIBConfiguratorResolveUpdatedBridgeDomain(t *testing.T) {
 	err, callbackErr := blockingResolveUpdatedBridgeDomain(plugin, "bd1", 1)
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
-	_, _, found := plugin.FibIndexes.LookupIdx("00:00:00:00:00:01")
+	_, _, found := plugin.GetFibIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeTrue())
 	_, _, found = plugin.GetFibAddCacheIndexes().LookupIdx("00:00:00:00:00:01")
 	Expect(found).To(BeFalse())
@@ -1025,7 +1020,7 @@ func TestFIBConfiguratorResolveDeletedBridgeDomain(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(callbackErr).To(BeNil())
 	// Manually remove metadata from FIB 1
-	plugin.FibIndexes.UpdateMetadata("00:00:00:00:00:01", nil)
+	plugin.GetFibIndexes().UpdateMetadata("00:00:00:00:00:01", nil)
 	// Register different bridge domain 1
 	bdIndexes.RegisterName("bd3", 3, getBdMetaWithInterfaces("bd3", []string{}, []string{}))
 	err = plugin.ResolveDeletedBridgeDomain("bd3", 3, callback.Done)
@@ -1141,16 +1136,8 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plug
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "fib-if", nil))
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(log, "fib-bd", nil))
 	// Configurator
-	plugin := &l2plugin.FIBConfigurator{
-		Log:           logging.ForPlugin("test-log", logrus.NewLogRegistry()),
-		GoVppmux:      connection,
-		SwIfIndexes:   swIfIndexes,
-		BdIndexes:     bdIndexes,
-		IfToBdIndexes: nametoidx.NewNameToIdx(logrus.DefaultLogger(), "ifToBd", ifaceidx.IndexMetadata),
-		FibIndexes:    l2idx.NewFIBIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "fib_indexes", nil)),
-		Stopwatch:     nil,
-	}
-	err = plugin.Init()
+	plugin := &l2plugin.FIBConfigurator{}
+	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, swIfIndexes, bdIndexes, false)
 	Expect(err).To(BeNil())
 	// Callback
 

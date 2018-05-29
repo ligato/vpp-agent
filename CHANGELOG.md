@@ -158,15 +158,15 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
     IP address set.
     - added support for virtio-based TAPv2 interfaces.
     - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in defaultplugins.conf. See  [readme](plugins/vpp/README.md) for more details.  
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
 - [l2plugin](plugins/vpp/l2plugin)
     - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in defaultplugins.conf. See  [readme](plugins/vpp/README.md) for more details.  
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
 
 ### Improvements
 - [ifplugin](plugins/vpp/ifplugin)
     - default MTU value was removed in order to be able to just pass empty MTU field. MTU now can be 
-    set only in interface configuration (preffered) or defined in defaultplugins.conf. If none of them
+    set only in interface configuration (preffered) or defined in vpp-plugin.conf. If none of them
     is set, MTU value will be empty.
     - interface state data are stored in statuscheck readiness probe
 - [l3plugin](plugins/vpp/l3plugin)
@@ -180,10 +180,10 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 - added API for ARP entries, L4 features, Application namespaces and STN rules.
 
 ### Logging
-- consolidated and improved logging in defaultplugins and linuxplugins.
+- consolidated and improved logging in vpp and linux plugins.
 
 ### Bugfix
-- fixed skip-resync parameter if defaultplugins.conf is not provided.
+- fixed skip-resync parameter if vpp-plugin.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
 - microservice and veth-interface related events are synchronized.
@@ -212,7 +212,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
    - support for VPP plugins/l3plugin ARP configuration. The configurator can perform the
    basic CRUD operation with ARP config.
    
-### Defaultplugins
+### VPP plugin
 - [ifplugin](plugins/vpp/ifplugin)
   - added possibility to add interface to any VRF table.
 - [resync](plugins/vpp/data_resync.go)
@@ -222,7 +222,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 - API contains new Method `DisableResync(keyPrefix ...string)`. One or more ETCD key prefixes 
   can be used as a parameter to disable resync for that specific key(s).
      
-### Linuxplugin
+### Linux plugin
 - [l3plugin](plugins/linux/l3plugin)
   - route configuration do not return error if required interface is missing. Instead, the 
   route data are internally stored and configured when the interface appears.
@@ -245,11 +245,11 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 ### Major Themes
 
 - [Default VPP plugin](plugins/vpp)
-    - added resync strategies. Resync of VPP plugins (defaultplugins) can be set using 
+    - added resync strategies. Resync of VPP plugins can be set using 
     defaultpluigns config file; Resync can be set to full (always resync everything) or
     dependent on VPP configuration (if there is none, skip resync). Resync can be also 
     forced to skip using parameter. See appropriate changelog in 
-    [Defaultplugins](plugins/vpp) for details.
+    [VPP plugins](plugins/vpp) for details.
 
 ### New Features
 

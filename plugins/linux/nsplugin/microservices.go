@@ -98,7 +98,7 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 				nextCreated = append(nextCreated, container)
 			}
 		} else {
-			plugin.Log.Debugf("Inspect container ID %v failed: %v", container, err)
+			plugin.log.Debugf("Inspect container ID %v failed: %v", container, err)
 		}
 	}
 	ctx.created = nextCreated
@@ -117,25 +117,25 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 		// If 'since' container was not found, list all containers (404 is required to support older docker version)
 		if dockerErr, ok := err.(*docker.Error); ok && (dockerErr.Status == 500 || dockerErr.Status == 404) {
 			// Reset filter and list containers again
-			plugin.Log.Debug("clearing 'since' %s", ctx.since)
+			plugin.log.Debug("clearing 'since' %s", ctx.since)
 			ctx.since = ""
 			delete(listOpts.Filters, "since")
 			containers, err = plugin.dockerClient.ListContainers(listOpts)
 		}
 		if err != nil {
 			// If there is other error, return it
-			plugin.Log.Errorf("Error listing docker containers: %v", err)
+			plugin.log.Errorf("Error listing docker containers: %v", err)
 			return
 		}
 	}
 
 	for _, container := range containers {
-		plugin.Log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		plugin.log.Debugf("processing new container %v with state %v", container.ID, container.State)
 		if container.State == "running" && container.Created > ctx.lastInspected {
 			// Inspect the container to get the list of defined environment variables.
 			details, err := plugin.dockerClient.InspectContainer(container.ID)
 			if err != nil {
-				plugin.Log.Debugf("Inspect container %v failed: %v", container.ID, err)
+				plugin.log.Debugf("Inspect container %v failed: %v", container.ID, err)
 				continue
 			}
 			plugin.detectMicroservice(ctx.nsMgmtCtx, details)
@@ -163,10 +163,10 @@ func (plugin *NsHandler) detectMicroservice(nsMgmtCtx *NamespaceMgmtCtx, contain
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				plugin.Log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
+				plugin.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
-					plugin.Log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
+					plugin.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
 					continue
 				}
 				microserviceContainerCreated[label] = container.Created
@@ -185,10 +185,10 @@ func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, mic
 	microservice, restarted := plugin.microServiceByLabel[microserviceLabel]
 	if restarted {
 		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.Id)
-		plugin.Log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
+		plugin.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
 			Warn("Microservice has been restarted")
 	} else {
-		plugin.Log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
+		plugin.log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
 			Debug("Discovered new microservice")
 	}
 
@@ -208,11 +208,11 @@ func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, mic
 func (plugin *NsHandler) processTerminatedMicroservice(nsMgmtCtx *NamespaceMgmtCtx, id string) {
 	microservice, exists := plugin.microServiceByID[id]
 	if !exists {
-		plugin.Log.WithFields(logging.Fields{"id": id}).
+		plugin.log.WithFields(logging.Fields{"id": id}).
 			Warn("Detected removal of an unknown microservice")
 		return
 	}
-	plugin.Log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.Pid, "id": microservice.Id}).
+	plugin.log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.Pid, "id": microservice.Id}).
 		Debug("Microservice has terminated")
 
 	delete(plugin.microServiceByLabel, microservice.Label)
@@ -242,7 +242,7 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 		case <-timer.C:
 			if err := plugin.dockerClient.Ping(); err != nil {
 				if clientOk {
-					plugin.Log.Errorf("Docker ping check failed: %v", err)
+					plugin.log.Errorf("Docker ping check failed: %v", err)
 				}
 				clientOk = false
 
@@ -252,7 +252,7 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 			}
 
 			if !clientOk {
-				plugin.Log.Infof("Docker ping check OK")
+				plugin.log.Infof("Docker ping check OK")
 				/*if info, err := plugin.dockerClient.Info(); err != nil {
 					plugin.Log.Errorf("Retrieving docker info failed: %v", err)
 					timer.Reset(dockerRetryPeriod)

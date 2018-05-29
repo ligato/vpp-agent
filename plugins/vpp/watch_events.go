@@ -157,11 +157,11 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 			}
 		})
 		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
-		plugin.l4Configurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.ipsecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	} else {
 		plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
@@ -174,11 +174,11 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 			}
 		})
 		plugin.xcConfigurator.ResolveDeletedInterface(e.Name)
-		plugin.l4Configurator.ResolveDeletedInterface(e.Name, e.Idx)
+		plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveDeletedInterface(e.Name)
 		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.ipsecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	}
 	e.Done()

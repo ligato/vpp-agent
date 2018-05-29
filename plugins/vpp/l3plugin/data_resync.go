@@ -23,29 +23,29 @@ import (
 
 // Resync configures the VPP static routes.
 func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC routes begin. ")
 	// Calculate and log route resync.
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
 	// Retrieve VPP route configuration
-	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.Log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.Stopwatch))
+	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.stopwatch))
 	if err != nil {
 		return err
 	}
-	plugin.Log.Debugf("Found %d routes configured on the VPP", len(vppRoutes))
+	plugin.log.Debugf("Found %d routes configured on the VPP", len(vppRoutes))
 
 	// Correlate NB and VPP configuration
 	for _, nbRoute := range nbRoutes {
 		nbRouteID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
-		nbIfIdx, _, found := plugin.SwIfIndexes.LookupIdx(nbRoute.OutgoingInterface)
+		nbIfIdx, _, found := plugin.ifIndexes.LookupIdx(nbRoute.OutgoingInterface)
 		if !found {
-			plugin.Log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
-			plugin.RouteCachedIndex.RegisterName(nbRouteID, plugin.RouteIndexSeq, nbRoute)
-			plugin.RouteIndexSeq++
+			plugin.log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
+			plugin.rtCachedIndexes.RegisterName(nbRouteID, plugin.rtIndexSeq, nbRoute)
+			plugin.rtIndexSeq++
 			continue
 		}
 		// Default VPP value for weight in case it is not set
@@ -55,41 +55,41 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		// Look for the same route in the configuration
 		for _, vppRoute := range vppRoutes {
 			vppRouteID := routeIdentifier(vppRoute.VrfID, vppRoute.DstAddr.String(), vppRoute.NextHopAddr.String())
-			plugin.Log.Debugf("RESYNC routes: comparing %s and %s", nbRouteID, vppRouteID)
+			plugin.log.Debugf("RESYNC routes: comparing %s and %s", nbRouteID, vppRouteID)
 			if vppRoute.OutIface != nbIfIdx {
-				plugin.Log.Debugf("RESYNC routes: interface index is different (NB: %d, VPP %d)",
+				plugin.log.Debugf("RESYNC routes: interface index is different (NB: %d, VPP %d)",
 					nbIfIdx, vppRoute.OutIface)
 				continue
 			}
 			if vppRoute.DstAddr.String() != nbRoute.DstIpAddr {
-				plugin.Log.Debugf("RESYNC routes: dst address is different (NB: %s, VPP %s)",
+				plugin.log.Debugf("RESYNC routes: dst address is different (NB: %s, VPP %s)",
 					nbRoute.DstIpAddr, vppRoute.DstAddr.String())
 				continue
 			}
 			if vppRoute.VrfID != nbRoute.VrfId {
-				plugin.Log.Debugf("RESYNC routes: VRF ID is different (NB: %d, VPP %d)",
+				plugin.log.Debugf("RESYNC routes: VRF ID is different (NB: %d, VPP %d)",
 					nbRoute.VrfId, vppRoute.VrfID)
 				continue
 			}
 			if vppRoute.Weight != nbRoute.Weight {
-				plugin.Log.Debugf("RESYNC routes: weight is different (NB: %d, VPP %d)",
+				plugin.log.Debugf("RESYNC routes: weight is different (NB: %d, VPP %d)",
 					nbRoute.Weight, vppRoute.Weight)
 				continue
 			}
 			if vppRoute.Preference != nbRoute.Preference {
-				plugin.Log.Debugf("RESYNC routes: preference is different (NB: %d, VPP %d)",
+				plugin.log.Debugf("RESYNC routes: preference is different (NB: %d, VPP %d)",
 					nbRoute.Preference, vppRoute.Preference)
 				continue
 			}
 			if vppRoute.NextHopAddr.String() != nbRoute.NextHopAddr {
-				plugin.Log.Debugf("RESYNC routes: next hop address is different (NB: %d, VPP %d)",
+				plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %d, VPP %d)",
 					nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
 				continue
 			}
 			// Register existing routes
-			plugin.RouteIndexes.RegisterName(nbRouteID, plugin.RouteIndexSeq, nbRoute)
-			plugin.RouteIndexSeq++
-			plugin.Log.Debugf("RESYNC routes: route %s registered without additional changes", nbRouteID)
+			plugin.rtIndexes.RegisterName(nbRouteID, plugin.rtIndexSeq, nbRoute)
+			plugin.rtIndexSeq++
+			plugin.log.Debugf("RESYNC routes: route %s registered without additional changes", nbRouteID)
 			break
 		}
 	}
@@ -99,28 +99,28 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	if len(nbRoutes) > 0 {
 		for _, nbRoute := range nbRoutes {
 			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
-			_, _, found := plugin.RouteIndexes.LookupIdx(routeID)
+			_, _, found := plugin.rtIndexes.LookupIdx(routeID)
 			if !found {
 				// create new route if does not exist yet. VRF ID is already validated at this point.
-				plugin.Log.Debugf("RESYNC routes: route %s not found and will be configured", routeID)
+				plugin.log.Debugf("RESYNC routes: route %s not found and will be configured", routeID)
 				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
-					plugin.Log.Error(err)
+					plugin.log.Error(err)
 					wasError = err
 				}
 			}
 		}
 	}
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
 	return wasError
 }
 
 // Resync confgures the empty VPP (overwrites the arp entries)
 func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error {
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp begin. ")
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC arp begin. ")
 	// Calculate and log arp resync
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
@@ -131,16 +131,16 @@ func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error 
 		}
 	}
 
-	plugin.Log.WithField("cfg", plugin).Debug("RESYNC arp end. ", wasError)
+	plugin.log.WithField("cfg", plugin).Debug("RESYNC arp end. ", wasError)
 	return nil
 }
 
 // Resync confgures the empty VPP (overwrites the proxy arp entries)
 func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.Log.Debug("RESYNC proxy ARP interfaces begin. ")
+	plugin.log.Debug("RESYNC proxy ARP interfaces begin. ")
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
@@ -153,16 +153,16 @@ func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyAr
 		}
 	}
 
-	plugin.Log.Debug("RESYNC proxy ARP interface end. ", wasError)
+	plugin.log.Debug("RESYNC proxy ARP interface end. ", wasError)
 	return nil
 }
 
 // Resync confgures the empty VPP (overwrites the proxy arp ranges)
 func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArpRanges_RangeList) error {
-	plugin.Log.Debug("RESYNC proxy ARP ranges begin. ")
+	plugin.log.Debug("RESYNC proxy ARP ranges begin. ")
 	defer func() {
-		if plugin.Stopwatch != nil {
-			plugin.Stopwatch.PrintLog()
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
 		}
 	}()
 
@@ -175,6 +175,6 @@ func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArp
 		}
 	}
 
-	plugin.Log.Debug("RESYNC proxy ARP ranges end. ", wasError)
+	plugin.log.Debug("RESYNC proxy ARP ranges end. ", wasError)
 	return nil
 }

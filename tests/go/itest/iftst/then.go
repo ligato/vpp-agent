@@ -48,7 +48,7 @@ func (step *ThenIface) ContainsIPSecSA(name string) bool {
 
 // ContainsName checks several times if sw_if_index - ifName mapping exists.
 func (step *ThenIface) ContainsIPSecSPD(name string) bool {
-	idx := idxtst.ContainsName(step.VPP.GetIPSecSPDIndexes(), name)
+	idx := idxtst.ContainsName(step.VPP.GetIPSecSPDIndexes().GetMapping(), name)
 	return idx != 0
 }
 
