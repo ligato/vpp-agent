@@ -72,12 +72,8 @@ test:
 	@echo "=> running unit tests"
 	go test -tags="${GO_BUILD_TAGS}" ./...
 
-# Get coverage report tools
-get-covtools:
-	go get -v github.com/wadey/gocovmerge
-
 # Run coverage report
-test-cover: get-covtools
+test-cover:
 	@echo "=> running unit tests with coverage"
 	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/coverage.out ./...
 	@echo "=> coverage data generated into ${COVER_DIR}/coverage.out"

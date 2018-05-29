@@ -92,6 +92,6 @@ sudo docker exec -it vpp_agent bash
 
 ### Running VPP and the Agent
 You can use the image the same way as the development image, see this
-[README](../dev_vpp_agent/README.md).
+[README](../dev/README.md).
 
 [1]: https://github.com/moby/moby/issues/26173
