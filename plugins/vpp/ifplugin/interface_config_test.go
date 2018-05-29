@@ -122,6 +122,7 @@ func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 	// Setup
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceDetails{
 		SwIfIndex: 1,
@@ -130,9 +131,11 @@ func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 		SwIfIndex: 2,
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
 	// Register
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
 	// Do not register second interface
+
 	// Process notifications
 	done := make(chan int)
 	go func() {
@@ -142,18 +145,17 @@ func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 			case notification := <-plugin.NotifChan:
 				Expect(notification).ShouldNot(BeNil())
 				counter++
-			case <-time.NewTimer(1 * time.Second).C:
+			case <-time.After(time.Second / 2):
 				done <- counter
 				break
 			}
 		}
 	}()
+
 	// Test notifications
-	err := plugin.PropagateIfDetailsToStatus()
-	Expect(err).To(BeNil())
+	Expect(plugin.PropagateIfDetailsToStatus()).To(Succeed())
 	// This blocks until the result is sent
-	Expect(<-done).To(BeEquivalentTo(1))
-	close(done)
+	Eventually(done).Should(Receive(Equal(1)))
 }
 
 // Configure new TAPv1 interface with IP address
