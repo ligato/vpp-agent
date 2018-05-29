@@ -331,7 +331,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "eb264fe36b0fa13361e1e1998744da6efbb76cc5"
+  revision = "441419d0105e188a473a6fcf7f0de09bf9532fa6"
 
 [[projects]]
   branch = "master"
@@ -623,6 +623,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e657a31d72b1e1450ead14c106d65c21185bdb66c9a97a8196fdd2b01a578a3a"
+  inputs-digest = "b096073d591a8855f77870538edf801268952b6580bbf39dbdcd68500a376731"
   solver-name = "gps-cdcl"
   solver-version = 1
