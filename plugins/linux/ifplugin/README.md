@@ -2,7 +2,7 @@
 
 
 The plugin watches the northbound configuration of Linux network interfaces,
-which is modelled by [interfaces proto file](model/interfaces/interfaces.proto)
+which is modelled by [interfaces proto file](../model/interfaces/interfaces.proto)
 and stored in ETCD under the following key:
 
 ```
