@@ -26,7 +26,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 	}
 
 	icmpV6Rule := getIPRuleMatches(acl_api.ACLRule{
-		IsIpv6:			1,
+		IsIpv6:         1,
 		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
 		SrcIPPrefixLen: 64,
 		DstIPAddr:      []byte{'d', 'e', 'd', 'd', 2},
@@ -63,21 +63,21 @@ func TestGetIPRuleMatch(t *testing.T) {
 // Test translation of MACIP rule into ACL Plugin's format
 func TestGetMACIPRuleMatches(t *testing.T) {
 	macipV4Rule := getMACIPRuleMatches(acl_api.MacipACLRule{
-		IsPermit:		1,
-		SrcMac: 		[]byte{2, 'd', 'e', 'a', 'd', 2},
-		SrcMacMask: 	[]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-		SrcIPAddr:  	[]byte{10, 0, 0, 1},
+		IsPermit:       1,
+		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
+		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 32,
 	})
 	if macipV4Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
 	}
 	macipV6Rule := getMACIPRuleMatches(acl_api.MacipACLRule{
-		IsPermit:		0,
+		IsPermit:       0,
 		IsIpv6:         1,
-		SrcMac: 		[]byte{2, 'd', 'e', 'a', 'd', 2},
-		SrcMacMask: 	[]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-		SrcIPAddr:  	[]byte{'d', 'e', 'a', 'd', 1},
+		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
+		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		SrcIPAddr:      []byte{'d', 'e', 'a', 'd', 1},
 		SrcIPPrefixLen: 64,
 	})
 	if macipV6Rule.GetSourceMacAddress() == "" {
@@ -92,21 +92,21 @@ func TestDumpIPACL(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 0,
-		Tag:      []byte{'a','c','l','1'},
+		Tag:      []byte{'a', 'c', 'l', '1'},
 		Count:    1,
-		R:        []acl_api.ACLRule{ {IsPermit:1}},
+		R:        []acl_api.ACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 1,
-		Tag:      []byte{'a','c','l','2'},
+		Tag:      []byte{'a', 'c', 'l', '2'},
 		Count:    2,
-		R:        []acl_api.ACLRule{ {IsPermit:0}, {IsPermit:2}},
+		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 2,
-		Tag:      []byte{'a','c','l','3'},
+		Tag:      []byte{'a', 'c', 'l', '3'},
 		Count:    3,
-		R:        []acl_api.ACLRule{ {IsPermit:0}, {IsPermit:1}, {IsPermit:2}},
+		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -136,21 +136,21 @@ func TestDumpMACIPACL(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
-		Tag:      []byte{'a','c','l','1'},
+		Tag:      []byte{'a', 'c', 'l', '1'},
 		Count:    1,
-		R:        []acl_api.MacipACLRule{ {IsPermit:1}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 1,
-		Tag:      []byte{'a','c','l','2'},
+		Tag:      []byte{'a', 'c', 'l', '2'},
 		Count:    2,
-		R:        []acl_api.MacipACLRule{ {IsPermit:0}, {IsPermit:2}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 2,
-		Tag:      []byte{'a','c','l','3'},
+		Tag:      []byte{'a', 'c', 'l', '3'},
 		Count:    3,
-		R:        []acl_api.MacipACLRule{ {IsPermit:0}, {IsPermit:1}, {IsPermit:2}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
@@ -229,7 +229,7 @@ func TestDumpIPAcls(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.ACLRule{ {IsPermit:1}},
+		R:        []acl_api.ACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -246,7 +246,7 @@ func TestDumpMacIPAcls(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{ {IsPermit:1}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -294,16 +294,16 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{ {IsPermit:1}, {IsPermit:0} },
+		R:        []acl_api.MacipACLRule{{IsPermit: 1}, {IsPermit: 0}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 1,
 		Count:    1,
-		R:        []acl_api.MacipACLRule{ {IsPermit:2}, {IsPermit:1} },
+		R:        []acl_api.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	ACLs, err := DumpInterfaceMACIPAcls(logrus.DefaultLogger(),0, ctx.MockChannel, nil)
+	ACLs, err := DumpInterfaceMACIPAcls(logrus.DefaultLogger(), 0, ctx.MockChannel, nil)
 	Expect(err).To(Succeed())
 	Expect(ACLs.Acls).To(HaveLen(2))
 }
@@ -382,4 +382,3 @@ func TestDumpInterfaces(t *testing.T) {
 	Expect(IPacls).To(HaveLen(3))
 	Expect(MACIPacls).To(HaveLen(2))
 }
-

@@ -7,14 +7,14 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 var ipAcls = acl.AccessLists_Acl{
@@ -73,7 +73,7 @@ func TestAclConfiguratorInit(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.ACLPluginGetVersionReply{})
 
 	// Test init
-	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, nil,false)
+	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, nil, false)
 	Expect(err).To(BeNil())
 	err = plugin.Close()
 	Expect(err).To(BeNil())
@@ -85,7 +85,7 @@ func TestConfigureACL(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	acl1 := acl.AccessLists_Acl{ AclName: "acl1",}
+	acl1 := acl.AccessLists_Acl{AclName: "acl1"}
 	err := plugin.ConfigureACL(&acl1)
 	Expect(err).To(BeNil())
 
@@ -133,9 +133,9 @@ func TestModifyNonExistingACL(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
 	// Test modify ipAcl
-	err := plugin.ModifyACL( &ipAcls, &ipAcl)
+	err := plugin.ModifyACL(&ipAcls, &ipAcl)
 	Expect(err).To(BeNil())
-	err = plugin.ModifyACL( &macipAcls, &macipAcl)
+	err = plugin.ModifyACL(&macipAcls, &macipAcl)
 	Expect(err).To(BeNil())
 }
 
@@ -191,7 +191,7 @@ func TestModifyACL(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
 
 	// Test modify ipAcl
-	err = plugin.ModifyACL( &ipAcls, &ipAcl)
+	err = plugin.ModifyACL(&ipAcls, &ipAcl)
 	Expect(err).To(BeNil())
 
 	macipAcl := acl.AccessLists_Acl{
@@ -219,7 +219,7 @@ func TestModifyACL(t *testing.T) {
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
 
 	// Test modify macipAcl
-	err = plugin.ModifyACL( &macipAcls, &macipAcl)
+	err = plugin.ModifyACL(&macipAcls, &macipAcl)
 	Expect(err).To(BeNil())
 }
 
@@ -321,21 +321,21 @@ func TestDumpMACIPACL(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
-		Tag:      []byte{'a','c','l','4'},
+		Tag:      []byte{'a', 'c', 'l', '4'},
 		Count:    1,
-		R:        []acl_api.MacipACLRule{ {IsPermit:1}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 1,
-		Tag:      []byte{'a','c','l','5'},
+		Tag:      []byte{'a', 'c', 'l', '5'},
 		Count:    2,
-		R:        []acl_api.MacipACLRule{ {IsPermit:0}, {IsPermit:2}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 2,
-		Tag:      []byte{'a','c','l','6'},
+		Tag:      []byte{'a', 'c', 'l', '6'},
 		Count:    3,
-		R:        []acl_api.MacipACLRule{ {IsPermit:0}, {IsPermit:1}, {IsPermit:2}},
+		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{

@@ -20,9 +20,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 )
 
 // ACLInterfaceLogicalReq groups multiple fields to not enumerate all of them in one function call
