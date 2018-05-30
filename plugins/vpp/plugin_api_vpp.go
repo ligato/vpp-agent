@@ -84,8 +84,11 @@ type API interface {
 	// to their respective indices as assigned by VPP.
 	GetAppNsIndexes() nsidx.AppNsIndex
 
-	// DumpACL returns a list of all configured ACLs.
-	DumpACL() (acls []*acl.AccessLists_Acl, err error)
+	// DumpIPACL returns a list of all configured IP ACLs.
+	DumpIPACL() (acls []*acl.AccessLists_Acl, err error)
+
+	// DumpMACIPACL returns a list of all configured MACIP ACLs.
+	DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error)
 
 	// DumpNat44Global returns the current NAT44 global config
 	DumpNat44Global() (*nat.Nat44Global, error)

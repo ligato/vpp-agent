@@ -226,9 +226,14 @@ func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
 	return plugin.appNsConfigurator.GetAppNsIndexes()
 }
 
-// DumpACL returns a list of all configured ACL entires
-func (plugin *Plugin) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
-	return plugin.aclConfigurator.DumpACL()
+// DumpIPACL returns a list of all configured IP ACL entires
+func (plugin *Plugin) DumpIPACL() (acls []*acl.AccessLists_Acl, err error) {
+	return plugin.aclConfigurator.DumpIPACL()
+}
+
+// DumpMACIPACL returns a list of all configured MACIP ACL entires
+func (plugin *Plugin) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error) {
+	return plugin.aclConfigurator.DumpMACIPACL()
 }
 
 // DumpNat44Global returns the current NAT44 global config
