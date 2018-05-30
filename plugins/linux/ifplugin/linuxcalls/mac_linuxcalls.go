@@ -32,23 +32,18 @@ package linuxcalls
 
 import (
 	"net"
-
 	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API.
-func SetInterfaceMac(ifName string, macAddress string, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkFromInterface(ifName)
 	if err != nil {
 		return err
 	}

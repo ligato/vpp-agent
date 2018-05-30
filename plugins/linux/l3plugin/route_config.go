@@ -56,7 +56,7 @@ type LinuxRouteConfigurator struct {
 	rtIdxSeq         uint32
 
 	// Linux namespace handler
-	nsHandler *nsplugin.NsHandler
+	nsHandler nsplugin.NamespaceAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -68,7 +68,7 @@ func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW 
 }
 
 // Init initializes static route configurator and starts goroutines
-func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler *nsplugin.NsHandler,
+func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
 	// Logger
 	plugin.log = logger.NewLogger("-route-conf")

@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
@@ -46,8 +47,9 @@ type Plugin struct {
 	// Shared indexes
 	ifIndexes ifaceidx.LinuxIfIndexRW
 
-	// Namespace handling
-	nsHandler *nsplugin.NsHandler
+	// Netlink/namespace handling
+	netHandler linuxcalls.NetlinkAPI
+	nsHandler  nsplugin.NamespaceAPI
 
 	// Channels (watch, notification, ...) which should be closed
 	ifStateChan         chan *ifplugin.LinuxInterfaceStateNotification
@@ -174,8 +176,10 @@ func (plugin *Plugin) Close() error {
 func (plugin *Plugin) initNs() error {
 	plugin.Log.Infof("Init Linux namespace handler")
 
-	plugin.nsHandler = &nsplugin.NsHandler{}
-	return plugin.nsHandler.Init(plugin.Log, plugin.msChan, plugin.ifMicroserviceNotif)
+	namespaceHandler := &nsplugin.NsHandler{}
+	plugin.nsHandler = namespaceHandler
+	return namespaceHandler.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), nsplugin.NewSyscallHandler(), plugin.msChan,
+		plugin.ifMicroserviceNotif, plugin.enableStopwatch)
 }
 
 // Initialize linux interface plugin
@@ -187,8 +191,8 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.nsHandler, plugin.ifIndexes, plugin.ifStateChan, plugin.ifMicroserviceNotif,
-		plugin.enableStopwatch); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes,
+		plugin.ifStateChan, plugin.ifMicroserviceNotif, plugin.enableStopwatch); err != nil {
 		return err
 	}
 

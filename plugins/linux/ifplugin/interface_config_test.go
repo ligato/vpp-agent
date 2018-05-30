@@ -1,0 +1,235 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package ifplugin_test
+
+import (
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/tests/linuxmock"
+	. "github.com/onsi/gomega"
+	"net"
+	"testing"
+)
+
+/* Linux interface configurator init and close */
+
+// Test init function
+func TestLinuxInterfaceConfiguratorInit(t *testing.T) {
+	plugin, _, _, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+	// Base fields
+	Expect(plugin).ToNot(BeNil())
+	Expect(stateChan).ToNot(BeNil())
+	Expect(msChan).ToNot(BeNil())
+	// Mappings & cache
+	Expect(plugin.GetLinuxInterfaceIndexes()).ToNot(BeNil())
+	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetInterfaceByNameCache()).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveLen(0))
+	Expect(plugin.GetInterfaceByMsCache()).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByMsCache()).To(HaveLen(0))
+}
+
+/* Linux interface configurator test cases */
+
+// Configure simple Veth without peer
+func TestLinuxConfiguratorAddSingleVeth(t *testing.T) {
+	plugin, _, _, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "peer1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure Veth with missing data
+func TestLinuxConfiguratorAddSingleVethWithoutData(t *testing.T) {
+	plugin, _, _, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	data := getVethInterface("veth1", "peer1", 1)
+	data.HostIfName = ""
+	data.Veth = nil
+	err := plugin.ConfigureLinuxInterface(data)
+	Expect(err).Should(HaveOccurred())
+}
+
+// Configure simple Veth without peer
+func TestLinuxConfiguratorAddVethPair(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 1,
+	})
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 2,
+	})
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 0))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 0))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Verify registration
+	_, meta, found := plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	_, meta, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	// Verify interface by name config
+	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	// Verify interface by microservice cache
+	_, ok = plugin.GetInterfaceByMsCache()["veth1-ms"]
+	Expect(ok).To(BeFalse())
+	_, ok = plugin.GetInterfaceByMsCache()["veth2-ms"]
+	Expect(ok).To(BeFalse())
+}
+
+// Configure simple Veth without peer
+func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 1,
+	})
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 2,
+	})
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Verify registration
+	_, meta, found := plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	_, meta, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	// Verify interface by name config
+	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	// Verify interface by microservice cache
+	ms, ok := plugin.GetInterfaceByMsCache()["veth1-ms"]
+	Expect(ok).To(BeTrue())
+	Expect(ms).To(HaveLen(1))
+	ms, ok = plugin.GetInterfaceByMsCache()["veth2-ms"]
+	Expect(ok).To(BeTrue())
+	Expect(ms).To(HaveLen(1))
+}
+
+/* Interface Test Setup */
+
+func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock.NetlinkHandlerMock, *linuxmock.NamespacePluginMock,
+	chan *ifplugin.LinuxInterfaceStateNotification, chan *nsplugin.MicroserviceCtx, chan *nsplugin.MicroserviceEvent) {
+	RegisterTestingT(t)
+
+	// Loggers
+	pluginLog := logging.ForPlugin("linux-if-log", logrus.NewLogRegistry())
+	pluginLog.SetLevel(logging.DebugLevel)
+	nsHandleLog := logging.ForPlugin("ns-handle-log", logrus.NewLogRegistry())
+	nsHandleLog.SetLevel(logging.DebugLevel)
+	// Linux interface indexes
+	swIfIndexes := ifaceidx2.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
+	// State/notification channels
+	ifStateChan := make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
+	msChan := make(chan *nsplugin.MicroserviceCtx, 100)
+	ifMicroserviceNotif := make(chan *nsplugin.MicroserviceEvent, 100)
+	// Configurator
+	plugin := &ifplugin.LinuxInterfaceConfigurator{}
+	linuxMock := linuxmock.NewNetlinkHandlerMock()
+	nsMock := linuxmock.NewNamespacePluginMock()
+	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes, ifStateChan,
+		ifMicroserviceNotif, true)
+	Expect(err).To(BeNil())
+
+	return plugin, linuxMock, nsMock, ifStateChan, msChan, ifMicroserviceNotif
+}
+
+func ifTestTeardown(plugin *ifplugin.LinuxInterfaceConfigurator, stateChan chan *ifplugin.LinuxInterfaceStateNotification,
+	msChan chan *nsplugin.MicroserviceCtx, msNotif chan *nsplugin.MicroserviceEvent) {
+	err := safeclose.Close(stateChan)
+	Expect(err).To(BeNil())
+	err = safeclose.Close(msNotif)
+	Expect(err).To(BeNil())
+	err = safeclose.Close(msChan)
+	Expect(err).To(BeNil())
+	err = plugin.Close()
+	Expect(err).To(BeNil())
+}
+
+/* Linux interface Test Data */
+
+func getVethInterface(ifName, peerName string, namespaceType interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType) *interfaces.LinuxInterfaces_Interface {
+	return &interfaces.LinuxInterfaces_Interface{
+		Name:       ifName,
+		Enabled:    true,
+		HostIfName: ifName + "-host",
+		Type:       interfaces.LinuxInterfaces_VETH,
+		Namespace: func(namespaceType interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType) *interfaces.LinuxInterfaces_Interface_Namespace{
+			if namespaceType < 4 {
+				return &interfaces.LinuxInterfaces_Interface_Namespace{
+					Type: namespaceType,
+					Microservice: ifName + "-ms",
+				}
+			}
+			return nil
+		}(namespaceType),
+		Veth: &interfaces.LinuxInterfaces_Interface_Veth{
+			PeerIfName: peerName,
+		},
+	}
+}
+

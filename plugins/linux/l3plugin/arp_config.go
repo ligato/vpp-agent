@@ -50,7 +50,7 @@ type LinuxArpConfigurator struct {
 	arpIdxSeq  uint32
 
 	// Linux namespace handler
-	nsHandler *nsplugin.NsHandler
+	nsHandler nsplugin.NamespaceAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -70,7 +70,7 @@ func (plugin *LinuxArpConfigurator) GetArpIndexes() l3idx.LinuxARPIndexRW {
 }
 
 // Init initializes ARP configurator and starts goroutines
-func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, handler *nsplugin.NsHandler,
+func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, handler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
 	// Logger
 	plugin.log = logger.NewLogger("-arp-conf")

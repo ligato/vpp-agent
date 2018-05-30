@@ -32,23 +32,16 @@ package linuxcalls
 
 import (
 	"fmt"
-
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
-func AddVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
-	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Creating new Linux VETH pair")
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("add-veth-iface-pair").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Veth pair params
 	veth := &netlink.Veth{
@@ -65,14 +58,10 @@ func AddVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog
 }
 
 // DelVethInterfacePair calls LinkDel Netlink API for the Netlink.Veth interface type.
-func DelVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog measure.StopWatchEntry) error {
-	log.WithFields(logging.Fields{"ifName": ifName, "peerIfName": peerIfName}).Debug("Deleting Linux VETH pair")
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) DelVethInterfacePair(ifName, peerIfName string) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("del-veth-iface-pair").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Veth pair params.
 	veth := &netlink.Veth{
@@ -89,15 +78,12 @@ func DelVethInterfacePair(ifName, peerIfName string, log logging.Logger, timeLog
 }
 
 // GetVethPeerName return the peer name for a given VETH interface.
-func GetVethPeerName(ifName string, timeLog measure.StopWatchEntry) (string, error) {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) GetVethPeerName(ifName string) (string, error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("get-veth-peer-name").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkFromInterface(ifName)
 	if err != nil {
 		return "", err
 	}
