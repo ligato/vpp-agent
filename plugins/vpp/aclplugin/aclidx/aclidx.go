@@ -61,7 +61,7 @@ type AclIdxDto struct {
 	Metadata *acl_model.AccessLists_Acl
 }
 
-// NewAclIndex creates new instance of swIfIndex.
+// NewAclIndex creates new instance of aclIndex.
 func NewAclIndex(mapping idxvpp.NameToIdxRW) AclIndexRW {
 	return &aclIndex{mapping: mapping}
 }
