@@ -351,7 +351,7 @@ func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err err
 	return acls, nil
 }
 
-// DumpMACIPACL returns all configured IP ACLs in proto format
+// DumpMACIPACL returns all configured MACIP ACLs in proto format
 func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error) {
 	aclsWithIndex, err := vppdump.DumpMACIPACL(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
 	if err != nil {
