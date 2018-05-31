@@ -35,4 +35,5 @@ sudo docker build --tag ${IMAGE_TAG} --file ${DOCKERFILE} \
     --build-arg GOLANG_OS_ARCH=${GOLANG_OS_ARCH} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
+    ${DOCKER_BUILD_ARGS} \
  ../..

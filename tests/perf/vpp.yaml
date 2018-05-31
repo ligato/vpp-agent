@@ -52,7 +52,7 @@ data:
 
     [program:agent]
     ;command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
-    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --default-plugins-config=/opt/vpp-agent/dev/vppplugin.conf --linuxplugin-config=/opt/vpp-agent/dev/linuxplugin.conf
+    command=/bin/vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --vpp-plugins-config=/opt/vpp-agent/dev/vppplugin.conf --linux-plugin-config=/opt/vpp-agent/dev/linuxplugin.conf
     autorestart=false
     redirect_stderr=true
     priority=2
