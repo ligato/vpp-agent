@@ -21,8 +21,8 @@ To build the production image on your local machine, type:
 This will build `prod_vpp_agent` image with agent and vpp files taken from dev image.
 
 In addition, these environment variables can be set in Dockerfile:
-- `START_AGENT` - whether the vpp-agent should be started after start of the container (default is true, agent will be started)
-- `RETAIN_SUPERVISOR` - whether the supervisor should be killed (default is false, supervisor will be stopped)
+- `OMIT_AGENT` - whether the start of vpp-agent should be omitted (default is unset, agent will be started normally)
+- `RETAIN_SUPERVISOR` - whether the supervisord should quit on unexpected exit of vpp or vpp-agent (default is unset, supervisord will quit)
 
 Their values can be also changed before image start with `docker -e` to have desired behavior
 
