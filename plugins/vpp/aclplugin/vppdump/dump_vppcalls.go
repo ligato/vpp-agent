@@ -66,6 +66,9 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VP
 
 	// get all ACLs with IP ruleData
 	IPRuleACLs, _ := DumpIPAcls(log, vppChannel, stopwatch)
+	if len(IPRuleACLs) < 1 {
+		return ACLs, nil
+	}
 
 	// resolve IP rules for every ACL
 	// Note: currently ACL may have only IP ruleData or only MAC IP ruleData
@@ -125,9 +128,9 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 	ruleMACIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
-	MACIPRuleACLs, err := DumpMacIPAcls(log, vppChannel, stopwatch)
-	if err != nil {
-		return nil, err
+	MACIPRuleACLs, _ := DumpMacIPAcls(log, vppChannel, stopwatch)
+	if len(MACIPRuleACLs) < 1 {
+		return ACLs, nil
 	}
 
 	// resolve MACIP rules for every ACL

@@ -56,6 +56,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
+				break
 			}
 			continue
 		}
@@ -67,6 +68,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				log.Error(err)
 				wasErr = err
+				break
 			}
 			continue
 		}
@@ -77,6 +79,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 		if err := plugin.ConfigureACL(nbACL); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
+			break
 		}
 	}
 
