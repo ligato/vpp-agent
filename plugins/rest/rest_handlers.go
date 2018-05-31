@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
-    aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	acldump "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
@@ -299,6 +299,7 @@ func (plugin *Plugin) macipACLGetHandler(formatter *render.Render) http.HandlerF
 		formatter.JSON(w, http.StatusOK, res)
 	}
 }
+
 // exampleACLGetHandler - used to get an example ACL configuration
 func (plugin *Plugin) exampleIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -346,9 +347,9 @@ func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.H
 		plugin.Deps.Log.Info("Getting example macip acl")
 
 		macipRule := &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-			SourceAddress: "192.168.0.1",
-			SourceAddressPrefix: uint32(16),
-			SourceMacAddress: "02:00:DE:AD:00:02",
+			SourceAddress:        "192.168.0.1",
+			SourceAddressPrefix:  uint32(16),
+			SourceMacAddress:     "02:00:DE:AD:00:02",
 			SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 		}
 
@@ -368,6 +369,7 @@ func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.H
 		formatter.JSON(w, http.StatusOK, aclRes)
 	}
 }
+
 // ipACLPostHandler - used to get acl configuration for a particular interface
 func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {

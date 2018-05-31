@@ -17,16 +17,16 @@ package vppcalls
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
-    acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-    "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 // AclMessages is list of used VPP messages for compatibility check

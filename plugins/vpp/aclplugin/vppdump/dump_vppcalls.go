@@ -21,12 +21,13 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
-    acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
+
 // Protocol types that can occur in ACLs
 const (
 	ICMPv4Proto = 1
@@ -103,7 +104,7 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VP
 		ACLs = append(ACLs, &ACLEntry{
 			Identifier: &ACLIdentifier{
 				ACLIndex: identifier.ACLIndex,
-				Tag: identifier.Tag,
+				Tag:      identifier.Tag,
 			},
 			ACLDetails: &acl.AccessLists_Acl{
 				AclName:    identifier.Tag,
@@ -124,10 +125,12 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 	ruleMACIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
-	MACIPRuleACLs, _ := DumpMacIPAcls(log, vppChannel, stopwatch)
+	MACIPRuleACLs, err := DumpMacIPAcls(log, vppChannel, stopwatch)
+	if err != nil {
+		return nil, err
+	}
 
-	// resolve IP rules for every ACL
-	// Note: currently ACL may have only IP ruleData or only MAC IP ruleData
+	// resolve MACIP rules for every ACL
 	var wasErr error
 	for identifier, MACIPRules := range MACIPRuleACLs {
 		var rulesDetails []*acl.AccessLists_Acl_Rule
@@ -163,7 +166,7 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 		ACLs = append(ACLs, &ACLEntry{
 			Identifier: &ACLIdentifier{
 				ACLIndex: identifier.ACLIndex,
-				Tag: identifier.Tag,
+				Tag:      identifier.Tag,
 			},
 			ACLDetails: &acl.AccessLists_Acl{
 				AclName:    identifier.Tag,
@@ -207,7 +210,7 @@ func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log l
 			break
 		}
 
-		if replyIP.Count>0 {
+		if replyIP.Count > 0 {
 			data := &ACLToInterface{
 				SwIfIdx: replyIP.SwIfIndex,
 			}
@@ -263,7 +266,7 @@ func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log l
 // DumpMACIPACLInterfaces returns a map of MACIP ACL indices with interfaces
 func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VPPChannel,
 	stopwatch *measure.Stopwatch) (
-		map[uint32]*acl.AccessLists_Acl_Interfaces,error) {
+	map[uint32]*acl.AccessLists_Acl_Interfaces, error) {
 	defer func(start time.Time) {
 		stopwatch.TimeLog(acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(start))
 	}(time.Now())
@@ -292,7 +295,7 @@ func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, lo
 			wasErr = err
 			break
 		}
-		if replyMACIP.Count>0 {
+		if replyMACIP.Count > 0 {
 			data := &ACLToInterface{
 				SwIfIdx: replyMACIP.SwIfIndex,
 			}

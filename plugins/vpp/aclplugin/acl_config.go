@@ -197,35 +197,28 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 		rules, isL2MacIP := plugin.validateRules(newACL.AclName, newACL.Rules)
 		var vppACLIndex uint32
 		if isL2MacIP {
-			agentACLIndex, _, found := plugin.l2AclIndexes.LookupIdx(newACL.AclName)
+			agentACLIndex, _, found := plugin.l2AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", newACL.AclName)
+				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
 				return nil
 			}
 			// Index used in VPP = index used in mapping - 1
 			vppACLIndex = agentACLIndex - 1
 		} else {
-			agentACLIndex, _, found := plugin.l3l4AclIndexes.LookupIdx(newACL.AclName)
+			agentACLIndex, _, found := plugin.l3l4AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", newACL.AclName)
+				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
 				return nil
 			}
 			vppACLIndex = agentACLIndex - 1
 		}
 		if isL2MacIP {
 			// L2 ACL
-			err := vppcalls.DeleteMacIPAcl(vppACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch)
+			err := vppcalls.ModifyMACIPAcl(vppACLIndex, rules, newACL.AclName, plugin.log, plugin.vppChan, plugin.stopwatch)
 			if err != nil {
 				return err
 			}
-			plugin.l2AclIndexes.UnregisterName(newACL.AclName)
-			newVppACLIndex, err := vppcalls.AddMacIPAcl(rules, newACL.AclName, plugin.log, plugin.vppChan, plugin.stopwatch)
-			if err != nil {
-				return err
-			}
-			// Create agent index by incrementing the vpp one.
-			newAgentACLIndex := newVppACLIndex + 1
-			plugin.l2AclIndexes.RegisterName(newACL.AclName, newAgentACLIndex, nil)
+			// There is no need to update index because modified ACL keeps the old one.
 		} else {
 			// L3/L4 ACL can be modified directly.
 			err := vppcalls.ModifyIPAcl(vppACLIndex, rules, newACL.AclName, plugin.log, plugin.vppChan, plugin.stopwatch)
@@ -345,9 +338,22 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 	return err
 }
 
-// DumpACL returns all configured ACLs in proto format
-func (plugin *ACLConfigurator) DumpACL() (acls []*acl.AccessLists_Acl, err error) {
+// DumpIPACL returns all configured IP ACLs in proto format
+func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err error) {
 	aclsWithIndex, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
+	if err != nil {
+		plugin.log.Error(err)
+		return nil, err
+	}
+	for _, aclWithIndex := range aclsWithIndex {
+		acls = append(acls, aclWithIndex.ACLDetails)
+	}
+	return acls, nil
+}
+
+// DumpMACIPACL returns all configured MACIP ACLs in proto format
+func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error) {
+	aclsWithIndex, err := vppdump.DumpMACIPACL(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
 	if err != nil {
 		plugin.log.Error(err)
 		return nil, err

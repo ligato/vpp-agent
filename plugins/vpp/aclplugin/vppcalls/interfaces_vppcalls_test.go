@@ -25,7 +25,7 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		[]uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err := interfaces.SetACLToInterfacesAsIngress( 0, []uint32{0})
+	err := interfaces.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
