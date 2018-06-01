@@ -15,6 +15,7 @@
 package ifplugin_test
 
 import (
+	"fmt"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -74,7 +75,7 @@ func TestLinuxConfiguratorAddSingleVethWithoutData(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-// Configure simple Veth without peer
+// Configure simple Veth with peer
 func TestLinuxConfiguratorAddVethPair(t *testing.T) {
 	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
@@ -121,7 +122,7 @@ func TestLinuxConfiguratorAddVethPair(t *testing.T) {
 	Expect(ok).To(BeFalse())
 }
 
-// Configure simple Veth without peer
+// Configure simple Veth with peer in microservice-type namespace
 func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
 	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
@@ -168,6 +169,352 @@ func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
 	ms, ok = plugin.GetInterfaceByMsCache()["veth2-ms"]
 	Expect(ok).To(BeTrue())
 	Expect(ms).To(HaveLen(1))
+}
+
+// Configure simple Veth with peer while Veth ns is not available
+func TestLinuxConfiguratorAddVethPairVethNsNotAvailable(t *testing.T) {
+	plugin, _, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(false)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Verify registration
+	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
+	Expect(found).To(BeFalse())
+	// Verify interface by name config
+	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while peer ns is not available
+func TestLinuxConfiguratorAddVethPairPeerNsNotAvailable(t *testing.T) {
+	plugin, _, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(false)
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Verify registration
+	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
+	Expect(found).To(BeFalse())
+	// Verify interface by name config
+	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(ok).To(BeTrue())
+	Expect(val).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while switching ns returns error
+func TestLinuxConfiguratorAddVethPairSwitchNsError(t *testing.T) {
+	plugin, _, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("SwitchNamespace").ThenReturn(fmt.Errorf("switch-namespace error"))
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred())
+}
+
+// Configure simple Veth with peer while peer ns is not available
+func TestLinuxConfiguratorAddVethPairPeerSwitchToNsWhileRemovingObsoleteErr(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("SwitchToNamespace").ThenReturn(fmt.Errorf("remove-obsolete-1-err"))
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 1,
+	})
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 2,
+	})
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth which needs to be removed. Covers all 4 cases.
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsolete(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-ms-obsolete-peer")
+	// Second obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth2-ms-obsolete-peer")
+	// Third obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-cfg-obsolete-peer")
+	// Fourth obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth2-cfg-obsolete-peer")
+	// Complete
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 1,
+	})
+	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
+		Index: 2,
+	})
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth - interface exists error
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfExistsError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(fmt.Errorf("interface-exists-err"))
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred()) // Expect error
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth - interface type error
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn(fmt.Errorf("interface-type-err"))
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred()) // Expect error
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth - interface type does not match error
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeMatchError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-ms-obsolete-peer")
+	// Second obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("tap") // instead of veth
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred()) // Expect error
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth - get peer name error
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteGetPeerNameError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-ms-obsolete-peer")
+	// Second obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth2-ms-obsolete-peer")
+	// Third obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn(fmt.Errorf("get-veth-peer-err"))
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred()) // Expect error
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer while there is an obsolete veth - delete obsotele interface error
+func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteDeletePeerNameError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// First obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-ms-obsolete-peer")
+	ifMock.When("DelVethInterfacePair").ThenReturn()
+	// Second obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth2-ms-obsolete-peer")
+	ifMock.When("DelVethInterfacePair").ThenReturn()
+	// Third obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-cfg-obsolete-peer")
+	ifMock.When("DelVethInterfacePair").ThenReturn()
+	// Fourth obsolete veth removal
+	ifMock.When("InterfaceExists").ThenReturn(true)
+	ifMock.When("GetInterfaceType").ThenReturn("veth")
+	ifMock.When("GetVethPeerName").ThenReturn("veth1-ms-obsolete-peer")
+	ifMock.When("DelVethInterfacePair").ThenReturn(fmt.Errorf("del-veth-interface-pair-error"))
+
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
+	Expect(err).Should(HaveOccurred()) // Expect error
+	data, found = plugin.GetInterfaceByNameCache()["veth2"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+}
+
+// Configure simple Veth with peer - add veth pair error
+func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
+	plugin, ifMock, nsMock, stateChan, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("AddVethInterfacePair").ThenReturn(fmt.Errorf("add-veth-interface-pair-err"))
+	// Configure first veth
+	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 0))
+	Expect(err).ShouldNot(HaveOccurred())
+	data, found := plugin.GetInterfaceByNameCache()["veth1"]
+	Expect(found).To(BeTrue())
+	Expect(data).ToNot(BeNil())
+	// Configure second veth
+	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 0))
+	Expect(err).Should(HaveOccurred())
 }
 
 /* Interface Test Setup */
