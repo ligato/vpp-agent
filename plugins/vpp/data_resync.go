@@ -165,7 +165,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 		}
 	}
 	if !plugin.droppedFromResync(acl.KeyPrefix()) {
-		if err := plugin.aclConfigurator.Resync(req.ACLs, plugin.Log); err != nil {
+		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}

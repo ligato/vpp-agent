@@ -20,7 +20,53 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	. "github.com/onsi/gomega"
 	"testing"
+	"git.fd.io/govpp.git/adapter/mock"
+	govppapi "git.fd.io/govpp.git/api"
 )
+
+type vppReplyMock struct {
+	Id      uint16
+	Ping    bool
+	Message govppapi.Message
+}
+
+func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
+	var sendControlPing bool
+
+	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
+		if sendControlPing {
+			sendControlPing = false
+			data := &vpe.ControlPingReply{}
+			reply, err := vppMock.ReplyBytes(request, data)
+			Expect(err).To(BeNil())
+			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
+			Expect(err).To(BeNil())
+			return reply, msgID, true
+		}
+
+		for _, dataMock := range dataList {
+			if request.MsgID == dataMock.Id {
+				// Send control ping next iteration if set
+				sendControlPing = dataMock.Ping
+				msgID, err := vppMock.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())
+				Expect(err).To(BeNil())
+				reply, err := vppMock.ReplyBytes(request, dataMock.Message)
+				Expect(err).To(BeNil())
+				return reply, msgID, true
+			}
+		}
+
+		replyMsg, msgID, ok := vppMock.ReplyFor(request.MsgName)
+
+		if ok {
+			reply, err := vppMock.ReplyBytes(request, replyMsg)
+			Expect(err).To(BeNil())
+			return reply, msgID, true
+		}
+
+		return reply, 0, false
+	}
+}
 
 var acls = []*acl.AccessLists_Acl{
 	{AclName: "acl1",
@@ -66,196 +112,308 @@ var acls = []*acl.AccessLists_Acl{
 // Test synchronisation - writes ACLs to the empty VPP
 func TestResyncEmpty(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, log := aclTestSetup(t, false)
+	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+		{
+			Id:   1011,
+			Ping: true,
+			Message: &acl_api.ACLDetails{},
+		},
+		{
+			Id:   1015,
+			Ping: true,
+			Message: &acl_api.ACLInterfaceListDetails{},
+		},
+		{
+			Id:   1013,
+			Ping: true,
+			Message: &acl_api.MacipACLDetails{},
+		},
+		{
+			Id:   1017,
+			Ping: true,
+			Message: &acl_api.MacipACLInterfaceListDetails{},
+		},
+		{
+			Id:   1001,
+			Ping: false,
+			Message: &acl_api.ACLAddReplaceReply{},
+		},
+		{
+			Id:   1005,
+			Ping: false,
+			Message: &acl_api.MacipACLAddReply{},
+		},
+	}))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-
-	err := plugin.Resync(acls, log)
+	err := plugin.Resync(acls)
 	Expect(err).To(BeNil())
 }
 
 // Test synchronisation - writes ACLs to the already configured VPP
 func TestResyncConfigured(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, log := aclTestSetup(t, false)
+	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{0, 2},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+		{
+			Id:   1011,
+			Ping: true,
+			Message: &acl_api.ACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '1'},
+				Count:    1,
+				R:        []acl_api.ACLRule{{IsPermit: 1}},
+			},
+		},
+		{
+			Id:   1015,
+			Ping: true,
+			Message: &acl_api.ACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     2,
+				NInput:    1,
+				Acls:      []uint32{0, 2},
+			},
+		},
+		{
+			Id:   1013,
+			Ping: true,
+			Message: &acl_api.MacipACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '2'},
+				Count:    2,
+				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			},
+		},
+		{
+			Id:   1017,
+			Ping: true,
+			Message: &acl_api.MacipACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     1,
+				Acls:      []uint32{1},
+			},
+		},
+		{
+			Id:   1003,
+			Ping: false,
+			Message: &acl_api.ACLDelReply{},
+		},
+		{
+			Id:   1009,
+			Ping: false,
+			Message: &acl_api.MacipACLDelReply{},
+		},
+		{
+			Id:   1001,
+			Ping: false,
+			Message: &acl_api.ACLAddReplaceReply{},
+		},
+		{
+			Id:   1005,
+			Ping: false,
+			Message: &acl_api.MacipACLAddReply{},
+		},
+	}))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     1,
-		Acls:      []uint32{1},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-
-	err := plugin.Resync(acls, log)
+	err := plugin.Resync(acls)
 	Expect(err).To(BeNil())
 }
 
 // Test Resync with error when removig existing IP ACL
 func TestResyncErr1(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, log := aclTestSetup(t, false)
+	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{0, 2},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+		{
+			Id:   1011,
+			Ping: true,
+			Message: &acl_api.ACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '1'},
+				Count:    1,
+				R:        []acl_api.ACLRule{{IsPermit: 1}},
+			},
+		},
+		{
+			Id:   1015,
+			Ping: true,
+			Message: &acl_api.ACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     2,
+				NInput:    1,
+				Acls:      []uint32{0, 2},
+			},
+		},
+		{
+			Id:   1013,
+			Ping: true,
+			Message: &acl_api.MacipACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '2'},
+				Count:    2,
+				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			},
+		},
+		{
+			Id:   1017,
+			Ping: true,
+			Message: &acl_api.MacipACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     1,
+				Acls:      []uint32{1},
+			},
+		},
+		// wrong msg
+		{
+			Id:   1003,
+			Ping: false,
+			Message: &acl_api.MacipACLDelReply{},
+		},
+	}))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     1,
-		Acls:      []uint32{1},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-	//ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-
-	err := plugin.Resync(acls, log)
+	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test Resync with error when removig existing IP ACL
 func TestResyncErr2(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, log := aclTestSetup(t, false)
+	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{0, 2},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+		{
+			Id:   1011,
+			Ping: true,
+			Message: &acl_api.ACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '1'},
+				Count:    1,
+				R:        []acl_api.ACLRule{{IsPermit: 1}},
+			},
+		},
+		{
+			Id:   1015,
+			Ping: true,
+			Message: &acl_api.ACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     2,
+				NInput:    1,
+				Acls:      []uint32{0, 2},
+			},
+		},
+		{
+			Id:   1013,
+			Ping: true,
+			Message: &acl_api.MacipACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '2'},
+				Count:    2,
+				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			},
+		},
+		{
+			Id:   1017,
+			Ping: true,
+			Message: &acl_api.MacipACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     1,
+				Acls:      []uint32{1},
+			},
+		},
+		{
+			Id:   1003,
+			Ping: false,
+			Message: &acl_api.ACLDelReply{},
+		},
+		// wrong msg
+		{
+			Id:   1009,
+			Ping: false,
+			Message: &acl_api.ACLDelReply{},
+		},
+	}))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     1,
-		Acls:      []uint32{1},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-
-	err := plugin.Resync(acls, log)
+	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test Resync with error when configuring new ALCs
 func TestResyncErr3(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, log := aclTestSetup(t, false)
+	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{0, 2},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
+	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+		{
+			Id:   1011,
+			Ping: true,
+			Message: &acl_api.ACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '1'},
+				Count:    1,
+				R:        []acl_api.ACLRule{{IsPermit: 1}},
+			},
+		},
+		{
+			Id:   1015,
+			Ping: true,
+			Message: &acl_api.ACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     2,
+				NInput:    1,
+				Acls:      []uint32{0, 2},
+			},
+		},
+		{
+			Id:   1013,
+			Ping: true,
+			Message: &acl_api.MacipACLDetails{
+				ACLIndex: 0,
+				Tag:      []byte{'a', 'c', 'l', '2'},
+				Count:    2,
+				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+			},
+		},
+		{
+			Id:   1017,
+			Ping: true,
+			Message: &acl_api.MacipACLInterfaceListDetails{
+				SwIfIndex: 1,
+				Count:     1,
+				Acls:      []uint32{1},
+			},
+		},
+		{
+			Id:   1003,
+			Ping: false,
+			Message: &acl_api.ACLDelReply{},
+		},
+		{
+			Id:   1009,
+			Ping: false,
+			Message: &acl_api.MacipACLDelReply{},
+		},
+		// wrong msg
+		{
+			Id:   1001,
+			Ping: false,
+			Message: &acl_api.MacipACLAddReplaceReply{},
+		},
+	}))
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     1,
-		Acls:      []uint32{1},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	err := plugin.Resync(acls, log)
+	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
-
 }

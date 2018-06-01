@@ -15,15 +15,14 @@
 package aclplugin
 
 import (
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP.
-func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging.Logger) error {
-	log.Debug("Resync ACLs started")
+func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
+	plugin.log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
 	defer func() {
 		if plugin.stopwatch != nil {
@@ -54,7 +53,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
-				log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 				break
 			}
@@ -66,7 +65,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
-				log.Error(err)
+				plugin.log.Error(err)
 				wasErr = err
 				break
 			}
