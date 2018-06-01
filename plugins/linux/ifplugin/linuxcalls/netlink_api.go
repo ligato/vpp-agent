@@ -43,6 +43,8 @@ type NetlinkAPI interface {
 	RenameInterface(ifName string, newName string) error
 	// GetLinkFromInterface returns netlink interface type
 	GetLinkFromInterface(ifName string) (netlink.Link, error)
+	// GetLinkList return all links from namespace
+	GetLinkList() ([]netlink.Link, error)
 	// GetAddressList reads all IP addresses
 	GetAddressList(ifName string) ([]netlink.Addr, error)
 	// InterfaceExists verifies interface existence

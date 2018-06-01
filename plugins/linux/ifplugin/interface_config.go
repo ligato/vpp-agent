@@ -336,7 +336,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 	}
 
 	// Search default namespace for appropriate interface
-	linuxIfs, err := netlink.LinkList()
+	linuxIfs, err := plugin.ifHandler.GetLinkList()
 	if err != nil {
 		return fmt.Errorf("failed to read linux interfaces: %v", err)
 	}
@@ -655,10 +655,10 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	// Get all IP addresses currently configured on the interface. It is not enough to just remove all IP addresses
 	// present in the ifConfig object, there can be default IP address which needs to be removed as well.
 	var ipAddresses []*net.IPNet
-	link, err := netlink.LinkList()
+	link, err := plugin.ifHandler.GetLinkList()
 	for _, linuxIf := range link {
 		if linuxIf.Attrs().Name == ifConfig.config.HostIfName {
-			IPlist, err := netlink.AddrList(linuxIf, netlink.FAMILY_ALL)
+			IPlist, err := plugin.ifHandler.GetAddressList(linuxIf.Attrs().Name)
 			if err != nil {
 				return err
 			}

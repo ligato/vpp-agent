@@ -63,7 +63,7 @@ type NsHandler struct {
 
 	// Handlers
 	ifHandler  linuxcalls.NetlinkAPI
-	sysHandler SyscallAPI
+	sysHandler SystemAPI
 
 	// Context within which all goroutines are running
 	ctx context.Context
@@ -74,7 +74,7 @@ type NsHandler struct {
 }
 
 // Init namespace handler caches and create config namespace
-func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, sysHandler SyscallAPI,
+func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, sysHandler SystemAPI,
 	msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent, enableStopwatch bool) error {
 	// Logger
 	plugin.log = logger.NewLogger("-ns-handler")
@@ -88,6 +88,10 @@ func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.
 
 	plugin.microServiceByLabel = make(map[string]*Microservice)
 	plugin.microServiceByID = make(map[string]*Microservice)
+
+	// Handlers
+	plugin.ifHandler = ifHandler
+	plugin.sysHandler = sysHandler
 
 	// Default namespace
 	var err error
@@ -107,10 +111,6 @@ func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.
 		return err
 	}
 	plugin.log.Debugf("Using docker client endpoint: %+v", plugin.dockerClient.Endpoint())
-
-	// Handlers
-	plugin.ifHandler = ifHandler
-	plugin.sysHandler = sysHandler
 
 	// Stopwatch
 	if enableStopwatch {

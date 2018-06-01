@@ -218,10 +218,10 @@ func getVethInterface(ifName, peerName string, namespaceType interfaces.LinuxInt
 		Enabled:    true,
 		HostIfName: ifName + "-host",
 		Type:       interfaces.LinuxInterfaces_VETH,
-		Namespace: func(namespaceType interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType) *interfaces.LinuxInterfaces_Interface_Namespace{
+		Namespace: func(namespaceType interfaces.LinuxInterfaces_Interface_Namespace_NamespaceType) *interfaces.LinuxInterfaces_Interface_Namespace {
 			if namespaceType < 4 {
 				return &interfaces.LinuxInterfaces_Interface_Namespace{
-					Type: namespaceType,
+					Type:         namespaceType,
 					Microservice: ifName + "-ms",
 				}
 			}
@@ -232,4 +232,3 @@ func getVethInterface(ifName, peerName string, namespaceType interfaces.LinuxInt
 		},
 	}
 }
-

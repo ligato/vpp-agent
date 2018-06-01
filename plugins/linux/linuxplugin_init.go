@@ -178,7 +178,7 @@ func (plugin *Plugin) initNs() error {
 
 	namespaceHandler := &nsplugin.NsHandler{}
 	plugin.nsHandler = namespaceHandler
-	return namespaceHandler.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), nsplugin.NewSyscallHandler(), plugin.msChan,
+	return namespaceHandler.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), nsplugin.NewSystemHandler(), plugin.msChan,
 		plugin.ifMicroserviceNotif, plugin.enableStopwatch)
 }
 

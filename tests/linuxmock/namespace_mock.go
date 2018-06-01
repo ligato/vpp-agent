@@ -13,7 +13,7 @@ type NamespacePluginMock struct {
 	respMax   int
 }
 
-// NewNamespacePluginMock creates new instance of mock and initializes response list
+// NewNamespacePluginMock creates new instance of the mock and initializes response list
 func NewNamespacePluginMock() *NamespacePluginMock {
 	return &NamespacePluginMock{
 		responses: make([]*whenNsResp, 0),
@@ -22,15 +22,15 @@ func NewNamespacePluginMock() *NamespacePluginMock {
 
 // Helper struct with single method call and desired response items
 type whenNsResp struct {
-	method string
-	items  []interface{}
+	methodName string
+	items      []interface{}
 }
 
 // When defines name of the related method. It creates a new instance of whenNsResp with provided method name and
 // stores it to the mock.
 func (mock *NamespacePluginMock) When(methodName string) *whenNsResp {
 	resp := &whenNsResp{
-		method: methodName,
+		methodName: methodName,
 	}
 	mock.responses = append(mock.responses, resp)
 	return resp
@@ -55,7 +55,7 @@ func (when *whenNsResp) ThenReturn(item ...interface{}) {
 // Auxiliary method returns next return value for provided method as generic type
 func (mock *NamespacePluginMock) getReturnValues(name string) (response []interface{}) {
 	for i, resp := range mock.responses {
-		if resp.method == name {
+		if resp.methodName == name {
 			// Remove used response but retain order
 			mock.responses = append(mock.responses[:i], mock.responses[i+1:]...)
 			return resp.items
@@ -67,12 +67,12 @@ func (mock *NamespacePluginMock) getReturnValues(name string) (response []interf
 
 /* Mocked netlink handler methods */ //todo define other
 
-func (mock *NamespacePluginMock) IsNamespaceAvailable(ns *interfaces.LinuxInterfaces_Interface_Namespace) (retVal bool) {
+func (mock *NamespacePluginMock) IsNamespaceAvailable(ns *interfaces.LinuxInterfaces_Interface_Namespace) bool {
 	items := mock.getReturnValues("IsNamespaceAvailable")
 	return items[0].(bool)
 }
 
-func (mock *NamespacePluginMock) SwitchNamespace(ns *nsplugin.Namespace, ctx *nsplugin.NamespaceMgmtCtx) (revert func(), err error) {
+func (mock *NamespacePluginMock) SwitchNamespace(ns *nsplugin.Namespace, ctx *nsplugin.NamespaceMgmtCtx) (func(), error) {
 	items := mock.getReturnValues("SwitchNamespace")
 	if len(items) == 1 {
 		switch typed := items[0].(type) {
@@ -87,7 +87,7 @@ func (mock *NamespacePluginMock) SwitchNamespace(ns *nsplugin.Namespace, ctx *ns
 	return func() {}, nil
 }
 
-func (mock *NamespacePluginMock) SwitchToNamespace(nsMgmtCtx *nsplugin.NamespaceMgmtCtx, ns *interfaces.LinuxInterfaces_Interface_Namespace) (revert func(), err error) {
+func (mock *NamespacePluginMock) SwitchToNamespace(nsMgmtCtx *nsplugin.NamespaceMgmtCtx, ns *interfaces.LinuxInterfaces_Interface_Namespace) (func(), error) {
 	items := mock.getReturnValues("SwitchToNamespace")
 	if len(items) == 1 {
 		switch typed := items[0].(type) {
@@ -111,14 +111,22 @@ func (mock *NamespacePluginMock) SetInterfaceNamespace(ctx *nsplugin.NamespaceMg
 }
 
 func (mock *NamespacePluginMock) GetConfigNamespace() *interfaces.LinuxInterfaces_Interface_Namespace {
+	items := mock.getReturnValues("GetConfigNamespace")
+	if len(items) >= 1 {
+		return items[0].(*interfaces.LinuxInterfaces_Interface_Namespace)
+	}
 	return nil
 }
 
 func (mock *NamespacePluginMock) IfaceNsToString(namespace *interfaces.LinuxInterfaces_Interface_Namespace) string {
+	items := mock.getReturnValues("IfaceNsToString")
+	if len(items) >= 1 {
+		return items[0].(string)
+	}
 	return ""
 }
 
-func (mock *NamespacePluginMock) IfNsToGeneric(ns *interfaces.LinuxInterfaces_Interface_Namespace) (retVal *nsplugin.Namespace) {
+func (mock *NamespacePluginMock) IfNsToGeneric(ns *interfaces.LinuxInterfaces_Interface_Namespace) *nsplugin.Namespace {
 	items := mock.getReturnValues("IfNsToGeneric")
 	if len(items) >= 1 {
 		return items[0].(*nsplugin.Namespace)
@@ -126,7 +134,7 @@ func (mock *NamespacePluginMock) IfNsToGeneric(ns *interfaces.LinuxInterfaces_In
 	return nil
 }
 
-func (mock *NamespacePluginMock) ArpNsToGeneric(ns *l3.LinuxStaticArpEntries_ArpEntry_Namespace) (retVal *nsplugin.Namespace) {
+func (mock *NamespacePluginMock) ArpNsToGeneric(ns *l3.LinuxStaticArpEntries_ArpEntry_Namespace) *nsplugin.Namespace {
 	items := mock.getReturnValues("ArpNsToGeneric")
 	if len(items) >= 1 {
 		return items[0].(*nsplugin.Namespace)
@@ -149,7 +157,7 @@ func (mock *NamespacePluginMock) GenericToArpNs(ns *nsplugin.Namespace) (*l3.Lin
 	return nil, nil
 }
 
-func (mock *NamespacePluginMock) RouteNsToGeneric(ns *l3.LinuxStaticRoutes_Route_Namespace) (retVal *nsplugin.Namespace) {
+func (mock *NamespacePluginMock) RouteNsToGeneric(ns *l3.LinuxStaticRoutes_Route_Namespace) *nsplugin.Namespace {
 	items := mock.getReturnValues("RouteNsToGeneric")
 	if len(items) >= 1 {
 		return items[0].(*nsplugin.Namespace)

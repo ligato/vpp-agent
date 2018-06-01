@@ -181,7 +181,7 @@ func (plugin *NsHandler) IfaceNsToString(namespace *intf.LinuxInterfaces_Interfa
 
 // createNamedNetNs creates a new named Linux network namespace.
 // It does exactly the same thing as the command "ip netns add NAMESPACE".
-func (ns *Namespace) createNamedNetNs(sysHandler SyscallAPI, log logging.Logger) (netns.NsHandle, error) {
+func (ns *Namespace) createNamedNetNs(sysHandler SystemAPI, log logging.Logger) (netns.NsHandle, error) {
 	log.WithFields(logging.Fields{"namespace": ns.Name}).
 		Debug("Creating new named Linux namespace")
 

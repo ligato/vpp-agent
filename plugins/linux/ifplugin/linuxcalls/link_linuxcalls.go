@@ -46,6 +46,15 @@ func (handler *netLinkHandler) GetLinkFromInterface(ifName string) (netlink.Link
 	return netlink.LinkByName(ifName)
 }
 
+// GetLinkList calls netlink API to get all Links in namespace
+func (handler *netLinkHandler) GetLinkList() ([]netlink.Link, error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("get-link-list").LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	return netlink.LinkList()
+}
+
 // GetInterfaceType returns the type (string representation) of a given interface.
 func (handler *netLinkHandler) GetInterfaceType(ifName string) (string, error) {
 	defer func(t time.Time) {
