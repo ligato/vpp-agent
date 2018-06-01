@@ -55,7 +55,8 @@ type LinuxRouteConfigurator struct {
 	rtCachedGwRoutes map[string]*l3.LinuxStaticRoutes_Route // Cache for gateway routes which cannot be created at the time due to unreachable network
 	rtIdxSeq         uint32
 
-	// Linux namespace handler
+	// Linux namespace/calls handler
+	l3Handler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
 
 	// Timer used to measure and store time
@@ -68,7 +69,7 @@ func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW 
 }
 
 // Init initializes static route configurator and starts goroutines
-func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler nsplugin.NamespaceAPI,
+func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
 	// Logger
 	plugin.log = logger.NewLogger("-route-conf")
@@ -81,8 +82,15 @@ func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler 
 	plugin.rtCachedIfRoutes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(plugin.log, "linux_cached_route_indexes", nil))
 	plugin.rtCachedGwRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
 
-	// Namespace handler
-	plugin.nsHandler = handler
+	// L3 and namespace handler
+	plugin.l3Handler = l3Handler
+	plugin.nsHandler = nsHandler
+
+	// Stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", plugin.log)
+		plugin.l3Handler.SetStopwatch(plugin.stopwatch)
+	}
 
 	return nil
 }
@@ -154,7 +162,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	}
 	defer revertNs()
 
-	err = linuxcalls.AddStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("add-linux-route", plugin.stopwatch))
+	err = plugin.l3Handler.AddStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
 		plugin.log.Errorf("adding static route %s failed: %v (%+v)", route.Name, err, netLinkRoute)
 		return err
@@ -268,7 +276,7 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 		plugin.log.Errorf("deleting static route %s failed: %v (%+v)", oldRoute.Name, err, oldRoute)
 		return err
 	}
-	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.log, measure.GetTimeLog("add-linux-route", plugin.stopwatch)); err != nil {
+	if err = plugin.l3Handler.AddStaticRoute(newRoute.Name, netLinkRoute); err != nil {
 		plugin.log.Errorf("adding static route %s failed: %v (%+v)", newRoute.Name, err, netLinkRoute)
 		return err
 	}
@@ -359,7 +367,7 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	}
 	defer revertNs()
 
-	err = linuxcalls.DeleteStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("del-linux-route", plugin.stopwatch))
+	err = plugin.l3Handler.DeleteStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
 		plugin.log.Errorf("deleting static route %q failed: %v (%+v)", route.Name, err, netLinkRoute)
 		return err
@@ -573,7 +581,7 @@ func (plugin *LinuxRouteConfigurator) recreateLinuxStaticRoute(netLinkRoute *net
 	defer revertNs()
 
 	// Update existing route
-	return linuxcalls.ModifyStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("modify-linux-route", plugin.stopwatch))
+	return plugin.l3Handler.ModifyStaticRoute(route.Name, netLinkRoute)
 }
 
 // Tries to configure again cached default/gateway routes (as a reaction to the new route)

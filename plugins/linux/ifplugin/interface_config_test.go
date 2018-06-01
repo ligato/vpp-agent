@@ -519,7 +519,7 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 
 /* Interface Test Setup */
 
-func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock.NetlinkHandlerMock, *linuxmock.NamespacePluginMock,
+func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock.IfNetlinkHandlerMock, *linuxmock.NamespacePluginMock,
 	chan *ifplugin.LinuxInterfaceStateNotification, chan *nsplugin.MicroserviceCtx, chan *nsplugin.MicroserviceEvent) {
 	RegisterTestingT(t)
 
@@ -536,7 +536,7 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	ifMicroserviceNotif := make(chan *nsplugin.MicroserviceEvent, 100)
 	// Configurator
 	plugin := &ifplugin.LinuxInterfaceConfigurator{}
-	linuxMock := linuxmock.NewNetlinkHandlerMock()
+	linuxMock := linuxmock.NewIfNetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
 	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes, ifStateChan,
 		ifMicroserviceNotif, true)

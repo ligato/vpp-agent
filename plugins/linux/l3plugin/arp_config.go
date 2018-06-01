@@ -49,7 +49,8 @@ type LinuxArpConfigurator struct {
 	arpIfCache map[string]*arpToInterface // Cache for non-configurable ARPs due to missing interface
 	arpIdxSeq  uint32
 
-	// Linux namespace handler
+	// Linux namespace/calls handler
+	l3Handler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
 
 	// Timer used to measure and store time
@@ -70,7 +71,7 @@ func (plugin *LinuxArpConfigurator) GetArpIndexes() l3idx.LinuxARPIndexRW {
 }
 
 // Init initializes ARP configurator and starts goroutines
-func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, handler nsplugin.NamespaceAPI,
+func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
 	// Logger
 	plugin.log = logger.NewLogger("-arp-conf")
@@ -82,11 +83,14 @@ func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, handler ns
 	plugin.arpIfCache = make(map[string]*arpToInterface)
 	plugin.arpIdxSeq = 1
 
-	plugin.nsHandler = handler
+	// L3 and namespace handler
+	plugin.l3Handler = l3Handler
+	plugin.nsHandler = nsHandler
 
 	// Stopwatch
 	if enableStopwatch {
 		plugin.stopwatch = measure.NewStopwatch("LinuxArpConfigurator", plugin.log)
+		plugin.l3Handler.SetStopwatch(plugin.stopwatch)
 	}
 
 	return nil
@@ -154,7 +158,7 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	defer revertNs()
 
 	// Create a new ARP entry in interface namespace
-	err = linuxcalls.AddArpEntry(arpEntry.Name, neigh, plugin.log, measure.GetTimeLog("add-arp-entry", plugin.stopwatch))
+	err = plugin.l3Handler.AddArpEntry(arpEntry.Name, neigh)
 	if err != nil {
 		plugin.log.Errorf("adding arp entry %q failed: %v (%+v)", arpEntry.Name, err, neigh)
 		return err
@@ -238,7 +242,7 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	}
 	defer revertNs()
 
-	err = linuxcalls.ModifyArpEntry(newArpEntry.Name, neigh, plugin.log, measure.GetTimeLog("modify-arp-entry", plugin.stopwatch))
+	err = plugin.l3Handler.ModifyArpEntry(newArpEntry.Name, neigh)
 	if err != nil {
 		plugin.log.Errorf("modifying arp entry %q failed: %v (%+v)", newArpEntry.Name, err, neigh)
 		return err
@@ -287,7 +291,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	defer revertNs()
 
 	// Read all ARP entries configured for interface
-	entries, err := linuxcalls.ReadArpEntries(int(ifData.Index), noFamilyFilter, plugin.log, measure.GetTimeLog("list-arp-entries", plugin.stopwatch))
+	entries, err := plugin.l3Handler.ReadArpEntries(int(ifData.Index), noFamilyFilter)
 	if err != nil {
 		return err
 	}
@@ -306,7 +310,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	}
 
 	// Remove the ARP entry from the interface namespace
-	err = linuxcalls.DeleteArpEntry(arpEntry.Name, neigh, plugin.log, measure.GetTimeLog("del-arp-entry", plugin.stopwatch))
+	err = plugin.l3Handler.DeleteArpEntry(arpEntry.Name, neigh)
 	if err != nil {
 		plugin.log.Errorf("deleting arp entry %q failed: %v (%+v)", arpEntry.Name, err, neigh)
 		return err
@@ -329,7 +333,7 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 	plugin.log.Infof("Browsing Linux ARP entries")
 
 	// Set interface index and family to 0 reads all arp entries from all of the interfaces
-	entries, err := linuxcalls.ReadArpEntries(noIfaceIdxFilter, noFamilyFilter, plugin.log, nil)
+	entries, err := plugin.l3Handler.ReadArpEntries(noIfaceIdxFilter, noFamilyFilter)
 	if err != nil {
 		return err
 	}

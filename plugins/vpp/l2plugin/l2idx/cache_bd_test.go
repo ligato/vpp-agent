@@ -14,43 +14,43 @@
 package l2idx_test
 
 import (
-  "testing"
+	"testing"
 
-  . "github.com/onsi/gomega"
-  "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
-  "github.com/ligato/cn-infra/datasync"
-  "io"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
+	. "github.com/onsi/gomega"
+	"io"
 )
 
 type testWatcher struct {
-  datasync.KeyValProtoWatcher
-  datasync.WatchRegistration
-  io.Closer
+	datasync.KeyValProtoWatcher
+	datasync.WatchRegistration
+	io.Closer
 
-  Handle func(resyncName string)
+	Handle func(resyncName string)
 }
 
 func (testWatcher *testWatcher) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
-  resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
-    testWatcher.Handle(resyncName)
-    return testWatcher.WatchRegistration, nil
+	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
+	testWatcher.Handle(resyncName)
+	return testWatcher.WatchRegistration, nil
 }
 
 func TestCache(t *testing.T) {
-  RegisterTestingT(t)
+	RegisterTestingT(t)
 
-  nameChan := make(chan string, 1)
+	nameChan := make(chan string, 1)
 
-  watcher := &testWatcher{
-    Handle: func(resyncName string) {
-      nameChan <- resyncName
-    },
-  }
+	watcher := &testWatcher{
+		Handle: func(resyncName string) {
+			nameChan <- resyncName
+		},
+	}
 
-  bdIdx := l2idx.Cache(watcher)
-  Expect(bdIdx).To(Not(BeNil()))
+	bdIdx := l2idx.Cache(watcher)
+	Expect(bdIdx).To(Not(BeNil()))
 
-  var notif string
-  Eventually(nameChan).Should(Receive(&notif))
-  Expect(notif).To(ContainSubstring("bd-cache"))
+	var notif string
+	Eventually(nameChan).Should(Receive(&notif))
+	Expect(notif).To(ContainSubstring("bd-cache"))
 }

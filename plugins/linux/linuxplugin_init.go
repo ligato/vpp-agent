@@ -26,9 +26,10 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	ifLinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
+	l3Linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 )
 
@@ -47,9 +48,8 @@ type Plugin struct {
 	// Shared indexes
 	ifIndexes ifaceidx.LinuxIfIndexRW
 
-	// Netlink/namespace handling
-	netHandler linuxcalls.NetlinkAPI
-	nsHandler  nsplugin.NamespaceAPI
+	// Namespace handling
+	nsHandler nsplugin.NamespaceAPI
 
 	// Channels (watch, notification, ...) which should be closed
 	ifStateChan         chan *ifplugin.LinuxInterfaceStateNotification
@@ -178,7 +178,7 @@ func (plugin *Plugin) initNs() error {
 
 	namespaceHandler := &nsplugin.NsHandler{}
 	plugin.nsHandler = namespaceHandler
-	return namespaceHandler.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), nsplugin.NewSystemHandler(), plugin.msChan,
+	return namespaceHandler.Init(plugin.Log, ifLinuxcalls.NewNetLinkHandler(), nsplugin.NewSystemHandler(), plugin.msChan,
 		plugin.ifMicroserviceNotif, plugin.enableStopwatch)
 }
 
@@ -191,7 +191,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes,
+	if err := plugin.ifConfigurator.Init(plugin.Log, ifLinuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes,
 		plugin.ifStateChan, plugin.ifMicroserviceNotif, plugin.enableStopwatch); err != nil {
 		return err
 	}
@@ -207,13 +207,13 @@ func (plugin *Plugin) initL3() error {
 
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
-	if err := plugin.arpConfigurator.Init(plugin.Log, plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.arpConfigurator.Init(plugin.Log, l3Linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	return plugin.routeConfigurator.Init(plugin.Log, plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch)
+	return plugin.routeConfigurator.Init(plugin.Log, l3Linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch)
 }
 
 func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
