@@ -107,13 +107,16 @@ COPY \
     docker/dev/linux-plugin.conf \
     docker/dev/logs.conf \
  ./
+
 COPY docker/dev/vpp.conf /etc/vpp/vpp.conf
 COPY docker/dev/supervisord.conf /etc/supervisord/supervisord.conf
 
 # copy scripts
-COPY docker/dev/runvpp.sh /usr/bin/runvpp
-COPY docker/dev/agent_start.py /usr/bin/agent_start.py
-COPY docker/dev/supervisord_kill.py /usr/bin/supervisord_kill.py
+COPY \
+    docker/dev/exec_vpp.sh \
+    docker/dev/exec_agent.sh \
+    docker/dev/supervisord_kill.py \
+ /usr/bin/
 
 ARG VERSION
 ARG COMMIT
@@ -125,11 +128,6 @@ RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
  && VERSION=$VERSION COMMIT=$COMMIT make install
 
 WORKDIR /
-
-# start agent
-ENV START_AGENT "True"
-# kill supervisor if vpp or agent is closed
-ENV RETAIN_SUPERVISOR "False"
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \

@@ -30,20 +30,24 @@ COPY --from=devimg \
  /bin/
 
 # copy configs
-COPY etcd.conf kafka.conf govpp.conf vpp-plugin.conf linux-plugin.conf /opt/vpp-agent/dev/
+COPY \
+    etcd.conf \
+    kafka.conf \
+    govpp.conf \
+    vpp-plugin.conf \
+    linux-plugin.conf \
+ /opt/vpp-agent/dev/
+
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY supervisord.conf /etc/supervisord/supervisord.conf
 
 # copy scripts
-COPY supervisord_kill.py /usr/bin/supervisord_kill.py
-COPY agent_start.py /usr/bin/agent_start.py
+COPY \
+    exec_agent.sh \
+    supervisord_kill.py \
+ /usr/bin/
 
 WORKDIR /root/
-
-# start agent
-ENV START_AGENT "True"
-# kill supervisor if vpp or agent is closed
-ENV RETAIN_SUPERVISOR "False"
 
 # run supervisor as the default executable
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
