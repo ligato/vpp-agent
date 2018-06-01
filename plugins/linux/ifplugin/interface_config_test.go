@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
-	ifaceidx2 "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/tests/linuxmock"
@@ -517,6 +517,8 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
+// Todo
+
 /* Interface Test Setup */
 
 func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock.IfNetlinkHandlerMock, *linuxmock.NamespacePluginMock,
@@ -529,7 +531,7 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	nsHandleLog := logging.ForPlugin("ns-handle-log", logrus.NewLogRegistry())
 	nsHandleLog.SetLevel(logging.DebugLevel)
 	// Linux interface indexes
-	swIfIndexes := ifaceidx2.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
+	swIfIndexes := ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
 	// State/notification channels
 	ifStateChan := make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
 	msChan := make(chan *nsplugin.MicroserviceCtx, 100)

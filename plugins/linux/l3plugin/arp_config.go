@@ -70,6 +70,11 @@ func (plugin *LinuxArpConfigurator) GetArpIndexes() l3idx.LinuxARPIndexRW {
 	return plugin.arpIndexes
 }
 
+// GetArpInterfaceCache returns internal non-configurable interface cache, mainly for testing purpose
+func (plugin *LinuxArpConfigurator) GetArpInterfaceCache() map[string]*arpToInterface {
+	return plugin.arpIfCache
+}
+
 // Init initializes ARP configurator and starts goroutines
 func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
