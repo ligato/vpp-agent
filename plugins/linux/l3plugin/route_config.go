@@ -63,11 +63,6 @@ type LinuxRouteConfigurator struct {
 	stopwatch *measure.Stopwatch
 }
 
-// GetRouteIndexes returns route in-memory indexes
-func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW {
-	return plugin.rtIndexes
-}
-
 // Init initializes static route configurator and starts goroutines
 func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
@@ -95,9 +90,29 @@ func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handle
 	return nil
 }
 
-// Close closes all goroutines started during Init
+// Close does nothing for route configurator
 func (plugin *LinuxRouteConfigurator) Close() error {
 	return nil
+}
+
+// GetRouteIndexes returns route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtIndexes
+}
+
+// GetAutoRouteIndexes returns automatic route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetAutoRouteIndexes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtAutoIndexes
+}
+
+// GetCachedRoutes returns cached route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetCachedRoutes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtCachedIfRoutes
+}
+
+// GetCachedGatewayRoutes returns in-memory indexes of unreachable gateway routes
+func (plugin *LinuxRouteConfigurator) GetCachedGatewayRoutes() map[string]*l3.LinuxStaticRoutes_Route {
+	return plugin.rtCachedGwRoutes
 }
 
 // ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
@@ -168,7 +183,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 		return err
 	}
 
-	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
+	plugin.rtIndexes.RegisterName(plugin.RouteIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
 	plugin.rtIdxSeq++
 	plugin.log.Debugf("Route %s registered", route.Name)
 
@@ -373,7 +388,7 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 		return err
 	}
 
-	_, _, found := plugin.rtIndexes.UnregisterName(routeIdentifier(netLinkRoute))
+	_, _, found := plugin.rtIndexes.UnregisterName(plugin.RouteIdentifier(netLinkRoute))
 	if !found {
 		plugin.log.Warnf("Attempt to unregister non-registered route %s", route.Name)
 	}
@@ -479,6 +494,19 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 	return nil
 }
 
+// RouteIdentifier generates unique route ID used in mapping
+func (plugin *LinuxRouteConfigurator) RouteIdentifier(route *netlink.Route) string {
+	var dstAddr string
+	if route.Dst != nil && route.Dst.IP != nil && route.Dst.Mask != nil {
+		maskSize, _ := route.Dst.Mask.Size()
+		dstAddr = route.Dst.IP.String() + "/" + strconv.Itoa(maskSize)
+	}
+	if dstAddr == ipv4AddrAny || dstAddr == ipv6AddrAny {
+		return fmt.Sprintf("default-iface%d-table%v-%s", route.LinkIndex, route.Table, route.Gw.To4().String())
+	}
+	return fmt.Sprintf("dst%s-iface%d-table%v-%s", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
+}
+
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) (err error) {
 	// Gateway
@@ -522,7 +550,6 @@ func (plugin *LinuxRouteConfigurator) createStaticRoute(netLinkRoute *netlink.Ro
 		if len(addressWithPrefix) > 1 {
 			_, dstIPAddr, err = net.ParseCIDR(route.DstIpAddr)
 			if err != nil {
-				plugin.log.Error(err)
 				return err
 			}
 		} else {
@@ -793,11 +820,4 @@ func (plugin *LinuxRouteConfigurator) networkReachable(ns *l3.LinuxStaticRoutes_
 		return true
 	}
 	return false
-}
-
-func routeIdentifier(route *netlink.Route) string {
-	if route.Dst == nil {
-		return fmt.Sprintf("default-iface%d-table%v-%s", route.LinkIndex, route.Table, route.Gw.String())
-	}
-	return fmt.Sprintf("dst%s-iface%d-table%v-%s", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
 }

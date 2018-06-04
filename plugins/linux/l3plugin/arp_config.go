@@ -170,9 +170,9 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	}
 
 	// Register created ARP entry
-	plugin.arpIndexes.RegisterName(arpIdentifier(neigh), plugin.arpIdxSeq, arpEntry)
+	plugin.arpIndexes.RegisterName(plugin.ArpIdentifier(neigh), plugin.arpIdxSeq, arpEntry)
 	plugin.arpIdxSeq++
-	plugin.log.Debugf("ARP entry %v registered as %v", arpEntry.Name, arpIdentifier(neigh))
+	plugin.log.Debugf("ARP entry %v registered as %v", arpEntry.Name, plugin.ArpIdentifier(neigh))
 
 	plugin.log.Infof("Linux ARP entry %v configured", arpEntry.Name)
 
@@ -321,7 +321,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 		return err
 	}
 
-	_, _, found = plugin.arpIndexes.UnregisterName(arpIdentifier(neigh))
+	_, _, found = plugin.arpIndexes.UnregisterName(plugin.ArpIdentifier(neigh))
 	if !found {
 		plugin.log.Warnf("Attempt to unregister non-existing ARP entry %v", arpEntry.Name)
 	} else {
@@ -345,7 +345,7 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 
 	for _, entry := range entries {
 		plugin.log.WithField("interface", entry.LinkIndex).Debugf("Found new static linux ARP entry")
-		_, arp, found := plugin.arpIndexes.LookupIdx(arpIdentifier(&entry))
+		_, arp, found := plugin.arpIndexes.LookupIdx(plugin.ArpIdentifier(&entry))
 		if !found {
 			var ifName string
 			if arp == nil || arp.Namespace == nil {
@@ -353,14 +353,14 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 			} else {
 				ifName, _, _ = plugin.ifIndexes.LookupNameByNamespace(uint32(entry.LinkIndex), arp.Namespace.Name)
 			}
-			plugin.arpIndexes.RegisterName(arpIdentifier(&entry), plugin.arpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
+			plugin.arpIndexes.RegisterName(plugin.ArpIdentifier(&entry), plugin.arpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
 				// Register fields required to reconstruct ARP identifier
 				Interface: ifName,
 				IpAddr:    entry.IP.String(),
 				HwAddress: entry.HardwareAddr.String(),
 			})
 			plugin.arpIdxSeq++
-			plugin.log.Debugf("ARP entry registered as %v", arpIdentifier(&entry))
+			plugin.log.Debugf("ARP entry registered as %v", plugin.ArpIdentifier(&entry))
 		}
 	}
 
@@ -429,7 +429,7 @@ func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx
 				plugin.log.Errorf("ARP %v - cannot unregister, invalid MAC %v: %v", arpName, arp.HwAddress, err)
 				continue
 			}
-			plugin.arpIndexes.UnregisterName(arpIdentifier(&netlink.Neigh{
+			plugin.arpIndexes.UnregisterName(plugin.ArpIdentifier(&netlink.Neigh{
 				LinkIndex:    int(ifIdx),
 				IP:           ip,
 				HardwareAddr: mac,
@@ -444,6 +444,11 @@ func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx
 	}
 
 	return nil
+}
+
+// ArpIdentifier generates unique ARP ID used in mapping
+func (plugin *LinuxArpConfigurator) ArpIdentifier(arp *netlink.Neigh) string {
+	return fmt.Sprintf("iface%v-%v-%v", arp.LinkIndex, arp.IP.String(), arp.HardwareAddr)
 }
 
 // arpStateParser returns representation of neighbor unreachability detection index as defined in netlink
@@ -495,8 +500,4 @@ func compareARPLinkIdxAndIP(arp1 *netlink.Neigh, arp2 *netlink.Neigh) bool {
 		return false
 	}
 	return true
-}
-
-func arpIdentifier(arp *netlink.Neigh) string {
-	return fmt.Sprintf("iface%v-%v-%v", arp.LinkIndex, arp.IP.String(), arp.HardwareAddr)
 }

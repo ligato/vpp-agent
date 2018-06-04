@@ -27,12 +27,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/ligato/vpp-agent/tests/linuxmock"
 	. "github.com/onsi/gomega"
+	"github.com/vishvananda/netlink"
+	"net"
 )
 
 /* Linux ARP configurator init and close */
 
 // Test init function
-func TestLinuxInterfaceConfiguratorInit(t *testing.T) {
+func TestLinuxArpConfiguratorInit(t *testing.T) {
 	plugin, _, _, _ := arpTestSetup(t)
 	defer arpTestTeardown(plugin)
 	// Base fields
@@ -44,7 +46,7 @@ func TestLinuxInterfaceConfiguratorInit(t *testing.T) {
 	Expect(plugin.GetArpInterfaceCache()).To(HaveLen(0))
 }
 
-/* Linux interface configurator test cases */
+/* Linux ARP configurator test cases */
 
 // Configure ARP entry
 func TestLinuxConfiguratorAddARP(t *testing.T) {
@@ -57,7 +59,7 @@ func TestLinuxConfiguratorAddARP(t *testing.T) {
 	data := getTestARP("arp1", "if1", "10.0.0.1", "00:00:00:00:00:01", 2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetArpIndexes().LookupIdx(arpIdentifier(1, "10.0.0.1", "00:00:00:00:00:01"))
+	_, meta, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 	_, ok := plugin.GetArpInterfaceCache()["arp1"]
@@ -74,7 +76,7 @@ func TestLinuxConfiguratorAddARPMissingInterface(t *testing.T) {
 		2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, _, found := plugin.GetArpIndexes().LookupIdx(arpIdentifier(1, "10.0.0.1", "00:00:00:00:00:01"))
+	_, _, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeFalse())
 	val, ok := plugin.GetArpInterfaceCache()["arp1"]
 	Expect(ok).To(BeTrue())
@@ -92,7 +94,7 @@ func TestLinuxConfiguratorAddARPParseIPErr(t *testing.T) {
 	data := getTestARP("arp1", "if1", "10.0.0.1/24", "00:00:00:00:00:01", 2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).Should(HaveOccurred())
-	_, _, found := plugin.GetArpIndexes().LookupIdx(arpIdentifier(1, "10.0.0.1", "00:00:00:00:00:01"))
+	_, _, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeFalse())
 	_, ok := plugin.GetArpInterfaceCache()["arp1"]
 	Expect(ok).To(BeFalse())
@@ -178,9 +180,18 @@ func arpTestTeardown(plugin *l3plugin.LinuxArpConfigurator) {
 	Expect(err).To(BeNil())
 }
 
-// Creates the same ARP identifier as in the plugin
-func arpIdentifier(ifIdx uint32, ip, mac string) string {
-	return fmt.Sprintf("iface%v-%v-%v", ifIdx, ip, mac)
+func getArpID(ifIdx uint32, ip, mac string) *netlink.Neigh {
+	return &netlink.Neigh{
+		LinkIndex: int(ifIdx),
+		IP:        net.ParseIP(ip),
+		HardwareAddr: func(mac string) net.HardwareAddr {
+			hw, err := net.ParseMAC(mac)
+			if err != nil {
+				panic(err)
+			}
+			return hw
+		}(mac),
+	}
 }
 
 /* Linux ARP Test Data */
