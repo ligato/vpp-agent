@@ -5,7 +5,7 @@ The Etcd plugin provides access to an etcd key-value data store.
 ## Configuration
 
 - Location of the Etcd configuration file can be defined either by the 
-  command line flag `etcdv3-config` or set via the `ETCDV3_CONFIG` 
+  command line flag `etcd-config` or set via the `ETCD_CONFIG`
   environment variable.
 
 ## Status Check
@@ -32,6 +32,6 @@ You can compact Etcd using two ways.
 
 - If connection to the ETCD is interrupted, resync can be automatically called 
   after re-connection. This option is disabled by default and has to be allowed
-  in the etcd.conf file.
+  in the `etcd.conf` file.
   
   Set `resync-after-reconnect` to `true` to enable the feature.

@@ -61,7 +61,7 @@ Get All Loggers On ${node}
     Log Many    ${node}
     ${out}=     rest_api: Get Loggers List    agent_vpp_1
     Log Many    ${out}
-     Should Contain     ${out}    etcdv3
+     Should Contain     ${out}    etcd
      Should Contain     ${out}    govpp
      Should Contain     ${out}    http
      Should Contain     ${out}    health-rpc
@@ -143,7 +143,7 @@ Get ${plugin} Plugin Status For ${node} From ETCD
 
 
 Start Agent On ${node} With Port ${port}
-    ${out}=    Execute In Container    ${node}    vpp-agent -http-probe-port ${port} --etcdv3-config=${AGENT_VPP_ETCD_CONF_PATH} --kafka-config=${AGENT_VPP_KAFKA_CONF_PATH} &
+    ${out}=    Execute In Container    ${node}    vpp-agent -http-probe-port ${port} --etcd-config=${AGENT_VPP_ETCD_CONF_PATH} --kafka-config=${AGENT_VPP_KAFKA_CONF_PATH} &
     Log Many   ${out}
     [Return]  ${out}
 

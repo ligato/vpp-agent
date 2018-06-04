@@ -168,7 +168,7 @@ func (pdb *protoBroker) GetValue(key string, reqObj proto.Message) (found bool, 
 }
 
 func getValueProtoInternal(broker keyval.BytesBroker, serializer keyval.Serializer, key string, reqObj proto.Message) (found bool, revision int64, err error) {
-	// get data from etcdv3
+	// get data from etcd
 	resp, found, rev, err := broker.GetValue(key)
 	if err != nil {
 		return false, 0, err

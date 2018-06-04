@@ -29,9 +29,9 @@ type Config struct {
 	// Endpoint is an address of GRPC netListener
 	Endpoint string `json:"endpoint"`
 
-	// Type of Socket defaults to "tcp" if unset
-
-	SocketType string `json:"socket-type"`
+	// Network defaults to "tcp" if unset, and can be set to one of the following values:
+	// "tcp", "tcp4", "tcp6", "unix", "unixpacket" or any other value accepted by net.Listen
+	Network string `json:"network"`
 
 	// MaxMsgSize returns a ServerOption to set the max message size in bytes for inbound mesages.
 	// If this is not set, gRPC uses the default 4MB.
@@ -39,7 +39,7 @@ type Config struct {
 
 	// MaxConcurrentStreams returns a ServerOption that will apply a limit on the number
 	// of concurrent streams to each ServerTransport.
-	MaxConcurrentStreams uint32 `json:"mac-conncurrent-streams"`
+	MaxConcurrentStreams uint32 `json:"max-concurrent-streams"`
 
 	// Compression for inbound/outbound messages.
 	// Supported only gzip.

@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -45,7 +45,7 @@ type VppAgentCtl struct {
 	Log             logging.Logger
 	Commands        []string
 	serviceLabel    servicelabel.Plugin
-	bytesConnection *etcdv3.BytesConnectionEtcd
+	bytesConnection *etcd.BytesConnectionEtcd
 	broker          keyval.ProtoBroker
 }
 

@@ -29,31 +29,31 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 )
 
 // CreateEtcdClient uses environment variable or ETCD config file to establish connection
-func (ctl *VppAgentCtl) createEtcdClient(configFile string) (*etcdv3.BytesConnectionEtcd, keyval.ProtoBroker, error) {
+func (ctl *VppAgentCtl) createEtcdClient(configFile string) (*etcd.BytesConnectionEtcd, keyval.ProtoBroker, error) {
 	var err error
 
 	if configFile == "" {
-		configFile = os.Getenv("ETCDV3_CONFIG")
+		configFile = os.Getenv("ETCD_CONFIG")
 	}
 
-	cfg := &etcdv3.Config{}
+	cfg := &etcd.Config{}
 	if configFile != "" {
 		err := config.ParseConfigFromYamlFile(configFile, cfg)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	etcdConfig, err := etcdv3.ConfigToClient(cfg)
+	etcdConfig, err := etcd.ConfigToClient(cfg)
 	if err != nil {
 		ctl.Log.Fatal(err)
 	}
 
-	bDB, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, ctl.Log)
+	bDB, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, ctl.Log)
 	if err != nil {
 		return nil, nil, err
 	}

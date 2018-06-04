@@ -326,7 +326,7 @@
     "datasync/syncbase",
     "db/keyval",
     "db/keyval/consul",
-    "db/keyval/etcdv3",
+    "db/keyval/etcd",
     "db/keyval/kvproto",
     "db/keyval/redis",
     "db/sql",
@@ -356,7 +356,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "f7af8757d5426e3ea1f0c865207793e305a315c9"
+  revision = "df5295a976cf70b7086ec7f0666a9bd235450959"
 
 [[projects]]
   branch = "master"
@@ -654,6 +654,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "40074de54b4db80329344923850b0e8227547efc5e33abec3d01a161921f909b"
+  inputs-digest = "68cc4a3a169331501fc4165863a47e90d3316ebba2599f7a4c98b917feec47b8"
   solver-name = "gps-cdcl"
   solver-version = 1

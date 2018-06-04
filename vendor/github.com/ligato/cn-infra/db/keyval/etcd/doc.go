@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package etcdv3 implements the key-value Data Broker client API for the
-// etcdv3 key-value data store.  See cn-infra/db/keyval for the definition
+// Package etcd implements the key-value Data Broker client API for the
+// etcd key-value data store.  See cn-infra/db/keyval for the definition
 // of the key-value Data Broker client API.
 //
 // The entity that provides access to the data store is called BytesConnectionEtcd.
@@ -220,7 +220,7 @@
 //
 // The Etcd plugin
 //
-//    plugin := etcdv3.Plugin{}
+//    plugin := etcd.Plugin{}
 //    // initialization by agent core
 //
 // Plugin allows to create a broker
@@ -228,4 +228,4 @@
 //
 // and watcher
 //    watcher := plugin.NewWatcher(prefix)
-package etcdv3
+package etcd

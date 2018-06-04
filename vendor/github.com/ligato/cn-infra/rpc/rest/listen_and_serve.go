@@ -15,7 +15,10 @@
 package rest
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -39,6 +42,25 @@ func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
 
 // ListenAndServeHTTP starts a http server.
 func ListenAndServeHTTP(config Config, handler http.Handler) (httpServer io.Closer, err error) {
+
+	tlsCfg := &tls.Config{}
+
+	if len(config.ClientCerts) > 0 {
+		// require client certificate
+		caCertPool := x509.NewCertPool()
+
+		for _, c := range config.ClientCerts {
+			caCert, err := ioutil.ReadFile(c)
+			if err != nil {
+				return nil, err
+			}
+			caCertPool.AppendCertsFromPEM(caCert)
+		}
+
+		tlsCfg.ClientAuth = tls.RequireAndVerifyClientCert
+		tlsCfg.ClientCAs = caCertPool
+	}
+
 	server := &http.Server{
 		Addr:              config.Endpoint,
 		ReadTimeout:       config.ReadTimeout,
@@ -46,16 +68,22 @@ func ListenAndServeHTTP(config Config, handler http.Handler) (httpServer io.Clos
 		WriteTimeout:      config.WriteTimeout,
 		IdleTimeout:       config.IdleTimeout,
 		MaxHeaderBytes:    config.MaxHeaderBytes,
+		TLSConfig:         tlsCfg,
 	}
 	server.Handler = handler
 
 	var errCh chan error
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			errCh <- err
+		var err error
+		if config.UseHTTPS() {
+			// if server certificate and key is configured use HTTPS
+			err = server.ListenAndServeTLS(config.ServerCertfile, config.ServerKeyfile)
 		} else {
-			errCh <- nil
+			err = server.ListenAndServe()
 		}
+
+		errCh <- err
+
 	}()
 
 	select {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcdv3
+package etcd
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ const (
 	healthCheckProbeKey = "/probe-etcd-connection"
 )
 
-// Plugin implements etcdv3 plugin.
+// Plugin implements etcd plugin.
 type Plugin struct {
 	Deps
 	// Plugin is disabled if there is no config file available
@@ -47,7 +47,7 @@ type Plugin struct {
 	lastConnErr     error
 }
 
-// Deps lists dependencies of the etcdv3 plugin.
+// Deps lists dependencies of the etcd plugin.
 // If injected, etcd plugin will use StatusCheck to signal the connection status.
 type Deps struct {
 	local.PluginInfraDeps

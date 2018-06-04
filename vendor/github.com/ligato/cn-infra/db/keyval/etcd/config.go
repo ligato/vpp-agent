@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcdv3
+package etcd
 
 import (
 	"crypto/tls"
@@ -64,7 +64,7 @@ const (
 // into ClientConfig, which is ready for use with the underlying coreos/etcd
 // package.
 // If the etcd endpoint addresses are not specified in the configuration,
-// the function will query the ETCDV3_ENDPOINTS environment variable
+// the function will query the ETCD_ENDPOINTS environment variable
 // for a non-empty value. If neither the config nor the environment specify the
 // endpoint location, a default address "127.0.0.1:2379" is assumed.
 // The function may return error only if TLS connection is selected and the
@@ -87,7 +87,9 @@ func ConfigToClient(yc *Config) (*ClientConfig, error) {
 	cfg := &ClientConfig{Config: clientv3Cfg, OpTimeout: opTimeout}
 
 	if len(cfg.Endpoints) == 0 {
-		if ep := os.Getenv("ETCDV3_ENDPOINTS"); ep != "" {
+		if ep := os.Getenv("ETCD_ENDPOINTS"); ep != "" {
+			cfg.Endpoints = strings.Split(ep, ",")
+		} else if ep := os.Getenv("ETCDV3_ENDPOINTS"); ep != "" { // this provides backwards compatiblity
 			cfg.Endpoints = strings.Split(ep, ",")
 		} else {
 			cfg.Endpoints = []string{"127.0.0.1:2379"}
