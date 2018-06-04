@@ -20,7 +20,7 @@ import (
 	"syscall"
 )
 
-// Defines all methods required for managing system calls
+// Defines all methods required for managing operating system, system calls and namespaces on system level
 type SystemAPI interface {
 	OperatingSystem
 	Syscall
@@ -33,11 +33,16 @@ type OperatingSystem interface {
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
 	// MakeDirectoryAll creates a directory with all parent directories
 	MakeDirectoryAll(path string, perm os.FileMode) error
+	// Remove removes named file or directory
+	Remove(name string) error
 }
 
 // Syscall defines methods using low-level operating system primitives
 type Syscall interface {
+	// Mount makes resources available
 	Mount(source string, target string, fsType string, flags uintptr, data string) error
+	// Unmount resources
+	Unmount(target string, flags int) (err error)
 }
 
 // NetlinkNamespace defines method for namespace handling from netlink package
@@ -66,10 +71,18 @@ func (osh *systemHandler) MakeDirectoryAll(path string, perm os.FileMode) error 
 	return os.MkdirAll(path, perm)
 }
 
+func (osh *systemHandler) Remove(name string) error {
+	return os.Remove(name)
+}
+
 /* Syscall */
 
 func (osh *systemHandler) Mount(source string, target string, fsType string, flags uintptr, data string) error {
 	return syscall.Mount(source, target, fsType, flags, data)
+}
+
+func (osh *systemHandler) Unmount(target string, flags int) error {
+	return syscall.Unmount(target, flags)
 }
 
 /* Netlink namespace */

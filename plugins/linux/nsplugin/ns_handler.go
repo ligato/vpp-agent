@@ -132,7 +132,7 @@ func (plugin *NsHandler) Close() error {
 	if plugin.configNs != nil {
 		// Remove veth pre-configure namespace
 		ns := plugin.IfNsToGeneric(plugin.configNs)
-		wasErr = ns.deleteNamedNetNs(plugin.log)
+		wasErr = ns.deleteNamedNetNs(plugin.sysHandler, plugin.log)
 		plugin.cancel()
 		plugin.wg.Wait()
 	}
@@ -143,6 +143,16 @@ func (plugin *NsHandler) Close() error {
 // GetConfigNamespace return configuration namespace object
 func (plugin *NsHandler) GetConfigNamespace() *intf.LinuxInterfaces_Interface_Namespace {
 	return plugin.configNs
+}
+
+// GetMicroserviceByLabel returns internal microservice-by-label mapping
+func (plugin *NsHandler) GetMicroserviceByLabel() map[string]*Microservice {
+	return plugin.microServiceByLabel
+}
+
+// GetMicroserviceByID returns internal microservice-by-id mapping
+func (plugin *NsHandler) GetMicroserviceByID() map[string]*Microservice {
+	return plugin.microServiceByID
 }
 
 // SetInterfaceNamespace moves a given Linux interface into a specified namespace.
@@ -441,7 +451,7 @@ func (plugin *NsHandler) prepareConfigNamespace() error {
 	}
 	// Remove namespace if exists.
 	if found {
-		err := ns.deleteNamedNetNs(plugin.log)
+		err := ns.deleteNamedNetNs(plugin.sysHandler, plugin.log)
 		if err != nil {
 			return err
 		}

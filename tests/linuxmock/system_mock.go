@@ -101,8 +101,24 @@ func (mock *SystemMock) MakeDirectoryAll(path string, perm os.FileMode) error {
 	return nil
 }
 
+func (mock *SystemMock) Remove(name string) error {
+	items := mock.getReturnValues("Remove")
+	if len(items) >= 1 {
+		return items[0].(error)
+	}
+	return nil
+}
+
 func (mock *SystemMock) Mount(source string, target string, fsType string, flags uintptr, data string) error {
 	items := mock.getReturnValues("Mount")
+	if len(items) >= 1 {
+		return items[0].(error)
+	}
+	return nil
+}
+
+func (mock *SystemMock) Unmount(target string, flags int) error {
+	items := mock.getReturnValues("Unmount")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}

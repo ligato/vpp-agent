@@ -271,20 +271,20 @@ func (ns *Namespace) createNamedNetNs(sysHandler SystemAPI, log logging.Logger) 
 
 // deleteNamedNetNs deletes an existing named Linux network namespace.
 // It does exactly the same thing as the command "ip netns del NAMESPACE".
-func (ns *Namespace) deleteNamedNetNs(log logging.Logger) error {
+func (ns *Namespace) deleteNamedNetNs(sysHandler SystemAPI, log logging.Logger) error {
 	log.WithFields(logging.Fields{"namespace": ns.Name}).
 		Debug("Deleting named Linux namespace")
 
 	// Unmount the namespace.
 	netnsMountFile := path.Join(netNsMountDir, ns.Name)
-	err := syscall.Unmount(netnsMountFile, syscall.MNT_DETACH)
+	err := sysHandler.Unmount(netnsMountFile, syscall.MNT_DETACH)
 	if err != nil {
 		log.WithFields(logging.Fields{"namespace": ns.Name}).
 			Error("failed to unmount namespace")
 	}
 
 	// Remove file path used for the mount.
-	err = os.Remove(netnsMountFile)
+	err = sysHandler.Remove(netnsMountFile)
 	if err != nil {
 		log.WithFields(logging.Fields{"namespace": ns.Name}).
 			Error("failed to remove namespace file")

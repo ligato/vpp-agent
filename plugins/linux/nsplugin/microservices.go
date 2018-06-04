@@ -241,6 +241,7 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 		select {
 		case <-timer.C:
 			if err := plugin.dockerClient.Ping(); err != nil {
+				plugin.log.Error(err)
 				if clientOk {
 					plugin.log.Errorf("Docker ping check failed: %v", err)
 				}
