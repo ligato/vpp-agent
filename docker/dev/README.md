@@ -194,7 +194,7 @@ networking settings.*
 
 - Start the Agent:
 ```
-vpp-agent --etcdv3-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
+vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
 ```
 
 ### Running Etcd Server on Local Host

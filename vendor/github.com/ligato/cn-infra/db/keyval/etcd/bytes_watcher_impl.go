@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcdv3
+package etcd
 
 import (
 	"github.com/ligato/cn-infra/datasync"

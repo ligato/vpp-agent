@@ -97,6 +97,22 @@ type Config struct {
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
+
+	// ServerCertfile is path to the server certificate. If the certificate and corresponding
+	// key (see config item below) is defined server uses HTTPS instead of HTTP.
+	ServerCertfile string `json:"server-cert-file"`
+
+	// ServerKeyfile is path to the server key file.
+	ServerKeyfile string `json:"server-key-file"`
+
+	// ClientBasicAuth is a slice of credentials in form "username:password"
+	// used for basic HTTP authentication. If defined only authenticated users are allowed
+	// to access the server.
+	ClientBasicAuth []string `json:"client-basic-auth"`
+
+	// ClientCerts is a slice of the root certificate authorities
+	// that servers uses to verify a client certificate
+	ClientCerts []string `json:"client-cert-files"`
 }
 
 // GetPort parses suffix from endpoint & returns integer after last ":" (otherwise it returns 0)
@@ -112,6 +128,11 @@ func (cfg *Config) GetPort() int {
 	}
 
 	return 0
+}
+
+// UseHTTPS returns true if server certificate and key is defined.
+func (cfg *Config) UseHTTPS() bool {
+	return cfg.ServerCertfile != "" && cfg.ServerKeyfile != ""
 }
 
 // DeclareHTTPPortFlag declares http port (with usage & default value) a flag for a particular plugin name

@@ -10,7 +10,7 @@ spec:
       imagePullPolicy: IfNotPresent
       command:
         - /root/go/bin/sfc-controller
-        - -etcdv3-config=/opt/sfc-controller/dev/etcd.conf
+        - -etcd-config=/opt/sfc-controller/dev/etcd.conf
         - -sfc-config=/opt/sfc-controller/dev/sfc.conf
         - -vnf-config=/opt/sfc-controller/dev/vnf.conf
       volumeMounts:

@@ -37,7 +37,7 @@ func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
 func ListenAndServeGRPC(config *Config, grpcServer *grpc.Server) (netListener net.Listener, err error) {
 
 	// Default to tcp socket type of not specified for backward compatibility
-	socketType := config.SocketType
+	socketType := config.Network
 	if socketType == "" {
 		socketType = "tcp"
 	}

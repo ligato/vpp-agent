@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcdv3
+package etcd
 
 import (
 	"time"
@@ -90,7 +90,7 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 }
 
 // NewEtcdConnectionUsingClient creates a new instance of BytesConnectionEtcd
-// using the provided etcdv3 client.
+// using the provided etcd client.
 // This constructor is used primarily for testing.
 func NewEtcdConnectionUsingClient(etcdClient *clientv3.Client, log logging.Logger) (*BytesConnectionEtcd, error) {
 	log.Debug("NewEtcdConnectionWithBytes", etcdClient)
@@ -318,7 +318,7 @@ func putInternal(log logging.Logger, kv clientv3.KV, lessor clientv3.Lease, opTi
 	}
 
 	if _, err := kv.Put(ctx, key, string(binData), etcdOpts...); err != nil {
-		log.Error("etcdv3 put error: ", err)
+		log.Error("etcd put error: ", err)
 		return err
 	}
 
@@ -356,10 +356,10 @@ func deleteInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration,
 		}
 	}
 
-	// delete data from etcdv3
+	// delete data from etcd
 	resp, err := kv.Delete(ctx, key, etcdOpts...)
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcd error: ", err)
 		return false, err
 	}
 
@@ -381,10 +381,10 @@ func getValueInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	// get data from etcdv3
+	// get data from etcd
 	resp, err := kv.Get(ctx, key)
 	if err != nil {
-		log.Error("etcdv3 get error: ", err)
+		log.Error("etcd get error: ", err)
 		return nil, false, 0, err
 	}
 
@@ -407,10 +407,10 @@ func getValueRevInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Dura
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	// get data from etcdv3
+	// get data from etcd
 	resp, err := kv.Get(ctx, key, clientv3.WithRev(rev))
 	if err != nil {
-		log.Error("etcdv3 get error: ", err)
+		log.Error("etcd get error: ", err)
 		return nil, false, 0, err
 	}
 
@@ -431,10 +431,10 @@ func listValuesInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Durat
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	// get data from etcdv3
+	// get data from etcd
 	resp, err := kv.Get(ctx, key, clientv3.WithPrefix())
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcd error: ", err)
 		return nil, err
 	}
 
@@ -452,10 +452,10 @@ func listKeysInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	// get data from etcdv3
+	// get data from etcd
 	resp, err := kv.Get(ctx, prefix, clientv3.WithPrefix(), clientv3.WithKeysOnly())
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcd error: ", err)
 		return nil, err
 	}
 
@@ -473,10 +473,10 @@ func listValuesRangeInternal(log logging.Logger, kv clientv3.KV, opTimeout time.
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	// get data from etcdv3
+	// get data from etcd
 	resp, err := kv.Get(ctx, fromPrefix, clientv3.WithRange(toPrefix))
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcd error: ", err)
 		return nil, err
 	}
 
@@ -497,7 +497,7 @@ func compactInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration
 	if len(rev) == 0 {
 		resp, err := kv.Get(ctx, "\x00")
 		if err != nil {
-			log.Error("etcdv3 error: ", err)
+			log.Error("etcd error: ", err)
 			return 0, err
 		}
 		toRev = resp.Header.Revision
@@ -508,7 +508,7 @@ func compactInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duration
 	log.Debugf("compacting ETCD to revision %v", toRev)
 	t := time.Now()
 	if _, err := kv.Compact(ctx, toRev, clientv3.WithCompactPhysical()); err != nil {
-		log.Error("etcdv3 compact error: ", err)
+		log.Error("etcd compact error: ", err)
 		return 0, err
 	}
 	log.Debugf("compacting ETCD took %v", time.Since(t))
@@ -528,7 +528,7 @@ func getRevisionInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Dura
 
 	resp, err := kv.Get(ctx, "\x00")
 	if err != nil {
-		log.Error("etcdv3 error: ", err)
+		log.Error("etcd error: ", err)
 		return 0, err
 	}
 
