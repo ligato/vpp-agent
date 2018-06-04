@@ -75,25 +75,32 @@ Create Loopbak Intfs
     Create loopback interface loop1 on agent_vpp_1 with ip ${IP_2}/64 and mac 8a:f1:be:90:20:00
 
 Check Veth Interface On Agent1
-    linux: Interface With IP Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv4=${IP_3_PREFIX}
+    linux: Interface With IPv6 Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv6=${IP_3_PREFIX}
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent1_veth     mac=${AGENT1_VETH_MAC}    ipv6=${IP_3}/64    mtu=1500    state=up
 
 Check Veth Interface On Agent2
-    linux: Interface With IP Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv4=${IP_4_PREFIX}
+    linux: Interface With IPv6 Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv6=${IP_4_PREFIX}
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent2_veth     mac=${AGENT2_VETH_MAC}    ipv6=${IP_4}/64    mtu=1500    state=up
 
 Check Bridge Domain Is Created
     vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth
 
+Check loop000 Is Created
+    vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:00:00
+    run keyword and ignore error  vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:00:00    mtu=1500  ipv6=${IP_1}/64
+
+
 Check loop0 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:00:00
-    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:00:00    mtu=1500  ipv6=${IP_1}/64
+    sleep  200s
+    Wait Until Keyword Succeeds    120s   60s   vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:00:00    mtu=1500  ipv6=${IP_1}/64
 
 Check loop1 Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:20:00
-    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:20:00    mtu=1500  ipv6=${IP_2}/64
+    sleep  150s
+    Wait Until Keyword Succeeds    120s   60s   vat_term: Check Loopback Interface State    agent_vpp_1    loop1    enabled=1     mac=8a:f1:be:90:20:00    mtu=1500  ipv6=${IP_2}/64
 
 Create BD fo Loopbacks
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces loop0, loop1
@@ -118,11 +125,11 @@ Check Ping Agent1 -> Agent2
 Check Ping Agent2 -> Agent1
     linux: Check Ping6    node_2    ${IP_3}
 
-Ping Loop0 -> Loop1
-    vpp_term: Check Ping6 Within Interface    agent_vpp_1     ${IP_2}    loop0    15
+Ping Loop1 -> Loop2
+    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_2}    loop1    15
 
-Ping Loop1 -> Loop0
-    vpp_term: Check Ping6 Within Interface    agent_vpp_1     ${IP_1}    loop1    15
+Ping Loop2 -> Loop1
+    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_1}    loop2    15
 
 
 #Check UDP Ping Agent1 -> Agent2
