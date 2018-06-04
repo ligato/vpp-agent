@@ -80,7 +80,7 @@ func (dsl *DataChangeDSL) Send() vppclient.Reply {
 
 // LinuxInterface adds a request to create or update Linux network interface.
 func (dsl *PutDSL) LinuxInterface(val *linuxIf.LinuxInterfaces_Interface) linuxclient.PutDSL {
-	dsl.parent.txn.Put(interfaces.InterfaceKey(val.Name), val)
+	dsl.parent.txn.Put(linuxIf.InterfaceKey(val.Name), val)
 	return dsl
 }
 
