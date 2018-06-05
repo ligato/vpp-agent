@@ -582,8 +582,7 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Delete
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&tap.TapDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -668,8 +667,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Modify - delete old data
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -757,8 +755,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Modify - delete old data
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // Modify - configure new data
@@ -990,7 +987,6 @@ func TestInterfacesDeleteTapInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
@@ -1014,7 +1010,6 @@ func TestInterfacesDeleteMemifInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
@@ -1036,7 +1031,6 @@ func TestInterfacesDeleteVxlanInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{})
@@ -1059,7 +1053,6 @@ func TestInterfacesDeleteLoopbackInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{})
@@ -1081,7 +1074,6 @@ func TestInterfacesDeleteEthernetInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	// Data
