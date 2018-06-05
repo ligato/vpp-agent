@@ -65,7 +65,7 @@ type LinuxRouteConfigurator struct {
 
 // Init initializes static route configurator and starts goroutines
 func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
+	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
 	// Logger
 	plugin.log = logger.NewLogger("-route-conf")
 	plugin.log.Debug("Initializing Linux Route configurator")
@@ -81,11 +81,8 @@ func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handle
 	plugin.l3Handler = l3Handler
 	plugin.nsHandler = nsHandler
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("LinuxRouteConfigurator", plugin.log)
-		plugin.l3Handler.SetStopwatch(plugin.stopwatch)
-	}
+	// Configurator-wide stopwatch instance
+	plugin.stopwatch = stopwatch
 
 	return nil
 }

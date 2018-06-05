@@ -22,6 +22,7 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -48,7 +49,8 @@ type Plugin struct {
 	// Shared indexes
 	ifIndexes ifaceidx.LinuxIfIndexRW
 
-	// Namespace handling
+	// Interface/namespace handling
+	ifHandler ifLinuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
 
 	// Channels (watch, notification, ...) which should be closed
@@ -63,7 +65,7 @@ type Plugin struct {
 	watchDataReg datasync.WatchRegistration
 
 	// From config file
-	enableStopwatch bool
+	stopwatch *measure.Stopwatch
 
 	// Common
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
@@ -110,9 +112,9 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if config != nil {
-		plugin.enableStopwatch = config.Stopwatch
-		if plugin.enableStopwatch {
+		if config.Stopwatch {
 			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
+			plugin.stopwatch = measure.NewStopwatch("LinuxPlugin", plugin.Log)
 		} else {
 			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
@@ -176,10 +178,15 @@ func (plugin *Plugin) Close() error {
 func (plugin *Plugin) initNs() error {
 	plugin.Log.Infof("Init Linux namespace handler")
 
+	// Linux plugin stopwatch
+
+	// Shared interface linux calls handler
+	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.stopwatch)
+
 	namespaceHandler := &nsplugin.NsHandler{}
 	plugin.nsHandler = namespaceHandler
-	return namespaceHandler.Init(plugin.Log, ifLinuxcalls.NewNetLinkHandler(), nsplugin.NewSystemHandler(), plugin.msChan,
-		plugin.ifMicroserviceNotif, plugin.enableStopwatch)
+	return namespaceHandler.Init(plugin.Log, plugin.ifHandler, nsplugin.NewSystemHandler(), plugin.msChan,
+		plugin.ifMicroserviceNotif)
 }
 
 // Initialize linux interface plugin
@@ -191,8 +198,8 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, ifLinuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes,
-		plugin.ifStateChan, plugin.ifMicroserviceNotif, plugin.enableStopwatch); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes, plugin.ifStateChan,
+		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -205,15 +212,18 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 func (plugin *Plugin) initL3() error {
 	plugin.Log.Infof("Init Linux L3 plugin")
 
+	// L3 linux calls handler
+	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.stopwatch)
+
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
-	if err := plugin.arpConfigurator.Init(plugin.Log, l3Linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch); err != nil {
+	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
 		return err
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	return plugin.routeConfigurator.Init(plugin.Log, l3Linuxcalls.NewNetLinkHandler(), plugin.nsHandler, plugin.ifIndexes, plugin.enableStopwatch)
+	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
 }
 
 func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {

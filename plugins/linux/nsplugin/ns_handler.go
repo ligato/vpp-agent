@@ -27,7 +27,6 @@ import (
 	"bytes"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -75,7 +74,7 @@ type NsHandler struct {
 
 // Init namespace handler caches and create config namespace
 func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, sysHandler SystemAPI,
-	msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent, enableStopwatch bool) error {
+	msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
 	// Logger
 	plugin.log = logger.NewLogger("-ns-handler")
 	plugin.log.Infof("Initializing namespace handler plugin")
@@ -111,11 +110,6 @@ func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.
 		return err
 	}
 	plugin.log.Debugf("Using docker client endpoint: %+v", plugin.dockerClient.Endpoint())
-
-	// Stopwatch
-	if enableStopwatch {
-		plugin.ifHandler.SetStopwatch(measure.NewStopwatch("NsHandler", plugin.log))
-	}
 
 	// Create config namespace (for VETHs)
 	err = plugin.prepareConfigNamespace()

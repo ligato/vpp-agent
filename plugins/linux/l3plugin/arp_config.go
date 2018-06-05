@@ -77,7 +77,7 @@ func (plugin *LinuxArpConfigurator) GetArpInterfaceCache() map[string]*arpToInte
 
 // Init initializes ARP configurator and starts goroutines
 func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
+	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
 	// Logger
 	plugin.log = logger.NewLogger("-arp-conf")
 	plugin.log.Debug("Initializing Linux ARP configurator")
@@ -92,11 +92,8 @@ func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler 
 	plugin.l3Handler = l3Handler
 	plugin.nsHandler = nsHandler
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("LinuxArpConfigurator", plugin.log)
-		plugin.l3Handler.SetStopwatch(plugin.stopwatch)
-	}
+	// Configurator-wide stopwatch instance
+	plugin.stopwatch = stopwatch
 
 	return nil
 }

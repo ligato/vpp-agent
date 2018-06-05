@@ -49,6 +49,7 @@ func NewDataResyncReq() *DataResyncReq {
 // DataResync delegates resync request linuxplugin configurators.
 func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	plugin.Log.Info("resync the Linux Configuration")
+
 	// store all resync errors
 	var resyncErrs []error
 

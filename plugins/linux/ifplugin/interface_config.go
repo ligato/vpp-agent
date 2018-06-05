@@ -75,7 +75,7 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linux plugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, stateChan chan *LinuxInterfaceStateNotification, ifNotif chan *nsplugin.MicroserviceEvent, enableStopwatch bool) (err error) {
+	ifIndexes ifaceidx.LinuxIfIndexRW, stateChan chan *LinuxInterfaceStateNotification, ifNotif chan *nsplugin.MicroserviceEvent, stopwatch *measure.Stopwatch) (err error) {
 	// Logger
 	plugin.log = logging.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Linux Interface configurator")
@@ -96,11 +96,8 @@ func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifH
 	plugin.ifHandler = ifHandler
 	plugin.nsHandler = nsHandler
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("LinuxInterfaceConfigurator", plugin.log)
-		plugin.ifHandler.SetStopwatch(plugin.stopwatch)
-	}
+	// Configurator-wide stopwatch instance
+	plugin.stopwatch = stopwatch
 
 	// Start watching on microservice events
 	go plugin.watchMicroservices(plugin.ctx)

@@ -37,15 +37,6 @@ type NetlinkAPI interface {
 	ModifyStaticRoute(name string, route *netlink.Route) error
 	// DeleteStaticRoute removes linux static route
 	DeleteStaticRoute(name string, route *netlink.Route) error
-
-	// NetlinkHandlerSetup is post-init handler setup
-	NetlinkHandlerSetup
-}
-
-// NetlinkHandlerSetup is post-init handler setup
-type NetlinkHandlerSetup interface {
-	// SetTimeLog sets time log instance to the handler
-	SetStopwatch(stopwatch *measure.Stopwatch)
 }
 
 // netLinkHandler is accessor for netlink methods
@@ -53,12 +44,9 @@ type netLinkHandler struct {
 	stopwatch *measure.Stopwatch
 }
 
-// SetTimeLog sets time log instance to the handler
-func (handler *netLinkHandler) SetStopwatch(stopwatch *measure.Stopwatch) {
-	handler.stopwatch = stopwatch
-}
-
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler() *netLinkHandler {
-	return &netLinkHandler{}
+func NewNetLinkHandler(stopwatch *measure.Stopwatch) *netLinkHandler {
+	return &netLinkHandler{
+		stopwatch: stopwatch,
+	}
 }

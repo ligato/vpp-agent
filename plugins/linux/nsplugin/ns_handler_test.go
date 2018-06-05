@@ -57,7 +57,7 @@ func nsHandlerTestSetup(t *testing.T) (*nsplugin.NsHandler, *linuxmock.IfNetlink
 	ifNotif := make(chan *nsplugin.MicroserviceEvent)
 	// Configurator
 	plugin := &nsplugin.NsHandler{}
-	err := plugin.Init(pluginLog, ifHandler, sysHandler, msChan, ifNotif, true)
+	err := plugin.Init(pluginLog, ifHandler, sysHandler, msChan, ifNotif)
 	Expect(err).To(BeNil())
 
 	return plugin, ifHandler, sysHandler, msChan, ifNotif

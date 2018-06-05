@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -541,7 +542,7 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	linuxMock := linuxmock.NewIfNetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
 	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes, ifStateChan,
-		ifMicroserviceNotif, true)
+		ifMicroserviceNotif, measure.NewStopwatch("LinuxIfTest", pluginLog))
 	Expect(err).To(BeNil())
 
 	return plugin, linuxMock, nsMock, ifStateChan, msChan, ifMicroserviceNotif
