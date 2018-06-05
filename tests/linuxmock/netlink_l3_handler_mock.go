@@ -88,24 +88,24 @@ func (mock *L3NetlinkHandlerMock) AddArpEntry(name string, arpEntry *netlink.Nei
 	return nil
 }
 
-func (mock *L3NetlinkHandlerMock) ModifyArpEntry(name string, arpEntry *netlink.Neigh) error {
-	items := mock.getReturnValues("ModifyArpEntry")
+func (mock *L3NetlinkHandlerMock) SetArpEntry(name string, arpEntry *netlink.Neigh) error {
+	items := mock.getReturnValues("SetArpEntry")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
 	return nil
 }
 
-func (mock *L3NetlinkHandlerMock) DeleteArpEntry(name string, arpEntry *netlink.Neigh) error {
-	items := mock.getReturnValues("DeleteArpEntry")
+func (mock *L3NetlinkHandlerMock) DelArpEntry(name string, arpEntry *netlink.Neigh) error {
+	items := mock.getReturnValues("DelArpEntry")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
 	return nil
 }
 
-func (mock *L3NetlinkHandlerMock) ReadArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error) {
-	items := mock.getReturnValues("ReadArpEntries")
+func (mock *L3NetlinkHandlerMock) GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error) {
+	items := mock.getReturnValues("GetArpEntries")
 	if len(items) == 1 {
 		switch typed := items[0].(type) {
 		case []netlink.Neigh:
@@ -127,16 +127,16 @@ func (mock *L3NetlinkHandlerMock) AddStaticRoute(name string, route *netlink.Rou
 	return nil
 }
 
-func (mock *L3NetlinkHandlerMock) ModifyStaticRoute(name string, route *netlink.Route) error {
-	items := mock.getReturnValues("ModifyStaticRoute")
+func (mock *L3NetlinkHandlerMock) ReplaceStaticRoute(name string, route *netlink.Route) error {
+	items := mock.getReturnValues("ReplaceStaticRoute")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
 	return nil
 }
 
-func (mock *L3NetlinkHandlerMock) DeleteStaticRoute(name string, route *netlink.Route) error {
-	items := mock.getReturnValues("DeleteStaticRoute")
+func (mock *L3NetlinkHandlerMock) DelStaticRoute(name string, route *netlink.Route) error {
+	items := mock.getReturnValues("DelStaticRoute")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}

@@ -62,10 +62,10 @@ func TestLinuxConfiguratorAddStaticRoute(t *testing.T) {
 		nil, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
+	_, meta, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -85,10 +85,10 @@ func TestLinuxConfiguratorAddStaticRouteWithInterface(t *testing.T) {
 		&l3.LinuxStaticRoutes_Route_Scope{}, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 1, 1)))
+	_, meta, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 1, 1)))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 1, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 1, 1)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -106,9 +106,9 @@ func TestLinuxConfiguratorAddStaticRouteWithMissingInterface(t *testing.T) {
 		&l3.LinuxStaticRoutes_Route_Scope{}, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, _, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
+	_, _, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
 	Expect(found).To(BeFalse())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "", 0, 1)))
 	Expect(found).To(BeFalse())
 	_, meta, found := plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeTrue())
@@ -135,10 +135,10 @@ func TestLinuxConfiguratorAddStaticRouteGatewaySrc(t *testing.T) {
 		&l3.LinuxStaticRoutes_Route_Scope{}, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, meta, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -166,10 +166,10 @@ func TestLinuxConfiguratorAddStaticRouteGatewayAuto(t *testing.T) {
 		}, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, meta, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -189,9 +189,9 @@ func TestLinuxConfiguratorAddStaticRouteGatewayUnreachable(t *testing.T) {
 		}, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, _, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, _, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeFalse())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("10.0.0.1/24", "20.0.0.2", 0, 1)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -276,10 +276,10 @@ func TestLinuxConfiguratorAddDefaultRoute(t *testing.T) {
 		nil, 1)
 	err := plugin.ConfigureLinuxStaticRoute(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("", "20.0.0.2", 0, 0)))
+	_, meta, found := plugin.GetRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("", "20.0.0.2", 0, 0)))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(plugin.RouteIdentifier(getRouteID("", "20.0.0.2", 0, 0)))
+	_, _, found = plugin.GetAutoRouteIndexes().LookupIdx(l3plugin.RouteIdentifier(getRouteID("", "20.0.0.2", 0, 0)))
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetCachedRoutes().LookupIdx("route1")
 	Expect(found).To(BeFalse())
@@ -360,16 +360,8 @@ func getRouteID(dst, gw string, ifIdx, table uint32) *netlink.Route {
 func getTestStaticRoute(rtName, ifName, dstIp, srcIp, gwIp string, metric, table uint32, scope *l3.LinuxStaticRoutes_Route_Scope,
 	namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType) *l3.LinuxStaticRoutes_Route {
 	return &l3.LinuxStaticRoutes_Route{
-		Name: rtName,
-		Namespace: func(namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType) *l3.LinuxStaticRoutes_Route_Namespace {
-			if namespaceType < 4 {
-				return &l3.LinuxStaticRoutes_Route_Namespace{
-					Type:         namespaceType,
-					Microservice: rtName + "-ms",
-				}
-			}
-			return nil
-		}(namespaceType),
+		Name:      rtName,
+		Namespace: getNamespace(ifName, namespaceType),
 		Interface: ifName,
 		DstIpAddr: dstIp,
 		SrcIpAddr: srcIp,
@@ -383,17 +375,9 @@ func getTestStaticRoute(rtName, ifName, dstIp, srcIp, gwIp string, metric, table
 func getTestDefaultRoute(rtName, ifName, dstIp, srcIp, gwIp string, metric, table uint32, scope *l3.LinuxStaticRoutes_Route_Scope,
 	namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType) *l3.LinuxStaticRoutes_Route {
 	return &l3.LinuxStaticRoutes_Route{
-		Name:    rtName,
-		Default: true,
-		Namespace: func(namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType) *l3.LinuxStaticRoutes_Route_Namespace {
-			if namespaceType < 4 {
-				return &l3.LinuxStaticRoutes_Route_Namespace{
-					Type:         namespaceType,
-					Microservice: rtName + "-ms",
-				}
-			}
-			return nil
-		}(namespaceType),
+		Name:      rtName,
+		Default:   true,
+		Namespace: getNamespace(ifName, namespaceType),
 		Interface: ifName,
 		DstIpAddr: dstIp,
 		SrcIpAddr: srcIp,
@@ -402,4 +386,14 @@ func getTestDefaultRoute(rtName, ifName, dstIp, srcIp, gwIp string, metric, tabl
 		Metric:    metric,
 		Table:     table,
 	}
+}
+
+func getNamespace(rtName string, namespaceType l3.LinuxStaticRoutes_Route_Namespace_NamespaceType) *l3.LinuxStaticRoutes_Route_Namespace {
+	if namespaceType < 4 {
+		return &l3.LinuxStaticRoutes_Route_Namespace{
+			Type:         namespaceType,
+			Microservice: rtName + "-ms",
+		}
+	}
+	return nil
 }

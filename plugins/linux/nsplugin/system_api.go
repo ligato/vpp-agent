@@ -31,8 +31,8 @@ type SystemAPI interface {
 type OperatingSystem interface {
 	// Open file
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
-	// MakeDirectoryAll creates a directory with all parent directories
-	MakeDirectoryAll(path string, perm os.FileMode) error
+	// MkDirAll creates a directory with all parent directories
+	MkDirAll(path string, perm os.FileMode) error
 	// Remove removes named file or directory
 	Remove(name string) error
 }
@@ -49,8 +49,8 @@ type Syscall interface {
 type NetlinkNamespace interface {
 	// NewNetworkNamespace crates new namespace and returns handle to manage it further
 	NewNetworkNamespace() (ns netns.NsHandle, err error)
-	// GetNsHandleFromName returns namespace handle from its name
-	GetNsHandleFromName(name string) (ns netns.NsHandle, err error)
+	// GetNamespaceFromName returns namespace handle from its name
+	GetNamespaceFromName(name string) (ns netns.NsHandle, err error)
 	// SetNamespace sets the current namespace to the namespace represented by the handle
 	SetNamespace(ns netns.NsHandle) (err error)
 }
@@ -67,7 +67,7 @@ func (osh *systemHandler) OpenFile(name string, flag int, perm os.FileMode) (*os
 	return os.OpenFile(name, flag, perm)
 }
 
-func (osh *systemHandler) MakeDirectoryAll(path string, perm os.FileMode) error {
+func (osh *systemHandler) MkDirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
@@ -91,7 +91,7 @@ func (osh *systemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
 	return netns.New()
 }
 
-func (osh *systemHandler) GetNsHandleFromName(name string) (ns netns.NsHandle, err error) {
+func (osh *systemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, err error) {
 	return netns.GetFromName(name)
 }
 

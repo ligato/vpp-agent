@@ -27,10 +27,10 @@ type NetlinkAPI interface {
 	AddVethInterfacePair(ifName, peerIfName string) error
 	// DelVethInterfacePair removes VETH pair
 	DelVethInterfacePair(ifName, peerIfName string) error
-	// InterfaceAdminUp sets interface state to 'up'
-	InterfaceAdminUp(ifName string) error
-	// InterfaceAdminDown sets interface state to 'down'
-	InterfaceAdminDown(ifName string) error
+	// SetInterfaceUp sets interface state to 'up'
+	SetInterfaceUp(ifName string) error
+	// SetInterfaceDown sets interface state to 'down'
+	SetInterfaceDown(ifName string) error
 	// AddInterfaceIP adds new IP address
 	AddInterfaceIP(ifName string, addr *net.IPNet) error
 	// DelInterfaceIP removes IP address from linux interface
@@ -41,8 +41,8 @@ type NetlinkAPI interface {
 	SetInterfaceMTU(ifName string, mtu int) error
 	// RenameInterface changes interface host name
 	RenameInterface(ifName string, newName string) error
-	// GetLinkFromInterface returns netlink interface type
-	GetLinkFromInterface(ifName string) (netlink.Link, error)
+	// GetLinkByName returns netlink interface type
+	GetLinkByName(ifName string) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
 	// GetAddressList reads all IP addresses

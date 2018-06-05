@@ -43,7 +43,7 @@ func (handler *netLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, er
 		handler.stopwatch.TimeLog("get-address-list").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (handler *netLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) er
 		handler.stopwatch.TimeLog("add-interface-ip").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (handler *netLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) er
 		handler.stopwatch.TimeLog("del-interface-ip").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (handler *netLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
 		handler.stopwatch.TimeLog("set-interface-mtu").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

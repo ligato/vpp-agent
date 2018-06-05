@@ -36,26 +36,26 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// InterfaceAdminDown calls Netlink API LinkSetDown.
-func (handler *netLinkHandler) InterfaceAdminDown(ifName string) error {
+// SetInterfaceDown calls Netlink API LinkSetDown.
+func (handler *netLinkHandler) SetInterfaceDown(ifName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("interface-admin-down").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
 	return netlink.LinkSetDown(link)
 }
 
-// InterfaceAdminUp calls Netlink API LinkSetUp.
-func (handler *netLinkHandler) InterfaceAdminUp(ifName string) error {
+// SetInterfaceUp calls Netlink API LinkSetUp.
+func (handler *netLinkHandler) SetInterfaceUp(ifName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("interface-admin-up").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

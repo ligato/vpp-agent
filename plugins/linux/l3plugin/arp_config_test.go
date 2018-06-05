@@ -60,11 +60,10 @@ func TestLinuxConfiguratorAddARP(t *testing.T) {
 	data := getTestARP("arp1", "if1", "10.0.0.1", "00:00:00:00:00:01", 2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, meta, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
+	_, meta, found := plugin.GetArpIndexes().LookupIdx(l3plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
-	_, ok := plugin.GetArpInterfaceCache()["arp1"]
-	Expect(ok).To(BeFalse())
+	Expect(plugin.GetArpInterfaceCache()).ToNot(HaveKeyWithValue("arp1", BeNil()))
 }
 
 // Configure ARP entry with missing interface
@@ -77,11 +76,9 @@ func TestLinuxConfiguratorAddARPMissingInterface(t *testing.T) {
 		2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	_, _, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
+	_, _, found := plugin.GetArpIndexes().LookupIdx(l3plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeFalse())
-	val, ok := plugin.GetArpInterfaceCache()["arp1"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
+	Expect(plugin.GetArpInterfaceCache()).To(HaveKeyWithValue("arp1", Not(BeNil())))
 }
 
 // Configure ARP entry with parse IP error
@@ -95,10 +92,9 @@ func TestLinuxConfiguratorAddARPParseIPErr(t *testing.T) {
 	data := getTestARP("arp1", "if1", "10.0.0.1/24", "00:00:00:00:00:01", 2, nil, nil)
 	err := plugin.ConfigureLinuxStaticArpEntry(data)
 	Expect(err).Should(HaveOccurred())
-	_, _, found := plugin.GetArpIndexes().LookupIdx(plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
+	_, _, found := plugin.GetArpIndexes().LookupIdx(l3plugin.ArpIdentifier(getArpID(1, "10.0.0.1", "00:00:00:00:00:01")))
 	Expect(found).To(BeFalse())
-	_, ok := plugin.GetArpInterfaceCache()["arp1"]
-	Expect(ok).To(BeFalse())
+	Expect(plugin.GetArpInterfaceCache()).ToNot(HaveKeyWithValue("arp1", BeNil()))
 }
 
 // Configure ARP entry with parse MAC error

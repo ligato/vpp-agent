@@ -176,7 +176,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	defer ns.Close()
 
 	// Get the link plugin.
-	link, err := plugin.ifHandler.GetLinkFromInterface(ifName)
+	link, err := plugin.ifHandler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 
 	if netIntf.Flags&net.FlagUp == 1 {
 		// re-enable interface
-		err = plugin.ifHandler.InterfaceAdminUp(ifName)
+		err = plugin.ifHandler.SetInterfaceUp(ifName)
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
@@ -404,7 +404,7 @@ func (plugin *NsHandler) getOrCreateNs(ns *Namespace) (netns.NsHandle, error) {
 		if ns.Name == "" {
 			return dupNsHandle(plugin.defaultNs)
 		}
-		nsHandle, err = plugin.sysHandler.GetNsHandleFromName(ns.Name)
+		nsHandle, err = plugin.sysHandler.GetNamespaceFromName(ns.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
 			_, err = ns.createNamedNetNs(plugin.sysHandler, plugin.log)
@@ -471,7 +471,7 @@ func (plugin *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) 
 
 func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
 	for _, confAddr := range configured {
-		if bytes.Compare(confAddr.IP, provided.IP) == 0 {
+		if bytes.Equal(confAddr.IP, provided.IP) {
 			return true
 		}
 	}

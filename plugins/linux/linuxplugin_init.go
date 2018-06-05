@@ -178,8 +178,6 @@ func (plugin *Plugin) Close() error {
 func (plugin *Plugin) initNs() error {
 	plugin.Log.Infof("Init Linux namespace handler")
 
-	// Linux plugin stopwatch
-
 	// Shared interface linux calls handler
 	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.stopwatch)
 

@@ -167,9 +167,9 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	}
 
 	// Register created ARP entry
-	plugin.arpIndexes.RegisterName(plugin.ArpIdentifier(neigh), plugin.arpIdxSeq, arpEntry)
+	plugin.arpIndexes.RegisterName(ArpIdentifier(neigh), plugin.arpIdxSeq, arpEntry)
 	plugin.arpIdxSeq++
-	plugin.log.Debugf("ARP entry %v registered as %v", arpEntry.Name, plugin.ArpIdentifier(neigh))
+	plugin.log.Debugf("ARP entry %v registered as %v", arpEntry.Name, ArpIdentifier(neigh))
 
 	plugin.log.Infof("Linux ARP entry %v configured", arpEntry.Name)
 
@@ -244,7 +244,7 @@ func (plugin *LinuxArpConfigurator) ModifyLinuxStaticArpEntry(newArpEntry *l3.Li
 	}
 	defer revertNs()
 
-	err = plugin.l3Handler.ModifyArpEntry(newArpEntry.Name, neigh)
+	err = plugin.l3Handler.SetArpEntry(newArpEntry.Name, neigh)
 	if err != nil {
 		plugin.log.Errorf("modifying arp entry %q failed: %v (%+v)", newArpEntry.Name, err, neigh)
 		return err
@@ -293,7 +293,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	defer revertNs()
 
 	// Read all ARP entries configured for interface
-	entries, err := plugin.l3Handler.ReadArpEntries(int(ifData.Index), noFamilyFilter)
+	entries, err := plugin.l3Handler.GetArpEntries(int(ifData.Index), noFamilyFilter)
 	if err != nil {
 		return err
 	}
@@ -312,13 +312,13 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	}
 
 	// Remove the ARP entry from the interface namespace
-	err = plugin.l3Handler.DeleteArpEntry(arpEntry.Name, neigh)
+	err = plugin.l3Handler.DelArpEntry(arpEntry.Name, neigh)
 	if err != nil {
 		plugin.log.Errorf("deleting arp entry %q failed: %v (%+v)", arpEntry.Name, err, neigh)
 		return err
 	}
 
-	_, _, found = plugin.arpIndexes.UnregisterName(plugin.ArpIdentifier(neigh))
+	_, _, found = plugin.arpIndexes.UnregisterName(ArpIdentifier(neigh))
 	if !found {
 		plugin.log.Warnf("Attempt to unregister non-existing ARP entry %v", arpEntry.Name)
 	} else {
@@ -335,14 +335,14 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 	plugin.log.Infof("Browsing Linux ARP entries")
 
 	// Set interface index and family to 0 reads all arp entries from all of the interfaces
-	entries, err := plugin.l3Handler.ReadArpEntries(noIfaceIdxFilter, noFamilyFilter)
+	entries, err := plugin.l3Handler.GetArpEntries(noIfaceIdxFilter, noFamilyFilter)
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range entries {
 		plugin.log.WithField("interface", entry.LinkIndex).Debugf("Found new static linux ARP entry")
-		_, arp, found := plugin.arpIndexes.LookupIdx(plugin.ArpIdentifier(&entry))
+		_, arp, found := plugin.arpIndexes.LookupIdx(ArpIdentifier(&entry))
 		if !found {
 			var ifName string
 			if arp == nil || arp.Namespace == nil {
@@ -350,14 +350,14 @@ func (plugin *LinuxArpConfigurator) LookupLinuxArpEntries() error {
 			} else {
 				ifName, _, _ = plugin.ifIndexes.LookupNameByNamespace(uint32(entry.LinkIndex), arp.Namespace.Name)
 			}
-			plugin.arpIndexes.RegisterName(plugin.ArpIdentifier(&entry), plugin.arpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
+			plugin.arpIndexes.RegisterName(ArpIdentifier(&entry), plugin.arpIdxSeq, &l3.LinuxStaticArpEntries_ArpEntry{
 				// Register fields required to reconstruct ARP identifier
 				Interface: ifName,
 				IpAddr:    entry.IP.String(),
 				HwAddress: entry.HardwareAddr.String(),
 			})
 			plugin.arpIdxSeq++
-			plugin.log.Debugf("ARP entry registered as %v", plugin.ArpIdentifier(&entry))
+			plugin.log.Debugf("ARP entry registered as %v", ArpIdentifier(&entry))
 		}
 	}
 
@@ -426,7 +426,7 @@ func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx
 				plugin.log.Errorf("ARP %v - cannot unregister, invalid MAC %v: %v", arpName, arp.HwAddress, err)
 				continue
 			}
-			plugin.arpIndexes.UnregisterName(plugin.ArpIdentifier(&netlink.Neigh{
+			plugin.arpIndexes.UnregisterName(ArpIdentifier(&netlink.Neigh{
 				LinkIndex:    int(ifIdx),
 				IP:           ip,
 				HardwareAddr: mac,
@@ -444,7 +444,7 @@ func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx
 }
 
 // ArpIdentifier generates unique ARP ID used in mapping
-func (plugin *LinuxArpConfigurator) ArpIdentifier(arp *netlink.Neigh) string {
+func ArpIdentifier(arp *netlink.Neigh) string {
 	return fmt.Sprintf("iface%v-%v-%v", arp.LinkIndex, arp.IP.String(), arp.HardwareAddr)
 }
 

@@ -43,7 +43,7 @@ func (handler *netLinkHandler) SetInterfaceMac(ifName string, macAddress string)
 		handler.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

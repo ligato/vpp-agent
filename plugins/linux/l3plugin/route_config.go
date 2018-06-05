@@ -180,7 +180,7 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 		return err
 	}
 
-	plugin.rtIndexes.RegisterName(plugin.RouteIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
+	plugin.rtIndexes.RegisterName(RouteIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
 	plugin.rtIdxSeq++
 	plugin.log.Debugf("Route %s registered", route.Name)
 
@@ -379,13 +379,13 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	}
 	defer revertNs()
 
-	err = plugin.l3Handler.DeleteStaticRoute(route.Name, netLinkRoute)
+	err = plugin.l3Handler.DelStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
 		plugin.log.Errorf("deleting static route %q failed: %v (%+v)", route.Name, err, netLinkRoute)
 		return err
 	}
 
-	_, _, found := plugin.rtIndexes.UnregisterName(plugin.RouteIdentifier(netLinkRoute))
+	_, _, found := plugin.rtIndexes.UnregisterName(RouteIdentifier(netLinkRoute))
 	if !found {
 		plugin.log.Warnf("Attempt to unregister non-registered route %s", route.Name)
 	}
@@ -492,13 +492,8 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 }
 
 // RouteIdentifier generates unique route ID used in mapping
-func (plugin *LinuxRouteConfigurator) RouteIdentifier(route *netlink.Route) string {
-	var dstAddr string
-	if route.Dst != nil && route.Dst.IP != nil && route.Dst.Mask != nil {
-		maskSize, _ := route.Dst.Mask.Size()
-		dstAddr = route.Dst.IP.String() + "/" + strconv.Itoa(maskSize)
-	}
-	if dstAddr == ipv4AddrAny || dstAddr == ipv6AddrAny {
+func RouteIdentifier(route *netlink.Route) string {
+	if route.Dst == nil || route.Dst.String() == ipv4AddrAny || route.Dst.String() == ipv6AddrAny {
 		return fmt.Sprintf("default-iface%d-table%v-%s", route.LinkIndex, route.Table, route.Gw.To4().String())
 	}
 	return fmt.Sprintf("dst%s-iface%d-table%v-%s", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
@@ -605,7 +600,7 @@ func (plugin *LinuxRouteConfigurator) recreateLinuxStaticRoute(netLinkRoute *net
 	defer revertNs()
 
 	// Update existing route
-	return plugin.l3Handler.ModifyStaticRoute(route.Name, netLinkRoute)
+	return plugin.l3Handler.ReplaceStaticRoute(route.Name, netLinkRoute)
 }
 
 // Tries to configure again cached default/gateway routes (as a reaction to the new route)

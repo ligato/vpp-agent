@@ -419,7 +419,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 
 	// Set interface up.
 	if ifConfig.Enabled {
-		err := plugin.ifHandler.InterfaceAdminUp(ifConfig.HostIfName)
+		err := plugin.ifHandler.SetInterfaceUp(ifConfig.HostIfName)
 		if nil != err {
 			wasErr = fmt.Errorf("failed to enable Linux interface: %v", err)
 			plugin.log.Error(wasErr)
@@ -470,18 +470,18 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 		plugin.log.Debugf("MTU %d set to interface %s", ifConfig.Mtu, ifConfig.HostIfName)
 	}
 
-	idx := plugin.getLinuxInterfaceIndex(ifConfig.HostIfName)
-	if idx < 0 {
-		return fmt.Errorf("failed to get index of the Linux interface %s", ifConfig.HostIfName)
+	netIf, err := plugin.ifHandler.GetInterfaceByName(ifConfig.HostIfName)
+	if err != nil || netIf == nil || netIf.Index < 0 {
+		return fmt.Errorf("failed to get index of the Linux interface %s: %v", ifConfig.HostIfName, err)
 	}
 
 	// Register interface with its original name and store host name in metadata
 	plugin.ifIndexes.RegisterName(ifConfig.Name, plugin.ifIdxSeq, &ifaceidx.IndexedLinuxInterface{
-		Index: uint32(idx),
+		Index: uint32(netIf.Index),
 		Data:  ifConfig,
 	})
 	plugin.ifIdxSeq++
-	plugin.log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": idx}).
+	plugin.log.WithFields(logging.Fields{"ifName": ifConfig.Name, "ifIdx": netIf.Index}).
 		Info("An entry added into ifState.")
 
 	return wasErr
@@ -498,8 +498,8 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 	defer revertNs()
 
 	// Verify that the interface already exists in the Linux namespace.
-	idx := plugin.getLinuxInterfaceIndex(oldIfConfig.HostIfName)
-	if idx < 0 {
+	netIf, err := plugin.ifHandler.GetInterfaceByName(oldIfConfig.HostIfName)
+	if err != nil || netIf == nil || netIf.Index < 0 {
 		plugin.log.Debugf("Host interface %v was not found", oldIfConfig.HostIfName)
 		// If host does not exist, configure new setup as a new one
 		return plugin.ConfigureLinuxInterface(newIfConfig)
@@ -510,9 +510,9 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 	// Set admin status.
 	if newIfConfig.Enabled != oldIfConfig.Enabled {
 		if newIfConfig.Enabled {
-			err = plugin.ifHandler.InterfaceAdminUp(newIfConfig.HostIfName)
+			err = plugin.ifHandler.SetInterfaceUp(newIfConfig.HostIfName)
 		} else {
-			err = plugin.ifHandler.InterfaceAdminDown(newIfConfig.HostIfName)
+			err = plugin.ifHandler.SetInterfaceDown(newIfConfig.HostIfName)
 		}
 		if nil != err {
 			wasErr = fmt.Errorf("failed to enable/disable Linux interface: %v", err)
@@ -980,20 +980,9 @@ func (plugin *LinuxInterfaceConfigurator) handleOptionalHostIfName(config *inter
 
 func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
 	for _, confAddr := range configured {
-		if bytes.Compare(confAddr.IP, provided.IP) == 0 {
+		if bytes.Equal(confAddr.IP, provided.IP) {
 			return true
 		}
 	}
 	return false
-}
-
-// GetLinuxInterfaceIndex returns the index of a Linux interface identified by its name.
-// In Linux, interface index is a positive integer that starts at one, zero is never used.
-// Function returns negative number in case of a failure, such as when the interface doesn't exist.
-func (plugin *LinuxInterfaceConfigurator) getLinuxInterfaceIndex(ifName string) int {
-	iface, err := plugin.ifHandler.GetInterfaceByName(ifName)
-	if err != nil {
-		return -1
-	}
-	return iface.Index
 }

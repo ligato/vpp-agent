@@ -50,7 +50,7 @@ func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterf
 	plugin.log.Debugf("RESYNC Linux interface begin.")
 
 	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
+		plugin.stopwatch.TimeLog("resync-linux-interfaces").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()

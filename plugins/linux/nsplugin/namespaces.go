@@ -199,7 +199,7 @@ func (ns *Namespace) createNamedNetNs(sysHandler SystemAPI, log logging.Logger) 
 	defer origns.Close()
 
 	// Create directory for namespace mounts.
-	err = sysHandler.MakeDirectoryAll(netNsMountDir, 0755)
+	err = sysHandler.MkDirAll(netNsMountDir, 0755)
 	if err != nil {
 		log.WithFields(logging.Fields{"namespace": ns.Name}).
 			Error("Failed to create directory for namespace mounts")

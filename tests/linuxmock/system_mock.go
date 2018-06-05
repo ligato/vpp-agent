@@ -93,8 +93,8 @@ func (mock *SystemMock) OpenFile(name string, flag int, perm os.FileMode) (*os.F
 	return nil, nil
 }
 
-func (mock *SystemMock) MakeDirectoryAll(path string, perm os.FileMode) error {
-	items := mock.getReturnValues("MakeDirectoryAll")
+func (mock *SystemMock) MkDirAll(path string, perm os.FileMode) error {
+	items := mock.getReturnValues("MkDirAll")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
@@ -140,8 +140,8 @@ func (mock *SystemMock) NewNetworkNamespace() (netns.NsHandle, error) {
 	return 0, nil
 }
 
-func (mock *SystemMock) GetNsHandleFromName(name string) (netns.NsHandle, error) {
-	items := mock.getReturnValues("GetNsHandleFromName")
+func (mock *SystemMock) GetNamespaceFromName(name string) (netns.NsHandle, error) {
+	items := mock.getReturnValues("GetNamespaceFromName")
 	if len(items) == 1 {
 		switch typed := items[0].(type) {
 		case netns.NsHandle:

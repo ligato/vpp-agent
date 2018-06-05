@@ -30,7 +30,7 @@ func (plugin *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntrie
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC ARPs begin.")
 
 	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
+		plugin.stopwatch.TimeLog("configure-linux-arp").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Create missing arp entries and update existing ones
@@ -58,7 +58,7 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC static routes begin.")
 
 	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
+		plugin.stopwatch.TimeLog("configure-linux-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()

@@ -83,7 +83,7 @@ func (handler *netLinkHandler) GetVethPeerName(ifName string) (string, error) {
 		handler.stopwatch.TimeLog("get-veth-peer-name").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return "", err
 	}

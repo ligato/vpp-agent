@@ -97,16 +97,16 @@ func (mock *IfNetlinkHandlerMock) DelVethInterfacePair(ifName, peerIfName string
 	return nil
 }
 
-func (mock *IfNetlinkHandlerMock) InterfaceAdminUp(ifName string) error {
-	items := mock.getReturnValues("InterfaceAdminUp")
+func (mock *IfNetlinkHandlerMock) SetInterfaceUp(ifName string) error {
+	items := mock.getReturnValues("SetInterfaceUp")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
 	return nil
 }
 
-func (mock *IfNetlinkHandlerMock) InterfaceAdminDown(ifName string) error {
-	items := mock.getReturnValues("InterfaceAdminDown")
+func (mock *IfNetlinkHandlerMock) SetInterfaceDown(ifName string) error {
+	items := mock.getReturnValues("SetInterfaceDown")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
@@ -153,8 +153,8 @@ func (mock *IfNetlinkHandlerMock) RenameInterface(ifName string, newName string)
 	return nil
 }
 
-func (mock *IfNetlinkHandlerMock) GetLinkFromInterface(ifName string) (netlink.Link, error) {
-	items := mock.getReturnValues("GetLinkFromInterface")
+func (mock *IfNetlinkHandlerMock) GetLinkByName(ifName string) (netlink.Link, error) {
+	items := mock.getReturnValues("GetLinkByName")
 	if len(items) == 1 {
 		switch typed := items[0].(type) {
 		case netlink.Link:

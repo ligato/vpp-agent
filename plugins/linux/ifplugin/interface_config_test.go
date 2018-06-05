@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@ package ifplugin_test
 
 import (
 	"fmt"
+	"net"
+	"testing"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -27,8 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/tests/linuxmock"
 	. "github.com/onsi/gomega"
-	"net"
-	"testing"
 )
 
 /* Linux interface configurator init and close */
@@ -57,11 +58,10 @@ func TestLinuxConfiguratorAddSingleVeth(t *testing.T) {
 	plugin, _, _, stateChan, msChan, msNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, stateChan, msChan, msNotif)
 
-	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "peer1", 1))
+	data := getVethInterface("veth1", "peer1", 1)
+	err := plugin.ConfigureLinuxInterface(data)
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 }
 
 // Configure Veth with missing data
@@ -93,15 +93,11 @@ func TestLinuxConfiguratorAddVethPair(t *testing.T) {
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 0))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 0))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 	// Verify registration
 	_, meta, found := plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
 	Expect(found).To(BeTrue())
@@ -110,17 +106,11 @@ func TestLinuxConfiguratorAddVethPair(t *testing.T) {
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 	// Verify interface by name config
-	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
-	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 	// Verify interface by microservice cache
-	_, ok = plugin.GetInterfaceByMsCache()["veth1-ms"]
-	Expect(ok).To(BeFalse())
-	_, ok = plugin.GetInterfaceByMsCache()["veth2-ms"]
-	Expect(ok).To(BeFalse())
+	Expect(plugin.GetInterfaceByNameCache()).ToNot(HaveKeyWithValue("veth1-ms", BeNil()))
+	Expect(plugin.GetInterfaceByNameCache()).ToNot(HaveKeyWithValue("veth1-ms", BeNil()))
 }
 
 // Configure simple Veth with peer in microservice-type namespace
@@ -140,15 +130,11 @@ func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 	// Verify registration
 	_, meta, found := plugin.GetLinuxInterfaceIndexes().LookupIdx("veth1")
 	Expect(found).To(BeTrue())
@@ -157,12 +143,8 @@ func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 	// Verify interface by name config
-	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
-	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 	// Verify interface by microservice cache
 	ms, ok := plugin.GetInterfaceByMsCache()["veth1-ms"]
 	Expect(ok).To(BeTrue())
@@ -199,12 +181,8 @@ func TestLinuxConfiguratorAddVethPairVethNsNotAvailable(t *testing.T) {
 	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
 	Expect(found).To(BeFalse())
 	// Verify interface by name config
-	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
-	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while peer ns is not available
@@ -234,12 +212,8 @@ func TestLinuxConfiguratorAddVethPairPeerNsNotAvailable(t *testing.T) {
 	_, _, found = plugin.GetLinuxInterfaceIndexes().LookupIdx("veth2")
 	Expect(found).To(BeFalse())
 	// Verify interface by name config
-	val, ok := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
-	val, ok = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(ok).To(BeTrue())
-	Expect(val).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while switching ns returns error
@@ -282,15 +256,11 @@ func TestLinuxConfiguratorAddVethPairPeerSwitchToNsWhileRemovingObsoleteErr(t *t
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth which needs to be removed. Covers all 4 cases.
@@ -328,15 +298,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsolete(t *testing.T) {
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth - interface exists error
@@ -353,15 +319,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfExistsError(t *testing.
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).Should(HaveOccurred()) // Expect error
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth - interface type error
@@ -379,15 +341,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeError(t *testing.T)
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).Should(HaveOccurred()) // Expect error
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth - interface type does not match error
@@ -409,15 +367,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeMatchError(t *testi
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).Should(HaveOccurred()) // Expect error
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth - get peer name error
@@ -444,15 +398,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteGetPeerNameError(t *testi
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).Should(HaveOccurred()) // Expect error
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer while there is an obsolete veth - delete obsotele interface error
@@ -487,15 +437,11 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteDeletePeerNameError(t *te
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 1))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
 	Expect(err).Should(HaveOccurred()) // Expect error
-	data, found = plugin.GetInterfaceByNameCache()["veth2"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth2", Not(BeNil())))
 }
 
 // Configure simple Veth with peer - add veth pair error
@@ -510,9 +456,7 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 	// Configure first veth
 	err := plugin.ConfigureLinuxInterface(getVethInterface("veth1", "veth2", 0))
 	Expect(err).ShouldNot(HaveOccurred())
-	data, found := plugin.GetInterfaceByNameCache()["veth1"]
-	Expect(found).To(BeTrue())
-	Expect(data).ToNot(BeNil())
+	Expect(plugin.GetInterfaceByNameCache()).To(HaveKeyWithValue("veth1", Not(BeNil())))
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 0))
 	Expect(err).Should(HaveOccurred())

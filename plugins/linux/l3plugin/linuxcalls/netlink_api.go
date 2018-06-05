@@ -24,19 +24,19 @@ type NetlinkAPI interface {
 	/* ARP */
 	// AddArpEntry configures new linux ARP entry
 	AddArpEntry(name string, arpEntry *netlink.Neigh) error
-	// ModifyArpEntry modifies existing linux ARP entry
-	ModifyArpEntry(name string, arpEntry *netlink.Neigh) error
-	// DeleteArpEntry removes linux ARP entry
-	DeleteArpEntry(name string, arpEntry *netlink.Neigh) error
-	// ReadArpEntries returns all configured ARP entries from current namespace
-	ReadArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error)
+	// SetArpEntry modifies existing linux ARP entry
+	SetArpEntry(name string, arpEntry *netlink.Neigh) error
+	// DelArpEntry removes linux ARP entry
+	DelArpEntry(name string, arpEntry *netlink.Neigh) error
+	// GetArpEntries returns all configured ARP entries from current namespace
+	GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error)
 	/* Routes */
 	// AddStaticRoute adds new linux static route
 	AddStaticRoute(name string, route *netlink.Route) error
-	// ModifyStaticRoute changes existing linux static route
-	ModifyStaticRoute(name string, route *netlink.Route) error
-	// DeleteStaticRoute removes linux static route
-	DeleteStaticRoute(name string, route *netlink.Route) error
+	// ReplaceStaticRoute changes existing linux static route
+	ReplaceStaticRoute(name string, route *netlink.Route) error
+	// DelStaticRoute removes linux static route
+	DelStaticRoute(name string, route *netlink.Route) error
 }
 
 // netLinkHandler is accessor for netlink methods

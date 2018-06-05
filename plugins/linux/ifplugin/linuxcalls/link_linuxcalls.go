@@ -37,8 +37,8 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// GetLinkFromInterface calls netlink API to get Link type from interface name
-func (handler *netLinkHandler) GetLinkFromInterface(ifName string) (netlink.Link, error) {
+// GetLinkByName calls netlink API to get Link type from interface name
+func (handler *netLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-link-from-interface").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -61,7 +61,7 @@ func (handler *netLinkHandler) GetInterfaceType(ifName string) (string, error) {
 		handler.stopwatch.TimeLog("get-interface-type").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +74,7 @@ func (handler *netLinkHandler) InterfaceExists(ifName string) (bool, error) {
 		handler.stopwatch.TimeLog("interface-exists").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	_, err := handler.GetLinkFromInterface(ifName)
+	_, err := handler.GetLinkByName(ifName)
 	if err == nil {
 		return true, nil
 	}
@@ -90,11 +90,11 @@ func (handler *netLinkHandler) RenameInterface(ifName string, newName string) er
 		handler.stopwatch.TimeLog("rename-interface").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	link, err := handler.GetLinkFromInterface(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
-	err = handler.InterfaceAdminDown(ifName)
+	err = handler.SetInterfaceDown(ifName)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (handler *netLinkHandler) RenameInterface(ifName string, newName string) er
 	if err != nil {
 		return err
 	}
-	err = handler.InterfaceAdminUp(ifName)
+	err = handler.SetInterfaceUp(ifName)
 	if err != nil {
 		return err
 	}
