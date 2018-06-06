@@ -85,14 +85,19 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 
 	// Mappings
 	plugin.ifIndexes = indexes
-	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
-	plugin.afPacketByName = make(map[string]*AfPacketConfig)
-	plugin.hostInterfaces = make(map[string]struct{})
+	plugin.allocateCache()
 
 	// Stopwatch
 	plugin.stopwatch = stopwatch
 
 	return nil
+}
+
+// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *AFPacketConfigurator) allocateCache() {
+	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
+	plugin.afPacketByName = make(map[string]*AfPacketConfig)
+	plugin.hostInterfaces = make(map[string]struct{})
 }
 
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.

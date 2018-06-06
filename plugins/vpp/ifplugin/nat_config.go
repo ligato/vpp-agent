@@ -90,14 +90,7 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Mappings
 	plugin.ifIndexes = ifIndexes
-	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-indices", nil)
-	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-mapping-indices", nil)
-	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-indices", nil)
-	plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
-	plugin.natIndexSeq, plugin.natMappingTagSeq = 1, 1
+	plugin.allocateCache()
 
 	// Init VPP API channel
 	if plugin.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
@@ -124,6 +117,38 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 func (plugin *NatConfigurator) Close() error {
 	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
 	return err
+}
+
+// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *NatConfigurator) allocateCache() {
+	if plugin.sNatIndexes == nil {
+		plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-indices", nil)
+	} else {
+		plugin.sNatIndexes.Clear()
+	}
+	if plugin.sNatMappingIndexes == nil {
+		plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-mapping-indices", nil)
+	} else {
+		plugin.sNatMappingIndexes.Clear()
+	}
+	if plugin.dNatIndexes == nil {
+		plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-indices", nil)
+	} else {
+		plugin.dNatIndexes.Clear()
+	}
+	if plugin.dNatStMappingIndexes == nil {
+		plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-st-mapping-indices", nil)
+	} else {
+		plugin.dNatStMappingIndexes.Clear()
+	}
+	if plugin.dNatIdMappingIndexes == nil {
+		plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
+	} else {
+		plugin.dNatIdMappingIndexes.Clear()
+	}
+	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	plugin.natIndexSeq, plugin.natMappingTagSeq = 1, 1
 }
 
 // GetGlobalNat makes current global nat accessible

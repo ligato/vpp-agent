@@ -50,19 +50,25 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		}
 	}()
 
+	// Re-initialize cache
+	if err := plugin.allocateCache(); err != nil {
+		return []error{err}
+	}
+	plugin.afPacketConfigurator.allocateCache()
+
 	// Dump current state of the VPP interfaces
 	vppIfs, err := vppdump.DumpInterfaces(plugin.log, plugin.vppCh, plugin.stopwatch)
 	if err != nil {
 		return []error{err}
 	}
 
-	// Cache for untagged interfaces
+	// Cache for untagged interfaces. All un-named interfaces have to be correlated
 	unnamedVppIfs := make(map[uint32]*intf.Interfaces_Interface)
 
 	// Iterate over VPP interfaces and try to correlate NB config
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
-			// Register interface before removal (to keep state consistent)
+			// Register local0 interface with zero index
 			if err := plugin.registerInterface(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
 				errs = append(errs, err)
 			}
@@ -219,6 +225,9 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.allocateCache()
+
 	// Dump all BFD vppSessions
 	vppSessions, err := plugin.DumpBfdSessions()
 	if err != nil {
@@ -360,6 +369,9 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.allocateCache()
+
 	// Dump existing STN Rules
 	vppStnRules, err := plugin.Dump()
 	if err != nil {
@@ -433,6 +445,9 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 // ResyncNatGlobal writes NAT address pool config to the the empty VPP
 func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
 	plugin.log.Debug("RESYNC nat global config.")
+
+	// Re-initialize cache
+	plugin.allocateCache()
 
 	vppNatGlobal, err := vppdump.Nat44GlobalConfigDump(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
 	if err != nil {

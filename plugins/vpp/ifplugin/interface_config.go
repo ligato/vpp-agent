@@ -78,10 +78,6 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
 
-	// Mappings
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
-	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
-
 	// State notification channel
 	plugin.NotifChan = notifChan
 
@@ -96,18 +92,15 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 		return err
 	}
 
+	// Mappings
+	if err = plugin.allocateCache(); err != nil {
+		return err
+	}
+
 	// Init AF-packet configurator
 	plugin.linux = linux
 	plugin.afPacketConfigurator = &AFPacketConfigurator{}
 	plugin.afPacketConfigurator.Init(plugin.log, plugin.vppCh, plugin.linux, plugin.swIfIndexes, plugin.stopwatch)
-
-	plugin.uIfaceCache = make(map[string]string)
-	// Obtain registered socket filenames
-	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
-		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch))
-	if err != nil {
-		return err
-	}
 
 	// DHCP channel
 	plugin.DhcpChan = make(chan govppapi.Message, 1)
@@ -126,6 +119,26 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 // Close GOVPP channel
 func (plugin *InterfaceConfigurator) Close() error {
 	_, err := safeclose.CloseAll(plugin.vppCh, plugin.DhcpChan)
+	return err
+}
+
+// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *InterfaceConfigurator) allocateCache() error {
+	if plugin.swIfIndexes == nil {
+		plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
+	} else {
+		plugin.swIfIndexes.Clear()
+	}
+	if plugin.dhcpIndexes == nil {
+		plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
+	} else {
+		plugin.dhcpIndexes.Clear()
+	}
+	plugin.uIfaceCache = make(map[string]string)
+	var err error
+	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch))
+
 	return err
 }
 
