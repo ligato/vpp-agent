@@ -104,6 +104,23 @@ func TestFIBUpdateMetadata(t *testing.T) {
 	Expect(metadata.PhysAddress).To(Equal("192.168.0.2"))
 }
 
+// Tests index mapping clear
+func TestClearFIB(t *testing.T) {
+	mapping, index, _ := testInitialization(t, nil)
+
+	// Register entries
+	index.RegisterName("fib1", 0, nil)
+	index.RegisterName("fib2", 1, nil)
+	index.RegisterName("fib3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 // Tests lookup by index
 func TestFIBLookupByIndex(t *testing.T) {
 	_, index, data := fibIndexTestInitialization(t)
