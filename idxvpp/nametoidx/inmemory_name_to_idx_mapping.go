@@ -95,6 +95,11 @@ func (mem *nameToIdxMem) UpdateMetadata(name string, metadata interface{}) (succ
 	return false
 }
 
+// Clear removes all entries from the mapping
+func (mem *nameToIdxMem) Clear() {
+	mem.internal.Clear()
+}
+
 // GetRegistryTitle returns a name assigned to mapping.
 func (mem *nameToIdxMem) GetRegistryTitle() string {
 	return mem.internal.GetRegistryTitle()
