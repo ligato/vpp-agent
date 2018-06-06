@@ -471,7 +471,7 @@ func (plugin *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsp
 	}
 
 	netIf, err := plugin.ifHandler.GetInterfaceByName(ifConfig.HostIfName)
-	if err != nil || netIf == nil || netIf.Index < 0 {
+	if err != nil {
 		return fmt.Errorf("failed to get index of the Linux interface %s: %v", ifConfig.HostIfName, err)
 	}
 
@@ -498,8 +498,8 @@ func (plugin *LinuxInterfaceConfigurator) modifyLinuxInterface(nsMgmtCtx *nsplug
 	defer revertNs()
 
 	// Verify that the interface already exists in the Linux namespace.
-	netIf, err := plugin.ifHandler.GetInterfaceByName(oldIfConfig.HostIfName)
-	if err != nil || netIf == nil || netIf.Index < 0 {
+	_, err = plugin.ifHandler.GetInterfaceByName(oldIfConfig.HostIfName)
+	if err != nil {
 		plugin.log.Debugf("Host interface %v was not found", oldIfConfig.HostIfName)
 		// If host does not exist, configure new setup as a new one
 		return plugin.ConfigureLinuxInterface(newIfConfig)
