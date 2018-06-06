@@ -69,17 +69,8 @@ func (plugin *SRv6Configurator) Init() (err error) {
 		return
 	}
 
-	// Create caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
-	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
-	plugin.createdPolicies = make(map[string]struct{})
-
-	// Create indexes
-	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-segment-indexes", nil)
-	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-indexes", nil)
+	// Create caches and indexes
+	plugin.allocateCache()
 
 	return
 }
@@ -88,6 +79,29 @@ func (plugin *SRv6Configurator) Init() (err error) {
 func (plugin *SRv6Configurator) Close() error {
 	_, err := safeclose.CloseAll(plugin.vppChannel)
 	return err
+}
+
+// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *SRv6Configurator) allocateCache() {
+	// Create caches
+	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
+	plugin.createdPolicies = make(map[string]struct{})
+
+	// Create indexes
+	plugin.policySegmentIndexSeq = newSequence()
+	if plugin.policySegmentIndexes == nil {
+		plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-segment-indexes", nil)
+	} else {
+		plugin.policySegmentIndexes.Clear()
+	}
+	plugin.policyIndexSeq = newSequence()
+	if plugin.policyIndexes == nil {
+		plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-indexes", nil)
+	} else {
+		plugin.policyIndexes.Clear()
+	}
 }
 
 // AddLocalSID adds new Local SID into VPP using VPP's binary api

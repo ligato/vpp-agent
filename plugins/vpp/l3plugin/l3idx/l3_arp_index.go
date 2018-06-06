@@ -49,6 +49,9 @@ type ARPIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping
 	UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool)
+
+	// Clear removes all ARP entries from the mapping.
+	Clear()
 }
 
 // ARPIndexDto represents an item sent through watch channel in ARPIndex.
@@ -113,6 +116,11 @@ func (arpIndex *ArpIndex) RegisterName(name string, idx uint32, ifMeta *l3.ArpTa
 func (arpIndex *ArpIndex) UnregisterName(name string) (idx uint32, metadata *l3.ArpTable_ArpEntry, exists bool) {
 	idx, meta, exists := arpIndex.mapping.UnregisterName(name)
 	return idx, arpIndex.castMetadata(meta), exists
+}
+
+// Clear removes all ARP entries from the cache.
+func (arpIndex *ArpIndex) Clear() {
+	arpIndex.mapping.Clear()
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in SwIfIndex mapping

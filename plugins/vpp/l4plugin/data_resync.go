@@ -29,6 +29,9 @@ func (plugin *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_A
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.allocateCache()
+
 	var wasError error
 	if len(appNamespaces) > 0 {
 		for _, appNs := range appNamespaces {
