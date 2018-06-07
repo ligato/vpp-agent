@@ -144,7 +144,7 @@ func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyAr
 		}
 	}()
 
-	// Note: there is no API to dump already configured proxy ARP interfaces
+	// Todo: dump proxy arp
 
 	var wasError error
 	if len(nbProxyArpIfs) > 0 {
@@ -166,7 +166,7 @@ func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArp
 		}
 	}()
 
-	// Note: there is no API to dump already configured proxy ARP ranges
+	// Todo: dump proxy arp
 
 	var wasError error
 	if len(nbProxyArpRanges) > 0 {

@@ -6,7 +6,7 @@ package nat
 import "git.fd.io/govpp.git/api"
 
 // Nat44LbAddrPort represents the VPP binary API data type 'nat44_lb_addr_port'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3327:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3424:
 //
 //            "nat44_lb_addr_port",
 //            [
@@ -40,7 +40,7 @@ func (*Nat44LbAddrPort) GetCrcString() string {
 }
 
 // NatControlPing represents the VPP binary API message 'nat_control_ping'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 199:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 4:
 //
 //            "nat_control_ping",
 //            [
@@ -76,7 +76,7 @@ func NewNatControlPing() api.Message {
 }
 
 // NatControlPingReply represents the VPP binary API message 'nat_control_ping_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 217:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 22:
 //
 //            "nat_control_ping_reply",
 //            [
@@ -123,7 +123,7 @@ func NewNatControlPingReply() api.Message {
 }
 
 // NatShowConfig represents the VPP binary API message 'nat_show_config'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 243:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 48:
 //
 //            "nat_show_config",
 //            [
@@ -159,7 +159,7 @@ func NewNatShowConfig() api.Message {
 }
 
 // NatShowConfigReply represents the VPP binary API message 'nat_show_config_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 261:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 66:
 //
 //            "nat_show_config_reply",
 //            [
@@ -246,7 +246,7 @@ func NewNatShowConfigReply() api.Message {
 }
 
 // NatSetWorkers represents the VPP binary API message 'nat_set_workers'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 319:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 124:
 //
 //            "nat_set_workers",
 //            [
@@ -287,7 +287,7 @@ func NewNatSetWorkers() api.Message {
 }
 
 // NatSetWorkersReply represents the VPP binary API message 'nat_set_workers_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 341:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 146:
 //
 //            "nat_set_workers_reply",
 //            [
@@ -324,7 +324,7 @@ func NewNatSetWorkersReply() api.Message {
 }
 
 // NatWorkerDump represents the VPP binary API message 'nat_worker_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 359:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 164:
 //
 //            "nat_worker_dump",
 //            [
@@ -360,7 +360,7 @@ func NewNatWorkerDump() api.Message {
 }
 
 // NatWorkerDetails represents the VPP binary API message 'nat_worker_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 377:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 182:
 //
 //            "nat_worker_details",
 //            [
@@ -408,7 +408,7 @@ func NewNatWorkerDetails() api.Message {
 }
 
 // NatIpfixEnableDisable represents the VPP binary API message 'nat_ipfix_enable_disable'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 404:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 209:
 //
 //            "nat_ipfix_enable_disable",
 //            [
@@ -459,7 +459,7 @@ func NewNatIpfixEnableDisable() api.Message {
 }
 
 // NatIpfixEnableDisableReply represents the VPP binary API message 'nat_ipfix_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 434:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 239:
 //
 //            "nat_ipfix_enable_disable_reply",
 //            [
@@ -496,7 +496,7 @@ func NewNatIpfixEnableDisableReply() api.Message {
 }
 
 // NatSetReass represents the VPP binary API message 'nat_set_reass'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 452:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 257:
 //
 //            "nat_set_reass",
 //            [
@@ -557,7 +557,7 @@ func NewNatSetReass() api.Message {
 }
 
 // NatSetReassReply represents the VPP binary API message 'nat_set_reass_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 490:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 295:
 //
 //            "nat_set_reass_reply",
 //            [
@@ -594,7 +594,7 @@ func NewNatSetReassReply() api.Message {
 }
 
 // NatGetReass represents the VPP binary API message 'nat_get_reass'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 508:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 313:
 //
 //            "nat_get_reass",
 //            [
@@ -630,7 +630,7 @@ func NewNatGetReass() api.Message {
 }
 
 // NatGetReassReply represents the VPP binary API message 'nat_get_reass_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 526:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 331:
 //
 //            "nat_get_reass_reply",
 //            [
@@ -707,7 +707,7 @@ func NewNatGetReassReply() api.Message {
 }
 
 // NatReassDump represents the VPP binary API message 'nat_reass_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 576:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 381:
 //
 //            "nat_reass_dump",
 //            [
@@ -743,7 +743,7 @@ func NewNatReassDump() api.Message {
 }
 
 // NatReassDetails represents the VPP binary API message 'nat_reass_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 594:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 399:
 //
 //            "nat_reass_details",
 //            [
@@ -807,7 +807,7 @@ func NewNatReassDetails() api.Message {
 }
 
 // Nat44AddDelAddressRange represents the VPP binary API message 'nat44_add_del_address_range'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 634:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 439:
 //
 //            "nat44_add_del_address_range",
 //            [
@@ -870,7 +870,7 @@ func NewNat44AddDelAddressRange() api.Message {
 }
 
 // Nat44AddDelAddressRangeReply represents the VPP binary API message 'nat44_add_del_address_range_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 674:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 479:
 //
 //            "nat44_add_del_address_range_reply",
 //            [
@@ -907,7 +907,7 @@ func NewNat44AddDelAddressRangeReply() api.Message {
 }
 
 // Nat44AddressDump represents the VPP binary API message 'nat44_address_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 692:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 497:
 //
 //            "nat44_address_dump",
 //            [
@@ -943,7 +943,7 @@ func NewNat44AddressDump() api.Message {
 }
 
 // Nat44AddressDetails represents the VPP binary API message 'nat44_address_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 710:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 515:
 //
 //            "nat44_address_details",
 //            [
@@ -991,7 +991,7 @@ func NewNat44AddressDetails() api.Message {
 }
 
 // Nat44InterfaceAddDelFeature represents the VPP binary API message 'nat44_interface_add_del_feature'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 737:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 542:
 //
 //            "nat44_interface_add_del_feature",
 //            [
@@ -1042,7 +1042,7 @@ func NewNat44InterfaceAddDelFeature() api.Message {
 }
 
 // Nat44InterfaceAddDelFeatureReply represents the VPP binary API message 'nat44_interface_add_del_feature_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 767:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 572:
 //
 //            "nat44_interface_add_del_feature_reply",
 //            [
@@ -1079,7 +1079,7 @@ func NewNat44InterfaceAddDelFeatureReply() api.Message {
 }
 
 // Nat44InterfaceDump represents the VPP binary API message 'nat44_interface_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 785:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 590:
 //
 //            "nat44_interface_dump",
 //            [
@@ -1115,7 +1115,7 @@ func NewNat44InterfaceDump() api.Message {
 }
 
 // Nat44InterfaceDetails represents the VPP binary API message 'nat44_interface_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 803:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 608:
 //
 //            "nat44_interface_details",
 //            [
@@ -1157,7 +1157,7 @@ func NewNat44InterfaceDetails() api.Message {
 }
 
 // Nat44InterfaceAddDelOutputFeature represents the VPP binary API message 'nat44_interface_add_del_output_feature'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 825:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 630:
 //
 //            "nat44_interface_add_del_output_feature",
 //            [
@@ -1208,7 +1208,7 @@ func NewNat44InterfaceAddDelOutputFeature() api.Message {
 }
 
 // Nat44InterfaceAddDelOutputFeatureReply represents the VPP binary API message 'nat44_interface_add_del_output_feature_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 855:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 660:
 //
 //            "nat44_interface_add_del_output_feature_reply",
 //            [
@@ -1245,7 +1245,7 @@ func NewNat44InterfaceAddDelOutputFeatureReply() api.Message {
 }
 
 // Nat44InterfaceOutputFeatureDump represents the VPP binary API message 'nat44_interface_output_feature_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 873:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 678:
 //
 //            "nat44_interface_output_feature_dump",
 //            [
@@ -1281,7 +1281,7 @@ func NewNat44InterfaceOutputFeatureDump() api.Message {
 }
 
 // Nat44InterfaceOutputFeatureDetails represents the VPP binary API message 'nat44_interface_output_feature_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 891:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 696:
 //
 //            "nat44_interface_output_feature_details",
 //            [
@@ -1323,7 +1323,7 @@ func NewNat44InterfaceOutputFeatureDetails() api.Message {
 }
 
 // Nat44AddDelStaticMapping represents the VPP binary API message 'nat44_add_del_static_mapping'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 913:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 718:
 //
 //            "nat44_add_del_static_mapping",
 //            [
@@ -1382,6 +1382,10 @@ func NewNat44InterfaceOutputFeatureDetails() api.Message {
 //            ],
 //            [
 //                "u8",
+//                "self_twice_nat"
+//            ],
+//            [
+//                "u8",
 //                "out2in_only"
 //            ],
 //            [
@@ -1390,7 +1394,7 @@ func NewNat44InterfaceOutputFeatureDetails() api.Message {
 //                64
 //            ],
 //            {
-//                "crc": "0xd825e39c"
+//                "crc": "0x9f35331e"
 //            }
 //
 type Nat44AddDelStaticMapping struct {
@@ -1404,6 +1408,7 @@ type Nat44AddDelStaticMapping struct {
 	ExternalSwIfIndex uint32
 	VrfID             uint32
 	TwiceNat          uint8
+	SelfTwiceNat      uint8
 	Out2inOnly        uint8
 	Tag               []byte `struc:"[64]byte"`
 }
@@ -1415,14 +1420,14 @@ func (*Nat44AddDelStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Nat44AddDelStaticMapping) GetCrcString() string {
-	return "d825e39c"
+	return "9f35331e"
 }
 func NewNat44AddDelStaticMapping() api.Message {
 	return &Nat44AddDelStaticMapping{}
 }
 
 // Nat44AddDelStaticMappingReply represents the VPP binary API message 'nat44_add_del_static_mapping_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 982:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 791:
 //
 //            "nat44_add_del_static_mapping_reply",
 //            [
@@ -1459,7 +1464,7 @@ func NewNat44AddDelStaticMappingReply() api.Message {
 }
 
 // Nat44StaticMappingDump represents the VPP binary API message 'nat44_static_mapping_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1000:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 809:
 //
 //            "nat44_static_mapping_dump",
 //            [
@@ -1495,7 +1500,7 @@ func NewNat44StaticMappingDump() api.Message {
 }
 
 // Nat44StaticMappingDetails represents the VPP binary API message 'nat44_static_mapping_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1018:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 827:
 //
 //            "nat44_static_mapping_details",
 //            [
@@ -1546,6 +1551,10 @@ func NewNat44StaticMappingDump() api.Message {
 //            ],
 //            [
 //                "u8",
+//                "self_twice_nat"
+//            ],
+//            [
+//                "u8",
 //                "out2in_only"
 //            ],
 //            [
@@ -1554,7 +1563,7 @@ func NewNat44StaticMappingDump() api.Message {
 //                64
 //            ],
 //            {
-//                "crc": "0x2d820f09"
+//                "crc": "0xcf257b56"
 //            }
 //
 type Nat44StaticMappingDetails struct {
@@ -1567,6 +1576,7 @@ type Nat44StaticMappingDetails struct {
 	ExternalSwIfIndex uint32
 	VrfID             uint32
 	TwiceNat          uint8
+	SelfTwiceNat      uint8
 	Out2inOnly        uint8
 	Tag               []byte `struc:"[64]byte"`
 }
@@ -1578,14 +1588,14 @@ func (*Nat44StaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Nat44StaticMappingDetails) GetCrcString() string {
-	return "2d820f09"
+	return "cf257b56"
 }
 func NewNat44StaticMappingDetails() api.Message {
 	return &Nat44StaticMappingDetails{}
 }
 
 // Nat44AddDelIdentityMapping represents the VPP binary API message 'nat44_add_del_identity_mapping'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1079:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 892:
 //
 //            "nat44_add_del_identity_mapping",
 //            [
@@ -1663,7 +1673,7 @@ func NewNat44AddDelIdentityMapping() api.Message {
 }
 
 // Nat44AddDelIdentityMappingReply represents the VPP binary API message 'nat44_add_del_identity_mapping_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1131:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 944:
 //
 //            "nat44_add_del_identity_mapping_reply",
 //            [
@@ -1700,7 +1710,7 @@ func NewNat44AddDelIdentityMappingReply() api.Message {
 }
 
 // Nat44IdentityMappingDump represents the VPP binary API message 'nat44_identity_mapping_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1149:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 962:
 //
 //            "nat44_identity_mapping_dump",
 //            [
@@ -1736,7 +1746,7 @@ func NewNat44IdentityMappingDump() api.Message {
 }
 
 // Nat44IdentityMappingDetails represents the VPP binary API message 'nat44_identity_mapping_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1167:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 980:
 //
 //            "nat44_identity_mapping_details",
 //            [
@@ -1805,7 +1815,7 @@ func NewNat44IdentityMappingDetails() api.Message {
 }
 
 // Nat44AddDelInterfaceAddr represents the VPP binary API message 'nat44_add_del_interface_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1211:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1024:
 //
 //            "nat44_add_del_interface_addr",
 //            [
@@ -1856,7 +1866,7 @@ func NewNat44AddDelInterfaceAddr() api.Message {
 }
 
 // Nat44AddDelInterfaceAddrReply represents the VPP binary API message 'nat44_add_del_interface_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1241:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1054:
 //
 //            "nat44_add_del_interface_addr_reply",
 //            [
@@ -1893,7 +1903,7 @@ func NewNat44AddDelInterfaceAddrReply() api.Message {
 }
 
 // Nat44InterfaceAddrDump represents the VPP binary API message 'nat44_interface_addr_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1259:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1072:
 //
 //            "nat44_interface_addr_dump",
 //            [
@@ -1929,7 +1939,7 @@ func NewNat44InterfaceAddrDump() api.Message {
 }
 
 // Nat44InterfaceAddrDetails represents the VPP binary API message 'nat44_interface_addr_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1277:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1090:
 //
 //            "nat44_interface_addr_details",
 //            [
@@ -1971,7 +1981,7 @@ func NewNat44InterfaceAddrDetails() api.Message {
 }
 
 // Nat44UserDump represents the VPP binary API message 'nat44_user_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1299:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1112:
 //
 //            "nat44_user_dump",
 //            [
@@ -2007,7 +2017,7 @@ func NewNat44UserDump() api.Message {
 }
 
 // Nat44UserDetails represents the VPP binary API message 'nat44_user_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1317:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1130:
 //
 //            "nat44_user_details",
 //            [
@@ -2060,7 +2070,7 @@ func NewNat44UserDetails() api.Message {
 }
 
 // Nat44UserSessionDump represents the VPP binary API message 'nat44_user_session_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1348:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1161:
 //
 //            "nat44_user_session_dump",
 //            [
@@ -2107,7 +2117,7 @@ func NewNat44UserSessionDump() api.Message {
 }
 
 // Nat44UserSessionDetails represents the VPP binary API message 'nat44_user_session_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1375:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1188:
 //
 //            "nat44_user_session_details",
 //            [
@@ -2156,20 +2166,52 @@ func NewNat44UserSessionDump() api.Message {
 //                "u32",
 //                "total_pkts"
 //            ],
+//            [
+//                "u8",
+//                "is_twicenat"
+//            ],
+//            [
+//                "u8",
+//                "ext_host_valid"
+//            ],
+//            [
+//                "u8",
+//                "ext_host_address",
+//                4
+//            ],
+//            [
+//                "u16",
+//                "ext_host_port"
+//            ],
+//            [
+//                "u8",
+//                "ext_host_nat_address",
+//                4
+//            ],
+//            [
+//                "u16",
+//                "ext_host_nat_port"
+//            ],
 //            {
-//                "crc": "0x2c9755fa"
+//                "crc": "0x2250ec64"
 //            }
 //
 type Nat44UserSessionDetails struct {
-	OutsideIPAddress []byte `struc:"[4]byte"`
-	OutsidePort      uint16
-	InsideIPAddress  []byte `struc:"[4]byte"`
-	InsidePort       uint16
-	Protocol         uint16
-	IsStatic         uint8
-	LastHeard        uint64
-	TotalBytes       uint64
-	TotalPkts        uint32
+	OutsideIPAddress  []byte `struc:"[4]byte"`
+	OutsidePort       uint16
+	InsideIPAddress   []byte `struc:"[4]byte"`
+	InsidePort        uint16
+	Protocol          uint16
+	IsStatic          uint8
+	LastHeard         uint64
+	TotalBytes        uint64
+	TotalPkts         uint32
+	IsTwicenat        uint8
+	ExtHostValid      uint8
+	ExtHostAddress    []byte `struc:"[4]byte"`
+	ExtHostPort       uint16
+	ExtHostNatAddress []byte `struc:"[4]byte"`
+	ExtHostNatPort    uint16
 }
 
 func (*Nat44UserSessionDetails) GetMessageName() string {
@@ -2179,14 +2221,14 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Nat44UserSessionDetails) GetCrcString() string {
-	return "2c9755fa"
+	return "2250ec64"
 }
 func NewNat44UserSessionDetails() api.Message {
 	return &Nat44UserSessionDetails{}
 }
 
 // Nat44AddDelLbStaticMapping represents the VPP binary API message 'nat44_add_del_lb_static_mapping'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1427:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1266:
 //
 //            "nat44_add_del_lb_static_mapping",
 //            [
@@ -2228,6 +2270,10 @@ func NewNat44UserSessionDetails() api.Message {
 //            ],
 //            [
 //                "u8",
+//                "self_twice_nat"
+//            ],
+//            [
+//                "u8",
 //                "out2in_only"
 //            ],
 //            [
@@ -2246,7 +2292,7 @@ func NewNat44UserSessionDetails() api.Message {
 //                "local_num"
 //            ],
 //            {
-//                "crc": "0xea172198"
+//                "crc": "0xad5e6e06"
 //            }
 //
 type Nat44AddDelLbStaticMapping struct {
@@ -2256,6 +2302,7 @@ type Nat44AddDelLbStaticMapping struct {
 	Protocol     uint8
 	VrfID        uint32
 	TwiceNat     uint8
+	SelfTwiceNat uint8
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	LocalNum     uint8  `struc:"sizeof=Locals"`
@@ -2269,14 +2316,14 @@ func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Nat44AddDelLbStaticMapping) GetCrcString() string {
-	return "ea172198"
+	return "ad5e6e06"
 }
 func NewNat44AddDelLbStaticMapping() api.Message {
 	return &Nat44AddDelLbStaticMapping{}
 }
 
 // Nat44AddDelLbStaticMappingReply represents the VPP binary API message 'nat44_add_del_lb_static_mapping_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1489:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1332:
 //
 //            "nat44_add_del_lb_static_mapping_reply",
 //            [
@@ -2313,7 +2360,7 @@ func NewNat44AddDelLbStaticMappingReply() api.Message {
 }
 
 // Nat44LbStaticMappingDump represents the VPP binary API message 'nat44_lb_static_mapping_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1507:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1350:
 //
 //            "nat44_lb_static_mapping_dump",
 //            [
@@ -2349,7 +2396,7 @@ func NewNat44LbStaticMappingDump() api.Message {
 }
 
 // Nat44LbStaticMappingDetails represents the VPP binary API message 'nat44_lb_static_mapping_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1525:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1368:
 //
 //            "nat44_lb_static_mapping_details",
 //            [
@@ -2383,6 +2430,10 @@ func NewNat44LbStaticMappingDump() api.Message {
 //            ],
 //            [
 //                "u8",
+//                "self_twice_nat"
+//            ],
+//            [
+//                "u8",
 //                "out2in_only"
 //            ],
 //            [
@@ -2401,7 +2452,7 @@ func NewNat44LbStaticMappingDump() api.Message {
 //                "local_num"
 //            ],
 //            {
-//                "crc": "0x44bda89a"
+//                "crc": "0xc0e5e366"
 //            }
 //
 type Nat44LbStaticMappingDetails struct {
@@ -2410,6 +2461,7 @@ type Nat44LbStaticMappingDetails struct {
 	Protocol     uint8
 	VrfID        uint32
 	TwiceNat     uint8
+	SelfTwiceNat uint8
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	LocalNum     uint8  `struc:"sizeof=Locals"`
@@ -2423,14 +2475,14 @@ func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*Nat44LbStaticMappingDetails) GetCrcString() string {
-	return "44bda89a"
+	return "c0e5e366"
 }
 func NewNat44LbStaticMappingDetails() api.Message {
 	return &Nat44LbStaticMappingDetails{}
 }
 
 // Nat44DelSession represents the VPP binary API message 'nat44_del_session'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1579:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1426:
 //
 //            "nat44_del_session",
 //            [
@@ -2466,16 +2518,32 @@ func NewNat44LbStaticMappingDetails() api.Message {
 //                "u32",
 //                "vrf_id"
 //            ],
+//            [
+//                "u8",
+//                "ext_host_valid"
+//            ],
+//            [
+//                "u8",
+//                "ext_host_address",
+//                4
+//            ],
+//            [
+//                "u16",
+//                "ext_host_port"
+//            ],
 //            {
-//                "crc": "0x9d56a36e"
+//                "crc": "0x04154d0c"
 //            }
 //
 type Nat44DelSession struct {
-	IsIn     uint8
-	Address  []byte `struc:"[4]byte"`
-	Protocol uint8
-	Port     uint16
-	VrfID    uint32
+	IsIn           uint8
+	Address        []byte `struc:"[4]byte"`
+	Protocol       uint8
+	Port           uint16
+	VrfID          uint32
+	ExtHostValid   uint8
+	ExtHostAddress []byte `struc:"[4]byte"`
+	ExtHostPort    uint16
 }
 
 func (*Nat44DelSession) GetMessageName() string {
@@ -2485,14 +2553,14 @@ func (*Nat44DelSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Nat44DelSession) GetCrcString() string {
-	return "9d56a36e"
+	return "04154d0c"
 }
 func NewNat44DelSession() api.Message {
 	return &Nat44DelSession{}
 }
 
 // Nat44DelSessionReply represents the VPP binary API message 'nat44_del_session_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1618:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1478:
 //
 //            "nat44_del_session_reply",
 //            [
@@ -2529,7 +2597,7 @@ func NewNat44DelSessionReply() api.Message {
 }
 
 // Nat44ForwardingEnableDisable represents the VPP binary API message 'nat44_forwarding_enable_disable'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1636:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1496:
 //
 //            "nat44_forwarding_enable_disable",
 //            [
@@ -2570,7 +2638,7 @@ func NewNat44ForwardingEnableDisable() api.Message {
 }
 
 // Nat44ForwardingEnableDisableReply represents the VPP binary API message 'nat44_forwarding_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1658:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1518:
 //
 //            "nat44_forwarding_enable_disable_reply",
 //            [
@@ -2607,7 +2675,7 @@ func NewNat44ForwardingEnableDisableReply() api.Message {
 }
 
 // Nat44ForwardingIsEnabled represents the VPP binary API message 'nat44_forwarding_is_enabled'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1676:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1536:
 //
 //            "nat44_forwarding_is_enabled",
 //            [
@@ -2643,7 +2711,7 @@ func NewNat44ForwardingIsEnabled() api.Message {
 }
 
 // Nat44ForwardingIsEnabledReply represents the VPP binary API message 'nat44_forwarding_is_enabled_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1694:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1554:
 //
 //            "nat44_forwarding_is_enabled_reply",
 //            [
@@ -2680,7 +2748,7 @@ func NewNat44ForwardingIsEnabledReply() api.Message {
 }
 
 // NatDetAddDelMap represents the VPP binary API message 'nat_det_add_del_map'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1712:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1572:
 //
 //            "nat_det_add_del_map",
 //            [
@@ -2753,7 +2821,7 @@ func NewNatDetAddDelMap() api.Message {
 }
 
 // NatDetAddDelMapReply represents the VPP binary API message 'nat_det_add_del_map_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1760:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1620:
 //
 //            "nat_det_add_del_map_reply",
 //            [
@@ -2790,7 +2858,7 @@ func NewNatDetAddDelMapReply() api.Message {
 }
 
 // NatDetForward represents the VPP binary API message 'nat_det_forward'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1778:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1638:
 //
 //            "nat_det_forward",
 //            [
@@ -2837,7 +2905,7 @@ func NewNatDetForward() api.Message {
 }
 
 // NatDetForwardReply represents the VPP binary API message 'nat_det_forward_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1805:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1665:
 //
 //            "nat_det_forward_reply",
 //            [
@@ -2890,7 +2958,7 @@ func NewNatDetForwardReply() api.Message {
 }
 
 // NatDetReverse represents the VPP binary API message 'nat_det_reverse'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1836:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1696:
 //
 //            "nat_det_reverse",
 //            [
@@ -2937,7 +3005,7 @@ func NewNatDetReverse() api.Message {
 }
 
 // NatDetReverseReply represents the VPP binary API message 'nat_det_reverse_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1863:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1723:
 //
 //            "nat_det_reverse_reply",
 //            [
@@ -2985,7 +3053,7 @@ func NewNatDetReverseReply() api.Message {
 }
 
 // NatDetMapDump represents the VPP binary API message 'nat_det_map_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1890:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1750:
 //
 //            "nat_det_map_dump",
 //            [
@@ -3021,7 +3089,7 @@ func NewNatDetMapDump() api.Message {
 }
 
 // NatDetMapDetails represents the VPP binary API message 'nat_det_map_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1908:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1768:
 //
 //            "nat_det_map_details",
 //            [
@@ -3095,7 +3163,7 @@ func NewNatDetMapDetails() api.Message {
 }
 
 // NatDetSetTimeouts represents the VPP binary API message 'nat_det_set_timeouts'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1956:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1816:
 //
 //            "nat_det_set_timeouts",
 //            [
@@ -3151,7 +3219,7 @@ func NewNatDetSetTimeouts() api.Message {
 }
 
 // NatDetSetTimeoutsReply represents the VPP binary API message 'nat_det_set_timeouts_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 1990:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1850:
 //
 //            "nat_det_set_timeouts_reply",
 //            [
@@ -3188,7 +3256,7 @@ func NewNatDetSetTimeoutsReply() api.Message {
 }
 
 // NatDetGetTimeouts represents the VPP binary API message 'nat_det_get_timeouts'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2008:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1868:
 //
 //            "nat_det_get_timeouts",
 //            [
@@ -3224,7 +3292,7 @@ func NewNatDetGetTimeouts() api.Message {
 }
 
 // NatDetGetTimeoutsReply represents the VPP binary API message 'nat_det_get_timeouts_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2026:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1886:
 //
 //            "nat_det_get_timeouts_reply",
 //            [
@@ -3281,7 +3349,7 @@ func NewNatDetGetTimeoutsReply() api.Message {
 }
 
 // NatDetCloseSessionOut represents the VPP binary API message 'nat_det_close_session_out'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2060:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1920:
 //
 //            "nat_det_close_session_out",
 //            [
@@ -3339,7 +3407,7 @@ func NewNatDetCloseSessionOut() api.Message {
 }
 
 // NatDetCloseSessionOutReply represents the VPP binary API message 'nat_det_close_session_out_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2096:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1956:
 //
 //            "nat_det_close_session_out_reply",
 //            [
@@ -3376,7 +3444,7 @@ func NewNatDetCloseSessionOutReply() api.Message {
 }
 
 // NatDetCloseSessionIn represents the VPP binary API message 'nat_det_close_session_in'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2114:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 1974:
 //
 //            "nat_det_close_session_in",
 //            [
@@ -3439,7 +3507,7 @@ func NewNatDetCloseSessionIn() api.Message {
 }
 
 // NatDetCloseSessionInReply represents the VPP binary API message 'nat_det_close_session_in_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2154:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2014:
 //
 //            "nat_det_close_session_in_reply",
 //            [
@@ -3476,7 +3544,7 @@ func NewNatDetCloseSessionInReply() api.Message {
 }
 
 // NatDetSessionDump represents the VPP binary API message 'nat_det_session_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2172:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2032:
 //
 //            "nat_det_session_dump",
 //            [
@@ -3523,7 +3591,7 @@ func NewNatDetSessionDump() api.Message {
 }
 
 // NatDetSessionDetails represents the VPP binary API message 'nat_det_session_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2199:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2059:
 //
 //            "nat_det_session_details",
 //            [
@@ -3590,7 +3658,7 @@ func NewNatDetSessionDetails() api.Message {
 }
 
 // Nat64AddDelPoolAddrRange represents the VPP binary API message 'nat64_add_del_pool_addr_range'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2242:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2102:
 //
 //            "nat64_add_del_pool_addr_range",
 //            [
@@ -3648,7 +3716,7 @@ func NewNat64AddDelPoolAddrRange() api.Message {
 }
 
 // Nat64AddDelPoolAddrRangeReply represents the VPP binary API message 'nat64_add_del_pool_addr_range_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2278:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2138:
 //
 //            "nat64_add_del_pool_addr_range_reply",
 //            [
@@ -3685,7 +3753,7 @@ func NewNat64AddDelPoolAddrRangeReply() api.Message {
 }
 
 // Nat64PoolAddrDump represents the VPP binary API message 'nat64_pool_addr_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2296:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2156:
 //
 //            "nat64_pool_addr_dump",
 //            [
@@ -3721,7 +3789,7 @@ func NewNat64PoolAddrDump() api.Message {
 }
 
 // Nat64PoolAddrDetails represents the VPP binary API message 'nat64_pool_addr_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2314:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2174:
 //
 //            "nat64_pool_addr_details",
 //            [
@@ -3764,7 +3832,7 @@ func NewNat64PoolAddrDetails() api.Message {
 }
 
 // Nat64AddDelInterface represents the VPP binary API message 'nat64_add_del_interface'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2337:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2197:
 //
 //            "nat64_add_del_interface",
 //            [
@@ -3815,7 +3883,7 @@ func NewNat64AddDelInterface() api.Message {
 }
 
 // Nat64AddDelInterfaceReply represents the VPP binary API message 'nat64_add_del_interface_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2367:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2227:
 //
 //            "nat64_add_del_interface_reply",
 //            [
@@ -3852,7 +3920,7 @@ func NewNat64AddDelInterfaceReply() api.Message {
 }
 
 // Nat64InterfaceDump represents the VPP binary API message 'nat64_interface_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2385:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2245:
 //
 //            "nat64_interface_dump",
 //            [
@@ -3888,7 +3956,7 @@ func NewNat64InterfaceDump() api.Message {
 }
 
 // Nat64InterfaceDetails represents the VPP binary API message 'nat64_interface_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2403:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2263:
 //
 //            "nat64_interface_details",
 //            [
@@ -3930,7 +3998,7 @@ func NewNat64InterfaceDetails() api.Message {
 }
 
 // Nat64AddDelStaticBib represents the VPP binary API message 'nat64_add_del_static_bib'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2425:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2285:
 //
 //            "nat64_add_del_static_bib",
 //            [
@@ -4003,7 +4071,7 @@ func NewNat64AddDelStaticBib() api.Message {
 }
 
 // Nat64AddDelStaticBibReply represents the VPP binary API message 'nat64_add_del_static_bib_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2473:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2333:
 //
 //            "nat64_add_del_static_bib_reply",
 //            [
@@ -4040,7 +4108,7 @@ func NewNat64AddDelStaticBibReply() api.Message {
 }
 
 // Nat64BibDump represents the VPP binary API message 'nat64_bib_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2491:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2351:
 //
 //            "nat64_bib_dump",
 //            [
@@ -4081,7 +4149,7 @@ func NewNat64BibDump() api.Message {
 }
 
 // Nat64BibDetails represents the VPP binary API message 'nat64_bib_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2513:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2373:
 //
 //            "nat64_bib_details",
 //            [
@@ -4155,7 +4223,7 @@ func NewNat64BibDetails() api.Message {
 }
 
 // Nat64SetTimeouts represents the VPP binary API message 'nat64_set_timeouts'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2561:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2421:
 //
 //            "nat64_set_timeouts",
 //            [
@@ -4216,7 +4284,7 @@ func NewNat64SetTimeouts() api.Message {
 }
 
 // Nat64SetTimeoutsReply represents the VPP binary API message 'nat64_set_timeouts_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2599:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2459:
 //
 //            "nat64_set_timeouts_reply",
 //            [
@@ -4253,7 +4321,7 @@ func NewNat64SetTimeoutsReply() api.Message {
 }
 
 // Nat64GetTimeouts represents the VPP binary API message 'nat64_get_timeouts'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2617:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2477:
 //
 //            "nat64_get_timeouts",
 //            [
@@ -4289,7 +4357,7 @@ func NewNat64GetTimeouts() api.Message {
 }
 
 // Nat64GetTimeoutsReply represents the VPP binary API message 'nat64_get_timeouts_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2635:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2495:
 //
 //            "nat64_get_timeouts_reply",
 //            [
@@ -4351,7 +4419,7 @@ func NewNat64GetTimeoutsReply() api.Message {
 }
 
 // Nat64StDump represents the VPP binary API message 'nat64_st_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2673:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2533:
 //
 //            "nat64_st_dump",
 //            [
@@ -4392,7 +4460,7 @@ func NewNat64StDump() api.Message {
 }
 
 // Nat64StDetails represents the VPP binary API message 'nat64_st_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2695:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2555:
 //
 //            "nat64_st_details",
 //            [
@@ -4473,7 +4541,7 @@ func NewNat64StDetails() api.Message {
 }
 
 // Nat64AddDelPrefix represents the VPP binary API message 'nat64_add_del_prefix'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2749:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2609:
 //
 //            "nat64_add_del_prefix",
 //            [
@@ -4530,7 +4598,7 @@ func NewNat64AddDelPrefix() api.Message {
 }
 
 // Nat64AddDelPrefixReply represents the VPP binary API message 'nat64_add_del_prefix_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2784:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2644:
 //
 //            "nat64_add_del_prefix_reply",
 //            [
@@ -4567,7 +4635,7 @@ func NewNat64AddDelPrefixReply() api.Message {
 }
 
 // Nat64PrefixDump represents the VPP binary API message 'nat64_prefix_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2802:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2662:
 //
 //            "nat64_prefix_dump",
 //            [
@@ -4603,7 +4671,7 @@ func NewNat64PrefixDump() api.Message {
 }
 
 // Nat64PrefixDetails represents the VPP binary API message 'nat64_prefix_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2820:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2680:
 //
 //            "nat64_prefix_details",
 //            [
@@ -4651,7 +4719,7 @@ func NewNat64PrefixDetails() api.Message {
 }
 
 // Nat64AddDelInterfaceAddr represents the VPP binary API message 'nat64_add_del_interface_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2847:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2707:
 //
 //            "nat64_add_del_interface_addr",
 //            [
@@ -4702,7 +4770,7 @@ func NewNat64AddDelInterfaceAddr() api.Message {
 }
 
 // Nat64AddDelInterfaceAddrReply represents the VPP binary API message 'nat64_add_del_interface_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2877:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2737:
 //
 //            "nat64_add_del_interface_addr_reply",
 //            [
@@ -4739,7 +4807,7 @@ func NewNat64AddDelInterfaceAddrReply() api.Message {
 }
 
 // DsliteAddDelPoolAddrRange represents the VPP binary API message 'dslite_add_del_pool_addr_range'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2895:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2755:
 //
 //            "dslite_add_del_pool_addr_range",
 //            [
@@ -4792,7 +4860,7 @@ func NewDsliteAddDelPoolAddrRange() api.Message {
 }
 
 // DsliteAddDelPoolAddrRangeReply represents the VPP binary API message 'dslite_add_del_pool_addr_range_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2927:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2787:
 //
 //            "dslite_add_del_pool_addr_range_reply",
 //            [
@@ -4828,8 +4896,82 @@ func NewDsliteAddDelPoolAddrRangeReply() api.Message {
 	return &DsliteAddDelPoolAddrRangeReply{}
 }
 
+// DsliteAddressDump represents the VPP binary API message 'dslite_address_dump'.
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2805:
+//
+//            "dslite_address_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type DsliteAddressDump struct {
+}
+
+func (*DsliteAddressDump) GetMessageName() string {
+	return "dslite_address_dump"
+}
+func (*DsliteAddressDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*DsliteAddressDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewDsliteAddressDump() api.Message {
+	return &DsliteAddressDump{}
+}
+
+// DsliteAddressDetails represents the VPP binary API message 'dslite_address_details'.
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2823:
+//
+//            "dslite_address_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "ip_address",
+//                4
+//            ],
+//            {
+//                "crc": "0xade70e23"
+//            }
+//
+type DsliteAddressDetails struct {
+	IPAddress []byte `struc:"[4]byte"`
+}
+
+func (*DsliteAddressDetails) GetMessageName() string {
+	return "dslite_address_details"
+}
+func (*DsliteAddressDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*DsliteAddressDetails) GetCrcString() string {
+	return "ade70e23"
+}
+func NewDsliteAddressDetails() api.Message {
+	return &DsliteAddressDetails{}
+}
+
 // DsliteSetAftrAddr represents the VPP binary API message 'dslite_set_aftr_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2945:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2842:
 //
 //            "dslite_set_aftr_addr",
 //            [
@@ -4877,7 +5019,7 @@ func NewDsliteSetAftrAddr() api.Message {
 }
 
 // DsliteSetAftrAddrReply represents the VPP binary API message 'dslite_set_aftr_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2973:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2870:
 //
 //            "dslite_set_aftr_addr_reply",
 //            [
@@ -4914,7 +5056,7 @@ func NewDsliteSetAftrAddrReply() api.Message {
 }
 
 // DsliteGetAftrAddr represents the VPP binary API message 'dslite_get_aftr_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 2991:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2888:
 //
 //            "dslite_get_aftr_addr",
 //            [
@@ -4950,7 +5092,7 @@ func NewDsliteGetAftrAddr() api.Message {
 }
 
 // DsliteGetAftrAddrReply represents the VPP binary API message 'dslite_get_aftr_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3009:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2906:
 //
 //            "dslite_get_aftr_addr_reply",
 //            [
@@ -4999,7 +5141,7 @@ func NewDsliteGetAftrAddrReply() api.Message {
 }
 
 // DsliteSetB4Addr represents the VPP binary API message 'dslite_set_b4_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3037:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2934:
 //
 //            "dslite_set_b4_addr",
 //            [
@@ -5047,7 +5189,7 @@ func NewDsliteSetB4Addr() api.Message {
 }
 
 // DsliteSetB4AddrReply represents the VPP binary API message 'dslite_set_b4_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3065:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2962:
 //
 //            "dslite_set_b4_addr_reply",
 //            [
@@ -5084,7 +5226,7 @@ func NewDsliteSetB4AddrReply() api.Message {
 }
 
 // DsliteGetB4Addr represents the VPP binary API message 'dslite_get_b4_addr'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3083:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2980:
 //
 //            "dslite_get_b4_addr",
 //            [
@@ -5120,7 +5262,7 @@ func NewDsliteGetB4Addr() api.Message {
 }
 
 // DsliteGetB4AddrReply represents the VPP binary API message 'dslite_get_b4_addr_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3101:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 2998:
 //
 //            "dslite_get_b4_addr_reply",
 //            [
@@ -5169,7 +5311,7 @@ func NewDsliteGetB4AddrReply() api.Message {
 }
 
 // Nat66AddDelInterface represents the VPP binary API message 'nat66_add_del_interface'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3129:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3026:
 //
 //            "nat66_add_del_interface",
 //            [
@@ -5220,7 +5362,7 @@ func NewNat66AddDelInterface() api.Message {
 }
 
 // Nat66AddDelInterfaceReply represents the VPP binary API message 'nat66_add_del_interface_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3159:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3056:
 //
 //            "nat66_add_del_interface_reply",
 //            [
@@ -5257,7 +5399,7 @@ func NewNat66AddDelInterfaceReply() api.Message {
 }
 
 // Nat66InterfaceDump represents the VPP binary API message 'nat66_interface_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3177:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3074:
 //
 //            "nat66_interface_dump",
 //            [
@@ -5293,7 +5435,7 @@ func NewNat66InterfaceDump() api.Message {
 }
 
 // Nat66InterfaceDetails represents the VPP binary API message 'nat66_interface_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3195:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3092:
 //
 //            "nat66_interface_details",
 //            [
@@ -5335,7 +5477,7 @@ func NewNat66InterfaceDetails() api.Message {
 }
 
 // Nat66AddDelStaticMapping represents the VPP binary API message 'nat66_add_del_static_mapping'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3217:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3114:
 //
 //            "nat66_add_del_static_mapping",
 //            [
@@ -5393,7 +5535,7 @@ func NewNat66AddDelStaticMapping() api.Message {
 }
 
 // Nat66AddDelStaticMappingReply represents the VPP binary API message 'nat66_add_del_static_mapping_reply'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3253:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3150:
 //
 //            "nat66_add_del_static_mapping_reply",
 //            [
@@ -5430,7 +5572,7 @@ func NewNat66AddDelStaticMappingReply() api.Message {
 }
 
 // Nat66StaticMappingDump represents the VPP binary API message 'nat66_static_mapping_dump'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3271:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3168:
 //
 //            "nat66_static_mapping_dump",
 //            [
@@ -5466,7 +5608,7 @@ func NewNat66StaticMappingDump() api.Message {
 }
 
 // Nat66StaticMappingDetails represents the VPP binary API message 'nat66_static_mapping_details'.
-// Generated from '/usr/share/vpp/api/nat.api.json', line 3289:
+// Generated from '/usr/share/vpp/api/nat.api.json', line 3186:
 //
 //            "nat66_static_mapping_details",
 //            [

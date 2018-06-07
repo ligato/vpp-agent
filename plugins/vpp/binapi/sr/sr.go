@@ -5,8 +5,32 @@ package sr
 
 import "git.fd.io/govpp.git/api"
 
+// SrIP6Address represents the VPP binary API data type 'sr_ip6_address'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 455:
+//
+//            "sr_ip6_address",
+//            [
+//                "u8",
+//                "data",
+//                16
+//            ],
+//            {
+//                "crc": "0xbea0c5e6"
+//            }
+//
+type SrIP6Address struct {
+	Data []byte `struc:"[16]byte"`
+}
+
+func (*SrIP6Address) GetTypeName() string {
+	return "sr_ip6_address"
+}
+func (*SrIP6Address) GetCrcString() string {
+	return "bea0c5e6"
+}
+
 // SrLocalsidAddDel represents the VPP binary API message 'sr_localsid_add_del'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 30:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 4:
 //
 //            "sr_localsid_add_del",
 //            [
@@ -84,7 +108,7 @@ func NewSrLocalsidAddDel() api.Message {
 }
 
 // SrLocalsidAddDelReply represents the VPP binary API message 'sr_localsid_add_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 82:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 56:
 //
 //            "sr_localsid_add_del_reply",
 //            [
@@ -121,7 +145,7 @@ func NewSrLocalsidAddDelReply() api.Message {
 }
 
 // SrPolicyAdd represents the VPP binary API message 'sr_policy_add'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 100:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 74:
 //
 //            "sr_policy_add",
 //            [
@@ -162,12 +186,13 @@ func NewSrLocalsidAddDelReply() api.Message {
 //                "n_segments"
 //            ],
 //            [
-//                "u8",
+//                "vl_api_sr_ip6_address_t",
 //                "segments",
-//                0
+//                0,
+//                "n_segments"
 //            ],
 //            {
-//                "crc": "0xc8c2222d"
+//                "crc": "0x6869ac7f"
 //            }
 //
 type SrPolicyAdd struct {
@@ -176,8 +201,8 @@ type SrPolicyAdd struct {
 	IsEncap   uint8
 	Type      uint8
 	FibTable  uint32
-	NSegments uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
-	Segments  []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	NSegments uint8 `struc:"sizeof=Segments"`
+	Segments  []SrIP6Address
 }
 
 func (*SrPolicyAdd) GetMessageName() string {
@@ -187,14 +212,14 @@ func (*SrPolicyAdd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrPolicyAdd) GetCrcString() string {
-	return "c8c2222d"
+	return "6869ac7f"
 }
 func NewSrPolicyAdd() api.Message {
 	return &SrPolicyAdd{}
 }
 
 // SrPolicyAddReply represents the VPP binary API message 'sr_policy_add_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 148:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 123:
 //
 //            "sr_policy_add_reply",
 //            [
@@ -231,7 +256,7 @@ func NewSrPolicyAddReply() api.Message {
 }
 
 // SrPolicyMod represents the VPP binary API message 'sr_policy_mod'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 166:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 141:
 //
 //            "sr_policy_mod",
 //            [
@@ -276,12 +301,13 @@ func NewSrPolicyAddReply() api.Message {
 //                "n_segments"
 //            ],
 //            [
-//                "u8",
+//                "vl_api_sr_ip6_address_t",
 //                "segments",
-//                0
+//                0,
+//                "n_segments"
 //            ],
 //            {
-//                "crc": "0x596a4682"
+//                "crc": "0xad91f4b2"
 //            }
 //
 type SrPolicyMod struct {
@@ -291,8 +317,8 @@ type SrPolicyMod struct {
 	Operation     uint8
 	SlIndex       uint32
 	Weight        uint32
-	NSegments     uint8      `struc:"sizeof=Segments"` // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
-	Segments      []IPv6type // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)
+	NSegments     uint8 `struc:"sizeof=Segments"`
+	Segments      []SrIP6Address
 }
 
 func (*SrPolicyMod) GetMessageName() string {
@@ -302,14 +328,14 @@ func (*SrPolicyMod) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrPolicyMod) GetCrcString() string {
-	return "596a4682"
+	return "ad91f4b2"
 }
 func NewSrPolicyMod() api.Message {
 	return &SrPolicyMod{}
 }
 
 // SrPolicyModReply represents the VPP binary API message 'sr_policy_mod_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 218:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 194:
 //
 //            "sr_policy_mod_reply",
 //            [
@@ -346,7 +372,7 @@ func NewSrPolicyModReply() api.Message {
 }
 
 // SrPolicyDel represents the VPP binary API message 'sr_policy_del'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 236:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 212:
 //
 //            "sr_policy_del",
 //            [
@@ -393,7 +419,7 @@ func NewSrPolicyDel() api.Message {
 }
 
 // SrPolicyDelReply represents the VPP binary API message 'sr_policy_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 263:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 239:
 //
 //            "sr_policy_del_reply",
 //            [
@@ -430,7 +456,7 @@ func NewSrPolicyDelReply() api.Message {
 }
 
 // SrSetEncapSource represents the VPP binary API message 'sr_set_encap_source'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 281:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 257:
 //
 //            "sr_set_encap_source",
 //            [
@@ -472,7 +498,7 @@ func NewSrSetEncapSource() api.Message {
 }
 
 // SrSetEncapSourceReply represents the VPP binary API message 'sr_set_encap_source_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 304:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 280:
 //
 //            "sr_set_encap_source_reply",
 //            [
@@ -509,7 +535,7 @@ func NewSrSetEncapSourceReply() api.Message {
 }
 
 // SrSteeringAddDel represents the VPP binary API message 'sr_steering_add_del'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 322:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 298:
 //
 //            "sr_steering_add_del",
 //            [
@@ -587,7 +613,7 @@ func NewSrSteeringAddDel() api.Message {
 }
 
 // SrSteeringAddDelReply represents the VPP binary API message 'sr_steering_add_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 374:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 350:
 //
 //            "sr_steering_add_del_reply",
 //            [
@@ -624,7 +650,7 @@ func NewSrSteeringAddDelReply() api.Message {
 }
 
 // SrLocalsidsDump represents the VPP binary API message 'sr_localsids_dump'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 392:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 368:
 //
 //            "sr_localsids_dump",
 //            [
@@ -660,7 +686,7 @@ func NewSrLocalsidsDump() api.Message {
 }
 
 // SrLocalsidsDetails represents the VPP binary API message 'sr_localsids_details'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 410:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 386:
 //
 //            "sr_localsids_details",
 //            [
@@ -722,5 +748,3 @@ func (*SrLocalsidsDetails) GetCrcString() string {
 func NewSrLocalsidsDetails() api.Message {
 	return &SrLocalsidsDetails{}
 }
-
-type IPv6type struct{ Value [16]byte } // MANUALLY ADDED TO FIX MARSHALLING (BAD VPP API)

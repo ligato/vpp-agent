@@ -6,7 +6,7 @@ package stn
 import "git.fd.io/govpp.git/api"
 
 // StnAddDelRule represents the VPP binary API message 'stn_add_del_rule'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 15:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 4:
 //
 //            "stn_add_del_rule",
 //            [
@@ -63,7 +63,7 @@ func NewStnAddDelRule() api.Message {
 }
 
 // StnAddDelRuleReply represents the VPP binary API message 'stn_add_del_rule_reply'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 50:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 39:
 //
 //            "stn_add_del_rule_reply",
 //            [
@@ -100,7 +100,7 @@ func NewStnAddDelRuleReply() api.Message {
 }
 
 // StnRulesDump represents the VPP binary API message 'stn_rules_dump'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 68:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 57:
 //
 //            "stn_rules_dump",
 //            [
@@ -136,7 +136,7 @@ func NewStnRulesDump() api.Message {
 }
 
 // StnRulesDetails represents the VPP binary API message 'stn_rules_details'.
-// Generated from '/usr/share/vpp/api/stn.api.json', line 86:
+// Generated from '/usr/share/vpp/api/stn.api.json', line 75:
 //
 //            "stn_rules_details",
 //            [

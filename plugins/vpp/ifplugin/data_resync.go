@@ -770,7 +770,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
-	// todo unnumbered data cannot be dumped
+	// todo dump unnumbered data
 	if nbIf.Unnumbered != nil {
 		plugin.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
 		vppIf.IpAddresses = nil

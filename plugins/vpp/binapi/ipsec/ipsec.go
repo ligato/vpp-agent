@@ -6,7 +6,7 @@ package ipsec
 import "git.fd.io/govpp.git/api"
 
 // IpsecSpdAddDel represents the VPP binary API message 'ipsec_spd_add_del'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 79:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 4:
 //
 //            "ipsec_spd_add_del",
 //            [
@@ -52,7 +52,7 @@ func NewIpsecSpdAddDel() api.Message {
 }
 
 // IpsecSpdAddDelReply represents the VPP binary API message 'ipsec_spd_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 105:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 30:
 //
 //            "ipsec_spd_add_del_reply",
 //            [
@@ -89,7 +89,7 @@ func NewIpsecSpdAddDelReply() api.Message {
 }
 
 // IpsecInterfaceAddDelSpd represents the VPP binary API message 'ipsec_interface_add_del_spd'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 123:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 48:
 //
 //            "ipsec_interface_add_del_spd",
 //            [
@@ -140,7 +140,7 @@ func NewIpsecInterfaceAddDelSpd() api.Message {
 }
 
 // IpsecInterfaceAddDelSpdReply represents the VPP binary API message 'ipsec_interface_add_del_spd_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 153:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 78:
 //
 //            "ipsec_interface_add_del_spd_reply",
 //            [
@@ -177,7 +177,7 @@ func NewIpsecInterfaceAddDelSpdReply() api.Message {
 }
 
 // IpsecSpdAddDelEntry represents the VPP binary API message 'ipsec_spd_add_del_entry'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 171:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 96:
 //
 //            "ipsec_spd_add_del_entry",
 //            [
@@ -302,7 +302,7 @@ func NewIpsecSpdAddDelEntry() api.Message {
 }
 
 // IpsecSpdAddDelEntryReply represents the VPP binary API message 'ipsec_spd_add_del_entry_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 261:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 186:
 //
 //            "ipsec_spd_add_del_entry_reply",
 //            [
@@ -339,7 +339,7 @@ func NewIpsecSpdAddDelEntryReply() api.Message {
 }
 
 // IpsecSadAddDelEntry represents the VPP binary API message 'ipsec_sad_add_del_entry'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 279:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 204:
 //
 //            "ipsec_sad_add_del_entry",
 //            [
@@ -422,8 +422,12 @@ func NewIpsecSpdAddDelEntryReply() api.Message {
 //                "tunnel_dst_address",
 //                16
 //            ],
+//            [
+//                "u8",
+//                "udp_encap"
+//            ],
 //            {
-//                "crc": "0x6271f533"
+//                "crc": "0x306782b4"
 //            }
 //
 type IpsecSadAddDelEntry struct {
@@ -443,6 +447,7 @@ type IpsecSadAddDelEntry struct {
 	IsTunnelIpv6              uint8
 	TunnelSrcAddress          []byte `struc:"[16]byte"`
 	TunnelDstAddress          []byte `struc:"[16]byte"`
+	UDPEncap                  uint8
 }
 
 func (*IpsecSadAddDelEntry) GetMessageName() string {
@@ -452,14 +457,14 @@ func (*IpsecSadAddDelEntry) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecSadAddDelEntry) GetCrcString() string {
-	return "6271f533"
+	return "306782b4"
 }
 func NewIpsecSadAddDelEntry() api.Message {
 	return &IpsecSadAddDelEntry{}
 }
 
 // IpsecSadAddDelEntryReply represents the VPP binary API message 'ipsec_sad_add_del_entry_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 365:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 294:
 //
 //            "ipsec_sad_add_del_entry_reply",
 //            [
@@ -496,7 +501,7 @@ func NewIpsecSadAddDelEntryReply() api.Message {
 }
 
 // IpsecSaSetKey represents the VPP binary API message 'ipsec_sa_set_key'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 383:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 312:
 //
 //            "ipsec_sa_set_key",
 //            [
@@ -559,7 +564,7 @@ func NewIpsecSaSetKey() api.Message {
 }
 
 // IpsecSaSetKeyReply represents the VPP binary API message 'ipsec_sa_set_key_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 423:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 352:
 //
 //            "ipsec_sa_set_key_reply",
 //            [
@@ -596,7 +601,7 @@ func NewIpsecSaSetKeyReply() api.Message {
 }
 
 // Ikev2ProfileAddDel represents the VPP binary API message 'ikev2_profile_add_del'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 441:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 370:
 //
 //            "ikev2_profile_add_del",
 //            [
@@ -643,7 +648,7 @@ func NewIkev2ProfileAddDel() api.Message {
 }
 
 // Ikev2ProfileAddDelReply represents the VPP binary API message 'ikev2_profile_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 468:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 397:
 //
 //            "ikev2_profile_add_del_reply",
 //            [
@@ -680,7 +685,7 @@ func NewIkev2ProfileAddDelReply() api.Message {
 }
 
 // Ikev2ProfileSetAuth represents the VPP binary API message 'ikev2_profile_set_auth'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 486:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 415:
 //
 //            "ikev2_profile_set_auth",
 //            [
@@ -715,17 +720,18 @@ func NewIkev2ProfileAddDelReply() api.Message {
 //            [
 //                "u8",
 //                "data",
-//                0
+//                0,
+//                "data_len"
 //            ],
 //            {
-//                "crc": "0xe4fa45e3"
+//                "crc": "0xbd76f369"
 //            }
 //
 type Ikev2ProfileSetAuth struct {
 	Name       []byte `struc:"[64]byte"`
 	AuthMethod uint8
 	IsHex      uint8
-	DataLen    uint32
+	DataLen    uint32 `struc:"sizeof=Data"`
 	Data       []byte
 }
 
@@ -736,14 +742,14 @@ func (*Ikev2ProfileSetAuth) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileSetAuth) GetCrcString() string {
-	return "e4fa45e3"
+	return "bd76f369"
 }
 func NewIkev2ProfileSetAuth() api.Message {
 	return &Ikev2ProfileSetAuth{}
 }
 
 // Ikev2ProfileSetAuthReply represents the VPP binary API message 'ikev2_profile_set_auth_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 526:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 456:
 //
 //            "ikev2_profile_set_auth_reply",
 //            [
@@ -780,7 +786,7 @@ func NewIkev2ProfileSetAuthReply() api.Message {
 }
 
 // Ikev2ProfileSetID represents the VPP binary API message 'ikev2_profile_set_id'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 544:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 474:
 //
 //            "ikev2_profile_set_id",
 //            [
@@ -815,17 +821,18 @@ func NewIkev2ProfileSetAuthReply() api.Message {
 //            [
 //                "u8",
 //                "data",
-//                0
+//                0,
+//                "data_len"
 //            ],
 //            {
-//                "crc": "0x3d0143ba"
+//                "crc": "0xca88c0ef"
 //            }
 //
 type Ikev2ProfileSetID struct {
 	Name    []byte `struc:"[64]byte"`
 	IsLocal uint8
 	IDType  uint8
-	DataLen uint32
+	DataLen uint32 `struc:"sizeof=Data"`
 	Data    []byte
 }
 
@@ -836,14 +843,14 @@ func (*Ikev2ProfileSetID) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*Ikev2ProfileSetID) GetCrcString() string {
-	return "3d0143ba"
+	return "ca88c0ef"
 }
 func NewIkev2ProfileSetID() api.Message {
 	return &Ikev2ProfileSetID{}
 }
 
 // Ikev2ProfileSetIDReply represents the VPP binary API message 'ikev2_profile_set_id_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 584:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 515:
 //
 //            "ikev2_profile_set_id_reply",
 //            [
@@ -880,7 +887,7 @@ func NewIkev2ProfileSetIDReply() api.Message {
 }
 
 // Ikev2ProfileSetTs represents the VPP binary API message 'ikev2_profile_set_ts'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 602:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 533:
 //
 //            "ikev2_profile_set_ts",
 //            [
@@ -952,7 +959,7 @@ func NewIkev2ProfileSetTs() api.Message {
 }
 
 // Ikev2ProfileSetTsReply represents the VPP binary API message 'ikev2_profile_set_ts_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 649:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 580:
 //
 //            "ikev2_profile_set_ts_reply",
 //            [
@@ -989,7 +996,7 @@ func NewIkev2ProfileSetTsReply() api.Message {
 }
 
 // Ikev2SetLocalKey represents the VPP binary API message 'ikev2_set_local_key'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 667:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 598:
 //
 //            "ikev2_set_local_key",
 //            [
@@ -1031,7 +1038,7 @@ func NewIkev2SetLocalKey() api.Message {
 }
 
 // Ikev2SetLocalKeyReply represents the VPP binary API message 'ikev2_set_local_key_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 690:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 621:
 //
 //            "ikev2_set_local_key_reply",
 //            [
@@ -1068,7 +1075,7 @@ func NewIkev2SetLocalKeyReply() api.Message {
 }
 
 // Ikev2SetResponder represents the VPP binary API message 'ikev2_set_responder'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 708:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 639:
 //
 //            "ikev2_set_responder",
 //            [
@@ -1121,7 +1128,7 @@ func NewIkev2SetResponder() api.Message {
 }
 
 // Ikev2SetResponderReply represents the VPP binary API message 'ikev2_set_responder_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 740:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 671:
 //
 //            "ikev2_set_responder_reply",
 //            [
@@ -1158,7 +1165,7 @@ func NewIkev2SetResponderReply() api.Message {
 }
 
 // Ikev2SetIkeTransforms represents the VPP binary API message 'ikev2_set_ike_transforms'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 758:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 689:
 //
 //            "ikev2_set_ike_transforms",
 //            [
@@ -1220,7 +1227,7 @@ func NewIkev2SetIkeTransforms() api.Message {
 }
 
 // Ikev2SetIkeTransformsReply represents the VPP binary API message 'ikev2_set_ike_transforms_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 797:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 728:
 //
 //            "ikev2_set_ike_transforms_reply",
 //            [
@@ -1257,7 +1264,7 @@ func NewIkev2SetIkeTransformsReply() api.Message {
 }
 
 // Ikev2SetEspTransforms represents the VPP binary API message 'ikev2_set_esp_transforms'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 815:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 746:
 //
 //            "ikev2_set_esp_transforms",
 //            [
@@ -1319,7 +1326,7 @@ func NewIkev2SetEspTransforms() api.Message {
 }
 
 // Ikev2SetEspTransformsReply represents the VPP binary API message 'ikev2_set_esp_transforms_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 854:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 785:
 //
 //            "ikev2_set_esp_transforms_reply",
 //            [
@@ -1356,7 +1363,7 @@ func NewIkev2SetEspTransformsReply() api.Message {
 }
 
 // Ikev2SetSaLifetime represents the VPP binary API message 'ikev2_set_sa_lifetime'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 872:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 803:
 //
 //            "ikev2_set_sa_lifetime",
 //            [
@@ -1418,7 +1425,7 @@ func NewIkev2SetSaLifetime() api.Message {
 }
 
 // Ikev2SetSaLifetimeReply represents the VPP binary API message 'ikev2_set_sa_lifetime_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 911:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 842:
 //
 //            "ikev2_set_sa_lifetime_reply",
 //            [
@@ -1455,7 +1462,7 @@ func NewIkev2SetSaLifetimeReply() api.Message {
 }
 
 // Ikev2InitiateSaInit represents the VPP binary API message 'ikev2_initiate_sa_init'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 929:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 860:
 //
 //            "ikev2_initiate_sa_init",
 //            [
@@ -1497,7 +1504,7 @@ func NewIkev2InitiateSaInit() api.Message {
 }
 
 // Ikev2InitiateSaInitReply represents the VPP binary API message 'ikev2_initiate_sa_init_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 952:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 883:
 //
 //            "ikev2_initiate_sa_init_reply",
 //            [
@@ -1534,7 +1541,7 @@ func NewIkev2InitiateSaInitReply() api.Message {
 }
 
 // Ikev2InitiateDelIkeSa represents the VPP binary API message 'ikev2_initiate_del_ike_sa'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 970:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 901:
 //
 //            "ikev2_initiate_del_ike_sa",
 //            [
@@ -1575,7 +1582,7 @@ func NewIkev2InitiateDelIkeSa() api.Message {
 }
 
 // Ikev2InitiateDelIkeSaReply represents the VPP binary API message 'ikev2_initiate_del_ike_sa_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 992:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 923:
 //
 //            "ikev2_initiate_del_ike_sa_reply",
 //            [
@@ -1612,7 +1619,7 @@ func NewIkev2InitiateDelIkeSaReply() api.Message {
 }
 
 // Ikev2InitiateDelChildSa represents the VPP binary API message 'ikev2_initiate_del_child_sa'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1010:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 941:
 //
 //            "ikev2_initiate_del_child_sa",
 //            [
@@ -1653,7 +1660,7 @@ func NewIkev2InitiateDelChildSa() api.Message {
 }
 
 // Ikev2InitiateDelChildSaReply represents the VPP binary API message 'ikev2_initiate_del_child_sa_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1032:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 963:
 //
 //            "ikev2_initiate_del_child_sa_reply",
 //            [
@@ -1690,7 +1697,7 @@ func NewIkev2InitiateDelChildSaReply() api.Message {
 }
 
 // Ikev2InitiateRekeyChildSa represents the VPP binary API message 'ikev2_initiate_rekey_child_sa'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1050:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 981:
 //
 //            "ikev2_initiate_rekey_child_sa",
 //            [
@@ -1731,7 +1738,7 @@ func NewIkev2InitiateRekeyChildSa() api.Message {
 }
 
 // Ikev2InitiateRekeyChildSaReply represents the VPP binary API message 'ikev2_initiate_rekey_child_sa_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1072:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1003:
 //
 //            "ikev2_initiate_rekey_child_sa_reply",
 //            [
@@ -1768,7 +1775,7 @@ func NewIkev2InitiateRekeyChildSaReply() api.Message {
 }
 
 // IpsecSpdDump represents the VPP binary API message 'ipsec_spd_dump'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1090:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1021:
 //
 //            "ipsec_spd_dump",
 //            [
@@ -1814,7 +1821,7 @@ func NewIpsecSpdDump() api.Message {
 }
 
 // IpsecSpdDetails represents the VPP binary API message 'ipsec_spd_details'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1116:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1047:
 //
 //            "ipsec_spd_details",
 //            [
@@ -1935,7 +1942,7 @@ func NewIpsecSpdDetails() api.Message {
 }
 
 // IpsecTunnelIfAddDel represents the VPP binary API message 'ipsec_tunnel_if_add_del'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1202:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1133:
 //
 //            "ipsec_tunnel_if_add_del",
 //            [
@@ -2024,8 +2031,16 @@ func NewIpsecSpdDetails() api.Message {
 //                "remote_integ_key",
 //                128
 //            ],
+//            [
+//                "u8",
+//                "renumber"
+//            ],
+//            [
+//                "u32",
+//                "show_instance"
+//            ],
 //            {
-//                "crc": "0xd9a582bc"
+//                "crc": "0x56b8943b"
 //            }
 //
 type IpsecTunnelIfAddDel struct {
@@ -2046,6 +2061,8 @@ type IpsecTunnelIfAddDel struct {
 	LocalIntegKey      []byte `struc:"[128]byte"`
 	RemoteIntegKeyLen  uint8
 	RemoteIntegKey     []byte `struc:"[128]byte"`
+	Renumber           uint8
+	ShowInstance       uint32
 }
 
 func (*IpsecTunnelIfAddDel) GetMessageName() string {
@@ -2055,14 +2072,14 @@ func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "d9a582bc"
+	return "56b8943b"
 }
 func NewIpsecTunnelIfAddDel() api.Message {
 	return &IpsecTunnelIfAddDel{}
 }
 
 // IpsecTunnelIfAddDelReply represents the VPP binary API message 'ipsec_tunnel_if_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1294:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1233:
 //
 //            "ipsec_tunnel_if_add_del_reply",
 //            [
@@ -2104,7 +2121,7 @@ func NewIpsecTunnelIfAddDelReply() api.Message {
 }
 
 // IpsecSaDump represents the VPP binary API message 'ipsec_sa_dump'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1316:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1255:
 //
 //            "ipsec_sa_dump",
 //            [
@@ -2145,7 +2162,7 @@ func NewIpsecSaDump() api.Message {
 }
 
 // IpsecSaDetails represents the VPP binary API message 'ipsec_sa_details'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1338:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1277:
 //
 //            "ipsec_sa_details",
 //            [
@@ -2244,8 +2261,12 @@ func NewIpsecSaDump() api.Message {
 //                "u64",
 //                "total_data_size"
 //            ],
+//            [
+//                "u8",
+//                "udp_encap"
+//            ],
 //            {
-//                "crc": "0x77fa2e6b"
+//                "crc": "0xdc927a3b"
 //            }
 //
 type IpsecSaDetails struct {
@@ -2270,6 +2291,7 @@ type IpsecSaDetails struct {
 	LastSeqInbound uint64
 	ReplayWindow   uint64
 	TotalDataSize  uint64
+	UDPEncap       uint8
 }
 
 func (*IpsecSaDetails) GetMessageName() string {
@@ -2279,14 +2301,14 @@ func (*IpsecSaDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*IpsecSaDetails) GetCrcString() string {
-	return "77fa2e6b"
+	return "dc927a3b"
 }
 func NewIpsecSaDetails() api.Message {
 	return &IpsecSaDetails{}
 }
 
 // IpsecTunnelIfSetKey represents the VPP binary API message 'ipsec_tunnel_if_set_key'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1440:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1383:
 //
 //            "ipsec_tunnel_if_set_key",
 //            [
@@ -2348,7 +2370,7 @@ func NewIpsecTunnelIfSetKey() api.Message {
 }
 
 // IpsecTunnelIfSetKeyReply represents the VPP binary API message 'ipsec_tunnel_if_set_key_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1479:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1422:
 //
 //            "ipsec_tunnel_if_set_key_reply",
 //            [
@@ -2385,7 +2407,7 @@ func NewIpsecTunnelIfSetKeyReply() api.Message {
 }
 
 // IpsecTunnelIfSetSa represents the VPP binary API message 'ipsec_tunnel_if_set_sa'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1497:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1440:
 //
 //            "ipsec_tunnel_if_set_sa",
 //            [
@@ -2436,7 +2458,7 @@ func NewIpsecTunnelIfSetSa() api.Message {
 }
 
 // IpsecTunnelIfSetSaReply represents the VPP binary API message 'ipsec_tunnel_if_set_sa_reply'.
-// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1527:
+// Generated from '/usr/share/vpp/api/ipsec.api.json', line 1470:
 //
 //            "ipsec_tunnel_if_set_sa_reply",
 //            [

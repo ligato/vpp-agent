@@ -9,6 +9,8 @@ var Types = map[string]reflect.Type{
 	"AfPacketCreateReply": reflect.TypeOf((*AfPacketCreateReply)(nil)).Elem(),
 	"AfPacketDelete": reflect.TypeOf((*AfPacketDelete)(nil)).Elem(),
 	"AfPacketDeleteReply": reflect.TypeOf((*AfPacketDeleteReply)(nil)).Elem(),
+	"AfPacketDetails": reflect.TypeOf((*AfPacketDetails)(nil)).Elem(),
+	"AfPacketDump": reflect.TypeOf((*AfPacketDump)(nil)).Elem(),
 	"AfPacketSetL4CksumOffload": reflect.TypeOf((*AfPacketSetL4CksumOffload)(nil)).Elem(),
 	"AfPacketSetL4CksumOffloadReply": reflect.TypeOf((*AfPacketSetL4CksumOffloadReply)(nil)).Elem(),
 }
@@ -18,6 +20,8 @@ var Functions = map[string]reflect.Value{
 	"NewAfPacketCreateReply": reflect.ValueOf(NewAfPacketCreateReply),
 	"NewAfPacketDelete": reflect.ValueOf(NewAfPacketDelete),
 	"NewAfPacketDeleteReply": reflect.ValueOf(NewAfPacketDeleteReply),
+	"NewAfPacketDetails": reflect.ValueOf(NewAfPacketDetails),
+	"NewAfPacketDump": reflect.ValueOf(NewAfPacketDump),
 	"NewAfPacketSetL4CksumOffload": reflect.ValueOf(NewAfPacketSetL4CksumOffload),
 	"NewAfPacketSetL4CksumOffloadReply": reflect.ValueOf(NewAfPacketSetL4CksumOffloadReply),
 }
