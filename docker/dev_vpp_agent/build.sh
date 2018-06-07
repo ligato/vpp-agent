@@ -6,10 +6,12 @@ VPP_DEBUG_DEB=${VPP_DEBUG_DEB:-}
 IMAGE_TAG=${IMAGE_TAG:-dev_vpp_agent}
 
 AGENT_COMMIT=`git rev-parse HEAD`
-VPP_COMMIT=`cd ../.. && git submodule status|grep vpp|cut -c2-41`
+
+source ../../vpp.env
 
 echo "repo agent commit: ${AGENT_COMMIT}"
 echo "repo vpp commit:   ${VPP_COMMIT}"
+echo "repo vpp repo url: ${VPP_REPO_URL}"
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -30,4 +32,9 @@ done
 echo
 echo "building docker image: ${IMAGE_TAG}"
 
-sudo docker build --tag ${IMAGE_TAG} --build-arg VPP_DEBUG_DEB=${VPP_DEBUG_DEB} --build-arg AGENT_COMMIT=${AGENT_COMMIT} --build-arg VPP_COMMIT=${VPP_COMMIT} .
+sudo docker build --tag ${IMAGE_TAG} \
+    --build-arg VPP_DEBUG_DEB=${VPP_DEBUG_DEB} \
+    --build-arg AGENT_COMMIT=${AGENT_COMMIT} \
+    --build-arg VPP_COMMIT=${VPP_COMMIT} \
+    --build-arg VPP_REPO_URL=${VPP_REPO_URL} \
+  .

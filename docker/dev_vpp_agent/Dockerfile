@@ -24,9 +24,10 @@ RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 WORKDIR /opt/vpp-agent/dev
 
 ARG VPP_COMMIT
+ARG VPP_REPO_URL
 
 RUN /bin/bash -c "\
-    git clone https://github.com/ligato/vpp.git \
+    git clone ${VPP_REPO_URL} \
     && cd vpp \
     && git checkout ${VPP_COMMIT} \
     && UNATTENDED=y make vpp_configure_args_vpp='--disable-japi --disable-vom' install-dep bootstrap dpdk-install-dev build build-release;"
