@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/acl --gogo_out=../common/model/acl ../common/model/acl/acl.proto
+//go:generate protoc --proto_path=../model/acl --gogo_out=../model/acl ../model/acl/acl.proto
 
 // Package aclplugin implements the ACL Plugin that handles management of VPP
 // Access lists.
