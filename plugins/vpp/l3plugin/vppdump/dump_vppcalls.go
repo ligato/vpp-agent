@@ -20,7 +20,6 @@ import (
 
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -29,7 +28,7 @@ import (
 )
 
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.Route, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog measure.StopWatchEntry) ([]*vppcalls.Route, error) {
 	// IPFibDump time measurement
 	start := time.Now()
 	defer func() {
@@ -84,7 +83,6 @@ func DumpStaticRoutes(log logging.Logger, vppChan *govppapi.Channel, timeLog mea
 
 func dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*vppcalls.Route, error) {
 	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
-
 }
 
 func dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*vppcalls.Route, error) {
