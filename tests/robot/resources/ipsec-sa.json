@@ -1,6 +1,6 @@
 {
   "name":"${name}",
-  "spi": "${spi}",
+  "spi": ${spi},
   "protocol": 1,
   "crypto_alg": 1,
   "crypto_key": "${crypto_key}",

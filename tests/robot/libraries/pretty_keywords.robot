@@ -72,7 +72,7 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
 Create IPsec With SA And Json
     [Arguments]     ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
     Log Many        ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
-    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../../cmd/vpp-agent-ctl/json/${file_name}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
     Log Many        ${data}
     ${data}=        replace variables           ${data}
     Log Many        ${data}
@@ -81,10 +81,10 @@ Create IPsec With SA And Json
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
 
-Create IPsec On Node With SPD And Json
-    [Arguments]     ${node}    ${spd_name}    ${file_name}    ${name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
-    Log Many        ${node}    ${spd_name}    ${file_name}    ${name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
-    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../../cmd/vpp-agent-ctl/json/${file_name}
+Create IPsec With SPD And Json
+    [Arguments]     ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
+    Log Many        ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
     Log Many        ${data}
     ${data}=        replace variables           ${data}
     Log Many        ${data}

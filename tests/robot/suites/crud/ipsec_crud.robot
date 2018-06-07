@@ -32,7 +32,7 @@ Add SA2 Into VPP
 
 Add SPD Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 1
-    Create IPsec On agent_vpp_1 With SPD spd1 And Json ipsec-spd.json
+    Create IPsec With SPD And Json  agent_vpp_1    spd1    ipsec-spd.json    afp1    10.0.0.1    10.0.0.2    sa10  sa20
     IP Sec On agent_vpp_1 Should Contain SA spd 1
 
 Check IPsec config On VPP
