@@ -1076,6 +1076,49 @@ func NewIPSourceAndPortRangeCheckInterfaceAddDelReply() api.Message {
 	return &IPSourceAndPortRangeCheckInterfaceAddDelReply{}
 }
 
+// IPScanNeighborEnableDisable represents the VPP binary API message 'ip_scan_neighbor_enable_disable'.
+//
+type IPScanNeighborEnableDisable struct {
+	Mode           uint8
+	ScanInterval   uint8
+	MaxProcTime    uint8
+	MaxUpdate      uint8
+	ScanIntDelay   uint8
+	StaleThreshold uint8
+}
+
+func (*IPScanNeighborEnableDisable) GetMessageName() string {
+	return "ip_scan_neighbor_enable_disable"
+}
+func (*IPScanNeighborEnableDisable) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*IPScanNeighborEnableDisable) GetCrcString() string {
+	return "7134c2c8"
+}
+func NewIPScanNeighborEnableDisable() api.Message {
+	return &IPScanNeighborEnableDisable{}
+}
+
+// IPScanNeighborEnableDisableReply represents the VPP binary API message 'ip_scan_neighbor_enable_disable_reply'.
+//
+type IPScanNeighborEnableDisableReply struct {
+	Retval int32
+}
+
+func (*IPScanNeighborEnableDisableReply) GetMessageName() string {
+	return "ip_scan_neighbor_enable_disable_reply"
+}
+func (*IPScanNeighborEnableDisableReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*IPScanNeighborEnableDisableReply) GetCrcString() string {
+	return "c0cd9f52"
+}
+func NewIPScanNeighborEnableDisableReply() api.Message {
+	return &IPScanNeighborEnableDisableReply{}
+}
+
 // WantIP4ArpEvents represents the VPP binary API message 'want_ip4_arp_events'.
 //
 type WantIP4ArpEvents struct {
