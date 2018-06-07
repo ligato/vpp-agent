@@ -13,10 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-sudo docker pull ligato/vpp-agent:latest
-sudo docker pull ligato/vpp-agent:pantheon-dev
+sudo docker pull ligato/dev-vpp-agent:pantheon-dev
 sudo docker pull ligato/dev-cn-infra:latest
-sudo docker pull quay.io/coreos/etcd:latest
-sudo docker pull spotify/kafka:latest
-sudo docker pull ligato/libmemif-sample-service:latest
+sudo docker pull quay.io/coreos/etcd:v3.0.16
 sudo docker pull ligato/prod_sfc_controller:latest
