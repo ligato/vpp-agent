@@ -20,12 +20,14 @@ Add Agent Vpp Node
 
 Add SA1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 1
-    Create IPsec On agent_vpp_1 With SA sa10 And Json ipsec-sa10.json
+    Create IPsec With SA And Json  agent_vpp_1   sa10   ipsec-sa.json  sa10  1001  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
+#    Create IPsec On agent_vpp_1 With SA sa10 And Json ipsec-sa.json
     IP Sec On agent_vpp_1 Should Contain SA sa 1
 
 Add SA2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 2
-    Create IPsec On agent_vpp_1 With SA sa20 And Json ipsec-sa20.json
+    Create IPsec With SA And Json  agent_vpp_1   sa20   ipsec-sa.json  sa20  1000  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
+#    Create IPsec On agent_vpp_1 With SA sa20 And Json ipsec-sa20.json
     IP Sec On agent_vpp_1 Should Contain SA sa 2
 
 Add SPD Into VPP
