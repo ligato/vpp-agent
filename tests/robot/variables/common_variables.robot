@@ -4,7 +4,7 @@ ${DOCKER_HOST_USER}                frinx
 ${DOCKER_HOST_PSWD}                frinx
 ${DOCKER_SOCKET_FOLDER}            /tmp/vpp_socket
 ${DOCKER_WORKDIR}                  /tmp
-${DOCKER_COMMAND}                  sudo docker
+${DOCKER_COMMAND}                  docker
 ${DOCKER_PHYSICAL_INT_1}           0000:00:09.0
 ${DOCKER_PHYSICAL_INT_1_VPP_NAME}  GigabitEthernet0/9/0
 ${DOCKER_PHYSICAL_INT_1_MAC}       08:00:27:0e:22:53

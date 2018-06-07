@@ -294,6 +294,14 @@ vpp_ctl: Delete Routes
     Log Many        ${out}
     [Return]       ${out}
 
+vpp_ctl: Delete IPsec
+    [Arguments]    ${node}    ${id}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/${id}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Delete key  ${uri}
+    Log Many        ${out}
+    [Return]       ${out}
+
 vpp_ctl: Put BFD Session
     [Arguments]    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}=0    ${BFD_auth_key_id}=0
     Log Many    ${node}    ${session_name}    ${min_tx_interval}    ${dest_adr}    ${detect_multiplier}    ${interface}    ${min_rx_interval}    ${source_adr}   ${enabled}    ${auth_key_id}    ${BFD_auth_key_id}

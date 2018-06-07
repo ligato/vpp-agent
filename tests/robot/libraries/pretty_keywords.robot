@@ -69,6 +69,32 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
 
+Create IPsec On ${node} With SA ${interface} And Json ${file_name}
+    Log Many        ${node}    ${interface}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../../cmd/vpp-agent-ctl/json/${file_name}
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/sa/${interface}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}
+
+Create IPsec On ${node} With SPD ${spd} And Json ${file_name}
+    Log Many        ${node}    ${spd}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../../cmd/vpp-agent-ctl/json/${file_name}
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/spd/${spd}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}
+
+Delete IPsec On ${node} And ${id}
+    Log Many        ${node}    ${id}
+    vpp_ctl: Delete IPsec    ${node}    ${id}
+
 Create VXLan ${name} From ${src_ip} To ${dst_ip} With Vni ${vni} On ${node}
     Log Many    ${name}    ${src_ip}    ${dst_ip}    ${vni}    ${node}
     vpp_ctl: Put VXLan Interface    ${node}    ${name}    ${src_ip}    ${dst_ip}    ${vni}
@@ -151,6 +177,10 @@ Show IP6 Fib On ${node}
 
 Show Interfaces On ${node}
     ${out}=   vpp_term: Show Interfaces    ${node}
+    Log Many  ${out}
+
+Show IPsec On ${node}
+    ${out}=   vpp_term: Show IPsec    ${node}
     Log Many  ${out}
 
 Show Interfaces Address On ${node}
