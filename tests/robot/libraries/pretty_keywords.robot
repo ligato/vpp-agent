@@ -181,10 +181,6 @@ Show Interfaces On ${node}
     ${out}=   vpp_term: Show Interfaces    ${node}
     Log Many  ${out}
 
-Show IPsec On ${node}
-    ${out}=   vpp_term: Show IPsec    ${node}
-    Log Many  ${out}
-
 Show Interfaces Address On ${node}
     ${out}=   vpp_term: Show Interfaces Address    ${node}
     Log Many  ${out}
