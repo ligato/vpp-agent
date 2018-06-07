@@ -379,18 +379,18 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 	return nil
 }
 
-func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.IPv6type, error) {
-	segments := make([]sr.IPv6type, 0)
+func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.SrIP6Address, error) {
+	segments := make([]sr.SrIP6Address, 0)
 	for _, sid := range nextSidList {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
 		if err != nil {
-			return 0, []sr.IPv6type{}, err
+			return 0, []sr.SrIP6Address{}, err
 		}
 
 		// add sid to segment list
-		ipv6Segment := sr.IPv6type{}
-		copy(ipv6Segment.Value[:], parserSid) // sr.IPv6type.Value = [16]byte
+		ipv6Segment := sr.SrIP6Address{}
+		copy(ipv6Segment.Data[:], parserSid) // sr.SrIP6Address.Data = [16]byte
 		segments = append(segments, ipv6Segment)
 	}
 	return uint8(len(nextSidList)), segments, nil

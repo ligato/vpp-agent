@@ -34,9 +34,9 @@ func TestSetInterfaceAsDHCPClient(t *testing.T) {
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.WantDhcpEvent).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
+	Expect(vppMsg.Client.WantDhcpEvent).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
 
@@ -75,9 +75,9 @@ func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.WantDhcpEvent).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
+	Expect(vppMsg.Client.WantDhcpEvent).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 

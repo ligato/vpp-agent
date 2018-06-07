@@ -913,13 +913,13 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 		case notification := <-plugin.DhcpChan:
 			switch dhcpNotif := notification.(type) {
 			case *dhcp.DhcpComplEvent:
-				var ipAddr, rIPAddr net.IP = dhcpNotif.HostAddress, dhcpNotif.RouterAddress
-				var hwAddr net.HardwareAddr = dhcpNotif.HostMac
+				var ipAddr, rIPAddr net.IP = dhcpNotif.Lease.HostAddress, dhcpNotif.Lease.RouterAddress
+				var hwAddr net.HardwareAddr = dhcpNotif.Lease.HostMac
 				var ipStr, rIPStr string
 
-				name := string(bytes.SplitN(dhcpNotif.Hostname, []byte{0x00}, 2)[0])
+				name := string(bytes.SplitN(dhcpNotif.Lease.Hostname, []byte{0x00}, 2)[0])
 
-				if dhcpNotif.IsIpv6 == 1 {
+				if dhcpNotif.Lease.IsIpv6 == 1 {
 					ipStr = ipAddr.To16().String()
 					rIPStr = rIPAddr.To16().String()
 				} else {
@@ -943,9 +943,9 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 							return true
 						}
 						return false
-					}(dhcpNotif.IsIpv6),
+					}(dhcpNotif.Lease.IsIpv6),
 					IPAddress:     ipStr,
-					Mask:          uint32(dhcpNotif.MaskWidth),
+					Mask:          uint32(dhcpNotif.Lease.MaskWidth),
 					PhysAddress:   hwAddr.String(),
 					RouterAddress: rIPStr,
 				})
