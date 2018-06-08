@@ -125,6 +125,7 @@ ${AGENT_LIBMEMIF_4_MEMIF_SOCKET_FOLDER}    /run/vpp
 # Other variables
 ${VAT_START_COMMAND}               vpp_api_test json
 ${RESULTS_FOLDER}                  results
+${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
 ${SSH_READ_DELAY}                  3

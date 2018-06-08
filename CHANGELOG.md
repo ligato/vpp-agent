@@ -1,34 +1,91 @@
+# Release v1.4 (2018-05-24)
+
+## Compatibility
+- VPP v18.04 (ac2b736)
+- cn-infra v1.3
+
+## New Features
+- [Consul](https://www.consul.io/)
+  * Consul is now supported as an key-value store alternative to ETCD.
+    More information in the [readme](https://github.com/ligato/cn-infra/blob/master/db/keyval/consul/README.md).
+- [Telemetry](plugins/telemetry)
+  * New plugin for collecting telemetry data about VPP metrics
+    and serving them via HTTP server for Prometheus.
+    More information in the [readme](plugins/telemetry/README.md).
+- [Ipsecplugin](plugins/vpp/ipsecplugin)
+  * Now supports tunnel interface for encrypting all the data
+    passing through that interface.
+- [GRPC](plugins/vpp/rpc) 
+  * Vpp-agent itself can act as a GRPC server (no need for external executable)
+  * All configuration types are supported (incl. linux interfaces, routes and ARP)
+  * Client can read VPP notifications via vpp-agent.      
+
+## Improvements
+- [ifplugin](plugins/vpp/ifplugin) 
+  * Added support for self-twice-NAT
+- __vpp-agent-grpc__ executable merged with [vpp-agent](cmd/vpp-agent) command.
+- [govppmux](plugins/govppmux) 
+  * [configure reply timeout](plugins/govppmux/README.md) can be configured.
+  * Support for VPP started with custom shared memory prefix. SHM may be configured via govpp
+    plugin config file. More info in the [readme](plugins/govppmux/README.md)
+
+## Examples
+- [localclient_linux](examples/localclient_vpp) now contains two examples, the old one demonstrating
+  basic plugin functionality was moved to [plugin](examples/localclient_vpp/plugins) package, and 
+  specialised example for [NAT](examples/localclient_vpp/nat) was added.
+- [localclient_linux](examples/localclient_linux) now contains two examples, the old one demonstrating 
+  [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
+  [tap](examples/localclient_linux/tap) was added.
+
+
+## Bugfix
+  * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
+    now appropriately cached and created when possible. 
+  * Fixed issue with GoVPP channels returning errors after timeout.
+  * Fixed various issues related to caching and resync in L2 cross-connect
+  * Split horizon group is now correctly assigned if interface is created after bridge domain
+  * Fixed issue where creation of FIB while interface was not a part of the bridge domain returned
+    error
+
+## Other
+  * Overall redundancy cleanup and corrected naming for all proto models.
+  * Added more unit tests for increased coverage and code stability. 
+
+## Known issues
+  * VPP crash may occur if there is interface with non-default VRF (>0). There is an 
+    [VPP-1280](https://jira.fd.io/browse/VPP-1280) issue created with more details 
+
 # Release v1.3 (2018-03-22)
 
 ## Compatibility
-VPP v18.01-rc0~605-g954d437
-cn-infra v1.2
+- VPP v18.01-rc0~605-g954d437
+- cn-infra v1.2
 
 The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github.com/vpp-dev/vpp/tree/stable-1801-contiv).
 
 ## New Features
-- [ipsecplugin](plugins/defaultplugins/ipsecplugin)
+- [ipsecplugin](plugins/vpp/ipsecplugin)
   * New plugin for IPSec added. The IPSec is supported for VPP only
     with linux set manually for now. IKEv2 is not yet supported.
-    More information in the [readme](plugins/defaultplugins/ipsecplugin/README.md).
-- [nsplugin](plugins/linuxplugin/nsplugin)
+    More information in the [readme](plugins/vpp/ipsecplugin/README.md).
+- [nsplugin](plugins/linux/nsplugin)
   * New namespace plugin added. The configurator handles common namespace
     and microservice processing and communication with other Linux plugins.
-- [ifplugin](plugins/defaultplugins/ifplugin)
+- [ifplugin](plugins/vpp/ifplugin)
   * Added support for Network address translation. NAT plugin supports
     configuration of NAT44 interfaces, address pools and DNAT.
-    More information in the [readme](plugins/defaultplugins/ifplugin/README.md).
+    More information in the [readme](plugins/vpp/ifplugin/README.md).
   * DHCP can now be configured for the interface  
-- [l2plugin](plugins/defaultplugins/l2plugin)
+- [l2plugin](plugins/vpp/l2plugin)
   * Split-horizon group can be configured for bridge domain interface.
-- [l3plugin](plugins/defaultplugins/l3plugin)
+- [l3plugin](plugins/vpp/l3plugin)
   * Added support for proxy ARP. For more information and configuration 
-    example, please see [readme](plugins/defaultplugins/l3plugin/README.md).
-- [linux ifplugin](plugins/linuxplugin/ifplugin)
+    example, please see [readme](plugins/vpp/l3plugin/README.md).
+- [linux ifplugin](plugins/linux/ifplugin)
   * Support for automatic interface configuration (currently only TAP).
         
 ## Improvements
-- [aclplugin](plugins/defaultplugins/aclplugin)
+- [aclplugin](plugins/vpp/aclplugin)
   * Removed configuration order of interfaces. Access list can be now 
     configured even if interfaces do not exist yet, and add them later.
 - [vpp-agent-ctl](cmd/vpp-agent-ctl) 
@@ -36,7 +93,7 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 
 ## Docker Images
   * VPP can be build and run in release or debug mode.
-  Read more information in the [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/docker/dev_vpp_agent/README.md).
+  Read more information in the [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/docker/dev/README.md).
   * Production image is now smaller by roughly 40% (229MB).
 
 ## Bugfix
@@ -54,21 +111,21 @@ The vpp-agent is now using custom VPP branch [stable-1801-contiv](https://github
 # Release v1.2 (2018-02-07)
 
 ## Compatibility
-VPP v18.04-rc0~90-gd95c39e
-cn-infra v1.1
+- VPP v18.04-rc0~90-gd95c39e
+- cn-infra v1.1
 
 ### Improvements
-- [aclplugin](plugins/defaultplugins/aclplugin) 
+- [aclplugin](plugins/vpp/aclplugin) 
   * Improved resync of ACL entries. Every new ACL entry is correctly configured in the VPP and all obosolete entries are read and removed. 
-- [ifplugin](plugins/defaultplugins/ifplugin) 
+- [ifplugin](plugins/vpp/ifplugin) 
   * Improved resync of interfaces, BFD sessions, authentication keys, echo functions and STN. Better resolution of persistence config for interfaces. 
-- [l2plugin](plugins/defaultplugins/l2plugin) 
+- [l2plugin](plugins/vpp/l2plugin) 
   * Improved resync of bridge domains, FIB entries and xConnect pairs. Resync now better correlates configuration present on the VPP with the NB setup.
-- (Linux) [ifplugin](plugins/linuxplugin/l3plugin) 
+- (Linux) [ifplugin](plugins/linux/l3plugin) 
   * ARP does not need the interface to be present on the VPP. Configuration is cached and put to the VPP if requirements are fullfiled. 
 
 ### Fixes
-  * [vpp-agent-grpc](cmd/vpp-agent-grpc) now compiles properly
+  * [vpp-agent-grpc](cmd/vpp-agent) (removed in 1.4 release, since then it is a part of the vpp-agent) now compiles properly
     together with other commands.
 
 ### Dependencies
@@ -78,7 +135,7 @@ cn-infra v1.1
   * VPP compilation now skips building of Java/C++ APIs,
     this saves build time and final image size.
   * Development image now runs VPP in debug mode with
-    various debug options added in [VPP config file](docker/dev_vpp_agent/vpp.conf).
+    various debug options added in [VPP config file](docker/dev/vpp.conf).
 
 ## Bugfix
 - Fixed interface assignment in ACLs
@@ -91,31 +148,31 @@ cn-infra v1.1
 # Release v1.1 (2018-01-22)
 
 ## Compatibility
-VPP version v18.04-rc0~33-gb59bd65
-cn-infra v1.0.8
+- VPP version v18.04-rc0~33-gb59bd65
+- cn-infra v1.0.8
 
 ### New Features
-- [ifplugin](plugins/defaultplugins/ifplugin)
+- [ifplugin](plugins/vpp/ifplugin)
     - added support for un-numbered interfaces. Interface can be marked as un-numbered with information 
     about another interface containing required IP address. Un-numbered interface does not need to have 
     IP address set.
     - added support for virtio-based TAPv2 interfaces.
     - interface status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
-- [l2plugin](plugins/defaultplugins/l2plugin)
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
+- [l2plugin](plugins/vpp/l2plugin)
     - bridge domain status is no longer stored in the ETCD by default and it can be turned on using appropriate
-    setting in defaultplugins.conf. See  [readme](plugins/defaultplugins/README.md) for more details.  
+    setting in vpp-plugin.conf. See  [readme](plugins/vpp/README.md) for more details.  
 
 ### Improvements
-- [ifplugin](plugins/defaultplugins/ifplugin)
+- [ifplugin](plugins/vpp/ifplugin)
     - default MTU value was removed in order to be able to just pass empty MTU field. MTU now can be 
-    set only in interface configuration (preffered) or defined in defaultplugins.conf. If none of them
+    set only in interface configuration (preffered) or defined in vpp-plugin.conf. If none of them
     is set, MTU value will be empty.
     - interface state data are stored in statuscheck readiness probe
-- [l3plugin](plugins/defaultplugins/l3plugin)
+- [l3plugin](plugins/vpp/l3plugin)
     - removed strict configuration order for VPP ARP entries and routes. Both ARP entry or route can 
     be configured without interface already present.
-- [l4plugin](plugins/defaultplugins/l4plugin)
+- [l4plugin](plugins/vpp/l4plugin)
    - removed strict configuration order for application namespaces. Application namespace can 
     be configured without interface already present.
 
@@ -123,10 +180,10 @@ cn-infra v1.0.8
 - added API for ARP entries, L4 features, Application namespaces and STN rules.
 
 ### Logging
-- consolidated and improved logging in defaultplugins and linuxplugins.
+- consolidated and improved logging in vpp and linux plugins.
 
 ### Bugfix
-- fixed skip-resync parameter if defaultplugins.conf is not provided.
+- fixed skip-resync parameter if vpp-plugin.conf is not provided.
 - corrected af_packet type interface behavior if veth interface is created/removed.
 - several fixes related to the af_packet and veth interface type configuration.
 - microservice and veth-interface related events are synchronized.
@@ -138,35 +195,35 @@ cn-infra v1.0.8
 # Release v1.0.8 (2017-11-21)
 
 ## Compatibility
-VPP v18.01-rc0-309-g70bfcaf
-cn-infra v1.0.7
+- VPP v18.01-rc0-309-g70bfcaf
+- cn-infra v1.0.7
 
 ### New Features
-- [ifplugin](plugins/defaultplugins/ifplugin)
+- [ifplugin](plugins/vpp/ifplugin)
    - ability to configure STN rules.  See respective
-   [readme](plugins/defaultplugins/ifplugin/README.md) in interface plugin for more details.
+   [readme](plugins/vpp/ifplugin/README.md) in interface plugin for more details.
    - rx-mode settings can be set on interface. Ethernet-type interface can be set to POLLING mode, 
    other types of interfaces supports also INTERRUPT and ADAPTIVE. Fields to set QueueID/QueueIDValid
    are also available
-- [l4plugin](plugins/defaultplugins/l4plugin)
+- [l4plugin](plugins/vpp/l4plugin)
    - added new l4 plugin to the VPP plugins. It can be used to enable/disable L4 features 
    and configure application namespaces. See respective
-    [readme](plugins/defaultplugins/l4plugin/README.md) in L4 plugin for more details.
+    [readme](plugins/vpp/l4plugin/README.md) in L4 plugin for more details.
    - support for VPP plugins/l3plugin ARP configuration. The configurator can perform the
    basic CRUD operation with ARP config.
    
-### Defaultplugins
-- [ifplugin](plugins/defaultplugins/ifplugin)
+### VPP plugin
+- [ifplugin](plugins/vpp/ifplugin)
   - added possibility to add interface to any VRF table.
-- [resync](plugins/defaultplugins/data_resync.go)
+- [resync](plugins/vpp/data_resync.go)
   - resync error propagation improved. If any resynced configuration fails, rest of the resync
   completes and will not be interrupted. All errors which appears during resync are logged after. 
 - added defaultpligins API.
 - API contains new Method `DisableResync(keyPrefix ...string)`. One or more ETCD key prefixes 
   can be used as a parameter to disable resync for that specific key(s).
      
-### Linuxplugin
-- [l3plugin](plugins/linuxplugin/l3plugin)
+### Linux plugin
+- [l3plugin](plugins/linux/l3plugin)
   - route configuration do not return error if required interface is missing. Instead, the 
   route data are internally stored and configured when the interface appears.
      
@@ -182,32 +239,32 @@ cn-infra v1.0.7
 # Release v1.0.7 (2017-10-30)
 
 ## Compatibility
-VPP version v18.01-rc0~154-gfc1c612
-cn-infra v1.0.6
+- VPP version v18.01-rc0~154-gfc1c612
+- cn-infra v1.0.6
 
 ### Major Themes
 
-- [Default VPP plugin](plugins/defaultplugins)
-    - added resync strategies. Resync of VPP plugins (defaultplugins) can be set using 
+- [Default VPP plugin](plugins/vpp)
+    - added resync strategies. Resync of VPP plugins can be set using 
     defaultpluigns config file; Resync can be set to full (always resync everything) or
     dependent on VPP configuration (if there is none, skip resync). Resync can be also 
     forced to skip using parameter. See appropriate changelog in 
-    [Defaultplugins](plugins/defaultplugins) for details.
+    [VPP plugins](plugins/vpp) for details.
 
 ### New Features
 
-- [Linuxplugins L3Plugin](plugins/linuxplugin/l3plugin)
+- [Linuxplugins L3Plugin](plugins/linux/l3plugin)
     - added support for basic CRUD operations with static Address resolution protocol 
     entries and static Routes.
 
 # Release v1.0.6 (2017-10-17)
 
 ## Compatibility
-cn-infra v1.0.5
+- cn-infra v1.0.5
 
 ### Major Themes
 
-- [LinuxPlugin](plugins/linuxplugin)
+- [LinuxPlugin](plugins/linux)
    - Configuration of vEth interfaces modified. Veth configuration defines
    two names: symbolic used internally and the one used in host OS.
    `HostIfName` field is optional. If it is not defined, the name in the host OS
@@ -216,8 +273,8 @@ cn-infra v1.0.5
 # Release v1.0.5 (2017-09-26)
 
 ## Compatibility
-VPP version v17.10-rc0~334-gce41a5c
-cn-infra v1.0.4
+- VPP version v17.10-rc0~334-gce41a5c
+- cn-infra v1.0.4
 
 ### Major Themes
 
@@ -256,18 +313,17 @@ Enabled support for wathing data store `OfDifferentAgent()` - see:
 Preview of new Kafka client API methods that allows to fill also partition and offset argument. New methods implementation ignores these new parameters for now (fallbacking to existing implementation based on `github.com/bsm/sarama-cluster` and `github.com/Shopify/sarama`).
 
 ## Compatibility
-VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
-
+- VPP version v17.10-rc0~265-g809bc74 (upgraded because of VPP MEMIF fixes).
 
 # Release v1.0.2 (2017-08-28)
 
 ## Compatibility
-VPP version v17.10-rc0~203
+- VPP version v17.10-rc0~203
 
 ### Major Themes
 
 Algorithms for applying northbound configuration (stored in ETCD key value data store)
-to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/defaultplugins):
+to VPP in the proper order of VPP binary API calls implemented in [Default VPP plugin](plugins/vpp):
 - network interfaces, especially:
   - MEMIFs (optimized dataplane network interface tailored for a container to container network connectivity)
   - VETHs (standard Linux Virtual Ethernet network interface)
@@ -277,7 +333,7 @@ to VPP in the proper order of VPP binary API calls implemented in [Default VPP p
 - L3 IP Routes & VRFs
 - ACL (Access Control List)
 
-Support for Linux VETH northbound configuration implemented in [Linux Plugin](plugins/linuxplugin)
+Support for Linux VETH northbound configuration implemented in [Linux Plugin](plugins/linux)
 applied in proper order with VPP AF_Packet configuration.
 
 Data Synchronization during startup for network interfaces & L2 BD
@@ -300,8 +356,8 @@ Miscellaneous:
 ### Extensibility & integration
 Ability to extend the behavior of the VPP Agent by creating new plugins on top of [VPP Agent flavor](flavors/vpp).
 New plugins can access API for configured:
-[VPP Network interfaces](plugins/defaultplugins/ifplugin/ifaceidx),
-[Bridge domains](plugins/defaultplugins/l2plugin/bdidx) and [VETHs](plugins/linuxplugin/ifplugin/ifaceidx)
+[VPP Network interfaces](plugins/vpp/ifplugin/ifaceidx),
+[Bridge domains](plugins/vpp/l2plugin/l2idx) and [VETHs](plugins/linux/ifplugin/ifaceidx)
 based on [idxvpp](idxvpp) threadsafe map tailored for VPP data
 with advanced features (multiple watchers, secondary indexes).
 

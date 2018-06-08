@@ -13,7 +13,7 @@
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "3da2b73ec5ce77abf796ebeae6dfc149c8d3c698"
+  revision = "061e24913927c85cac21c79b206f409592a0f6a9"
 
 [[projects]]
   branch = "master"
@@ -326,7 +326,7 @@
     "datasync/syncbase",
     "db/keyval",
     "db/keyval/consul",
-    "db/keyval/etcdv3",
+    "db/keyval/etcd",
     "db/keyval/kvproto",
     "db/keyval/redis",
     "db/sql",
@@ -356,7 +356,7 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "cc8a67f81d21d526e69ec4007677afeb55be6c8c"
+  revision = "df5295a976cf70b7086ec7f0666a9bd235450959"
 
 [[projects]]
   branch = "master"
@@ -654,6 +654,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "65a53d59e3d34e581f3be29b4ccd04823f7d6996de944090481dd67807631df9"
+  inputs-digest = "6af7cbc45565abc7b9d130aa91bd3c0be4f286455039d4e301ee1c2234fa95e7"
   solver-name = "gps-cdcl"
   solver-version = 1

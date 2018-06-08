@@ -1,15 +1,17 @@
-VERSION	:= $(shell git describe --always --tags --dirty)
-COMMIT	:= $(shell git rev-parse HEAD)
+include vpp.env
+
+VERSION	?= $(shell git describe --always --tags --dirty)
+COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
 LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
 
-ifeq ($(STRIP), y)
+ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
-COVER_DIR ?= /tmp/
+COVER_DIR ?= /tmp
 
 # Build all
 build: cmd examples
@@ -67,101 +69,80 @@ clean-examples:
 
 # Run tests
 test:
-	@echo "=> running scenario tests"
-	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	@echo "=> running unit tests"
-	go test ./cmd/agentctl/utils
-	go test ./idxvpp/nametoidx
-	go test ./plugins/defaultplugins/aclplugin/vppdump
-	go test ./plugins/defaultplugins/ifplugin
-	go test ./plugins/defaultplugins/ifplugin/vppcalls
-	go test ./plugins/defaultplugins/ifplugin/vppdump
-	go test ./plugins/defaultplugins/l2plugin
-	go test ./plugins/defaultplugins/l2plugin/l2idx
-	go test ./plugins/defaultplugins/l2plugin/vppcalls
-	go test ./plugins/defaultplugins/l2plugin/vppdump
-	go test ./plugins/defaultplugins/rpc
-
-# Get coverage report tools
-get-covtools:
-	go get -v github.com/wadey/gocovmerge
+	go test -tags="${GO_BUILD_TAGS}" ./...
 
 # Run coverage report
-test-cover: get-covtools
-	@echo "=> running unit tests with coverage analysis"
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/defaultplugins/aclplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
-	@echo "=> merging coverage results"
-	gocovmerge \
-			${COVER_DIR}coverage_scenario.out \
-			${COVER_DIR}coverage_unit1.out \
-			${COVER_DIR}coverage_unit2.out \
-			${COVER_DIR}coverage_aclplugin_vppdump.out  \
-			${COVER_DIR}coverage_ifplugin.out \
-			${COVER_DIR}coverage_ifplugin_vppcalls.out \
-			${COVER_DIR}coverage_ifplugin_vppdump.out \
-			${COVER_DIR}coverage_l2plugin.out \
-			${COVER_DIR}coverage_l2plugin_l2idx.out \
-			${COVER_DIR}coverage_l2plugin_vppcalls.out \
-			${COVER_DIR}coverage_l2plugin_vppdump.out  \
-			${COVER_DIR}coverage_rpc.out  \
-		> ${COVER_DIR}coverage.out
-	@echo "=> coverage data generated into ${COVER_DIR}coverage.out"
+test-cover:
+	@echo "=> running unit tests with coverage"
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/coverage.out ./...
+	@echo "=> coverage data generated into ${COVER_DIR}/coverage.out"
 
 test-cover-html: test-cover
-	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.html"
+	go tool cover -html=${COVER_DIR}/coverage.out -o ${COVER_DIR}/coverage.html
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.html"
 
 test-cover-xml: test-cover
-	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.xml"
+	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
+
+# Code generation
+generate: generate-proto generate-binapi
 
 # Get generator tools
-get-generators:
+get-proto-generators:
 	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+
+# Generate proto models
+generate-proto: get-proto-generators
+	@echo "=> generating proto"
+	cd plugins/linux/ifplugin && go generate
+	cd plugins/linux/l3plugin && go generate
+	cd plugins/vpp/aclplugin && go generate
+	cd plugins/vpp/ifplugin && go generate
+	cd plugins/vpp/ipsecplugin && go generate
+	cd plugins/vpp/l2plugin && go generate
+	cd plugins/vpp/l3plugin && go generate
+	cd plugins/vpp/l4plugin && go generate
+	cd plugins/vpp/rpc && go generate
+	cd plugins/vpp/srplugin && go generate
+
+# Get generator tools
+get-binapi-generators:
 	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 	go install -v ./vendor/github.com/ungerik/pkgreflect
 
-# Generate sources
-generate: get-generators
-	@echo "=> generating sources"
-	cd plugins/linuxplugin && go generate
-	cd plugins/defaultplugins/aclplugin && go generate
-	cd plugins/defaultplugins/ifplugin && go generate
-	cd plugins/defaultplugins/ipsecplugin && go generate
-	cd plugins/defaultplugins/l2plugin && go generate
-	cd plugins/defaultplugins/l3plugin && go generate
-	cd plugins/defaultplugins/l4plugin && go generate
-	cd plugins/defaultplugins/rpc && go generate
-	cd plugins/linuxplugin/ifplugin && go generate
-	cd plugins/linuxplugin/l3plugin && go generate
-	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stn && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
+# Generate binary api
+generate-binapi: get-binapi-generators
+	@echo "=> generating binapi"
+	cd plugins/vpp/binapi && go generate
+	cd plugins/vpp/binapi/acl && pkgreflect
+	cd plugins/vpp/binapi/af_packet && pkgreflect
+	cd plugins/vpp/binapi/bfd && pkgreflect
+	cd plugins/vpp/binapi/dhcp && pkgreflect
+	cd plugins/vpp/binapi/interfaces && pkgreflect
+	cd plugins/vpp/binapi/ip && pkgreflect
+	cd plugins/vpp/binapi/ipsec && pkgreflect
+	cd plugins/vpp/binapi/l2 && pkgreflect
+	cd plugins/vpp/binapi/memif && pkgreflect
+	cd plugins/vpp/binapi/nat && pkgreflect
+	cd plugins/vpp/binapi/session && pkgreflect
+	cd plugins/vpp/binapi/sr && pkgreflect
+	cd plugins/vpp/binapi/stats && pkgreflect
+	cd plugins/vpp/binapi/stn && pkgreflect
+	cd plugins/vpp/binapi/tap && pkgreflect
+	cd plugins/vpp/binapi/tapv2 && pkgreflect
+	cd plugins/vpp/binapi/vpe && pkgreflect
+	cd plugins/vpp/binapi/vxlan && pkgreflect
+	@echo "=> applying fix patch"
+	patch -p1 -i plugins/vpp/binapi/fixapi.patch
+
+verify-binapi:
+	@echo "=> verifying binary api"
+	cd docker/dev && docker build --file Dockerfile --target verify \
+			--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
+			--build-arg VPP_COMMIT=${VPP_COMMIT} \
+	 	../..
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
@@ -177,12 +158,16 @@ get-dep:
 # Install the project's dependencies
 dep-install: get-dep
 	@echo "=> installing project's dependencies"
-	dep ensure
+	dep ensure -v
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
 	@echo "=> updating all dependencies"
 	dep ensure -update
+
+# Check state of dependencies
+dep-check: get-dep
+	dep ensure -dry-run -no-vendor
 
 # Get linter tools
 get-linters:
@@ -211,8 +196,8 @@ check-links: get-linkcheck
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
-	get-covtools test-cover test-cover-html test-cover-xml \
-	get-generators generate \
-	get-dep dep-install dep-update \
+	test-cover test-cover-html test-cover-xml \
+	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
+	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links

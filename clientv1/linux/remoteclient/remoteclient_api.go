@@ -25,13 +25,13 @@ import (
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys
 // prior to RESYNC - it is handled by DataResyncDSL.
-func DataResyncRequestDB(broker keyval.ProtoBroker) linux.DataResyncDSL {
+func DataResyncRequestDB(broker keyval.ProtoBroker) linuxclient.DataResyncDSL {
 	return dbadapter.NewDataResyncDSL(broker.NewTxn(), broker.ListKeys)
 }
 
 // DataChangeRequestDB allows creating Data Change requests, using convenient
 // Data Change DSL and sending it through the provided <broker>.
 // User of the API does not need to be aware of keys.
-func DataChangeRequestDB(broker keyval.ProtoBroker) linux.DataChangeDSL {
+func DataChangeRequestDB(broker keyval.ProtoBroker) linuxclient.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(broker.NewTxn())
 }

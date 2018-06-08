@@ -72,7 +72,7 @@ Current examples:
  Example can be started now from particular directory.
  ```
  go run main.go  \
- --etcdv3-config=/opt/vpp-agent/dev/etcd.conf \
+ --etcd-config=/opt/vpp-agent/dev/etcd.conf \
  --kafka-config=/opt/vpp-agent/dev/kafka.conf
  ```
 [1]: https://github.com/ligato/cn-infra/tree/master/examples 

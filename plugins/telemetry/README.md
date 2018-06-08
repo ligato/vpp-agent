@@ -1,8 +1,10 @@
 # Telemetry Plugin
 
 The `telemetry` plugin is a core Agent Plugin for exporting telemetry
-statistics for Prometheus. Statistics are published via registry path
-`/metrics` and updates every 5 seconds.
+statistics from VPP for Prometheus.
+
+Statistics are published via registry path `/vpp` on port `9191` and
+updated every 5 seconds.
 
 ### Exported data
 
@@ -48,6 +50,37 @@ statistics for Prometheus. Statistics are published via registry path
     wildcard-ip4-arp-publisher-pro event wait                0               0               1          5.49e4            0.00
 
     ```
+
+    Example:
+
+    ```sh
+    # HELP vpp_runtime_calls Number of calls
+    # TYPE vpp_runtime_calls gauge
+    ...
+    vpp_runtime_calls{agent="agent1",item="unix-epoll-input",thread="",threadID="0"} 7.65806939e+08
+    ...
+    # HELP vpp_runtime_clocks Number of clocks
+    # TYPE vpp_runtime_clocks gauge
+    ...
+    vpp_runtime_clocks{agent="agent1",item="unix-epoll-input",thread="",threadID="0"} 1150
+    ...
+    # HELP vpp_runtime_suspends Number of suspends
+    # TYPE vpp_runtime_suspends gauge
+    ...
+    vpp_runtime_suspends{agent="agent1",item="unix-epoll-input",thread="",threadID="0"} 0
+    ...
+    # HELP vpp_runtime_vectors Number of vectors
+    # TYPE vpp_runtime_vectors gauge
+    ...
+    vpp_runtime_vectors{agent="agent1",item="unix-epoll-input",thread="",threadID="0"} 0
+    ...
+    # HELP vpp_runtime_vectors_per_call Number of vectors per call
+    # TYPE vpp_runtime_vectors_per_call gauge
+    ...
+    vpp_runtime_vectors_per_call{agent="agent1",item="unix-epoll-input",thread="",threadID="0"} 0
+    ...
+    ```
+
 - VPP buffers (`show buffers`)
 
     ```
@@ -62,9 +95,94 @@ statistics for Prometheus. Statistics are published via registry path
           0           replication-recycle           7        1024      0           0           0           0
           0                       default           8        2048      0           0           0           0
     ```
+
+    Example:
+
+    ```sh
+    # HELP vpp_buffers_alloc Allocated
+    # TYPE vpp_buffers_alloc gauge
+    vpp_buffers_alloc{agent="agent1",index="0",item="default",threadID="0"} 0
+    vpp_buffers_alloc{agent="agent1",index="1",item="lacp-ethernet",threadID="0"} 0
+    ...
+    # HELP vpp_buffers_free Free
+    # TYPE vpp_buffers_free gauge
+    vpp_buffers_free{agent="agent1",index="0",item="default",threadID="0"} 0
+    vpp_buffers_free{agent="agent1",index="1",item="lacp-ethernet",threadID="0"} 0
+    ...
+    # HELP vpp_buffers_num_alloc Number of allocated
+    # TYPE vpp_buffers_num_alloc gauge
+    vpp_buffers_num_alloc{agent="agent1",index="0",item="default",threadID="0"} 0
+    vpp_buffers_num_alloc{agent="agent1",index="1",item="lacp-ethernet",threadID="0"} 0
+    ...
+    # HELP vpp_buffers_num_free Number of free
+    # TYPE vpp_buffers_num_free gauge
+    vpp_buffers_num_free{agent="agent1",index="0",item="default",threadID="0"} 0
+    vpp_buffers_num_free{agent="agent1",index="1",item="lacp-ethernet",threadID="0"} 0
+    ...
+    # HELP vpp_buffers_size Size of buffer
+    # TYPE vpp_buffers_size gauge
+    vpp_buffers_size{agent="agent1",index="0",item="default",threadID="0"} 2048
+    vpp_buffers_size{agent="agent1",index="1",item="lacp-ethernet",threadID="0"} 256
+    ...
+    ...
+    ```
+
 - VPP memory (`show memory`)
 
     ```
     Thread 0 vpp_main
     20071 objects, 14276k of 14771k used, 21k free, 12k reclaimed, 315k overhead, 1048572k capacity
+    ```
+
+    Example:
+
+    ```sh
+    # HELP vpp_memory_capacity Capacity
+    # TYPE vpp_memory_capacity gauge
+    vpp_memory_capacity{agent="agent1",thread="vpp_main",threadID="0"} 1.048572e+09
+    # HELP vpp_memory_free Free memory
+    # TYPE vpp_memory_free gauge
+    vpp_memory_free{agent="agent1",thread="vpp_main",threadID="0"} 4000
+    # HELP vpp_memory_objects Number of objects
+    # TYPE vpp_memory_objects gauge
+    vpp_memory_objects{agent="agent1",thread="vpp_main",threadID="0"} 20331
+    # HELP vpp_memory_overhead Overhead
+    # TYPE vpp_memory_overhead gauge
+    vpp_memory_overhead{agent="agent1",thread="vpp_main",threadID="0"} 319000
+    # HELP vpp_memory_reclaimed Reclaimed memory
+    # TYPE vpp_memory_reclaimed gauge
+    vpp_memory_reclaimed{agent="agent1",thread="vpp_main",threadID="0"} 0
+    # HELP vpp_memory_total Total memory
+    # TYPE vpp_memory_total gauge
+    vpp_memory_total{agent="agent1",thread="vpp_main",threadID="0"} 1.471e+07
+    # HELP vpp_memory_used Used memory
+    # TYPE vpp_memory_used gauge
+    vpp_memory_used{agent="agent1",thread="vpp_main",threadID="0"} 1.4227e+07
+    ```
+
+- VPP node counters (`show node counters`)
+
+    ```
+       Count                    Node                  Reason
+        120406            ipsec-output-ip4            IPSec policy protect
+        120406               esp-encrypt              ESP pkts received
+        123692             ipsec-input-ip4            IPSEC pkts received
+          3286             ip4-icmp-input             unknown type
+        120406             ip4-icmp-input             echo replies sent
+            14             ethernet-input             l3 mac mismatch
+           102                arp-input               ARP replies sent
+    ```
+
+    Example:
+
+    ```sh
+    # HELP vpp_node_counter_count Count
+    # TYPE vpp_node_counter_count gauge
+    vpp_node_counter_count{agent="agent1",item="arp-input",reason="ARP replies sent"} 103
+    vpp_node_counter_count{agent="agent1",item="esp-encrypt",reason="ESP pkts received"} 124669
+    vpp_node_counter_count{agent="agent1",item="ethernet-input",reason="l3 mac mismatch"} 14
+    vpp_node_counter_count{agent="agent1",item="ip4-icmp-input",reason="echo replies sent"} 124669
+    vpp_node_counter_count{agent="agent1",item="ip4-icmp-input",reason="unknown type"} 3358
+    vpp_node_counter_count{agent="agent1",item="ipsec-input-ip4",reason="IPSEC pkts received"} 128027
+    vpp_node_counter_count{agent="agent1",item="ipsec-output-ip4",reason="IPSec policy protect"} 124669
     ```

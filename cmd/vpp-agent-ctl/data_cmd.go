@@ -23,20 +23,20 @@ import (
 	"os"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/namsral/flag"
 )
 
@@ -45,7 +45,7 @@ type VppAgentCtl struct {
 	Log             logging.Logger
 	Commands        []string
 	serviceLabel    servicelabel.Plugin
-	bytesConnection *etcdv3.BytesConnectionEtcd
+	bytesConnection *etcd.BytesConnectionEtcd
 	broker          keyval.ProtoBroker
 }
 

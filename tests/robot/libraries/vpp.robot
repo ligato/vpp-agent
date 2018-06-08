@@ -47,6 +47,8 @@ Execute In VPP
     ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
     Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
     Append To File           ${RESULTS_FOLDER}/output_${container}_term.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
+    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}_term.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
     Run Keyword If           ${status}==False      Append To File           ${RESULTS_FOLDER}/output_${container}_term.log      *** Error: ${stderr}${\n}
+    Run Keyword If           ${status}==False      Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}_term.log      *** Error: ${stderr}${\n}
     [Return]                 ${out}
 

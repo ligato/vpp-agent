@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // VersionInfo contains values returned from ShowVersion
@@ -34,7 +34,7 @@ type VersionInfo struct {
 }
 
 // GetVersionInfo retrieves version info
-func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
+func GetVersionInfo(vppChan VPPChannel) (*VersionInfo, error) {
 	req := &vpe.ShowVersion{}
 	reply := &vpe.ShowVersionReply{}
 
@@ -55,7 +55,7 @@ func GetVersionInfo(vppChan *govppapi.Channel) (*VersionInfo, error) {
 }
 
 // RunCliCommand executes CLI command and returns output
-func RunCliCommand(vppChan *govppapi.Channel, cmd string) ([]byte, error) {
+func RunCliCommand(vppChan VPPChannel, cmd string) ([]byte, error) {
 	req := &vpe.CliInband{
 		Cmd:    []byte(cmd),
 		Length: uint32(len(cmd)),
@@ -89,10 +89,13 @@ type MemoryThread struct {
 	Capacity  uint64 `json:"capacity"`
 }
 
-var memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, (\d+k?) of (\d+k?) used, (\d+k?) free, (\d+k?) reclaimed, (\d+k?) overhead, (\d+k?) capacity`)
+var (
+	// Regular expression to parse output from `show memory`
+	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkm\.]+) of ([\dkm\.]+) used, ([\dkm\.]+) free, ([\dkm\.]+) reclaimed, ([\dkm\.]+) overhead, ([\dkm\.]+) capacity`)
+)
 
 // GetNodeCounters retrieves node counters info
-func GetMemory(vppChan *govppapi.Channel) (*MemoryInfo, error) {
+func GetMemory(vppChan VPPChannel) (*MemoryInfo, error) {
 	data, err := RunCliCommand(vppChan, "show memory")
 	if err != nil {
 		return nil, err
@@ -143,8 +146,13 @@ type NodeCounter struct {
 	Reason string `json:"reason"`
 }
 
+var (
+	// Regular expression to parse output from `show node counters`
+	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+([\w- ]+)$`)
+)
+
 // GetNodeCounters retrieves node counters info
-func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
+func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
 	if err != nil {
 		return nil, err
@@ -152,21 +160,33 @@ func GetNodeCounters(vppChan *govppapi.Channel) (*NodeCounterInfo, error) {
 
 	var counters []NodeCounter
 
-	for _, line := range strings.Split(string(data), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 3 {
-			if fields[0] == "Count" {
-				counters = []NodeCounter{}
-				continue
-			}
-			if counters != nil {
-				counters = append(counters, NodeCounter{
-					Count:  strToUint64(fields[0]),
-					Node:   fields[1],
-					Reason: fields[2],
-				})
-			}
+	for i, line := range strings.Split(string(data), "\n") {
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
+		// Check first line
+		if i == 0 {
+			fields := strings.Fields(line)
+			// Verify header
+			if len(fields) != 3 || fields[0] != "Count" {
+				return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
+			}
+			continue
+		}
+
+		// Parse lines using regexp
+		matches := nodeCountersRe.FindStringSubmatch(line)
+		if len(matches)-1 != 3 {
+			return nil, fmt.Errorf("parsing failed for `show node counters` line: %q", line)
+		}
+		fields := matches[1:]
+
+		counters = append(counters, NodeCounter{
+			Count:  strToUint64(fields[0]),
+			Node:   fields[1],
+			Reason: fields[2],
+		})
 	}
 
 	info := &NodeCounterInfo{
@@ -183,18 +203,18 @@ type RuntimeInfo struct {
 
 // RuntimeThread represents single runtime thread
 type RuntimeThread struct {
-	ID                uint          `json:"id"`
-	Name              string        `json:"name"`
-	Time              float64       `json:"time"`
-	AvgVectorsPerNode float64       `json:"avg_vectors_per_node"`
-	LastMainLoops     uint64        `json:"last_main_loops"`
-	PerNode           float64       `json:"per_node"`
-	VectorRates       float64       `json:"vector_rates"`
-	In                float64       `json:"in"`
-	Out               float64       `json:"out"`
-	Drop              float64       `json:"drop"`
-	Punt              float64       `json:"punt"`
-	Items             []RuntimeItem `json:"items"`
+	ID                  uint          `json:"id"`
+	Name                string        `json:"name"`
+	Time                float64       `json:"time"`
+	AvgVectorsPerNode   float64       `json:"avg_vectors_per_node"`
+	LastMainLoops       uint64        `json:"last_main_loops"`
+	VectorsPerMainLoop  float64       `json:"vectors_per_main_loop"`
+	VectorLengthPerNode float64       `json:"vector_length_per_node"`
+	VectorRatesIn       float64       `json:"vector_rates_in"`
+	VectorRatesOut      float64       `json:"vector_rates_out"`
+	VectorRatesDrop     float64       `json:"vector_rates_drop"`
+	VectorRatesPunt     float64       `json:"vector_rates_punt"`
+	Items               []RuntimeItem `json:"items"`
 }
 
 // RuntimeItem represents single runtime item
@@ -209,6 +229,7 @@ type RuntimeItem struct {
 }
 
 var (
+	// Regular expression to parse output from `show runtime`
 	runtimeRe = regexp.MustCompile(`(?:-+\n)?(?:Thread (\d+) (\w+)(?: \(lcore \d+\))?\n)?` +
 		`Time ([0-9\.e]+), average vectors/node ([0-9\.e]+), last (\d+) main loops ([0-9\.e]+) per node ([0-9\.e]+)\s+` +
 		`vector rates in ([0-9\.e]+), out ([0-9\.e]+), drop ([0-9\.e]+), punt ([0-9\.e]+)\n` +
@@ -218,7 +239,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info
-func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
+func GetRuntimeInfo(vppChan VPPChannel) (*RuntimeInfo, error) {
 	data, err := RunCliCommand(vppChan, "show runtime")
 	if err != nil {
 		return nil, err
@@ -233,17 +254,17 @@ func GetRuntimeInfo(vppChan *govppapi.Channel) (*RuntimeInfo, error) {
 			return nil, fmt.Errorf("invalid runtime data for thread: %q", matches[0])
 		}
 		thread := RuntimeThread{
-			ID:                uint(strToUint64(fields[0])),
-			Name:              fields[1],
-			Time:              strToFloat64(fields[2]),
-			AvgVectorsPerNode: strToFloat64(fields[3]),
-			LastMainLoops:     strToUint64(fields[4]),
-			PerNode:           strToFloat64(fields[5]),
-			VectorRates:       strToFloat64(fields[6]),
-			In:                strToFloat64(fields[7]),
-			Out:               strToFloat64(fields[8]),
-			Drop:              strToFloat64(fields[9]),
-			Punt:              strToFloat64(fields[10]),
+			ID:                  uint(strToUint64(fields[0])),
+			Name:                fields[1],
+			Time:                strToFloat64(fields[2]),
+			AvgVectorsPerNode:   strToFloat64(fields[3]),
+			LastMainLoops:       strToUint64(fields[4]),
+			VectorsPerMainLoop:  strToFloat64(fields[5]),
+			VectorLengthPerNode: strToFloat64(fields[6]),
+			VectorRatesIn:       strToFloat64(fields[7]),
+			VectorRatesOut:      strToFloat64(fields[8]),
+			VectorRatesDrop:     strToFloat64(fields[9]),
+			VectorRatesPunt:     strToFloat64(fields[10]),
 		}
 
 		itemMatches := runtimeItemsRe.FindAllStringSubmatch(string(fields[11]), -1)
@@ -290,10 +311,13 @@ type BuffersItem struct {
 	NumFree  uint64 `json:"num_free"`
 }
 
-var buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*$`)
+var (
+	// Regular expression to parse output from `show buffers`
+	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dkm\.]+)\s+([\dkm\.]+)\s+(\d+)\s+(\d+).*$`)
+)
 
 // GetBuffersInfo retrieves buffers info
-func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
+func GetBuffersInfo(vppChan VPPChannel) (*BuffersInfo, error) {
 	data, err := RunCliCommand(vppChan, "show buffers")
 	if err != nil {
 		return nil, err
@@ -343,6 +367,10 @@ func GetBuffersInfo(vppChan *govppapi.Channel) (*BuffersInfo, error) {
 }
 
 func strToFloat64(s string) float64 {
+	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
+	s = strings.Replace(s, "k", "e3", 1)
+	s = strings.Replace(s, "m", "e6", 1)
+
 	num, err := strconv.ParseFloat(s, 10)
 	if err != nil {
 		return 0
@@ -351,14 +379,14 @@ func strToFloat64(s string) float64 {
 }
 
 func strToUint64(s string) uint64 {
-	s = strings.Replace(s, "k", "000", 1)
-	num, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return 0
-	}
-	return num
+	return uint64(strToFloat64(s))
 }
 
 func cleanBytes(b []byte) []byte {
 	return bytes.SplitN(b, []byte{0x00}, 2)[0]
+}
+
+// VPPChannel is interface for send request to VPP channel
+type VPPChannel interface {
+	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 }

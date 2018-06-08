@@ -32,11 +32,11 @@ var RootCmd = &cobra.Command{
 	Short: "A CLI tool for the vnf-agent",
 	Long: `
 A CLI tool to show the state of and to configure agents connected to
-Etcd. Use the 'ETCDV3_ENDPOINTS'' environment variable or the 'endpoints'
+Etcd. Use the 'ETCD_ENDPOINTS'' environment variable or the 'endpoints'
 flag in the command line to specify one or more Etcd instances to
 connect to.`,
 	Example: `Specify the etcd to connect to and list all agents that it knows about:
-  $ export ETCDV3_ENDPOINTS=172.17.0.1:2379
+  $ export ETCD_ENDPOINTS=172.17.0.1:2379
   $ ./agentctl list
 
 Do as above, but with a command line flag:

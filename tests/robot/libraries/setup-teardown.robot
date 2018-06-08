@@ -62,8 +62,11 @@ Test Teardown
     Close All Connections
 
 Discard old results
-    [Documentation]    Remove and re-create ${RESULTS_FOLDER}.
-    Remove Directory    ${RESULTS_FOLDER}                 recursive=True
+    [Documentation]    Remove and re-create ${RESULTS_FOLDER} and ${RESULTS_FOLDER}/SUTIE_NAME specific folder.
+    Remove File         ${RESULTS_FOLDER}/*.txt
+    Remove File         ${RESULTS_FOLDER}/*.log
+    #Create Directory    ${RESULTS_FOLDER}
+    Remove Directory    ${RESULTS_FOLDER_SUITE}           recursive=true
     Create Directory    ${RESULTS_FOLDER}
 
 Log All SSH Outputs
@@ -84,6 +87,7 @@ Log ${machine} Output
     ${out}=                 Read                   delay=${SSH_READ_DELAY}s
     Log                     ${out}
     Append To File          ${RESULTS_FOLDER}/output_${machine}.log                ${out}
+    Append To File          ${RESULTS_FOLDER_SUITE}/output_${machine}.log                ${out}
 
 Get Machine Status
     [Arguments]              ${machine}
@@ -123,6 +127,7 @@ Take ETCD Snapshots
     Log                 ${tag}
     ${dump}=            Get ETCD Dump    ${machine}
     Append To File      ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${dump}
+    Append To File      ${RESULTS_FOLDER_SUITE}/etcd_dump-${tag}.txt    ${dump}
     ${errors}=          Get Lines Containing String    ${dump}    /error/
     ${status}=          Run Keyword And Return Status    Should Be Empty    ${errors}
     Run Keyword If      ${status}==False         Log     Errors detected in keys: ${errors}    level=WARN

@@ -37,7 +37,7 @@ var (
 )
 
 func InMemory(reloaded bool) (idxvpp.NameToIdxRW, error) {
-	return NewNameToIdx(logrus.DefaultLogger(), "plugin1", "test", nil), nil
+	return NewNameToIdx(logrus.DefaultLogger(), "test", nil), nil
 }
 
 func Test01UnregisteredMapsToNothing(t *testing.T) {
@@ -104,7 +104,7 @@ func createIdx(meta interface{}) map[string][]string {
 
 func TestIndexedMetadata(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewNameToIdx(logrus.DefaultLogger(), "plugin", "title", createIdx)
+	idxm := NewNameToIdx(logrus.DefaultLogger(), "title", createIdx)
 
 	res := idxm.LookupNameByMetadata(flagMetaKey, "true")
 	gomega.Expect(res).To(gomega.BeNil())
@@ -153,7 +153,7 @@ func TestIndexedMetadata(t *testing.T) {
 
 func TestOldIndexRemove(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewNameToIdx(logrus.DefaultLogger(), "plugin", "title", nil)
+	idxm := NewNameToIdx(logrus.DefaultLogger(), "title", nil)
 
 	idxm.RegisterName(string(eth0), idx1, nil)
 

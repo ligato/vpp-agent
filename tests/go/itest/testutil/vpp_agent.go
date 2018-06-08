@@ -8,9 +8,9 @@ import (
 	localsync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
@@ -86,7 +86,7 @@ type VppOnlyTestingFlavor struct {
 	IfStatePub *MockIfStatePub
 
 	GoVPP govppmux.GOVPPPlugin
-	VPP   defaultplugins.Plugin
+	VPP   vpp.Plugin
 
 	injected bool
 }
@@ -138,7 +138,7 @@ func (f *VppOnlyTestingFlavor) Inject() bool {
 	f.FlavorLocal.Inject()
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp")
-	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("default-plugins")
+	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("vpp-plugin")
 	//nil: f.VPP.Deps.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP
 	f.VPP.Deps.Watch = localsync.Get()

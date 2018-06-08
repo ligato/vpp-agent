@@ -50,6 +50,7 @@ Switch_Execute_And_Log_To_File
     BuiltIn.Run_Keyword_If    ${compress}    Execute_Command_And_Log    xz -9e ${filename}
     ${filename} =    Builtin.Set_Variable_If    ${compress}    ${filename}.xz    ${filename}
     SSHLibrary.Get_File    ${filename}    ${RESULTS_FOLDER}/${filename}
+    SSHLibrary.Get_File    ${filename}    ${RESULTS_FOLDER_SUITE}/${filename}
     [Teardown]    Execute_Command_And_Log    rm ${filename}
 
 Switch_And_Execute_Command
@@ -100,3 +101,4 @@ Append_Command_Log
     ${if_stderr} =    BuiltIn.Set_Variable_If    ${stderr_length}    *** Stderr: ${stderr}${\n}    ${EMPTY}
     ${if_rc} =    BuiltIn.Set_Variable_If    """${rc}"""    *** Return code: ${rc}${\n}    ${EMPTY}
     OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}${if_stderr}${if_rc}${if_output}
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER_SUITE}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}${if_stderr}${if_rc}${if_output}

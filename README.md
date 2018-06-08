@@ -62,7 +62,7 @@ The set of plugins in the VPP Agent is as follows:
 * [CN-Infra datasync][12] - data synchronization after HA events
 * [CN-Infra core][13] - lifecycle management of plugins (loading, 
   initialization, unloading)
-* [RESTAPI](plugins/restplugin) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
+* [RESTAPI](plugins/rest) - allows to run VPP CLI commands and also provides API to expose existing Northbound objects
 
 ## Tools
 
@@ -107,7 +107,7 @@ docker exec -it vpp vppctl -s localhost:5002
 GoDoc can be browsed [online](https://godoc.org/github.com/ligato/vpp-agent).
 
 ## Next Steps
-Read the README for the [Development Docker Image](docker/dev_vpp_agent/README.md) for more details.
+Read the README for the [Development Docker Image](docker/dev/README.md) for more details.
 
 #### Deployment:
 [![K8s integration](docs/imgs/k8s_deployment_thumb.png "VPP Agent - K8s integration")](docs/Deployment.md)
@@ -122,15 +122,15 @@ If you are interested in contributing, please see the [contribution guidelines](
 [2]: https://github.com/ligato/cn-infra/blob/master/docs/readmes/cn_virtual_function.md
 [3]: https://developers.google.com/protocol-buffers/
 [4]: https://wiki.fd.io/view/GoVPP
-[5]: plugins/defaultplugins
-[6]: plugins/defaultplugins/ifplugin
-[7]: plugins/defaultplugins/l2plugin
-[8]: plugins/defaultplugins/l3plugin
-[9]: plugins/defaultplugins/aclplugin
+[5]: plugins/vpp
+[6]: plugins/vpp/ifplugin
+[7]: plugins/vpp/l2plugin
+[8]: plugins/vpp/l3plugin
+[9]: plugins/vpp/aclplugin
 [10]: plugins/govppmux
-[11]: plugins/linuxplugin
+[11]: plugins/linux
 [12]: https://github.com/ligato/cn-infra/tree/master/datasync
 [13]: https://github.com/ligato/cn-infra/tree/master/core
 [14]: https://hub.docker.com/r/ligato/vpp-agent/
-[15]: docker/dev_vpp_agent/README.md#running-etcd-server-on-local-host
+[15]: docker/dev/README.md#running-etcd-server-on-local-host
 [16]: https://github.com/ligato/cn-infra

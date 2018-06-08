@@ -470,3 +470,156 @@ vpp_term: Dump Trace
     Log Many           ${node}
     ${out}=            vpp_term: Issue Command  ${node}    api trace save apitrace.trc
     [Return]           ${out}
+
+
+vpp_term: Check Local SID Presence
+    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    [Documentation]    Checking if specified local sid exists or will show up
+    Log Many           ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID exists    node=${node}     sidAddress=${sidAddress}    interface=${interface}    nexthop=${nexthop}
+
+vpp_term: Local SID exists
+    [Arguments]        ${node}     ${sidAddress}    ${interface}    ${nexthop}
+    [Documentation]    Checking if specified local sid exists
+    ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
+    Create File        /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    Log                ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_match.txt
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Log                ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show Local SIDs
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr localsids
+    [Return]           ${out}
+
+vpp_term: Check Local SID Deleted
+    [Arguments]        ${node}     ${sidAddress}
+    [Documentation]    Checking if specified local sid will be(or already is) deleted
+    Log Many           ${node}     ${sidAddress}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: Local SID doesnt exist    node=${node}     sidAddress=${sidAddress}
+
+vpp_term: Local SID doesnt exist
+    [Arguments]           ${node}     ${sidAddress}
+    [Documentation]       Checking if specified local sid doesnt exist
+    ${localsidsStr}=      vpp_term: Show Local SIDs    agent_vpp_1
+    Create File           /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
+    ${localsidsStr}=      Convert To Lowercase    ${localsidsStr}
+    Log                   ${localsidsStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_no_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Check SRv6 Policy Presence
+    [Arguments]        ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    [Documentation]    Checking if specified SRv6 policy exists or will show up
+    Log Many           ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Policy exists    node=${node}    bsid=${bsid}    fibtable=${fibtable}    behaviour=${behaviour}    type=${type}    index=${index}    segmentlists=${segmentlists}
+
+vpp_term: SRv6 Policy exists
+    [Arguments]        ${node}    ${bsid}    ${fibtable}    ${behaviour}    ${type}    ${index}    ${segmentlists}
+    [Documentation]    Checking if specified SRv6 policy exists
+    ${policyStr}=      vpp_term: Show SRv6 policies    ${node}
+    Create File        /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${policyStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
+    ${policyStr}=      Convert To Lowercase    ${policyStr}
+    Log                ${policyStr}
+    ${policymatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_match.txt
+    ${policymatchdata}=     Replace Variables           ${policymatchdata}
+    ${policymatchdata}=     Convert To Lowercase    ${policymatchdata}
+    ${segmentlistsmatchdata}=    Set Variable    ${EMPTY}
+    :FOR    ${segmentlist}    IN    @{segmentlists}
+    \    ${segmentlistmatchdata}=    OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policy_segments_output_match.txt
+    \    ${segmentlistmatchdata}=    Replace Variables           ${segmentlistmatchdata}
+    \    ${segmentlistmatchdata}=    Convert To Lowercase    ${segmentlistmatchdata}
+    \    ${segmentlistsmatchdata}=    Catenate    SEPARATOR=  ${segmentlistsmatchdata}   ${segmentlistmatchdata}
+    ${matchdata}=    Catenate    SEPARATOR=  ${policymatchdata}   ${segmentlistsmatchdata}
+    Log                ${matchdata}
+    Should Contain    ${policyStr}    ${matchdata}
+
+vpp_term: Show SRv6 policies
+    [Arguments]        ${node}
+    [Documentation]    Show SRv6 policies through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr policies
+    [Return]           ${out}
+
+vpp_term: Check SRv6 Policy Nonexistence
+    [Arguments]        ${node}    ${bsid}
+    [Documentation]    Checking if specified SRv6 policy doesn't exist (or will be deleted soon)
+    Log Many           ${node}    ${bsid}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Policy doesnt exist    node=${node}     bsid=${bsid}
+
+vpp_term: SRv6 Policy doesnt exist
+    [Arguments]           ${node}     ${bsid}
+    [Documentation]       Checking if specified SRv6 policy doesnt exist
+    ${policyStr}=         vpp_term: Show SRv6 policies    ${node}
+    Create File           /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${policyStr}=         OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
+    ${policyStr}=         Convert To Lowercase    ${policyStr}
+    Log                   ${policyStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_no_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${policyStr}    ${matchdata}
+
+vpp_term: Check SRv6 Steering Presence
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering exists or will show up
+    Log Many           ${node}    ${bsid}    ${prefixAddress}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Steering exists    node=${node}    bsid=${bsid}     prefixAddress=${prefixAddress}
+
+vpp_term: SRv6 Steering exists
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering exists
+    ${steeringStr}=    vpp_term: Show SRv6 steering policies    ${node}
+    Create File        /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${steeringStr}=    OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
+    ${steeringStr}=    Convert To Lowercase    ${steeringStr}
+    Log                ${steeringStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Log                ${matchdata}
+    Should Contain    ${steeringStr}    ${matchdata}
+
+vpp_term: Show SRv6 steering policies
+    [Arguments]        ${node}
+    [Documentation]    Show SRv6 steering policies through vpp terminal
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}   sh sr steering policies
+    [Return]           ${out}
+
+vpp_term: Check SRv6 Steering NonExistence
+    [Arguments]        ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]    Checking if specified steering is deleted (or soon will be deleted)
+    Log Many           ${node}    ${bsid}    ${prefixAddress}
+    #${terminal_timeout}
+    Wait Until Keyword Succeeds    5x    2s    vpp_term: SRv6 Steering doesnt exist    node=${node}    bsid=${bsid}     prefixAddress=${prefixAddress}
+
+vpp_term: SRv6 Steering doesnt exist
+    [Arguments]           ${node}    ${bsid}    ${prefixAddress}
+    [Documentation]       Checking if specified steering doesnt exist
+    ${steeringStr}=       vpp_term: Show SRv6 steering policies    ${node}
+    Create File           /tmp/srv6_sh_sr_steerings_output.txt    ${steeringStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${steeringStr}=       OperatingSystem.Get File    /tmp/srv6_sh_sr_steerings_output.txt
+    ${steeringStr}=       Convert To Lowercase    ${steeringStr}
+    Log                   ${steeringStr}
+    ${matchdata}=         OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_steering_output_match.txt
+    ${matchdata}=         Replace Variables           ${matchdata}
+    ${matchdata}=         Convert To Lowercase    ${matchdata}
+    Log                   ${matchdata}
+    Should Not Contain    ${steeringStr}    ${matchdata}

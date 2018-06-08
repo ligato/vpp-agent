@@ -17,10 +17,10 @@ package main
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
@@ -30,12 +30,12 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor.
-	vppFlavor := vpp.Flavor{}
+	flavor := vppFlavor.Flavor{}
 	exampleFlavor := ExampleFlavor{
 		IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:               &vppFlavor, // inject VPP flavor
+		Flavor:               &flavor, // inject VPP flavor
 	}
-	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
 
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -45,7 +45,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	VPP defaultplugins.API
+	VPP vpp.API
 
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
@@ -75,9 +75,9 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// Cache other agent's interface index mapping using injected plugin and local plugin name.
 	// /vnf-agent/agent1/vpp/config/v1/interface/
-	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1, plugin.PluginName)
+	plugin.swIfIdxAgent1 = ifaceidx.Cache(plugin.Agent1)
 	// /vnf-agent/agent2/vpp/config/v1/interface/
-	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.swIfIdxAgent2 = ifaceidx.Cache(plugin.Agent2)
 
 	return nil
 }

@@ -24,7 +24,7 @@ import (
 	"bytes"
 
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/logrusorgru/aurora.git"
 )
 

@@ -21,12 +21,12 @@ import (
 	"fmt"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // Common exit flags
@@ -163,48 +163,48 @@ func rebuildName(params []string) string {
 }
 
 // GetDbForAllAgents opens a connection to etcd, specified in the command line
-// or the "ETCDV3_ENDPOINTS" environment variable.
+// or the "ETCD_ENDPOINTS" environment variable.
 func GetDbForAllAgents(endpoints []string) (keyval.ProtoBroker, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
-		os.Setenv("ETCDV3_ENDPOINTS", ep)
+		os.Setenv("ETCD_ENDPOINTS", ep)
 	}
 
-	cfg := &etcdv3.Config{}
-	etcdConfig, err := etcdv3.ConfigToClient(cfg)
+	cfg := &etcd.Config{}
+	etcdConfig, err := etcd.ConfigToClient(cfg)
 
 	// Log warnings and errors only.
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.WarnLevel)
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
+	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err
 	}
 
-	return kvproto.NewProtoWrapperWithSerializer(etcdv3Broker, &keyval.SerializerJSON{}), nil
+	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}), nil
 
 }
 
 // GetDbForOneAgent opens a connection to etcd, specified in the command line
-// or the "ETCDV3_ENDPOINTS" environment variable.
+// or the "ETCD_ENDPOINTS" environment variable.
 func GetDbForOneAgent(endpoints []string, agentLabel string) (keyval.ProtoBroker, error) {
 	if len(endpoints) > 0 {
 		ep := strings.Join(endpoints, ",")
-		os.Setenv("ETCDV3_ENDPOINTS", ep)
+		os.Setenv("ETCD_ENDPOINTS", ep)
 	}
 
-	cfg := &etcdv3.Config{}
-	etcdConfig, err := etcdv3.ConfigToClient(cfg)
+	cfg := &etcd.Config{}
+	etcdConfig, err := etcd.ConfigToClient(cfg)
 
 	// Log warnings and errors only.
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.WarnLevel)
-	etcdv3Broker, err := etcdv3.NewEtcdConnectionWithBytes(*etcdConfig, log)
+	etcdBroker, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, err
 	}
 
-	return kvproto.NewProtoWrapperWithSerializer(etcdv3Broker, &keyval.SerializerJSON{}).
+	return kvproto.NewProtoWrapperWithSerializer(etcdBroker, &keyval.SerializerJSON{}).
 		NewBroker(servicelabel.GetAllAgentsPrefix() + agentLabel + "/"), nil
 
 }
