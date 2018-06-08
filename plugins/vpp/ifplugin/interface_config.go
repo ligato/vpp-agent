@@ -755,10 +755,14 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	plugin.log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface begin")
 
-	// let's try to do following even if previously error occurred
-	if err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
-		plugin.log.Error(err)
-		wasError = err
+	// Skip setting interface to ADMIN_DOWN unless the type ETHERNET_CSMACD because that one cannot be removed
+	// so at least put it down
+	if oldConfig.Type == intf.InterfaceType_ETHERNET_CSMACD {
+		// Let's try to do following even if previously error occurred
+		if err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+			plugin.log.Error(err)
+			wasError = err
+		}
 	}
 
 	// Remove DHCP if it was set
