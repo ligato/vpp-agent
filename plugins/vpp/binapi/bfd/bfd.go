@@ -6,7 +6,7 @@ package bfd
 import "git.fd.io/govpp.git/api"
 
 // BfdUDPSetEchoSource represents the VPP binary API message 'bfd_udp_set_echo_source'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 49:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 4:
 //
 //            "bfd_udp_set_echo_source",
 //            [
@@ -47,7 +47,7 @@ func NewBfdUDPSetEchoSource() api.Message {
 }
 
 // BfdUDPSetEchoSourceReply represents the VPP binary API message 'bfd_udp_set_echo_source_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 71:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 26:
 //
 //            "bfd_udp_set_echo_source_reply",
 //            [
@@ -84,7 +84,7 @@ func NewBfdUDPSetEchoSourceReply() api.Message {
 }
 
 // BfdUDPDelEchoSource represents the VPP binary API message 'bfd_udp_del_echo_source'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 89:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 44:
 //
 //            "bfd_udp_del_echo_source",
 //            [
@@ -120,7 +120,7 @@ func NewBfdUDPDelEchoSource() api.Message {
 }
 
 // BfdUDPDelEchoSourceReply represents the VPP binary API message 'bfd_udp_del_echo_source_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 107:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 62:
 //
 //            "bfd_udp_del_echo_source_reply",
 //            [
@@ -157,7 +157,7 @@ func NewBfdUDPDelEchoSourceReply() api.Message {
 }
 
 // BfdUDPAdd represents the VPP binary API message 'bfd_udp_add'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 125:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 80:
 //
 //            "bfd_udp_add",
 //            [
@@ -245,7 +245,7 @@ func NewBfdUDPAdd() api.Message {
 }
 
 // BfdUDPAddReply represents the VPP binary API message 'bfd_udp_add_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 185:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 140:
 //
 //            "bfd_udp_add_reply",
 //            [
@@ -282,7 +282,7 @@ func NewBfdUDPAddReply() api.Message {
 }
 
 // BfdUDPMod represents the VPP binary API message 'bfd_udp_mod'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 203:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 158:
 //
 //            "bfd_udp_mod",
 //            [
@@ -355,7 +355,7 @@ func NewBfdUDPMod() api.Message {
 }
 
 // BfdUDPModReply represents the VPP binary API message 'bfd_udp_mod_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 251:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 206:
 //
 //            "bfd_udp_mod_reply",
 //            [
@@ -392,7 +392,7 @@ func NewBfdUDPModReply() api.Message {
 }
 
 // BfdUDPDel represents the VPP binary API message 'bfd_udp_del'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 269:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 224:
 //
 //            "bfd_udp_del",
 //            [
@@ -450,7 +450,7 @@ func NewBfdUDPDel() api.Message {
 }
 
 // BfdUDPDelReply represents the VPP binary API message 'bfd_udp_del_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 305:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 260:
 //
 //            "bfd_udp_del_reply",
 //            [
@@ -487,7 +487,7 @@ func NewBfdUDPDelReply() api.Message {
 }
 
 // BfdUDPSessionDump represents the VPP binary API message 'bfd_udp_session_dump'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 323:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 278:
 //
 //            "bfd_udp_session_dump",
 //            [
@@ -523,7 +523,7 @@ func NewBfdUDPSessionDump() api.Message {
 }
 
 // BfdUDPSessionDetails represents the VPP binary API message 'bfd_udp_session_details'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 341:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 296:
 //
 //            "bfd_udp_session_details",
 //            [
@@ -612,7 +612,7 @@ func NewBfdUDPSessionDetails() api.Message {
 }
 
 // BfdUDPSessionSetFlags represents the VPP binary API message 'bfd_udp_session_set_flags'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 401:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 356:
 //
 //            "bfd_udp_session_set_flags",
 //            [
@@ -675,7 +675,7 @@ func NewBfdUDPSessionSetFlags() api.Message {
 }
 
 // BfdUDPSessionSetFlagsReply represents the VPP binary API message 'bfd_udp_session_set_flags_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 441:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 396:
 //
 //            "bfd_udp_session_set_flags_reply",
 //            [
@@ -712,7 +712,7 @@ func NewBfdUDPSessionSetFlagsReply() api.Message {
 }
 
 // WantBfdEvents represents the VPP binary API message 'want_bfd_events'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 459:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 414:
 //
 //            "want_bfd_events",
 //            [
@@ -758,7 +758,7 @@ func NewWantBfdEvents() api.Message {
 }
 
 // WantBfdEventsReply represents the VPP binary API message 'want_bfd_events_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 485:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 440:
 //
 //            "want_bfd_events_reply",
 //            [
@@ -795,7 +795,7 @@ func NewWantBfdEventsReply() api.Message {
 }
 
 // BfdAuthSetKey represents the VPP binary API message 'bfd_auth_set_key'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 503:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 458:
 //
 //            "bfd_auth_set_key",
 //            [
@@ -852,7 +852,7 @@ func NewBfdAuthSetKey() api.Message {
 }
 
 // BfdAuthSetKeyReply represents the VPP binary API message 'bfd_auth_set_key_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 538:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 493:
 //
 //            "bfd_auth_set_key_reply",
 //            [
@@ -889,7 +889,7 @@ func NewBfdAuthSetKeyReply() api.Message {
 }
 
 // BfdAuthDelKey represents the VPP binary API message 'bfd_auth_del_key'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 556:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 511:
 //
 //            "bfd_auth_del_key",
 //            [
@@ -930,7 +930,7 @@ func NewBfdAuthDelKey() api.Message {
 }
 
 // BfdAuthDelKeyReply represents the VPP binary API message 'bfd_auth_del_key_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 578:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 533:
 //
 //            "bfd_auth_del_key_reply",
 //            [
@@ -967,7 +967,7 @@ func NewBfdAuthDelKeyReply() api.Message {
 }
 
 // BfdAuthKeysDump represents the VPP binary API message 'bfd_auth_keys_dump'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 596:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 551:
 //
 //            "bfd_auth_keys_dump",
 //            [
@@ -1003,7 +1003,7 @@ func NewBfdAuthKeysDump() api.Message {
 }
 
 // BfdAuthKeysDetails represents the VPP binary API message 'bfd_auth_keys_details'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 614:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 569:
 //
 //            "bfd_auth_keys_details",
 //            [
@@ -1050,7 +1050,7 @@ func NewBfdAuthKeysDetails() api.Message {
 }
 
 // BfdUDPAuthActivate represents the VPP binary API message 'bfd_udp_auth_activate'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 640:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 595:
 //
 //            "bfd_udp_auth_activate",
 //            [
@@ -1123,7 +1123,7 @@ func NewBfdUDPAuthActivate() api.Message {
 }
 
 // BfdUDPAuthActivateReply represents the VPP binary API message 'bfd_udp_auth_activate_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 688:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 643:
 //
 //            "bfd_udp_auth_activate_reply",
 //            [
@@ -1160,7 +1160,7 @@ func NewBfdUDPAuthActivateReply() api.Message {
 }
 
 // BfdUDPAuthDeactivate represents the VPP binary API message 'bfd_udp_auth_deactivate'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 706:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 661:
 //
 //            "bfd_udp_auth_deactivate",
 //            [
@@ -1223,7 +1223,7 @@ func NewBfdUDPAuthDeactivate() api.Message {
 }
 
 // BfdUDPAuthDeactivateReply represents the VPP binary API message 'bfd_udp_auth_deactivate_reply'.
-// Generated from '/usr/share/vpp/api/bfd.api.json', line 746:
+// Generated from '/usr/share/vpp/api/bfd.api.json', line 701:
 //
 //            "bfd_udp_auth_deactivate_reply",
 //            [

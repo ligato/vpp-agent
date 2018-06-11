@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/l4 --gogo_out=../common/model/l4 ../common/model/l4/l4.proto
+//go:generate protoc --proto_path=../model/l4 --gogo_out=../model/l4 ../model/l4/l4.proto
 
 package l4plugin
 

@@ -92,8 +92,10 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, isAdd bo
 	} else {
 		req.IsAdd = 0
 	}
-	req.HiAddress = firstIP
-	req.LowAddress = lastIP
+	req.Proxy = ip.ProxyArp{
+		LowAddress: firstIP,
+		HiAddress: lastIP,
+	}
 
 	// Send message
 	reply := &ip.ProxyArpAddDelReply{}
@@ -104,7 +106,7 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, isAdd bo
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.Debugf("proxy arp range: %v - %v added: %v", req.LowAddress, req.HiAddress, isAdd)
+	log.Debugf("proxy arp range: %v - %v added: %v", req.Proxy.LowAddress, req.Proxy.HiAddress, isAdd)
 
 	return nil
 }

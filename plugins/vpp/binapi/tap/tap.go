@@ -6,7 +6,7 @@ package tap
 import "git.fd.io/govpp.git/api"
 
 // TapConnect represents the VPP binary API message 'tap_connect'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 21:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 4:
 //
 //            "tap_connect",
 //            [
@@ -107,7 +107,7 @@ func NewTapConnect() api.Message {
 }
 
 // TapConnectReply represents the VPP binary API message 'tap_connect_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 92:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 75:
 //
 //            "tap_connect_reply",
 //            [
@@ -149,7 +149,7 @@ func NewTapConnectReply() api.Message {
 }
 
 // TapModify represents the VPP binary API message 'tap_modify'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 114:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 97:
 //
 //            "tap_modify",
 //            [
@@ -217,7 +217,7 @@ func NewTapModify() api.Message {
 }
 
 // TapModifyReply represents the VPP binary API message 'tap_modify_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 158:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 141:
 //
 //            "tap_modify_reply",
 //            [
@@ -259,7 +259,7 @@ func NewTapModifyReply() api.Message {
 }
 
 // TapDelete represents the VPP binary API message 'tap_delete'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 180:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 163:
 //
 //            "tap_delete",
 //            [
@@ -300,7 +300,7 @@ func NewTapDelete() api.Message {
 }
 
 // TapDeleteReply represents the VPP binary API message 'tap_delete_reply'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 202:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 185:
 //
 //            "tap_delete_reply",
 //            [
@@ -337,7 +337,7 @@ func NewTapDeleteReply() api.Message {
 }
 
 // SwInterfaceTapDump represents the VPP binary API message 'sw_interface_tap_dump'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 220:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 203:
 //
 //            "sw_interface_tap_dump",
 //            [
@@ -373,7 +373,7 @@ func NewSwInterfaceTapDump() api.Message {
 }
 
 // SwInterfaceTapDetails represents the VPP binary API message 'sw_interface_tap_details'.
-// Generated from '/usr/share/vpp/api/tap.api.json', line 238:
+// Generated from '/usr/share/vpp/api/tap.api.json', line 221:
 //
 //            "sw_interface_tap_details",
 //            [

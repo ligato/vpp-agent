@@ -80,25 +80,29 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
 	// Test DHCP notifications
 	dhcpIpv4 := &dhcp_api.DhcpComplEvent{
-		HostAddress:   net.ParseIP("10.0.0.1"),
-		RouterAddress: net.ParseIP("10.0.0.2"),
-		HostMac: func(mac string) []byte {
-			parsed, _ := net.ParseMAC(mac)
-			return parsed
-		}("7C:4E:E7:8A:63:68"),
-		Hostname: []byte("if1"),
-		IsIpv6:   0,
+		Lease: dhcp_api.DhcpLease{
+			HostAddress:   net.ParseIP("10.0.0.1"),
+			RouterAddress: net.ParseIP("10.0.0.2"),
+			HostMac: func(mac string) []byte {
+				parsed, _ := net.ParseMAC(mac)
+				return parsed
+			}("7C:4E:E7:8A:63:68"),
+			Hostname: []byte("if1"),
+			IsIpv6:   0,
+		},
 	}
 	dhcpIpv6 := &dhcp_api.DhcpComplEvent{
-		HostAddress:   net.ParseIP("fd21:7408:186f::/48"),
-		RouterAddress: net.ParseIP("2001:db8:a0b:12f0::1/48"),
-		HostMac: func(mac string) []byte {
-			parsed, err := net.ParseMAC(mac)
-			Expect(err).To(BeNil())
-			return parsed
-		}("7C:4E:E7:8A:63:68"),
-		Hostname: []byte("if2"),
-		IsIpv6:   1,
+		Lease: dhcp_api.DhcpLease{
+			HostAddress:   net.ParseIP("fd21:7408:186f::/48"),
+			RouterAddress: net.ParseIP("2001:db8:a0b:12f0::1/48"),
+			HostMac: func(mac string) []byte {
+				parsed, err := net.ParseMAC(mac)
+				Expect(err).To(BeNil())
+				return parsed
+			}("7C:4E:E7:8A:63:68"),
+			Hostname: []byte("if2"),
+			IsIpv6:   1,
+		},
 	}
 	plugin.DhcpChan <- dhcpIpv4
 	Eventually(func() bool {

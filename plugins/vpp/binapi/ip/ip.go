@@ -5,52 +5,8 @@ package ip
 
 import "git.fd.io/govpp.git/api"
 
-// IP6RaPrefixInfo represents the VPP binary API data type 'ip6_ra_prefix_info'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2470:
-//
-//            "ip6_ra_prefix_info",
-//            [
-//                "u8",
-//                "dst_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "dst_address_length"
-//            ],
-//            [
-//                "u8",
-//                "flags"
-//            ],
-//            [
-//                "u32",
-//                "valid_time"
-//            ],
-//            [
-//                "u32",
-//                "preferred_time"
-//            ],
-//            {
-//                "crc": "0x83d7c6e5"
-//            }
-//
-type IP6RaPrefixInfo struct {
-	DstAddress       []byte `struc:"[16]byte"`
-	DstAddressLength uint8
-	Flags            uint8
-	ValidTime        uint32
-	PreferredTime    uint32
-}
-
-func (*IP6RaPrefixInfo) GetTypeName() string {
-	return "ip6_ra_prefix_info"
-}
-func (*IP6RaPrefixInfo) GetCrcString() string {
-	return "83d7c6e5"
-}
-
 // FibMplsLabel represents the VPP binary API data type 'fib_mpls_label'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2497:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2713:
 //
 //            "fib_mpls_label",
 //            [
@@ -88,7 +44,7 @@ func (*FibMplsLabel) GetCrcString() string {
 }
 
 // FibPath represents the VPP binary API data type 'fib_path'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2519:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2735:
 //
 //            "fib_path",
 //            [
@@ -207,8 +163,87 @@ func (*FibPath) GetCrcString() string {
 	return "abe483ef"
 }
 
+// IP6RaPrefixInfo represents the VPP binary API data type 'ip6_ra_prefix_info'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2823:
+//
+//            "ip6_ra_prefix_info",
+//            [
+//                "u8",
+//                "dst_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "dst_address_length"
+//            ],
+//            [
+//                "u8",
+//                "flags"
+//            ],
+//            [
+//                "u32",
+//                "valid_time"
+//            ],
+//            [
+//                "u32",
+//                "preferred_time"
+//            ],
+//            {
+//                "crc": "0x83d7c6e5"
+//            }
+//
+type IP6RaPrefixInfo struct {
+	DstAddress       []byte `struc:"[16]byte"`
+	DstAddressLength uint8
+	Flags            uint8
+	ValidTime        uint32
+	PreferredTime    uint32
+}
+
+func (*IP6RaPrefixInfo) GetTypeName() string {
+	return "ip6_ra_prefix_info"
+}
+func (*IP6RaPrefixInfo) GetCrcString() string {
+	return "83d7c6e5"
+}
+
+// ProxyArp represents the VPP binary API data type 'proxy_arp'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2850:
+//
+//            "proxy_arp",
+//            [
+//                "u32",
+//                "vrf_id"
+//            ],
+//            [
+//                "u8",
+//                "low_address",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "hi_address",
+//                4
+//            ],
+//            {
+//                "crc": "0x6d88106e"
+//            }
+//
+type ProxyArp struct {
+	VrfID      uint32
+	LowAddress []byte `struc:"[4]byte"`
+	HiAddress  []byte `struc:"[4]byte"`
+}
+
+func (*ProxyArp) GetTypeName() string {
+	return "proxy_arp"
+}
+func (*ProxyArp) GetCrcString() string {
+	return "6d88106e"
+}
+
 // IPTableAddDel represents the VPP binary API message 'ip_table_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 137:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 4:
 //
 //            "ip_table_add_del",
 //            [
@@ -265,7 +300,7 @@ func NewIPTableAddDel() api.Message {
 }
 
 // IPTableAddDelReply represents the VPP binary API message 'ip_table_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 172:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 39:
 //
 //            "ip_table_add_del_reply",
 //            [
@@ -302,7 +337,7 @@ func NewIPTableAddDelReply() api.Message {
 }
 
 // IPFibDump represents the VPP binary API message 'ip_fib_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 190:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 57:
 //
 //            "ip_fib_dump",
 //            [
@@ -338,7 +373,7 @@ func NewIPFibDump() api.Message {
 }
 
 // IPFibDetails represents the VPP binary API message 'ip_fib_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 208:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 75:
 //
 //            "ip_fib_details",
 //            [
@@ -404,7 +439,7 @@ func NewIPFibDetails() api.Message {
 }
 
 // IP6FibDump represents the VPP binary API message 'ip6_fib_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 250:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 117:
 //
 //            "ip6_fib_dump",
 //            [
@@ -440,7 +475,7 @@ func NewIP6FibDump() api.Message {
 }
 
 // IP6FibDetails represents the VPP binary API message 'ip6_fib_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 268:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 135:
 //
 //            "ip6_fib_details",
 //            [
@@ -506,7 +541,7 @@ func NewIP6FibDetails() api.Message {
 }
 
 // IPNeighborDump represents the VPP binary API message 'ip_neighbor_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 310:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 177:
 //
 //            "ip_neighbor_dump",
 //            [
@@ -552,7 +587,7 @@ func NewIPNeighborDump() api.Message {
 }
 
 // IPNeighborDetails represents the VPP binary API message 'ip_neighbor_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 336:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 203:
 //
 //            "ip_neighbor_details",
 //            [
@@ -611,7 +646,7 @@ func NewIPNeighborDetails() api.Message {
 }
 
 // IPNeighborAddDel represents the VPP binary API message 'ip_neighbor_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 372:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 239:
 //
 //            "ip_neighbor_add_del",
 //            [
@@ -684,7 +719,7 @@ func NewIPNeighborAddDel() api.Message {
 }
 
 // IPNeighborAddDelReply represents the VPP binary API message 'ip_neighbor_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 420:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 287:
 //
 //            "ip_neighbor_add_del_reply",
 //            [
@@ -721,7 +756,7 @@ func NewIPNeighborAddDelReply() api.Message {
 }
 
 // SetIPFlowHash represents the VPP binary API message 'set_ip_flow_hash'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 438:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 305:
 //
 //            "set_ip_flow_hash",
 //            [
@@ -797,7 +832,7 @@ func NewSetIPFlowHash() api.Message {
 }
 
 // SetIPFlowHashReply represents the VPP binary API message 'set_ip_flow_hash_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 488:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 355:
 //
 //            "set_ip_flow_hash_reply",
 //            [
@@ -834,7 +869,7 @@ func NewSetIPFlowHashReply() api.Message {
 }
 
 // SwInterfaceIP6ndRaConfig represents the VPP binary API message 'sw_interface_ip6nd_ra_config'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 506:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 373:
 //
 //            "sw_interface_ip6nd_ra_config",
 //            [
@@ -940,7 +975,7 @@ func NewSwInterfaceIP6ndRaConfig() api.Message {
 }
 
 // SwInterfaceIP6ndRaConfigReply represents the VPP binary API message 'sw_interface_ip6nd_ra_config_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 580:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 447:
 //
 //            "sw_interface_ip6nd_ra_config_reply",
 //            [
@@ -977,7 +1012,7 @@ func NewSwInterfaceIP6ndRaConfigReply() api.Message {
 }
 
 // SwInterfaceIP6ndRaPrefix represents the VPP binary API message 'sw_interface_ip6nd_ra_prefix'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 598:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 465:
 //
 //            "sw_interface_ip6nd_ra_prefix",
 //            [
@@ -1069,7 +1104,7 @@ func NewSwInterfaceIP6ndRaPrefix() api.Message {
 }
 
 // SwInterfaceIP6ndRaPrefixReply represents the VPP binary API message 'sw_interface_ip6nd_ra_prefix_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 661:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 528:
 //
 //            "sw_interface_ip6nd_ra_prefix_reply",
 //            [
@@ -1106,7 +1141,7 @@ func NewSwInterfaceIP6ndRaPrefixReply() api.Message {
 }
 
 // IP6ndProxyAddDel represents the VPP binary API message 'ip6nd_proxy_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 679:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 546:
 //
 //            "ip6nd_proxy_add_del",
 //            [
@@ -1158,7 +1193,7 @@ func NewIP6ndProxyAddDel() api.Message {
 }
 
 // IP6ndProxyAddDelReply represents the VPP binary API message 'ip6nd_proxy_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 710:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 577:
 //
 //            "ip6nd_proxy_add_del_reply",
 //            [
@@ -1195,7 +1230,7 @@ func NewIP6ndProxyAddDelReply() api.Message {
 }
 
 // IP6ndProxyDetails represents the VPP binary API message 'ip6nd_proxy_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 728:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 595:
 //
 //            "ip6nd_proxy_details",
 //            [
@@ -1242,7 +1277,7 @@ func NewIP6ndProxyDetails() api.Message {
 }
 
 // IP6ndProxyDump represents the VPP binary API message 'ip6nd_proxy_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 755:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 622:
 //
 //            "ip6nd_proxy_dump",
 //            [
@@ -1278,7 +1313,7 @@ func NewIP6ndProxyDump() api.Message {
 }
 
 // IP6ndSendRouterSolicitation represents the VPP binary API message 'ip6nd_send_router_solicitation'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 773:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 640:
 //
 //            "ip6nd_send_router_solicitation",
 //            [
@@ -1344,7 +1379,7 @@ func NewIP6ndSendRouterSolicitation() api.Message {
 }
 
 // IP6ndSendRouterSolicitationReply represents the VPP binary API message 'ip6nd_send_router_solicitation_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 815:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 682:
 //
 //            "ip6nd_send_router_solicitation_reply",
 //            [
@@ -1381,7 +1416,7 @@ func NewIP6ndSendRouterSolicitationReply() api.Message {
 }
 
 // SwInterfaceIP6EnableDisable represents the VPP binary API message 'sw_interface_ip6_enable_disable'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 833:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 700:
 //
 //            "sw_interface_ip6_enable_disable",
 //            [
@@ -1427,7 +1462,7 @@ func NewSwInterfaceIP6EnableDisable() api.Message {
 }
 
 // SwInterfaceIP6EnableDisableReply represents the VPP binary API message 'sw_interface_ip6_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 859:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 726:
 //
 //            "sw_interface_ip6_enable_disable_reply",
 //            [
@@ -1464,7 +1499,7 @@ func NewSwInterfaceIP6EnableDisableReply() api.Message {
 }
 
 // SwInterfaceIP6SetLinkLocalAddress represents the VPP binary API message 'sw_interface_ip6_set_link_local_address'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 877:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 744:
 //
 //            "sw_interface_ip6_set_link_local_address",
 //            [
@@ -1511,7 +1546,7 @@ func NewSwInterfaceIP6SetLinkLocalAddress() api.Message {
 }
 
 // SwInterfaceIP6SetLinkLocalAddressReply represents the VPP binary API message 'sw_interface_ip6_set_link_local_address_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 904:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 771:
 //
 //            "sw_interface_ip6_set_link_local_address_reply",
 //            [
@@ -1548,7 +1583,7 @@ func NewSwInterfaceIP6SetLinkLocalAddressReply() api.Message {
 }
 
 // IPAddDelRoute represents the VPP binary API message 'ip_add_del_route'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 922:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 789:
 //
 //            "ip_add_del_route",
 //            [
@@ -1723,7 +1758,7 @@ func NewIPAddDelRoute() api.Message {
 }
 
 // IPAddDelRouteReply represents the VPP binary API message 'ip_add_del_route_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1052:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 919:
 //
 //            "ip_add_del_route_reply",
 //            [
@@ -1760,7 +1795,7 @@ func NewIPAddDelRouteReply() api.Message {
 }
 
 // IPMrouteAddDel represents the VPP binary API message 'ip_mroute_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1070:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 937:
 //
 //            "ip_mroute_add_del",
 //            [
@@ -1829,8 +1864,13 @@ func NewIPAddDelRouteReply() api.Message {
 //                "src_address",
 //                16
 //            ],
+//            [
+//                "u8",
+//                "nh_address",
+//                16
+//            ],
 //            {
-//                "crc": "0xc37112f7"
+//                "crc": "0xf44c17b1"
 //            }
 //
 type IPMrouteAddDel struct {
@@ -1847,6 +1887,7 @@ type IPMrouteAddDel struct {
 	IsLocal          uint8
 	GrpAddress       []byte `struc:"[16]byte"`
 	SrcAddress       []byte `struc:"[16]byte"`
+	NhAddress        []byte `struc:"[16]byte"`
 }
 
 func (*IPMrouteAddDel) GetMessageName() string {
@@ -1856,14 +1897,14 @@ func (*IPMrouteAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*IPMrouteAddDel) GetCrcString() string {
-	return "c37112f7"
+	return "f44c17b1"
 }
 func NewIPMrouteAddDel() api.Message {
 	return &IPMrouteAddDel{}
 }
 
 // IPMrouteAddDelReply represents the VPP binary API message 'ip_mroute_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1142:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1014:
 //
 //            "ip_mroute_add_del_reply",
 //            [
@@ -1900,7 +1941,7 @@ func NewIPMrouteAddDelReply() api.Message {
 }
 
 // IPMfibDump represents the VPP binary API message 'ip_mfib_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1160:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1032:
 //
 //            "ip_mfib_dump",
 //            [
@@ -1936,7 +1977,7 @@ func NewIPMfibDump() api.Message {
 }
 
 // IPMfibDetails represents the VPP binary API message 'ip_mfib_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1178:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1050:
 //
 //            "ip_mfib_details",
 //            [
@@ -2012,7 +2053,7 @@ func NewIPMfibDetails() api.Message {
 }
 
 // IP6MfibDump represents the VPP binary API message 'ip6_mfib_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1228:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1100:
 //
 //            "ip6_mfib_dump",
 //            [
@@ -2048,7 +2089,7 @@ func NewIP6MfibDump() api.Message {
 }
 
 // IP6MfibDetails represents the VPP binary API message 'ip6_mfib_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1246:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1118:
 //
 //            "ip6_mfib_details",
 //            [
@@ -2114,7 +2155,7 @@ func NewIP6MfibDetails() api.Message {
 }
 
 // IPAddressDetails represents the VPP binary API message 'ip_address_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1288:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1160:
 //
 //            "ip_address_details",
 //            [
@@ -2171,7 +2212,7 @@ func NewIPAddressDetails() api.Message {
 }
 
 // IPAddressDump represents the VPP binary API message 'ip_address_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1323:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1195:
 //
 //            "ip_address_dump",
 //            [
@@ -2216,8 +2257,95 @@ func NewIPAddressDump() api.Message {
 	return &IPAddressDump{}
 }
 
+// IPUnnumberedDetails represents the VPP binary API message 'ip_unnumbered_details'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1221:
+//
+//            "ip_unnumbered_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "ip_sw_if_index"
+//            ],
+//            {
+//                "crc": "0x05b717ca"
+//            }
+//
+type IPUnnumberedDetails struct {
+	SwIfIndex   uint32
+	IPSwIfIndex uint32
+}
+
+func (*IPUnnumberedDetails) GetMessageName() string {
+	return "ip_unnumbered_details"
+}
+func (*IPUnnumberedDetails) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*IPUnnumberedDetails) GetCrcString() string {
+	return "05b717ca"
+}
+func NewIPUnnumberedDetails() api.Message {
+	return &IPUnnumberedDetails{}
+}
+
+// IPUnnumberedDump represents the VPP binary API message 'ip_unnumbered_dump'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1247:
+//
+//            "ip_unnumbered_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x529cb13f"
+//            }
+//
+type IPUnnumberedDump struct {
+	SwIfIndex uint32
+}
+
+func (*IPUnnumberedDump) GetMessageName() string {
+	return "ip_unnumbered_dump"
+}
+func (*IPUnnumberedDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*IPUnnumberedDump) GetCrcString() string {
+	return "529cb13f"
+}
+func NewIPUnnumberedDump() api.Message {
+	return &IPUnnumberedDump{}
+}
+
 // IPDetails represents the VPP binary API message 'ip_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1349:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1269:
 //
 //            "ip_details",
 //            [
@@ -2260,7 +2388,7 @@ func NewIPDetails() api.Message {
 }
 
 // IPDump represents the VPP binary API message 'ip_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1371:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1291:
 //
 //            "ip_dump",
 //            [
@@ -2301,7 +2429,7 @@ func NewIPDump() api.Message {
 }
 
 // MfibSignalDump represents the VPP binary API message 'mfib_signal_dump'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1393:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1313:
 //
 //            "mfib_signal_dump",
 //            [
@@ -2337,7 +2465,7 @@ func NewMfibSignalDump() api.Message {
 }
 
 // MfibSignalDetails represents the VPP binary API message 'mfib_signal_details'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1411:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1331:
 //
 //            "mfib_signal_details",
 //            [
@@ -2411,7 +2539,7 @@ func NewMfibSignalDetails() api.Message {
 }
 
 // IPPuntPolice represents the VPP binary API message 'ip_punt_police'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1460:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1380:
 //
 //            "ip_punt_police",
 //            [
@@ -2462,7 +2590,7 @@ func NewIPPuntPolice() api.Message {
 }
 
 // IPPuntPoliceReply represents the VPP binary API message 'ip_punt_police_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1490:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1410:
 //
 //            "ip_punt_police_reply",
 //            [
@@ -2499,7 +2627,7 @@ func NewIPPuntPoliceReply() api.Message {
 }
 
 // IPPuntRedirect represents the VPP binary API message 'ip_punt_redirect'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1508:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1428:
 //
 //            "ip_punt_redirect",
 //            [
@@ -2561,7 +2689,7 @@ func NewIPPuntRedirect() api.Message {
 }
 
 // IPPuntRedirectReply represents the VPP binary API message 'ip_punt_redirect_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1547:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1467:
 //
 //            "ip_punt_redirect_reply",
 //            [
@@ -2598,7 +2726,7 @@ func NewIPPuntRedirectReply() api.Message {
 }
 
 // IPContainerProxyAddDel represents the VPP binary API message 'ip_container_proxy_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1565:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1485:
 //
 //            "ip_container_proxy_add_del",
 //            [
@@ -2660,7 +2788,7 @@ func NewIPContainerProxyAddDel() api.Message {
 }
 
 // IPContainerProxyAddDelReply represents the VPP binary API message 'ip_container_proxy_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1604:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1524:
 //
 //            "ip_container_proxy_add_del_reply",
 //            [
@@ -2697,7 +2825,7 @@ func NewIPContainerProxyAddDelReply() api.Message {
 }
 
 // IPSourceAndPortRangeCheckAddDel represents the VPP binary API message 'ip_source_and_port_range_check_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1622:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1542:
 //
 //            "ip_source_and_port_range_check_add_del",
 //            [
@@ -2776,7 +2904,7 @@ func NewIPSourceAndPortRangeCheckAddDel() api.Message {
 }
 
 // IPSourceAndPortRangeCheckAddDelReply represents the VPP binary API message 'ip_source_and_port_range_check_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1675:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1595:
 //
 //            "ip_source_and_port_range_check_add_del_reply",
 //            [
@@ -2813,7 +2941,7 @@ func NewIPSourceAndPortRangeCheckAddDelReply() api.Message {
 }
 
 // IPSourceAndPortRangeCheckInterfaceAddDel represents the VPP binary API message 'ip_source_and_port_range_check_interface_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1693:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1613:
 //
 //            "ip_source_and_port_range_check_interface_add_del",
 //            [
@@ -2879,7 +3007,7 @@ func NewIPSourceAndPortRangeCheckInterfaceAddDel() api.Message {
 }
 
 // IPSourceAndPortRangeCheckInterfaceAddDelReply represents the VPP binary API message 'ip_source_and_port_range_check_interface_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1735:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1655:
 //
 //            "ip_source_and_port_range_check_interface_add_del_reply",
 //            [
@@ -2915,8 +3043,200 @@ func NewIPSourceAndPortRangeCheckInterfaceAddDelReply() api.Message {
 	return &IPSourceAndPortRangeCheckInterfaceAddDelReply{}
 }
 
+// IPScanNeighborEnableDisable represents the VPP binary API message 'ip_scan_neighbor_enable_disable'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1673:
+//
+//            "ip_scan_neighbor_enable_disable",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "mode"
+//            ],
+//            [
+//                "u8",
+//                "scan_interval"
+//            ],
+//            [
+//                "u8",
+//                "max_proc_time"
+//            ],
+//            [
+//                "u8",
+//                "max_update"
+//            ],
+//            [
+//                "u8",
+//                "scan_int_delay"
+//            ],
+//            [
+//                "u8",
+//                "stale_threshold"
+//            ],
+//            {
+//                "crc": "0x0a6bf57a"
+//            }
+//
+type IPScanNeighborEnableDisable struct {
+	Mode           uint8
+	ScanInterval   uint8
+	MaxProcTime    uint8
+	MaxUpdate      uint8
+	ScanIntDelay   uint8
+	StaleThreshold uint8
+}
+
+func (*IPScanNeighborEnableDisable) GetMessageName() string {
+	return "ip_scan_neighbor_enable_disable"
+}
+func (*IPScanNeighborEnableDisable) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*IPScanNeighborEnableDisable) GetCrcString() string {
+	return "0a6bf57a"
+}
+func NewIPScanNeighborEnableDisable() api.Message {
+	return &IPScanNeighborEnableDisable{}
+}
+
+// IPScanNeighborEnableDisableReply represents the VPP binary API message 'ip_scan_neighbor_enable_disable_reply'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1715:
+//
+//            "ip_scan_neighbor_enable_disable_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type IPScanNeighborEnableDisableReply struct {
+	Retval int32
+}
+
+func (*IPScanNeighborEnableDisableReply) GetMessageName() string {
+	return "ip_scan_neighbor_enable_disable_reply"
+}
+func (*IPScanNeighborEnableDisableReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*IPScanNeighborEnableDisableReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewIPScanNeighborEnableDisableReply() api.Message {
+	return &IPScanNeighborEnableDisableReply{}
+}
+
+// IPProbeNeighbor represents the VPP binary API message 'ip_probe_neighbor'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1733:
+//
+//            "ip_probe_neighbor",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "dst_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            {
+//                "crc": "0x1e44bfd7"
+//            }
+//
+type IPProbeNeighbor struct {
+	SwIfIndex  uint32
+	DstAddress []byte `struc:"[16]byte"`
+	IsIpv6     uint8
+}
+
+func (*IPProbeNeighbor) GetMessageName() string {
+	return "ip_probe_neighbor"
+}
+func (*IPProbeNeighbor) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*IPProbeNeighbor) GetCrcString() string {
+	return "1e44bfd7"
+}
+func NewIPProbeNeighbor() api.Message {
+	return &IPProbeNeighbor{}
+}
+
+// IPProbeNeighborReply represents the VPP binary API message 'ip_probe_neighbor_reply'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1764:
+//
+//            "ip_probe_neighbor_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type IPProbeNeighborReply struct {
+	Retval int32
+}
+
+func (*IPProbeNeighborReply) GetMessageName() string {
+	return "ip_probe_neighbor_reply"
+}
+func (*IPProbeNeighborReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*IPProbeNeighborReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewIPProbeNeighborReply() api.Message {
+	return &IPProbeNeighborReply{}
+}
+
 // WantIP4ArpEvents represents the VPP binary API message 'want_ip4_arp_events'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1753:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1782:
 //
 //            "want_ip4_arp_events",
 //            [
@@ -2967,7 +3287,7 @@ func NewWantIP4ArpEvents() api.Message {
 }
 
 // WantIP4ArpEventsReply represents the VPP binary API message 'want_ip4_arp_events_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1783:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1812:
 //
 //            "want_ip4_arp_events_reply",
 //            [
@@ -3004,7 +3324,7 @@ func NewWantIP4ArpEventsReply() api.Message {
 }
 
 // IP4ArpEvent represents the VPP binary API message 'ip4_arp_event'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1801:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1830:
 //
 //            "ip4_arp_event",
 //            [
@@ -3062,7 +3382,7 @@ func NewIP4ArpEvent() api.Message {
 }
 
 // WantIP6NdEvents represents the VPP binary API message 'want_ip6_nd_events'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1836:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1865:
 //
 //            "want_ip6_nd_events",
 //            [
@@ -3114,7 +3434,7 @@ func NewWantIP6NdEvents() api.Message {
 }
 
 // WantIP6NdEventsReply represents the VPP binary API message 'want_ip6_nd_events_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1867:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1896:
 //
 //            "want_ip6_nd_events_reply",
 //            [
@@ -3151,7 +3471,7 @@ func NewWantIP6NdEventsReply() api.Message {
 }
 
 // IP6NdEvent represents the VPP binary API message 'ip6_nd_event'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1885:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1914:
 //
 //            "ip6_nd_event",
 //            [
@@ -3210,7 +3530,7 @@ func NewIP6NdEvent() api.Message {
 }
 
 // WantIP6RaEvents represents the VPP binary API message 'want_ip6_ra_events'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1921:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1950:
 //
 //            "want_ip6_ra_events",
 //            [
@@ -3256,7 +3576,7 @@ func NewWantIP6RaEvents() api.Message {
 }
 
 // WantIP6RaEventsReply represents the VPP binary API message 'want_ip6_ra_events_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1947:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1976:
 //
 //            "want_ip6_ra_events_reply",
 //            [
@@ -3293,7 +3613,7 @@ func NewWantIP6RaEventsReply() api.Message {
 }
 
 // IP6RaEvent represents the VPP binary API message 'ip6_ra_event'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 1965:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 1994:
 //
 //            "ip6_ra_event",
 //            [
@@ -3378,7 +3698,7 @@ func NewIP6RaEvent() api.Message {
 }
 
 // ProxyArpAddDel represents the VPP binary API message 'proxy_arp_add_del'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2022:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2051:
 //
 //            "proxy_arp_add_del",
 //            [
@@ -3394,32 +3714,20 @@ func NewIP6RaEvent() api.Message {
 //                "context"
 //            ],
 //            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
 //                "u8",
 //                "is_add"
 //            ],
 //            [
-//                "u8",
-//                "low_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "hi_address",
-//                4
+//                "vl_api_proxy_arp_t",
+//                "proxy"
 //            ],
 //            {
-//                "crc": "0xc2442918"
+//                "crc": "0x227988d9"
 //            }
 //
 type ProxyArpAddDel struct {
-	VrfID      uint32
-	IsAdd      uint8
-	LowAddress []byte `struc:"[4]byte"`
-	HiAddress  []byte `struc:"[4]byte"`
+	IsAdd uint8
+	Proxy ProxyArp
 }
 
 func (*ProxyArpAddDel) GetMessageName() string {
@@ -3429,14 +3737,14 @@ func (*ProxyArpAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*ProxyArpAddDel) GetCrcString() string {
-	return "c2442918"
+	return "227988d9"
 }
 func NewProxyArpAddDel() api.Message {
 	return &ProxyArpAddDel{}
 }
 
 // ProxyArpAddDelReply represents the VPP binary API message 'proxy_arp_add_del_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2058:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2077:
 //
 //            "proxy_arp_add_del_reply",
 //            [
@@ -3472,8 +3780,81 @@ func NewProxyArpAddDelReply() api.Message {
 	return &ProxyArpAddDelReply{}
 }
 
+// ProxyArpDump represents the VPP binary API message 'proxy_arp_dump'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2095:
+//
+//            "proxy_arp_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type ProxyArpDump struct {
+}
+
+func (*ProxyArpDump) GetMessageName() string {
+	return "proxy_arp_dump"
+}
+func (*ProxyArpDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*ProxyArpDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewProxyArpDump() api.Message {
+	return &ProxyArpDump{}
+}
+
+// ProxyArpDetails represents the VPP binary API message 'proxy_arp_details'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2113:
+//
+//            "proxy_arp_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "vl_api_proxy_arp_t",
+//                "proxy"
+//            ],
+//            {
+//                "crc": "0x9b707c77"
+//            }
+//
+type ProxyArpDetails struct {
+	Proxy ProxyArp
+}
+
+func (*ProxyArpDetails) GetMessageName() string {
+	return "proxy_arp_details"
+}
+func (*ProxyArpDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*ProxyArpDetails) GetCrcString() string {
+	return "9b707c77"
+}
+func NewProxyArpDetails() api.Message {
+	return &ProxyArpDetails{}
+}
+
 // ProxyArpIntfcEnableDisable represents the VPP binary API message 'proxy_arp_intfc_enable_disable'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2076:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2131:
 //
 //            "proxy_arp_intfc_enable_disable",
 //            [
@@ -3519,7 +3900,7 @@ func NewProxyArpIntfcEnableDisable() api.Message {
 }
 
 // ProxyArpIntfcEnableDisableReply represents the VPP binary API message 'proxy_arp_intfc_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2102:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2157:
 //
 //            "proxy_arp_intfc_enable_disable_reply",
 //            [
@@ -3555,8 +3936,81 @@ func NewProxyArpIntfcEnableDisableReply() api.Message {
 	return &ProxyArpIntfcEnableDisableReply{}
 }
 
+// ProxyArpIntfcDump represents the VPP binary API message 'proxy_arp_intfc_dump'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2175:
+//
+//            "proxy_arp_intfc_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type ProxyArpIntfcDump struct {
+}
+
+func (*ProxyArpIntfcDump) GetMessageName() string {
+	return "proxy_arp_intfc_dump"
+}
+func (*ProxyArpIntfcDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*ProxyArpIntfcDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewProxyArpIntfcDump() api.Message {
+	return &ProxyArpIntfcDump{}
+}
+
+// ProxyArpIntfcDetails represents the VPP binary API message 'proxy_arp_intfc_details'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2193:
+//
+//            "proxy_arp_intfc_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0xf6458e5f"
+//            }
+//
+type ProxyArpIntfcDetails struct {
+	SwIfIndex uint32
+}
+
+func (*ProxyArpIntfcDetails) GetMessageName() string {
+	return "proxy_arp_intfc_details"
+}
+func (*ProxyArpIntfcDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*ProxyArpIntfcDetails) GetCrcString() string {
+	return "f6458e5f"
+}
+func NewProxyArpIntfcDetails() api.Message {
+	return &ProxyArpIntfcDetails{}
+}
+
 // ResetFib represents the VPP binary API message 'reset_fib'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2120:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2211:
 //
 //            "reset_fib",
 //            [
@@ -3602,7 +4056,7 @@ func NewResetFib() api.Message {
 }
 
 // ResetFibReply represents the VPP binary API message 'reset_fib_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2146:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2237:
 //
 //            "reset_fib_reply",
 //            [
@@ -3639,7 +4093,7 @@ func NewResetFibReply() api.Message {
 }
 
 // SetArpNeighborLimit represents the VPP binary API message 'set_arp_neighbor_limit'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2164:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2255:
 //
 //            "set_arp_neighbor_limit",
 //            [
@@ -3685,7 +4139,7 @@ func NewSetArpNeighborLimit() api.Message {
 }
 
 // SetArpNeighborLimitReply represents the VPP binary API message 'set_arp_neighbor_limit_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2190:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2281:
 //
 //            "set_arp_neighbor_limit_reply",
 //            [
@@ -3722,7 +4176,7 @@ func NewSetArpNeighborLimitReply() api.Message {
 }
 
 // IoamEnable represents the VPP binary API message 'ioam_enable'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2208:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2299:
 //
 //            "ioam_enable",
 //            [
@@ -3788,7 +4242,7 @@ func NewIoamEnable() api.Message {
 }
 
 // IoamEnableReply represents the VPP binary API message 'ioam_enable_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2250:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2341:
 //
 //            "ioam_enable_reply",
 //            [
@@ -3825,7 +4279,7 @@ func NewIoamEnableReply() api.Message {
 }
 
 // IoamDisable represents the VPP binary API message 'ioam_disable'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2268:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2359:
 //
 //            "ioam_disable",
 //            [
@@ -3866,7 +4320,7 @@ func NewIoamDisable() api.Message {
 }
 
 // IoamDisableReply represents the VPP binary API message 'ioam_disable_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2290:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2381:
 //
 //            "ioam_disable_reply",
 //            [
@@ -3903,7 +4357,7 @@ func NewIoamDisableReply() api.Message {
 }
 
 // IPReassemblySet represents the VPP binary API message 'ip_reassembly_set'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2308:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2399:
 //
 //            "ip_reassembly_set",
 //            [
@@ -3959,7 +4413,7 @@ func NewIPReassemblySet() api.Message {
 }
 
 // IPReassemblySetReply represents the VPP binary API message 'ip_reassembly_set_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2342:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2433:
 //
 //            "ip_reassembly_set_reply",
 //            [
@@ -3996,7 +4450,7 @@ func NewIPReassemblySetReply() api.Message {
 }
 
 // IPReassemblyGet represents the VPP binary API message 'ip_reassembly_get'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2360:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2451:
 //
 //            "ip_reassembly_get",
 //            [
@@ -4037,7 +4491,7 @@ func NewIPReassemblyGet() api.Message {
 }
 
 // IPReassemblyGetReply represents the VPP binary API message 'ip_reassembly_get_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2382:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2473:
 //
 //            "ip_reassembly_get_reply",
 //            [
@@ -4098,7 +4552,7 @@ func NewIPReassemblyGetReply() api.Message {
 }
 
 // IPReassemblyEnableDisable represents the VPP binary API message 'ip_reassembly_enable_disable'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2420:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2511:
 //
 //            "ip_reassembly_enable_disable",
 //            [
@@ -4149,7 +4603,7 @@ func NewIPReassemblyEnableDisable() api.Message {
 }
 
 // IPReassemblyEnableDisableReply represents the VPP binary API message 'ip_reassembly_enable_disable_reply'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2450:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2541:
 //
 //            "ip_reassembly_enable_disable_reply",
 //            [

@@ -6,7 +6,7 @@ package vxlan
 import "git.fd.io/govpp.git/api"
 
 // VxlanAddDelTunnel represents the VPP binary API message 'vxlan_add_del_tunnel'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 18:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 4:
 //
 //            "vxlan_add_del_tunnel",
 //            [
@@ -89,7 +89,7 @@ func NewVxlanAddDelTunnel() api.Message {
 }
 
 // VxlanAddDelTunnelReply represents the VPP binary API message 'vxlan_add_del_tunnel_reply'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 74:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 60:
 //
 //            "vxlan_add_del_tunnel_reply",
 //            [
@@ -131,7 +131,7 @@ func NewVxlanAddDelTunnelReply() api.Message {
 }
 
 // VxlanTunnelDump represents the VPP binary API message 'vxlan_tunnel_dump'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 96:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 82:
 //
 //            "vxlan_tunnel_dump",
 //            [
@@ -172,7 +172,7 @@ func NewVxlanTunnelDump() api.Message {
 }
 
 // VxlanTunnelDetails represents the VPP binary API message 'vxlan_tunnel_details'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 118:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 104:
 //
 //            "vxlan_tunnel_details",
 //            [
@@ -251,7 +251,7 @@ func NewVxlanTunnelDetails() api.Message {
 }
 
 // SwInterfaceSetVxlanBypass represents the VPP binary API message 'sw_interface_set_vxlan_bypass'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 170:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 156:
 //
 //            "sw_interface_set_vxlan_bypass",
 //            [
@@ -302,7 +302,7 @@ func NewSwInterfaceSetVxlanBypass() api.Message {
 }
 
 // SwInterfaceSetVxlanBypassReply represents the VPP binary API message 'sw_interface_set_vxlan_bypass_reply'.
-// Generated from '/usr/share/vpp/api/vxlan.api.json', line 200:
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 186:
 //
 //            "sw_interface_set_vxlan_bypass_reply",
 //            [

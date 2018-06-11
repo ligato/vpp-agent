@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/interfaces --gogo_out=../common/model/interfaces ../common/model/interfaces/interfaces.proto
-//go:generate protoc --proto_path=../common/model/bfd --gogo_out=../common/model/bfd ../common/model/bfd/bfd.proto
+//go:generate protoc --proto_path=../model/interfaces --gogo_out=../model/interfaces ../model/interfaces/interfaces.proto
+//go:generate protoc --proto_path=../model/bfd --gogo_out=../model/bfd ../model/bfd/bfd.proto
 
 // Package ifplugin implements the Interface plugin that handles management
 // of VPP interfaces.
@@ -1008,13 +1008,13 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 		case notification := <-plugin.DhcpChan:
 			switch dhcpNotif := notification.(type) {
 			case *dhcp.DhcpComplEvent:
-				var ipAddr, rIPAddr net.IP = dhcpNotif.HostAddress, dhcpNotif.RouterAddress
-				var hwAddr net.HardwareAddr = dhcpNotif.HostMac
+				var ipAddr, rIPAddr net.IP = dhcpNotif.Lease.HostAddress, dhcpNotif.Lease.RouterAddress
+				var hwAddr net.HardwareAddr = dhcpNotif.Lease.HostMac
 				var ipStr, rIPStr string
 
-				name := string(bytes.SplitN(dhcpNotif.Hostname, []byte{0x00}, 2)[0])
+				name := string(bytes.SplitN(dhcpNotif.Lease.Hostname, []byte{0x00}, 2)[0])
 
-				if dhcpNotif.IsIpv6 == 1 {
+				if dhcpNotif.Lease.IsIpv6 == 1 {
 					ipStr = ipAddr.To16().String()
 					rIPStr = rIPAddr.To16().String()
 				} else {
@@ -1038,9 +1038,9 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 							return true
 						}
 						return false
-					}(dhcpNotif.IsIpv6),
+					}(dhcpNotif.Lease.IsIpv6),
 					IPAddress:     ipStr,
-					Mask:          uint32(dhcpNotif.MaskWidth),
+					Mask:          uint32(dhcpNotif.Lease.MaskWidth),
 					PhysAddress:   hwAddr.String(),
 					RouterAddress: rIPStr,
 				})
