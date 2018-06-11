@@ -15,13 +15,13 @@
 package aclplugin_test
 
 import (
+	"git.fd.io/govpp.git/adapter/mock"
+	govppapi "git.fd.io/govpp.git/api"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	. "github.com/onsi/gomega"
 	"testing"
-	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
 )
 
 type vppReplyMock struct {
@@ -118,39 +118,47 @@ func TestResyncEmpty(t *testing.T) {
 	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
 		{
-			Id:   1011,
-			Ping: true,
+			Id:      1011,
+			Ping:    true,
 			Message: &acl_api.ACLDetails{},
 		},
 		{
-			Id:   1015,
-			Ping: true,
+			Id:      1015,
+			Ping:    true,
 			Message: &acl_api.ACLInterfaceListDetails{},
 		},
 		{
-			Id:   1013,
-			Ping: true,
+			Id:      1013,
+			Ping:    true,
 			Message: &acl_api.MacipACLDetails{},
 		},
 		{
-			Id:   1017,
-			Ping: true,
+			Id:      1017,
+			Ping:    true,
 			Message: &acl_api.MacipACLInterfaceListDetails{},
 		},
 		{
-			Id:   1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &acl_api.ACLAddReplaceReply{},
 		},
 		{
-			Id:   1005,
-			Ping: false,
+			Id:      1005,
+			Ping:    false,
 			Message: &acl_api.MacipACLAddReply{},
 		},
 	}))
 
 	err := plugin.Resync(acls)
 	Expect(err).To(BeNil())
+
+	_, metaIpACL, found := plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
+	Expect(found).To(BeTrue())
+	Expect(metaIpACL).ToNot(BeNil())
+
+	_, metaMacIpACL, found := plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	Expect(found).To(BeTrue())
+	Expect(metaMacIpACL).ToNot(BeNil())
 }
 
 // Test synchronisation - writes ACLs to the already configured VPP
@@ -166,7 +174,7 @@ func TestResyncConfigured(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '1'},
+				Tag:      []byte{'a', 'c', 'l', '3'},
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -186,7 +194,7 @@ func TestResyncConfigured(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '2'},
+				Tag:      []byte{'a', 'c', 'l', '4'},
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
@@ -201,32 +209,56 @@ func TestResyncConfigured(t *testing.T) {
 			},
 		},
 		{
-			Id:   1003,
-			Ping: false,
+			Id:      1003,
+			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		{
-			Id:   1009,
-			Ping: false,
+			Id:      1009,
+			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
 		{
-			Id:   1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &acl_api.ACLAddReplaceReply{},
 		},
 		{
-			Id:   1005,
-			Ping: false,
+			Id:      1005,
+			Ping:    false,
 			Message: &acl_api.MacipACLAddReply{},
 		},
 	}))
 
+	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
+	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
+
+	// new acls do not exist
+	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	Expect(found).To(BeFalse())
+
 	err := plugin.Resync(acls)
 	Expect(err).To(BeNil())
+
+	// new acls are present
+	_, metaIpACL, found := plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
+	Expect(found).To(BeTrue())
+	Expect(metaIpACL).ToNot(BeNil())
+
+	_, metaMacIpACL, found := plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	Expect(found).To(BeTrue())
+	Expect(metaMacIpACL).ToNot(BeNil())
+
+	// old acls do not exist
+	_, _, found = plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
+	Expect(found).To(BeFalse())
 }
 
-// Test Resync with error when removig existing IP ACL
+// Test Resync with error when removing existing IP ACL
 func TestResyncErr1(t *testing.T) {
 	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
@@ -239,7 +271,7 @@ func TestResyncErr1(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '1'},
+				Tag:      []byte{'a', 'c', 'l', '3'},
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -259,7 +291,7 @@ func TestResyncErr1(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '2'},
+				Tag:      []byte{'a', 'c', 'l', '4'},
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
@@ -275,17 +307,33 @@ func TestResyncErr1(t *testing.T) {
 		},
 		// wrong msg
 		{
-			Id:   1003,
-			Ping: false,
+			Id:      1003,
+			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
 	}))
 
+	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
+	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
+
 	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
+
+	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
+	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
+
+	// old acls are still there, no change in acl config
+	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
+	Expect(found).To(BeTrue())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
+	Expect(found).To(BeTrue())
+	_, _, found = plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	Expect(found).To(BeFalse())
 }
 
-// Test Resync with error when removig existing IP ACL
+// Test Resync with error when removnig existing IP ACL
 func TestResyncErr2(t *testing.T) {
 	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
@@ -298,7 +346,7 @@ func TestResyncErr2(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '1'},
+				Tag:      []byte{'a', 'c', 'l', '3'},
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -318,7 +366,7 @@ func TestResyncErr2(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '2'},
+				Tag:      []byte{'a', 'c', 'l', '4'},
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
@@ -333,20 +381,38 @@ func TestResyncErr2(t *testing.T) {
 			},
 		},
 		{
-			Id:   1003,
-			Ping: false,
+			Id:      1003,
+			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		// wrong msg
 		{
-			Id:   1009,
-			Ping: false,
+			Id:      1009,
+			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 	}))
 
+	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
+	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
+
 	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
+
+	// IP acl has been removed
+	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
+	// but MACIP acl not (wrong msg)
+	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
+
+	// old MACIP acl is still there
+	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
+	Expect(found).To(BeTrue())
+	_, _, found = plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
+	Expect(found).To(BeFalse())
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	Expect(found).To(BeFalse())
 }
 
 // Test Resync with error when configuring new ALCs
@@ -362,7 +428,7 @@ func TestResyncErr3(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '1'},
+				Tag:      []byte{'a', 'c', 'l', '3'},
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -382,7 +448,7 @@ func TestResyncErr3(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '2'},
+				Tag:      []byte{'a', 'c', 'l', '4'},
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
@@ -397,23 +463,27 @@ func TestResyncErr3(t *testing.T) {
 			},
 		},
 		{
-			Id:   1003,
-			Ping: false,
+			Id:      1003,
+			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		{
-			Id:   1009,
-			Ping: false,
+			Id:      1009,
+			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
 		// wrong msg
 		{
-			Id:   1001,
-			Ping: false,
+			Id:      1001,
+			Ping:    false,
 			Message: &acl_api.MacipACLAddReplaceReply{},
 		},
 	}))
 
 	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
+
+	// old acls have been removed, but no new added - wrong msg during configure
+	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
+	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
 }

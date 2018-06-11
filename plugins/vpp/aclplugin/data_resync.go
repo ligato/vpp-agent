@@ -44,7 +44,6 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	// Remove all configured VPP ACLs
 	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
-	var wasErr error
 	for _, vppIpACL := range vppIpACLs {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
@@ -54,9 +53,10 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		if ipRulesExist {
 			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				plugin.log.Error(err)
-				wasErr = err
-				break
+				return err
 			}
+			// Unregister.
+			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.ACLDetails.AclName)
 			continue
 		}
 	}
@@ -66,9 +66,10 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		if ipRulesExist {
 			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
 				plugin.log.Error(err)
-				wasErr = err
-				break
+				return err
 			}
+			// Unregister.
+			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.ACLDetails.AclName)
 			continue
 		}
 	}
@@ -77,10 +78,9 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	for _, nbACL := range nbACLs {
 		if err := plugin.ConfigureACL(nbACL); err != nil {
 			plugin.log.Error(err)
-			wasErr = err
-			break
+			return err
 		}
 	}
 
-	return wasErr
+	return nil
 }
