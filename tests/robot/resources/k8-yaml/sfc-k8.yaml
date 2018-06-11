@@ -8,12 +8,18 @@ data:
     dial-timeout: 1000000000
     endpoints:
      - "172.17.0.1:22379"
-  kafka.conf: |
-    addrs:
-     - "172.17.0.1:9092"
   sfc.conf: |
     sfc_controller_config_version: 1
-    description: Empty Config
+    description: Basic restarts topology
+
+    host_entities:
+    - name: agent_vpp_vswitch
+
+    sfc_entities:
+    - name: l2bridge-0
+      description: abc
+      type: 2
+      elements:
 ---
 apiVersion: v1
 kind: Pod
