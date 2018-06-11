@@ -319,8 +319,8 @@ func TestResyncErr1(t *testing.T) {
 	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))
 
-	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
-	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
+	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
+	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 
 	// old acls are still there, no change in acl config
 	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
@@ -400,9 +400,9 @@ func TestResyncErr2(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 
 	// IP acl has been removed
-	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
+	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	// but MACIP acl not (wrong msg)
-	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(1))
+	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 
 	// old MACIP acl is still there
 	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
@@ -484,6 +484,6 @@ func TestResyncErr3(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 
 	// old acls have been removed, but no new added - wrong msg during configure
-	Expect(len(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
-	Expect(len(plugin.GetL2AclIfIndexes().GetMapping().ListNames())).To(BeEquivalentTo(0))
+	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
 }
