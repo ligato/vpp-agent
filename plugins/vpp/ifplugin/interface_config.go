@@ -57,8 +57,9 @@ type InterfaceConfigurator struct {
 	swIfIndexes ifaceidx.SwIfIndexRW
 	dhcpIndexes ifaceidx.DhcpIndexRW
 
-	uIfaceCache  map[string]string // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
-	memifScCache map[string]uint32 // memif socket filename/ID cache (all known sockets). Note: do not remove items from the map
+	uIfaceCache         map[string]string                     // cache for not-configurable unnumbered interfaces. map[unumbered-iface-name]required-iface
+	memifScCache        map[string]uint32                     // memif socket filename/ID cache (all known sockets). Note: do not remove items from the map
+	vxlanMulticastCache map[string]*intf.Interfaces_Interface // cache for multicast VxLANs expecting another interface
 
 	defaultMtu uint32 // default MTU value can be read from config
 
@@ -102,6 +103,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.afPacketConfigurator.Init(plugin.log, plugin.vppCh, plugin.linux, plugin.swIfIndexes, plugin.stopwatch)
 
 	plugin.uIfaceCache = make(map[string]string)
+	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
 	// Obtain registered socket filenames
 	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
 		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch))
@@ -148,6 +150,12 @@ func (plugin *InterfaceConfigurator) IsSocketFilenameCached(filename string) boo
 // IsUnnumberedIfCached returns true if provided interface is cached as unconfigurabel unnubered interface
 func (plugin *InterfaceConfigurator) IsUnnumberedIfCached(ifName string) bool {
 	_, ok := plugin.uIfaceCache[ifName]
+	return ok
+}
+
+// IsMulticastVxLanIfCached returns true if provided interface is cached as VxLAN with missing multicast interface
+func (plugin *InterfaceConfigurator) IsMulticastVxLanIfCached(ifName string) bool {
+	_, ok := plugin.vxlanMulticastCache[ifName]
 	return ok
 }
 
@@ -208,7 +216,12 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 		ifIdx, err = vppcalls.AddMemifInterface(iface.Name, iface.Memif, id, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, plugin.vppCh, plugin.stopwatch)
+		// VxLAN multicast interface. Interrupt the processing if there is an error or interface was cached
+		multicastIfIdx, cached, err := plugin.getVxLanMulticast(iface)
+		if err != nil || cached {
+			return err
+		}
+		ifIdx, err = vppcalls.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, multicastIfIdx, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		ifIdx, err = vppcalls.AddLoopbackInterface(iface.Name, plugin.vppCh, plugin.stopwatch)
 	case intf.InterfaceType_ETHERNET_CSMACD:
@@ -316,6 +329,11 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	plugin.PropagateIfDetailsToStatus()
 
 	l.Info("Interface configuration done")
+
+	// Check whether there is no VxLAN interface waiting on created one as a multicast
+	if err := plugin.resolveCachedVxLANMulticasts(iface.Name); err != nil {
+		errs = append(errs, err)
+	}
 
 	// TODO: use some error aggregator
 	if errs != nil {
@@ -461,8 +479,15 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 	oldConfig *intf.Interfaces_Interface) error {
 	plugin.log.Infof("Modifying Interface %v", newConfig.Name)
 
+	// Recreate pending Af-packet
 	if newConfig.Type == intf.InterfaceType_AF_PACKET_INTERFACE && plugin.afPacketConfigurator.IsPendingAfPacket(oldConfig) {
 		return plugin.recreateVPPInterface(newConfig, oldConfig, 0)
+	}
+
+	// Re-create cached VxLAN
+	if _, ok := plugin.vxlanMulticastCache[newConfig.Name]; ok {
+		delete(plugin.vxlanMulticastCache, newConfig.Name)
+		return plugin.ConfigureVPPInterface(newConfig)
 	}
 
 	// lookup index
@@ -712,6 +737,14 @@ func (plugin *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interf
 func (plugin *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_Interface) (wasError error) {
 	plugin.log.Infof("Removing interface %v", iface.Name)
 
+	// Remove VxLAN from cache if exists
+	if iface.Type == intf.InterfaceType_VXLAN_TUNNEL {
+		if _, ok := plugin.vxlanMulticastCache[iface.Name]; ok {
+			delete(plugin.vxlanMulticastCache, iface.Name)
+			return
+		}
+	}
+
 	if plugin.afPacketConfigurator.IsPendingAfPacket(iface) {
 		ifIdx, _, found := plugin.afPacketConfigurator.ifIndexes.LookupIdx(iface.Name)
 		if !found {
@@ -871,6 +904,62 @@ func (plugin *InterfaceConfigurator) resolveMemifSocketFilename(memifIf *intf.In
 		plugin.log.Debugf("Memif socket filename %s registered under ID %d", memifIf.SocketFilename, registeredID)
 	}
 	return registeredID, nil
+}
+
+// Returns VxLAN multicast interface index if set and exists. Returns index of the interface an whether the vxlan was cached.
+func (plugin *InterfaceConfigurator) getVxLanMulticast(vxlan *intf.Interfaces_Interface) (uint32, bool, error) {
+	if vxlan.Vxlan == nil {
+		plugin.log.Debugf("VxLAN multicast: no data available for %s", vxlan.Name)
+		return 0, false, nil
+	}
+	if vxlan.Vxlan.Multicast == "" {
+		plugin.log.Debugf("VxLAN %s has no multicast interface defined", vxlan.Name)
+		return 0, false, nil
+	}
+	mcIfIdx, mcIf, found := plugin.swIfIndexes.LookupIdx(vxlan.Vxlan.Multicast)
+	if !found {
+		plugin.log.Infof("multicast interface %s not found, %s is cached", vxlan.Vxlan.Multicast, vxlan.Name)
+		plugin.vxlanMulticastCache[vxlan.Name] = vxlan
+		return 0, true, nil
+	}
+	// Check wheteher at least one of the addresses is from multicast range
+	if len(mcIf.IpAddresses) == 0 {
+		return 0, false, fmt.Errorf("VxLAN %s refers to multicast interface %s which does not have any IP address",
+			vxlan.Name, mcIf.Name)
+	}
+	var IPVerified bool
+	for _, mcIfAddr := range mcIf.IpAddresses {
+		mcIfAddrWithoutMask := strings.Split(mcIfAddr, "/")[0]
+		IPVerified = net.ParseIP(mcIfAddrWithoutMask).IsMulticast()
+		if IPVerified {
+			if vxlan.Vxlan.DstAddress != mcIfAddr {
+				plugin.log.Warn("VxLAN %s contains destination address %s which will be replaced with multicast %s",
+					vxlan.Name, vxlan.Vxlan.DstAddress, mcIfAddr)
+			}
+			vxlan.Vxlan.DstAddress = mcIfAddrWithoutMask
+			break
+		}
+	}
+	if !IPVerified {
+		return 0, false, fmt.Errorf("VxLAN %s refers to multicast interface %s which does not have multicast IP address",
+			vxlan.Name, mcIf.Name)
+	}
+
+	return mcIfIdx, false, nil
+}
+
+// Look over cached VxLAN multicast interfaces and configure them if possible
+func (plugin *InterfaceConfigurator) resolveCachedVxLANMulticasts(createdIfName string) error {
+	for vxlanName, vxlan := range plugin.vxlanMulticastCache {
+		if vxlan.Vxlan.Multicast == createdIfName {
+			delete(plugin.vxlanMulticastCache, vxlanName)
+			if err := plugin.ConfigureVPPInterface(vxlan); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (plugin *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {

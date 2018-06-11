@@ -386,14 +386,23 @@ func dumpVxlanDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[u
 		if !ifIdxExists {
 			continue
 		}
+		// Multicast interface
+		var multicastIfName string
+		_, exists := ifs[vxlanDetails.McastSwIfIndex]
+		if exists {
+			multicastIfName = ifs[vxlanDetails.McastSwIfIndex].Name
+		}
+
 		if vxlanDetails.IsIpv6 == 1 {
 			ifs[vxlanDetails.SwIfIndex].Vxlan = &ifnb.Interfaces_Interface_Vxlan{
+				Multicast:  multicastIfName,
 				SrcAddress: net.IP(vxlanDetails.SrcAddress).To16().String(),
 				DstAddress: net.IP(vxlanDetails.DstAddress).To16().String(),
 				Vni:        vxlanDetails.Vni,
 			}
 		} else {
 			ifs[vxlanDetails.SwIfIndex].Vxlan = &ifnb.Interfaces_Interface_Vxlan{
+				Multicast:  multicastIfName,
 				SrcAddress: net.IP(vxlanDetails.SrcAddress[:4]).To4().String(),
 				DstAddress: net.IP(vxlanDetails.DstAddress[:4]).To4().String(),
 				Vni:        vxlanDetails.Vni,
