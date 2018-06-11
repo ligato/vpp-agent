@@ -485,9 +485,11 @@ func (plugin *InterfaceConfigurator) ModifyVPPInterface(newConfig *intf.Interfac
 	}
 
 	// Re-create cached VxLAN
-	if _, ok := plugin.vxlanMulticastCache[newConfig.Name]; ok {
-		delete(plugin.vxlanMulticastCache, newConfig.Name)
-		return plugin.ConfigureVPPInterface(newConfig)
+	if newConfig.Type == intf.InterfaceType_VXLAN_TUNNEL {
+		if _, ok := plugin.vxlanMulticastCache[newConfig.Name]; ok {
+			delete(plugin.vxlanMulticastCache, newConfig.Name)
+			return plugin.ConfigureVPPInterface(newConfig)
+		}
 	}
 
 	// lookup index
@@ -907,7 +909,7 @@ func (plugin *InterfaceConfigurator) resolveMemifSocketFilename(memifIf *intf.In
 }
 
 // Returns VxLAN multicast interface index if set and exists. Returns index of the interface an whether the vxlan was cached.
-func (plugin *InterfaceConfigurator) getVxLanMulticast(vxlan *intf.Interfaces_Interface) (uint32, bool, error) {
+func (plugin *InterfaceConfigurator) getVxLanMulticast(vxlan *intf.Interfaces_Interface) (ifIdx uint32, cached bool, err error) {
 	if vxlan.Vxlan == nil {
 		plugin.log.Debugf("VxLAN multicast: no data available for %s", vxlan.Name)
 		return 0, false, nil

@@ -67,10 +67,10 @@ message Interfaces {
         Memif memif = 101;
 
         message Vxlan {
-            string multicast = 1;    /* multicast interface */
-            string src_address = 2;  /* source VTEP address */
-            string dst_address = 3;  /* destination VTEP address */
-            uint32 vni = 4;          /* VXLAN Network Identifier */
+            string src_address = 1;  /* source VTEP address */
+            string dst_address = 2;  /* destination VTEP address */
+            uint32 vni = 3;          /* VXLAN Network Identifier */
+            string multicast = 4;    /* multicast interface */
 
         }
         Vxlan vxlan = 102; /* VXLAN interface settings */

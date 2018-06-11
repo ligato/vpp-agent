@@ -19,7 +19,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -60,8 +59,6 @@ func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf, multicast
 
 	req.SrcAddress = []byte(srcAddr)
 	req.DstAddress = []byte(dstAddr)
-
-	logrus.DefaultLogger().Warn(req)
 
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
