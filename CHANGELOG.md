@@ -1,3 +1,17 @@
+# Release v1.4.1 (2018-06-11)
+
+## Compatibility
+- VPP v18.04 (2302d0d)
+- cn-infra v1.3
+
+A minor release using newer VPP v18.04 version.
+
+## Bugfix
+- VPP submodule was removed from the project. It should prevent various problems with dependency
+  resolution.
+- Fixed known bug present in previous version of the VPP, issued as
+  [VPP-1280](https://jira.fd.io/browse/VPP-1280). Current version contains appropriate fix.  
+
 # Release v1.4 (2018-05-24)
 
 ## Compatibility
