@@ -71,8 +71,6 @@ func TestRouteRegisterAndUnregisterName(t *testing.T) {
 }
 
 func TestRouteLookupIndex(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3routeIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 0, &routes[0])
@@ -86,8 +84,6 @@ func TestRouteLookupIndex(t *testing.T) {
 }
 
 func TestRouteLookupName(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3routeIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 1, &routes[1])
@@ -101,8 +97,6 @@ func TestRouteLookupName(t *testing.T) {
 }
 
 func TestRouteLookupRouteAndIDByOutgoingIfc(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3routeIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 1, &routes[0])

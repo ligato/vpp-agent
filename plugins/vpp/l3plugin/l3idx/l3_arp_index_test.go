@@ -75,8 +75,6 @@ func TestArpRegisterAndUnregisterName(t *testing.T) {
 }
 
 func TestArpLookupIndex(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3arpIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 0, &arpEntries[0])
@@ -90,8 +88,6 @@ func TestArpLookupIndex(t *testing.T) {
 }
 
 func TestArpLookupName(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3arpIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 1, &arpEntries[2])
@@ -105,8 +101,6 @@ func TestArpLookupName(t *testing.T) {
 }
 
 func TestArpLookupNamesByInterface(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3arpIndexTestInitialization(t)
 
 	l3index.RegisterName("l3", 1, &arpEntries[0])
@@ -117,8 +111,6 @@ func TestArpLookupNamesByInterface(t *testing.T) {
 }
 
 func TestArpWatchNameToIdx(t *testing.T) {
-	RegisterTestingT(t)
-
 	_, l3index := l3arpIndexTestInitialization(t)
 
 	c := make(chan l3idx.ARPIndexDto)
