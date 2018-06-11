@@ -40,7 +40,7 @@ func TestAddVxlanTunnel(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 2, ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -51,6 +51,7 @@ func TestAddVxlanTunnel(t *testing.T) {
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(0))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
 			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
 			msgCheck = true
@@ -77,7 +78,7 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 1, ctx.MockChannel, nil)
+	}, 1, 1, ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -88,6 +89,7 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(1))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(1))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
 			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
 			msgCheck = true
@@ -109,7 +111,7 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 		SrcAddress: "2001:db8:0:1:1:1:1:1",
 		DstAddress: "2002:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 0, ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -138,7 +140,7 @@ func TestAddVxlanTunnelIPMismatch(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 0, ctx.MockChannel, nil)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -155,7 +157,7 @@ func TestAddVxlanTunnelInvalidIP(t *testing.T) {
 		SrcAddress: "invalid-ip",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 0, ctx.MockChannel, nil)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -170,7 +172,7 @@ func TestAddVxlanTunnelError(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 0, ctx.MockChannel, nil)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -192,7 +194,7 @@ func TestAddVxlanTunnelWithVrfError(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 1, ctx.MockChannel, nil)
+	}, 1, 0, ctx.MockChannel, nil)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -209,7 +211,7 @@ func TestAddVxlanTunnelRetval(t *testing.T) {
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
-	}, 0, ctx.MockChannel, nil)
+	}, 0, 0, ctx.MockChannel, nil)
 	Expect(err).ToNot(BeNil())
 }
 

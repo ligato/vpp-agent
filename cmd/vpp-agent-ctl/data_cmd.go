@@ -417,6 +417,7 @@ func (ctl *VppAgentCtl) createVxlan() {
 				//	InterfaceWithIP: "memif1",
 				//},
 				Vxlan: &interfaces.Interfaces_Interface_Vxlan{
+					//Multicast:  "if1",
 					SrcAddress: "192.168.42.1",
 					DstAddress: "192.168.42.2",
 					Vni:        13,
