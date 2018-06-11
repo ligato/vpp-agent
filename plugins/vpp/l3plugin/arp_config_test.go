@@ -61,7 +61,7 @@ func TestAddArpCached(t *testing.T) {
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	arps := plugin.GetArpCache().GetMapping().ListNames()
-	Expect(len(arps)).To(Equal(1))
+	Expect(arps).To(HaveLen(1))
 	Expect(arps[0]).To(Equal("arp-iface-tap3-59:6C:DE:AD:00:03-dead::01"))
 }
 
@@ -78,8 +78,8 @@ func TestAddArpAndResolve(t *testing.T) {
 		Static:      false,
 	})
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(1))
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(1))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(0))
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap3", 1, nil)
@@ -87,8 +87,8 @@ func TestAddArpAndResolve(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
 	err = plugin.ResolveCreatedInterface("tap3")
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(1))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(1))
 }
 
 func TestAddArp(t *testing.T) {
@@ -107,9 +107,9 @@ func TestAddArp(t *testing.T) {
 		Static:      true,
 	})
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
 	arps := plugin.GetArpIndexes().GetMapping().ListNames()
-	Expect(len(arps)).To(Equal(1))
+	Expect(arps).To(HaveLen(1))
 	Expect(arps[0]).To(Equal("arp-iface-tap1-59:6C:DE:AD:00:01-192.168.10.21"))
 }
 
@@ -134,7 +134,7 @@ func TestDeleteArpNonExistingIntf(t *testing.T) {
 	defer arpTestTeardown(connection, plugin)
 
 	num_arps := len(plugin.GetArpIndexes().GetMapping().ListNames())
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(0))
 	// delete arp for non existing intf
 	err := plugin.DeleteArp(&l3.ArpTable_ArpEntry{
 		Interface:   "tap4",
@@ -143,8 +143,8 @@ func TestDeleteArpNonExistingIntf(t *testing.T) {
 		Static:      false,
 	})
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(num_arps))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(1))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(num_arps))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(1))
 }
 
 // Test deleting of cached ARP entry
@@ -164,8 +164,8 @@ func TestDeleteArpCached(t *testing.T) {
 	num_arps := len(plugin.GetArpCache().GetMapping().ListNames())
 	err := plugin.DeleteArp(arp_entry)
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(num_arps - 1))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(num_arps - 1))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(0))
 }
 
 // Test deleting of ARP entry
@@ -194,7 +194,7 @@ func TestDeleteArp(t *testing.T) {
 		Static:      true,
 	})
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(num_arps - 1))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(num_arps - 1))
 }
 
 // Test changing of ARP entry
@@ -228,9 +228,9 @@ func TestChangeArp(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(err).ShouldNot(HaveOccurred())
 	arps := plugin.GetArpIndexes().GetMapping().ListNames()
-	Expect(len(arps)).To(Equal(num_arps))
+	Expect(arps).To(HaveLen(num_arps))
 	Expect(arps[0]).To(Equal("arp-iface-tap2-59:6C:DE:AD:00:02-192.168.10.22"))
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
 }
 
 // Test resolving of created ARPs
@@ -252,20 +252,20 @@ func TestArpResolveCreatedInterface(t *testing.T) {
 		Static:      false,
 	}
 
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(0))
 
 	plugin.GetArpCache().RegisterName("arp-iface-tap3-59:6C:DE:AD:00:03-dead::01", 1, arp_entry1)
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(1))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(0))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(1))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(0))
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
 	ifIndexes.GetMapping().RegisterName("tap3", 1, arp_entry1)
 	err := plugin.ResolveCreatedInterface("tap3")
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(1))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	_, _, found := plugin.GetArpCache().LookupIdx("arp-iface-tap3-59:6C:DE:AD:00:03-dead::01")
 	Expect(found).To(BeFalse())
 	_, meta, found := plugin.GetArpIndexes().LookupIdx("arp-iface-tap3-59:6C:DE:AD:00:03-dead::01")
@@ -275,17 +275,17 @@ func TestArpResolveCreatedInterface(t *testing.T) {
 
 	plugin.GetArpIndexes().RegisterName("arp-iface-tap4-59:6C:DE:AD:00:04-dead::02", 2, arp_entry2)
 	plugin.GetArpDeleted().RegisterName("arp-iface-tap4-59:6C:DE:AD:00:04-dead::02", 2, arp_entry2)
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(1))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(1))
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
 	ifIndexes.GetMapping().RegisterName("tap4", 2, arp_entry2)
 	err = plugin.ResolveCreatedInterface("tap4")
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(len(plugin.GetArpCache().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpDeleted().GetMapping().ListNames())).To(Equal(0))
-	Expect(len(plugin.GetArpIndexes().GetMapping().ListNames())).To(Equal(1))
+	Expect(plugin.GetArpCache().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpDeleted().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetArpIndexes().GetMapping().ListNames()).To(HaveLen(1))
 
 	_, _, found = plugin.GetArpCache().LookupIdx("arp-iface-tap4-59:6C:DE:AD:00:03-dead::02")
 	Expect(found).To(BeFalse())
