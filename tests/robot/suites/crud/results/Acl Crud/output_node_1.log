@@ -1,0 +1,5 @@
+*** Time:2018-06-06 12:58:37.159 Command: sudo docker create -e MICROSERVICE_LABEL=node_1 --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p 9195:9191 --name node_1 ligato/dev-cn-infra:latest
+2c6503cc9654ff8afcf62a381bc454182e6d64b100fd4ad86fc7af09337982c9
+*** Time:2018-06-06 12:58:37.467 Command: sudo docker start node_1
+node_1
+msestak@msestak-VirtualBox:~$ 

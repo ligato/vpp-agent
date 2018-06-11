@@ -1,0 +1,14 @@
+*** Time:2018-06-06 12:58:11.148 Command: sudo docker create -e MICROSERVICE_LABEL=agent_vpp_1 -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "/run/vpp:/run/vpp" -v "/tmp/vpp_socket:/tmp" -p 5001:5002 -p 9191:9191 --name agent_vpp_1 --pid=host -v "/var/run/docker.sock:/var/run/docker.sock" ligato/vpp-agent:pantheon-dev
+49f58df8eaed3c4421d26e427a93c08ca39ad711e1c56f7085f4d968811e7601
+*** Time:2018-06-06 12:58:11.385 Command: sudo docker start agent_vpp_1
+agent_vpp_1
+msestak@msestak-VirtualBox:~$ 
+*** Time:2018-06-06 12:58:51.816 Command: echo $MICROSERVICE_LABEL
+
+****** Time:2018-06-06 12:58:52.051 Command: ls -al
+total 16
+drwx------  2 root root 4096 Apr 17 13:41 .
+drwxr-xr-x 53 root root 4096 Jun  6 10:41 ..
+-rw-r--r--  1 root root 3106 Oct 22  2015 .bashrc
+-rw-r--r--  1 root root  148 Aug 17  2015 .profile
+***
