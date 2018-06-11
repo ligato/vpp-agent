@@ -1,20 +1,20 @@
 *** Settings ***
-Resource    ../../../libraries/kubernetes/CCMTSSetup.robot
+Resource    ../../../libraries/kubernetes/Restarts_Setup.robot
 Resource    ../../../libraries/kubernetes/KubeTestOperations.robot
 
 Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Library    SSHLibrary
 
-Suite Setup       Basic Ccmts Setup with ${1} VNFs and ${1} non-VPP containers
-Suite Teardown    Basic Ccmts Teardown
+Suite Setup       Basic Restarts Setup with ${1} VNFs and ${1} non-VPP containers
+Suite Teardown    Basic Restarts Teardown
 
 Documentation    Sanity test suite for Kubernetes pod restarts.
 
 *** Variables ***
 ${VARIABLES}=       common
 ${ENV}=             common
-${CLUSTER_ID}=      CCMTS1
+${CLUSTER_ID}=      INTEGRATION1
 
 *** Test Cases ***
 Basic restart scenario - VNF

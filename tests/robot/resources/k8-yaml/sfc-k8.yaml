@@ -10,7 +10,7 @@ data:
      - "172.17.0.1:22379"
   sfc.conf: |
     sfc_controller_config_version: 1
-    description: Basic cCMTS topo
+    description: Basic restarts topology
 
     host_entities:
     - name: agent_vpp_vswitch

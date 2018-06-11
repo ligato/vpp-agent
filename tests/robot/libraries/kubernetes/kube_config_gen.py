@@ -1,8 +1,10 @@
 import yaml
 import os
+"""Generates YAML config files for use with kubernetes."""
 
 
 def mac_hex(number):
+    """Convert integer to hexadecimal for incrementing MAC addresses."""
     temp = hex(number)[2:]
     if number < 10:
         temp = "0{0}".format(temp)
@@ -15,6 +17,7 @@ def mac_hex(number):
 
 
 def yaml_replace_line(yaml_string, line_identifier, replacement):
+    """Replace a single line in the specified file."""
     for line in yaml_string.splitlines():
         if line_identifier in line:
             whitespace = len(line) - len(line.lstrip(" "))
@@ -39,7 +42,6 @@ class YamlConfigGenerator(object):
             self.templates["vnf"] = vnf.read()
         with open("{0}/novpp.yaml".format(template_folder), "r") as novpp:
             self.templates["novpp"] = novpp.read()
-        print self.templates
 
     def generate_config(self, output_path):
         self.generate_sfc_config()
@@ -95,10 +97,9 @@ class YamlConfigGenerator(object):
             for section in sections:
                 if "sfc_entities:" in section:
                     output = template.replace(section, section + output)
-                    print output
                     self.output["sfc"] = output
         else:
-            print self.templates["sfc"] + output
+            self.output["sfc"] = template + output
 
     def generate_vnf_config(self):
         template = self.templates["vnf"]
@@ -106,7 +107,6 @@ class YamlConfigGenerator(object):
             template,
             "replicas:",
             "replicas: {0}".format(self.vnf_count))
-        print output
         self.output["vnf"] = output
 
     def generate_novpp_config(self):
@@ -115,7 +115,6 @@ class YamlConfigGenerator(object):
             template,
             "replicas:",
             "replicas: {0}".format(self.novpp_count))
-        print output
         self.output["novpp"] = output
 
     def write_config_files(self, output_path):

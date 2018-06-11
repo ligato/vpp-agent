@@ -7,29 +7,28 @@ Resource    ${CURDIR}/KubeCtl.robot
 Resource    ${CURDIR}/../SshCommons.robot
 
 *** Keywords ***
-Basic Ccmts Setup with ${vnf_count} VNFs and ${novpp_count} non-VPP containers
+Basic Restarts Setup with ${vnf_count} VNFs and ${novpp_count} non-VPP containers
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
     KubeSetup.Kubernetes Suite Setup   ${CLUSTER_ID}
-    Cleanup_Basic_Ccmts_Deployment_On_Cluster    ${testbed_connection}
+    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
     Generate YAML Config Files    ${vnf_count}    ${novpp_count}
     KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${vnf_count}
     KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${novpp_count}
     KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
-    Open_CCMTS1_Connections    ${vnf_count}    ${novpp_count}    node_index=1    cluster_id=${CLUSTER_ID}
+    Open_Restarts_Connections    ${vnf_count}    ${novpp_count}    node_index=1    cluster_id=${CLUSTER_ID}
 
-Basic Ccmts Teardown
+Basic Restarts Teardown
     [Documentation]    Log leftover output from pods, remove pods, execute common teardown.
     KubeEnv.Log_Pods_For_Debug    ${testbed_connection}    exp_nr_vswitch=1
     KubeEnv.Remove_ETCD_Pod_And_Verify_Removed    ${testbed_connection}
     KubeEnv.Remove_VSwitch_Pod_And_Verify_Removed   ${testbed_connection}
     KubeEnv.Remove_SFC_Pod_And_Verify_Removed   ${testbed_connection}
-    # KubeEnv.Remove_Cn-Infra_Pod_And_Verify_Removed   ${testbed_connection}
     # TODO: Remove vnf and novpp pods.
     KubeSetup.Kubernetes Suite Teardown    ${CLUSTER_ID}
 
-Cleanup_Basic_Ccmts_Deployment_On_Cluster
+Cleanup_Basic_Restarts_Deployment_On_Cluster
     [Arguments]    ${testbed_connection}
     [Documentation]    Assuming active SSH connection, delete all Kubernetes elements and wait for completion.
     SSHLibrary.Switch_Connection  ${testbed_connection}
@@ -38,14 +37,14 @@ Cleanup_Basic_Ccmts_Deployment_On_Cluster
 Setup_Hosts_Connections
     [Documentation]    Open and store two more SSH connections to master host, in them open
     ...    pod shells to client and server pod, parse their IP addresses and store them.
-    Open_CCMTS1_Connections
+    Open_Restarts_Connections
 
 Teardown_Hosts_Connections
     [Documentation]    Exit pod shells, close corresponding SSH connections.
-    Close_CCMTS1_Connections
+    Close_Restarts_Connections
 
-Open_CCMTS1_Connections
-    [Arguments]    ${vnf_count}    ${novpp_count}    ${node_index}=1    ${cluster_id}=CCMTS1
+Open_Restarts_Connections
+    [Arguments]    ${vnf_count}    ${novpp_count}    ${node_index}=1    ${cluster_id}=INTEGRATION1
     BuiltIn.Log    ${node_index}
     BuiltIn.Log    ${cluster_id}
 
@@ -75,7 +74,7 @@ Open_CCMTS1_Connections
     \    KubeEnv.Get_Into_Container_Prompt_In_Pod    ${novpp_connection}    novpp-${novpp}    prompt=#
     BuiltIn.Set_Suite_Variable    ${novpp_connections}
 
-Close_CCMTS1_Connections
+Close_Restarts_Connections
     KubeEnv.Leave_Container_Prompt_In_Pod    ${vswitch_connection}
     KubeEnv.Leave_Container_Prompt_In_Pod    ${sfc_connection}
     KubeEnv.Leave_Container_Prompt_In_Pod    ${etcd_connection}

@@ -12,4 +12,4 @@ Resource    KubeCtl.robot
 Resource    KubeEnv.robot
 Resource    KubeEnvConnections.robot
 Resource    KubeSetup.robot
-Resource    CCMTSSetup.robot
+Resource    Restarts_Setup.robot
