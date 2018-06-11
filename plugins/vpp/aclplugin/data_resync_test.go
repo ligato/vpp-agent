@@ -346,7 +346,7 @@ func TestResyncErr2(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '3'},
+				Tag:      []byte("acl3"),
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -366,7 +366,7 @@ func TestResyncErr2(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '4'},
+				Tag:      []byte("acl4"),
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
@@ -428,7 +428,7 @@ func TestResyncErr3(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '3'},
+				Tag:      []byte("acl3"),
 				Count:    1,
 				R:        []acl_api.ACLRule{{IsPermit: 1}},
 			},
@@ -448,7 +448,7 @@ func TestResyncErr3(t *testing.T) {
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
-				Tag:      []byte{'a', 'c', 'l', '4'},
+				Tag:      []byte("acl4"),
 				Count:    2,
 				R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 			},
