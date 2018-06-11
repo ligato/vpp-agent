@@ -57,23 +57,23 @@ func TestAddInterface(t *testing.T) {
 	ifIndexes.GetMapping().RegisterName("tap2", 2, nil)
 
 	err := plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf1",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "", }, },
+		Label:      "proxyArpIf1",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: ""}},
 	})
 	Expect(err).Should(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(0))
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(0))
 	err = plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(1))
 
 	err = plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	})
 	Expect(err).Should(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
@@ -81,8 +81,8 @@ func TestAddInterface(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	err = plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf4",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap1", }, },
+		Label:      "proxyArpIf4",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap1"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
@@ -105,30 +105,30 @@ func TestDeleteInterface(t *testing.T) {
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(4))
 
 	err := plugin.DeleteInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf1",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf1",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(3))
 
 	err = plugin.DeleteInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	})
 	Expect(err).Should(HaveOccurred())
 	Expect(err).To(Not(BeNil()))
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(3))
 
 	err = plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
 
 	err = plugin.DeleteInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(2))
@@ -136,8 +136,8 @@ func TestDeleteInterface(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	err = plugin.DeleteInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf4",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap1", }, },
+		Label:      "proxyArpIf4",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap1"}},
 	})
 	Expect(err).To(BeNil())
 	Expect(err).ShouldNot(HaveOccurred())
@@ -154,30 +154,30 @@ func TestModifyInterface(t *testing.T) {
 	ifIndexes.GetMapping().RegisterName("tap2", 2, nil)
 
 	err := plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
 
 	// old int deleted from cache
 	err = plugin.ModifyInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	}, &l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).Should(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(1))
 	Expect(len(plugin.GetArpIfCache())).To(Equal(0))
 
 	err = plugin.ModifyInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	}, &l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf4",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap1", }, },
+		Label:      "proxyArpIf4",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap1"}},
 	})
 	Expect(err).Should(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(1))
@@ -186,11 +186,11 @@ func TestModifyInterface(t *testing.T) {
 	// new int added to cache
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	err = plugin.ModifyInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	}, &l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(1))
@@ -200,11 +200,11 @@ func TestModifyInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	err = plugin.ModifyInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf3",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap2", }, },
+		Label:      "proxyArpIf3",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap2"}},
 	}, &l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf4",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap1", }, },
+		Label:      "proxyArpIf4",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap1"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfIndexes().ListNames())).To(Equal(1))
@@ -223,8 +223,8 @@ func TestAddRange(t *testing.T) {
 	err := plugin.AddRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIf1",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-			{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+			{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+			{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -236,8 +236,8 @@ func TestAddRange(t *testing.T) {
 	err = plugin.AddRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIf1",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-			{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+			{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+			{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 		},
 	})
 	Expect(err).Should(HaveOccurred())
@@ -247,8 +247,8 @@ func TestAddRange(t *testing.T) {
 	err = plugin.AddRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIfErr",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.20.0/24/32", LastIp:  "124.168.30.10", },
-			{ FirstIp: "124.168.20.5", LastIp:  "124.168.30.5/16/24", },
+			{FirstIp: "124.168.20.0/24/32", LastIp: "124.168.30.10"},
+			{FirstIp: "124.168.20.5", LastIp: "124.168.30.5/16/24"},
 		},
 	})
 	Expect(err).Should(HaveOccurred())
@@ -270,8 +270,8 @@ func TestDeleteRange(t *testing.T) {
 	err := plugin.DeleteRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIf1",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-			{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+			{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+			{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -284,8 +284,8 @@ func TestDeleteRange(t *testing.T) {
 	err = plugin.DeleteRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIf1",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-			{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+			{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+			{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 		},
 	})
 	Expect(err).Should(HaveOccurred())
@@ -295,8 +295,8 @@ func TestDeleteRange(t *testing.T) {
 	err = plugin.DeleteRange(&l3.ProxyArpRanges_RangeList{
 		Label: "proxyArpIfErr",
 		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.20.0/24/32", LastIp:  "124.168.30.10", },
-			{ FirstIp: "124.168.20.5", LastIp:  "124.168.30.5/16/24", },
+			{FirstIp: "124.168.20.0/24/32", LastIp: "124.168.30.10"},
+			{FirstIp: "124.168.20.5", LastIp: "124.168.30.5/16/24"},
 		},
 	})
 	Expect(err).Should(HaveOccurred())
@@ -314,18 +314,18 @@ func TestModifyRange1(t *testing.T) {
 	Expect(len(plugin.GetArpRngIndexes().ListNames())).To(Equal(1))
 
 	err := plugin.ModifyRange(
-		&l3.ProxyArpRanges_RangeList {
+		&l3.ProxyArpRanges_RangeList{
 			Label: "proxyArpIf2",
 			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-				{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-				{ FirstIp: "172.154.100.0/24", LastIp:  "172.154.200.0/24", },
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "172.154.100.0/24", LastIp: "172.154.200.0/24"},
 			},
 		},
 		&l3.ProxyArpRanges_RangeList{
 			Label: "proxyArpIf1",
 			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-				{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-				{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 			},
 		})
 	Expect(err).Should(HaveOccurred())
@@ -334,18 +334,18 @@ func TestModifyRange1(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
 	err = plugin.ModifyRange(
-		&l3.ProxyArpRanges_RangeList {
+		&l3.ProxyArpRanges_RangeList{
 			Label: "proxyArpIf2",
 			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-				{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-				{ FirstIp: "172.154.100.0/24", LastIp:  "172.154.200.0/24", },
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "172.154.100.0/24", LastIp: "172.154.200.0/24"},
 			},
 		},
 		&l3.ProxyArpRanges_RangeList{
 			Label: "proxyArpIf1",
 			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-				{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-				{ FirstIp: "124.168.20.0/24", LastIp:  "124.168.20.0/24", },
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
 			},
 		})
 	Expect(err).Should(HaveOccurred())
@@ -355,20 +355,20 @@ func TestModifyRange1(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
 	err = plugin.ModifyRange(
-		&l3.ProxyArpRanges_RangeList {
-		Label: "proxyArpIf2",
-		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{ FirstIp: "124.168.10.5", LastIp:  "124.168.10.10", },
-			{ FirstIp: "172.154.100.0/24", LastIp:  "172.154.200.0/24", },
-		},
-	},
 		&l3.ProxyArpRanges_RangeList{
-		Label: "proxyArpIf1",
-		Ranges: []*l3.ProxyArpRanges_RangeList_Range{
-			{FirstIp: "124.168.10.5", LastIp: "124.168.10.10",},
-			{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24",},
+			Label: "proxyArpIf2",
+			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "172.154.100.0/24", LastIp: "172.154.200.0/24"},
+			},
 		},
-	})
+		&l3.ProxyArpRanges_RangeList{
+			Label: "proxyArpIf1",
+			Ranges: []*l3.ProxyArpRanges_RangeList_Range{
+				{FirstIp: "124.168.10.5", LastIp: "124.168.10.10"},
+				{FirstIp: "124.168.20.0/24", LastIp: "124.168.20.0/24"},
+			},
+		})
 	Expect(err).ShouldNot(HaveOccurred())
 }
 
@@ -379,8 +379,8 @@ func TestArpProxyResolveCreatedInterface(t *testing.T) {
 	defer proxyarpTestTeardown(connection, plugin)
 
 	err := plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf2",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap3", }, },
+		Label:      "proxyArpIf2",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap3"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(1))
@@ -404,8 +404,8 @@ func TestArpProxyResolveDeletedInterface(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
 	err := plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
-		Label: "proxyArpIf4",
-		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{ { Name: "tap1", }, },
+		Label:      "proxyArpIf4",
+		Interfaces: []*l3.ProxyArpInterfaces_InterfaceList_Interface{{Name: "tap1"}},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(len(plugin.GetArpIfCache())).To(Equal(0))
