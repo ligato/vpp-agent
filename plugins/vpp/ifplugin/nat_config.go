@@ -187,50 +187,13 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 		plugin.log.Debug("No NAT interfaces to configure")
 	}
 
-	// Address pool
-	var wasErr error
-	for _, pool := range config.AddressPools {
-		if pool.FirstSrcAddress == "" && pool.LastSrcAddress == "" {
-			wasErr = fmt.Errorf("invalid address pool config, no IP address provided")
-			plugin.log.Error(wasErr)
-			continue
-		}
-		var firstIP []byte
-		var lastIP []byte
-		if pool.FirstSrcAddress != "" {
-			firstIP = net.ParseIP(pool.FirstSrcAddress).To4()
-			if firstIP == nil {
-				wasErr = fmt.Errorf("unable to parse IP address %v", pool.FirstSrcAddress)
-				plugin.log.Error(wasErr)
-				continue
-			}
-		}
-		if pool.LastSrcAddress != "" {
-			lastIP = net.ParseIP(pool.LastSrcAddress).To4()
-			if lastIP == nil {
-				wasErr = fmt.Errorf("unable to parse IP address %v", pool.LastSrcAddress)
-				plugin.log.Error(wasErr)
-				continue
-			}
-		}
-		// Both fields have to be set, at least at the same value if only one of them is set
-		if firstIP == nil {
-			firstIP = lastIP
-		} else if lastIP == nil {
-			lastIP = firstIP
-		}
-
-		// Configure address pool
-		if err := vppcalls.AddNat44AddressPool(firstIP, lastIP, pool.VrfId, pool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
-			wasErr = err
-			plugin.log.Error(wasErr)
-			continue
-		}
+	if err := plugin.addAddressPool(config.AddressPools); err != nil {
+		return err
 	}
 
 	plugin.log.Debug("Setting up NAT global config done")
 
-	return wasErr
+	return nil
 }
 
 // ModifyNatGlobalConfig modifies common setup for all NAT use cases
@@ -264,10 +227,10 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 
 	// Address pool
 	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools)
-	if err := plugin.addDelAddressPool(toRemove, false); err != nil {
+	if err := plugin.delAddressPool(toRemove); err != nil {
 		return err
 	}
-	if err := plugin.addDelAddressPool(toAdd, true); err != nil {
+	if err := plugin.addAddressPool(toAdd); err != nil {
 		return err
 	}
 
@@ -292,7 +255,7 @@ func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (e
 
 	// Address pools
 	if len(config.AddressPools) > 0 {
-		if err := plugin.addDelAddressPool(config.AddressPools, false); err != nil {
+		if err := plugin.delAddressPool(config.AddressPools); err != nil {
 			return err
 		}
 	}
@@ -551,8 +514,8 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 	return
 }
 
-// adds NAT address pool
-func (plugin *NatConfigurator) addDelAddressPool(addressPools []*nat.Nat44Global_AddressPool, isAdd bool) (err error) {
+// Configures NAT address pool. If an address pool cannot is invalid and cannot be configured, it is skipped.
+func (plugin *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_AddressPool) (err error) {
 	var wasErr error
 	for _, addressPool := range addressPools {
 		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
@@ -587,18 +550,55 @@ func (plugin *NatConfigurator) addDelAddressPool(addressPools []*nat.Nat44Global
 		} else if lastIP == nil {
 			lastIP = firstIP
 		}
+		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
+			plugin.log.Error(err)
+			wasErr = err
+		}
+	}
 
-		// configure or remove address pool
-		if isAdd {
-			if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+	return wasErr
+}
+
+// Removes NAT address pool. Invalid address pool configuration is skipped with warning, configurator assumes that
+// such a data could not be configured to the vpp.
+func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_AddressPool) (err error) {
+	var wasErr error
+	for _, addressPool := range addressPools {
+		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
+			// No address pool to remove
+			continue
+		}
+		var firstIP []byte
+		var lastIP []byte
+		if addressPool.FirstSrcAddress != "" {
+			firstIP = net.ParseIP(addressPool.FirstSrcAddress).To4()
+			if firstIP == nil {
+				// Do not return error here
+				plugin.log.Warnf("First address pool IP %s cannot be parsed and removed, skipping",
+					addressPool.FirstSrcAddress)
+				continue
 			}
-		} else {
-			if err = vppcalls.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+		}
+		if addressPool.LastSrcAddress != "" {
+			lastIP = net.ParseIP(addressPool.LastSrcAddress).To4()
+			if lastIP == nil {
+				// Do not return error here
+				plugin.log.Warnf("Last address pool IP %s cannot be parsed and removed, skipping",
+					addressPool.LastSrcAddress)
+				continue
 			}
+		}
+		// Both fields have to be set, at least at the same value if only one of them is set
+		if firstIP == nil {
+			firstIP = lastIP
+		} else if lastIP == nil {
+			lastIP = firstIP
+		}
+
+		// remove address pool
+		if err = vppcalls.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
+			plugin.log.Error(err)
+			wasErr = err
 		}
 	}
 

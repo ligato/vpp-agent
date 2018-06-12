@@ -462,6 +462,29 @@ func TestNatConfiguratorModifyAddressPoolErrors(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
+// Set NAT address pool with invalid ip addresses and then modify it with correct one
+func TestNatConfiguratorModifyAddressPoolModifyErrors(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
+	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
+	// Data
+	var aps []*nat.Nat44Global_AddressPool
+	oldData := &nat.Nat44Global{AddressPools: append(aps,
+		getTestNatAddressPoolConfig("invalid-ip", "", 0, true))} // invalid
+	newData := &nat.Nat44Global{AddressPools: append(aps,
+		getTestNatAddressPoolConfig("10.0.0.1", "", 0, true))} // valid
+	// Test set address pool
+	err = plugin.SetNatGlobalConfig(oldData)
+	Expect(err).ToNot(BeNil())
+	err = plugin.ModifyNatGlobalConfig(oldData, newData)
+	Expect(err).To(BeNil())
+}
+
 // Remove global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 	var err error
