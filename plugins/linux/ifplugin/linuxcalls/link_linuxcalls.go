@@ -102,7 +102,7 @@ func (handler *netLinkHandler) RenameInterface(ifName string, newName string) er
 	if err != nil {
 		return err
 	}
-	err = handler.SetInterfaceUp(ifName)
+	err = handler.SetInterfaceUp(newName)
 	if err != nil {
 		return err
 	}
