@@ -129,7 +129,7 @@ func (plugin *InterfaceConfigurator) Close() error {
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *InterfaceConfigurator) clearCache() error {
+func (plugin *InterfaceConfigurator) clearMapping() error {
 	plugin.swIfIndexes.Clear()
 	plugin.dhcpIndexes.Clear()
 	plugin.uIfaceCache = make(map[string]string)

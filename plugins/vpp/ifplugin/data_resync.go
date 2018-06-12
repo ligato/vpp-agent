@@ -51,7 +51,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	}()
 
 	// Re-initialize cache
-	if err := plugin.clearCache(); err != nil {
+	if err := plugin.clearMapping(); err != nil {
 		return []error{err}
 	}
 	plugin.afPacketConfigurator.clearMapping()

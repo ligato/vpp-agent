@@ -90,8 +90,8 @@ func (plugin *SRv6Configurator) Close() error {
 	return err
 }
 
-// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *SRv6Configurator) clearCache() {
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *SRv6Configurator) clearMapping() {
 	// Clear caches
 	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
 	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)

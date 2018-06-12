@@ -105,8 +105,8 @@ func (plugin *FIBConfigurator) Close() error {
 	return err
 }
 
-// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *FIBConfigurator) clearCache() {
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *FIBConfigurator) clearMapping() {
 	plugin.fibIndexes.Clear()
 	plugin.addCacheIndexes.Clear()
 	plugin.delCacheIndexes.Clear()

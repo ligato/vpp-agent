@@ -30,7 +30,7 @@ func (plugin *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_A
 	}()
 
 	// Re-initialize cache
-	plugin.clearCache()
+	plugin.clearMapping()
 
 	var wasError error
 	if len(appNamespaces) > 0 {

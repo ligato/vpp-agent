@@ -91,8 +91,8 @@ func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *RouteConfigurator) clearCache() {
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *RouteConfigurator) clearMapping() {
 	plugin.rtIndexes.Clear()
 	plugin.rtCachedIndexes.Clear()
 }
