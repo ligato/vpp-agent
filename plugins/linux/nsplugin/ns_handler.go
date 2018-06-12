@@ -24,9 +24,9 @@ import (
 	"sync"
 	"syscall"
 
+	"bytes"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -60,6 +60,10 @@ type NsHandler struct {
 	// moved to proper namespace
 	configNs *intf.LinuxInterfaces_Interface_Namespace
 
+	// Handlers
+	ifHandler  linuxcalls.NetlinkAPI
+	sysHandler SystemAPI
+
 	// Context within which all goroutines are running
 	ctx context.Context
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
@@ -69,7 +73,8 @@ type NsHandler struct {
 }
 
 // Init namespace handler caches and create config namespace
-func (plugin *NsHandler) Init(logger logging.PluginLogger, msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
+func (plugin *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, sysHandler SystemAPI,
+	msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
 	// Logger
 	plugin.log = logger.NewLogger("-ns-handler")
 	plugin.log.Infof("Initializing namespace handler plugin")
@@ -82,6 +87,10 @@ func (plugin *NsHandler) Init(logger logging.PluginLogger, msChan chan *Microser
 
 	plugin.microServiceByLabel = make(map[string]*Microservice)
 	plugin.microServiceByID = make(map[string]*Microservice)
+
+	// Handlers
+	plugin.ifHandler = ifHandler
+	plugin.sysHandler = sysHandler
 
 	// Default namespace
 	var err error
@@ -117,7 +126,7 @@ func (plugin *NsHandler) Close() error {
 	if plugin.configNs != nil {
 		// Remove veth pre-configure namespace
 		ns := plugin.IfNsToGeneric(plugin.configNs)
-		wasErr = ns.deleteNamedNetNs(plugin.log)
+		wasErr = ns.deleteNamedNetNs(plugin.sysHandler, plugin.log)
 		plugin.cancel()
 		plugin.wg.Wait()
 	}
@@ -130,9 +139,18 @@ func (plugin *NsHandler) GetConfigNamespace() *intf.LinuxInterfaces_Interface_Na
 	return plugin.configNs
 }
 
+// GetMicroserviceByLabel returns internal microservice-by-label mapping
+func (plugin *NsHandler) GetMicroserviceByLabel() map[string]*Microservice {
+	return plugin.microServiceByLabel
+}
+
+// GetMicroserviceByID returns internal microservice-by-id mapping
+func (plugin *NsHandler) GetMicroserviceByID() map[string]*Microservice {
+	return plugin.microServiceByID
+}
+
 // SetInterfaceNamespace moves a given Linux interface into a specified namespace.
-func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace,
-	log logging.Logger, stopwatch *measure.Stopwatch) error {
+func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace) error {
 	// Convert microservice namespace
 	var err error
 	if namespace != nil && namespace.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
@@ -158,7 +176,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	defer ns.Close()
 
 	// Get the link plugin.
-	link, err := netlink.LinkByName(ifName)
+	link, err := plugin.ifHandler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
@@ -182,7 +200,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	if err != nil {
 		return err
 	}
-	log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": plugin.IfaceNsToString(namespace),
+	plugin.log.WithFields(logging.Fields{"ifName": ifName, "dest-namespace": plugin.IfaceNsToString(namespace),
 		"dest-namespace-fd": int(ns)}).
 		Debug("Moved Linux interface across namespaces")
 
@@ -195,12 +213,18 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 
 	if netIntf.Flags&net.FlagUp == 1 {
 		// re-enable interface
-		err = linuxcalls.InterfaceAdminUp(ifName, measure.GetTimeLog("iface_admin_up", stopwatch))
+		err = plugin.ifHandler.SetInterfaceUp(ifName)
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
 		}
-		log.WithFields(logging.Fields{"ifName": ifName}).
+		plugin.log.WithFields(logging.Fields{"ifName": ifName}).
 			Debug("Linux interface was re-enabled")
+	}
+
+	// Get all configured interface addresses
+	confAddresses, err := plugin.ifHandler.GetAddressList(ifName)
+	if err != nil {
+		return err
 	}
 
 	// re-add IP addresses
@@ -210,23 +234,29 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 		if err != nil {
 			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
 		}
-		err = linuxcalls.AddInterfaceIP(log, ifName, network, measure.GetTimeLog("add_iface_ip", stopwatch))
+		// Check link local addresses which cannot be reassigned
+		if addressExists(confAddresses, network) {
+			plugin.log.Debugf("Cannot assign %s to interface %s, IP already exists",
+				network.IP.String(), ifName)
+			continue
+		}
+		err = plugin.ifHandler.AddInterfaceIP(ifName, network)
 		if err != nil {
 			if err.Error() == "file exists" {
 				continue
 			}
 			return fmt.Errorf("failed to assign IPv4 address to a Linux interface `%s`: %v", ifName, err)
 		}
-		log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).
+		plugin.log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).
 			Debug("IP address was re-assigned to Linux interface")
 	}
 
 	// revert back the MTU config
-	err = linuxcalls.SetInterfaceMTU(ifName, netIntf.MTU, measure.GetTimeLog("set_iface_mtu", stopwatch))
+	err = plugin.ifHandler.SetInterfaceMTU(ifName, netIntf.MTU)
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}
-	log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).
+	plugin.log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).
 		Debug("MTU was reconfigured for Linux interface")
 
 	return nil
@@ -288,7 +318,7 @@ func (plugin *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (
 
 	// Switch the namespace.
 	l := plugin.log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
-	if err := netns.Set(nsHandle); err != nil {
+	if err := plugin.sysHandler.SetNamespace(nsHandle); err != nil {
 		l.Errorf("Failed to switch Linux network namespace (%v): %v", ns.GenericNsToString(), err)
 	} else {
 		l.Debugf("Switched Linux network namespace (%v)", ns.GenericNsToString())
@@ -374,10 +404,10 @@ func (plugin *NsHandler) getOrCreateNs(ns *Namespace) (netns.NsHandle, error) {
 		if ns.Name == "" {
 			return dupNsHandle(plugin.defaultNs)
 		}
-		nsHandle, err = netns.GetFromName(ns.Name)
+		nsHandle, err = plugin.sysHandler.GetNamespaceFromName(ns.Name)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, err = ns.createNamedNetNs(plugin.log)
+			_, err = ns.createNamedNetNs(plugin.sysHandler, plugin.log)
 			if err != nil {
 				return netns.None(), err
 			}
@@ -415,12 +445,12 @@ func (plugin *NsHandler) prepareConfigNamespace() error {
 	}
 	// Remove namespace if exists.
 	if found {
-		err := ns.deleteNamedNetNs(plugin.log)
+		err := ns.deleteNamedNetNs(plugin.sysHandler, plugin.log)
 		if err != nil {
 			return err
 		}
 	}
-	_, err = ns.createNamedNetNs(plugin.log)
+	_, err = ns.createNamedNetNs(plugin.sysHandler, plugin.log)
 	if err != nil {
 		return err
 	}
@@ -437,6 +467,15 @@ func (plugin *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) 
 		return pidNamespace
 	}
 	return nil
+}
+
+func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
+	for _, confAddr := range configured {
+		if bytes.Equal(confAddr.IP, provided.IP) {
+			return true
+		}
+	}
+	return false
 }
 
 // dupNsHandle duplicates namespace handle.

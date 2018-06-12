@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/nat --gogo_out=../common/model/nat ../common/model/nat/nat.proto
+//go:generate protoc --proto_path=../model/nat --gogo_out=../model/nat ../model/nat/nat.proto
 
 package ifplugin
 

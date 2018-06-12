@@ -6,7 +6,7 @@ package af_packet
 import "git.fd.io/govpp.git/api"
 
 // AfPacketCreate represents the VPP binary API message 'af_packet_create'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 17:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 4:
 //
 //            "af_packet_create",
 //            [
@@ -59,7 +59,7 @@ func NewAfPacketCreate() api.Message {
 }
 
 // AfPacketCreateReply represents the VPP binary API message 'af_packet_create_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 49:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 36:
 //
 //            "af_packet_create_reply",
 //            [
@@ -101,7 +101,7 @@ func NewAfPacketCreateReply() api.Message {
 }
 
 // AfPacketDelete represents the VPP binary API message 'af_packet_delete'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 71:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 58:
 //
 //            "af_packet_delete",
 //            [
@@ -143,7 +143,7 @@ func NewAfPacketDelete() api.Message {
 }
 
 // AfPacketDeleteReply represents the VPP binary API message 'af_packet_delete_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 94:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 81:
 //
 //            "af_packet_delete_reply",
 //            [
@@ -180,7 +180,7 @@ func NewAfPacketDeleteReply() api.Message {
 }
 
 // AfPacketSetL4CksumOffload represents the VPP binary API message 'af_packet_set_l4_cksum_offload'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 112:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 99:
 //
 //            "af_packet_set_l4_cksum_offload",
 //            [
@@ -226,7 +226,7 @@ func NewAfPacketSetL4CksumOffload() api.Message {
 }
 
 // AfPacketSetL4CksumOffloadReply represents the VPP binary API message 'af_packet_set_l4_cksum_offload_reply'.
-// Generated from '/usr/share/vpp/api/af_packet.api.json', line 138:
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 125:
 //
 //            "af_packet_set_l4_cksum_offload_reply",
 //            [
@@ -260,4 +260,83 @@ func (*AfPacketSetL4CksumOffloadReply) GetCrcString() string {
 }
 func NewAfPacketSetL4CksumOffloadReply() api.Message {
 	return &AfPacketSetL4CksumOffloadReply{}
+}
+
+// AfPacketDump represents the VPP binary API message 'af_packet_dump'.
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 143:
+//
+//            "af_packet_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type AfPacketDump struct {
+}
+
+func (*AfPacketDump) GetMessageName() string {
+	return "af_packet_dump"
+}
+func (*AfPacketDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*AfPacketDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewAfPacketDump() api.Message {
+	return &AfPacketDump{}
+}
+
+// AfPacketDetails represents the VPP binary API message 'af_packet_details'.
+// Generated from '/usr/share/vpp/api/af_packet.api.json', line 161:
+//
+//            "af_packet_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "host_if_name",
+//                64
+//            ],
+//            {
+//                "crc": "0x057205fa"
+//            }
+//
+type AfPacketDetails struct {
+	SwIfIndex  uint32
+	HostIfName []byte `struc:"[64]byte"`
+}
+
+func (*AfPacketDetails) GetMessageName() string {
+	return "af_packet_details"
+}
+func (*AfPacketDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*AfPacketDetails) GetCrcString() string {
+	return "057205fa"
+}
+func NewAfPacketDetails() api.Message {
+	return &AfPacketDetails{}
 }

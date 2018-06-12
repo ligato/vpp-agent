@@ -5,7 +5,6 @@ Documentation     Library which includes all other libs
 ...
 
 Library     basic_operations.py
-Library     kube_parser.py
 Resource    setup-teardown.robot
 Resource    ssh.robot
 Resource    docker.robot
@@ -18,9 +17,5 @@ Resource    vpp_ctl.robot
 Resource    rest_api.robot
 Resource    vxlan.robot
 Resource    linux.robot
-Resource    KubeAdm.robot
-Resource    KubeCtl.robot
-Resource    KubeEnv.robot
-Resource    KubeEnvConnections.robot
+Resource    kubernetes/all_kube_libs.robot
 Resource    SshCommons.robot
-Library     kube_parser.py

@@ -33,27 +33,27 @@ var ProxyArpMessages = []govppapi.Message{
 }
 
 // EnableProxyArpInterface enables interface for proxy ARP
-func EnableProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func EnableProxyArpInterface(swIfIdx uint32, vppChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	return vppAddDelProxyArpInterface(swIfIdx, vppChan, true, log, stopwatch)
 }
 
 // DisableProxyArpInterface disables interface for proxy ARP
-func DisableProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func DisableProxyArpInterface(swIfIdx uint32, vppChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	return vppAddDelProxyArpInterface(swIfIdx, vppChan, false, log, stopwatch)
 }
 
 // AddProxyArpRange adds new IP range for proxy ARP
-func AddProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func AddProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	return vppAddDelProxyArpRange(firstIP, lastIP, vppChan, true, log, stopwatch)
 }
 
 // DeleteProxyArpRange removes proxy ARP IP range
-func DeleteProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func DeleteProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	return vppAddDelProxyArpRange(firstIP, lastIP, vppChan, false, log, stopwatch)
 }
 
 // vppAddDelProxyArpInterface adds or removes proxy ARP interface entry according to provided input
-func vppAddDelProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, enable bool, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func vppAddDelProxyArpInterface(swIfIdx uint32, vppChan VPPChannel, enable bool, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ip.ProxyArpIntfcEnableDisable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -81,7 +81,7 @@ func vppAddDelProxyArpInterface(swIfIdx uint32, vppChan *govppapi.Channel, enabl
 }
 
 // vppAddDelProxyArpRange adds or removes proxy ARP range according to provided input
-func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, isAdd bool, log logging.Logger, stopwatch *measure.Stopwatch) error {
+func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, isAdd bool, log logging.Logger, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ip.ProxyArpAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -92,8 +92,10 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, i
 	} else {
 		req.IsAdd = 0
 	}
-	req.HiAddress = firstIP
-	req.LowAddress = lastIP
+	req.Proxy = ip.ProxyArp{
+		LowAddress: firstIP,
+		HiAddress: lastIP,
+	}
 
 	// Send message
 	reply := &ip.ProxyArpAddDelReply{}
@@ -104,7 +106,7 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan *govppapi.Channel, i
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	log.Debugf("proxy arp range: %v - %v added: %v", req.LowAddress, req.HiAddress, isAdd)
+	log.Debugf("proxy arp range: %v - %v added: %v", req.Proxy.LowAddress, req.Proxy.HiAddress, isAdd)
 
 	return nil
 }

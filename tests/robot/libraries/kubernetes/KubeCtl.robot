@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation     This is a library to handle kubectl commands on the remote machine, towards which
 ...               ssh connection is opened.
-Resource          ${CURDIR}/all_libs.robot
+Resource          ${CURDIR}/../all_libs.robot
 
 *** Keywords ***
 Apply_F

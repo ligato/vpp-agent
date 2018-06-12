@@ -5,9 +5,13 @@ package dhcp
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"DhcpClient": reflect.TypeOf((*DhcpClient)(nil)).Elem(),
 	"DhcpClientConfig": reflect.TypeOf((*DhcpClientConfig)(nil)).Elem(),
 	"DhcpClientConfigReply": reflect.TypeOf((*DhcpClientConfigReply)(nil)).Elem(),
+	"DhcpClientDetails": reflect.TypeOf((*DhcpClientDetails)(nil)).Elem(),
+	"DhcpClientDump": reflect.TypeOf((*DhcpClientDump)(nil)).Elem(),
 	"DhcpComplEvent": reflect.TypeOf((*DhcpComplEvent)(nil)).Elem(),
+	"DhcpLease": reflect.TypeOf((*DhcpLease)(nil)).Elem(),
 	"DhcpProxyConfig": reflect.TypeOf((*DhcpProxyConfig)(nil)).Elem(),
 	"DhcpProxyConfigReply": reflect.TypeOf((*DhcpProxyConfigReply)(nil)).Elem(),
 	"DhcpProxyDetails": reflect.TypeOf((*DhcpProxyDetails)(nil)).Elem(),
@@ -20,6 +24,8 @@ var Types = map[string]reflect.Type{
 var Functions = map[string]reflect.Value{
 	"NewDhcpClientConfig": reflect.ValueOf(NewDhcpClientConfig),
 	"NewDhcpClientConfigReply": reflect.ValueOf(NewDhcpClientConfigReply),
+	"NewDhcpClientDetails": reflect.ValueOf(NewDhcpClientDetails),
+	"NewDhcpClientDump": reflect.ValueOf(NewDhcpClientDump),
 	"NewDhcpComplEvent": reflect.ValueOf(NewDhcpComplEvent),
 	"NewDhcpProxyConfig": reflect.ValueOf(NewDhcpProxyConfig),
 	"NewDhcpProxyConfigReply": reflect.ValueOf(NewDhcpProxyConfigReply),

@@ -7,6 +7,8 @@ import "reflect"
 var Types = map[string]reflect.Type{
 	"DsliteAddDelPoolAddrRange": reflect.TypeOf((*DsliteAddDelPoolAddrRange)(nil)).Elem(),
 	"DsliteAddDelPoolAddrRangeReply": reflect.TypeOf((*DsliteAddDelPoolAddrRangeReply)(nil)).Elem(),
+	"DsliteAddressDetails": reflect.TypeOf((*DsliteAddressDetails)(nil)).Elem(),
+	"DsliteAddressDump": reflect.TypeOf((*DsliteAddressDump)(nil)).Elem(),
 	"DsliteGetAftrAddr": reflect.TypeOf((*DsliteGetAftrAddr)(nil)).Elem(),
 	"DsliteGetAftrAddrReply": reflect.TypeOf((*DsliteGetAftrAddrReply)(nil)).Elem(),
 	"DsliteGetB4Addr": reflect.TypeOf((*DsliteGetB4Addr)(nil)).Elem(),
@@ -125,6 +127,8 @@ var Types = map[string]reflect.Type{
 var Functions = map[string]reflect.Value{
 	"NewDsliteAddDelPoolAddrRange": reflect.ValueOf(NewDsliteAddDelPoolAddrRange),
 	"NewDsliteAddDelPoolAddrRangeReply": reflect.ValueOf(NewDsliteAddDelPoolAddrRangeReply),
+	"NewDsliteAddressDetails": reflect.ValueOf(NewDsliteAddressDetails),
+	"NewDsliteAddressDump": reflect.ValueOf(NewDsliteAddressDump),
 	"NewDsliteGetAftrAddr": reflect.ValueOf(NewDsliteGetAftrAddr),
 	"NewDsliteGetAftrAddrReply": reflect.ValueOf(NewDsliteGetAftrAddrReply),
 	"NewDsliteGetB4Addr": reflect.ValueOf(NewDsliteGetB4Addr),

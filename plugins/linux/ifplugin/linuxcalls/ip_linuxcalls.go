@@ -31,73 +31,61 @@
 package linuxcalls
 
 import (
-	"bytes"
 	"net"
-
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
+// GetAddressList calls AddrList netlink API
+func (handler *netLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("get-address-list").LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	link, err := handler.GetLinkByName(ifName)
+	if err != nil {
+		return nil, err
+	}
+
+	return netlink.AddrList(link, netlink.FAMILY_ALL)
+}
+
 // AddInterfaceIP calls AddrAdd Netlink API.
-func AddInterfaceIP(log logging.Logger, ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("add-interface-ip").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
-	}
-
-	exAddrList, err := netlink.AddrList(link, netlink.FAMILY_ALL)
-	if err != nil {
-		return err
-	}
-
-	// The check is because of link local addresses which sometimes cannot be reassigned
-	for _, exAddr := range exAddrList {
-		if bytes.Compare(exAddr.IP, addr.IP) == 0 {
-			log.Debugf("Cannot assign %v to interface %v, IP already exists", addr.IP.String(), ifName)
-			return nil
-		}
 	}
 
 	return netlink.AddrAdd(link, &netlink.Addr{IPNet: addr})
 }
 
 // DelInterfaceIP calls AddrDel Netlink API.
-func DelInterfaceIP(ifName string, addr *net.IPNet, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("del-interface-ip").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
-	address := &netlink.Addr{IPNet: addr}
-	return netlink.AddrDel(link, address)
+
+	return netlink.AddrDel(link, &netlink.Addr{IPNet: addr})
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API.
-func SetInterfaceMTU(ifName string, mtu int, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *netLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("set-interface-mtu").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

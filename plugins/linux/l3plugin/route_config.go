@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/l3 --gogo_out=../common/model/l3 ../common/model/l3/l3.proto
+//go:generate protoc --proto_path=../model/l3 --gogo_out=../model/l3 ../model/l3/l3.proto
 
 package l3plugin
 
@@ -55,21 +55,17 @@ type LinuxRouteConfigurator struct {
 	rtCachedGwRoutes map[string]*l3.LinuxStaticRoutes_Route // Cache for gateway routes which cannot be created at the time due to unreachable network
 	rtIdxSeq         uint32
 
-	// Linux namespace handler
-	nsHandler *nsplugin.NsHandler
+	// Linux namespace/calls handler
+	l3Handler linuxcalls.NetlinkAPI
+	nsHandler nsplugin.NamespaceAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
 }
 
-// GetRouteIndexes returns route in-memory indexes
-func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW {
-	return plugin.rtIndexes
-}
-
 // Init initializes static route configurator and starts goroutines
-func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler *nsplugin.NsHandler,
-	ifIndexes ifaceidx.LinuxIfIndexRW, enableStopwatch bool) error {
+func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
+	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
 	// Logger
 	plugin.log = logger.NewLogger("-route-conf")
 	plugin.log.Debug("Initializing Linux Route configurator")
@@ -81,15 +77,39 @@ func (plugin *LinuxRouteConfigurator) Init(logger logging.PluginLogger, handler 
 	plugin.rtCachedIfRoutes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(plugin.log, "linux_cached_route_indexes", nil))
 	plugin.rtCachedGwRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
 
-	// Namespace handler
-	plugin.nsHandler = handler
+	// L3 and namespace handler
+	plugin.l3Handler = l3Handler
+	plugin.nsHandler = nsHandler
+
+	// Configurator-wide stopwatch instance
+	plugin.stopwatch = stopwatch
 
 	return nil
 }
 
-// Close closes all goroutines started during Init
+// Close does nothing for route configurator
 func (plugin *LinuxRouteConfigurator) Close() error {
 	return nil
+}
+
+// GetRouteIndexes returns route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetRouteIndexes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtIndexes
+}
+
+// GetAutoRouteIndexes returns automatic route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetAutoRouteIndexes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtAutoIndexes
+}
+
+// GetCachedRoutes returns cached route in-memory indexes
+func (plugin *LinuxRouteConfigurator) GetCachedRoutes() l3idx.LinuxRouteIndexRW {
+	return plugin.rtCachedIfRoutes
+}
+
+// GetCachedGatewayRoutes returns in-memory indexes of unreachable gateway routes
+func (plugin *LinuxRouteConfigurator) GetCachedGatewayRoutes() map[string]*l3.LinuxStaticRoutes_Route {
+	return plugin.rtCachedGwRoutes
 }
 
 // ConfigureLinuxStaticRoute reacts to a new northbound Linux static route config by creating and configuring
@@ -154,13 +174,13 @@ func (plugin *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxS
 	}
 	defer revertNs()
 
-	err = linuxcalls.AddStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("add-linux-route", plugin.stopwatch))
+	err = plugin.l3Handler.AddStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
 		plugin.log.Errorf("adding static route %s failed: %v (%+v)", route.Name, err, netLinkRoute)
 		return err
 	}
 
-	plugin.rtIndexes.RegisterName(routeIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
+	plugin.rtIndexes.RegisterName(RouteIdentifier(netLinkRoute), plugin.rtIdxSeq, route)
 	plugin.rtIdxSeq++
 	plugin.log.Debugf("Route %s registered", route.Name)
 
@@ -268,7 +288,7 @@ func (plugin *LinuxRouteConfigurator) ModifyLinuxStaticRoute(newRoute *l3.LinuxS
 		plugin.log.Errorf("deleting static route %s failed: %v (%+v)", oldRoute.Name, err, oldRoute)
 		return err
 	}
-	if err = linuxcalls.AddStaticRoute(newRoute.Name, netLinkRoute, plugin.log, measure.GetTimeLog("add-linux-route", plugin.stopwatch)); err != nil {
+	if err = plugin.l3Handler.AddStaticRoute(newRoute.Name, netLinkRoute); err != nil {
 		plugin.log.Errorf("adding static route %s failed: %v (%+v)", newRoute.Name, err, netLinkRoute)
 		return err
 	}
@@ -359,13 +379,13 @@ func (plugin *LinuxRouteConfigurator) DeleteLinuxStaticRoute(route *l3.LinuxStat
 	}
 	defer revertNs()
 
-	err = linuxcalls.DeleteStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("del-linux-route", plugin.stopwatch))
+	err = plugin.l3Handler.DelStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
 		plugin.log.Errorf("deleting static route %q failed: %v (%+v)", route.Name, err, netLinkRoute)
 		return err
 	}
 
-	_, _, found := plugin.rtIndexes.UnregisterName(routeIdentifier(netLinkRoute))
+	_, _, found := plugin.rtIndexes.UnregisterName(RouteIdentifier(netLinkRoute))
 	if !found {
 		plugin.log.Warnf("Attempt to unregister non-registered route %s", route.Name)
 	}
@@ -471,6 +491,14 @@ func (plugin *LinuxRouteConfigurator) ResolveDeletedInterface(name string, index
 	return nil
 }
 
+// RouteIdentifier generates unique route ID used in mapping
+func RouteIdentifier(route *netlink.Route) string {
+	if route.Dst == nil || route.Dst.String() == ipv4AddrAny || route.Dst.String() == ipv6AddrAny {
+		return fmt.Sprintf("default-iface%d-table%v-%s", route.LinkIndex, route.Table, route.Gw.To4().String())
+	}
+	return fmt.Sprintf("dst%s-iface%d-table%v-%s", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
+}
+
 // Create default route object with gateway address. Destination address has to be set in such a case
 func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.Route, route *l3.LinuxStaticRoutes_Route) (err error) {
 	// Gateway
@@ -514,7 +542,6 @@ func (plugin *LinuxRouteConfigurator) createStaticRoute(netLinkRoute *netlink.Ro
 		if len(addressWithPrefix) > 1 {
 			_, dstIPAddr, err = net.ParseCIDR(route.DstIpAddr)
 			if err != nil {
-				plugin.log.Error(err)
 				return err
 			}
 		} else {
@@ -573,7 +600,7 @@ func (plugin *LinuxRouteConfigurator) recreateLinuxStaticRoute(netLinkRoute *net
 	defer revertNs()
 
 	// Update existing route
-	return linuxcalls.ModifyStaticRoute(route.Name, netLinkRoute, plugin.log, measure.GetTimeLog("modify-linux-route", plugin.stopwatch))
+	return plugin.l3Handler.ReplaceStaticRoute(route.Name, netLinkRoute)
 }
 
 // Tries to configure again cached default/gateway routes (as a reaction to the new route)
@@ -785,11 +812,4 @@ func (plugin *LinuxRouteConfigurator) networkReachable(ns *l3.LinuxStaticRoutes_
 		return true
 	}
 	return false
-}
-
-func routeIdentifier(route *netlink.Route) string {
-	if route.Dst == nil {
-		return fmt.Sprintf("default-iface%d-table%v-%s", route.LinkIndex, route.Table, route.Gw.String())
-	}
-	return fmt.Sprintf("dst%s-iface%d-table%v-%s", route.Dst.IP.String(), route.LinkIndex, route.Table, route.Gw.String())
 }

@@ -33,36 +33,29 @@ package linuxcalls
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
-// InterfaceAdminDown calls Netlink API LinkSetDown.
-func InterfaceAdminDown(ifName string, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+// SetInterfaceDown calls Netlink API LinkSetDown.
+func (handler *netLinkHandler) SetInterfaceDown(ifName string) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("interface-admin-down").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}
 	return netlink.LinkSetDown(link)
 }
 
-// InterfaceAdminUp calls Netlink API LinkSetUp.
-func InterfaceAdminUp(ifName string, timeLog measure.StopWatchEntry) error {
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+// SetInterfaceUp calls Netlink API LinkSetUp.
+func (handler *netLinkHandler) SetInterfaceUp(ifName string) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog("interface-admin-up").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	link, err := netlink.LinkByName(ifName)
+	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

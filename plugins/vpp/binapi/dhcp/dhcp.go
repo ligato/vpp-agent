@@ -5,11 +5,134 @@ package dhcp
 
 import "git.fd.io/govpp.git/api"
 
-// DhcpServer represents the VPP binary API data type 'dhcp_server'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 55:
+// DhcpClient represents the VPP binary API data type 'dhcp_client'.
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 340:
 //
+//            "dhcp_client",
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "hostname",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "id",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "want_dhcp_event"
+//            ],
+//            [
+//                "u8",
+//                "set_broadcast_flag"
+//            ],
+//            [
+//                "u32",
+//                "pid"
+//            ],
+//            {
+//                "crc": "0x527f7935"
+//            }
+//
+type DhcpClient struct {
+	SwIfIndex        uint32
+	Hostname         []byte `struc:"[64]byte"`
+	ID               []byte `struc:"[64]byte"`
+	WantDhcpEvent    uint8
+	SetBroadcastFlag uint8
+	Pid              uint32
+}
+
+func (*DhcpClient) GetTypeName() string {
+	return "dhcp_client"
+}
+func (*DhcpClient) GetCrcString() string {
+	return "527f7935"
+}
+
+// DhcpLease represents the VPP binary API data type 'dhcp_lease'.
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 372:
+//
+//            "dhcp_lease",
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "state"
+//            ],
+//            [
+//                "u8",
+//                "hostname",
+//                64
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "mask_width"
+//            ],
+//            [
+//                "u8",
+//                "host_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "router_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "host_mac",
+//                6
+//            ],
+//            {
+//                "crc": "0x61090276"
+//            }
+//
+type DhcpLease struct {
+	SwIfIndex     uint32
+	State         uint8
+	Hostname      []byte `struc:"[64]byte"`
+	IsIpv6        uint8
+	MaskWidth     uint8
+	HostAddress   []byte `struc:"[16]byte"`
+	RouterAddress []byte `struc:"[16]byte"`
+	HostMac       []byte `struc:"[6]byte"`
+}
+
+func (*DhcpLease) GetTypeName() string {
+	return "dhcp_lease"
+}
+func (*DhcpLease) GetCrcString() string {
+	return "61090276"
+}
+
+// DhcpServer represents the VPP binary API data type 'dhcp_server'.
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 414:
+//
+//            "dhcp_server",
+//            [
+//                "u32",
+//                "server_vrf_id"
+//            ],
+//            [
+//                "u8",
 //                "dhcp_server",
 //                16
+//            ],
+//            {
+//                "crc": "0xf16506c4"
+//            }
 //
 type DhcpServer struct {
 	ServerVrfID uint32
@@ -24,7 +147,7 @@ func (*DhcpServer) GetCrcString() string {
 }
 
 // DhcpProxyConfig represents the VPP binary API message 'dhcp_proxy_config'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 24:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 4:
 //
 //            "dhcp_proxy_config",
 //            [
@@ -92,7 +215,7 @@ func NewDhcpProxyConfig() api.Message {
 }
 
 // DhcpProxyConfigReply represents the VPP binary API message 'dhcp_proxy_config_reply'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 68:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 48:
 //
 //            "dhcp_proxy_config_reply",
 //            [
@@ -129,7 +252,7 @@ func NewDhcpProxyConfigReply() api.Message {
 }
 
 // DhcpProxySetVss represents the VPP binary API message 'dhcp_proxy_set_vss'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 86:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 66:
 //
 //            "dhcp_proxy_set_vss",
 //            [
@@ -201,7 +324,7 @@ func NewDhcpProxySetVss() api.Message {
 }
 
 // DhcpProxySetVssReply represents the VPP binary API message 'dhcp_proxy_set_vss_reply'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 133:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 113:
 //
 //            "dhcp_proxy_set_vss_reply",
 //            [
@@ -238,7 +361,7 @@ func NewDhcpProxySetVssReply() api.Message {
 }
 
 // DhcpClientConfig represents the VPP binary API message 'dhcp_client_config'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 151:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 131:
 //
 //            "dhcp_client_config",
 //            [
@@ -254,47 +377,20 @@ func NewDhcpProxySetVssReply() api.Message {
 //                "context"
 //            ],
 //            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "hostname",
-//                64
-//            ],
-//            [
-//                "u8",
-//                "client_id",
-//                64
-//            ],
-//            [
 //                "u8",
 //                "is_add"
 //            ],
 //            [
-//                "u8",
-//                "want_dhcp_event"
-//            ],
-//            [
-//                "u8",
-//                "set_broadcast_flag"
-//            ],
-//            [
-//                "u32",
-//                "pid"
+//                "vl_api_dhcp_client_t",
+//                "client"
 //            ],
 //            {
-//                "crc": "0x652052aa"
+//                "crc": "0xc32ccdfe"
 //            }
 //
 type DhcpClientConfig struct {
-	SwIfIndex        uint32
-	Hostname         []byte `struc:"[64]byte"`
-	ClientID         []byte `struc:"[64]byte"`
-	IsAdd            uint8
-	WantDhcpEvent    uint8
-	SetBroadcastFlag uint8
-	Pid              uint32
+	IsAdd  uint8
+	Client DhcpClient
 }
 
 func (*DhcpClientConfig) GetMessageName() string {
@@ -304,14 +400,14 @@ func (*DhcpClientConfig) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*DhcpClientConfig) GetCrcString() string {
-	return "652052aa"
+	return "c32ccdfe"
 }
 func NewDhcpClientConfig() api.Message {
 	return &DhcpClientConfig{}
 }
 
 // DhcpClientConfigReply represents the VPP binary API message 'dhcp_client_config_reply'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 199:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 157:
 //
 //            "dhcp_client_config_reply",
 //            [
@@ -348,7 +444,7 @@ func NewDhcpClientConfigReply() api.Message {
 }
 
 // DhcpComplEvent represents the VPP binary API message 'dhcp_compl_event'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 217:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 175:
 //
 //            "dhcp_compl_event",
 //            [
@@ -364,45 +460,16 @@ func NewDhcpClientConfigReply() api.Message {
 //                "pid"
 //            ],
 //            [
-//                "u8",
-//                "hostname",
-//                64
-//            ],
-//            [
-//                "u8",
-//                "is_ipv6"
-//            ],
-//            [
-//                "u8",
-//                "mask_width"
-//            ],
-//            [
-//                "u8",
-//                "host_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "router_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "host_mac",
-//                6
+//                "vl_api_dhcp_lease_t",
+//                "lease"
 //            ],
 //            {
-//                "crc": "0x28c60f01"
+//                "crc": "0x2105c31b"
 //            }
 //
 type DhcpComplEvent struct {
-	Pid           uint32
-	Hostname      []byte `struc:"[64]byte"`
-	IsIpv6        uint8
-	MaskWidth     uint8
-	HostAddress   []byte `struc:"[16]byte"`
-	RouterAddress []byte `struc:"[16]byte"`
-	HostMac       []byte `struc:"[6]byte"`
+	Pid   uint32
+	Lease DhcpLease
 }
 
 func (*DhcpComplEvent) GetMessageName() string {
@@ -412,14 +479,92 @@ func (*DhcpComplEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
 }
 func (*DhcpComplEvent) GetCrcString() string {
-	return "28c60f01"
+	return "2105c31b"
 }
 func NewDhcpComplEvent() api.Message {
 	return &DhcpComplEvent{}
 }
 
+// DhcpClientDump represents the VPP binary API message 'dhcp_client_dump'.
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 197:
+//
+//            "dhcp_client_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type DhcpClientDump struct {
+}
+
+func (*DhcpClientDump) GetMessageName() string {
+	return "dhcp_client_dump"
+}
+func (*DhcpClientDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*DhcpClientDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewDhcpClientDump() api.Message {
+	return &DhcpClientDump{}
+}
+
+// DhcpClientDetails represents the VPP binary API message 'dhcp_client_details'.
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 215:
+//
+//            "dhcp_client_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "vl_api_dhcp_client_t",
+//                "client"
+//            ],
+//            [
+//                "vl_api_dhcp_lease_t",
+//                "lease"
+//            ],
+//            {
+//                "crc": "0x7ea3a745"
+//            }
+//
+type DhcpClientDetails struct {
+	Client DhcpClient
+	Lease  DhcpLease
+}
+
+func (*DhcpClientDetails) GetMessageName() string {
+	return "dhcp_client_details"
+}
+func (*DhcpClientDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*DhcpClientDetails) GetCrcString() string {
+	return "7ea3a745"
+}
+func NewDhcpClientDetails() api.Message {
+	return &DhcpClientDetails{}
+}
+
 // DhcpProxyDump represents the VPP binary API message 'dhcp_proxy_dump'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 263:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 237:
 //
 //            "dhcp_proxy_dump",
 //            [
@@ -460,7 +605,7 @@ func NewDhcpProxyDump() api.Message {
 }
 
 // DhcpProxyDetails represents the VPP binary API message 'dhcp_proxy_details'.
-// Generated from '/usr/share/vpp/api/dhcp.api.json', line 285:
+// Generated from '/usr/share/vpp/api/dhcp.api.json', line 259:
 //
 //            "dhcp_proxy_details",
 //            [

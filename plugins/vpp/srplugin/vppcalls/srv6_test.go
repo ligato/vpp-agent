@@ -481,7 +481,7 @@ func TestAddPolicy(t *testing.T) {
 					IsEncap:   boolToUint(true),
 					Weight:    1,
 					NSegments: 3,
-					Segments:  []sr.IPv6type{{Value: to16BytesArray(sidA)}, {Value: to16BytesArray(sidB)}, {Value: to16BytesArray(sidC)}},
+					Segments:  []sr.SrIP6Address{{Data: to16BytesArray(sidA)}, {Data: to16BytesArray(sidB)}, {Data: to16BytesArray(sidC)}},
 				}))
 			},
 		},
@@ -595,7 +595,7 @@ func TestAddPolicySegment(t *testing.T) {
 					FibTable:  10,
 					Weight:    1,
 					NSegments: 3,
-					Segments:  []sr.IPv6type{{Value: to16BytesArray(sidA)}, {Value: to16BytesArray(sidB)}, {Value: to16BytesArray(sidC)}},
+					Segments:  []sr.SrIP6Address{{Data: to16BytesArray(sidA)}, {Data: to16BytesArray(sidB)}, {Data: to16BytesArray(sidC)}},
 				}))
 			},
 		},
@@ -665,7 +665,7 @@ func TestDeletePolicySegment(t *testing.T) {
 					FibTable:  10,
 					Weight:    1,
 					NSegments: 3,
-					Segments:  []sr.IPv6type{{Value: to16BytesArray(sidA)}, {Value: to16BytesArray(sidB)}, {Value: to16BytesArray(sidC)}},
+					Segments:  []sr.SrIP6Address{{Data: to16BytesArray(sidA)}, {Data: to16BytesArray(sidB)}, {Data: to16BytesArray(sidC)}},
 				}))
 			},
 		},
@@ -914,8 +914,8 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func to16BytesArray(slice []byte) [16]byte {
-	var array [16]byte
+func to16BytesArray(slice []byte) []byte {
+	var array []byte
 	copy(array[:], slice)
 	return array
 }

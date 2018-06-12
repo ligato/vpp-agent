@@ -19,7 +19,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
@@ -30,13 +29,9 @@ import (
 func (plugin *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_ArpEntry) (errs []error) {
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC ARPs begin.")
 
-	start := time.Now()
-	defer func() {
-		if plugin.stopwatch != nil {
-			timeLog := measure.GetTimeLog("linux-arp resync", plugin.stopwatch)
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		plugin.stopwatch.TimeLog("configure-linux-arp").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Create missing arp entries and update existing ones
 	for _, entry := range arpEntries {
@@ -62,13 +57,9 @@ func (plugin *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntrie
 func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Route) (errs []error) {
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC static routes begin.")
 
-	start := time.Now()
-	defer func() {
-		if plugin.stopwatch != nil {
-			timeLog := measure.GetTimeLog("linux-route resync", plugin.stopwatch)
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		plugin.stopwatch.TimeLog("configure-linux-route").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 

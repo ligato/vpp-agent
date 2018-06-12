@@ -6,7 +6,7 @@ package memif
 import "git.fd.io/govpp.git/api"
 
 // MemifSocketFilenameAddDel represents the VPP binary API message 'memif_socket_filename_add_del'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 25:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 4:
 //
 //            "memif_socket_filename_add_del",
 //            [
@@ -58,7 +58,7 @@ func NewMemifSocketFilenameAddDel() api.Message {
 }
 
 // MemifSocketFilenameAddDelReply represents the VPP binary API message 'memif_socket_filename_add_del_reply'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 56:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 35:
 //
 //            "memif_socket_filename_add_del_reply",
 //            [
@@ -95,7 +95,7 @@ func NewMemifSocketFilenameAddDelReply() api.Message {
 }
 
 // MemifCreate represents the VPP binary API message 'memif_create'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 74:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 53:
 //
 //            "memif_create",
 //            [
@@ -183,7 +183,7 @@ func NewMemifCreate() api.Message {
 }
 
 // MemifCreateReply represents the VPP binary API message 'memif_create_reply'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 134:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 113:
 //
 //            "memif_create_reply",
 //            [
@@ -225,7 +225,7 @@ func NewMemifCreateReply() api.Message {
 }
 
 // MemifDelete represents the VPP binary API message 'memif_delete'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 156:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 135:
 //
 //            "memif_delete",
 //            [
@@ -266,7 +266,7 @@ func NewMemifDelete() api.Message {
 }
 
 // MemifDeleteReply represents the VPP binary API message 'memif_delete_reply'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 178:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 157:
 //
 //            "memif_delete_reply",
 //            [
@@ -303,7 +303,7 @@ func NewMemifDeleteReply() api.Message {
 }
 
 // MemifSocketFilenameDetails represents the VPP binary API message 'memif_socket_filename_details'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 196:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 175:
 //
 //            "memif_socket_filename_details",
 //            [
@@ -346,7 +346,7 @@ func NewMemifSocketFilenameDetails() api.Message {
 }
 
 // MemifSocketFilenameDump represents the VPP binary API message 'memif_socket_filename_dump'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 219:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 198:
 //
 //            "memif_socket_filename_dump",
 //            [
@@ -382,7 +382,7 @@ func NewMemifSocketFilenameDump() api.Message {
 }
 
 // MemifDetails represents the VPP binary API message 'memif_details'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 237:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 216:
 //
 //            "memif_details",
 //            [
@@ -471,7 +471,7 @@ func NewMemifDetails() api.Message {
 }
 
 // MemifDump represents the VPP binary API message 'memif_dump'.
-// Generated from '/usr/share/vpp/api/memif.api.json', line 297:
+// Generated from '/usr/share/vpp/api/memif.api.json', line 276:
 //
 //            "memif_dump",
 //            [

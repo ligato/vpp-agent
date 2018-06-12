@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
@@ -50,13 +49,9 @@ type LinuxDataPair struct {
 func (plugin *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_Interface) (errs []error) {
 	plugin.log.Debugf("RESYNC Linux interface begin.")
 
-	start := time.Now()
-	defer func() {
-		if plugin.stopwatch != nil {
-			timeLog := measure.GetTimeLog("linux-interface resync", plugin.stopwatch)
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		plugin.stopwatch.TimeLog("resync-linux-interfaces").LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 

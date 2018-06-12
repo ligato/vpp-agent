@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/srv6 --gogo_out=../common/model/srv6 ../common/model/srv6/srv6.proto
+//go:generate protoc --proto_path=../model/srv6 --gogo_out=../model/srv6 ../model/srv6/srv6.proto
 
 package srplugin
 

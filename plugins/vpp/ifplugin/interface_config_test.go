@@ -80,25 +80,29 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
 	// Test DHCP notifications
 	dhcpIpv4 := &dhcp_api.DhcpComplEvent{
-		HostAddress:   net.ParseIP("10.0.0.1"),
-		RouterAddress: net.ParseIP("10.0.0.2"),
-		HostMac: func(mac string) []byte {
-			parsed, _ := net.ParseMAC(mac)
-			return parsed
-		}("7C:4E:E7:8A:63:68"),
-		Hostname: []byte("if1"),
-		IsIpv6:   0,
+		Lease: dhcp_api.DhcpLease{
+			HostAddress:   net.ParseIP("10.0.0.1"),
+			RouterAddress: net.ParseIP("10.0.0.2"),
+			HostMac: func(mac string) []byte {
+				parsed, _ := net.ParseMAC(mac)
+				return parsed
+			}("7C:4E:E7:8A:63:68"),
+			Hostname: []byte("if1"),
+			IsIpv6:   0,
+		},
 	}
 	dhcpIpv6 := &dhcp_api.DhcpComplEvent{
-		HostAddress:   net.ParseIP("fd21:7408:186f::/48"),
-		RouterAddress: net.ParseIP("2001:db8:a0b:12f0::1/48"),
-		HostMac: func(mac string) []byte {
-			parsed, err := net.ParseMAC(mac)
-			Expect(err).To(BeNil())
-			return parsed
-		}("7C:4E:E7:8A:63:68"),
-		Hostname: []byte("if2"),
-		IsIpv6:   1,
+		Lease: dhcp_api.DhcpLease{
+			HostAddress:   net.ParseIP("fd21:7408:186f::/48"),
+			RouterAddress: net.ParseIP("2001:db8:a0b:12f0::1/48"),
+			HostMac: func(mac string) []byte {
+				parsed, err := net.ParseMAC(mac)
+				Expect(err).To(BeNil())
+				return parsed
+			}("7C:4E:E7:8A:63:68"),
+			Hostname: []byte("if2"),
+			IsIpv6:   1,
+		},
 	}
 	plugin.DhcpChan <- dhcpIpv4
 	Eventually(func() bool {
@@ -347,13 +351,176 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
-	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
-	// Test configure TAP
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "", 1)
+	// Test configure VxLAN
 	err = plugin.ConfigureVPPInterface(data)
 	Expect(err).To(BeNil())
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
+}
+
+// Configure new VxLAN interface with multicast
+func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
+		SwIfIndex: 2,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
+	// Data
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
+	multicast := getTestInterface("multicastIf", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"239.0.0.1/24"}, false, "", 0)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	// Configure multicast
+	err = plugin.ConfigureVPPInterface(multicast)
+	Expect(err).To(BeNil())
+	// Test configure VxLAN
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	Expect(meta.Vxlan).ToNot(BeNil())
+	Expect(meta.Vxlan.Multicast).To(BeEquivalentTo(multicast.Name))
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
+}
+
+// Configure new VxLAN interface with multicast cache
+func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
+		SwIfIndex: 2,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
+	// Data
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
+	multicast := getTestInterface("multicastIf", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"239.0.0.1/24"}, false, "", 0)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	// Test configure VxLAN
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeTrue())
+	// Configure Multicast
+	err = plugin.ConfigureVPPInterface(multicast)
+	Expect(err).To(BeNil())
+	// Check VxLAN again
+	_, _, found = plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeTrue())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
+}
+
+// Configure new VxLAN interface with multicast cache delete
+func TestInterfacesConfigureVxLANWithMulticastCacheDelete(t *testing.T) {
+	var err error
+	// Setup
+	_, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Data
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	// Test configure VxLAN
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).To(BeNil())
+	_, _, found := plugin.GetSwIfIndexes().LookupIdx(data.Name)
+	Expect(found).To(BeFalse())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeTrue())
+	// Delete VxLAN
+	err = plugin.DeleteVPPInterface(data)
+	Expect(err).To(BeNil())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
+}
+
+// Configure new VxLAN interface with multicast, where target interface does not contain multicast address
+func TestInterfacesConfigureVxLANWithMulticastError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	// Data
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
+	multicast := getTestInterface("multicastIf", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"20.0.0.1/24"}, false, "", 0)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	// Configure multicast
+	err = plugin.ConfigureVPPInterface(multicast)
+	Expect(err).To(BeNil())
+	// Test configure VxLAN
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).ToNot(BeNil())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
+}
+
+// Configure new VxLAN interface with multicast, where target interface does not contain IP address
+func TestInterfacesConfigureVxLANWithMulticastIPError(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	// Data
+	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
+	multicast := getTestInterface("multicastIf", if_api.InterfaceType_SOFTWARE_LOOPBACK, nil, false, "", 0)
+	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	// Configure multicast
+	err = plugin.ConfigureVPPInterface(multicast)
+	Expect(err).To(BeNil())
+	// Test configure VxLAN
+	err = plugin.ConfigureVPPInterface(data)
+	Expect(err).ToNot(BeNil())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
 }
 
 // Configure new VxLAN interface with default MTU
@@ -582,8 +749,7 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Delete
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&tap.TapDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -668,8 +834,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Modify - delete old data
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -725,22 +890,51 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
-	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
+	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "", 1)
 	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
-	newData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
-	// Register old config and socket filename
-	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
+	newData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "", 1)
 	// Test configure vxlan
 	err = plugin.ConfigureVPPInterface(oldData)
 	Expect(err).To(BeNil())
-	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
 	// Test modify vxlan
 	err = plugin.ModifyVPPInterface(newData, oldData)
 	Expect(err).To(BeNil())
-	_, meta, found = plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 	Expect(meta.SetDhcpClient).To(BeFalse())
+}
+
+// Modify VxLAN interface multicast
+func TestInterfacesModifyVxLanMulticast(t *testing.T) {
+	var err error
+	// Setup
+	ctx, connection, plugin := ifTestSetup(t)
+	defer ifTestTeardown(connection, plugin)
+	// Reply set
+	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
+	// Data
+	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
+	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
+	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
+	newData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "", 1)
+	// Test configure vxlan
+	err = plugin.ConfigureVPPInterface(oldData)
+	Expect(err).To(BeNil())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeTrue())
+	// Test modify vxlan
+	err = plugin.ModifyVPPInterface(newData, oldData)
+	Expect(err).To(BeNil())
+	_, meta, found := plugin.GetSwIfIndexes().LookupIdx(newData.Name)
+	Expect(found).To(BeTrue())
+	Expect(meta).ToNot(BeNil())
+	Expect(plugin.IsMulticastVxLanIfCached("if1")).To(BeFalse())
 }
 
 // Modify VxLAN interface with recreate
@@ -757,8 +951,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Modify - delete old data
-	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // Modify - configure new data
@@ -770,9 +963,9 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
-	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", 1)
+	oldData.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "", 1)
 	newData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
-	newData.Vxlan = getTestVxLanInterface("10.0.0.4", "10.0.0.5", 1)
+	newData.Vxlan = getTestVxLanInterface("10.0.0.4", "10.0.0.5", "", 1)
 	// Register old config and socket filename
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, oldData)
 	// Test configure vxlan
@@ -990,7 +1183,6 @@ func TestInterfacesDeleteTapInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
@@ -1014,7 +1206,6 @@ func TestInterfacesDeleteMemifInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
@@ -1036,14 +1227,13 @@ func TestInterfacesDeleteVxlanInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	// Data
 	data := getTestInterface("if", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
-	data.Vxlan = getTestVxLanInterface("10.0.0.1", "20.0.0.1", 1)
+	data.Vxlan = getTestVxLanInterface("10.0.0.1", "20.0.0.1", "", 1)
 	// Register interface (as if it is configured)
 	plugin.GetSwIfIndexes().RegisterName("if", 1, data)
 	// Test delete
@@ -1059,7 +1249,6 @@ func TestInterfacesDeleteLoopbackInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{})
@@ -1081,7 +1270,6 @@ func TestInterfacesDeleteEthernetInterface(t *testing.T) {
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	// Data
@@ -1250,8 +1438,9 @@ func getTestMemifInterface(master bool, id uint32) *if_api.Interfaces_Interface_
 	}
 }
 
-func getTestVxLanInterface(src, dst string, vni uint32) *if_api.Interfaces_Interface_Vxlan {
+func getTestVxLanInterface(src, dst, multicastIf string, vni uint32) *if_api.Interfaces_Interface_Vxlan {
 	return &if_api.Interfaces_Interface_Vxlan{
+		Multicast:  multicastIf,
 		SrcAddress: src,
 		DstAddress: dst,
 		Vni:        vni,
