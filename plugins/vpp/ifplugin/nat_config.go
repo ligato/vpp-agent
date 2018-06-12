@@ -584,11 +584,8 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 			if lastIP == nil {
 				// Do not return error here
 				plugin.log.Warnf("Last address pool IP %s cannot be parsed and removed, skipping",
-					addressPool.FirstSrcAddress)
-				// If first IP is also nil, continue with next iteration
-				if firstIP == nil {
-					continue
-				}
+					addressPool.LastSrcAddress)
+				continue
 			}
 		}
 		// Both fields have to be set, at least at the same value if only one of them is set
