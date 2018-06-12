@@ -574,14 +574,14 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 			firstIP = net.ParseIP(addressPool.FirstSrcAddress).To4()
 			if firstIP == nil {
 				// Do not return error here
-				plugin.log.Warnf("Firs address pool IP %s cannot be parsed and removed, skipping",
+				plugin.log.Warnf("First address pool IP %s cannot be parsed and removed, skipping",
 					addressPool.FirstSrcAddress)
 				continue
 			}
 		}
 		if addressPool.LastSrcAddress != "" {
 			lastIP = net.ParseIP(addressPool.LastSrcAddress).To4()
-			if firstIP == nil {
+			if lastIP == nil {
 				// Do not return error here
 				plugin.log.Warnf("Last address pool IP %s cannot be parsed and removed, skipping",
 					addressPool.FirstSrcAddress)
