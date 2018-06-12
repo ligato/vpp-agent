@@ -1,0 +1,38 @@
+*** Time:2018-06-06 12:58:54.054 Command: sudo docker create -it --name sfc_controller ligato/prod_sfc_controller
+31a9384076b4e3f9c6d0499d95a9428a6784e522a40ae466147bd685ed8fcf2b
+*** Time:2018-06-06 12:58:54.415 Command: sudo docker cp /tmp/acl_basic.conf sfc_controller:/opt/sfc-controller/dev/sfc.conf
+
+*** Time:2018-06-06 12:58:54.713 Command: sudo docker start -i sfc_controller
+[36mINFO[0m[0000] Starting agent                                [36mBuildDate[0m= [36mCommitHash[0m= [36mloc[0m="core/agent_core.go(195)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] plugin Logs: Init took 60.563µs               [36mdurationInNs[0m=60563 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[37mDEBU[0m[0000] Microservice label is set to vpp1             [37mloc[0m="servicelabel/plugin_impl_servicelabel.go(49)" [37mlogger[0m=defaultLogger
+[36mINFO[0m[0000] plugin ServiceLabel: Init took 37.017µs       [36mdurationInNs[0m=37017 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] plugin StatusCheck: Init took 1.995µs         [36mdurationInNs[0m=1995 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] plugin HTTP: Init took 27.014µs               [36mdurationInNs[0m=27014 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] plugin HealthRPC: Init took 324ns             [36mdurationInNs[0m=324 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] plugin LogMngRPC: Init took 1.186µs           [36mdurationInNs[0m=1186 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] Connecting to etcd took 421.433µs             [36mdurationInNs[0m=421433 [36mloc[0m="etcdv3/bytes_broker_impl.go(85)" [36mlogger[0m=etcdv3
+[36mINFO[0m[0000] Plugin etcdv3: status check probe registered  [36mloc[0m="statuscheck/plugin_impl_statuscheck.go(144)" [36mlogger[0m=status-check
+[36mINFO[0m[0000] plugin ETCD: Init took 762.938µs              [36mdurationInNs[0m=762938 [36mloc[0m="core/agent_core.go(295)" [36mlogger[0m=agentcore
+[36mINFO[0m[0000] Plugin SfcController: status check probe registered  [36mloc[0m="statuscheck/plugin_impl_statuscheck.go(144)" [36mlogger[0m=status-check
+[36mINFO[0m[0000] Initializing sfcCtrlPlugin 'SfcController'    [36mloc[0m="core/controller_core.go(116)" [36mlogger[0m=defaultLogger
+[37mDEBU[0m[0000] LogFlags:                                     [37mloc[0m="core/controller_core.go(62)" [37mlogger[0m=defaultLogger
+[37mDEBU[0m[0000] 	cnpDriver:'sfcctlrl2'                        [37mloc[0m="core/controller_core.go(63)" [37mlogger[0m=defaultLogger
+[37mDEBU[0m[0000] 	sfcConfigFile:'/opt/sfc-controller/dev/sfc.conf'  [37mloc[0m="core/controller_core.go(64)" [37mlogger[0m=defaultLogger
+[36mINFO[0m[0000] InitHTTPHandlers: registering controller URLs. sfcplug:%!(EXTRA *core.SfcControllerPluginHandler=&{etcdv3 http 0xc420166a80 {0 0} <nil> <nil> {map[] map[] map[] {0 0 0 0 <nil> <nil>}} false 0xc42016b7a0 map[]})  [36mloc[0m="core/http_handlers.go(45)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] CNP Driver: Sfc Controller L2 Plugin: sfcctlrl2  [36mloc[0m="core/controller_core.go(131)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileStart: enter ...                     [36mloc[0m="core/reconcile.go(44)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileLoadAllVppLabels: begin ...          [36mloc[0m="core/reconcile.go(71)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileLoadAllVppLabels: adding label to reconcile label map: agent_vpp_1  [36mloc[0m="core/reconcile.go(82)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileLoadAllVppLabels: adding label to reconcile label map: node_1  [36mloc[0m="core/reconcile.go(82)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileLoadAllVppLabels: adding label to reconcile label map: node_2  [36mloc[0m="core/reconcile.go(82)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileLoadAllVppLabels: exit ...           [36mloc[0m="core/reconcile.go(91)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileStart: begin ...                     [36mloc[0m="l2driver/reconcile.go(95)" [36mlogger[0m=defaultLogger
+sequencerInitFromReconcileCache: sequence IDs after loading id's:  {0 0 0 0}
+[36mINFO[0m[0000] ReconcileStart: exit ...                      [36mloc[0m="l2driver/reconcile.go(114)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReconcileStart: exit ...                      [36mloc[0m="core/reconcile.go(54)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReadEtcdDatastoreIntoRAMCache: start ...      [36mloc[0m="core/database.go(60)" [36mlogger[0m=defaultLogger
+[36mINFO[0m[0000] ReadEtcdDatastoreIntoRAMCache: end ...        [36mloc[0m="core/database.go(75)" [36mlogger[0m=defaultLogger
+[37mDEBU[0m[0000] fpath of sfc-config: '/opt/sfc-controller/dev/sfc.conf'  [37mloc[0m="core/sfc_config_yaml.go(39)" [37mlogger[0m=defaultLogger
+[31mERRO[0m[0000] error loading config: error converting YAML to JSON: yaml: line 4: could not find expected ':'  [31mloc[0m="core/controller_core.go(158)" [31mlogger[0m=defaultLogger
+msestak@msestak-VirtualBox:~$ 
