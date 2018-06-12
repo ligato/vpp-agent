@@ -65,7 +65,9 @@ func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux g
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.pArpIfIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_if_indices", nil)
+	plugin.pArpRngIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_rng_indices", nil)
+	plugin.pArpIndexSeq = 1
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -92,19 +94,10 @@ func (plugin *ProxyArpConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *ProxyArpConfigurator) allocateCache() {
-	if plugin.pArpIfIndexes == nil {
-		plugin.pArpIfIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_if_indices", nil)
-	} else {
-		plugin.pArpIfIndexes.Clear()
-	}
-	if plugin.pArpRngIndexes == nil {
-		plugin.pArpRngIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_rng_indices", nil)
-	} else {
-		plugin.pArpRngIndexes.Clear()
-	}
-	plugin.pArpIndexSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ProxyArpConfigurator) clearCache() {
+	plugin.pArpIfIndexes.Clear()
+	plugin.pArpRngIndexes.Clear()
 }
 
 func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {

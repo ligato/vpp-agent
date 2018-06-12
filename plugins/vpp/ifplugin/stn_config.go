@@ -78,7 +78,9 @@ func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Init indexes
 	plugin.ifIndexes = ifIndexes
-	plugin.allocateCache()
+	plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-all-indexes", nil)
+	plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-unstored-indexes", nil)
+	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
 
 	// Stopwatch
 	if enableStopwatch {
@@ -93,19 +95,10 @@ func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	return nil
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *StnConfigurator) allocateCache() {
-	if plugin.allIndexes == nil {
-		plugin.allIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-all-indexes", nil)
-	} else {
-		plugin.allIndexes.Clear()
-	}
-	if plugin.unstoredIndexes == nil {
-		plugin.unstoredIndexes = nametoidx.NewNameToIdx(plugin.log, "stn-unstored-indexes", nil)
-	} else {
-		plugin.unstoredIndexes.Clear()
-	}
-	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *StnConfigurator) clearMapping() {
+	plugin.allIndexes.Clear()
+	plugin.unstoredIndexes.Clear()
 }
 
 // ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface

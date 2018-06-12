@@ -85,7 +85,9 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 
 	// Mappings
 	plugin.ifIndexes = indexes
-	plugin.allocateCache()
+	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
+	plugin.afPacketByName = make(map[string]*AfPacketConfig)
+	plugin.hostInterfaces = make(map[string]struct{})
 
 	// Stopwatch
 	plugin.stopwatch = stopwatch
@@ -93,8 +95,8 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 	return nil
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *AFPacketConfigurator) allocateCache() {
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *AFPacketConfigurator) clearMapping() {
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
 	plugin.afPacketByName = make(map[string]*AfPacketConfig)
 	plugin.hostInterfaces = make(map[string]struct{})

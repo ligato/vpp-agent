@@ -63,7 +63,9 @@ func (plugin *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.appNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "namespace_indexes", nil))
+	plugin.appNsCached = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "not_configured_namespace_indexes", nil))
+	plugin.appNsIdxSeq = 1
 
 	// Stopwatch
 	if enableStopwatch {
@@ -89,19 +91,10 @@ func (plugin *AppNsConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *AppNsConfigurator) allocateCache() {
-	if plugin.appNsIndexes == nil {
-		plugin.appNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "namespace_indexes", nil))
-	} else {
-		plugin.appNsIndexes.Clear()
-	}
-	if plugin.appNsCached == nil {
-		plugin.appNsCached = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "not_configured_namespace_indexes", nil))
-	} else {
-		plugin.appNsCached.Clear()
-	}
-	plugin.appNsIdxSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *AppNsConfigurator) clearCache() {
+	plugin.appNsIndexes.Clear()
+	plugin.appNsCached.Clear()
 }
 
 // GetAppNsIndexes returns application namespace memory indexes

@@ -65,7 +65,9 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
 	plugin.bdIndexes = bdIndexes
-	plugin.allocateCache()
+	plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_indexes", nil))
+	plugin.addCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_add_indexes", nil))
+	plugin.delCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_del_indexes", nil))
 	plugin.fibIndexSeq = 1
 
 	// VPP channels
@@ -103,24 +105,11 @@ func (plugin *FIBConfigurator) Close() error {
 	return err
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *FIBConfigurator) allocateCache() {
-	if plugin.fibIndexes == nil {
-		plugin.fibIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_indexes", nil))
-	} else {
-		plugin.fibIndexes.Clear()
-	}
-	if plugin.addCacheIndexes == nil {
-		plugin.addCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_add_indexes", nil))
-	} else {
-		plugin.addCacheIndexes.Clear()
-	}
-	if plugin.delCacheIndexes == nil {
-		plugin.delCacheIndexes = l2idx.NewFIBIndex(nametoidx.NewNameToIdx(plugin.log, "fib_del_indexes", nil))
-	} else {
-		plugin.delCacheIndexes.Clear()
-	}
-	plugin.fibIndexSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *FIBConfigurator) clearCache() {
+	plugin.fibIndexes.Clear()
+	plugin.addCacheIndexes.Clear()
+	plugin.delCacheIndexes.Clear()
 }
 
 // GetFibIndexes returns FIB memory indexes

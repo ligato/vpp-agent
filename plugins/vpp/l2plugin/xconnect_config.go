@@ -53,7 +53,10 @@ func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux g
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-indexes", nil))
+	plugin.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-add-cache-indexes", nil))
+	plugin.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-del-cache-indexes", nil))
+	plugin.xcIndexSeq = 1
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -80,24 +83,11 @@ func (plugin *XConnectConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *XConnectConfigurator) allocateCache() {
-	if plugin.xcIndexes == nil {
-		plugin.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-indexes", nil))
-	} else {
-		plugin.xcIndexes.Clear()
-	}
-	if plugin.xcAddCacheIndexes == nil {
-		plugin.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-add-cache-indexes", nil))
-	} else {
-		plugin.xcAddCacheIndexes.Clear()
-	}
-	if plugin.xcDelCacheIndexes == nil {
-		plugin.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-del-cache-indexes", nil))
-	} else {
-		plugin.xcDelCacheIndexes.Clear()
-	}
-	plugin.xcIndexSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *XConnectConfigurator) clearCache() {
+	plugin.xcIndexes.Clear()
+	plugin.xcAddCacheIndexes.Clear()
+	plugin.xcDelCacheIndexes.Clear()
 }
 
 // GetXcIndexes returns cross connect memory indexes

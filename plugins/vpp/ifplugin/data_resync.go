@@ -51,10 +51,10 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	}()
 
 	// Re-initialize cache
-	if err := plugin.allocateCache(); err != nil {
+	if err := plugin.clearCache(); err != nil {
 		return []error{err}
 	}
-	plugin.afPacketConfigurator.allocateCache()
+	plugin.afPacketConfigurator.clearMapping()
 
 	// Dump current state of the VPP interfaces
 	vppIfs, err := vppdump.DumpInterfaces(plugin.log, plugin.vppCh, plugin.stopwatch)
@@ -226,7 +226,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	}()
 
 	// Re-initialize cache
-	plugin.allocateCache()
+	plugin.clearMapping()
 
 	// Dump all BFD vppSessions
 	vppSessions, err := plugin.DumpBfdSessions()
@@ -370,7 +370,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 	}()
 
 	// Re-initialize cache
-	plugin.allocateCache()
+	plugin.clearMapping()
 
 	// Dump existing STN Rules
 	vppStnRules, err := plugin.Dump()
@@ -447,7 +447,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	plugin.log.Debug("RESYNC nat global config.")
 
 	// Re-initialize cache
-	plugin.allocateCache()
+	plugin.clearMapping()
 
 	vppNatGlobal, err := vppdump.Nat44GlobalConfigDump(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
 	if err != nil {

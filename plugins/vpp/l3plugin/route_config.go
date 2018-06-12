@@ -62,7 +62,9 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.rtIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_indexes", nil))
+	plugin.rtCachedIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_cached_indexes", nil))
+	plugin.rtIndexSeq = 1
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -89,19 +91,10 @@ func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *RouteConfigurator) allocateCache() {
-	if plugin.rtIndexes == nil {
-		plugin.rtIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_indexes", nil))
-	} else {
-		plugin.rtIndexes.Clear()
-	}
-	if plugin.rtCachedIndexes == nil {
-		plugin.rtCachedIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_cached_indexes", nil))
-	} else {
-		plugin.rtCachedIndexes.Clear()
-	}
-	plugin.rtIndexSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *RouteConfigurator) clearCache() {
+	plugin.rtIndexes.Clear()
+	plugin.rtCachedIndexes.Clear()
 }
 
 // Create unique identifier which serves as a name in name-to-index mapping.

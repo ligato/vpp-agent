@@ -94,7 +94,12 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	}
 
 	// Mappings
-	if err = plugin.allocateCache(); err != nil {
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
+	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
+	plugin.uIfaceCache = make(map[string]string)
+	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
+	if plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch)); err != nil {
 		return err
 	}
 
@@ -123,25 +128,18 @@ func (plugin *InterfaceConfigurator) Close() error {
 	return err
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *InterfaceConfigurator) allocateCache() error {
-	if plugin.swIfIndexes == nil {
-		plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
-	} else {
-		plugin.swIfIndexes.Clear()
-	}
-	if plugin.dhcpIndexes == nil {
-		plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
-	} else {
-		plugin.dhcpIndexes.Clear()
-	}
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *InterfaceConfigurator) clearCache() error {
+	plugin.swIfIndexes.Clear()
+	plugin.dhcpIndexes.Clear()
 	plugin.uIfaceCache = make(map[string]string)
 	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
 	var err error
-	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
-		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch))
-
-	return err
+	if plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetSwIfIndexes exposes interface name-to-index mapping

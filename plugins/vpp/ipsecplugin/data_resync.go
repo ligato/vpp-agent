@@ -26,7 +26,7 @@ func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SP
 		}
 	}()
 
-	plugin.allocateCache()
+	plugin.clearMapping()
 
 	// TODO: dump existing configuration from VPP
 

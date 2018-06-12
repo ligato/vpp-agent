@@ -15,21 +15,21 @@
 package l2plugin_test
 
 import (
-	"testing"
-	"git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	. "github.com/onsi/gomega"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l22 "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator, error) {
@@ -100,7 +100,7 @@ func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -146,7 +146,7 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 		MacAge:              15,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -167,7 +167,7 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -214,7 +214,7 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if1",
+				Name: "if1",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -235,7 +235,7 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -281,7 +281,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -304,7 +304,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -325,7 +325,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: false,
 				SplitHorizonGroup:       1,
 			},
@@ -368,7 +368,7 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -391,7 +391,7 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -459,7 +459,7 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "test",
+				Name: "test",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -530,7 +530,7 @@ func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "test",
+				Name: "test",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -652,7 +652,7 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 				Name: "if3",
 			},
 			{
-				Name:                    "if4",
+				Name: "if4",
 				BridgedVirtualInterface: true,
 			},
 			{
@@ -696,7 +696,7 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 				Name: "if4",
 			},
 			{
-				Name:                    "if5",
+				Name: "if5",
 				BridgedVirtualInterface: true,
 			},
 		},
@@ -728,11 +728,11 @@ func TestBDConfigurator_TwoBVI(t *testing.T) {
 		Learn:               true,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name:                    "if0",
+				Name: "if0",
 				BridgedVirtualInterface: true,
 			},
 			{
-				Name:                    "if1",
+				Name: "if1",
 				BridgedVirtualInterface: true,
 			},
 		},

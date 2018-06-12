@@ -76,7 +76,9 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(plugin.log, "bd_indexes", l2idx.IndexMetadata))
+	plugin.bdIDSeq = 1
+	plugin.regIfCounter = 1
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -107,15 +109,9 @@ func (plugin *BDConfigurator) Close() error {
 	return err
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *BDConfigurator) allocateCache() {
-	if plugin.bdIndexes == nil {
-		plugin.bdIndexes = l2idx.NewBDIndex(nametoidx.NewNameToIdx(plugin.log, "bd_indexes", l2idx.IndexMetadata))
-	} else {
-		plugin.bdIndexes.Clear()
-	}
-	plugin.bdIDSeq = 1
-	plugin.regIfCounter = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *BDConfigurator) clearCache() {
+	plugin.bdIndexes.Clear()
 }
 
 // ConfigureBridgeDomain handles the creation of new bridge domain including interfaces, ARP termination

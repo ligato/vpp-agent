@@ -66,7 +66,10 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_indexes", nil))
+	plugin.arpCache = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_cache", nil))
+	plugin.arpDeleted = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_unnasigned", nil))
+	plugin.arpIndexSeq = 1
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -93,24 +96,11 @@ func (plugin *ArpConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *ArpConfigurator) allocateCache() {
-	if plugin.arpIndexes == nil {
-		plugin.arpIndexes = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_indexes", nil))
-	} else {
-		plugin.arpIndexes.Clear()
-	}
-	if plugin.arpCache == nil {
-		plugin.arpCache = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_cache", nil))
-	} else {
-		plugin.arpCache.Clear()
-	}
-	if plugin.arpDeleted == nil {
-		plugin.arpDeleted = l3idx.NewARPIndex(nametoidx.NewNameToIdx(plugin.log, "arp_unnasigned", nil))
-	} else {
-		plugin.arpDeleted.Clear()
-	}
-	plugin.arpIndexSeq = 1
+// clearCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ArpConfigurator) clearCache() {
+	plugin.arpIndexes.Clear()
+	plugin.arpCache.Clear()
+	plugin.arpDeleted.Clear()
 }
 
 // Creates unique identifier which serves as a name in name to index mapping

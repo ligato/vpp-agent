@@ -61,7 +61,9 @@ func (plugin *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.sessionsIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_session_indexes", nil)
+	plugin.keysIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_auth_keys_indexes", nil)
+	plugin.echoFunctionIndex = nametoidx.NewNameToIdx(plugin.log, "bfd_echo_function_index", nil)
 
 	// VPP channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -87,24 +89,11 @@ func (plugin *BFDConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *BFDConfigurator) allocateCache() {
-	if plugin.sessionsIndexes == nil {
-		plugin.sessionsIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_session_indexes", nil)
-	} else {
-		plugin.sessionsIndexes.Clear()
-	}
-	if plugin.keysIndexes == nil {
-		plugin.keysIndexes = nametoidx.NewNameToIdx(plugin.log, "bfd_auth_keys_indexes", nil)
-	} else {
-		plugin.keysIndexes.Clear()
-	}
-	if plugin.echoFunctionIndex == nil {
-		plugin.echoFunctionIndex = nametoidx.NewNameToIdx(plugin.log, "bfd_echo_function_index", nil)
-	} else {
-		plugin.echoFunctionIndex.Clear()
-	}
-	plugin.bfdIDSeq = 1
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *BFDConfigurator) clearMapping() {
+	plugin.sessionsIndexes.Clear()
+	plugin.keysIndexes.Clear()
+	plugin.echoFunctionIndex.Clear()
 }
 
 // GetBfdSessionIndexes gives access to BFD session indexes

@@ -74,7 +74,11 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.spdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_spd_indexes", nil))
+	plugin.cachedSpdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_cached_spd_indexes", nil))
+	plugin.saIndexes = nametoidx.NewNameToIdx(plugin.log, "ipsec_sa_indexes", ifaceidx.IndexMetadata)
+	plugin.spdIndexSeq = 1
+	plugin.saIndexSeq = 1
 
 	// VPP channel
 	plugin.vppCh, err = goVppMux.NewAPIChannel()
@@ -101,25 +105,11 @@ func (plugin *IPSecConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *IPSecConfigurator) allocateCache() {
-	if plugin.spdIndexes == nil {
-		plugin.spdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_spd_indexes", nil))
-	} else {
-		plugin.spdIndexes.Clear()
-	}
-	if plugin.cachedSpdIndexes == nil {
-		plugin.cachedSpdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_cached_spd_indexes", nil))
-	} else {
-		plugin.cachedSpdIndexes.Clear()
-	}
-	if plugin.saIndexes == nil {
-		plugin.saIndexes = nametoidx.NewNameToIdx(plugin.log, "ipsec_sa_indexes", ifaceidx.IndexMetadata)
-	} else {
-		plugin.saIndexes.Clear()
-	}
-	plugin.spdIndexSeq = 1
-	plugin.saIndexSeq = 1
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *IPSecConfigurator) clearMapping() {
+	plugin.spdIndexes.Clear()
+	plugin.cachedSpdIndexes.Clear()
+	plugin.saIndexes.Clear()
 }
 
 // GetSaIndexes returns security association indexes

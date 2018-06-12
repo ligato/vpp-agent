@@ -84,7 +84,8 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.allocateCache()
+	plugin.l2AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l2_indexes", nil))
+	plugin.l3l4AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l3_l4_indexes", nil))
 
 	// VPP channels
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -126,18 +127,10 @@ func (plugin *ACLConfigurator) Close() error {
 	return err
 }
 
-// allocateCache prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *ACLConfigurator) allocateCache() {
-	if plugin.l2AclIndexes == nil {
-		plugin.l2AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l2_indexes", nil))
-	} else {
-		plugin.l2AclIndexes.Clear()
-	}
-	if plugin.l3l4AclIndexes == nil {
-		plugin.l3l4AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l3_l4_indexes", nil))
-	} else {
-		plugin.l3l4AclIndexes.Clear()
-	}
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ACLConfigurator) clearMapping() {
+	plugin.l2AclIndexes.Clear()
+	plugin.l3l4AclIndexes.Clear()
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
