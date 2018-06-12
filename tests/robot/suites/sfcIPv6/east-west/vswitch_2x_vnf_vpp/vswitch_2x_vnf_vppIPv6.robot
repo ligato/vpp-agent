@@ -8,6 +8,7 @@ Resource     ../../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../../libraries/all_libs.robot
 
+Force Tags        sfcIPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 
