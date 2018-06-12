@@ -101,12 +101,12 @@ func (plugin *ArpConfigurator) GetArpIndexes() l3idx.ARPIndexRW {
 	return plugin.arpIndexes
 }
 
-// GetArpIndexes exposes arpIndexes mapping
+// GetArpCache exposes list of cached ARP entries (prent in ETCD but not in VPP)
 func (plugin *ArpConfigurator) GetArpCache() l3idx.ARPIndexRW {
 	return plugin.arpCache
 }
 
-// GetArpIndexes exposes arpIndexes mapping
+// GetArpDeleted exposes arppDeleted mapping (unsuccessfully deleted ARP entries)
 func (plugin *ArpConfigurator) GetArpDeleted() l3idx.ARPIndexRW {
 	return plugin.arpDeleted
 }
